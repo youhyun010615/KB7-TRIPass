@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <!-- DB의 snake_case 컬럼명을 Java의 camelCase 필드에 자동 매핑 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- SQL 실행 타임아웃(초) -->
+        <setting name="defaultStatementTimeout" value="30"/>
+        <!-- null 값도 매핑 허용 -->
+        <setting name="callSettersOnNulls" value="true"/>
+    </settings>
+
+    <typeAliases>
+        <!-- 각 도메인 DTO 패키지 등록 — Mapper XML 에서 전체 경로 대신 클래스명만 사용 가능 -->
+        <package name="com.tripass.auth.dto"/>
+        <package name="com.tripass.mypage.dto"/>
+        <package name="com.tripass.profile.dto"/>
+        <package name="com.tripass.financial.dto"/>
+        <package name="com.tripass.asset.dto"/>
+        <package name="com.tripass.saving.dto"/>
+        <package name="com.tripass.travel.dto"/>
+        <package name="com.tripass.exchange.dto"/>
+        <package name="com.tripass.prepay.dto"/>
+        <package name="com.tripass.schedule.dto"/>
+        <package name="com.tripass.expense.dto"/>
+        <package name="com.tripass.ocr.dto"/>
+        <package name="com.tripass.report.dto"/>
+    </typeAliases>
+</configuration>

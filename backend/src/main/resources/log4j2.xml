@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- 애플리케이션 로그 -->
+        <Logger name="com.tripass" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- log4jdbc SQL 로그 (실행된 쿼리 출력) -->
+        <Logger name="jdbc.sqlonly"        level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="jdbc.sqltiming"      level="INFO"  additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="jdbc.resultsettable" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- 불필요한 log4jdbc 로그 비활성화 -->
+        <Logger name="jdbc.audit"          level="OFF"   additivity="false"/>
+        <Logger name="jdbc.resultset"      level="OFF"   additivity="false"/>
+        <Logger name="jdbc.connection"     level="OFF"   additivity="false"/>
+
+        <Root level="WARN">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
