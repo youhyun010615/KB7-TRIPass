@@ -1,4 +1,4 @@
-# TRIPass — 외국인 여행자를 위한 금융 자산관리 앱
+# TRIPass — 해외여행 기반 금융 자산관리 서비스
 
 KB IT's Your Life 7기 팀 프로젝트
 
