@@ -36,39 +36,49 @@ KB IT's Your Life 7기 팀 프로젝트
 - MySQL 8.x
 - Tomcat 9
 
-### 1. DB 설정
+### 1. DB 초기화
 
 ```sql
 CREATE DATABASE tripass CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 2. 백엔드 설정
+스키마 초기화 SQL은 추후 `backend/src/main/resources/sql/schema.sql` 에 추가 예정입니다.
+
+### 2. 환경변수 설정
+
+백엔드 환경변수:
 
 ```bash
 cd backend
+cp .env.example .env.local
+# .env.local 에 DB 비밀번호, JWT 시크릿, 외부 API 키 입력
 ```
 
-`src/main/resources/application-local.properties` 파일 생성 (gitignore 처리됨):
+`application.properties` 는 `${환경변수명:기본값}` 형식으로 환경변수를 참조합니다.  
+민감 정보는 `application-local.properties` 또는 OS 환경변수로 주입하세요.
 
-```properties
-db.password=your_mysql_password
-```
-
-빌드 및 Tomcat 배포:
+프론트엔드 환경변수:
 
 ```bash
+cd frontend
+cp .env.example .env.local
+# VITE_API_BASE_URL=http://localhost:8080/api/v1 입력
+```
+
+### 3. 백엔드 빌드 및 배포
+
+```bash
+cd backend
 ./gradlew war
 # build/libs/tripass.war 를 Tomcat webapps/ 에 배포 후 Tomcat 실행
 ```
 
 기본 포트: http://localhost:8080
 
-### 3. 프론트엔드 설정
+### 4. 프론트엔드 실행
 
 ```bash
 cd frontend
-cp .env.example .env.local
-# VITE_API_BASE_URL 확인 (기본값: http://localhost:8080/api/v1)
 npm install
 npm run dev
 ```
@@ -117,6 +127,19 @@ KB7-TRIPass/
         ├── views/                   # 도메인별 페이지 컴포넌트
         └── components/common/       # 공통 UI 컴포넌트
 ```
+
+---
+
+## 관련 문서
+
+| 문서 | 설명 |
+|---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Issue · 브랜치 · 커밋 · PR · 충돌 해결 규칙 |
+| [API_CONVENTION.md](API_CONVENTION.md) | REST API 설계 규칙 (URL, 응답 형식, 페이징 등) |
+| [DB_CONVENTION.md](DB_CONVENTION.md) | DB 테이블/컬럼 설계 규칙 |
+| [DOMAIN_BOUNDARIES.md](DOMAIN_BOUNDARIES.md) | 팀원별 담당 패키지 · 테이블 경계 |
+| [API_MAPPING.md](API_MAPPING.md) | 요구사항 ID별 API · 테이블 · 진척도 추적 |
+| [TRIPass Notion 화면정의서](https://app.notion.com/p/TRIPass-3adaa200f0a58096a624cb6487e9badf) | 전체 서비스 화면 설계 |
 
 ---
 
