@@ -180,13 +180,13 @@ PR 생성 시 `.github/PULL_REQUEST_TEMPLATE.md` 가 자동 로드됩니다.
 
 ### 리뷰어 지정
 
-- 자신의 담당 도메인이 아닌 팀원 **최소 2명** 을 리뷰어로 지정
+- 자신의 담당 도메인이 아닌 팀원 **최소 1명** 을 리뷰어로 지정
 
 ### Merge 승인 체크리스트 (팀장 확인)
 
 - [ ] PR 본문에 `Closes #이슈번호` 포함 여부 확인
 - [ ] 커밋 메시지 규격 (Type / Scope / 이슈번호) 검증
-- [ ] 코드 리뷰 Approve **2명 이상** 수령
+- [ ] 코드 리뷰 Approve **1명 이상** 수령
 - [ ] 로컬에서 빌드/동작 확인 완료
 
 ### 병합 방식
@@ -210,7 +210,7 @@ GitHub 레포 → **Settings → Branches → Add branch ruleset**
 |---|---|
 | Branch name pattern | `main` |
 | Require a pull request before merging | ✅ |
-| Required number of approvals | **2** |
+| Required number of approvals | **1** |
 | Require status checks to pass | ✅ |
 | Block force pushes | ✅ |
 | Restrict deletions | ✅ |
@@ -218,7 +218,7 @@ GitHub 레포 → **Settings → Branches → Add branch ruleset**
 ### develop 브랜치 보호
 
 동일하게 `develop` 브랜치도 위 설정 적용.  
-단, Required approvals는 **2명** 동일하게 유지.
+단, Required approvals는 **1명** 동일하게 유지.
 
 ---
 
