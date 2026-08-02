@@ -42,7 +42,12 @@ KB IT's Your Life 7기 팀 프로젝트
 CREATE DATABASE tripass CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-스키마 초기화 SQL은 추후 `backend/src/main/resources/sql/schema.sql` 에 추가 예정입니다.
+스키마 초기화 SQL: `backend/src/main/resources/sql/schema.sql`
+
+```bash
+# MySQL Workbench 또는 CLI에서 실행
+mysql -u root -p tripass < backend/src/main/resources/sql/schema.sql
+```
 
 ### 2. 환경변수 설정
 
@@ -271,7 +276,7 @@ Closes #4
 
 - [ ] PR 본문에 `Closes #이슈번호` 포함 여부 확인
 - [ ] 커밋 메시지 규격(Type/Scope/이슈번호) 검증
-- [ ] 코드 리뷰 Approve 최소 1개 이상 수령
+- [ ] 코드 리뷰 Approve **2명 이상** 수령
 - [ ] 병합 방식은 **Squash and merge** 만 사용 (히스토리 단일화)
 
 **절대 금지 (Auto Rejection)**
