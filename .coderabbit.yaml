@@ -1,6 +1,12 @@
 language: "ko-KR"
 
 reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - develop
+      - main
   profile: "chill"
   high_level_summary: true
   poem: false
