@@ -1,16 +1,31 @@
 <script setup>
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useTravelModeStore } from '@/stores/travelMode'
 
 const router = useRouter()
 const route = useRoute()
+const travelModeStore = useTravelModeStore()
 
-const navItems = [
+const savingsNavItems = [
   { name: '홈', path: '/', icon: 'home' },
   { name: '금융상품', path: '/financial', icon: 'financial' },
+  { name: '자산관리', path: '/asset', icon: 'asset' },
+  { name: '환율', path: '/exchange', icon: 'exchange' },
+  { name: '마이페이지', path: '/mypage', icon: 'mypage' },
+]
+
+const travelNavItems = [
+  { name: '홈', path: '/', icon: 'home' },
+  { name: '여행일정', path: '/schedule', icon: 'schedule' },
   { name: '자산관리', path: '/asset', icon: 'asset' },
   { name: '영수증', path: '/receipt', icon: 'receipt' },
   { name: '마이페이지', path: '/mypage', icon: 'mypage' },
 ]
+
+const navItems = computed(() =>
+  travelModeStore.isTravelMode ? travelNavItems : savingsNavItems
+)
 
 function isActive(path) {
   if (path === '/') return route.path === '/'
@@ -41,8 +56,20 @@ function isActive(path) {
       </svg>
       <!-- asset (자산관리) -->
       <svg v-if="item.icon === 'asset'" width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="9" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
-        <path d="M12 3V12L16.5 7.5" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="3" y="6" width="18" height="13" rx="2" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
+        <path d="M3 10H21" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
+        <path d="M7 15H10" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <!-- exchange (환율) -->
+      <svg v-if="item.icon === 'exchange'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z"
+          :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
+        <path d="M8 12H16M16 12L13 9M16 12L13 15" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <!-- schedule (여행일정) -->
+      <svg v-if="item.icon === 'schedule'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="4" width="18" height="18" rx="2" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
+        <path d="M16 2V6M8 2V6M3 10H21" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
       <!-- receipt (영수증) -->
       <svg v-if="item.icon === 'receipt'" width="20" height="20" viewBox="0 0 24 24" fill="none">
