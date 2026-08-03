@@ -130,7 +130,7 @@ function formatCurrency(n) {
             <div class="mb-2 text-2xl">✈</div>
             <h2 class="text-[16px] font-extrabold">아직 등록된 여행이 없어요</h2>
             <p class="mt-2 text-[10px] leading-4 text-blue-100">여행을 등록하면 목표 금액을 설정하고<br>저축 계획까지 한 번에 도와드려요.</p>
-            <button class="w-full h-11 mt-4 rounded-xl text-[12px] font-extrabold text-white" style="background:#ff7a36" @click="router.push('/travel/register')">여행 계획 등록하기</button>
+            <button class="w-full h-11 mt-4 rounded-xl text-[12px] font-extrabold text-white" style="background:#ff7a36" @click="router.push('/savings')">여행 계획 등록하기</button>
             <div class="grid grid-cols-2 gap-3 mt-4 text-left">
               <div><span class="block text-[8px] text-blue-200">보유 총자산</span><b class="text-[14px]">12,500,000원</b></div>
               <div class="border-l border-white/20 pl-3"><span class="block text-[8px] text-blue-200">연결 계좌</span><b class="text-[14px]">2개</b></div>
