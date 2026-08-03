@@ -20,7 +20,10 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     /** Web ApplicationContext: Controller, MVC 설정 */
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class[]{ WebMvcConfig.class };
+        return new Class[]{
+                WebMvcConfig.class,
+                SwaggerConfig.class
+        };
     }
 
     /** DispatcherServlet 이 처리할 URL 패턴 */
