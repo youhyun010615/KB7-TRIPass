@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 const countrySeed = [
@@ -22,15 +22,26 @@ const createPlan = (country) => ({
   targetBudget: country.securedBudget,
 })
 
+const STORAGE_KEY = 'tripass-travel-goal'
+
+function loadSavedGoal() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
 export const useTravelStore = defineStore('travel', () => {
+  const savedGoal = loadSavedGoal()
   const isTravelMode = ref(false)
   const selectedCountry = ref(null)
   const travelBudget = ref(null)
-  const hasTravelGoal = ref(false)
-  const tripName = ref('')
-  const selectedCountryCodes = ref([])
-  const plans = reactive({})
-  const allocations = reactive({})
+  const hasTravelGoal = ref(savedGoal?.hasTravelGoal ?? false)
+  const tripName = ref(savedGoal?.tripName ?? '')
+  const selectedCountryCodes = ref(savedGoal?.selectedCountryCodes ?? [])
+  const plans = reactive(savedGoal?.plans ?? {})
+  const allocations = reactive(savedGoal?.allocations ?? {})
 
   const countries = countrySeed
   const accounts = accountSeed
@@ -88,6 +99,18 @@ export const useTravelStore = defineStore('travel', () => {
 
   const canCompleteGoal = computed(() => totalTargetAmount.value > 0 && totalAllocatedAmount.value > 0)
 
+  watch(
+    () => ({
+      hasTravelGoal: hasTravelGoal.value,
+      tripName: tripName.value,
+      selectedCountryCodes: [...selectedCountryCodes.value],
+      plans: { ...plans },
+      allocations: { ...allocations },
+    }),
+    (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)),
+    { deep: true },
+  )
+
   function completeGoal() {
     if (!canCompleteGoal.value) return false
     hasTravelGoal.value = true
@@ -100,6 +123,7 @@ export const useTravelStore = defineStore('travel', () => {
     selectedCountryCodes.value = []
     Object.keys(plans).forEach((key) => delete plans[key])
     Object.keys(allocations).forEach((key) => delete allocations[key])
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   function enterTravelMode(country, budget) {
