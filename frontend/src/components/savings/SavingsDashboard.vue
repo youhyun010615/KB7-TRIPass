@@ -19,8 +19,6 @@ const statusCopy = computed(() => ({
   warning: { icon: '!', title: '월 저축액을 조금 더 늘려볼까요?', amount: plan.additionalRecommendedAmount, badge: `예상 출국 ${plan.expectedDeparture}`, detail: `현재 계획은 목표 출국일보다 약 ${plan.delayMonths}개월 늦게 달성할 수 있어요.` },
   error: { icon: '⚠', title: '현재 여유 자금보다 저축 금액이 커요', amount: plan.insufficientFunds, badge: '설정 불가', detail: `${money(plan.availableFunds)} 이하로 다시 입력해 주세요.` },
 }[plan.status]))
-const linkedAccounts = computed(() => travel.accountAllocations.filter((item) => item.selected))
-
 function openPrimaryAction() {
   if (plan.status === 'success') router.push('/asset')
   else router.push('/savings/plan')
