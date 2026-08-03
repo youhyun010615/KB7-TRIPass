@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.travel.mapper.TravelMapper">
+
+    <resultMap id="DashboardResultMap" type="com.tripass.travel.dto.TravelStatusResponseDto">
+        <result property="totalRemainingFund" column="total_remaining_fund"/>
+        <result property="dailyAvailableAmount" column="daily_available_amount"/>
+        <collection property="countries" ofType="com.tripass.travel.dto.CountryStatusDto">
+            <result property="countryName" column="country_name"/>
+            <result property="remainingFund" column="country_remaining_fund"/>
+            <result property="remainingDays" column="remaining_days"/>
+        </collection>
+    </resultMap>
+
+    <select id="getTripDashboard" resultMap="DashboardResultMap">
+        WITH TripStats AS (
+            SELECT
+                t.id AS trip_id,
+                t.total_target_amount,
+                COALESCE(SUM(tr.amount), 0) AS total_spent,
+                DATEDIFF(t.end_date, CURRENT_DATE) AS remaining_trip_days
+            FROM
+                trips t
+            LEFT JOIN
+                transactions tr ON t.id = tr.trip_id AND tr.is_deleted = 0
+            WHERE
+                t.id = #{tripId} AND t.is_deleted = 0
+            GROUP BY
+                t.id
+        )
+        SELECT
+            (ts.total_target_amount - ts.total_spent) AS total_remaining_fund,
+            CASE
+                WHEN ts.remaining_trip_days > 0 THEN (ts.total_target_amount - ts.total_spent) / ts.remaining_trip_days
+                ELSE 0
+            END AS daily_available_amount,
+            c.country_name,
+            tc.target_budget - COALESCE(SUM(tr.amount), 0) AS country_remaining_fund,
+            DATEDIFF(tc.departure_date, CURRENT_DATE) AS remaining_days
+        FROM
+            TripStats ts
+        JOIN
+            trip_countries tc ON ts.trip_id = tc.trip_id
+        JOIN
+            countries c ON tc.country_id = c.id
+        LEFT JOIN
+            transactions tr ON tc.id = tr.trip_country_id AND tr.is_deleted = 0
+        WHERE
+            tc.is_deleted = 0
+        GROUP BY
+            ts.trip_id, tc.id, c.country_name, tc.target_budget, tc.departure_date, ts.total_target_amount, ts.total_spent, ts.remaining_trip_days
+    </select>
+</mapper>
