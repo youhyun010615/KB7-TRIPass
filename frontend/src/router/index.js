@@ -48,7 +48,7 @@ const router = createRouter({
     {
       path: '/profile/financial',
       name: 'FinancialProfile',
-      component: () => import('@/views/auth/SignupView.vue'), // 온보딩 플로우에서 연결
+      component: () => import('@/views/financial/FinancialProfileView.vue'),
       meta: { requiresAuth: true },
     },
 
@@ -160,8 +160,19 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const authStore = useAuthStore()
+
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     return { name: 'Login' }
+  }
+
+  // 로그인 후 금융 프로필 미완료 시 등록 페이지로 강제 이동
+  if (
+    authStore.isLoggedIn &&
+    !authStore.isProfileComplete &&
+    to.name !== 'FinancialProfile' &&
+    to.meta.requiresAuth
+  ) {
+    return { name: 'FinancialProfile' }
   }
 })
 
