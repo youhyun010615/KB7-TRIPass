@@ -53,7 +53,10 @@ import javax.sql.DataSource;
         "com.tripass.ocr.mapper",
         "com.tripass.report.mapper"
 })
-@PropertySource("classpath:application.properties")
+@PropertySource(value = {
+        "classpath:application.properties",
+        "classpath:application-local.properties"
+}, ignoreResourceNotFound = true)
 @EnableTransactionManagement
 public class RootConfig {
 
