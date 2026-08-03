@@ -78,6 +78,7 @@ CREATE TABLE countries (
     id           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '국가 ID',
     country_name VARCHAR(100) NOT NULL                COMMENT '국가명',
     currency_id  BIGINT       NOT NULL                COMMENT '기본 통화 ID',
+    time_zone    VARCHAR(50)  NOT NULL                COMMENT 'IANA 시간대(예: Asia/Seoul)',
     flag_url     VARCHAR(500) NULL                    COMMENT '국기 이미지 URL',
     created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
