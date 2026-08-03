@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -107,7 +107,6 @@ const router = createRouter({
       component: () => import('@/views/mypage/MypageView.vue'),
       meta: { requiresAuth: true },
     },
-<<<<<<< HEAD
     {
       path: '/mypage/profile',
       name: 'MypageProfile',
@@ -157,13 +156,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
   ],
-})
+});
 
 router.beforeEach((to) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
-    return { name: 'Login' }
+    return { name: 'Login' };
   }
 
   // 로그인 후 금융 프로필 미완료 시 등록 페이지로 강제 이동
@@ -173,8 +172,8 @@ router.beforeEach((to) => {
     to.name !== 'FinancialProfile' &&
     to.meta.requiresAuth
   ) {
-    return { name: 'FinancialProfile' }
+    return { name: 'FinancialProfile' };
   }
-})
+});
 
-export default router
+export default router;

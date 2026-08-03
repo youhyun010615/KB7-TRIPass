@@ -1,0 +1,74 @@
+package com.tripass.travel.controller;
+
+import com.tripass.common.response.ApiResponse;
+import com.tripass.travel.dto.CountryStatusDto;
+import com.tripass.travel.dto.TravelStatusResponseDto;
+import com.tripass.travel.service.TravelService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
+
+class TravelControllerTest {
+
+    @Mock
+    private TravelService travelService;
+
+    @InjectMocks
+    private TravelController travelController;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    @DisplayName("TravelService 반환 데이터 구조 및 값 검증")
+    void getTravelStatus_DataContractTest() {
+        // given
+        Long tripId = 1L;
+        
+        CountryStatusDto country = CountryStatusDto.builder()
+                .countryName("일본")
+                .remainingFund(800000L)
+                .remainingDays(10L)
+                .build();
+
+        TravelStatusResponseDto responseDto = TravelStatusResponseDto.builder()
+                .totalRemainingFund(800000L)
+                .dailyAvailableAmount(80000L)
+                .countries(Collections.singletonList(country))
+                .build();
+
+        when(travelService.getTravelStatus(tripId)).thenReturn(responseDto);
+
+        // when
+        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response = travelController.getTravelStatus(tripId);
+
+        // then
+        assertNotNull(response.getBody());
+        assertEquals("SUCCESS", response.getBody().getCode());
+        
+        TravelStatusResponseDto data = response.getBody().getData();
+        assertNotNull(data);
+        assertEquals(800000L, data.getTotalRemainingFund());
+        assertEquals(80000L, data.getDailyAvailableAmount());
+        
+        List<CountryStatusDto> countries = data.getCountries();
+        assertNotNull(countries);
+        assertEquals(1, countries.size());
+        assertEquals("일본", countries.get(0).getCountryName());
+        assertEquals(800000L, countries.get(0).getRemainingFund());
+        assertEquals(10L, countries.get(0).getRemainingDays());
+    }
+}
