@@ -80,10 +80,13 @@ dependencies {
 
     // Test
     testImplementation          "org.springframework:spring-test:${springVersion}"
+    testImplementation          "org.mockito:mockito-core:4.11.0"
     testCompileOnly             "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor     "org.projectlombok:lombok:${lombokVersion}"
     testImplementation          "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly             "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+    testImplementation          "org.mockito:mockito-core:4.11.0" // 테스트용 추가
+
 }
 
 test {

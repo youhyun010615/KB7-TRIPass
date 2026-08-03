@@ -12,7 +12,11 @@
         <setting name="callSettersOnNulls" value="true"/>
     </settings>
 
+
+
     <typeAliases>
+        <typeAlias type="com.tripass.travel.dto.TravelStatusResponseDto" alias="TravelStatusResponseDto"/>
+        <typeAlias type="com.tripass.travel.dto.CountryStatusDto" alias="CountryStatusDto"/>
         <!-- 각 도메인 DTO 패키지 등록 — Mapper XML 에서 전체 경로 대신 클래스명만 사용 가능 -->
         <package name="com.tripass.auth.dto"/>
         <package name="com.tripass.mypage.dto"/>
@@ -20,7 +24,6 @@
         <package name="com.tripass.financial.dto"/>
         <package name="com.tripass.asset.dto"/>
         <package name="com.tripass.saving.dto"/>
-        <package name="com.tripass.travel.dto"/>
         <package name="com.tripass.exchange.dto"/>
         <package name="com.tripass.prepay.dto"/>
         <package name="com.tripass.schedule.dto"/>
