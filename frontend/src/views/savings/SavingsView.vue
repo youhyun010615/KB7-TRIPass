@@ -6,7 +6,6 @@ import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const travelStore = useTravelStore()
-const money = (value) => `${Number(value).toLocaleString('ko-KR')}원`
 </script>
 
 <template>

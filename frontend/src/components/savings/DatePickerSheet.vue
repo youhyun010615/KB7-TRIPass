@@ -5,7 +5,7 @@ const props = defineProps({ open: Boolean, plan: { type: Object, default: null }
 const emit = defineEmits(['close', 'confirm'])
 const start = ref('2026-08-15')
 const end = ref('2026-08-22')
-const days = Array.from({ length: 35 }, (_, i) => i + 1)
+const days = Array.from({ length: 42 }, (_, i) => i - 5)
 
 watch(() => props.plan, (plan) => {
   start.value = plan?.startDate || '2026-08-15'
