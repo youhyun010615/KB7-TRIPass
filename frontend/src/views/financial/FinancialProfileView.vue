@@ -16,23 +16,23 @@ const salaryItems = ref([
     id: 1,
     name: '플리보험 월급',
     payDay: '25',
-    amount: '2600000',
+    amount: '2,600,000',
     memo: '메모입니다',
     account: '하나은행 급여계좌 ****4821',
   },
 ])
 const fixedExpenses = ref([
-  { id: 1, name: '월세', day: '28', amount: '800000', account: '하나은행 급여계좌 ****4821', memo: '관리비 포함', icon: '⌂', tone: 'red' },
-  { id: 2, name: '통신비', day: '31', amount: '50000', account: 'KB국민은행 ****1234', memo: '자동이체', icon: '▤', tone: 'blue' },
-  { id: 3, name: '공과금 (전기·수도·가스)', day: '25', amount: '50000', account: '신한은행 ****8888', memo: '전기 + 가스', icon: '●', tone: 'orange' },
+  { id: 1, name: '월세', day: '28', amount: '800,000', account: '하나은행 급여계좌 ****4821', memo: '관리비 포함', icon: '⌂', tone: 'red' },
+  { id: 2, name: '통신비', day: '31', amount: '50,000', account: 'KB국민은행 ****1234', memo: '자동이체', icon: '▤', tone: 'blue' },
+  { id: 3, name: '공과금 (전기·수도·가스)', day: '25', amount: '50,000', account: '신한은행 ****8888', memo: '전기 + 가스', icon: '●', tone: 'orange' },
 ])
 const categories = ref([
-  { id: 1, name: '식비', icon: '🍴', amount: '450000', tone: 'violet' },
-  { id: 2, name: '카페', icon: '☕', amount: '100000', tone: 'orange' },
-  { id: 3, name: '생활비', icon: '●', amount: '300000', tone: 'green' },
-  { id: 4, name: '쇼핑', icon: '♜', amount: '150000', tone: 'pink' },
-  { id: 5, name: '취미·여가', icon: '⌂', amount: '100000', tone: 'orange' },
-  { id: 6, name: '기타', icon: '…', amount: '100000', tone: 'gray' },
+  { id: 1, name: '식비', icon: '🍴', amount: '450,000', tone: 'violet' },
+  { id: 2, name: '카페', icon: '☕', amount: '100,000', tone: 'orange' },
+  { id: 3, name: '생활비', icon: '●', amount: '300,000', tone: 'green' },
+  { id: 4, name: '쇼핑', icon: '♜', amount: '150,000', tone: 'pink' },
+  { id: 5, name: '취미·여가', icon: '⌂', amount: '100,000', tone: 'orange' },
+  { id: 6, name: '기타', icon: '…', amount: '100,000', tone: 'gray' },
 ])
 
 const banks = [
@@ -65,8 +65,8 @@ function formatNumber(value) {
   return toNumber(value).toLocaleString('ko-KR')
 }
 
-function sanitizeAmount(item) {
-  item.amount = String(item.amount).replace(/[^0-9]/g, '')
+function updateAmount(item, event) {
+  item.amount = formatNumber(event.target.value)
 }
 
 function toggleBank(bank) {
@@ -279,7 +279,7 @@ onBeforeUnmount(() => clearInterval(connectionTimer))
           <div class="summary-ticket"><small>등록된 월 수입</small><strong>{{ formatNumber(salaryTotal) }}원</strong><span>{{ salaryItems.length }}건</span></div>
           <article v-for="item in salaryItems" :key="item.id" class="form-card">
             <div class="form-card-title"><span class="feature-icon blue">▣</span><input v-model="item.name" aria-label="급여명"><button @click="removeItem(salaryItems, item.id)">삭제</button></div>
-            <div class="field-grid two"><label>급여일<input v-model="item.payDay" inputmode="numeric"><em>일</em></label><label>월 급여액<input v-model="item.amount" inputmode="numeric" @input="sanitizeAmount(item)"><em>원</em></label></div>
+            <div class="field-grid two"><label>급여일<input v-model="item.payDay" inputmode="numeric"><em>일</em></label><label>월 급여액<input :value="item.amount" inputmode="numeric" @input="updateAmount(item, $event)"><em>원</em></label></div>
             <label class="full-field">메모 (선택)<input v-model="item.memo"></label>
             <label class="full-field">연결 계좌<select v-model="item.account"><option>하나은행 급여계좌 ****4821</option><option>KB국민은행 ****1234</option></select></label>
           </article>
@@ -296,7 +296,7 @@ onBeforeUnmount(() => clearInterval(connectionTimer))
           <div class="summary-ticket"><small>월 고정지출 합계</small><strong>{{ formatNumber(fixedTotal) }}원</strong></div>
           <article v-for="item in fixedExpenses" :key="item.id" class="form-card expense-card">
             <div class="form-card-title"><span class="feature-icon" :class="item.tone">{{ item.icon }}</span><input v-model="item.name" aria-label="고정지출명"><button @click="removeItem(fixedExpenses, item.id)">삭제</button></div>
-            <div class="field-grid two"><label>납부일<input v-model="item.day" inputmode="numeric"><em>일</em></label><label>금액<input v-model="item.amount" inputmode="numeric" @input="sanitizeAmount(item)"><em>원</em></label></div>
+            <div class="field-grid two"><label>납부일<input v-model="item.day" inputmode="numeric"><em>일</em></label><label>금액<input :value="item.amount" inputmode="numeric" @input="updateAmount(item, $event)"><em>원</em></label></div>
             <div class="field-grid account-memo"><label>연결 계좌<select v-model="item.account"><option>하나은행 급여계좌 ****4821</option><option>KB국민은행 ****1234</option><option>신한은행 ****8888</option></select></label><label>메모 (선택)<input v-model="item.memo"></label></div>
           </article>
           <button class="add-row" @click="addFixedExpense">＋ 고정지출 항목 추가하기</button>
@@ -311,7 +311,7 @@ onBeforeUnmount(() => clearInterval(connectionTimer))
           <h2>카테고리별 목표 금액 입력</h2><p class="subcopy">여행 전까지 자유롭게 쓰고 싶은 만큼 설정해주세요</p>
           <article v-for="item in categories" :key="item.id" class="category-row">
             <span class="feature-icon" :class="item.tone">{{ item.icon }}</span><div><strong>{{ item.name }}</strong><small>목표 금액</small></div>
-            <label><input v-model="item.amount" inputmode="numeric" @input="sanitizeAmount(item)"><em>원</em></label>
+            <label><input :value="item.amount" inputmode="numeric" @input="updateAmount(item, $event)"><em>원</em></label>
           </article>
           <div class="category-total"><span>ⓘ 총 합산 금액</span><strong>{{ formatNumber(categoryTotal) }}원</strong></div>
         </div>
