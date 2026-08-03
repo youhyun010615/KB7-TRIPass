@@ -1,0 +1,17 @@
+# =====================================================
+# TRIPass 로컬 환경 설정 템플릿
+# 이 파일을 application-local.properties 로 복사한 뒤 실제 값 입력
+# application-local.properties 는 절대 커밋하지 마세요 (gitignore 처리됨)
+# =====================================================
+
+# --- Database ---
+db.password=여기에_MySQL_비밀번호_입력
+
+# --- JWT (로컬 개발용, 변경 불필요) ---
+# jwt.secret=tripass-dev-secret-key-change-before-production
+
+# --- 외부 API (담당자만 입력, 없으면 생략 가능) ---
+# codef.client-id=
+# codef.client-secret=
+# exchange.api-key=
+# ocr.api-key=
