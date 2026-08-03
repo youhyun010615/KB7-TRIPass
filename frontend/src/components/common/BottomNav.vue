@@ -77,6 +77,7 @@ function isActive(path) {
           :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         <line x1="9" y1="8" x2="15" y2="8" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
         <line x1="9" y1="12" x2="15" y2="12" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="9" y1="16" x2="12" y2="16" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
       <!-- mypage -->
       <svg v-if="item.icon === 'mypage'" width="20" height="20" viewBox="0 0 24 24" fill="none">

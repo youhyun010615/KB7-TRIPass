@@ -107,6 +107,7 @@ const router = createRouter({
       component: () => import('@/views/mypage/MypageView.vue'),
       meta: { requiresAuth: true },
     },
+<<<<<<< HEAD
     {
       path: '/mypage/profile',
       name: 'MypageProfile',
