@@ -10,6 +10,9 @@ const travel = useTravelStore()
 const plan = useSavingsPlanStore()
 const money = (value) => `${Number(value).toLocaleString('ko-KR')}원`
 const firstPlan = computed(() => travel.selectedPlans[0] || { countryName: '프랑스', cityName: '파리' })
+const linkedAccounts = computed(() =>
+  travel.accounts.filter((acc) => Number(travel.allocations[acc.id] ?? 0) > 0)
+)
 const statusCopy = computed(() => ({
   unset: { icon: '⚠', title: '현재 저축 계획으로는 목표 달성이 부족해요', amount: plan.recommendedMonthlySavings, badge: '계산 불가', detail: '지금은 월 저축 금액이 없어 지연 출국 날짜를 계산할 수 없어요.' },
   success: { icon: '✓', title: '현재 계획으로 목표 달성 가능', amount: 0, badge: `예상 출국 ${plan.expectedDeparture}`, detail: '목표로 설정한 날짜에 출국할 수 있어요.' },
@@ -43,7 +46,7 @@ function openPrimaryAction() {
 
     <button class="account-summary" @click="router.push('/savings/accounts')">
       <span class="account-icon">▣</span>
-      <div><strong>반영 중인 계좌</strong><small>{{ linkedAccounts.map((item) => item.productName).join(' · ') || '반영 계좌를 확인해 주세요' }}</small></div>
+      <div><strong>반영 중인 계좌</strong><small>{{ linkedAccounts.map((item) => item.name).join(' · ') || '반영 계좌를 확인해 주세요' }}</small></div>
       <div class="account-value"><b>{{ linkedAccounts.length || 2 }}개</b><span>{{ money(plan.securedAmount) }}</span></div><i>›</i>
     </button>
 
