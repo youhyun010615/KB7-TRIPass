@@ -52,4 +52,44 @@
         GROUP BY
             ts.trip_id, tc.id, c.country_name, tc.target_budget, tc.departure_date, ts.total_target_amount, ts.total_spent, ts.remaining_trip_days
     </select>
+
+    <resultMap id="BudgetCheckResultMap" type="com.tripass.travel.dto.BudgetCheckResponseDto">
+        <result property="targetBudget" column="target_budget"/>
+        <result property="preExpenseTotal" column="pre_expense_total"/>
+        <result property="travelExpenseTotal" column="travel_expense_total"/>
+        <result property="remainingFund" column="remaining_fund"/>
+        <collection property="categoryBreakdown" ofType="com.tripass.travel.dto.CategoryBreakdownDto">
+            <result property="categoryName" column="category_name"/>
+            <result property="amount" column="amount"/>
+            <result property="percentage" column="percentage"/>
+        </collection>
+    </resultMap>
+
+    <select id="getTripBudget" resultMap="BudgetCheckResultMap">
+        WITH Budget AS (
+            SELECT
+                (SELECT SUM(target_budget) FROM trip_countries WHERE trip_id = #{tripId}
+                 <if test="scope == 'COUNTRY'"> AND country_id = #{countryId} </if>) AS target_budget,
+                COALESCE((SELECT SUM(direct_amount) FROM pre_expenses pe
+                          JOIN transactions tr ON pe.transaction_id = tr.id
+                          WHERE pe.trip_id = #{tripId}
+                          <if test="scope == 'COUNTRY'"> AND pe.trip_country_id = (SELECT id FROM trip_countries WHERE trip_id = #{tripId} AND country_id = #{countryId}) </if>), 0) AS pre_expense_total,
+                COALESCE((SELECT SUM(amount) FROM transactions
+                          WHERE trip_id = #{tripId} AND is_pre_expense = 0
+                          <if test="scope == 'COUNTRY'"> AND trip_country_id = (SELECT id FROM trip_countries WHERE trip_id = #{tripId} AND country_id = #{countryId}) </if>), 0) AS travel_expense_total
+        )
+        SELECT
+            b.target_budget,
+            b.pre_expense_total,
+            b.travel_expense_total,
+            (b.target_budget - (b.pre_expense_total + b.travel_expense_total)) AS remaining_fund,
+            sc.category_name,
+            COALESCE(SUM(tr.amount), 0) AS amount,
+            (COALESCE(SUM(tr.amount), 0) / NULLIF(b.travel_expense_total, 0) * 100) AS percentage
+        FROM Budget b
+        LEFT JOIN transactions tr ON tr.trip_id = #{tripId} AND tr.is_deleted = 0 AND tr.is_pre_expense = 0
+        <if test="scope == 'COUNTRY'"> AND tr.trip_country_id = (SELECT id FROM trip_countries WHERE trip_id = #{tripId} AND country_id = #{countryId}) </if>
+        LEFT JOIN spending_categories sc ON tr.category_id = sc.id
+        GROUP BY sc.category_name, b.target_budget, b.pre_expense_total, b.travel_expense_total
+    </select>
 </mapper>
