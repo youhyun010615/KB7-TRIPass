@@ -43,6 +43,18 @@ const router = createRouter({
       component: () => import('@/views/savings/SavingsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/savings/plan',
+      name: 'SavingsPlanSetup',
+      component: () => import('@/views/savings/SavingsPlanSetupView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/accounts',
+      name: 'SavingsAccounts',
+      component: () => import('@/views/savings/SavingsAccountsView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── PRO (담당: 송형진) ──────────────────────────────────
     {

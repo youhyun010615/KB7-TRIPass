@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
+import SavingsDashboard from '@/components/savings/SavingsDashboard.vue'
 import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
@@ -9,7 +10,8 @@ const travelStore = useTravelStore()
 </script>
 
 <template>
-  <main class="goal-page">
+  <SavingsDashboard v-if="travelStore.hasTravelGoal" />
+  <main v-else class="goal-page">
     <header class="page-header">
       <button aria-label="뒤로가기" @click="router.back()">‹</button>
       <h1>여행 목표 자금 관리</h1>
