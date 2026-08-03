@@ -17,6 +17,18 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
     {
+      path: '/find-id',
+      name: 'FindId',
+      component: () => import('@/views/auth/FindIdView.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/find-password',
+      name: 'FindPassword',
+      component: () => import('@/views/auth/FindPasswordView.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
       path: '/',
       name: 'Home',
       component: () => import('@/views/HomeView.vue'),
