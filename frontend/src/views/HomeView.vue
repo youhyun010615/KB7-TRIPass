@@ -290,49 +290,52 @@ function formatCurrency(n) {
         </button>
       </div>
 
-      <!-- 보유 자금 / 연동 계좌 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex shadow-sm">
-        <div class="flex-1 text-center border-r border-gray-100">
-          <p class="text-[11px] text-gray-400 mb-1">보유 자금</p>
-          <p class="text-[15px] font-extrabold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
+      <!-- 보유 총자산 / 연동 계좌 -->
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex items-center shadow-sm">
+        <div class="flex-1">
+          <p class="text-[10px] text-gray-400 mb-1">보유 총자산</p>
+          <p class="text-[16px] font-extrabold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
         </div>
-        <div class="flex-1 text-center">
-          <p class="text-[11px] text-gray-400 mb-1">연동 계좌</p>
-          <p class="text-[15px] font-extrabold text-gray-900">{{ savingsData.accounts }}개</p>
+        <div class="w-px h-8 bg-gray-100 mx-4" />
+        <div class="text-right">
+          <p class="text-[10px] text-gray-400 mb-1">연동 계좌</p>
+          <p class="text-[16px] font-extrabold text-gray-900">{{ savingsData.accounts }}개</p>
         </div>
+        <svg class="ml-2 flex-none" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+        </svg>
       </div>
 
       <!-- 이달의 자금 체크 -->
       <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
         <button class="w-full flex items-center justify-between mb-2" @click="router.push('/savings')">
-          <p class="text-[13px] font-extrabold text-gray-900">이달의 자금 체크</p>
+          <p class="text-[14px] font-extrabold text-gray-900">이달의 자금 체크</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
-        <p class="text-[11px] text-gray-400 mb-1.5">이달에 여유자금</p>
-        <p class="text-[24px] font-extrabold" style="color: #3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
+        <p class="text-[11px] text-gray-400 mb-1.5">이달의 여유자금</p>
+        <p class="text-[28px] font-extrabold" style="color:#3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
         <p class="text-[10px] text-gray-400 mt-1 leading-relaxed">{{ savingsData.monthly.details }}</p>
       </div>
 
       <!-- 카테고리별 사용 현황 -->
       <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
         <div class="flex items-center justify-between mb-3">
-          <p class="text-[13px] font-extrabold text-gray-900">카테고리별 사용 현황</p>
+          <p class="text-[14px] font-extrabold text-gray-900">카테고리별 사용 현황</p>
           <span class="text-[11px] text-gray-400">이번 달</span>
         </div>
-        <div class="flex flex-col gap-2.5">
-          <div v-for="cat in savingsData.categories" :key="cat.name" class="flex items-center gap-3">
-            <span class="text-xs text-gray-500 w-12 flex-shrink-0">{{ cat.name }}</span>
+        <div class="flex flex-col gap-3">
+          <div v-for="cat in savingsData.categories" :key="cat.name" class="flex items-center gap-2">
+            <span class="text-[15px] w-5 flex-none">{{ cat.icon }}</span>
+            <span class="text-[11px] text-gray-600 w-10 flex-none">{{ cat.name }}</span>
             <div class="flex-1 h-1.5 rounded-full bg-gray-100">
-              <div class="h-full rounded-full" :style="`width: ${cat.percent}%; background: ${cat.color}`"/>
+              <div class="h-full rounded-full" :style="`width:${cat.percent}%;background:${cat.color}`" />
             </div>
-            <span class="text-xs text-gray-400 w-20 text-right flex-shrink-0">
-              {{ formatCurrency(cat.spent) }}/{{ formatCurrency(cat.budget) }}
+            <span class="text-[10px] text-gray-400 w-[90px] text-right flex-none">
+              {{ cat.spent.toLocaleString('ko-KR') }}/{{ cat.budget.toLocaleString('ko-KR') }}
             </span>
-            <span class="text-xs font-semibold w-8 text-right flex-shrink-0" :style="`color: ${cat.color}`">
-              {{ cat.percent }}%
-            </span>
+            <span class="text-[11px] font-bold w-8 text-right flex-none" :style="`color:${cat.color}`">{{ cat.percent }}%</span>
           </div>
         </div>
       </div>
@@ -340,36 +343,44 @@ function formatCurrency(n) {
       <!-- 다가오는 금융 일정 -->
       <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
         <button class="w-full flex items-center justify-between mb-3">
-          <p class="text-[13px] font-extrabold text-gray-900">다가오는 금융 일정</p>
+          <p class="text-[14px] font-extrabold text-gray-900">다가오는 금융 일정</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
         <div class="flex flex-col gap-3">
-          <div v-for="item in savingsData.schedule" :key="item.date" class="flex items-center justify-between">
-            <p class="text-[13px] font-bold" style="color:#3B5BDB">{{ item.date }}</p>
-            <p class="text-[12px] text-gray-600 flex-1 mx-3">{{ item.label }}</p>
+          <div v-for="item in savingsData.schedule" :key="item.date" class="flex items-center gap-3">
+            <p class="text-[13px] font-extrabold w-8 flex-none" style="color:#3B5BDB">{{ item.date }}</p>
+            <div class="flex-1 min-w-0">
+              <p class="text-[13px] font-semibold text-gray-900">{{ item.label }}</p>
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ item.desc }}</p>
+            </div>
             <span
-              class="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+              class="text-[10px] font-semibold px-2.5 py-1 rounded-full flex-none"
               :style="item.type === '입금'
-                ? 'background: #EEF2FF; color: #3B5BDB'
-                : 'background: #FEF2F2; color: #EF4444'"
+                ? 'background:#F0FDF4;color:#16A34A'
+                : 'background:#EEF2FF;color:#3B5BDB'"
             >{{ item.type }}</span>
           </div>
         </div>
       </div>
 
       <!-- 오늘의 환율 -->
-      <div
-        class="mx-4 mt-3 mb-4 rounded-2xl px-5 py-4 flex items-center justify-between"
-        :style="`background: linear-gradient(135deg, ${selectedCountry.color}, ${selectedCountry.color}cc)`"
-      >
-        <div>
-          <p class="text-white/55 text-[10px] mb-1">오늘의 환율</p>
-          <p class="text-white text-[13px] font-semibold">{{ selectedCountry.flag }} {{ selectedCountry.currency }}/KRW</p>
-          <p class="text-white/40 text-[9px] mt-0.5">{{ new Date().toLocaleDateString('ko-KR') }} 기준</p>
+      <div class="mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" style="background:#1a2d5e">
+        <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
+          <span class="text-white/60 text-[11px] font-semibold">오늘의 환율</span>
+          <span class="text-white/40 text-[10px]">{{ new Date().toLocaleDateString('ko-KR') }} 기준</span>
         </div>
-        <p class="text-white text-[22px] font-extrabold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</p>
+        <div class="px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-[14px]">{{ selectedCountry.flag }}</span>
+            <span class="text-white font-bold text-[14px]">{{ selectedCountry.currency }}/KRW</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-white text-[22px] font-extrabold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded text-blue-300">-0.3% ↓</span>
+          </div>
+        </div>
       </div>
 
     </template>
