@@ -34,7 +34,7 @@ function isActive(path) {
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-100 flex items-center">
+  <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[390px] h-16 bg-white border-t border-gray-100 flex items-center">
     <button
       v-for="item in navItems"
       :key="item.path"

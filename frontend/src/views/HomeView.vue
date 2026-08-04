@@ -70,8 +70,33 @@ const showCountryDropdown = ref(false)
 // 탑승권 저축 상태: unset(미설정) / low(부족) / ok(정상)
 const savingsCardState = computed(() => {
   if (!plan.savingMethod || !plan.monthlySavings) return 'unset'
-  if (plan.status === 'warning') return 'low'
+  if (plan.status === 'warning' || plan.status === 'error') return 'low'
   return 'ok'
+})
+
+const homeGoalAmount = computed(() => plan.totalTargetAmount)
+const homeSavedAmount = computed(() => plan.securedAmount)
+const homeSavingsPercent = computed(() => plan.securedPercent)
+const ticketSavingCopy = computed(() => {
+  if (savingsCardState.value === 'unset') {
+    return {
+      title: '월 저축 계획이 필요해요',
+      action: '월 저축 계획 설정',
+      amountLabel: `추천 월 ${formatCurrency(plan.recommendedMonthlySavings)}`,
+    }
+  }
+  if (savingsCardState.value === 'low') {
+    return {
+      title: '목표 일정까지 저축액이 부족해요',
+      action: '월 저축 계획 조정',
+      amountLabel: `추가 월 ${formatCurrency(plan.additionalRecommendedAmount)}`,
+    }
+  }
+  return {
+    title: '여행 저축 목표',
+    action: '여행 목표 자금 관리',
+    amountLabel: '',
+  }
 })
 
 const savingsData = {
@@ -85,22 +110,18 @@ const savingsData = {
     details: '급여일 3,500,000원 - 고정지출 1,800,000원 - 카테고리 목표 1,200,000원',
   },
   categories: [
-    { name: '식비', spent: 180000, budget: 450000, percent: 72, color: '#3B5BDB' },
-    { name: '카페', spent: 41000, budget: 100000, percent: 42, color: '#60A5FA' },
-    { name: '생활비', spent: 126000, budget: 300000, percent: 70, color: '#F59E0B' },
-    { name: '쇼핑', spent: 45000, budget: 150000, percent: 60, color: '#EC4899' },
-    { name: '취미', spent: 35000, budget: 100000, percent: 50, color: '#8B5CF6' },
+    { icon: '🍴', name: '식비', spent: 180000, budget: 450000, percent: 72, color: '#173b86' },
+    { icon: '☕', name: '카페', spent: 42000, budget: 100000, percent: 42, color: '#315ca8' },
+    { icon: '🧴', name: '생활비', spent: 126000, budget: 300000, percent: 70, color: '#25ad79' },
+    { icon: '🛍', name: '쇼핑', spent: 48000, budget: 150000, percent: 60, color: '#f0a000' },
+    { icon: '🎮', name: '취미', spent: 35000, budget: 100000, percent: 50, color: '#173b86' },
   ],
   schedule: [
-    { date: '7/25', label: '금액입금', type: '입금' },
-    { date: '7/28', label: '돌산에 낙하예', type: '지출' },
-    { date: '7/31', label: '돌산에 낙하예', type: '지출' },
+    { date: '7/25', label: '급여일', desc: '2,600,000원 입금 예정', type: '입금' },
+    { date: '7/28', label: '월세', desc: '350,000원 납부 예정', type: '지출' },
+    { date: '7/31', label: '통신비', desc: '61,000원 납부 예정', type: '지출' },
   ],
 }
-
-const savingsPercent = computed(() =>
-  Math.round((savingsData.saved / savingsData.goal) * 100)
-)
 
 // ── 여행 모드 데이터 ──────────────────────────────────────
 const travelData = {
@@ -227,7 +248,7 @@ function formatCurrency(n) {
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div class="mx-4 mt-2 rounded-3xl overflow-hidden shadow-xl" :style="`background:${selectedCountry.headerBg}`">
+      <div class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
 
         <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
         <div class="px-5 pt-3 pb-2 flex items-center justify-between"
@@ -266,28 +287,28 @@ function formatCurrency(n) {
                 <p class="text-white text-[22px] font-extrabold leading-none">D-{{ selectedCountry.dday }}</p>
               </div>
             </div>
-            <p class="text-white/75 text-[11px] mt-2">{{ selectedCountry.desc }} ✨</p>
+            <p class="ticket-description text-white/80 text-[10px] mt-2">{{ selectedCountry.desc }} ✨</p>
 
             <!-- 사진이 보이는 여백 -->
-            <div class="h-28" />
+            <div class="ticket-photo-space" />
 
             <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
-            <div class="rounded-2xl px-4 py-3" :style="`background:${selectedCountry.progressBg}`">
+            <div class="rounded-xl px-4 py-3" :style="`background:${selectedCountry.progressBg}`">
               <div class="flex justify-between mb-2">
-                <span class="text-white font-semibold text-[13px]">여행 저축 목표</span>
-                <span class="text-white font-extrabold text-[13px]">{{ savingsPercent }}%</span>
+                <span class="font-semibold text-[11px]" :class="savingsCardState === 'unset' ? 'text-red-300' : 'text-white'">{{ ticketSavingCopy.title }}</span>
+                <span class="text-white font-extrabold text-[12px]">{{ homeSavingsPercent }}%</span>
               </div>
               <div class="h-2 rounded-full bg-white/25 overflow-hidden">
-                <div class="h-full rounded-full transition-all" :style="`width:${savingsPercent}%;background:${selectedCountry.barColor}`" />
+                <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${selectedCountry.barColor}`" />
               </div>
               <div class="flex justify-between mt-2.5">
                 <div>
-                  <p class="text-white text-[12px] font-bold">{{ formatCurrency(savingsData.saved) }}</p>
-                  <p class="text-white/50 text-[9px] tracking-wider mt-0.5">SAVED</p>
+                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
+                  <p class="text-white/55 text-[7px] tracking-wider mt-0.5">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-white text-[12px] font-bold">{{ formatCurrency(savingsData.goal) }}</p>
-                  <p class="text-white/50 text-[9px] tracking-wider mt-0.5">GOAL</p>
+                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
+                  <p class="text-white/50 text-[7px] tracking-wider mt-0.5">GOAL</p>
                 </div>
               </div>
             </div>
@@ -302,10 +323,10 @@ function formatCurrency(n) {
 
           <!-- ④ 흰색 스텁 (카드 하단 꽉 채움, 사진이 아래로 안 보이게) -->
           <div class="relative z-10 bg-white mt-1">
-            <button v-if="savingsCardState === 'ok'"
-              class="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50"
-              @click="router.push('/savings')">
-              <span class="text-[13px] font-bold text-red-600">여행 목표 자금 관리</span>
+            <button
+              class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
+              @click="router.push(savingsCardState === 'ok' ? '/savings' : '/savings/plan')">
+              <span class="text-[10px] font-bold" :style="`color:${savingsCardState === 'unset' ? '#e5484d' : selectedCountry.headerBg}`">{{ ticketSavingCopy.action }}</span>
               <div class="flex items-center gap-2">
                 <div class="flex gap-[1.5px] items-end h-5">
                   <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
@@ -316,18 +337,6 @@ function formatCurrency(n) {
                   <path d="M9 18L15 12L9 6" stroke="#374151" stroke-width="2.5" stroke-linecap="round"/>
                 </svg>
               </div>
-            </button>
-            <button v-else-if="savingsCardState === 'unset'"
-              class="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50"
-              @click="router.push('/savings/plan')">
-              <span class="text-[13px] font-bold text-gray-900">월 저축액을 설정하세요</span>
-              <span class="text-[12px] font-bold text-red-500">설정하기 →</span>
-            </button>
-            <button v-else
-              class="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50"
-              @click="router.push('/savings/plan')">
-              <span class="text-[13px] font-bold text-gray-900">오늘 저축 조정</span>
-              <span class="text-[12px] font-bold" style="color:#D97706">{{ formatCurrency(plan.additionalRecommendedAmount) }} 부족 →</span>
             </button>
           </div>
         </div>
@@ -559,3 +568,13 @@ function formatCurrency(n) {
     <BottomNav />
   </div>
 </template>
+
+<style scoped>
+.country-ticket {
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(22, 39, 78, .15);
+}
+.ticket-photo-space { height: 86px; }
+.ticket-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticket-stub { height: 39px; }
+</style>
