@@ -18,11 +18,12 @@ public class TransactionDto {
 
     private Long id;
     private Long accountId;
+    private String externalKey;       // 중복 수집 방지 키 (날짜+시간+계좌+금액 조합)
     private LocalDate transactionDate;
     private LocalTime transactionTime;
-    private String transactionType; // DEPOSIT / WITHDRAWAL
-    private String transactionRegion; //DOMESTIC / OVERSEAS
+    private String transactionType;   // DEPOSIT / WITHDRAWAL
+    private String transactionRegion; // DOMESTIC / OVERSEAS
     private BigDecimal amount;
     private BigDecimal balanceAfter;
-    private String merchantName; //거래처
+    private String merchantName;      // 거래처
 }

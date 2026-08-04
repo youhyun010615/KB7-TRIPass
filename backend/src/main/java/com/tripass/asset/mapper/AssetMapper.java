@@ -20,7 +20,8 @@ public interface AssetMapper {
     // transactions
     void insertTransaction(TransactionDto dto);
     List<TransactionDto> findTransactionsByAccountId(Long accountId);
-    AccountDto findAccountById(Long accountId);
+    AccountDto findAccountById(@org.apache.ibatis.annotations.Param("accountId") Long accountId,
+                               @org.apache.ibatis.annotations.Param("userId") Long userId);
 
     // supported_institutions
     List<SupportedInstitutionDto> findAllSupportedInstitutions();

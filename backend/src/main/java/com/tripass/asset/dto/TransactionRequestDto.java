@@ -8,10 +8,12 @@ package com.tripass.asset.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class TransactionRequestDto {
     private Long accountId;
-    private String startDate; //"20240101"
-    private String endDate; //"20241231"
+    private LocalDate startDate; // "2024-01-01" (yyyy-MM-dd)
+    private LocalDate endDate;   // "2024-12-31" (yyyy-MM-dd)
 }

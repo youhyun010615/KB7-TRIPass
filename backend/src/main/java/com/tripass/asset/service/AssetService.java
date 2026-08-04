@@ -168,7 +168,7 @@ public class AssetService {
             String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
 
             //계좌 정보 조회(계좌번호 필요)
-            AccountDto account = assetMapper.findAccountById(req.getAccountId());
+            AccountDto account = assetMapper.findAccountById(req.getAccountId(), userId);
             if (account == null) {
                 throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");
             }
@@ -184,8 +184,8 @@ public class AssetService {
             body.put("connectedId", conn.getConnectedId());
             body.put("organization", account.getOrganizationCode());
             body.put("account", account.getAccountNumber());
-            body.put("startDate", req.getStartDate());
-            body.put("endDate", req.getEndDate());
+            body.put("startDate", req.getStartDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+            body.put("endDate", req.getEndDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
             body.put("orderBy", "0");
             body.put("inquiryType", "1");
 
@@ -212,12 +212,16 @@ public class AssetService {
             List<TransactionDto> saved = new ArrayList<>();
             for (Map<String, Object> tran : tranList) {
                 TransactionDto dto = new TransactionDto();
+                String trDate = (String) tran.get("resAccountTrDate");
+                String trTime = (String) tran.get("resAccountTrTime");
+                String trAmt  = (String) tran.get("resAccountTrAmt");
                 dto.setAccountId(req.getAccountId());
-                dto.setTransactionDate(LocalDate.parse((String) tran.get("resAccountTrDate"), DateTimeFormatter.ofPattern("yyyyMMdd")));
-                dto.setTransactionTime(LocalTime.parse((String) tran.get("resAccountTrTime"), DateTimeFormatter.ofPattern("HHmmss")));
+                dto.setExternalKey(trDate + trTime + account.getAccountNumber() + trAmt);
+                dto.setTransactionDate(LocalDate.parse(trDate, DateTimeFormatter.ofPattern("yyyyMMdd")));
+                dto.setTransactionTime(LocalTime.parse(trTime, DateTimeFormatter.ofPattern("HHmmss")));
                 dto.setTransactionType("1".equals(tran.get("resAccountTrType")) ? "DEPOSIT" : "WITHDRAWAL");
                 dto.setTransactionRegion("DOMESTIC");
-                dto.setAmount(parseBigDecimal(tran.get("resAccountTrAmt")));
+                dto.setAmount(parseBigDecimal(trAmt));
                 dto.setBalanceAfter(parseBigDecimal(tran.get("resAfterTranBalance")));
                 dto.setMerchantName((String) tran.get("resAccountTrRemark"));
                 assetMapper.insertTransaction(dto);
