@@ -9,7 +9,7 @@ const schedule = useFinancialScheduleStore()
 const tabs = [{id:'all',label:'전체'},{id:'income',label:'입금'},{id:'expense',label:'지출'}]
 
 function openSchedule(event) {
-  router.push(`/financial-schedule/${event.id}`)
+  router.push(event.source === 'fixed' ? `/asset/fixed-expenses/${event.sourceId}` : `/financial-schedule/${event.id}`)
 }
 </script>
 

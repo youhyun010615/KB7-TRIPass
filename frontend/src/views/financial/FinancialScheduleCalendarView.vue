@@ -26,7 +26,7 @@ const selectedLabel = computed(() => `${Number(schedule.selectedDate.slice(5,7))
 const selectedDateEvents = computed(() => schedule.events.filter((item) => item.date === schedule.selectedDate))
 
 function openSchedule(event) {
-  router.push(`/financial-schedule/${event.id}`)
+  router.push(event.source === 'fixed' ? `/asset/fixed-expenses/${event.sourceId}` : `/financial-schedule/${event.id}`)
 }
 </script>
 
