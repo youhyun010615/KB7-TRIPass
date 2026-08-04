@@ -258,11 +258,11 @@ function formatCurrency(n) {
           <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
         </div>
 
-        <!-- 헤더 하단 노치 (헤더색 배경 + 반원 + 점선) -->
-        <div class="relative flex items-center py-2" :style="`background:${selectedCountry.headerBg}`">
-          <div class="w-6 h-6 rounded-full flex-none -ml-3 bg-[#F7F4EE]" />
-          <div class="flex-1 border-t border-dashed border-white/35 mx-1" />
-          <div class="w-6 h-6 rounded-full flex-none -mr-3 bg-[#F7F4EE]" />
+        <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
+        <div class="ticket-cutline ticket-cutline-top">
+          <div class="ticket-notch ticket-notch-left" />
+          <div class="ticket-dashed-line" />
+          <div class="ticket-notch ticket-notch-right" />
         </div>
 
         <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
@@ -314,27 +314,27 @@ function formatCurrency(n) {
             </div>
           </div>
 
-          <!-- ③ 중간 노치 (사진 위에서 반원 + 점선) -->
-          <div class="relative z-10 flex items-center mt-3 py-2">
-            <div class="w-6 h-6 rounded-full flex-none -ml-3 bg-[#F7F4EE]" />
-            <div class="flex-1 border-t-2 border-dashed border-white/35 mx-1" />
-            <div class="w-6 h-6 rounded-full flex-none -mr-3 bg-[#F7F4EE]" />
+          <!-- 사진의 종료 경계와 정확히 맞닿는 하단 절취선 -->
+          <div class="ticket-cutline ticket-cutline-bottom">
+            <div class="ticket-notch ticket-notch-left" />
+            <div class="ticket-dashed-line" />
+            <div class="ticket-notch ticket-notch-right" />
           </div>
 
-          <!-- ④ 흰색 스텁 (카드 하단 꽉 채움, 사진이 아래로 안 보이게) -->
-          <div class="relative z-10 bg-white mt-1">
+          <!-- ④ 국가 컬러 스텁 -->
+          <div class="relative z-10" :style="`background:${selectedCountry.headerBg}`">
             <button
               class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
               @click="router.push(savingsCardState === 'ok' ? '/savings' : '/savings/plan')">
-              <span class="text-[10px] font-bold" :style="`color:${savingsCardState === 'unset' ? '#e5484d' : selectedCountry.headerBg}`">{{ ticketSavingCopy.action }}</span>
+              <span class="text-[10px] font-bold text-white">{{ ticketSavingCopy.action }}</span>
               <div class="flex items-center gap-2">
                 <div class="flex gap-[1.5px] items-end h-5">
                   <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
-                    class="bg-gray-700 rounded-[0.5px]"
+                    class="bg-white/85 rounded-[0.5px]"
                     :style="`height:${h}px;width:${i%4===0?'2.5px':'1.5px'}`" />
                 </div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 18L15 12L9 6" stroke="#374151" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M9 18L15 12L9 6" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
                 </svg>
               </div>
             </button>
@@ -577,4 +577,11 @@ function formatCurrency(n) {
 .ticket-photo-space { height: 86px; }
 .ticket-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ticket-stub { height: 39px; }
+.ticket-cutline { position: relative; z-index: 20; display: flex; align-items: center; height: 0; }
+.ticket-cutline-top { transform: translateY(0); }
+.ticket-cutline-bottom { margin-top: 14px; }
+.ticket-notch { position: absolute; top: 50%; width: 24px; height: 24px; border-radius: 50%; background: #f7f4ee; transform: translateY(-50%); }
+.ticket-notch-left { left: -12px; }
+.ticket-notch-right { right: -12px; }
+.ticket-dashed-line { width: calc(100% - 34px); margin: 0 auto; border-top: 1.5px dashed rgba(255, 255, 255, .42); }
 </style>
