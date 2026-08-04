@@ -293,10 +293,10 @@ function formatCurrency(n) {
             <div class="w-6 h-6 rounded-full flex-none -mr-3 bg-[#F7F4EE]" />
           </div>
 
-          <!-- ④ 흰색 필 카드 (사진 위에 완전 불투명 흰색) -->
-          <div class="relative z-10 mx-4 mb-4">
+          <!-- ④ 흰색 스텁 (카드 하단 꽉 채움, 사진이 아래로 안 보이게) -->
+          <div class="relative z-10 bg-white mt-1">
             <button v-if="savingsCardState === 'ok'"
-              class="w-full bg-white rounded-2xl px-4 py-3.5 flex items-center justify-between active:bg-gray-50"
+              class="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50"
               @click="router.push('/savings')">
               <span class="text-[13px] font-bold text-red-600">여행 목표 자금 관리</span>
               <div class="flex items-center gap-2">
@@ -311,13 +311,13 @@ function formatCurrency(n) {
               </div>
             </button>
             <button v-else-if="savingsCardState === 'unset'"
-              class="w-full bg-white rounded-2xl px-4 py-3.5 flex items-center justify-between active:bg-gray-50"
+              class="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50"
               @click="router.push('/savings/plan')">
               <span class="text-[13px] font-bold text-gray-900">월 저축액을 설정하세요</span>
               <span class="text-[12px] font-bold text-red-500">설정하기 →</span>
             </button>
             <button v-else
-              class="w-full bg-white rounded-2xl px-4 py-3.5 flex items-center justify-between active:bg-gray-50"
+              class="w-full px-5 py-4 flex items-center justify-between active:bg-gray-50"
               @click="router.push('/savings/plan')">
               <span class="text-[13px] font-bold text-gray-900">오늘 저축 조정</span>
               <span class="text-[12px] font-bold" style="color:#D97706">{{ formatCurrency(plan.additionalRecommendedAmount) }} 부족 →</span>
