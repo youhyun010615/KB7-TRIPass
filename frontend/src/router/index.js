@@ -55,6 +55,36 @@ const router = createRouter({
       component: () => import('@/views/savings/SavingsAccountsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/savings/monthly',
+      name: 'MonthlyFund',
+      component: () => import('@/views/savings/MonthlyFundView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/categories',
+      name: 'MonthlyFundCategoryGoals',
+      component: () => import('@/views/savings/CategoryGoalsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/categories/:categoryId',
+      name: 'MonthlyFundCategoryDetail',
+      component: () => import('@/views/savings/CategoryDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/transactions/:transactionId/category',
+      name: 'MonthlyFundCategorySelect',
+      component: () => import('@/views/savings/CategorySelectView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/prepaid/new',
+      name: 'MonthlyFundPrepaidNew',
+      component: () => import('@/views/savings/PrepaidExpenseView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── PRO (담당: 송형진) ──────────────────────────────────
     {
@@ -77,6 +107,54 @@ const router = createRouter({
       path: '/asset',
       name: 'Asset',
       component: () => import('@/views/asset/AssetView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/accounts/:accountId',
+      name: 'AssetAccountTransactions',
+      component: () => import('@/views/asset/AccountTransactionsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/transactions',
+      name: 'AssetTransactions',
+      component: () => import('@/views/asset/TransactionListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/transactions/calendar',
+      name: 'AssetTransactionCalendar',
+      component: () => import('@/views/asset/TransactionCalendarView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/transactions/:transactionId',
+      name: 'AssetTransactionDetail',
+      component: () => import('@/views/asset/TransactionDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses',
+      name: 'AssetFixedExpenses',
+      component: () => import('@/views/asset/FixedExpenseListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses/new',
+      name: 'AssetFixedExpenseNew',
+      component: () => import('@/views/asset/FixedExpenseFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses/:fixedExpenseId',
+      name: 'AssetFixedExpenseDetail',
+      component: () => import('@/views/asset/FixedExpenseDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/prepaid',
+      name: 'AssetPrepaidExpenses',
+      component: () => import('@/views/asset/PrepaidExpenseListView.vue'),
       meta: { requiresAuth: true },
     },
 

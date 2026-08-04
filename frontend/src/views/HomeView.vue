@@ -190,19 +190,16 @@ function formatCurrency(n) {
         </TravelTicket>
       </div>
 
-      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
-        <button class="w-full flex justify-between items-center" @click="router.push('/savings')"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></button>
+      <button class="block w-[calc(100%-2rem)] mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm text-left" @click="router.push('/savings/monthly')">
+        <div class="w-full flex justify-between items-center"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></div>
         <p class="mt-3 text-[9px] text-slate-400">이달의 여유자금</p>
         <p class="text-2xl font-extrabold" style="color:#0066ff">500,000원</p>
         <p class="mt-1 text-[8px] text-slate-400">월급 3,500,000원 · 고정지출 1,800,000원 · 카테고리 목표 1,200,000원</p>
-      </section>
-
-      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
-        <div class="flex justify-between"><h2 class="text-[13px] font-extrabold">카테고리별 사용 현황</h2><span class="text-[9px] text-slate-400">이번 달</span></div>
+        <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between"><h2 class="text-[13px] font-extrabold">카테고리별 사용 현황</h2><span class="text-[9px] text-slate-400">이번 달</span></div>
         <div v-for="cat in savingsData.categories" :key="cat.name" class="grid grid-cols-[48px_1fr_34px] items-center gap-2 mt-3">
           <span class="text-[9px] font-semibold">{{ cat.name }}</span><div class="h-1.5 rounded bg-slate-100"><i class="block h-full rounded" :style="`width:${cat.percent}%;background:${cat.color}`" /></div><b class="text-right text-[9px]" :style="`color:${cat.color}`">{{ cat.percent }}%</b>
         </div>
-      </section>
+      </button>
 
       <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
         <button class="w-full flex justify-between"><h2 class="text-[13px] font-extrabold">다가오는 금융 일정</h2><span>›</span></button>
@@ -358,22 +355,18 @@ function formatCurrency(n) {
         </svg>
       </div>
 
-      <!-- 이달의 자금 체크 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
-        <button class="w-full flex items-center justify-between mb-2" @click="router.push('/savings')">
+      <!-- 이달의 자금 체크 + 카테고리별 사용 현황 -->
+      <button class="block w-[calc(100%-2rem)] mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm text-left" @click="router.push('/savings/monthly')">
+        <div class="w-full flex items-center justify-between mb-2">
           <p class="text-[14px] font-extrabold text-gray-900">이달의 자금 체크</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
-        </button>
+        </div>
         <p class="text-[11px] text-gray-400 mb-1.5">이달의 여유자금</p>
         <p class="text-[28px] font-extrabold" style="color:#3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
         <p class="text-[10px] text-gray-400 mt-1 leading-relaxed">{{ savingsData.monthly.details }}</p>
-      </div>
-
-      <!-- 카테고리별 사용 현황 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
+        <div class="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between mb-3">
           <p class="text-[14px] font-extrabold text-gray-900">카테고리별 사용 현황</p>
           <span class="text-[11px] text-gray-400">이번 달</span>
         </div>
@@ -390,7 +383,7 @@ function formatCurrency(n) {
             <span class="text-[11px] font-bold w-8 text-right flex-none" :style="`color:${cat.color}`">{{ cat.percent }}%</span>
           </div>
         </div>
-      </div>
+      </button>
 
       <!-- 다가오는 금융 일정 -->
       <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
