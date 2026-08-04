@@ -1,7 +1,6 @@
 package com.tripass.travel.mapper;
 
-import com.tripass.travel.dto.BudgetCheckResponseDto;
-import com.tripass.travel.dto.TravelStatusResponseDto;
+import com.tripass.travel.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

@@ -8,9 +8,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class ExchangeRate {
     private Long id;
     private Long baseCurrencyId;   // KRW ID

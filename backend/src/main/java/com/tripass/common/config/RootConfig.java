@@ -14,8 +14,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-
 import org.springframework.web.client.RestTemplate;
+
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
@@ -66,11 +66,6 @@ public class RootConfig {
     private Environment env;
 
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
-
-    @Bean
     public DataSource dataSource() {
         HikariConfig config = new HikariConfig();
         // log4jdbc 드라이버 스파이로 SQL 로그 출력
@@ -84,6 +79,12 @@ public class RootConfig {
         config.setIdleTimeout(600_000);
         return new HikariDataSource(config);
     }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
 
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {

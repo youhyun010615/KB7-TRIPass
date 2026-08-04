@@ -4,7 +4,7 @@
 
 <mapper namespace="com.tripass.travel.mapper.TravelMapper">
 
-    <resultMap id="DashboardResultMap" type="com.tripass.travel.dto.TravelStatusResponseDto">
+    <resultMap id="DashboardResultMap" type="TravelStatusResponseDto">
         <result property="totalRemainingFund" column="total_remaining_fund"/>
         <result property="dailyAvailableAmount" column="daily_available_amount"/>
         <collection property="countries" ofType="com.tripass.travel.dto.CountryStatusDto">
@@ -53,12 +53,12 @@
             ts.trip_id, tc.id, c.country_name, tc.target_budget, tc.departure_date, ts.total_target_amount, ts.total_spent, ts.remaining_trip_days
     </select>
 
-    <resultMap id="BudgetCheckResultMap" type="com.tripass.travel.dto.BudgetCheckResponseDto">
+    <resultMap id="BudgetCheckResultMap" type="BudgetCheckResponseDto">
         <result property="targetBudget" column="target_budget"/>
         <result property="preExpenseTotal" column="pre_expense_total"/>
         <result property="travelExpenseTotal" column="travel_expense_total"/>
         <result property="remainingFund" column="remaining_fund"/>
-        <collection property="categoryBreakdown" ofType="com.tripass.travel.dto.CategoryBreakdownDto">
+        <collection property="categoryBreakdown" ofType="CategoryBreakdownDto">
             <result property="categoryName" column="category_name"/>
             <result property="amount" column="amount"/>
             <result property="percentage" column="percentage"/>

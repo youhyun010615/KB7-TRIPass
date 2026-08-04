@@ -15,10 +15,9 @@
 
 
     <typeAliases>
-
-        <package name="com.tripass.travel.dto"/>
         <!-- 각 도메인 DTO 패키지 등록 — Mapper XML 에서 전체 경로 대신 클래스명만 사용 가능 -->
         <package name="com.tripass.auth.dto"/>
+        <package name="com.tripass.travel.dto"/>
         <package name="com.tripass.mypage.dto"/>
         <package name="com.tripass.profile.dto"/>
         <package name="com.tripass.financial.dto"/>

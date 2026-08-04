@@ -38,17 +38,15 @@ class TravelControllerTest {
         // given
         Long tripId = 1L;
         
-        CountryStatusDto country = CountryStatusDto.builder()
-                .countryName("일본")
-                .remainingFund(800000L)
-                .remainingDays(10L)
-                .build();
+        CountryStatusDto country = new CountryStatusDto();
+        country.setCountryName("일본");
+        country.setRemainingFund(800000L);
+        country.setRemainingDays(10L);
 
-        TravelStatusResponseDto responseDto = TravelStatusResponseDto.builder()
-                .totalRemainingFund(800000L)
-                .dailyAvailableAmount(80000L)
-                .countries(Collections.singletonList(country))
-                .build();
+        TravelStatusResponseDto responseDto = new TravelStatusResponseDto();
+        responseDto.setTotalRemainingFund(800000L);
+        responseDto.setDailyAvailableAmount(80000L);
+        responseDto.setCountries(Collections.singletonList(country));
 
         when(travelService.getTravelStatus(tripId)).thenReturn(responseDto);
 

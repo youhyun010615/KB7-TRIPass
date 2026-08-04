@@ -22,6 +22,12 @@ public interface ExchangeRateMapper {
     // 통화 정보가 없을 경우 삽입
     void insertCurrency(@Param("currencyCode") String currencyCode, @Param("currencyName") String currencyName);
 
+    // 통화 ID로 코드 조회
+    String getCurrencyCodeById(Long id);
+
+    // 통화 이름 조회
+    String getCurrencyNameByCode(String currencyCode);
+
     // 저장된 ID 조회
     Long findIdByCurrencyAndDate(@Param("baseCurrencyId") Long baseCurrencyId, @Param("targetCurrencyId") Long targetCurrencyId, @Param("rateDate") LocalDate rateDate);
 

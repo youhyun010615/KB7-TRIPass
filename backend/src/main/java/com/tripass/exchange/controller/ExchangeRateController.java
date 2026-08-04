@@ -1,14 +1,14 @@
 package com.tripass.exchange.controller;
 
 import com.tripass.common.response.ApiResponse;
-import com.tripass.exchange.dto.ExchangeRateResponseDto;
+import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
 import com.tripass.exchange.dto.LatestExchangeRateDto;
+import com.tripass.exchange.dto.SyncResultDto;
 import com.tripass.exchange.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -36,8 +36,8 @@ public class ExchangeRateController {
     }
 
     @PostMapping("/sync")
-    public ApiResponse<List<ExchangeRateResponseDto>> manualSync(@RequestParam String date) {
-        List<ExchangeRateResponseDto> result = exchangeRateService.syncExchangeRates(date);
+    public ApiResponse<SyncResultDto> manualSync(@RequestParam String date) {
+        SyncResultDto result = exchangeRateService.syncExchangeRates(date);
         return ApiResponse.success("환율 동기화 완료", result);
     }
 }

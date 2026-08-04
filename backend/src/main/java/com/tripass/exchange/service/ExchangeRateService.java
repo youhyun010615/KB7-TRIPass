@@ -2,6 +2,7 @@ package com.tripass.exchange.service;
 
 import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
 import com.tripass.exchange.dto.ExchangeRateResponseDto;
+import com.tripass.exchange.dto.SyncResultDto;
 import com.tripass.exchange.client.ExchangeRateClient;
 import com.tripass.exchange.domain.ExchangeRate;
 import com.tripass.exchange.dto.ExternalExchangeRateDto;
@@ -32,60 +33,74 @@ public class ExchangeRateService {
 
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {
         List<ExchangeRateHistoryResponseDto.RateInfo> rates = exchangeRateMapper.getHistoryRates(currencyCode, days);
-        // 통화명 등을 조회하는 로직은 추가 가능 (현재는 코드만)
-        return ExchangeRateHistoryResponseDto.builder()
-                .currencyCode(currencyCode)
-                .rates(rates)
-                .build();
+        String currencyName = exchangeRateMapper.getCurrencyNameByCode(currencyCode);
+        
+        ExchangeRateHistoryResponseDto dto = new ExchangeRateHistoryResponseDto();
+        dto.setCurrencyCode(currencyCode);
+        dto.setCurrencyName(currencyName);
+        dto.setRates(rates);
+        return dto;
     }
 
     @Transactional
-    public List<ExchangeRateResponseDto> syncExchangeRates(String date) {
-        List<ExchangeRateResponseDto> allSavedRates = new java.util.ArrayList<>();
-        
-        // 날짜 파싱 (YYYYMMDD 또는 YYYY-MM-DD 지원)
-        LocalDate currentDate;
+    public SyncResultDto syncExchangeRates(String date) {
+        // 날짜 파싱
+        LocalDate endDate;
         String normalizedDate = date.replace("-", "");
         try {
-            currentDate = LocalDate.of(
+            endDate = LocalDate.of(
                     Integer.parseInt(normalizedDate.substring(0, 4)),
                     Integer.parseInt(normalizedDate.substring(4, 6)),
                     Integer.parseInt(normalizedDate.substring(6, 8))
             );
         } catch (Exception e) {
             log.error("날짜 파싱 실패: {}", date);
-            return java.util.Collections.emptyList();
+            return null; // 또는 적절한 에러 처리
         }
-
-        // 7일치 '영업일' 날짜 루프 (데이터가 존재하는 날짜를 찾을 때까지 거슬러 올라감)
-        int syncedDays = 0;
-        while (syncedDays < 7) {
+        
+        LocalDate startDate = endDate.minusDays(89); // 90일 범위 계산
+        
+        // 통계용 맵 (CurrencyCode -> SavedDays)
+        java.util.Map<String, Integer> currencySyncMap = new java.util.HashMap<>();
+        int totalSavedCount = 0;
+        
+        // 90일치 '달력' 날짜 루프
+        LocalDate currentDate = endDate;
+        for (int i = 0; i < 90; i++) {
             String dateParam = currentDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
             
-            int maxRetries = 3;
-            int attempt = 0;
-            boolean success = false;
-            
-            while (attempt < maxRetries && !success) {
-                try {
-                    List<ExternalExchangeRateDto> dtoList = exchangeRateClient.fetchExchangeRates(dateParam);
-                    if (dtoList.isEmpty()) {
-                        log.warn("데이터 없음(휴일/주말일 가능성) - 날짜: {}", dateParam);
-                        success = true; // 데이터를 못 가져오면(주말/휴일) 다음 날짜로 넘어감
-                    } else {
-                        allSavedRates.addAll(processAndSave(dtoList, currentDate));
-                        success = true;
-                        syncedDays++; // 데이터를 성공적으로 저장했을 때만 카운트 증가
+            try {
+                List<ExternalExchangeRateDto> dtoList = exchangeRateClient.fetchExchangeRates(dateParam);
+                if (!dtoList.isEmpty()) {
+                    List<ExchangeRateResponseDto> savedRates = processAndSave(dtoList, currentDate);
+                    totalSavedCount += savedRates.size();
+                    
+                    // 통화별 카운트 업데이트
+                    for (ExchangeRateResponseDto rate : savedRates) {
+                        String code = exchangeRateMapper.getCurrencyCodeById(rate.getTargetCurrencyId());
+                        currencySyncMap.put(code, currencySyncMap.getOrDefault(code, 0) + 1);
                     }
-                } catch (Exception e) {
-                    log.error("동기화 실패(재시도 {}/{}) - 날짜: {}", attempt + 1, maxRetries, dateParam, e);
-                    attempt++;
-                    if (!success) try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
                 }
+            } catch (Exception e) {
+                log.error("동기화 실패 - 날짜: {}", dateParam, e);
             }
-            currentDate = currentDate.minusDays(1); // 날짜 하루씩 감소
+            currentDate = currentDate.minusDays(1);
         }
-        return allSavedRates;
+        
+        // 결과 DTO 구성
+        List<SyncResultDto.CurrencySyncStatus> statusList = currencySyncMap.entrySet().stream()
+                .map(entry -> SyncResultDto.CurrencySyncStatus.builder()
+                        .currencyCode(entry.getKey())
+                        .savedDays(entry.getValue())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+
+        return SyncResultDto.builder()
+                .syncPeriod(startDate.toString() + " ~ " + endDate.toString())
+                .totalSavedCount(totalSavedCount)
+                .syncedAt(LocalDateTime.now())
+                .syncedCurrencies(statusList)
+                .build();
     }
 
     private List<ExchangeRateResponseDto> processAndSave(List<ExternalExchangeRateDto> dtoList, LocalDate rateDate) {
@@ -128,30 +143,28 @@ public class ExchangeRateService {
                 BigDecimal prevRate = exchangeRateMapper.getPreviousRate(targetId, rateDate);
                 log.debug("이전 환율 조회 결과: targetId={}, date={}, prevRate={}", targetId, rateDate, prevRate);
 
-                exchangeRateMapper.upsertExchangeRate(
-                    ExchangeRate.builder()
-                        .baseCurrencyId(krwId)
-                        .targetCurrencyId(targetId)
-                        .currencyUnit(1)
-                        .dealBaseRate(rate)
-                        .prevRate(prevRate)
-                        .rateDate(rateDate)
-                        .fetchedAt(LocalDateTime.now())
-                        .build()
-                );
+                ExchangeRate exchangeRate = new ExchangeRate();
+                exchangeRate.setBaseCurrencyId(krwId);
+                exchangeRate.setTargetCurrencyId(targetId);
+                exchangeRate.setCurrencyUnit(1);
+                exchangeRate.setDealBaseRate(rate);
+                exchangeRate.setPrevRate(prevRate);
+                exchangeRate.setRateDate(rateDate);
+                exchangeRate.setFetchedAt(LocalDateTime.now());
+                
+                exchangeRateMapper.upsertExchangeRate(exchangeRate);
                 
                 Long savedId = exchangeRateMapper.findIdByCurrencyAndDate(krwId, targetId, rateDate);
                 
-                ExchangeRateResponseDto dtoResponse = ExchangeRateResponseDto.builder()
-                        .id(savedId)
-                        .baseCurrencyId(krwId)
-                        .targetCurrencyId(targetId)
-                        .currencyUnit(1)
-                        .dealBaseRate(rate)
-                        .prevRate(prevRate)
-                        .rateDate(rateDate)
-                        .fetchedAt(LocalDateTime.now())
-                        .build();
+                ExchangeRateResponseDto dtoResponse = new ExchangeRateResponseDto();
+                dtoResponse.setId(savedId);
+                dtoResponse.setBaseCurrencyId(krwId);
+                dtoResponse.setTargetCurrencyId(targetId);
+                dtoResponse.setCurrencyUnit(1);
+                dtoResponse.setDealBaseRate(rate);
+                dtoResponse.setPrevRate(prevRate);
+                dtoResponse.setRateDate(rateDate);
+                dtoResponse.setFetchedAt(LocalDateTime.now());
 
                 savedRates.add(dtoResponse);
             } catch (Exception e) {

@@ -6,6 +6,14 @@
         SELECT id FROM currencies WHERE currency_code = #{currencyCode}
     </select>
 
+    <select id="getCurrencyNameByCode" resultType="String">
+        SELECT currency_name FROM currencies WHERE currency_code = #{currencyCode}
+    </select>
+
+    <select id="getCurrencyCodeById" resultType="String">
+        SELECT currency_code FROM currencies WHERE id = #{id}
+    </select>
+
     <insert id="insertCurrency" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO currencies (currency_code, currency_name)
         VALUES (#{currencyCode}, #{currencyName})
@@ -28,7 +36,7 @@
         LIMIT 1
     </select>
 
-    <select id="getLatestRates" resultType="com.tripass.exchange.dto.LatestExchangeRateDto">
+    <select id="getLatestRates" resultType="LatestExchangeRateDto">
         SELECT 
             c.currency_code AS currencyCode,
             c.currency_name AS currencyName,
