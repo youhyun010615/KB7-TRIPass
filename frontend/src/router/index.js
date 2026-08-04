@@ -125,6 +125,8 @@ const router = createRouter({
       component: () => import('@/views/financial/FinancialView.vue'),
       meta: { requiresAuth: true },
     },
+    { path:'/financial/savings', name:'FinancialSavings', component:()=>import('@/views/financial/FinancialSavingsView.vue'), meta:{requiresAuth:true} },
+    { path:'/financial/savings/:productId', name:'FinancialSavingsDetail', component:()=>import('@/views/financial/FinancialSavingsDetailView.vue'), meta:{requiresAuth:true} },
 
     // ── AST (담당: 이아영) ──────────────────────────────────
     {
