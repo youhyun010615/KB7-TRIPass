@@ -1,4 +1,28 @@
+/**
+ * Codef 수시입출 거래내역 조회 결과를 담는 DTO
+ * transactions 테이블에 저장할 데이터 구조
+ */
+
 package com.tripass.asset.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+@Getter
+@Setter
 public class TransactionDto {
+
+    private Long id;
+    private Long accountId;
+    private LocalDate transactionDate;
+    private LocalTime transactionTime;
+    private String transactionType; // DEPOSIT / WITHDRAWAL
+    private String transactionRegion; //DOMESTIC / OVERSEAS
+    private BigDecimal amount;
+    private BigDecimal balanceAfter;
+    private String merchantName; //거래처
 }
