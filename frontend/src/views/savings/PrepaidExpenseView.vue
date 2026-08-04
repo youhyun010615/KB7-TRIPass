@@ -19,7 +19,7 @@ function formatAmount(event) {
 function submit() {
   touched.value = true
   if (!valid.value || !fund.addPrepaidExpense(form)) return
-  router.push('/savings/monthly')
+  router.push('/asset/prepaid')
 }
 </script>
 
