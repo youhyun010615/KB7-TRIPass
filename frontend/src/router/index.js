@@ -105,6 +105,12 @@ const router = createRouter({
       component: () => import('@/views/financial/FinancialScheduleView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/financial-schedule/calendar',
+      name: 'FinancialScheduleCalendar',
+      component: () => import('@/views/financial/FinancialScheduleCalendarView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── GDS (담당: 송형진) ──────────────────────────────────
     {
