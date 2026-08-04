@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.auth.mapper.UserMapper">
+    <!-- users 테이블 조회 결과와 User 모델 필드 연결 -->
+
+    <resultMap id="userResultMap" type="com.tripass.auth.model.User">
+        <id
+            property="id"
+            column="id"/>
+        <result
+            property="loginId"
+            column="login_id"/>
+        <result
+            property="password"
+            column="password"/>
+        <result
+            property="name"
+            column="name"/>
+        <result
+            property="phoneNumber"
+            column="phone_number"/>
+        <result
+                property="loginProvider"
+                column="login_provider"/>
+
+        <result
+                property="providerKey"
+                column="provider_key"/>
+
+        <result
+                property="currentViewMode"
+                column="current_view_mode"/>
+
+        <result
+                property="deleted"
+                column="is_deleted"/>
+
+        <result
+                property="deletedAt"
+                column="deleted_at"/>
+
+        <result
+                property="createdAt"
+                column="created_at"/>
+
+        <result
+                property="updatedAt"
+                column="updated_at"/>
+    </resultMap>
+
+    <!-- 일반 회원가입에 사용하는 아이디 중복 체크 -->
+    <select
+            id="countLocalUserByLoginId"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        WHERE login_provider='LOCAL'
+        AND login_id = #{loginId}
+        AND is_deleted = 0
+    </select>
+
+    <!-- 로그인 시 아이디로 회원 조회 -->
+    <select id="findLocalUserByLoginId" resultMap="userResultMap">
+        SELECT id, login_id, password, name, phone_number, login_provider, provider_key, current_view_mode, is_deleted, deleted_at, created_at, updated_at
+        FROM users
+        WHERE login_provider='LOCAL'
+        AND login_id = #{loginId}
+        AND is_deleted = 0
+    </select>
+
+    <!-- 일반 회원 저장 -->
+    <insert id="insertLocalUser"
+            parameterType="com.tripass.auth.model.User"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO users (
+            login_id,
+            password,
+            name,
+            phone_number,
+            login_provider
+        )
+        VALUES (
+                   #{loginId},
+                   #{password},
+                   #{name},
+                   #{phoneNumber},
+                   'LOCAL'
+               )
+    </insert>
+</mapper>
