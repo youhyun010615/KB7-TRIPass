@@ -18,4 +18,5 @@ public class AccountDto {
     private Boolean isTravelFundIncluded;
     private String connectionType;
     private String lastSyncedAt;
+    private String organizationCode;
 }

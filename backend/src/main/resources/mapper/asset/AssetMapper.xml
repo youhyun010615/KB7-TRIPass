@@ -52,4 +52,35 @@
         ORDER BY display_order
     </select>
 
+    <!-- 거래내역 저장 — Codef 수시입출 거래내역 조회 결과를 transactions 테이블에 INSERT -->
+    <insert id = "insertTransaction" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO transactions
+        (account_id, external_key, transaction_date, transaction_time, transaction_type,
+         transaction_region, amount, balance_after, merchant_name)
+        VALUES
+            (#{accountId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
+             #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName})
+    </insert>
+
+    <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
+    <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
+        SELECT id, account_id, transaction_date, transaction_time,
+               transaction_type, transaction_region, amount, balance_after, merchant_name
+        FROM transactions
+        WHERE account_id = #{accountId}
+        AND is_deleted = 0
+        ORDER BY transaction_date DESC, transaction_time DESC
+    </select>
+
+    <!-- 계좌 ID로 단건 조회 — 거래내역 조회 시 계좌번호, 기관코드 확인용 (userId로 소유권 검증) -->
+    <select id = "findAccountById" resultType="AccountDto">
+        SELECT a.id, a.account_number, a.account_type, a.balance,
+               i.organization_code
+        FROM accounts a
+        JOIN codef_connected_institutions i ON a.codef_connection_id = i.codef_connection_id
+        WHERE a.id = #{accountId}
+        AND a.user_id = #{userId}
+        AND a.is_deleted = 0
+        AND i.is_deleted = 0
+    </select>
 </mapper>
