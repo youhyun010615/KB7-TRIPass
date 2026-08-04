@@ -61,6 +61,30 @@ const router = createRouter({
       component: () => import('@/views/savings/MonthlyFundView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/savings/monthly/categories',
+      name: 'MonthlyFundCategoryGoals',
+      component: () => import('@/views/savings/CategoryGoalsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/categories/:categoryId',
+      name: 'MonthlyFundCategoryDetail',
+      component: () => import('@/views/savings/CategoryDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/transactions/:transactionId/category',
+      name: 'MonthlyFundCategorySelect',
+      component: () => import('@/views/savings/CategorySelectView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/prepaid/new',
+      name: 'MonthlyFundPrepaidNew',
+      component: () => import('@/views/savings/PrepaidExpenseView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── PRO (담당: 송형진) ──────────────────────────────────
     {
