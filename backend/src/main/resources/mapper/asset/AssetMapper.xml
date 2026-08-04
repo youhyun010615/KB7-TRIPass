@@ -52,4 +52,23 @@
         ORDER BY display_order
     </select>
 
+    <!-- 거래내역 저장 — Codef 수시입출 거래내역 조회 결과를 transactions 테이블에 INSERT -->
+    <insert id = "insertTransaction" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO transactions
+        (account_id, transaction_date, transaction_time, transaction_type,
+         transaction_region, amount, balance_after, merchant_name)
+        VALUES
+            (#{accountId}, #{transactionDate}, #{transactionTime}, #{transactionType},
+             #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName})
+    </insert>
+
+    <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
+    <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
+        SELECT id, account_id, transaction_date, transaction_time,
+               transaction_type, transaction_region, amount, balance_after, merchant_name
+        FROM transactions
+        WHERE account_id = #{accountId}
+        AND is_deleted = 0
+        ORDER BY transaction_date DESC, transaction_time DESC
+    </select>
 </mapper>
