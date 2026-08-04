@@ -200,6 +200,7 @@ const router = createRouter({
       component: () => import('@/views/exchange/ExchangeView.vue'),
       meta: { requiresAuth: true },
     },
+    { path:'/exchange/currencies/:code', name:'ExchangeCurrencyDetail', component:()=>import('@/views/exchange/CurrencyDetailView.vue'), meta:{requiresAuth:true} },
 
     // ── TRV / BUD (담당: 권원영) ────────────────────────────
     {
