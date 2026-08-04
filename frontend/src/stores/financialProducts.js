@@ -17,8 +17,11 @@ const cardProducts = [
 ]
 
 function loadCompare() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') }
-  catch { return [] }
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? JSON.parse(saved) : ['hana-travellog', 'shinhan-sol']
+  }
+  catch { return ['hana-travellog', 'shinhan-sol'] }
 }
 
 export const useFinancialProductsStore = defineStore('financialProducts', () => {
