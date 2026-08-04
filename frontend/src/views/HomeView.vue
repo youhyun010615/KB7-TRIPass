@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { useTravelStore } from '@/stores/travel'
+import { useSavingsPlanStore } from '@/stores/savingsPlan'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
@@ -10,6 +11,7 @@ import TravelTicket from '@/components/savings/TravelTicket.vue'
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
+const plan = useSavingsPlanStore()
 const router = useRouter()
 
 const userName = computed(() => authStore.user?.name ?? '권유현')
@@ -18,31 +20,84 @@ const userName = computed(() => authStore.user?.name ?? '권유현')
 const countries = [
   {
     id: 1, name: '파리', flag: '🇫🇷', code: 'PAR',
-    color: '#2563EB', image: 'paris',
+    image: '/images/france.png',
+    headerBg: '#1a2d6e',
+    progressBg: 'rgba(0,35,149,0.80)',
+    barColor: 'linear-gradient(90deg,#002395 0%,#EDEDED 50%,#ED2939 100%)',
     dday: 230, currency: 'EUR', rate: 1548,
+    desc: '로맨틱한 파리의 밤 · 파리에서의 하루를 기대하며',
   },
   {
     id: 2, name: '인터라켄', flag: '🇨🇭', code: 'INT',
-    color: '#DB2777', image: 'interlaken',
+    image: '/images/switzerland.webp',
+    headerBg: '#7a0d1e',
+    progressBg: 'rgba(122,13,30,0.82)',
+    barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 60%,#FF0000 100%)',
     dday: 230, currency: 'CHF', rate: 1620,
+    desc: '알프스의 맑은 공기 · 인터라켄에서 시작되는 설레는 하루',
   },
   {
     id: 3, name: '베를린', flag: '🇩🇪', code: 'BER',
-    color: '#1F2937', image: 'berlin',
+    image: '/images/germany.png',
+    headerBg: '#111111',
+    progressBg: 'rgba(17,17,17,0.85)',
+    barColor: 'linear-gradient(90deg,#000000 0%,#DD0000 50%,#FFCE00 100%)',
     dday: 230, currency: 'EUR', rate: 1548,
+    desc: '클래식과 트렌드가 만나는 도시 · 베를린의 하루를 기대하며',
   },
   {
-    id: 4, name: '도쿄', flag: '🇯🇵', code: 'THO',
-    color: '#DC2626', image: 'tokyo',
+    id: 4, name: '도쿄', flag: '🇯🇵', code: 'TYO',
+    image: '/images/japan.webp',
+    headerBg: '#c2185b',
+    progressBg: 'rgba(194,24,91,0.82)',
+    barColor: 'linear-gradient(90deg,#FFFFFF 0%,#BC002D 35%,#BC002D 65%,#FFFFFF 100%)',
     dday: 230, currency: 'JPY', rate: 9,
+    desc: '익숙함 속 새로운 발견 · 도쿄에서의 하루를 기대하며',
   },
   {
     id: 5, name: '다낭', flag: '🇻🇳', code: 'DAD',
-    color: '#D97706', image: 'danang',
+    image: '/images/vietnam.png',
+    headerBg: '#b8860b',
+    progressBg: 'rgba(184,134,11,0.82)',
+    barColor: 'linear-gradient(90deg,#DA251D 0%,#FFCD00 50%,#DA251D 100%)',
     dday: 230, currency: 'VND', rate: 0.06,
+    desc: '바다와 햇살이 머무는 곳 · 다낭에서의 여유로운 하루',
   },
 ]
 const selectedCountry = ref(countries[0])
+const showCountryDropdown = ref(false)
+
+// 탑승권 저축 상태: unset(미설정) / low(부족) / ok(정상)
+const savingsCardState = computed(() => {
+  if (!plan.savingMethod || !plan.monthlySavings) return 'unset'
+  if (plan.status === 'warning' || plan.status === 'error') return 'low'
+  return 'ok'
+})
+
+const homeGoalAmount = computed(() => plan.totalTargetAmount)
+const homeSavedAmount = computed(() => plan.securedAmount)
+const homeSavingsPercent = computed(() => plan.securedPercent)
+const ticketSavingCopy = computed(() => {
+  if (savingsCardState.value === 'unset') {
+    return {
+      title: '월 저축 계획이 필요해요',
+      action: '월 저축 계획 설정',
+      amountLabel: `추천 월 ${formatCurrency(plan.recommendedMonthlySavings)}`,
+    }
+  }
+  if (savingsCardState.value === 'low') {
+    return {
+      title: '목표 일정까지 저축액이 부족해요',
+      action: '월 저축 계획 조정',
+      amountLabel: `추가 월 ${formatCurrency(plan.additionalRecommendedAmount)}`,
+    }
+  }
+  return {
+    title: '여행 저축 목표',
+    action: '여행 목표 자금 관리',
+    amountLabel: '',
+  }
+})
 
 const savingsData = {
   balance: 12500000,
@@ -55,22 +110,18 @@ const savingsData = {
     details: '급여일 3,500,000원 - 고정지출 1,800,000원 - 카테고리 목표 1,200,000원',
   },
   categories: [
-    { name: '식비', spent: 180000, budget: 450000, percent: 72, color: '#3B5BDB' },
-    { name: '카페', spent: 41000, budget: 100000, percent: 42, color: '#60A5FA' },
-    { name: '생활비', spent: 126000, budget: 300000, percent: 70, color: '#F59E0B' },
-    { name: '쇼핑', spent: 45000, budget: 150000, percent: 60, color: '#EC4899' },
-    { name: '취미', spent: 35000, budget: 100000, percent: 50, color: '#8B5CF6' },
+    { icon: '🍴', name: '식비', spent: 180000, budget: 450000, percent: 72, color: '#173b86' },
+    { icon: '☕', name: '카페', spent: 42000, budget: 100000, percent: 42, color: '#315ca8' },
+    { icon: '🧴', name: '생활비', spent: 126000, budget: 300000, percent: 70, color: '#25ad79' },
+    { icon: '🛍', name: '쇼핑', spent: 48000, budget: 150000, percent: 60, color: '#f0a000' },
+    { icon: '🎮', name: '취미', spent: 35000, budget: 100000, percent: 50, color: '#173b86' },
   ],
   schedule: [
-    { date: '7/25', label: '금액입금', type: '입금' },
-    { date: '7/28', label: '돌산에 낙하예', type: '지출' },
-    { date: '7/31', label: '돌산에 낙하예', type: '지출' },
+    { date: '7/25', label: '급여일', desc: '2,600,000원 입금 예정', type: '입금' },
+    { date: '7/28', label: '월세', desc: '350,000원 납부 예정', type: '지출' },
+    { date: '7/31', label: '통신비', desc: '61,000원 납부 예정', type: '지출' },
   ],
 }
-
-const savingsPercent = computed(() =>
-  Math.round((savingsData.saved / savingsData.goal) * 100)
-)
 
 // ── 여행 모드 데이터 ──────────────────────────────────────
 const travelData = {
@@ -163,160 +214,225 @@ function formatCurrency(n) {
     <template v-else-if="travelModeStore.isSavingsMode">
 
       <!-- 헤더 -->
-      <div class="bg-white px-5 pt-14 pb-3">
-        <div class="flex items-center justify-between mb-1">
-          <!-- 모드 전환 버튼 -->
-          <button
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-            style="background: #EEF2FF; color: #3B5BDB"
-            @click="travelModeStore.setMode('travel')"
-          >
-            <span>여행 저축</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M6 9L12 15L18 9" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <button class="text-xs text-gray-400">여행 계획 수정 &gt;</button>
-        </div>
-        <p class="text-xl font-bold text-gray-900 mt-2">안녕하세요, {{ userName }}님</p>
-
-        <!-- 국가 탭 -->
-        <div class="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
-          <button
-            v-for="c in countries"
-            :key="c.id"
-            class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
-            :style="selectedCountry.id === c.id
-              ? `background: ${c.color}; color: white`
-              : 'background: #F3F4F6; color: #6B7280'"
-            @click="selectedCountry = c"
-          >
-            <span>{{ c.flag }}</span>
-            <span>{{ c.name }}</span>
-          </button>
+      <div class="bg-white px-5 pt-10 pb-3 relative">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-[10px] font-extrabold tracking-widest text-gray-300">TRIPASS</p>
+            <h1 class="text-[20px] font-extrabold text-gray-900 mt-0.5">안녕하세요, {{ userName }}님</h1>
+            <button class="text-[11px] text-gray-400 mt-0.5" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
+          </div>
+          <!-- 국가 드롭다운 -->
+          <div class="relative flex-none">
+            <button
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-[12px] font-bold text-gray-800"
+              @click="showCountryDropdown = !showCountryDropdown"
+            >
+              <span>{{ selectedCountry.flag }}</span>
+              <span>{{ selectedCountry.name }}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9L12 15L18 9" stroke="#6B7280" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <div v-if="showCountryDropdown" class="absolute right-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 min-w-[120px]">
+              <button
+                v-for="c in countries" :key="c.id"
+                class="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                :class="{ 'font-extrabold': selectedCountry.id === c.id }"
+                @click="selectedCountry = c; showCountryDropdown = false"
+              >
+                <span>{{ c.flag }}</span><span>{{ c.name }}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div class="mx-4 mt-4 rounded-2xl overflow-hidden" :style="`background: ${selectedCountry.color}`">
-        <div class="px-4 pt-4 pb-5">
-          <div class="flex items-center justify-between mb-1">
-            <div>
-              <p class="text-white/60 text-[10px] tracking-widest">BOARDING PASS · TRIPASS AIR</p>
-              <p class="text-white/60 text-[10px]">NO. {{ selectedCountry.code }}-230</p>
+      <div class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
+
+        <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
+        <div class="px-5 pt-4 pb-3 flex items-center justify-between"
+             :style="`background:${selectedCountry.headerBg}`">
+          <span class="text-white/65 text-[9px] font-bold tracking-widest">BOARDING PASS</span>
+          <span class="text-white/40 text-[9px] tracking-widest">TRIPASS AIR</span>
+          <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
+        </div>
+
+        <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
+        <div class="ticket-cutline ticket-cutline-top">
+          <div class="ticket-notch ticket-notch-left" />
+          <div class="ticket-dashed-line" />
+          <div class="ticket-notch ticket-notch-right" />
+        </div>
+
+        <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
+        <div class="relative" :style="`background:url(${selectedCountry.image}) center/cover no-repeat`">
+          <!-- 어두운 오버레이 -->
+          <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
+
+          <div class="relative z-10 px-5 pt-6">
+            <!-- DESTINATION / DEPARTURE / 설명 -->
+            <div class="flex items-center gap-2">
+              <div class="flex-none">
+                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Destination</p>
+                <p class="text-white text-[22px] font-extrabold leading-none">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
+              </div>
+              <div class="flex-1 flex items-center mt-3.5">
+                <div class="flex-1 border-t border-dashed border-white/40" />
+                <span class="mx-2 text-yellow-300 text-lg">✈</span>
+                <div class="flex-1 border-t border-dashed border-white/40" />
+              </div>
+              <div class="text-right flex-none">
+                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Departure</p>
+                <p class="text-white text-[22px] font-extrabold leading-none">D-{{ selectedCountry.dday }}</p>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center justify-between mt-2">
-            <div>
-              <p class="text-white/60 text-xs">DESTINATION</p>
-              <p class="text-white text-2xl font-bold flex items-center gap-2">
-                {{ selectedCountry.flag }} {{ selectedCountry.name }}
-              </p>
-              <p class="text-white/60 text-xs mt-1">설레는 여행이 기다려요 ›</p>
-            </div>
-            <div class="text-right">
-              <p class="text-white/60 text-[10px]">DEPARTURE</p>
-              <p class="text-white font-bold text-2xl">D-{{ selectedCountry.dday }}</p>
+            <p class="ticket-description text-white/80 text-[10px] mt-2">{{ selectedCountry.desc }} ✨</p>
+
+            <!-- 사진이 보이는 여백 -->
+            <div class="ticket-photo-space" />
+
+            <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
+            <div class="rounded-xl px-4 py-4" :style="`background:${selectedCountry.progressBg}`">
+              <div class="flex justify-between mb-2">
+                <span class="font-semibold text-[11px]" :class="savingsCardState === 'unset' ? 'text-red-300' : 'text-white'">{{ ticketSavingCopy.title }}</span>
+                <span class="text-white font-extrabold text-[12px]">{{ homeSavingsPercent }}%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/25 overflow-hidden">
+                <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${selectedCountry.barColor}`" />
+              </div>
+              <div class="flex justify-between mt-2.5">
+                <div>
+                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
+                  <p class="text-white/55 text-[7px] tracking-wider mt-0.5">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
+                  <p class="text-white/50 text-[7px] tracking-wider mt-0.5">GOAL</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 저축 진행바 -->
-          <div class="mt-4">
-            <div class="flex justify-between text-xs text-white/70 mb-1.5">
-              <span>여행 저축 목표</span>
-              <span class="font-bold text-white">{{ savingsPercent }}%</span>
-            </div>
-            <div class="h-2 rounded-full bg-white/20">
-              <div class="h-full rounded-full bg-white transition-all" :style="`width: ${savingsPercent}%`"/>
-            </div>
-            <div class="flex justify-between text-[10px] text-white/60 mt-1">
-              <span>{{ formatCurrency(savingsData.saved) }}</span>
-              <span>{{ formatCurrency(savingsData.goal) }}</span>
-            </div>
+          <!-- 사진의 종료 경계와 정확히 맞닿는 하단 절취선 -->
+          <div class="ticket-cutline ticket-cutline-bottom">
+            <div class="ticket-notch ticket-notch-left" />
+            <div class="ticket-dashed-line" />
+            <div class="ticket-notch ticket-notch-right" />
           </div>
 
-          <button class="mt-3 w-full py-2 rounded-xl text-xs font-semibold text-center bg-white/15 text-white">
-            여행 목표 자금 관리 ›
-          </button>
+          <!-- ④ 국가 컬러 스텁 -->
+          <div class="relative z-10" :style="`background:${selectedCountry.headerBg}`">
+            <button
+              class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
+              @click="router.push(savingsCardState === 'ok' ? '/savings' : '/savings/plan')">
+              <span class="text-[10px] font-bold text-white">{{ ticketSavingCopy.action }}</span>
+              <div class="flex items-center gap-2">
+                <div class="flex gap-[1.5px] items-end h-5">
+                  <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
+                    class="bg-white/85 rounded-[0.5px]"
+                    :style="`height:${h}px;width:${i%4===0?'2.5px':'1.5px'}`" />
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 18L15 12L9 6" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 보유 자금 / 연동 계좌 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex">
-        <div class="flex-1 text-center border-r border-gray-100">
-          <p class="text-xs text-gray-400 mb-1">보유 자금</p>
-          <p class="text-base font-bold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
+      <!-- 보유 총자산 / 연동 계좌 -->
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex items-center shadow-sm">
+        <div class="flex-1">
+          <p class="text-[10px] text-gray-400 mb-1">보유 총자산</p>
+          <p class="text-[16px] font-extrabold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
         </div>
-        <div class="flex-1 text-center">
-          <p class="text-xs text-gray-400 mb-1">연동 계좌</p>
-          <p class="text-base font-bold text-gray-900">{{ savingsData.accounts }}개</p>
+        <div class="w-px h-8 bg-gray-100 mx-4" />
+        <div class="text-right">
+          <p class="text-[10px] text-gray-400 mb-1">연동 계좌</p>
+          <p class="text-[16px] font-extrabold text-gray-900">{{ savingsData.accounts }}개</p>
         </div>
+        <svg class="ml-2 flex-none" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+        </svg>
       </div>
 
       <!-- 이달의 자금 체크 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4">
-        <div class="flex items-center justify-between mb-1">
-          <p class="text-sm font-bold text-gray-900">이달의 자금 체크</p>
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
+        <button class="w-full flex items-center justify-between mb-2" @click="router.push('/savings')">
+          <p class="text-[14px] font-extrabold text-gray-900">이달의 자금 체크</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
-        </div>
-        <p class="text-xs text-gray-400 mb-2">이달에 여유자금</p>
-        <p class="text-2xl font-bold" style="color: #3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
-        <p class="text-[11px] text-gray-400 mt-1">{{ savingsData.monthly.details }}</p>
+        </button>
+        <p class="text-[11px] text-gray-400 mb-1.5">이달의 여유자금</p>
+        <p class="text-[28px] font-extrabold" style="color:#3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
+        <p class="text-[10px] text-gray-400 mt-1 leading-relaxed">{{ savingsData.monthly.details }}</p>
       </div>
 
       <!-- 카테고리별 사용 현황 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4">
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
         <div class="flex items-center justify-between mb-3">
-          <p class="text-sm font-bold text-gray-900">카테고리별 사용 현황</p>
-          <span class="text-xs text-gray-400">이번 달</span>
+          <p class="text-[14px] font-extrabold text-gray-900">카테고리별 사용 현황</p>
+          <span class="text-[11px] text-gray-400">이번 달</span>
         </div>
-        <div class="flex flex-col gap-2.5">
-          <div v-for="cat in savingsData.categories" :key="cat.name" class="flex items-center gap-3">
-            <span class="text-xs text-gray-500 w-12 flex-shrink-0">{{ cat.name }}</span>
+        <div class="flex flex-col gap-3">
+          <div v-for="cat in savingsData.categories" :key="cat.name" class="flex items-center gap-2">
+            <span class="text-[15px] w-5 flex-none">{{ cat.icon }}</span>
+            <span class="text-[11px] text-gray-600 w-10 flex-none">{{ cat.name }}</span>
             <div class="flex-1 h-1.5 rounded-full bg-gray-100">
-              <div class="h-full rounded-full" :style="`width: ${cat.percent}%; background: ${cat.color}`"/>
+              <div class="h-full rounded-full" :style="`width:${cat.percent}%;background:${cat.color}`" />
             </div>
-            <span class="text-xs text-gray-400 w-20 text-right flex-shrink-0">
-              {{ formatCurrency(cat.spent) }}/{{ formatCurrency(cat.budget) }}
+            <span class="text-[10px] text-gray-400 w-[90px] text-right flex-none">
+              {{ cat.spent.toLocaleString('ko-KR') }}/{{ cat.budget.toLocaleString('ko-KR') }}
             </span>
-            <span class="text-xs font-semibold w-8 text-right flex-shrink-0" :style="`color: ${cat.color}`">
-              {{ cat.percent }}%
-            </span>
+            <span class="text-[11px] font-bold w-8 text-right flex-none" :style="`color:${cat.color}`">{{ cat.percent }}%</span>
           </div>
         </div>
       </div>
 
       <!-- 다가오는 금융 일정 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm font-bold text-gray-900">다가오는 금융 일정</p>
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
+        <button class="w-full flex items-center justify-between mb-3">
+          <p class="text-[14px] font-extrabold text-gray-900">다가오는 금융 일정</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
-        </div>
+        </button>
         <div class="flex flex-col gap-3">
-          <div v-for="item in savingsData.schedule" :key="item.date" class="flex items-center justify-between">
-            <p class="text-sm text-gray-900 font-medium">{{ item.date }}</p>
-            <p class="text-xs text-gray-500 flex-1 mx-3">{{ item.label }}</p>
+          <div v-for="item in savingsData.schedule" :key="item.date" class="flex items-center gap-3">
+            <p class="text-[13px] font-extrabold w-8 flex-none" style="color:#3B5BDB">{{ item.date }}</p>
+            <div class="flex-1 min-w-0">
+              <p class="text-[13px] font-semibold text-gray-900">{{ item.label }}</p>
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ item.desc }}</p>
+            </div>
             <span
-              class="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              class="text-[10px] font-semibold px-2.5 py-1 rounded-full flex-none"
               :style="item.type === '입금'
-                ? 'background: #EEF2FF; color: #3B5BDB'
-                : 'background: #FEF2F2; color: #EF4444'"
+                ? 'background:#F0FDF4;color:#16A34A'
+                : 'background:#EEF2FF;color:#3B5BDB'"
             >{{ item.type }}</span>
           </div>
         </div>
       </div>
 
       <!-- 오늘의 환율 -->
-      <div class="mx-4 mt-3 mb-4 rounded-2xl px-5 py-4 flex items-center justify-between" :style="`background: ${selectedCountry.color}`">
-        <div>
-          <p class="text-white/60 text-xs mb-0.5">오늘의 환율</p>
-          <p class="text-white text-xs">{{ selectedCountry.flag }} {{ selectedCountry.currency }}/KRW</p>
+      <div class="mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
+        <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
+          <span class="text-white/60 text-[11px] font-semibold">오늘의 환율</span>
+          <span class="text-white/40 text-[10px]">{{ new Date().toLocaleDateString('ko-KR') }} 기준</span>
         </div>
-        <p class="text-white text-xl font-bold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</p>
+        <div class="px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-[14px]">{{ selectedCountry.flag }}</span>
+            <span class="text-white font-bold text-[14px]">{{ selectedCountry.currency }}/KRW</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-white text-[22px] font-extrabold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded text-blue-300">-0.3% ↓</span>
+          </div>
+        </div>
       </div>
 
     </template>
@@ -452,3 +568,20 @@ function formatCurrency(n) {
     <BottomNav />
   </div>
 </template>
+
+<style scoped>
+.country-ticket {
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(22, 39, 78, .15);
+}
+.ticket-photo-space { height: 104px; }
+.ticket-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticket-stub { height: 45px; }
+.ticket-cutline { position: relative; z-index: 20; display: flex; align-items: center; height: 0; }
+.ticket-cutline-top { transform: translateY(0); }
+.ticket-cutline-bottom { margin-top: 14px; }
+.ticket-notch { position: absolute; top: 50%; width: 24px; height: 24px; border-radius: 50%; background: #f7f4ee; transform: translateY(-50%); }
+.ticket-notch-left { left: -12px; }
+.ticket-notch-right { right: -12px; }
+.ticket-dashed-line { width: calc(100% - 34px); margin: 0 auto; border-top: 1.5px dashed rgba(255, 255, 255, .42); }
+</style>
