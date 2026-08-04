@@ -2,10 +2,15 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTravelModeStore } from '@/stores/travelMode'
+import { useTravelStore } from '@/stores/travel'
+import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
+import TravelTicket from '@/components/savings/TravelTicket.vue'
 
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
+const travelStore = useTravelStore()
+const router = useRouter()
 
 const userName = computed(() => authStore.user?.name ?? '권유현')
 
@@ -106,10 +111,56 @@ function formatCurrency(n) {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20" style="background: #F5F5F5">
+  <div class="min-h-screen pb-20" style="background: #F7F4EE">
+
+    <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
+    <template v-if="travelModeStore.isSavingsMode && !travelStore.hasTravelGoal">
+      <div class="px-5 pt-12 pb-3 bg-white/80">
+        <div class="flex items-center justify-between">
+          <button class="px-3 py-1.5 rounded-full text-xs font-bold" style="background:#eef2ff;color:#263f8c">여행 저축</button>
+          <button class="w-8 h-8 rounded-full text-sm" style="background:#fff1d9;color:#d97706">♧</button>
+        </div>
+        <p class="mt-2 text-lg font-extrabold">안녕하세요, {{ userName }}님</p>
+        <p class="mt-1 text-[10px] text-slate-500">새로운 여행을 함께 준비해 볼까요?</p>
+      </div>
+
+      <div class="px-4 mt-3">
+        <TravelTicket eyebrow="TRIPASS · START JOURNEY">
+          <div class="py-1 text-center">
+            <div class="mb-2 text-2xl">✈</div>
+            <h2 class="text-[16px] font-extrabold">아직 등록된 여행이 없어요</h2>
+            <p class="mt-2 text-[10px] leading-4 text-blue-100">여행을 등록하면 목표 금액을 설정하고<br>저축 계획까지 한 번에 도와드려요.</p>
+            <button class="w-full h-11 mt-4 rounded-xl text-[12px] font-extrabold text-white" style="background:#ff7a36" @click="router.push('/savings')">여행 계획 등록하기</button>
+            <div class="grid grid-cols-2 gap-3 mt-4 text-left">
+              <div><span class="block text-[8px] text-blue-200">보유 총자산</span><b class="text-[14px]">12,500,000원</b></div>
+              <div class="border-l border-white/20 pl-3"><span class="block text-[8px] text-blue-200">연결 계좌</span><b class="text-[14px]">2개</b></div>
+            </div>
+          </div>
+        </TravelTicket>
+      </div>
+
+      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
+        <button class="w-full flex justify-between items-center" @click="router.push('/savings')"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></button>
+        <p class="mt-3 text-[9px] text-slate-400">이달의 여유자금</p>
+        <p class="text-2xl font-extrabold" style="color:#0066ff">500,000원</p>
+        <p class="mt-1 text-[8px] text-slate-400">월급 3,500,000원 · 고정지출 1,800,000원 · 카테고리 목표 1,200,000원</p>
+      </section>
+
+      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
+        <div class="flex justify-between"><h2 class="text-[13px] font-extrabold">카테고리별 사용 현황</h2><span class="text-[9px] text-slate-400">이번 달</span></div>
+        <div v-for="cat in savingsData.categories" :key="cat.name" class="grid grid-cols-[48px_1fr_34px] items-center gap-2 mt-3">
+          <span class="text-[9px] font-semibold">{{ cat.name }}</span><div class="h-1.5 rounded bg-slate-100"><i class="block h-full rounded" :style="`width:${cat.percent}%;background:${cat.color}`" /></div><b class="text-right text-[9px]" :style="`color:${cat.color}`">{{ cat.percent }}%</b>
+        </div>
+      </section>
+
+      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
+        <button class="w-full flex justify-between"><h2 class="text-[13px] font-extrabold">다가오는 금융 일정</h2><span>›</span></button>
+        <div v-for="item in savingsData.schedule" :key="item.date" class="grid grid-cols-[38px_1fr_30px] mt-3 text-[9px]"><b style="color:#0066ff">{{ item.date }}</b><span>{{ item.label }}</span><strong :style="item.type==='입금' ? 'color:#16a36a' : 'color:#263f8c'">{{ item.type }}</strong></div>
+      </section>
+    </template>
 
     <!-- ══ 여행 저축 모드 ══════════════════════════════════════ -->
-    <template v-if="travelModeStore.isSavingsMode">
+    <template v-else-if="travelModeStore.isSavingsMode">
 
       <!-- 헤더 -->
       <div class="bg-white px-5 pt-14 pb-3">
