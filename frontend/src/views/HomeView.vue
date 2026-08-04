@@ -237,19 +237,12 @@ function formatCurrency(n) {
           <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
         </div>
 
-        <!-- ② 헤더 하단 노치 (헤더색 배경 + 반원 + 점선) -->
-        <div class="relative flex items-center py-2.5" :style="`background:${selectedCountry.headerBg}`">
-          <div class="w-6 h-6 rounded-full flex-none -ml-3 bg-[#F7F4EE]" />
-          <div class="flex-1 border-t border-dashed border-white/35 mx-1" />
-          <div class="w-6 h-6 rounded-full flex-none -mr-3 bg-[#F7F4EE]" />
-        </div>
-
-        <!-- ③ 사진 전체 배경 섹션 (나머지 전부) -->
+        <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
         <div class="relative" :style="`background:url(${selectedCountry.image}) center/cover no-repeat`">
           <!-- 어두운 오버레이 -->
-          <div class="absolute inset-0 bg-black/30 pointer-events-none" />
+          <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
 
-          <div class="relative px-5 pt-4">
+          <div class="relative z-10 px-5 pt-4">
             <!-- DESTINATION / DEPARTURE / 설명 -->
             <div class="flex items-center gap-2">
               <div class="flex-none">
@@ -293,15 +286,15 @@ function formatCurrency(n) {
             </div>
           </div>
 
-          <!-- ④ 중간 노치 (사진 위에서 반원 + 점선) -->
-          <div class="relative flex items-center mt-3 py-2">
+          <!-- ③ 중간 노치 (사진 위에서 반원 + 점선) -->
+          <div class="relative z-10 flex items-center mt-3 py-2">
             <div class="w-6 h-6 rounded-full flex-none -ml-3 bg-[#F7F4EE]" />
             <div class="flex-1 border-t-2 border-dashed border-white/35 mx-1" />
             <div class="w-6 h-6 rounded-full flex-none -mr-3 bg-[#F7F4EE]" />
           </div>
 
-          <!-- ⑤ 흰색 필 카드 (사진 위에 떠있음) -->
-          <div class="mx-4 mb-4">
+          <!-- ④ 흰색 필 카드 (사진 위에 완전 불투명 흰색) -->
+          <div class="relative z-10 mx-4 mb-4">
             <button v-if="savingsCardState === 'ok'"
               class="w-full bg-white rounded-2xl px-4 py-3.5 flex items-center justify-between active:bg-gray-50"
               @click="router.push('/savings')">
