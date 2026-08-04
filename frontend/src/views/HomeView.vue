@@ -217,7 +217,7 @@ function formatCurrency(n) {
         :style="`background-image: url(${selectedCountry.image}); background-size: cover; background-position: center;`"
       >
         <!-- 컬러 오버레이 -->
-        <div class="absolute inset-0" :style="`background: linear-gradient(160deg, ${selectedCountry.color}dd 0%, ${selectedCountry.color}99 100%)`" />
+        <div class="absolute inset-0" :style="`background: linear-gradient(160deg, ${selectedCountry.color}bb 0%, ${selectedCountry.color}88 100%)`" />
         <div class="relative px-4 pt-4 pb-5">
           <!-- 상단 메타 -->
           <div class="flex items-start justify-between mb-3">
