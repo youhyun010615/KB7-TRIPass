@@ -1,11 +1,11 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMonthlyFundStore } from '@/stores/monthlyFund'
+import { useAssetStore } from '@/stores/asset'
 import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
-const fund = useMonthlyFundStore()
+const asset = useAssetStore()
 const travel = useTravelStore()
 const form = reactive({ name: '', countryCode: travel.selectedCountryCodes[0] || '', date: '', amount: '', memo: '' })
 const touched = ref(false)
@@ -18,8 +18,18 @@ function formatAmount(event) {
 
 function submit() {
   touched.value = true
-  if (!valid.value || !fund.addPrepaidExpense(form)) return
+  if (!valid.value || !asset.addPrepaidExpense({ ...form, icon: resolveIcon(form.name) })) return
+  asset.selectedPrepaidScope = form.countryCode
   router.push('/asset/prepaid')
+}
+
+function resolveIcon(name) {
+  if (/항공|비행/.test(name)) return '✈️'
+  if (/보험/.test(name)) return '◇'
+  if (/호텔|숙박/.test(name)) return '▦'
+  if (/교통|픽업/.test(name)) return '▣'
+  if (/투어|액티비티/.test(name)) return '●'
+  return '◆'
 }
 </script>
 
