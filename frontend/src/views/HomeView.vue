@@ -227,7 +227,7 @@ function formatCurrency(n) {
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div class="mx-4 mt-2 rounded-3xl overflow-hidden shadow-xl">
+      <div class="mx-4 mt-2 rounded-3xl overflow-hidden shadow-xl" :style="`background:${selectedCountry.headerBg}`">
 
         <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
         <div class="px-5 pt-3 pb-2 flex items-center justify-between"
