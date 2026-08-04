@@ -7,6 +7,7 @@ import { useSavingsPlanStore } from '@/stores/savingsPlan'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
+import TravelModeHome from '@/components/travel/TravelModeHome.vue'
 
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
@@ -214,7 +215,10 @@ function formatCurrency(n) {
       <div class="bg-white px-5 pt-10 pb-3 relative">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-[10px] font-extrabold tracking-widest text-gray-300">TRIPASS</p>
+            <div class="inline-flex p-0.5 rounded-full border border-blue-100 bg-white">
+              <button class="px-2.5 py-1 rounded-full text-[9px] font-extrabold text-white bg-[#173f8d]">저축</button>
+              <button class="px-2.5 py-1 rounded-full text-[9px] font-extrabold text-slate-400" @click="travelModeStore.setMode('travel')">여행</button>
+            </div>
             <h1 class="text-[20px] font-extrabold text-gray-900 mt-0.5">안녕하세요, {{ userName }}님</h1>
             <button class="text-[11px] text-gray-400 mt-0.5" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
           </div>
@@ -431,7 +435,7 @@ function formatCurrency(n) {
     </template>
 
     <!-- ══ 여행 모드 ══════════════════════════════════════════ -->
-    <template v-else>
+    <template v-else-if="false">
 
       <!-- 헤더 -->
       <div class="bg-white px-5 pt-14 pb-3">
@@ -557,6 +561,8 @@ function formatCurrency(n) {
       </div>
 
     </template>
+
+    <TravelModeHome v-else :user-name="userName" />
 
     <BottomNav />
   </div>
