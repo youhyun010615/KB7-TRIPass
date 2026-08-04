@@ -200,6 +200,12 @@ const router = createRouter({
       component: () => import('@/views/exchange/ExchangeView.vue'),
       meta: { requiresAuth: true },
     },
+    { path:'/exchange/currencies/:code', name:'ExchangeCurrencyDetail', component:()=>import('@/views/exchange/CurrencyDetailView.vue'), meta:{requiresAuth:true} },
+    { path:'/exchange/alerts', name:'ExchangeAlerts', component:()=>import('@/views/exchange/ExchangeAlertsView.vue'), meta:{requiresAuth:true} },
+    { path:'/exchange/alerts/new', name:'ExchangeAlertNew', component:()=>import('@/views/exchange/ExchangeAlertFormView.vue'), meta:{requiresAuth:true} },
+    { path:'/exchange/alerts/:alertId', name:'ExchangeAlertEdit', component:()=>import('@/views/exchange/ExchangeAlertFormView.vue'), meta:{requiresAuth:true} },
+    { path:'/exchange/banks', name:'ExchangeBanks', component:()=>import('@/views/exchange/NearbyBanksView.vue'), meta:{requiresAuth:true} },
+    { path:'/exchange/banks/:bankId', name:'ExchangeBankDetail', component:()=>import('@/views/exchange/BankDetailView.vue'), meta:{requiresAuth:true} },
 
     // ── TRV / BUD (담당: 권원영) ────────────────────────────
     {

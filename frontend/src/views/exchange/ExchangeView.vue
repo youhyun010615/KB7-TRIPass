@@ -1,11 +1,11 @@
 <script setup>
-import BottomNav from '@/components/common/BottomNav.vue'
+import { useRouter } from 'vue-router';import BottomNav from '@/components/common/BottomNav.vue';import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';import { useExchangeStore } from '@/stores/exchange'
+const router=useRouter();const exchange=useExchangeStore();const tabs=[['rate','환율'],['alerts','환율 알림'],['banks','근처 은행']]
+function move(tab){if(tab==='alerts')router.push('/exchange/alerts');else if(tab==='banks')router.push('/exchange/banks')}
+const format=(v,d=2)=>Number(v||0).toLocaleString('ko-KR',{maximumFractionDigits:d})
 </script>
-
-<template>
-  <div class="min-h-screen pb-20 flex flex-col items-center justify-center" style="background: #F7F4EE">
-    <p class="text-gray-400 text-sm">환율/환전 · FXC</p>
-    <p class="text-xs text-gray-300 mt-1">담당: 권원영</p>
-    <BottomNav />
-  </div>
-</template>
+<template><main class="page"><div class="shell"><header><h1>환율·환전</h1></header><nav><button v-for="tab in tabs" :key="tab[0]" :class="{active:tab[0]==='rate'}" @click="move(tab[0])">{{ tab[1] }}</button></nav><ExchangeTicket :title="`${exchange.selectedCurrency.flag} ${exchange.selectedCurrency.code} ${format(exchange.selectedCurrency.rate)}원`" :subtitle="`어제보다 ${exchange.selectedCurrency.change>0?'▲':'▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원 · 환전 계산 03:00`"/><section class="calculator"><h2>빠른 환율 계산</h2><div><label>보내는 금액<input v-model.number="exchange.krwAmount" type="number" min="0"><b>KRW</b></label><span>→</span><label>받는 금액<strong>{{ format(exchange.foreignAmount) }}</strong><b>{{ exchange.selectedCode }}</b></label></div><button @click="router.push(`/exchange/currencies/${exchange.selectedCode}`)">환율 계산 더보기 ›</button></section><div class="title"><h2>주요 통화</h2><span>전체 보기</span></div><section class="currencies"><button v-for="item in exchange.currencies" :key="item.code" @click="exchange.selectedCode=item.code;router.push(`/exchange/currencies/${item.code}`)"><span>{{ item.flag }}</span><b>{{ item.code }}</b><strong>{{ format(item.rate) }}원</strong><em :class="{up:item.change>0}">{{ item.change>0?'▲':'▼' }} {{ format(Math.abs(item.change)) }}</em><i>›</i></button></section><BottomNav/></div></main></template>
+<style scoped>
+.page{min-height:100vh;background:#e7ecf4;color:#10192d}.shell{width:min(100%,390px);min-height:100vh;margin:auto;padding:52px 18px 100px;background:#f7f5ef}header{margin-bottom:16px}header h1{font-size:19px;font-weight:900}nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}nav button{padding:10px;border-radius:16px;background:#fff;color:#758196;font-size:8px}nav .active{background:#1870e8;color:#fff;font-weight:900}.calculator{margin-top:13px;padding:15px;border:1px solid #e1e6ed;border-radius:15px;background:#fff}.calculator h2{font-size:11px}.calculator>div{display:grid;grid-template-columns:1fr 20px 1fr;align-items:end;gap:4px;margin-top:12px}.calculator label{display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px;border-radius:10px;background:#f7f8fa;color:#8c97a7;font-size:7px}.calculator input,.calculator strong{grid-column:1;font-size:14px;font-weight:900;outline:none}.calculator label b{grid-column:2;grid-row:2;color:#8d98a8;font-size:8px}.calculator>div>span{text-align:center;color:#6680a4}.calculator button{display:block;margin:10px 0 0 auto;color:#1472ee;font-size:8px}.title{display:flex;justify-content:space-between;margin:21px 2px 9px}.title h2{font-size:12px}.title span{color:#2870dc;font-size:8px}.currencies button{display:grid;width:100%;grid-template-columns:25px 1fr auto 42px 8px;align-items:center;gap:7px;margin-top:8px;padding:12px;border:1px solid #e2e7ed;border-radius:12px;background:#fff;text-align:left}.currencies b{font-size:10px}.currencies strong{font-size:10px}.currencies em{color:#0b9e74;font-size:7px;font-style:normal}.currencies em.up{color:#de695c}.currencies i{color:#a2adbc;font-size:17px;font-style:normal}
+.shell :deep(.fixed){display:flex;grid-template-columns:none;gap:0;margin-bottom:0}
+</style>
