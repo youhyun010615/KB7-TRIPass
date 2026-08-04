@@ -3,6 +3,16 @@ import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'tripass-asset-management'
 
+export const PREPAID_SCOPE_META = {
+  ALL: { name: '전체', flag: '🌍' },
+  COMMON: { name: '공통', flag: '🌐', description: '모든 국가에 공통으로 적용되는 항목' },
+  FR: { name: '프랑스', flag: '🇫🇷', description: '프랑스 여행 관련 사전 지출 항목' },
+  CH: { name: '스위스', flag: '🇨🇭', description: '스위스 여행 관련 사전 지출 항목' },
+  DE: { name: '독일', flag: '🇩🇪', description: '독일 여행 관련 사전 지출 항목' },
+  JP: { name: '일본', flag: '🇯🇵', description: '일본 여행 관련 사전 지출 항목' },
+  VN: { name: '베트남', flag: '🇻🇳', description: '베트남 여행 관련 사전 지출 항목' },
+}
+
 const accountSeed = [
   { id: 1, bank: 'KB국민은행', name: 'KB국민은행 여행통장', number: '****4821', balance: 5_200_000, type: '급여계좌', symbol: '국', tone: '#fff5d8', accent: '#a56b00', primary: true },
   { id: 2, bank: '신한은행', name: '신한은행 통장', number: '****5678', balance: 3_000_000, type: '적금', symbol: '신', tone: '#e3f7f2', accent: '#10a88d' },
@@ -56,10 +66,28 @@ export const useAssetStore = defineStore('asset', () => {
   const prepaidExpenses = reactive(saved?.prepaidExpenses ?? prepaidSeed.map((item) => ({ ...item })))
   const transactionFilter = ref(saved?.transactionFilter ?? 'all')
   const selectedDate = ref(saved?.selectedDate ?? '2024-07-19')
+  const selectedPrepaidScope = ref(saved?.selectedPrepaidScope ?? 'ALL')
 
   const totalAssets = computed(() => accounts.reduce((sum, item) => sum + Number(item.balance || 0), 0))
   const activeFixedTotal = computed(() => fixedExpenses.filter((item) => item.active).reduce((sum, item) => sum + Number(item.amount || 0), 0))
   const prepaidTotal = computed(() => prepaidExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0))
+  const commonPrepaidTotal = computed(() => prepaidExpenses.filter((item) => item.scope === 'COMMON').reduce((sum, item) => sum + Number(item.amount || 0), 0))
+  const prepaidCountryScopes = computed(() => [...new Set(prepaidExpenses.filter((item) => item.scope !== 'COMMON').map((item) => item.scope))])
+  const commonAllocation = computed(() => prepaidCountryScopes.value.length ? Math.floor(commonPrepaidTotal.value / prepaidCountryScopes.value.length) : 0)
+  const prepaidGroups = computed(() => Object.entries(PREPAID_SCOPE_META)
+    .filter(([scope]) => scope !== 'ALL')
+    .map(([scope, meta]) => {
+      const items = prepaidExpenses.filter((item) => item.scope === scope)
+      const directTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      return {
+        scope,
+        ...meta,
+        items,
+        directTotal,
+        allocatedCommon: scope === 'COMMON' ? 0 : commonAllocation.value,
+        finalTotal: scope === 'COMMON' ? directTotal : directTotal + commonAllocation.value,
+      }
+    }))
   const depositCount = computed(() => transactions.filter((item) => item.amount > 0).length)
   const withdrawalCount = computed(() => transactions.filter((item) => item.amount < 0).length)
 
@@ -120,6 +148,37 @@ export const useAssetStore = defineStore('asset', () => {
     return true
   }
 
+  function addPrepaidExpense(payload) {
+    const amount = Math.max(0, Number(String(payload.amount).replace(/[^0-9]/g, '')) || 0)
+    const scope = payload.scope || payload.countryCode
+    if (!payload.name?.trim() || !PREPAID_SCOPE_META[scope] || scope === 'ALL' || !payload.date || !amount) return false
+    prepaidExpenses.unshift({
+      id: Date.now(),
+      scope,
+      name: payload.name.trim(),
+      date: payload.date,
+      amount,
+      memo: payload.memo?.trim() || '',
+      icon: payload.icon || '▦',
+    })
+    return true
+  }
+
+  function updatePrepaidExpense(id, patch) {
+    const item = prepaidExpenses.find((entry) => entry.id === Number(id))
+    if (!item) return false
+    Object.assign(item, patch)
+    if ('amount' in patch) item.amount = Math.max(0, Number(String(patch.amount).replace(/[^0-9]/g, '')) || 0)
+    return true
+  }
+
+  function removePrepaidExpense(id) {
+    const index = prepaidExpenses.findIndex((item) => item.id === Number(id))
+    if (index < 0) return false
+    prepaidExpenses.splice(index, 1)
+    return true
+  }
+
   watch(
     () => ({
       accounts: accounts.map((item) => ({ ...item })),
@@ -128,6 +187,7 @@ export const useAssetStore = defineStore('asset', () => {
       prepaidExpenses: prepaidExpenses.map((item) => ({ ...item })),
       transactionFilter: transactionFilter.value,
       selectedDate: selectedDate.value,
+      selectedPrepaidScope: selectedPrepaidScope.value,
     }),
     (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)),
     { deep: true },
@@ -135,9 +195,11 @@ export const useAssetStore = defineStore('asset', () => {
 
   return {
     accounts, transactions, fixedExpenses, prepaidExpenses,
-    transactionFilter, selectedDate, totalAssets, activeFixedTotal, prepaidTotal,
+    transactionFilter, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
+    commonPrepaidTotal, prepaidCountryScopes, commonAllocation, prepaidGroups,
     depositCount, withdrawalCount, filteredTransactions, groupedTransactions,
     getAccount, getTransaction, getFixedExpense, transactionsByAccount,
     addFixedExpense, updateFixedExpense, removeFixedExpense,
+    addPrepaidExpense, updatePrepaidExpense, removePrepaidExpense,
   }
 })
