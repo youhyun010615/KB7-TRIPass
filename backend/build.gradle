@@ -85,6 +85,12 @@ dependencies {
     testAnnotationProcessor     "org.projectlombok:lombok:${lombokVersion}"
     testImplementation          "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly             "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+
+    //추가
+    // HTTP 통신 (Codef API 호출용)
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    // JSON 파싱 (이미 jackson-databind 있으면 생략)
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.5'
 }
 
 test {
