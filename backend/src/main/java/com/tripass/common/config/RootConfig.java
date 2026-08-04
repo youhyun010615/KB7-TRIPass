@@ -15,6 +15,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import org.springframework.web.client.RestTemplate;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
@@ -32,6 +33,7 @@ import javax.sql.DataSource;
         "com.tripass.saving.service",
         "com.tripass.travel.service",
         "com.tripass.exchange.service",
+        "com.tripass.exchange.client",
         "com.tripass.prepay.service",
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
@@ -62,6 +64,11 @@ public class RootConfig {
 
     @Resource
     private Environment env;
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 
     @Bean
     public DataSource dataSource() {
