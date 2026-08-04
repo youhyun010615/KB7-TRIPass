@@ -19,6 +19,14 @@ public class AssetController {
         this.assetService = assetService;
     }
 
+    //AST-001: 자산(계좌) 목록 조회
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<AccountDto>>> getAccounts(
+            @RequestAttribute("userId") Long userId) {
+        return
+                ResponseEntity.ok(ApiResponse.success(assetService.getAccounts(userId)));
+    }
+
     //AST-002 계좌연동
     @PostMapping("/link")
     public ResponseEntity<ApiResponse<List<AccountDto>>> linkBank(
@@ -27,12 +35,13 @@ public class AssetController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(assetService.linkBank(userId, req)));
     }
 
-    //AST-001: 자산(계좌) 목록 조회
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<AccountDto>>> getAccounts(
-            @RequestAttribute("userId") Long userId) {
+    //AST-003: 거래내역 조회 - Codef 수시입출 거래내역을 조회하고 DB에 저장 후 반환
+    @PostMapping("/transactions")
+    public ResponseEntity<ApiResponse<List<TransactionDto>>> fetchTransactions(
+            @RequestAttribute("userId") Long userId,
+            @RequestBody TransactionRequestDto req) {
         return
-                ResponseEntity.ok(ApiResponse.success(assetService.getAccounts(userId)));
+                ResponseEntity.ok(ApiResponse.success(assetService.fetchTransactions(userId, req)));
     }
 
     //지원 금융기관 목록 (프론트 은행 선택 화면용)
@@ -42,4 +51,5 @@ public class AssetController {
         return
                 ResponseEntity.ok(ApiResponse.success(assetService.getSupportedInstitutions()));
     }
+
 }

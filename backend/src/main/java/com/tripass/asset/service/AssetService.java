@@ -182,7 +182,7 @@ public class AssetService {
             //Codef 거래내역 조회 API 호출
             Map<String, Object> body = new HashMap<>();
             body.put("connectedId", conn.getConnectedId());
-            body.put("organization", req.getOrganizationCode());
+            body.put("organization", account.getOrganizationCode());
             body.put("account", account.getAccountNumber());
             body.put("startDate", req.getStartDate());
             body.put("endDate", req.getEndDate());
