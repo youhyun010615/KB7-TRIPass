@@ -20,31 +20,31 @@ const userName = computed(() => authStore.user?.name ?? '권유현')
 const countries = [
   {
     id: 1, name: '파리', flag: '🇫🇷', code: 'PAR',
-    color: '#1d4ed8', image: 'paris',
+    color: '#1d4ed8', image: '/images/france.png',
     dday: 230, currency: 'EUR', rate: 1548,
     desc: '로맨틱한 파리의 빛 · 파리에서의 하루를 기대해요',
   },
   {
     id: 2, name: '인터라켄', flag: '🇨🇭', code: 'INT',
-    color: '#be185d', image: 'interlaken',
+    color: '#be185d', image: '/images/switzerland.webp',
     dday: 230, currency: 'CHF', rate: 1620,
     desc: '알프스의 경이 · 인터라켄에서 시작되는 하루 여행',
   },
   {
     id: 3, name: '베를린', flag: '🇩🇪', code: 'BER',
-    color: '#1f2937', image: 'berlin',
+    color: '#1f2937', image: '/images/germany.png',
     dday: 230, currency: 'EUR', rate: 1548,
     desc: '역사 속 새로운 발걸음 · 베를린에서 하루를 기대해요',
   },
   {
     id: 4, name: '도쿄', flag: '🇯🇵', code: 'THO',
-    color: '#b91c1c', image: 'tokyo',
+    color: '#b91c1c', image: '/images/japan.webp',
     dday: 230, currency: 'JPY', rate: 9,
     desc: '새로운 문화의 설렘 · 도쿄에서 하루를 기대해요',
   },
   {
     id: 5, name: '다낭', flag: '🇻🇳', code: 'DAD',
-    color: '#b45309', image: 'danang',
+    color: '#b45309', image: '/images/vietnam.png',
     dday: 230, currency: 'VND', rate: 0.06,
     desc: '바다의 낙원 · 다낭에서의 하루를 기대해요',
   },
@@ -212,8 +212,13 @@ function formatCurrency(n) {
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div class="mx-4 mt-4 rounded-2xl overflow-hidden" :style="`background: linear-gradient(145deg, ${selectedCountry.color}, ${selectedCountry.color}99)`">
-        <div class="px-4 pt-4 pb-5">
+      <div
+        class="mx-4 mt-4 rounded-2xl overflow-hidden relative"
+        :style="`background-image: url(${selectedCountry.image}); background-size: cover; background-position: center;`"
+      >
+        <!-- 컬러 오버레이 -->
+        <div class="absolute inset-0" :style="`background: linear-gradient(160deg, ${selectedCountry.color}dd 0%, ${selectedCountry.color}99 100%)`" />
+        <div class="relative px-4 pt-4 pb-5">
           <!-- 상단 메타 -->
           <div class="flex items-start justify-between mb-3">
             <div>
