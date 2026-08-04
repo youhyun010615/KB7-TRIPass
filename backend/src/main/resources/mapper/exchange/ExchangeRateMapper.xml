@@ -64,8 +64,8 @@
         FROM exchange_rates er
         JOIN currencies c ON er.target_currency_id = c.id
         WHERE c.currency_code = #{currencyCode}
-        ORDER BY er.rate_date DESC
-        LIMIT #{days}
+          AND er.rate_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY er.rate_date ASC
     </select>
 
     <insert id="upsertExchangeRate">
