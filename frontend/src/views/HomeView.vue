@@ -177,38 +177,37 @@ function formatCurrency(n) {
     <template v-else-if="travelModeStore.isSavingsMode">
 
       <!-- 헤더 -->
-      <div class="bg-white px-5 pt-14 pb-3">
+      <div class="bg-white px-5 pt-12 pb-4 relative">
         <div class="flex items-center justify-between mb-1">
-          <!-- 모드 전환 버튼 -->
-          <button
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-            style="background: #EEF2FF; color: #3B5BDB"
-            @click="travelModeStore.setMode('travel')"
-          >
-            <span>여행 저축</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M6 9L12 15L18 9" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <button class="text-xs text-gray-400" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
+          <p class="text-[11px] font-extrabold tracking-widest text-gray-300">TRIPASS</p>
+          <!-- 국가 드롭다운 -->
+          <div class="relative">
+            <button
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-[12px] font-bold text-gray-800"
+              @click="showCountryDropdown = !showCountryDropdown"
+            >
+              <span>{{ selectedCountry.flag }}</span>
+              <span>{{ selectedCountry.name }}</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9L12 15L18 9" stroke="#6B7280" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <div v-if="showCountryDropdown" class="absolute right-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 min-w-[130px]">
+              <button
+                v-for="c in countries" :key="c.id"
+                class="w-full flex items-center gap-2 px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                :class="{ 'font-extrabold': selectedCountry.id === c.id }"
+                @click="selectedCountry = c; showCountryDropdown = false"
+              >
+                <span>{{ c.flag }}</span><span>{{ c.name }}</span>
+              </button>
+            </div>
+          </div>
         </div>
-        <p class="text-xl font-bold text-gray-900 mt-2">안녕하세요, {{ userName }}님</p>
-
-        <!-- 국가 탭 -->
-        <div class="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
-          <button
-            v-for="c in countries"
-            :key="c.id"
-            class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
-            :style="selectedCountry.id === c.id
-              ? `background: ${c.color}; color: white`
-              : 'background: #F3F4F6; color: #6B7280'"
-            @click="selectedCountry = c"
-          >
-            <span>{{ c.flag }}</span>
-            <span>{{ c.name }}</span>
-          </button>
-        </div>
+        <h1 class="text-[22px] font-extrabold text-gray-900 mt-2">안녕하세요, {{ userName }}님</h1>
+        <button class="text-[12px] text-gray-400 mt-1.5" @click="router.push('/travel/register')">
+          여행 계획 수정하기 ›
+        </button>
       </div>
 
       <!-- BOARDING PASS 카드 -->
