@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -152,6 +155,84 @@ public class AssetService {
             throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "CODEF_ERROR", "계좌 연동 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
+
+    /**
+     * Codef 수시입출 거래내역 조회
+     * 계좌 ID로 connectedId와 계좌번호를 찾아 Codef API를 호출하고 결과를 DB에 저장
+     */
+
+    @Transactional
+    public List<TransactionDto> fetchTransactions(Long userId, TransactionRequestDto req)
+    {
+        try{
+            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+
+            //계좌 정보 조회(계좌번호 필요)
+            AccountDto account = assetMapper.findAccountById(req.getAccountId());
+            if (account == null) {
+                throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");
+            }
+
+            //연동 정보 조회 (connectedId 필요)
+            CodefConnectionDto conn = assetMapper.findConnectionByUserId(userId);
+            if (conn == null) {
+                throw new CustomException(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연동 정보를 찾을 수 없습니다.");
+            }
+
+            //Codef 거래내역 조회 API 호출
+            Map<String, Object> body = new HashMap<>();
+            body.put("connectedId", conn.getConnectedId());
+            body.put("organization", req.getOrganizationCode());
+            body.put("account", account.getAccountNumber());
+            body.put("startDate", req.getStartDate());
+            body.put("endDate", req.getEndDate());
+            body.put("orderBy", "0");
+            body.put("inquiryType", "1");
+
+            Map<String, Object> result = CodefUtil.callApi(accessToken, "/v1/kr/bank/p/account/transaction-list", body);
+            Map<String, Object> resultCode = (Map<String, Object>) result.get("result");
+            if (resultCode == null || !"CF-00000".equals(resultCode.get("code"))) {
+                String msg = resultCode != null ? (String) resultCode.get("message") : "알 수 없는 오류";
+                throw new CustomException(HttpStatus.BAD_REQUEST, "TRANSACTION_FETCH_FAIL", "거래내역 조회 실패: " + msg);
+            }
+
+            //거래내역 파싱 (1건이면 Map, 여러 건이면 List)
+            Map<String, Object> data = (Map<String, Object>) result.get("data");
+            Object rawList = data.get("resTranList");
+            List<Map<String, Object>> tranList;
+            if (rawList instanceof List) {
+                tranList = (List<Map<String, Object>>) rawList;
+            } else if (rawList instanceof Map) {
+                tranList = List.of((Map<String, Object>) rawList);
+            } else {
+                tranList = Collections.emptyList();
+            }
+
+            //거래내역 DB 저장
+            List<TransactionDto> saved = new ArrayList<>();
+            for (Map<String, Object> tran : tranList) {
+                TransactionDto dto = new TransactionDto();
+                dto.setAccountId(req.getAccountId());
+                dto.setTransactionDate(LocalDate.parse((String) tran.get("resAccountTrDate"), DateTimeFormatter.ofPattern("yyyyMMdd")));
+                dto.setTransactionTime(LocalTime.parse((String) tran.get("resAccountTrTime"), DateTimeFormatter.ofPattern("HHmmss")));
+                dto.setTransactionType("1".equals(tran.get("resAccountTrType")) ? "DEPOSIT" : "WITHDRAWAL");
+                dto.setTransactionRegion("DOMESTIC");
+                dto.setAmount(parseBigDecimal(tran.get("resAccountTrAmt")));
+                dto.setBalanceAfter(parseBigDecimal(tran.get("resAfterTranBalance")));
+                dto.setMerchantName((String) tran.get("resAccountTrRemark"));
+                assetMapper.insertTransaction(dto);
+                saved.add(dto);
+            }
+
+            return saved;
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "TRANSACTION_ERROR", "거래내역 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+
 
     public List<AccountDto> getAccounts(Long userId) {
         return assetMapper.findAccountsByUserId(userId);

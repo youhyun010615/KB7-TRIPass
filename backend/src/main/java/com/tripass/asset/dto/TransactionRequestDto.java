@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 public class TransactionRequestDto {
     private Long accountId;
+    private String organizationCode;
     private String startDate; //"20240101"
     private String endDate; //"20241231"
 }

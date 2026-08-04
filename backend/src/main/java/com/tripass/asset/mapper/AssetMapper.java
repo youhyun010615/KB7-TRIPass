@@ -20,6 +20,7 @@ public interface AssetMapper {
     // transactions
     void insertTransaction(TransactionDto dto);
     List<TransactionDto> findTransactionsByAccountId(Long accountId);
+    AccountDto findAccountById(Long accountId);
 
     // supported_institutions
     List<SupportedInstitutionDto> findAllSupportedInstitutions();
