@@ -45,7 +45,7 @@ function resolveIcon(name) {
 <template>
   <main class="prepaid-page">
     <header><button @click="router.back()">‹</button><div><h1>사전 지불 금액 등록</h1><p>여행을 위해 미리 지불한 항목 정보를 입력해 주세요.</p></div></header>
-    <section class="field auto" :class="{ error: touched && !form.name.trim() }"><div class="label"><span>▦</span><b>항목명 <i>자동</i></b><small>거래내역에서 자동으로 불러왔어요.</small></div><input v-model="form.name" readonly></section>
+    <section class="field" :class="{ error: touched && !form.name.trim() }"><div class="label"><span>▦</span><b>항목명 <i>자동 입력</i></b><small>알아보기 쉬운 이름으로 수정할 수 있어요.</small></div><input v-model="form.name" maxlength="40" placeholder="항목명을 입력해 주세요"></section>
     <section class="field" :class="{ error: touched && !form.countryCode }"><div class="label"><span>◎</span><b>국가</b><small>공통 또는 여행 목표 국가를 선택해 주세요.</small></div><select v-model="form.countryCode"><option value="" disabled>국가를 선택해 주세요</option><option value="COMMON">🌍 공통 항목</option><option v-for="item in travel.countries" :key="item.code" :value="item.code">{{ item.flag }} {{ item.name }} · {{ item.city }}</option></select></section>
     <section class="field auto" :class="{ error: touched && !form.date }"><div class="label"><span>□</span><b>지출일 <i>자동</i></b></div><input v-model="form.date" type="date" readonly></section>
     <section class="field amount auto" :class="{ error: touched && !amountNumber }"><div class="label"><span>₩</span><b>금액 <i>자동</i></b></div><div class="money-input"><input :value="form.amount" inputmode="numeric" readonly><b>원</b></div></section>
