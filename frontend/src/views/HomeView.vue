@@ -237,6 +237,13 @@ function formatCurrency(n) {
           <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
         </div>
 
+        <!-- 헤더 하단 노치 (헤더색 배경 + 반원 + 점선) -->
+        <div class="relative flex items-center py-2" :style="`background:${selectedCountry.headerBg}`">
+          <div class="w-6 h-6 rounded-full flex-none -ml-3 bg-[#F7F4EE]" />
+          <div class="flex-1 border-t border-dashed border-white/35 mx-1" />
+          <div class="w-6 h-6 rounded-full flex-none -mr-3 bg-[#F7F4EE]" />
+        </div>
+
         <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
         <div class="relative" :style="`background:url(${selectedCountry.image}) center/cover no-repeat`">
           <!-- 어두운 오버레이 -->
