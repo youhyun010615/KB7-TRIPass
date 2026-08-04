@@ -99,6 +99,24 @@ const router = createRouter({
       component: () => import('@/views/financial/FinancialProfileView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/financial-schedule',
+      name: 'FinancialSchedule',
+      component: () => import('@/views/financial/FinancialScheduleView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial-schedule/calendar',
+      name: 'FinancialScheduleCalendar',
+      component: () => import('@/views/financial/FinancialScheduleCalendarView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial-schedule/:eventId',
+      name: 'FinancialScheduleDetail',
+      component: () => import('@/views/financial/FinancialScheduleDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── GDS (담당: 송형진) ──────────────────────────────────
     {

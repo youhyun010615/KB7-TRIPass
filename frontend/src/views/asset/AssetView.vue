@@ -13,7 +13,7 @@ const menus = [
   { icon: '▤', title: '고정지출 관리', desc: '월 고정비 등록', path: '/asset/fixed-expenses' },
   { icon: '✈', title: '사전 지출 금액 관리', desc: '여행 전 지출 확인', path: '/asset/prepaid' },
   { icon: '◎', title: '이달의 자금 체크 바로가기', desc: '이달의 자금 체크', path: '/savings/monthly' },
-  { icon: '□', title: '다가오는 금융일정', desc: '다가오는 월급과 고정지출 확인', path: '/asset/transactions/calendar' },
+  { icon: '□', title: '다가오는 금융일정', desc: '다가오는 월급과 고정지출 확인', path: '/financial-schedule' },
 ]
 </script>
 
