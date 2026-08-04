@@ -191,7 +191,7 @@ function formatCurrency(n) {
       </div>
 
       <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
-        <button class="w-full flex justify-between items-center" @click="router.push('/savings')"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></button>
+        <button class="w-full flex justify-between items-center" @click="router.push('/savings/monthly')"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></button>
         <p class="mt-3 text-[9px] text-slate-400">이달의 여유자금</p>
         <p class="text-2xl font-extrabold" style="color:#0066ff">500,000원</p>
         <p class="mt-1 text-[8px] text-slate-400">월급 3,500,000원 · 고정지출 1,800,000원 · 카테고리 목표 1,200,000원</p>
@@ -360,7 +360,7 @@ function formatCurrency(n) {
 
       <!-- 이달의 자금 체크 -->
       <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
-        <button class="w-full flex items-center justify-between mb-2" @click="router.push('/savings')">
+        <button class="w-full flex items-center justify-between mb-2" @click="router.push('/savings/monthly')">
           <p class="text-[14px] font-extrabold text-gray-900">이달의 자금 체크</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>

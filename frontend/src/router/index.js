@@ -55,6 +55,12 @@ const router = createRouter({
       component: () => import('@/views/savings/SavingsAccountsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/savings/monthly',
+      name: 'MonthlyFund',
+      component: () => import('@/views/savings/MonthlyFundView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── PRO (담당: 송형진) ──────────────────────────────────
     {
