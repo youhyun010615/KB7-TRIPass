@@ -74,6 +74,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/savings/monthly/transactions/:transactionId',
+      name: 'MonthlyFundTransactionDetail',
+      component: () => import('@/views/savings/MonthlyTransactionDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/savings/monthly/transactions/:transactionId/category',
       name: 'MonthlyFundCategorySelect',
       component: () => import('@/views/savings/CategorySelectView.vue'),
@@ -155,6 +161,12 @@ const router = createRouter({
       path: '/asset/prepaid',
       name: 'AssetPrepaidExpenses',
       component: () => import('@/views/asset/PrepaidExpenseListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/prepaid/:prepaidExpenseId',
+      name: 'AssetPrepaidExpenseDetail',
+      component: () => import('@/views/asset/PrepaidExpenseDetailView.vue'),
       meta: { requiresAuth: true },
     },
 

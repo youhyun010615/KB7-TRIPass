@@ -26,10 +26,10 @@ const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
     </section>
     <h2><small>이번 달</small> 거래 내역 <b>{{ transactions.length }}건</b></h2>
     <section class="transaction-list">
-      <button v-for="item in transactions" :key="item.id" @click="router.push(`/savings/monthly/transactions/${item.id}/category`)">
+      <button v-for="item in transactions" :key="item.id" @click="router.push(`/savings/monthly/transactions/${item.id}`)">
         <span class="merchant-icon">{{ item.icon }}</span>
         <span class="merchant"><small>{{ item.date }}</small><b>{{ item.merchant }}</b></span>
-        <span class="amount"><b>{{ money(item.amount) }}</b><small>✎ 분류 수정 ›</small></span>
+        <span class="amount"><b>{{ money(item.amount) }}</b><small>상세보기 ›</small></span>
       </button>
       <p v-if="!transactions.length" class="empty">이번 달 거래 내역이 없어요.</p>
     </section>
