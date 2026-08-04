@@ -251,7 +251,7 @@ function formatCurrency(n) {
       <div class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
 
         <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
-        <div class="px-5 pt-3 pb-2 flex items-center justify-between"
+        <div class="px-5 pt-4 pb-3 flex items-center justify-between"
              :style="`background:${selectedCountry.headerBg}`">
           <span class="text-white/65 text-[9px] font-bold tracking-widest">BOARDING PASS</span>
           <span class="text-white/40 text-[9px] tracking-widest">TRIPASS AIR</span>
@@ -270,7 +270,7 @@ function formatCurrency(n) {
           <!-- 어두운 오버레이 -->
           <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
 
-          <div class="relative z-10 px-5 pt-4">
+          <div class="relative z-10 px-5 pt-5">
             <!-- DESTINATION / DEPARTURE / 설명 -->
             <div class="flex items-center gap-2">
               <div class="flex-none">
@@ -293,7 +293,7 @@ function formatCurrency(n) {
             <div class="ticket-photo-space" />
 
             <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
-            <div class="rounded-xl px-4 py-3" :style="`background:${selectedCountry.progressBg}`">
+            <div class="rounded-xl px-4 py-3.5" :style="`background:${selectedCountry.progressBg}`">
               <div class="flex justify-between mb-2">
                 <span class="font-semibold text-[11px]" :class="savingsCardState === 'unset' ? 'text-red-300' : 'text-white'">{{ ticketSavingCopy.title }}</span>
                 <span class="text-white font-extrabold text-[12px]">{{ homeSavingsPercent }}%</span>
@@ -574,9 +574,9 @@ function formatCurrency(n) {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(22, 39, 78, .15);
 }
-.ticket-photo-space { height: 104px; }
+.ticket-photo-space { height: 94px; }
 .ticket-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ticket-stub { height: 39px; }
+.ticket-stub { height: 43px; }
 .ticket-cutline { position: relative; z-index: 20; display: flex; align-items: center; height: 0; }
 .ticket-cutline-top { transform: translateY(0); }
 .ticket-cutline-bottom { margin-top: 14px; }
