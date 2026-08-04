@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.exchange.mapper.ExchangeRateMapper">
+
+    <select id="getCurrencyIdByCode" resultType="java.lang.Long">
+        SELECT id FROM currencies WHERE currency_code = #{currencyCode}
+    </select>
+
+    <select id="getLatestRates" resultType="com.tripass.exchange.dto.ExchangeRateResponseDto">
+        SELECT 
+            c.currency_code AS currencyCode,
+            c.currency_name AS currencyName,
+            er.deal_base_rate AS dealBaseRate,
+            er.prev_rate AS prevRate,
+            (er.deal_base_rate - er.prev_rate) AS changeAmount,
+            er.rate_date AS rateDate
+        FROM exchange_rates er
+        JOIN currencies c ON er.target_currency_id = c.id
+        WHERE er.rate_date = (SELECT MAX(rate_date) FROM exchange_rates)
+        <if test="currencyCodes != null and currencyCodes.size() > 0">
+            AND c.currency_code IN
+            <foreach item="code" collection="currencyCodes" open="(" separator="," close=")">
+                #{code}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getHistoryRates" resultType="com.tripass.exchange.dto.ExchangeRateHistoryResponseDto$RateInfo">
+        SELECT 
+            er.rate_date AS rateDate,
+            er.deal_base_rate AS dealBaseRate
+        FROM exchange_rates er
+        JOIN currencies c ON er.target_currency_id = c.id
+        WHERE c.currency_code = #{currencyCode}
+        ORDER BY er.rate_date DESC
+        LIMIT #{days}
+    </select>
+
+    <insert id="upsertExchangeRate">
+        INSERT INTO exchange_rates 
+            (base_currency_id, target_currency_id, currency_unit, deal_base_rate, prev_rate, rate_date, fetched_at)
+        VALUES 
+            (#{baseCurrencyId}, #{targetCurrencyId}, #{currencyUnit}, #{dealBaseRate}, #{prevRate}, #{rateDate}, #{fetchedAt})
+        ON DUPLICATE KEY UPDATE
+            deal_base_rate = VALUES(deal_base_rate),
+            prev_rate = VALUES(prev_rate),
+            fetched_at = VALUES(fetched_at)
+    </insert>
+
+    </mapper>
