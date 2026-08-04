@@ -116,6 +116,10 @@ export const useAssetStore = defineStore('asset', () => {
     return fixedExpenses.find((item) => item.id === Number(id))
   }
 
+  function getPrepaidExpense(id) {
+    return prepaidExpenses.find((item) => item.id === Number(id))
+  }
+
   function transactionsByAccount(accountId) {
     return transactions.filter((item) => item.accountId === Number(accountId))
   }
@@ -198,7 +202,7 @@ export const useAssetStore = defineStore('asset', () => {
     transactionFilter, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
     commonPrepaidTotal, prepaidCountryScopes, commonAllocation, prepaidGroups,
     depositCount, withdrawalCount, filteredTransactions, groupedTransactions,
-    getAccount, getTransaction, getFixedExpense, transactionsByAccount,
+    getAccount, getTransaction, getFixedExpense, getPrepaidExpense, transactionsByAccount,
     addFixedExpense, updateFixedExpense, removeFixedExpense,
     addPrepaidExpense, updatePrepaidExpense, removePrepaidExpense,
   }

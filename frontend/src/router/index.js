@@ -157,6 +157,12 @@ const router = createRouter({
       component: () => import('@/views/asset/PrepaidExpenseListView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/asset/prepaid/:prepaidExpenseId',
+      name: 'AssetPrepaidExpenseDetail',
+      component: () => import('@/views/asset/PrepaidExpenseDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── FXC (담당: 권원영) ──────────────────────────────────
     {
