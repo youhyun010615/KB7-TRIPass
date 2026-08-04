@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 //휴대전화 인증번호 확인 요청 DTO
 @Getter
 @NoArgsConstructor
-public class PhoneCodeVerfyRequest {
+public class PhoneCodeVerifyRequest{
 
     //인증번호 발송 시 서버가 발급한 요청 ID
     private String requestId;
