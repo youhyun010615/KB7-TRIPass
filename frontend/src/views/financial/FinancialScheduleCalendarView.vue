@@ -23,6 +23,11 @@ const cells = computed(() => {
   })
 })
 const selectedLabel = computed(() => `${Number(schedule.selectedDate.slice(5,7))}/${Number(schedule.selectedDate.slice(8,10))}`)
+const selectedDateEvents = computed(() => schedule.events.filter((item) => item.date === schedule.selectedDate))
+
+function openSchedule(event) {
+  router.push(event.source === 'fixed' ? `/asset/fixed-expenses/${event.sourceId}` : '/profile/financial')
+}
 </script>
 
 <template><main class="page"><div class="shell">
@@ -34,7 +39,7 @@ const selectedLabel = computed(() => `${Number(schedule.selectedDate.slice(5,7))
     <div class="grid"><button v-for="cell in cells" :key="cell.key" :disabled="!cell.current" :class="{outside:!cell.current,selected:cell.date===schedule.selectedDate,sunday:cell.current && (cells.indexOf(cell)+1)%7===0}" @click="cell.current && schedule.selectDay(cell.day)"><b>{{ cell.day }}</b><span v-if="cell.events?.length" class="dots"><i v-if="cell.events.some((item)=>item.type==='income')" class="income"></i><i v-if="cell.events.some((item)=>item.type==='expense')" class="expense"></i></span><small v-if="cell.events?.[0]">{{ cell.events[0].title }}</small></button></div>
     <div class="legend"><span><i class="income"></i>입금</span><span><i class="expense"></i>지출</span></div>
   </section>
-  <section class="selected-card"><h2><strong>{{ selectedLabel }}</strong> 선택한 날짜 일정 <small>{{ schedule.selectedEvents.length }}건</small></h2><div class="selected-list"><FinancialScheduleCard v-for="event in schedule.selectedEvents" :key="event.id" :event="event" compact/><p v-if="!schedule.selectedEvents.length">선택한 날짜에 예정된 일정이 없어요.</p></div></section>
+  <section class="selected-card"><h2><strong>{{ selectedLabel }}</strong> 선택한 날짜 일정 <small>{{ selectedDateEvents.length }}건</small></h2><div class="selected-list"><FinancialScheduleCard v-for="event in selectedDateEvents" :key="event.id" :event="event" compact @select="openSchedule"/><p v-if="!selectedDateEvents.length">선택한 날짜에 예정된 일정이 없어요.</p></div></section>
   <section class="summary"><span><small>이번 달 총 예정</small><b>{{ schedule.counts.all }}건</b></span><span><small><i class="income"></i>입금</small><b>{{ schedule.counts.income }}건</b></span><span><small><i class="expense"></i>지출</small><b>{{ schedule.counts.expense }}건</b></span></section>
   <BottomNav />
 </div></main></template>

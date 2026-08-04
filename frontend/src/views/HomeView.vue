@@ -201,8 +201,8 @@ function formatCurrency(n) {
         </div>
       </button>
 
-      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm">
-        <button class="w-full flex justify-between"><h2 class="text-[13px] font-extrabold">다가오는 금융 일정</h2><span>›</span></button>
+      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm cursor-pointer" role="button" tabindex="0" @click="router.push('/financial-schedule')" @keydown.enter="router.push('/financial-schedule')">
+        <button class="w-full flex justify-between" @click.stop="router.push('/financial-schedule')"><h2 class="text-[13px] font-extrabold">다가오는 금융 일정</h2><span>›</span></button>
         <div v-for="item in savingsData.schedule" :key="item.date" class="grid grid-cols-[38px_1fr_30px] mt-3 text-[9px]"><b style="color:#0066ff">{{ item.date }}</b><span>{{ item.label }}</span><strong :style="item.type==='입금' ? 'color:#16a36a' : 'color:#263f8c'">{{ item.type }}</strong></div>
       </section>
     </template>
@@ -386,8 +386,8 @@ function formatCurrency(n) {
       </button>
 
       <!-- 다가오는 금융 일정 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
-        <button class="w-full flex items-center justify-between mb-3">
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm cursor-pointer" role="button" tabindex="0" @click="router.push('/financial-schedule')" @keydown.enter="router.push('/financial-schedule')">
+        <button class="w-full flex items-center justify-between mb-3" @click.stop="router.push('/financial-schedule')">
           <p class="text-[14px] font-extrabold text-gray-900">다가오는 금융 일정</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
