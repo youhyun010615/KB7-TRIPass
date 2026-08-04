@@ -20,43 +20,48 @@ const userName = computed(() => authStore.user?.name ?? '권유현')
 const countries = [
   {
     id: 1, name: '파리', flag: '🇫🇷', code: 'PAR',
-    color: '#1a3fa8', image: '/images/france.png',
-    overlay: 'linear-gradient(180deg,rgba(0,35,149,0.72) 0%,rgba(0,35,149,0.45) 45%,rgba(0,35,149,0.80) 100%)',
+    image: '/images/france.png',
+    headerBg: '#1a2d6e',
+    progressBg: 'rgba(0,35,149,0.80)',
     barColor: 'linear-gradient(90deg,#002395 0%,#EDEDED 50%,#ED2939 100%)',
     dday: 230, currency: 'EUR', rate: 1548,
     desc: '로맨틱한 파리의 밤 · 파리에서의 하루를 기대하며',
   },
   {
     id: 2, name: '인터라켄', flag: '🇨🇭', code: 'INT',
-    color: '#be1622', image: '/images/switzerland.webp',
-    overlay: 'linear-gradient(180deg,rgba(190,22,34,0.72) 0%,rgba(190,22,34,0.45) 45%,rgba(190,22,34,0.80) 100%)',
-    barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 100%)',
+    image: '/images/switzerland.webp',
+    headerBg: '#7a0d1e',
+    progressBg: 'rgba(122,13,30,0.82)',
+    barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 60%,#FF0000 100%)',
     dday: 230, currency: 'CHF', rate: 1620,
-    desc: '알프스의 경이 · 인터라켄에서 시작되는 하루 여행',
+    desc: '알프스의 맑은 공기 · 인터라켄에서 시작되는 설레는 하루',
   },
   {
     id: 3, name: '베를린', flag: '🇩🇪', code: 'BER',
-    color: '#1a1a1a', image: '/images/germany.png',
-    overlay: 'linear-gradient(180deg,rgba(0,0,0,0.78) 0%,rgba(0,0,0,0.50) 45%,rgba(0,0,0,0.85) 100%)',
+    image: '/images/germany.png',
+    headerBg: '#111111',
+    progressBg: 'rgba(17,17,17,0.85)',
     barColor: 'linear-gradient(90deg,#000000 0%,#DD0000 50%,#FFCE00 100%)',
     dday: 230, currency: 'EUR', rate: 1548,
-    desc: '역사 속 새로운 발걸음 · 베를린에서 하루를 기대해요',
+    desc: '클래식과 트렌드가 만나는 도시 · 베를린의 하루를 기대하며',
   },
   {
-    id: 4, name: '도쿄', flag: '🇯🇵', code: 'THO',
-    color: '#bc002d', image: '/images/japan.webp',
-    overlay: 'linear-gradient(180deg,rgba(188,0,45,0.70) 0%,rgba(188,0,45,0.40) 45%,rgba(188,0,45,0.80) 100%)',
-    barColor: 'linear-gradient(90deg,#FFFFFF 0%,#BC002D 40%,#BC002D 60%,#FFFFFF 100%)',
+    id: 4, name: '도쿄', flag: '🇯🇵', code: 'TYO',
+    image: '/images/japan.webp',
+    headerBg: '#c2185b',
+    progressBg: 'rgba(194,24,91,0.82)',
+    barColor: 'linear-gradient(90deg,#FFFFFF 0%,#BC002D 35%,#BC002D 65%,#FFFFFF 100%)',
     dday: 230, currency: 'JPY', rate: 9,
-    desc: '새로운 문화의 설렘 · 도쿄에서 하루를 기대해요',
+    desc: '익숙함 속 새로운 발견 · 도쿄에서의 하루를 기대하며',
   },
   {
     id: 5, name: '다낭', flag: '🇻🇳', code: 'DAD',
-    color: '#da251d', image: '/images/vietnam.png',
-    overlay: 'linear-gradient(180deg,rgba(218,37,29,0.70) 0%,rgba(218,37,29,0.40) 45%,rgba(218,37,29,0.80) 100%)',
+    image: '/images/vietnam.png',
+    headerBg: '#b8860b',
+    progressBg: 'rgba(184,134,11,0.82)',
     barColor: 'linear-gradient(90deg,#DA251D 0%,#FFCD00 50%,#DA251D 100%)',
     dday: 230, currency: 'VND', rate: 0.06,
-    desc: '바다의 낙원 · 다낭에서의 하루를 기대해요',
+    desc: '바다와 햇살이 머무는 곳 · 다낭에서의 여유로운 하루',
   },
 ]
 const selectedCountry = ref(countries[0])
@@ -221,104 +226,104 @@ function formatCurrency(n) {
         </div>
       </div>
 
-      <!-- BOARDING PASS 카드 (도시 이미지 전체 배경) -->
-      <div
-        class="mx-4 mt-2 rounded-3xl overflow-hidden relative shadow-lg"
-        :style="`background-image: url(${selectedCountry.image}); background-size: cover; background-position: center;`"
-      >
-        <!-- 나라별 컬러 오버레이 -->
-        <div class="absolute inset-0 pointer-events-none" :style="selectedCountry.overlay" />
+      <!-- BOARDING PASS 카드 -->
+      <div class="mx-4 mt-2 rounded-3xl overflow-hidden shadow-lg">
 
-        <div class="relative">
-          <!-- 헤더 바 -->
-          <div class="bg-black/30 px-4 py-2 flex items-center justify-between">
-            <span class="text-white/65 text-[9px] font-bold tracking-widest">BOARDING PASS</span>
-            <span class="text-white/40 text-[9px] tracking-widest">TRIPASS AIR</span>
-            <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
-          </div>
+        <!-- ① 솔리드 컬러 헤더 (사진과 무관, 나라별 고정색) -->
+        <div class="px-4 py-2.5 flex items-center justify-between" :style="`background:${selectedCountry.headerBg}`">
+          <span class="text-white/70 text-[9px] font-bold tracking-widest">BOARDING PASS</span>
+          <span class="text-white/45 text-[9px] tracking-widest">TRIPASS AIR</span>
+          <span class="text-white/70 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
+        </div>
 
-          <!-- 점선 구분 -->
-          <div class="mx-4"><div class="border-t border-dashed border-white/30" /></div>
+        <!-- ② 도시 사진 배경 섹션 -->
+        <div
+          class="relative"
+          :style="`background-image:url(${selectedCountry.image});background-size:cover;background-position:center;`"
+        >
+          <!-- 텍스트 가독성용 미세 오버레이 (사진은 그대로 보임) -->
+          <div class="absolute inset-0 bg-black/20 pointer-events-none" />
 
-          <!-- 목적지 + 항공 경로 -->
-          <div class="px-4 pt-3 pb-2">
-            <div class="flex items-center gap-2">
-              <div class="flex-none">
-                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Destination</p>
-                <p class="text-white text-[21px] font-extrabold leading-none">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
-              </div>
-              <div class="flex-1 flex items-center mt-3">
-                <div class="flex-1 border-t border-dashed border-white/40" />
-                <span class="mx-1.5 text-white text-base">✈</span>
-                <div class="flex-1 border-t border-dashed border-white/40" />
-              </div>
-              <div class="flex-none text-right">
-                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Departure</p>
-                <p class="text-white text-[21px] font-extrabold leading-none">D-{{ selectedCountry.dday }}</p>
-              </div>
-            </div>
-            <p class="text-white/70 text-[11px] mt-1.5">{{ selectedCountry.desc }} ✨</p>
-          </div>
-
-          <!-- 빈 공간 (이미지 노출) -->
-          <div class="h-24" />
-
-          <!-- 저축 진행 -->
-          <div class="px-4 pb-3">
-            <div class="flex justify-between text-[12px] mb-1.5">
-              <span class="font-semibold text-white">여행 저축 목표</span>
-              <span class="font-extrabold text-white">{{ savingsPercent }}%</span>
-            </div>
-            <!-- 국기 그라디언트 진행바 -->
-            <div class="h-2.5 rounded-full bg-white/20 overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all"
-                :style="`width:${savingsPercent}%; background:${selectedCountry.barColor}`"
-              />
-            </div>
-            <div class="flex justify-between mt-2">
-              <div>
-                <p class="text-white text-[12px] font-bold">{{ formatCurrency(savingsData.saved) }}</p>
-                <p class="text-white/50 text-[9px] tracking-widest">SAVED</p>
-              </div>
-              <div class="text-right">
-                <p class="text-white text-[12px] font-bold">{{ formatCurrency(savingsData.goal) }}</p>
-                <p class="text-white/50 text-[9px] tracking-widest">GOAL</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- 점선 구분 + 흰 배경 스텁 영역 -->
           <div class="relative">
-            <!-- 반원 노치 -->
-            <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F7F4EE]" />
-            <div class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F7F4EE]" />
-            <div class="mx-4"><div class="border-t-2 border-dashed border-white/30" /></div>
-          </div>
+            <!-- 점선 구분 -->
+            <div class="mx-4 pt-0"><div class="border-t border-dashed border-white/40" /></div>
 
-          <!-- 하단 흰 배경 티켓 스텁 -->
-          <div class="bg-white/95 backdrop-blur-sm">
-            <!-- 정상: 바코드 + 자금 관리 -->
-            <button v-if="savingsCardState === 'ok'" class="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50" @click="router.push('/savings')">
-              <span class="text-[13px] font-bold text-gray-900">여행 목표 자금 관리</span>
+            <!-- DESTINATION / DEPARTURE / 설명 -->
+            <div class="px-4 pt-3 pb-2">
               <div class="flex items-center gap-2">
-                <div class="flex gap-[2px] items-end h-6">
-                  <div v-for="(h,i) in [16,8,20,5,16,10,20,7,16,5,14,9,18]" :key="i" class="bg-gray-800 rounded-[1px]" :style="`height:${h}px; width:${i%3===0 ? '3px' : '2px'}`" />
+                <div class="flex-none">
+                  <p class="text-white/60 text-[8px] uppercase tracking-widest mb-0.5">Destination</p>
+                  <p class="text-white text-[20px] font-extrabold leading-none drop-shadow">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
                 </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="#374151" stroke-width="2.5" stroke-linecap="round"/></svg>
+                <div class="flex-1 flex items-center mt-3">
+                  <div class="flex-1 border-t border-dashed border-white/50" />
+                  <span class="mx-1.5 text-yellow-300 text-base drop-shadow">✈</span>
+                  <div class="flex-1 border-t border-dashed border-white/50" />
+                </div>
+                <div class="flex-none text-right">
+                  <p class="text-white/60 text-[8px] uppercase tracking-widest mb-0.5">Departure</p>
+                  <p class="text-white text-[20px] font-extrabold leading-none drop-shadow">D-{{ selectedCountry.dday }}</p>
+                </div>
               </div>
-            </button>
-            <!-- 미설정 -->
-            <button v-else-if="savingsCardState === 'unset'" class="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50" @click="router.push('/savings/plan')">
-              <span class="text-[13px] font-bold text-gray-900">월 저축액을 설정하세요</span>
-              <span class="text-[12px] font-bold text-red-500">설정하기 →</span>
-            </button>
-            <!-- 부족 -->
-            <button v-else class="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50" @click="router.push('/savings/plan')">
-              <span class="text-[13px] font-bold text-gray-900">오늘 저축 조정</span>
-              <span class="text-[12px] font-bold" style="color:#D97706">{{ formatCurrency(plan.additionalRecommendedAmount) }} 부족 →</span>
-            </button>
+              <p class="text-white/80 text-[11px] mt-1.5 drop-shadow-sm">{{ selectedCountry.desc }} ✨</p>
+            </div>
+
+            <!-- 사진 노출 공간 -->
+            <div class="h-28" />
+
+            <!-- ③ 반투명 컬러 박스 (여행 저축 목표) — 사진 위에 떠있음, 나라별 색 -->
+            <div class="mx-3 mb-3 rounded-2xl px-4 py-3" :style="`background:${selectedCountry.progressBg}`">
+              <div class="flex justify-between text-[12px] mb-2">
+                <span class="font-semibold text-white">여행 저축 목표</span>
+                <span class="font-extrabold text-white">{{ savingsPercent }}%</span>
+              </div>
+              <!-- 국기 그라디언트 진행바 -->
+              <div class="h-2 rounded-full bg-white/25 overflow-hidden">
+                <div class="h-full rounded-full transition-all" :style="`width:${savingsPercent}%;background:${selectedCountry.barColor}`" />
+              </div>
+              <div class="flex justify-between mt-2">
+                <div>
+                  <p class="text-white text-[12px] font-bold">{{ formatCurrency(savingsData.saved) }}</p>
+                  <p class="text-white/55 text-[9px] tracking-wider">SAVED</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-white text-[12px] font-bold">{{ formatCurrency(savingsData.goal) }}</p>
+                  <p class="text-white/55 text-[9px] tracking-wider">GOAL</p>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <!-- 티켓 노치 구분선 -->
+        <div class="relative bg-white h-0">
+          <div class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F7F4EE] z-10" />
+          <div class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F7F4EE] z-10" />
+        </div>
+
+        <!-- ④ 순수 흰색 스텁 (여행 목표 자금 관리 + 바코드) -->
+        <div class="bg-white">
+          <div class="mx-4 border-t border-dashed border-gray-300" />
+          <!-- 정상: 바코드 -->
+          <button v-if="savingsCardState === 'ok'" class="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50" @click="router.push('/savings')">
+            <span class="text-[13px] font-bold text-gray-900">여행 목표 자금 관리</span>
+            <div class="flex items-center gap-2">
+              <div class="flex gap-[1.5px] items-end h-6">
+                <div v-for="(h,i) in [16,8,22,5,16,10,22,6,18,5,14,9,20,6,16]" :key="i" class="bg-gray-800 rounded-[1px]" :style="`height:${h}px;width:${i%4===0?'3px':'2px'}`" />
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="#374151" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <!-- 미설정 -->
+          <button v-else-if="savingsCardState === 'unset'" class="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50" @click="router.push('/savings/plan')">
+            <span class="text-[13px] font-bold text-gray-900">월 저축액을 설정하세요</span>
+            <span class="text-[12px] font-bold text-red-500">설정하기 →</span>
+          </button>
+          <!-- 부족 -->
+          <button v-else class="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50" @click="router.push('/savings/plan')">
+            <span class="text-[13px] font-bold text-gray-900">오늘 저축 조정</span>
+            <span class="text-[12px] font-bold" style="color:#D97706">{{ formatCurrency(plan.additionalRecommendedAmount) }} 부족 →</span>
+          </button>
         </div>
       </div>
 
