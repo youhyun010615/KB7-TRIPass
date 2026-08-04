@@ -574,7 +574,7 @@ function formatCurrency(n) {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(22, 39, 78, .15);
 }
-.ticket-photo-space { height: 86px; }
+.ticket-photo-space { height: 104px; }
 .ticket-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ticket-stub { height: 39px; }
 .ticket-cutline { position: relative; z-index: 20; display: flex; align-items: center; height: 0; }
