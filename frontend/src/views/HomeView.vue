@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { useTravelStore } from '@/stores/travel'
+import { useSavingsPlanStore } from '@/stores/savingsPlan'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
@@ -10,6 +11,7 @@ import TravelTicket from '@/components/savings/TravelTicket.vue'
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
+const plan = useSavingsPlanStore()
 const router = useRouter()
 
 const userName = computed(() => authStore.user?.name ?? '권유현')
@@ -18,31 +20,43 @@ const userName = computed(() => authStore.user?.name ?? '권유현')
 const countries = [
   {
     id: 1, name: '파리', flag: '🇫🇷', code: 'PAR',
-    color: '#2563EB', image: 'paris',
+    color: '#1d4ed8', image: 'paris',
     dday: 230, currency: 'EUR', rate: 1548,
+    desc: '로맨틱한 파리의 빛 · 파리에서의 하루를 기대해요',
   },
   {
     id: 2, name: '인터라켄', flag: '🇨🇭', code: 'INT',
-    color: '#DB2777', image: 'interlaken',
+    color: '#be185d', image: 'interlaken',
     dday: 230, currency: 'CHF', rate: 1620,
+    desc: '알프스의 경이 · 인터라켄에서 시작되는 하루 여행',
   },
   {
     id: 3, name: '베를린', flag: '🇩🇪', code: 'BER',
-    color: '#1F2937', image: 'berlin',
+    color: '#1f2937', image: 'berlin',
     dday: 230, currency: 'EUR', rate: 1548,
+    desc: '역사 속 새로운 발걸음 · 베를린에서 하루를 기대해요',
   },
   {
     id: 4, name: '도쿄', flag: '🇯🇵', code: 'THO',
-    color: '#DC2626', image: 'tokyo',
+    color: '#b91c1c', image: 'tokyo',
     dday: 230, currency: 'JPY', rate: 9,
+    desc: '새로운 문화의 설렘 · 도쿄에서 하루를 기대해요',
   },
   {
     id: 5, name: '다낭', flag: '🇻🇳', code: 'DAD',
-    color: '#D97706', image: 'danang',
+    color: '#b45309', image: 'danang',
     dday: 230, currency: 'VND', rate: 0.06,
+    desc: '바다의 낙원 · 다낭에서의 하루를 기대해요',
   },
 ]
 const selectedCountry = ref(countries[0])
+
+// 탑승권 저축 상태: unset(미설정) / low(부족) / ok(정상)
+const savingsCardState = computed(() => {
+  if (!plan.savingMethod || !plan.monthlySavings) return 'unset'
+  if (plan.status === 'warning') return 'low'
+  return 'ok'
+})
 
 const savingsData = {
   balance: 12500000,
@@ -176,7 +190,7 @@ function formatCurrency(n) {
               <path d="M6 9L12 15L18 9" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
-          <button class="text-xs text-gray-400">여행 계획 수정 &gt;</button>
+          <button class="text-xs text-gray-400" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
         </div>
         <p class="text-xl font-bold text-gray-900 mt-2">안녕하세요, {{ userName }}님</p>
 
@@ -198,79 +212,104 @@ function formatCurrency(n) {
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div class="mx-4 mt-4 rounded-2xl overflow-hidden" :style="`background: ${selectedCountry.color}`">
+      <div class="mx-4 mt-4 rounded-2xl overflow-hidden" :style="`background: linear-gradient(145deg, ${selectedCountry.color}, ${selectedCountry.color}99)`">
         <div class="px-4 pt-4 pb-5">
-          <div class="flex items-center justify-between mb-1">
+          <!-- 상단 메타 -->
+          <div class="flex items-start justify-between mb-3">
             <div>
-              <p class="text-white/60 text-[10px] tracking-widest">BOARDING PASS · TRIPASS AIR</p>
-              <p class="text-white/60 text-[10px]">NO. {{ selectedCountry.code }}-230</p>
+              <p class="text-white/60 text-[10px] tracking-widest font-semibold">BOARDING PASS · TRIPASS AIR</p>
+              <p class="text-white/40 text-[10px] mt-0.5">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</p>
             </div>
           </div>
-          <div class="flex items-center justify-between mt-2">
-            <div>
-              <p class="text-white/60 text-xs">DESTINATION</p>
-              <p class="text-white text-2xl font-bold flex items-center gap-2">
+
+          <!-- 목적지 + D-Day -->
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <p class="text-white/50 text-[9px] tracking-widest uppercase mb-1">Destination</p>
+              <p class="text-white text-[26px] font-extrabold leading-none">
                 {{ selectedCountry.flag }} {{ selectedCountry.name }}
               </p>
-              <p class="text-white/60 text-xs mt-1">설레는 여행이 기다려요 ›</p>
+              <p class="text-white/60 text-[11px] mt-2 leading-relaxed pr-4">{{ selectedCountry.desc }}</p>
             </div>
-            <div class="text-right">
-              <p class="text-white/60 text-[10px]">DEPARTURE</p>
-              <p class="text-white font-bold text-2xl">D-{{ selectedCountry.dday }}</p>
+            <div class="text-right flex-shrink-0 ml-3">
+              <p class="text-white/50 text-[9px] tracking-widest uppercase mb-1">Departure</p>
+              <p class="text-white font-extrabold text-[26px] leading-none">D-{{ selectedCountry.dday }}</p>
             </div>
           </div>
 
           <!-- 저축 진행바 -->
           <div class="mt-4">
-            <div class="flex justify-between text-xs text-white/70 mb-1.5">
+            <div class="flex justify-between text-[11px] text-white/70 mb-1.5">
               <span>여행 저축 목표</span>
               <span class="font-bold text-white">{{ savingsPercent }}%</span>
             </div>
             <div class="h-2 rounded-full bg-white/20">
               <div class="h-full rounded-full bg-white transition-all" :style="`width: ${savingsPercent}%`"/>
             </div>
-            <div class="flex justify-between text-[10px] text-white/60 mt-1">
+            <div class="flex justify-between text-[10px] text-white/50 mt-1.5">
               <span>{{ formatCurrency(savingsData.saved) }}</span>
               <span>{{ formatCurrency(savingsData.goal) }}</span>
             </div>
           </div>
 
-          <button class="mt-3 w-full py-2 rounded-xl text-xs font-semibold text-center bg-white/15 text-white">
-            여행 목표 자금 관리 ›
-          </button>
+          <!-- 저축 상태별 하단 영역 -->
+          <!-- 미설정 -->
+          <div v-if="savingsCardState === 'unset'" class="mt-3 p-3 rounded-xl bg-red-500/20 border border-red-300/25">
+            <p class="text-white text-[11px] font-semibold">월 저축액을 설정하세요</p>
+            <button
+              class="mt-2 text-white/80 text-[11px] font-bold underline underline-offset-2"
+              @click="router.push('/savings/plan')"
+            >날짜 저축 설정 →</button>
+          </div>
+
+          <!-- 부족 -->
+          <div v-else-if="savingsCardState === 'low'" class="mt-3 p-3 rounded-xl bg-amber-400/20 border border-amber-300/25">
+            <p class="text-white text-[11px] font-semibold">월 {{ formatCurrency(plan.additionalRecommendedAmount) }}이 부족합니다</p>
+            <button
+              class="mt-2 text-white/80 text-[11px] font-bold underline underline-offset-2"
+              @click="router.push('/savings/plan')"
+            >오늘 저축 조정 →</button>
+          </div>
+
+          <!-- 정상 -->
+          <button
+            v-else
+            class="mt-3 w-full py-2.5 rounded-xl text-[12px] font-bold text-center bg-white/15 text-white active:bg-white/25"
+            @click="router.push('/savings')"
+          >여행 목표 자금 관리 ›</button>
         </div>
       </div>
 
       <!-- 보유 자금 / 연동 계좌 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex">
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex shadow-sm">
         <div class="flex-1 text-center border-r border-gray-100">
-          <p class="text-xs text-gray-400 mb-1">보유 자금</p>
-          <p class="text-base font-bold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
+          <p class="text-[11px] text-gray-400 mb-1">보유 자금</p>
+          <p class="text-[15px] font-extrabold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
         </div>
         <div class="flex-1 text-center">
-          <p class="text-xs text-gray-400 mb-1">연동 계좌</p>
-          <p class="text-base font-bold text-gray-900">{{ savingsData.accounts }}개</p>
+          <p class="text-[11px] text-gray-400 mb-1">연동 계좌</p>
+          <p class="text-[15px] font-extrabold text-gray-900">{{ savingsData.accounts }}개</p>
         </div>
       </div>
 
       <!-- 이달의 자금 체크 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4">
-        <div class="flex items-center justify-between mb-1">
-          <p class="text-sm font-bold text-gray-900">이달의 자금 체크</p>
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
+        <button class="w-full flex items-center justify-between mb-2" @click="router.push('/savings')">
+          <p class="text-[13px] font-extrabold text-gray-900">이달의 자금 체크</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
-        </div>
-        <p class="text-xs text-gray-400 mb-2">이달에 여유자금</p>
-        <p class="text-2xl font-bold" style="color: #3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
-        <p class="text-[11px] text-gray-400 mt-1">{{ savingsData.monthly.details }}</p>
+        </button>
+        <p class="text-[11px] text-gray-400 mb-1.5">이달에 여유자금</p>
+        <p class="text-[24px] font-extrabold" style="color: #3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
+        <p class="text-[10px] text-gray-400 mt-1 leading-relaxed">{{ savingsData.monthly.details }}</p>
       </div>
 
       <!-- 카테고리별 사용 현황 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4">
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
         <div class="flex items-center justify-between mb-3">
-          <p class="text-sm font-bold text-gray-900">카테고리별 사용 현황</p>
-          <span class="text-xs text-gray-400">이번 달</span>
+          <p class="text-[13px] font-extrabold text-gray-900">카테고리별 사용 현황</p>
+          <span class="text-[11px] text-gray-400">이번 달</span>
         </div>
         <div class="flex flex-col gap-2.5">
           <div v-for="cat in savingsData.categories" :key="cat.name" class="flex items-center gap-3">
@@ -289,19 +328,19 @@ function formatCurrency(n) {
       </div>
 
       <!-- 다가오는 금융 일정 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm font-bold text-gray-900">다가오는 금융 일정</p>
+      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm">
+        <button class="w-full flex items-center justify-between mb-3">
+          <p class="text-[13px] font-extrabold text-gray-900">다가오는 금융 일정</p>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
           </svg>
-        </div>
+        </button>
         <div class="flex flex-col gap-3">
           <div v-for="item in savingsData.schedule" :key="item.date" class="flex items-center justify-between">
-            <p class="text-sm text-gray-900 font-medium">{{ item.date }}</p>
-            <p class="text-xs text-gray-500 flex-1 mx-3">{{ item.label }}</p>
+            <p class="text-[13px] font-bold" style="color:#3B5BDB">{{ item.date }}</p>
+            <p class="text-[12px] text-gray-600 flex-1 mx-3">{{ item.label }}</p>
             <span
-              class="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              class="text-[10px] font-semibold px-2.5 py-1 rounded-full"
               :style="item.type === '입금'
                 ? 'background: #EEF2FF; color: #3B5BDB'
                 : 'background: #FEF2F2; color: #EF4444'"
@@ -311,12 +350,16 @@ function formatCurrency(n) {
       </div>
 
       <!-- 오늘의 환율 -->
-      <div class="mx-4 mt-3 mb-4 rounded-2xl px-5 py-4 flex items-center justify-between" :style="`background: ${selectedCountry.color}`">
+      <div
+        class="mx-4 mt-3 mb-4 rounded-2xl px-5 py-4 flex items-center justify-between"
+        :style="`background: linear-gradient(135deg, ${selectedCountry.color}, ${selectedCountry.color}cc)`"
+      >
         <div>
-          <p class="text-white/60 text-xs mb-0.5">오늘의 환율</p>
-          <p class="text-white text-xs">{{ selectedCountry.flag }} {{ selectedCountry.currency }}/KRW</p>
+          <p class="text-white/55 text-[10px] mb-1">오늘의 환율</p>
+          <p class="text-white text-[13px] font-semibold">{{ selectedCountry.flag }} {{ selectedCountry.currency }}/KRW</p>
+          <p class="text-white/40 text-[9px] mt-0.5">{{ new Date().toLocaleDateString('ko-KR') }} 기준</p>
         </div>
-        <p class="text-white text-xl font-bold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</p>
+        <p class="text-white text-[22px] font-extrabold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</p>
       </div>
 
     </template>
