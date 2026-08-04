@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useFinancialScheduleStore } from '@/stores/financialSchedule'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const scheduleStore = useFinancialScheduleStore()
 
 const step = ref(0)
 const selectedBanks = ref(['신한은행', 'KB국민은행', '우리은행', '카카오뱅크', '토스뱅크'])
@@ -120,6 +122,7 @@ function removeItem(items, id) {
 }
 
 function completeProfile() {
+  scheduleStore.replaceSalaries(salaryItems.value)
   authStore.completeProfile()
   router.replace('/')
 }
