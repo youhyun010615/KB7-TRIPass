@@ -78,7 +78,7 @@ export const useMonthlyFundStore = defineStore('monthlyFund', () => {
 
   function updateTransactionCategory(transactionId, categoryId) {
     const transaction = transactions.find((item) => item.id === Number(transactionId))
-    if (!transaction || !getCategory(categoryId)) return false
+    if (!transaction || (categoryId !== 'prepaid' && !getCategory(categoryId))) return false
     transaction.categoryId = categoryId
     return true
   }

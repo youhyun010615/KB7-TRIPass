@@ -66,8 +66,8 @@ const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
           <strong :style="{ color: item.color }">{{ item.percent }}% ›</strong>
         </button>
 
-        <button class="prepaid-link" @click="router.push('/savings/monthly/prepaid/new')">
-          <span>✈️</span><b>여행비 사전 지출</b><small>{{ fund.prepaidTotal ? money(fund.prepaidTotal) : '등록하기' }} ›</small>
+        <button class="prepaid-link" @click="router.push('/asset/prepaid')">
+          <span>✈️</span><b>여행비 사전 지출</b><small>목록 보기 ›</small>
         </button>
       </section>
 

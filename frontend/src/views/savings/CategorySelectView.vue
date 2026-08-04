@@ -24,7 +24,7 @@ function applyCategory() {
         <span><b>{{ item.name }}</b><small>{{ item.description }}</small></span>
         <input v-model="selected" type="radio" :value="item.id">
       </label>
-      <button class="prepaid" @click="router.push('/savings/monthly/prepaid/new')"><span>✈️</span><span><b>여행비 사전 지출</b><small>항공권 등 여행을 위해 사전에 지출하는 금액</small></span><i>›</i></button>
+      <button class="prepaid" @click="router.push({ path:'/savings/monthly/prepaid/new', query:{ transactionId: transaction.id } })"><span>✈️</span><span><b>여행비 사전 지출</b><small>항공권 등 여행을 위해 사전에 지출하는 금액</small></span><i>›</i></button>
     </section>
     <button class="cta" @click="applyCategory">적용하기</button>
   </main>
