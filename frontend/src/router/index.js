@@ -74,6 +74,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/savings/monthly/transactions/:transactionId',
+      name: 'MonthlyFundTransactionDetail',
+      component: () => import('@/views/savings/MonthlyTransactionDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/savings/monthly/transactions/:transactionId/category',
       name: 'MonthlyFundCategorySelect',
       component: () => import('@/views/savings/CategorySelectView.vue'),
