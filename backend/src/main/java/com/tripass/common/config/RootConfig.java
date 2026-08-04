@@ -36,8 +36,7 @@ import javax.sql.DataSource;
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
         "com.tripass.ocr.service",
-        "com.tripass.report.service",
-        "com.tripass.asset"
+        "com.tripass.report.service"
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",

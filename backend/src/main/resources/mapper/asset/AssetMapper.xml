@@ -10,7 +10,7 @@
     </insert>
 
     <select id = "findConnectionByUserId"
-            resultType="com.tripass.asset.dto.CodefConnectionDto">
+            resultType="CodefConnectionDto">
         SELECT id, user_id, connected_id, connection_status, last_synced_at
         FROM codef_connections
         WHERE user_id = #{userId}
@@ -35,7 +35,7 @@
              #{balance}, #{withdrawableAmount}, 0, 'CODEF', NOW(), NOW(), NOW())
     </insert>
 
-    <select id = "findAccountsByUserId" resultType = "com.tripass.asset.dto.AccountDto">
+    <select id = "findAccountsByUserId" resultType = "AccountDto">
         SELECT id, account_name, account_number, account_type, balance,
                withdrawable_amount, recognized_amount, is_travel_fund_included, last_synced_at
         FROM accounts
@@ -45,7 +45,7 @@
     </select>
 
     <select id = "findAllSupportedInstitutions"
-            resultType="com.tripass.asset.dto.SupportedInstitutionDto">
+            resultType="SupportedInstitutionDto">
         SELECT id, organization_code, institution_name, business_type, logo_url, display_order
         FROM supported_institutions
         WHERE is_active = TRUE

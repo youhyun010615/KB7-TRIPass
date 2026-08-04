@@ -3,6 +3,7 @@ package com.tripass.asset.controller;
 import com.tripass.asset.dto.*;
 import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +24,7 @@ public class AssetController {
     public ResponseEntity<ApiResponse<List<AccountDto>>> linkBank(
             @RequestAttribute("userId") Long userId,
             @RequestBody CodefLinkRequestDto req) {
-        return ResponseEntity.ok(ApiResponse.success(assetService.linkBank(userId, req)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(assetService.linkBank(userId, req)));
     }
 
     //AST-001: 자산(계좌) 목록 조회

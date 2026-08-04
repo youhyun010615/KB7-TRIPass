@@ -94,6 +94,7 @@ public class AssetService {
             CodefConnectedInstitutionDto instDto = new CodefConnectedInstitutionDto();
             instDto.setCodefConnectionId(existingConn.getId());
             instDto.setOrganizationCode(req.getOrganizationCode());
+            instDto.setOrganizationName(req.getOrganizationName());
             instDto.setBusinessType(req.getBusinessType());
             assetMapper.insertConnectedInstitution(instDto);
 
