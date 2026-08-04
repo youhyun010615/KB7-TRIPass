@@ -3,9 +3,12 @@ package com.tripass.exchange.mapper;
 import com.tripass.exchange.domain.ExchangeRate;
 import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
 import com.tripass.exchange.dto.ExchangeRateResponseDto;
+import com.tripass.exchange.dto.LatestExchangeRateDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
@@ -16,8 +19,17 @@ public interface ExchangeRateMapper {
     // 통화 코드로 ID 조회
     Long getCurrencyIdByCode(String currencyCode);
 
+    // 통화 정보가 없을 경우 삽입
+    void insertCurrency(@Param("currencyCode") String currencyCode, @Param("currencyName") String currencyName);
+
+    // 저장된 ID 조회
+    Long findIdByCurrencyAndDate(@Param("baseCurrencyId") Long baseCurrencyId, @Param("targetCurrencyId") Long targetCurrencyId, @Param("rateDate") LocalDate rateDate);
+
+    // 이전 환율 조회
+    BigDecimal getPreviousRate(@Param("targetId") Long targetId, @Param("currentDate") LocalDate currentDate);
+
     // 최신 환율 목록 조회
-    List<ExchangeRateResponseDto> getLatestRates(@Param("currencyCodes") List<String> currencyCodes);
+    List<LatestExchangeRateDto> getLatestRates();
 
     // 특정 통화 히스토리 조회
     List<ExchangeRateHistoryResponseDto.RateInfo> getHistoryRates(@Param("currencyCode") String currencyCode, @Param("days") int days);

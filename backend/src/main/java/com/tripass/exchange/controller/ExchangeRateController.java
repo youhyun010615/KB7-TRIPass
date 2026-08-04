@@ -1,8 +1,11 @@
 package com.tripass.exchange.controller;
 
 import com.tripass.common.response.ApiResponse;
+import com.tripass.exchange.dto.ExchangeRateResponseDto;
+import com.tripass.exchange.dto.LatestExchangeRateDto;
 import com.tripass.exchange.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -10,16 +13,15 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/exchange-rates")
+@Slf4j
 @RequiredArgsConstructor
 public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
 
     @GetMapping
-    public ApiResponse<?> getLatestRates(@RequestParam(required = false) String currencyCodes) {
-        List<String> codeList = (currencyCodes != null && !currencyCodes.isEmpty()) 
-                                ? Arrays.asList(currencyCodes.split(",")) : null;
-        return ApiResponse.success("환율 정보 조회 성공", exchangeRateService.getLatestRates(codeList));
+    public ApiResponse<List<LatestExchangeRateDto>> getLatestRates() {
+        return ApiResponse.success("환율 정보 조회 성공", exchangeRateService.getLatestRates());
     }
 
     @GetMapping("/history")
@@ -34,8 +36,8 @@ public class ExchangeRateController {
     }
 
     @PostMapping("/sync")
-    public ApiResponse<?> manualSync(@RequestParam String date) {
-        exchangeRateService.syncExchangeRates(date);
-        return ApiResponse.success("수동 환율 동기화 요청 완료", null);
+    public ApiResponse<List<ExchangeRateResponseDto>> manualSync(@RequestParam String date) {
+        List<ExchangeRateResponseDto> result = exchangeRateService.syncExchangeRates(date);
+        return ApiResponse.success("환율 동기화 완료", result);
     }
 }

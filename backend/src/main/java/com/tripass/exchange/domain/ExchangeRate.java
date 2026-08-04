@@ -1,5 +1,6 @@
 package com.tripass.exchange.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,6 +18,22 @@ public class ExchangeRate {
     private Integer currencyUnit;  // 정규화된 단위 (보통 1)
     private BigDecimal dealBaseRate;
     private BigDecimal prevRate;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate rateDate;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fetchedAt;
+
+    @Override
+    public String toString() {
+        return "ExchangeRate{" +
+                "baseCurrencyId=" + baseCurrencyId +
+                ", targetCurrencyId=" + targetCurrencyId +
+                ", currencyUnit=" + currencyUnit +
+                ", dealBaseRate=" + dealBaseRate +
+                ", rateDate=" + rateDate +
+                ", fetchedAt=" + fetchedAt +
+                '}';
+    }
 }
