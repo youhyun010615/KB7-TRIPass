@@ -133,6 +133,24 @@ const router = createRouter({
       component: () => import('@/views/asset/TransactionDetailView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/asset/fixed-expenses',
+      name: 'AssetFixedExpenses',
+      component: () => import('@/views/asset/FixedExpenseListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses/new',
+      name: 'AssetFixedExpenseNew',
+      component: () => import('@/views/asset/FixedExpenseFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses/:fixedExpenseId',
+      name: 'AssetFixedExpenseDetail',
+      component: () => import('@/views/asset/FixedExpenseDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── FXC (담당: 권원영) ──────────────────────────────────
     {
