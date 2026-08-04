@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.asset.mapper.AssetMapper">
+
+    <insert id = "insertCodefConnection" useGeneratedKeys = "true" keyProperty = "id">
+        INSERT INTO codef_connections (user_id, connected_id, connection_status, created_at, updated_at)
+        VALUES (#{userId}, #{connectedId}, 'ACTIVE', NOW(), NOW())
+    </insert>
+
+    <select id = "findConnectionByUserId"
+            resultType="com.tripass.asset.dto.CodefConnectionDto">
+        SELECT id, user_id, connected_id, connection_status, last_synced_at
+        FROM codef_connections
+        WHERE user_id = #{userId}
+        AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <insert id = "insertConnectedInstitution">
+        INSERT INTO codef_connected_institutions (codef_connection_id, organization_code, organization_name, business_type,
+                                                  connection_status, created_at, updated_at)
+        VALUES
+            (#{codefConnectionId}, #{organizationCode}, #{organizationName}, #{businessType},
+             'CONNECTED', NOW(), NOW())
+    </insert>
+
+    <insert id = "insertAccount" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO accounts
+        (user_id, codef_connection_id, account_name, account_number, account_type,
+         balance, withdrawable_amount, recognized_amount, connection_type, last_synced_at, created_at, updated_at)
+        VALUES
+            (#{userId}, #{codefConnectionId}, #{accountName}, #{accountNumber}, #{accountType},
+             #{balance}, #{withdrawableAmount}, 0, 'CODEF', NOW(), NOW(), NOW())
+    </insert>
+
+    <select id = "findAccountsByUserId" resultType = "com.tripass.asset.dto.AccountDto">
+        SELECT id, account_name, account_number, account_type, balance,
+               withdrawable_amount, recognized_amount, is_travel_fund_included, last_synced_at
+        FROM accounts
+        WHERE user_id = #{userId}
+        AND is_deleted = 0
+        AND is_active = TRUE
+    </select>
+
+    <select id = "findAllSupportedInstitutions"
+            resultType="com.tripass.asset.dto.SupportedInstitutionDto">
+        SELECT id, organization_code, institution_name, business_type, logo_url, display_order
+        FROM supported_institutions
+        WHERE is_active = TRUE
+        ORDER BY display_order
+    </select>
+
+</mapper>
