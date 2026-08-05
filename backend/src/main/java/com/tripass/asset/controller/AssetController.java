@@ -52,4 +52,19 @@ public class AssetController {
                 ResponseEntity.ok(ApiResponse.success(assetService.getSupportedInstitutions()));
     }
 
+
+    //AST-004: 개별 계좌 거래내역 조회(DB 조회)
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<ApiResponse<AccountTransactionResponseDto>>
+    getAccountTransactions(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable("id") Long accountId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String type) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assetService.getAccountTransactions(userId, accountId, startDate, endDate, type
+                )));
+    }
+
 }
