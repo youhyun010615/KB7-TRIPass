@@ -4,6 +4,9 @@ import com.tripass.auth.dto.response.CheckLoginIdResponse;
 import com.tripass.auth.mapper.UserMapper;
 import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
+import com.tripass.auth.dto.request.LoginRequest;
+import com.tripass.auth.dto.response.LoginResponse;
+import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
 import com.tripass.common.exception.CustomException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,6 +29,8 @@ public class AuthServiceImpl implements AuthService{
     private final UserMapper userMapper;
     private final PhoneVerificationService phoneVerificationService;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+
     // 영문, 숫자, 특수문자를 각각 포함하는 8~64자
     private static final Pattern PASSWORD_PATTERN =
             Pattern.compile(
@@ -136,10 +141,7 @@ public class AuthServiceImpl implements AuthService{
                 );
             }
         } catch (DataIntegrityViolationException exception) {
-            /*
-             * 중복 확인 직후 다른 요청이 같은 아이디를
-             * 저장하는 경쟁 상황도 DB 유니크키로 방지한다.
-             */
+            //중복 확인 직후 다른 요청이 같은 아이디를 저장하는 상황도 DB 유니크키로 방지한다.
             throw new CustomException(
                     HttpStatus.CONFLICT,
                     "LOGIN_ID_DUPLICATED",
@@ -147,10 +149,7 @@ public class AuthServiceImpl implements AuthService{
             );
         }
 
-        /*
-         * 회원 저장과 인증 결과 사용 처리는
-         * @Transactional로 하나의 트랜잭션에 포함된다.
-         */
+        // 회원 저장과 인증 결과 사용 처리는 @Transactional로 하나의 트랜잭션에 포함된다.
         phoneVerificationService
                 .markVerificationAsUsed(
                         verificationRequestId
@@ -158,6 +157,47 @@ public class AuthServiceImpl implements AuthService{
 
         return new SignupResponse(user.getId());
     }
+
+    //일반 로그인 처리
+
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        if(request == null){
+            throw new IllegalArgumentException("로그인 정보를 입력해주세요");
+        }
+
+        String loginId = normalizeLoginId(request.getLoginId());
+        String password = requireText(request.getPassword(), "비밀번호를 입력해 주세요");
+
+        User user = userMapper.findLocalUserByLoginId(loginId);
+
+        //아이디가 없거나 비밀번호 틀린 경우 오류 반환
+        if(user == null
+                || user.getPassword() == null
+                || !passwordEncoder.matches(password, user.getPassword())){
+            throw new CustomException(
+                    HttpStatus.UNAUTHORIZED,
+                    "LOGIN_FAILED",
+                    "아이디 또는 비밀번호가 올바르지 않습니다."
+            );
+        }
+        String accessToken = jwtTokenProvider.createAccessToken(user);
+        LoginResponse.UserInfo userInfo =
+                new LoginResponse.UserInfo(
+                        user.getId(),
+                        user.getLoginId(),
+                        user.getName(),
+                        user.getLoginProvider()
+                );
+        return  new LoginResponse(
+                accessToken,
+                "Bearer",
+                jwtTokenProvider.getAccessExpirationSeconds(),
+                userInfo
+        );
+    }
+
     //문자열 길이 검사
     private String normalizeName(String name) {
 

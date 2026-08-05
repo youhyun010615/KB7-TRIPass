@@ -8,6 +8,8 @@ import com.tripass.auth.dto.request.PhoneCodeVerifyRequest;
 import com.tripass.auth.dto.response.PhoneCodeSendResponse;
 import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
+import com.tripass.auth.dto.request.LoginRequest;
+import com.tripass.auth.dto.response.LoginResponse;
 import com.tripass.auth.service.PhoneVerificationService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -112,5 +114,25 @@ public class AuthController {
                                 response
                         )
                 );
+    }
+
+    //일반 로그인
+    @ApiOperation(
+            value = "일반 로그인",
+            notes = "회원의 아이디와 비밀번호를 확인하고 JWT AccessToken을 발급합니다."
+    )
+    @PostMapping("/login")
+    public ApiResponse<LoginResponse> login(
+            @ApiParam(
+                    value = "일반 로그인 정보",
+                    required = true
+            )
+            @RequestBody LoginRequest request
+    ){
+        LoginResponse response = authService.login(request);
+        return ApiResponse.success(
+                "로그인이 완료되었습니다.",
+                response
+        );
     }
 }
