@@ -10,11 +10,11 @@ export const receiptTrips = [
 ]
 
 const seed = [
-  { id:101, tripId:1, country:'프랑스', flag:'🇫🇷', merchant:'Ristorante Pizzeria da RITA', date:'2025.07.12', time:'19:42', currency:'EUR', amount:17, wonAmount:25300, category:'식비', confidence:96, memo:'파리 저녁 식사' },
-  { id:102, tripId:1, country:'프랑스', flag:'🇫🇷', merchant:'Hotel Florence Central', date:'2025.07.13', time:'15:08', currency:'EUR', amount:125, wonAmount:185750, category:'숙박', confidence:94, memo:'' },
-  { id:103, tripId:1, country:'이탈리아', flag:'🇮🇹', merchant:'Firenze SMN', date:'2025.07.20', time:'11:20', currency:'EUR', amount:28, wonAmount:41608, category:'교통', confidence:92, memo:'기차표' },
-  { id:201, tripId:2, country:'홍콩', flag:'🇭🇰', merchant:'Victoria Peak Tram', date:'2025.09.04', time:'18:35', currency:'HKD', amount:108, wonAmount:19872, category:'관광', confidence:95, memo:'' },
-  { id:301, tripId:3, country:'일본', flag:'🇯🇵', merchant:'OSAKA TAKOYAKI', date:'2024.12.22', time:'20:14', currency:'JPY', amount:1800, wonAmount:16614, category:'식비', confidence:97, memo:'' },
+  { id:101, tripId:1, country:'프랑스', flag:'🇫🇷', merchant:'Ristorante Pizzeria da RITA', date:'2025.07.12', time:'19:42', currency:'EUR', amount:17, wonAmount:25300, confidence:96, memo:'파리 저녁 식사' },
+  { id:102, tripId:1, country:'프랑스', flag:'🇫🇷', merchant:'Hotel Florence Central', date:'2025.07.13', time:'15:08', currency:'EUR', amount:125, wonAmount:185750, confidence:94, memo:'' },
+  { id:103, tripId:1, country:'이탈리아', flag:'🇮🇹', merchant:'Firenze SMN', date:'2025.07.20', time:'11:20', currency:'EUR', amount:28, wonAmount:41608, confidence:92, memo:'기차표' },
+  { id:201, tripId:2, country:'홍콩', flag:'🇭🇰', merchant:'Victoria Peak Tram', date:'2025.09.04', time:'18:35', currency:'HKD', amount:108, wonAmount:19872, confidence:95, memo:'' },
+  { id:301, tripId:3, country:'일본', flag:'🇯🇵', merchant:'OSAKA TAKOYAKI', date:'2024.12.22', time:'20:14', currency:'JPY', amount:1800, wonAmount:16614, confidence:97, memo:'' },
 ]
 
 function load() {

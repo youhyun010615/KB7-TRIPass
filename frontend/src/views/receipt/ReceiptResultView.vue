@@ -6,7 +6,7 @@ import { useReceiptStore } from '@/stores/receipt'
 const route = useRoute(); const router = useRouter(); const store = useReceiptStore()
 const tripId = computed(() => Number(route.query.tripId || 1))
 const existing = route.params.receiptId ? store.get(route.params.receiptId) : null
-const base = existing || store.draft || { tripId:tripId.value, country:'프랑스', flag:'🇫🇷', merchant:'RISTORANTE PIZZERIA da RITA', date:'2025-07-12', time:'19:42', currency:'EUR', amount:17, wonAmount:25300, category:'식비', confidence:96, memo:'', items:[['COPERTO','테이블 요금',2],['PIZZA DIAVOLA','디아볼라 피자',8.5],['ACQUA MINERALE','생수',2.5],['BIRRA PERONI','페로니 맥주',4]] }
+const base = existing || store.draft || { tripId:tripId.value, country:'프랑스', flag:'🇫🇷', merchant:'RISTORANTE PIZZERIA da RITA', date:'2025-07-12', time:'19:42', currency:'EUR', amount:17, wonAmount:25300, confidence:96, memo:'', items:[['COPERTO','테이블 요금',2],['PIZZA DIAVOLA','디아볼라 피자',8.5],['ACQUA MINERALE','생수',2.5],['BIRRA PERONI','페로니 맥주',4]] }
 const form = reactive(JSON.parse(JSON.stringify(base)))
 form.date = form.date.replaceAll('.', '-')
 const editing = ref(false); const translated = ref(true); const showOriginal = ref(false)
@@ -34,7 +34,6 @@ const remove = () => { if (window.confirm('이 영수증을 보관함에서 삭�
     <label><span>결제 날짜</span><input v-model="form.date" type="date"></label>
     <label><span>결제 시간</span><input v-model="form.time" type="time"></label>
     <label><span>결제 금액</span><div class="amount-input"><b>{{ form.currency }}</b><input v-model.number="form.amount" min="0" type="number"></div></label>
-    <div class="fixed-category"><span>AI 자동 분류 카테고리</span><b>{{ form.category }}</b><em>수정 불가</em></div>
     <label><span>메모</span><input v-model="form.memo"></label>
   </section>
   <div v-if="!existing" class="actions"><button @click="discard">추가하지 않기</button><button @click="save">보관함에 추가</button></div>
