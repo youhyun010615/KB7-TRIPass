@@ -2,6 +2,7 @@ package com.tripass.asset.mapper;
 
 import com.tripass.asset.dto.*;
 import org.apache.ibatis.annotations.Mapper;
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
@@ -28,8 +29,8 @@ public interface AssetMapper {
     //개별 계좌 거래내역 조회(날짜, 타입 필터)
     List<TransactionDto> findTransactionsByAccountIdWithFilter(
             @org.apache.ibatis.annotations.Param("accountId") Long accountId,
-            @org.apache.ibatis.annotations.Param("startDate") String startDate,
-            @org.apache.ibatis.annotations.Param("endDate") String endDate,
+            @org.apache.ibatis.annotations.Param("startDate") LocalDate startDate,
+            @org.apache.ibatis.annotations.Param("endDate") LocalDate endDate,
             @org.apache.ibatis.annotations.Param("type") String type
     );
 

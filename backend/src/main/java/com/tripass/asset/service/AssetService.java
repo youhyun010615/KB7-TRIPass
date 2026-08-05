@@ -243,7 +243,7 @@ public class AssetService {
     }
 
     public AccountTransactionResponseDto getAccountTransactions(
-            Long userId, Long accountId, String startDate, String endDate, String type) {
+            Long userId, Long accountId, LocalDate startDate, LocalDate endDate, String type) {
         AccountDto account = assetMapper.findAccountById(accountId, userId);
         if (account == null) {
             throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");

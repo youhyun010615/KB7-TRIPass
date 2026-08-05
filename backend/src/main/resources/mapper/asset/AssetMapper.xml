@@ -92,10 +92,10 @@
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
-        <if test = "startDate != null and startDate != '' ">
+        <if test="startDate != null">
             AND transaction_date &gt;= #{startDate}
         </if>
-        <if test = "endDate != null and endDate != '' ">
+        <if test="endDate != null">
             AND transaction_date &lt;= #{endDate}
         </if>
         <if test="type != null and type != ''">

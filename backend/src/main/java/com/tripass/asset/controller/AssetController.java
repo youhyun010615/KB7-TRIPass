@@ -3,10 +3,12 @@ package com.tripass.asset.controller;
 import com.tripass.asset.dto.*;
 import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -59,8 +61,8 @@ public class AssetController {
     getAccountTransactions(
             @RequestAttribute("userId") Long userId,
             @PathVariable("id") Long accountId,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             @RequestParam(required = false) String type) {
         return ResponseEntity.ok(ApiResponse.success(
                 assetService.getAccountTransactions(userId, accountId, startDate, endDate, type
