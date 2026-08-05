@@ -13,7 +13,9 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import javax.sql.DataSource;
@@ -32,6 +34,8 @@ import javax.sql.DataSource;
         "com.tripass.saving.service",
         "com.tripass.travel.service",
         "com.tripass.exchange.service",
+        "com.tripass.exchange.client",
+        "com.tripass.exchange.scheduler",
         "com.tripass.prepay.service",
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
@@ -58,6 +62,7 @@ import javax.sql.DataSource;
         "classpath:application-local.properties"
 }, ignoreResourceNotFound = true)
 @EnableTransactionManagement
+@EnableScheduling
 public class RootConfig {
 
     @Resource
@@ -77,6 +82,12 @@ public class RootConfig {
         config.setIdleTimeout(600_000);
         return new HikariDataSource(config);
     }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
 
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.exchange.mapper.ExchangeRateMapper">
+
+    <select id="getCurrencyIdByCode" resultType="Long">
+        SELECT id FROM currencies WHERE currency_code = #{currencyCode}
+    </select>
+
+    <select id="getCurrencyNameByCode" resultType="String">
+        SELECT currency_name FROM currencies WHERE currency_code = #{currencyCode}
+    </select>
+
+    <select id="getCurrencyCodeById" resultType="String">
+        SELECT currency_code FROM currencies WHERE id = #{id}
+    </select>
+
+    <insert id="insertCurrency" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO currencies (currency_code, currency_name)
+        VALUES (#{currencyCode}, #{currencyName})
+    </insert>
+
+    <select id="findIdByCurrencyAndDate" resultType="Long">
+        SELECT id FROM exchange_rates
+        WHERE base_currency_id = #{baseCurrencyId}
+          AND target_currency_id = #{targetCurrencyId}
+          AND rate_date = #{rateDate}
+        LIMIT 1
+    </select>
+
+    <select id="getPreviousRate" resultType="BigDecimal">
+        SELECT deal_base_rate
+        FROM exchange_rates
+        WHERE target_currency_id = #{targetId}
+          AND rate_date <![CDATA[ < ]]> #{currentDate}
+        ORDER BY rate_date DESC
+        LIMIT 1
+    </select>
+
+    <select id="getLatestRates" resultType="LatestExchangeRateDto">
+        SELECT 
+            c.currency_code AS currencyCode,
+            c.currency_name AS currencyName,
+            er.deal_base_rate AS dealBaseRate,
+            er.prev_rate AS prevRate,
+            (er.deal_base_rate - IFNULL(er.prev_rate, er.deal_base_rate)) AS changeAmount,
+            er.rate_date AS rateDate
+        FROM exchange_rates er
+        JOIN currencies c ON er.target_currency_id = c.id
+        WHERE er.rate_date = (SELECT MAX(rate_date) FROM exchange_rates)
+        ORDER BY 
+            CASE 
+                WHEN c.currency_code IN ('JPY', 'EUR', 'CHF', 'VND', 'USD') THEN 0
+                WHEN c.currency_code IN ('GBP', 'CAD', 'AUD', 'CNH', 'HKD') THEN 1
+                ELSE 2 
+            END,
+            c.currency_code
+        LIMIT 10
+    </select>
+
+    <select id="getHistoryRates" resultType="com.tripass.exchange.dto.ExchangeRateHistoryResponseDto$RateInfo">
+        SELECT 
+            er.rate_date AS rateDate,
+            er.deal_base_rate AS dealBaseRate
+        FROM exchange_rates er
+        JOIN currencies c ON er.target_currency_id = c.id
+        WHERE c.currency_code = #{currencyCode}
+          AND er.rate_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY er.rate_date ASC
+    </select>
+
+    <insert id="upsertExchangeRate">
+        INSERT INTO exchange_rates 
+            (base_currency_id, target_currency_id, currency_unit, deal_base_rate, prev_rate, rate_date, fetched_at)
+        VALUES 
+            (#{baseCurrencyId}, #{targetCurrencyId}, #{currencyUnit}, #{dealBaseRate}, #{prevRate}, #{rateDate}, #{fetchedAt})
+        ON DUPLICATE KEY UPDATE
+            deal_base_rate = VALUES(deal_base_rate),
+            prev_rate = VALUES(prev_rate),
+            fetched_at = VALUES(fetched_at)
+    </insert>
+
+    </mapper>
