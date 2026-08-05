@@ -237,6 +237,7 @@ public class AssetService {
     }
 
     @Transactional
+    @Transactional
     public void deleteAccount(Long userId, Long accountId) {
         AccountDto account = assetMapper.findAccountById(accountId, userId);
         if (account == null) {
