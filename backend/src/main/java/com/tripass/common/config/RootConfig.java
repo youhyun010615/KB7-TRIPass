@@ -13,6 +13,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 
@@ -34,6 +35,7 @@ import javax.sql.DataSource;
         "com.tripass.travel.service",
         "com.tripass.exchange.service",
         "com.tripass.exchange.client",
+        "com.tripass.exchange.scheduler",
         "com.tripass.prepay.service",
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
@@ -60,6 +62,7 @@ import javax.sql.DataSource;
         "classpath:application-local.properties"
 }, ignoreResourceNotFound = true)
 @EnableTransactionManagement
+@EnableScheduling
 public class RootConfig {
 
     @Resource
