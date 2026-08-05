@@ -1,6 +1,7 @@
 package com.tripass.exchange.controller;
 
 import com.tripass.common.response.ApiResponse;
+import com.tripass.exchange.dto.ExchangeRateConvertResponseDto;
 import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
 import com.tripass.exchange.dto.LatestExchangeRateDto;
 import com.tripass.exchange.dto.SyncResultDto;
@@ -22,6 +23,15 @@ public class ExchangeRateController {
     @GetMapping
     public ApiResponse<List<LatestExchangeRateDto>> getLatestRates() {
         return ApiResponse.success("환율 정보 조회 성공", exchangeRateService.getLatestRates());
+    }
+
+    @GetMapping("/convert")
+    public ApiResponse<ExchangeRateConvertResponseDto> convert(
+            @RequestParam String fromCurrency,
+            @RequestParam String toCurrency,
+            @RequestParam double amount) {
+        return ApiResponse.success("환율 계산 성공", 
+                                  exchangeRateService.convertCurrency(fromCurrency, toCurrency, amount));
     }
 
     @GetMapping("/history")
