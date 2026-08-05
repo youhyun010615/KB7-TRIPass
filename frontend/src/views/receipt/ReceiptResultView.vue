@@ -9,7 +9,12 @@ const existing = route.params.receiptId ? store.get(route.params.receiptId) : nu
 const base = existing || store.draft || { tripId:tripId.value, country:'프랑스', flag:'🇫🇷', merchant:'RISTORANTE PIZZERIA da RITA', date:'2025-07-12', time:'19:42', currency:'EUR', amount:17, wonAmount:25300, category:'식비', confidence:96, memo:'', items:[['COPERTO','테이블 요금',2],['PIZZA DIAVOLA','디아볼라 피자',8.5],['ACQUA MINERALE','생수',2.5],['BIRRA PERONI','페로니 맥주',4]] }
 const form = reactive(JSON.parse(JSON.stringify(base)))
 const editing = ref(false); const translated = ref(true); const showOriginal = ref(false)
-const save = () => { const saved = store.save({ ...form, tripId:tripId.value, amount:Number(form.amount), wonAmount:Math.round(Number(form.amount)*1488) }); router.replace(`/receipt/${saved.id}?tripId=${tripId.value}`); editing.value=false }
+const save = () => {
+  store.save({ ...form, tripId:tripId.value, amount:Number(form.amount), wonAmount:Math.round(Number(form.amount)*1488) })
+  store.draft = null
+  editing.value = false
+  router.push(`/receipt?tripId=${tripId.value}`)
+}
 const discard = () => { store.draft = null; router.push(`/receipt?tripId=${tripId.value}`) }
 const remove = () => { if (window.confirm('이 영수증을 보관함에서 삭제할까요?')) { store.remove(existing.id); router.push(`/receipt?tripId=${tripId.value}`) } }
 </script>
