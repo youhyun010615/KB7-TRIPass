@@ -242,6 +242,32 @@ public class AssetService {
         return assetMapper.findAccountsByUserId(userId);
     }
 
+    public AccountTransactionResponseDto getAccountTransactions(
+            Long userId, Long accountId, String startDate, String endDate, String type) {
+        AccountDto account = assetMapper.findAccountById(accountId, userId);
+        if (account == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");
+        }
+        List<TransactionDto> transactions = assetMapper.findTransactionsByAccountIdWithFilter(
+                accountId, startDate, endDate, type);
+        AccountTransactionResponseDto response = new AccountTransactionResponseDto();
+        response.setBalance(account.getBalance());
+        response.setTransactions(transactions);
+        return response;
+    }
+
+    public List<TransactionDto> getAllTransactions(Long userId) {
+        return assetMapper.findTransactionsByUserId(userId);
+    }
+
+    public TransactionDto getTransactionDetail(Long userId, Long transactionId) {
+        TransactionDto transaction = assetMapper.findTransactionById(transactionId, userId);
+        if (transaction == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "TRANSACTION_NOT_FOUND", "거래내역을 찾을 수 없습니다.");
+        }
+        return transaction;
+    }
+
     public List<SupportedInstitutionDto> getSupportedInstitutions() {
         return assetMapper.findAllSupportedInstitutions();
     }

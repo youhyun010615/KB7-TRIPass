@@ -129,11 +129,4 @@
         ORDER BY t.transaction_date DESC, t.transaction_time DESC
     </select>
 
-    
-
-
-
-
-
-
 </mapper>
