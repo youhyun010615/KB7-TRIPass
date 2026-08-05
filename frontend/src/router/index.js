@@ -341,6 +341,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/checklists/preparation',
+      name: 'MypagePreparationChecklist',
+      component: () => import('@/views/mypage/PreparationChecklistView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/checklists/return',
+      name: 'MypageReturnChecklist',
+      component: () => import('@/views/mypage/ReturnChecklistView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/notification',
       name: 'MypageNotification',
       component: () => import('@/views/mypage/NotificationView.vue'),

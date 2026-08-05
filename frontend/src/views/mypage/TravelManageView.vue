@@ -88,7 +88,7 @@ const travels = [
           </button>
           <button
             class="flex items-center gap-1.5 text-xs text-gray-500"
-            @click.stop="router.push('/mypage/checklists')"
+            @click.stop="router.push(`/mypage/checklists?tripId=${travel.id}`)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M9 11L12 14L22 4" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
