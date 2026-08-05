@@ -272,6 +272,24 @@ const router = createRouter({
       component: () => import('@/views/receipt/ReceiptView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/receipt/capture',
+      name: 'ReceiptCapture',
+      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/receipt/result',
+      name: 'ReceiptResultNew',
+      component: () => import('@/views/receipt/ReceiptResultView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/receipt/:receiptId',
+      name: 'ReceiptResult',
+      component: () => import('@/views/receipt/ReceiptResultView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── MYP (담당: 권유현) ──────────────────────────────────
     {
