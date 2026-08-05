@@ -26,7 +26,17 @@ export const useReceiptStore = defineStore('receipt', () => {
   const receipts = ref(load())
   const draft = ref(null)
   const trip = id => receiptTrips.find(item => item.id === Number(id)) || receiptTrips[0]
-  const byTrip = id => computed(() => receipts.value.filter(item => item.tripId === Number(id)).sort((a,b) => `${b.date}${b.time || '00:00'}`.localeCompare(`${a.date}${a.time || '00:00'}`)))
+  const byTrip = id => computed(() => {
+    const currentTrip = trip(id)
+    const priority = country => Math.max(0, currentTrip.countries.indexOf(country))
+    return receipts.value.filter(item => item.tripId === Number(id)).sort((a,b) => {
+      const dateOrder = b.date.replaceAll('.', '-').localeCompare(a.date.replaceAll('.', '-'))
+      if (dateOrder) return dateOrder
+      const countryOrder = priority(a.country) - priority(b.country)
+      if (countryOrder) return countryOrder
+      return (b.time || '00:00').localeCompare(a.time || '00:00')
+    })
+  })
   const get = id => receipts.value.find(item => item.id === Number(id))
   function save(payload) {
     const item = { ...payload, id:payload.id || Date.now() }

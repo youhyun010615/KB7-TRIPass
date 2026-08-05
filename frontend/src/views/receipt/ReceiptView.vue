@@ -15,7 +15,11 @@ const countries = computed(() => ['전체', ...new Set(tripReceipts.value.map(it
 const filtered = computed(() => selectedCountry.value === '전체' ? tripReceipts.value : tripReceipts.value.filter(item => item.country === selectedCountry.value))
 const groups = computed(() => {
   const map = new Map()
-  filtered.value.forEach(item => { if (!map.has(item.date)) map.set(item.date, []); map.get(item.date).push(item) })
+  filtered.value.forEach(item => {
+    const date = item.date.replaceAll('.', '-')
+    if (!map.has(date)) map.set(date, [])
+    map.get(date).push(item)
+  })
   return [...map.entries()].map(([date, items]) => ({ date, items }))
 })
 </script>
@@ -27,7 +31,7 @@ const groups = computed(() => {
     <section class="filter-row"><b>국가 선택</b><select v-model="selectedCountry"><option v-for="country in countries" :key="country">{{ country }}</option></select></section>
     <section class="receipt-list">
       <div class="title"><h2>영수증 목록</h2><span>최근 스캔 순</span></div>
-      <div v-for="group in groups" :key="group.date" class="date-group"><h3>{{ group.date.replaceAll('.', '-') }}</h3><button v-for="item in group.items" :key="item.id" type="button" @click="router.push(`/receipt/${item.id}?tripId=${tripId}`)"><span>{{ item.flag }}</span><div><b>{{ item.merchant }}</b><small>{{ item.time || '시간 미확인' }} · {{ item.country }} · {{ item.category }}</small><i>약 {{ Number(item.wonAmount).toLocaleString() }}원</i></div><strong>{{ item.currency }} {{ item.amount.toLocaleString() }}</strong><em>›</em></button></div>
+      <div v-for="group in groups" :key="group.date" class="date-group"><h3>{{ group.date }}</h3><button v-for="item in group.items" :key="item.id" type="button" @click="router.push(`/receipt/${item.id}?tripId=${tripId}`)"><span>{{ item.flag }}</span><div><b>{{ item.merchant }}</b><small>{{ item.time || '시간 미확인' }} · {{ item.country }} · {{ item.category }}</small><i>약 {{ Number(item.wonAmount).toLocaleString() }}원</i></div><strong>{{ item.currency }} {{ item.amount.toLocaleString() }}</strong><em>›</em></button></div>
       <div v-if="!filtered.length" class="empty"><span>▤</span><b>보관된 영수증이 없어요</b><small>이 여행에서 촬영한 영수증을 추가해 주세요.</small></div>
     </section>
     <button class="scan" type="button" @click="router.push(`/receipt/capture?tripId=${tripId}`)">＋ 해외 영수증 OCR 스캔하기</button>
