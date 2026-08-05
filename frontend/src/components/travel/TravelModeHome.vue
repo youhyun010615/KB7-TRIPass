@@ -201,10 +201,10 @@ function switchMode(mode) {
         </div>
       </div>
       <div class="perforation lower"><i/><span/><i/></div>
-      <div class="ticket-stub"><span>여행 목표 자금 관리</span><div class="stub-action"><div class="barcode"><i v-for="(height,index) in [18,11,22,8,17,13,23,8,19,9,15,12,21,8,18]" :key="index" :style="{ height: `${height}px`, width: index % 4 === 0 ? '3px' : '2px' }" /></div><b>›</b></div></div>
+      <button class="ticket-stub" type="button" @click="router.push('/travel/funds')"><span>여행 목표 자금 관리</span><div class="stub-action"><div class="barcode"><i v-for="(height,index) in [18,11,22,8,17,13,23,8,19,9,15,12,21,8,18]" :key="index" :style="{ height: `${height}px`, width: index % 4 === 0 ? '3px' : '2px' }" /></div><b>›</b></div></button>
     </article>
 
-    <article class="card budget-card">
+    <article class="card budget-card" role="button" tabindex="0" aria-label="여행 자금 체크 상세 보기" @click="router.push('/travel/funds')" @keydown.enter="router.push('/travel/funds')">
       <div class="card-title"><h2>여행자금 체크</h2><div v-if="selected.code === 'all'" class="legend"><span>● 프랑스</span><span>● 스위스</span></div></div>
       <div v-for="category in selected.categories" :key="category.name" class="budget-row">
         <span class="category"><i>{{ category.icon }}</i>{{ category.name }}</span>
