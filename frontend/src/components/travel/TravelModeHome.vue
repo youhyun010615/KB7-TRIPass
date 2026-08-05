@@ -282,8 +282,8 @@ function switchMode(mode) {
 .stub-action{display:flex;align-items:center;gap:8px}.barcode{display:flex;height:24px;align-items:flex-end;gap:2px}.barcode i{display:block;background:#fff;border-radius:1px}
 .ticket-top{height:44px;box-sizing:border-box}
 .perforation{position:absolute;left:0;right:0;z-index:5;height:0}
-.perforation:not(.lower){top:44px}
-.perforation.lower{bottom:45px}
+.perforation:not(.lower){top:33px}
+.perforation.lower{bottom:56px}
 .asset-title{display:block}
 .asset-title>span{display:block;margin-bottom:5px;color:#ffbd14;font-size:12px;line-height:1.2}
 .asset-title>strong{display:block;text-align:left;font-size:25px}
