@@ -69,6 +69,19 @@
           AND era.is_deleted = 0
     </select>
 
+    <insert id="insertAlert" useGeneratedKeys="true" keyProperty="request.id">
+        INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, target_amount, is_deleted)
+        VALUES (#{userId}, #{request.currencyId}, #{request.targetRate}, #{request.targetAmount}, 0)
+    </insert>
+
+    <select id="countAlertByUserAndCurrency" resultType="int">
+        SELECT COUNT(*) 
+        FROM exchange_rate_alerts 
+        WHERE user_id = #{userId} 
+          AND currency_id = #{currencyId} 
+          AND is_deleted = 0
+    </select>
+
     <select id="getHistoryRates" resultType="com.tripass.exchange.dto.ExchangeRateHistoryResponseDto$RateInfo">
         SELECT 
             er.rate_date AS rateDate,

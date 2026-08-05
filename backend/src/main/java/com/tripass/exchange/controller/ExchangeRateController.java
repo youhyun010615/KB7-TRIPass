@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/exchange-rates")
@@ -53,5 +54,11 @@ public class ExchangeRateController {
     public ApiResponse<SyncResultDto> manualSync(@RequestParam String date) {
         SyncResultDto result = exchangeRateService.syncExchangeRates(date);
         return ApiResponse.success("환율 동기화 완료", result);
+    }
+
+    @PostMapping("/alerts")
+    public ApiResponse<Map<String, Long>> registerAlert(@RequestBody ExchangeRateAlertRequestDto request) {
+        Long alertId = exchangeRateService.registerAlert(101L, request); // TODO: 실제 유저 ID
+        return ApiResponse.success("환율 알림이 등록되었습니다.", Map.of("id", alertId));
     }
 }

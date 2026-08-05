@@ -32,6 +32,19 @@ public class ExchangeRateService {
         return result;
     }
 
+    public Long registerAlert(Long userId, ExchangeRateAlertRequestDto request) {
+        if (request.getCurrencyId() == null) {
+            throw new IllegalArgumentException("currencyId는 필수입니다.");
+        }
+        
+        if (exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId()) > 0) {
+            throw new IllegalStateException("이미 동일한 통화에 대한 알림이 존재합니다.");
+        }
+        
+        exchangeRateMapper.insertAlert(userId, request);
+        return request.getId();
+    }
+
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {
         List<ExchangeRateHistoryResponseDto.RateInfo> rates = exchangeRateMapper.getHistoryRates(currencyCode, days);
         String currencyName = exchangeRateMapper.getCurrencyNameByCode(currencyCode);
