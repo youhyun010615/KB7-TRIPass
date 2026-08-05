@@ -24,7 +24,7 @@ function submit() {
   if (!valid.value) return
   const payload = { ...form, alert:'1시간 전', amount:Number(form.amount), title:form.title.trim(), place:form.place.trim(), memo:form.memo.trim() }
   const success = editing.value ? store.update(route.params.scheduleId, payload) : store.save(payload)
-  if (success) router.push(editing.value ? `/schedule/${route.params.scheduleId}` : '/schedule')
+  if (success) router.push(editing.value ? `/schedule/${route.params.scheduleId}` : { path:'/schedule', query:route.query })
 }
 </script>
 

@@ -39,7 +39,7 @@ const menus = [
   {
     label: '일정 관리',
     desc: '날짜별 여행 일정',
-    path: '#',
+    path: `/schedule?tripId=${route.params.id}`,
     icon: 'schedule',
   },
 ]

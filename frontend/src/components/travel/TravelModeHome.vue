@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelModeStore } from '@/stores/travelMode'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -161,6 +162,7 @@ function switchMode(mode) {
         <button type="button" @click="switchMode('savings')">저축</button>
       </div>
       <h1>안녕하세요, {{ userName }}님</h1>
+      <NotificationBell />
       <div class="country-select">
         <button type="button" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen">
           <span>{{ selected.flag }}</span>{{ selected.name }}<i>⌄</i>

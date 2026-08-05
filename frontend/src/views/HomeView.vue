@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
 import TravelModeHome from '@/components/travel/TravelModeHome.vue'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
@@ -182,7 +183,7 @@ function formatCurrency(n) {
       <div class="px-5 pt-12 pb-3 bg-white/80">
         <div class="flex items-center justify-between">
           <button class="px-3 py-1.5 rounded-full text-xs font-bold" style="background:#eef2ff;color:#263f8c">여행 저축</button>
-          <button class="w-8 h-8 rounded-full text-sm" style="background:#fff1d9;color:#d97706">♧</button>
+          <NotificationBell />
         </div>
         <p class="mt-2 text-lg font-extrabold">안녕하세요, {{ userName }}님</p>
         <p class="mt-1 text-[10px] text-slate-500">새로운 여행을 함께 준비해 볼까요?</p>
@@ -236,7 +237,9 @@ function formatCurrency(n) {
             <button class="text-[11px] text-gray-400 mt-0.5" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
           </div>
           <!-- 국가 드롭다운 -->
-          <div class="relative flex-none">
+          <div class="relative flex items-center gap-2 flex-none">
+            <NotificationBell />
+            <div class="relative">
             <button
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-[12px] font-bold text-gray-800"
               @click="showCountryDropdown = !showCountryDropdown"
@@ -256,6 +259,7 @@ function formatCurrency(n) {
               >
                 <span>{{ c.flag }}</span><span>{{ c.name }}</span>
               </button>
+            </div>
             </div>
           </div>
         </div>
