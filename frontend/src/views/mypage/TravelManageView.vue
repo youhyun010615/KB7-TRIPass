@@ -96,6 +96,9 @@ const travels = [
             </svg>
             체크리스트
           </button>
+          <button class="flex items-center gap-1.5 text-xs text-gray-500" @click.stop="router.push(`/receipt?tripId=${travel.id}`)">
+            <span>▤</span> 영수증 관리
+          </button>
         </div>
       </button>
     </div>
