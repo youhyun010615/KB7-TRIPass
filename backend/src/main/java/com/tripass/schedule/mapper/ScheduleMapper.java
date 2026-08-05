@@ -1,6 +1,7 @@
 package com.tripass.schedule.mapper;
 
 
+import com.tripass.schedule.dto.ScheduleDetailRowDto;
 import com.tripass.schedule.dto.ScheduleListRowDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -14,5 +15,10 @@ public interface ScheduleMapper {
 
     List<ScheduleListRowDto> findAllByTripId(
             @Param("tripId") Long tripId
+    );
+
+    ScheduleDetailRowDto findDetailByTripIdAndScheduleId(
+            @Param("tripId") Long tripId,
+            @Param("scheduleId") Long scheduleId
     );
 }

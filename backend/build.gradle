@@ -89,6 +89,11 @@ dependencies {
     // HTTP 통신 (Codef API 호출용)
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
+    // Validation
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+    implementation 'org.hibernate.validator:hibernate-validator:6.2.5.Final'
+    implementation 'org.glassfish:javax.el:3.0.1-b12'
+
     // Test
     testImplementation          "org.springframework:spring-test:${springVersion}"
     testImplementation          "org.mockito:mockito-core:4.11.0"

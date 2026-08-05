@@ -1,5 +1,7 @@
 package com.tripass.schedule.service;
 
+import com.tripass.schedule.dto.ScheduleDetailResponseDto;
+import com.tripass.schedule.dto.ScheduleDetailRowDto;
 import com.tripass.schedule.dto.ScheduleListResponseDto;
 import com.tripass.schedule.dto.ScheduleListRowDto;
 import com.tripass.schedule.exception.ScheduleException;
@@ -13,8 +15,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static com.tripass.schedule.exception.ScheduleErrorCode.INVALID_TRIP_ID;
-import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_NOT_FOUND;
+import static com.tripass.schedule.exception.ScheduleErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +35,6 @@ public class ScheduleService {
     public List<ScheduleListResponseDto> getSchedules(
             Long tripId
     ) {
-        validateTripId(tripId);
 
         if (!scheduleMapper.existsTripById(tripId)) {
             throw new ScheduleException(TRIP_NOT_FOUND);
@@ -108,15 +108,75 @@ public class ScheduleService {
                 .toOffsetDateTime();
     }
 
+
     /**
-     * 여행 ID가 null이거나 양수가 아닌지 검증합니다.
+     * 여행 및 일정 존재 여부를 검증한 후 여행 일정 상세 정보를 조회하고,
+     * UTC 시각을 여행 국가 현지 시간으로 변환해 반환합니다.
      *
-     * @param tripId 검증할 여행 ID
-     * @throws ScheduleException 여행 ID가 유효하지 않은 경우
+     * @param tripId 여행 ID
+     * @param scheduleId 여행 일정 ID
+     * @return 여행 일정 상세 정보
      */
-    private void validateTripId(Long tripId) {
-        if (tripId == null || tripId <= 0) {
-            throw new ScheduleException(INVALID_TRIP_ID);
+    public ScheduleDetailResponseDto getScheduleDetail(
+            Long tripId,
+            Long scheduleId
+    ) {
+
+        if (!scheduleMapper.existsTripById(tripId)) {
+            throw new ScheduleException(TRIP_NOT_FOUND);
         }
+
+        ScheduleDetailRowDto row =
+                scheduleMapper.findDetailByTripIdAndScheduleId(
+                        tripId,
+                        scheduleId
+                );
+
+        if (row == null) {
+            throw new ScheduleException(SCHEDULE_NOT_FOUND);
+        }
+
+        return toDetailResponse(row);
+    }
+
+    /**
+     * DB에서 조회한 상세 정보를 API 상세 응답으로 변환합니다.
+     *
+     * @param row DB 일정 상세 조회 결과
+     * @return 일정 상세 API 응답
+     */
+    private ScheduleDetailResponseDto toDetailResponse(
+            ScheduleDetailRowDto row
+    ) {
+        ZoneId zoneId = ZoneId.of(row.getTimeZone());
+
+        return ScheduleDetailResponseDto.builder()
+                .id(row.getId())
+                .tripId(row.getTripId())
+                .tripCountryId(row.getTripCountryId())
+                .countryName(row.getCountryName())
+                .timeZone(row.getTimeZone())
+                .scheduleName(row.getScheduleName())
+                .startAt(
+                        toOffsetDateTime(
+                                row.getStartAt(),
+                                zoneId
+                        )
+                )
+                .endAt(
+                        toOffsetDateTime(
+                                row.getEndAt(),
+                                zoneId
+                        )
+                )
+                .amount(row.getAmount())
+                .currencyCode(row.getCurrencyCode())
+                .currencySymbol(row.getCurrencySymbol())
+                .paymentStatus(row.getPaymentStatus())
+                .scheduleStatus(row.getScheduleStatus())
+                .placeName(row.getPlaceName())
+                .placeAddress(row.getPlaceAddress())
+                .memo(row.getMemo())
+                .build();
     }
 }
