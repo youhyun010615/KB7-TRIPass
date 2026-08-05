@@ -11,6 +11,7 @@ const props = defineProps({
 const router = useRouter()
 const travelMode = useTravelModeStore()
 const countryMenuOpen = ref(false)
+const calculatorCountryCode = ref('FR')
 
 const destinations = [
   {
@@ -126,7 +127,7 @@ const selected = computed(() => destinations.find(item => item.code === travelMo
 const selectedSchedules = computed(() => schedules[selected.value.code])
 const selectedRecent = computed(() => recent[selected.value.code])
 const calculatorDestination = computed(() => selected.value.code === 'all'
-  ? destinations.find(item => item.currency === travelMode.calculatorCurrency && item.code !== 'all') ?? destinations[1]
+  ? destinations.find(item => item.code === calculatorCountryCode.value) ?? destinations[1]
   : selected.value)
 const convertedAmount = computed(() => Math.round((Number(travelMode.calculatorAmount) || 0) * calculatorDestination.value.rate))
 const categoryTotal = computed(() => selected.value.categories.reduce((sum, item) => sum + item.amount, 0))
@@ -138,7 +139,12 @@ function selectDestination(item) {
   countryMenuOpen.value = false
 }
 function openCalculator() {
+  if (selected.value.code !== 'all') calculatorCountryCode.value = selected.value.code
   travelMode.openCalculator(selected.value.code === 'all' ? travelMode.calculatorCurrency : selected.value.currency)
+}
+function selectCalculatorDestination(item) {
+  calculatorCountryCode.value = item.code
+  travelMode.setCalculatorCurrency(item.currency)
 }
 function switchMode(mode) {
   if (props.onSwitchMode) props.onSwitchMode(mode)
@@ -227,7 +233,7 @@ function switchMode(mode) {
     <section v-if="travelMode.calculatorOpen" class="quick-calculator" aria-label="외화 계산기">
       <div class="calculator-head"><b>외화 계산기</b><button type="button" aria-label="닫기" @click="travelMode.closeCalculator">×</button></div>
       <div v-if="selected.code === 'all'" class="calculator-currencies">
-        <button v-for="item in destinations.slice(1)" :key="item.code" type="button" :class="{ active: calculatorDestination.code === item.code }" @click="travelMode.setCalculatorCurrency(item.currency)">{{ item.flag }} {{ item.currency }}</button>
+        <button v-for="item in destinations.slice(1)" :key="item.code" type="button" :class="{ active: calculatorDestination.code === item.code }" @click="selectCalculatorDestination(item)">{{ item.flag }} {{ item.currency }}</button>
       </div>
       <div class="calculator-fields"><label><input v-model.number="travelMode.calculatorAmount" type="number" min="0"><span>{{ calculatorDestination.currency }}</span></label><b>↔</b><output>{{ convertedAmount.toLocaleString('ko-KR') }} <small>KRW</small></output></div>
     </section>
