@@ -78,6 +78,7 @@ CREATE TABLE countries (
     id           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '국가 ID',
     country_name VARCHAR(100) NOT NULL                COMMENT '국가명',
     currency_id  BIGINT       NOT NULL                COMMENT '기본 통화 ID',
+    time_zone    VARCHAR(50)  NOT NULL                COMMENT 'IANA 시간대(예: Asia/Seoul)',
     flag_url     VARCHAR(500) NULL                    COMMENT '국기 이미지 URL',
     created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
@@ -475,7 +476,8 @@ CREATE TABLE trip_schedules (
     trip_country_id BIGINT          NULL                    COMMENT '여행 국가 ID',
     currency_id     BIGINT          NULL                    COMMENT '통화 ID',
     schedule_name   VARCHAR(200)    NOT NULL                COMMENT '일정명',
-    scheduled_at    TIMESTAMP       NOT NULL                COMMENT '일정 일시',
+    start_at        TIMESTAMP       NOT NULL                COMMENT '일정 시작 일시',
+    end_at          TIMESTAMP       NULL                    COMMENT '일정 종료 일시',
     amount          DECIMAL(18, 2)  NULL                    COMMENT '현지 통화 금액',
     payment_status  VARCHAR(20)     NOT NULL DEFAULT 'UNDECIDED' COMMENT '결제 상태(PREPAID/ONSITE/UNDECIDED)',
     schedule_status VARCHAR(20)     NOT NULL DEFAULT 'UPCOMING' COMMENT '진행 상태(UPCOMING/DONE)',
@@ -487,6 +489,11 @@ CREATE TABLE trip_schedules (
     created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
+    CONSTRAINT chk_trip_schedules_time
+        CHECK (
+            end_at IS NULL
+                OR end_at >= start_at
+        ),
     CONSTRAINT fk_trip_schedules_trip         FOREIGN KEY (trip_id)         REFERENCES trips (id),
     CONSTRAINT fk_trip_schedules_trip_country FOREIGN KEY (trip_country_id) REFERENCES trip_countries (id),
     CONSTRAINT fk_trip_schedules_currency     FOREIGN KEY (currency_id)     REFERENCES currencies (id)
@@ -646,7 +653,8 @@ CREATE INDEX idx_accounts_user_id             ON accounts (user_id);
 CREATE INDEX idx_trips_user_id                ON trips (user_id);
 CREATE INDEX idx_trip_countries_trip_id       ON trip_countries (trip_id);
 CREATE INDEX idx_trip_schedules_trip_id       ON trip_schedules (trip_id);
-CREATE INDEX idx_trip_schedules_scheduled_at  ON trip_schedules (scheduled_at);
+CREATE INDEX idx_trip_schedules_start_at      ON trip_schedules (start_at);
+CREATE INDEX idx_trip_schedules_trip_deleted_start ON trip_schedules (trip_id, is_deleted, start_at);
 CREATE INDEX idx_trip_checklist_items_trip_id ON trip_checklist_items (trip_id);
 CREATE INDEX idx_receipts_user_id             ON receipts (user_id);
 CREATE INDEX idx_receipts_trip_id             ON receipts (trip_id);
