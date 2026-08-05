@@ -19,7 +19,7 @@ public class ExchangeRateScheduler {
     /**
      * zone = "Asia/Seoul"을 지정하여 서버 시간대와 관계없이 한국 시간 기준으로 동작합니다.
      */
-    @Scheduled(cron = "0 0 12 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 30 11 * * *", zone = "Asia/Seoul")
     public void dailyExchangeRateSync() {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         log.info("정기 환율 동기화 시작 - 날짜: {}", today);
