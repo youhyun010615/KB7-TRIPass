@@ -30,6 +30,12 @@ public enum ScheduleErrorCode {
             HttpStatus.NOT_FOUND,
             "SCHEDULE_NOT_FOUND",
             "여행 일정을 찾을 수 없습니다."
+    ),
+
+    INVALID_SCHEDULE_ID(
+            HttpStatus.BAD_REQUEST,
+            "INVALID_SCHEDULE_ID",
+            "잘못된 여행 일정 ID입니다."
     );
 
     private final HttpStatus status;
