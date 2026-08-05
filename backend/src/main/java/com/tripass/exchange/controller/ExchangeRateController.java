@@ -65,7 +65,7 @@ public class ExchangeRateController {
     @PutMapping("/alerts/{id}")
     public ApiResponse<ExchangeRateAlertUpdateResponseDto> updateAlert(
             @PathVariable Long id,
-            @RequestBody ExchangeRateAlertRequestDto request) {
+            @RequestBody ExchangeRateAlertUpdateRequestDto request) {
         Long userId = 101L; // TODO: 실제 로그인한 유저 ID로 대체
         ExchangeRateAlertUpdateResponseDto updatedAlert = exchangeRateService.updateAlert(id, userId, request);
         return ApiResponse.success("환율 알림이 수정되었습니다.", updatedAlert);

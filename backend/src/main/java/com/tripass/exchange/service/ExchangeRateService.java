@@ -58,12 +58,14 @@ public class ExchangeRateService {
     }
 
     @Transactional
-    public ExchangeRateAlertUpdateResponseDto updateAlert(Long id, Long userId, ExchangeRateAlertRequestDto request) {
+    public ExchangeRateAlertUpdateResponseDto updateAlert(Long id, Long userId, ExchangeRateAlertUpdateRequestDto request) {
+
         // 1. 알림 존재 여부 및 권한 확인
         ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
         if (existingAlert == null) {
             throw new CustomException(HttpStatus.NOT_FOUND, "ALERT_NOT_FOUND", "해당 알림을 찾을 수 없습니다.");
         }
+
         if (!existingAlert.getUserId().equals(userId)) {
             throw new CustomException(HttpStatus.FORBIDDEN, "FORBIDDEN", "수정 권한이 없습니다.");
         }
@@ -72,8 +74,11 @@ public class ExchangeRateService {
         exchangeRateMapper.updateAlert(id, request);
 
         // 3. 수정된 데이터 조회 및 반환
-        return exchangeRateMapper.getAlertById(id);
+        ExchangeRateAlertUpdateResponseDto updatedAlert = exchangeRateMapper.getAlertById(id);
+
+        return updatedAlert;
     }
+
 
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {
         List<ExchangeRateHistoryResponseDto.RateInfo> rates = exchangeRateMapper.getHistoryRates(currencyCode, days);

@@ -1,11 +1,7 @@
 package com.tripass.exchange.mapper;
 
 import com.tripass.exchange.domain.ExchangeRate;
-import com.tripass.exchange.dto.ExchangeRateAlertRequestDto;
-import com.tripass.exchange.dto.ExchangeRateAlertResponseDto;
-import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
-import com.tripass.exchange.dto.ExchangeRateResponseDto;
-import com.tripass.exchange.dto.LatestExchangeRateDto;
+import com.tripass.exchange.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -52,7 +48,7 @@ public interface ExchangeRateMapper {
     List<ExchangeRateHistoryResponseDto.RateInfo> getHistoryRates(@Param("currencyCode") String currencyCode, @Param("days") int days);
 
     // 관심 환율 알림 수정
-    int updateAlert(@Param("id") Long id, @Param("request") ExchangeRateAlertRequestDto request);
+    int updateAlert(@Param("id") Long id, @Param("request") ExchangeRateAlertUpdateRequestDto request);
 
     // 관심 환율 알림 조회 (단건)
     ExchangeRateAlertUpdateResponseDto getAlertById(@Param("id") Long id);
