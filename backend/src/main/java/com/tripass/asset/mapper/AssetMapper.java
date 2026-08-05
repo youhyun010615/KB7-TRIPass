@@ -40,7 +40,7 @@ public interface AssetMapper {
     );
 
     //전체 계좌 거래내역 조회
-    List<TransactionDto> findTransactionByUserId(Long userId);
+    List<TransactionDto> findTransactionsByUserId(Long userId);
 
     // supported_institutions
     List<SupportedInstitutionDto> findAllSupportedInstitutions();
