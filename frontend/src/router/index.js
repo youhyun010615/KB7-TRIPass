@@ -335,6 +335,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/reports/pre-trip',
+      name: 'MypagePreTripReport',
+      component: () => import('@/views/mypage/PreTripReportView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/reports/post-trip',
+      name: 'MypagePostTripReport',
+      component: () => import('@/views/mypage/PostTripReportView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/checklists',
       name: 'MypageChecklists',
       component: () => import('@/views/mypage/ChecklistListView.vue'),

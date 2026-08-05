@@ -21,7 +21,7 @@ const menus = [
   {
     label: '여행 리포트',
     desc: '여행 지출 분석과 요약',
-    path: '/mypage/reports',
+    path: `/mypage/reports?tripId=${route.params.id}`,
     icon: 'report',
   },
   {
