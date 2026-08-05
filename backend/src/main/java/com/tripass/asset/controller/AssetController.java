@@ -69,4 +69,12 @@ public class AssetController {
                 )));
     }
 
+    //AST-007: 계좌 연결 해제(soft delete)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable("id") Long accountId) {
+        assetService.deleteAccount(userId, accountId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }
