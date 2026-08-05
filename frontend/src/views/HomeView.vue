@@ -68,13 +68,13 @@ const countries = [
     desc: '익숙함 속 새로운 발견 · 도쿄에서의 하루를 기대하며',
   },
   {
-    id: 5, name: '다낭', flag: '🇻🇳', code: 'DAD',
-    image: '/images/vietnam.png',
-    headerBg: '#b8860b',
-    progressBg: 'rgba(184,134,11,0.82)',
-    barColor: 'linear-gradient(90deg,#DA251D 0%,#FFCD00 50%,#DA251D 100%)',
-    dday: 230, currency: 'VND', rate: 0.06,
-    desc: '바다와 햇살이 머무는 곳 · 다낭에서의 여유로운 하루',
+    id: 5, name: '홍콩', flag: '🇭🇰', code: 'HKG',
+    image: '/images/Hong%20Kong.png',
+    headerBg: '#00685a',
+    progressBg: 'rgba(0,104,90,0.84)',
+    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFFFFF 58%,#DE2910 100%)',
+    dday: 230, currency: 'HKD', rate: 184.2,
+    desc: '빛나는 야경과 활기찬 거리 · 홍콩에서 시작되는 특별한 하루',
   },
 ]
 const selectedCountry = ref(countries[0])

@@ -49,7 +49,7 @@
         WHERE er.rate_date = (SELECT MAX(rate_date) FROM exchange_rates)
         ORDER BY 
             CASE 
-                WHEN c.currency_code IN ('JPY', 'EUR', 'CHF', 'VND', 'USD') THEN 0
+                WHEN c.currency_code IN ('JPY', 'EUR', 'CHF', 'HKD', 'USD') THEN 0
                 WHEN c.currency_code IN ('GBP', 'CAD', 'AUD', 'CNH', 'HKD') THEN 1
                 ELSE 2 
             END,

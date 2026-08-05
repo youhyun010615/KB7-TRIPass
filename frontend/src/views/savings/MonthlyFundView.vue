@@ -15,7 +15,7 @@ const countryThemes = [
   { code: 'CH', name: '스위스', city: '인터라켄', flag: '🇨🇭', ticketGradient: 'linear-gradient(115deg,#9c1034,#e32835)' },
   { code: 'DE', name: '독일', city: '베를린', flag: '🇩🇪', ticketGradient: 'linear-gradient(115deg,#151515,#db1111)' },
   { code: 'JP', name: '일본', city: '도쿄', flag: '🇯🇵', ticketGradient: 'linear-gradient(115deg,#a8155c,#f04c98)' },
-  { code: 'VN', name: '베트남', city: '다낭', flag: '🇻🇳', ticketGradient: 'linear-gradient(115deg,#b77700,#f1b900)' },
+  { code: 'HK', name: '홍콩', city: '홍콩', flag: '🇭🇰', ticketGradient: 'linear-gradient(115deg,#00584d,#008d78)' },
 ]
 
 const initialCode = travel.selectedCountryCodes[0] || 'FR'
