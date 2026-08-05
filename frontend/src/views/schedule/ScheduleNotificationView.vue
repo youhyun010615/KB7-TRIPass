@@ -6,7 +6,7 @@ import { useTravelScheduleStore } from '@/stores/travelSchedule'
 
 const router = useRouter()
 const store = useTravelScheduleStore()
-const alerts = computed(() => store.sortedSchedules.filter(item => item.alert !== '알림 없음'))
+const alerts = computed(() => store.sortedSchedules)
 const country = code => store.countries.find(item => item.code === code)
 const openDetail = item => {
   store.markNotificationRead(item.id)
@@ -28,7 +28,7 @@ const openDetail = item => {
       <div class="section-title"><h2>예정된 알림</h2><span>총 {{ alerts.length }}건</span></div>
       <button v-for="item in alerts" :key="item.id" type="button" :class="{ read: item.notificationRead }" @click="openDetail(item)">
         <span class="flag">{{ country(item.countryCode).flag }}</span>
-        <span class="copy"><small>{{ item.date.replaceAll('-', '.') }} · {{ item.time }}</small><b>{{ item.title }}</b><em>{{ item.alert }} 알림 · {{ item.paymentStatus === 'prepaid' ? '사전결제 완료' : '현장결제 필요' }}</em></span>
+        <span class="copy"><small>{{ item.date.replaceAll('-', '.') }} · {{ item.time }}</small><b>{{ item.title }}</b><em>1시간 전 자동 알림 · {{ item.paymentStatus === 'prepaid' ? '사전결제 완료' : '현장결제 필요' }}</em></span>
         <i v-if="!item.notificationRead" />
         <strong>›</strong>
       </button>

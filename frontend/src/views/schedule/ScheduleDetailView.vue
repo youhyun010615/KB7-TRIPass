@@ -24,7 +24,7 @@ function remove() {
       <section class="details"><dl>
         <div><dt>▣ 일시</dt><dd>{{ schedule.date }} {{ schedule.time }}</dd></div>
         <div><dt>📍 장소 및 주소</dt><dd>{{ schedule.place }}</dd></div>
-        <div><dt>🔔 알림</dt><dd>{{ schedule.alert }}</dd></div>
+        <div><dt>🔔 알림</dt><dd>일정 1시간 전 자동 알림</dd></div>
       </dl></section>
       <section class="memo"><h3>📝 메모</h3><p>{{ schedule.memo || '등록된 메모가 없어요.' }}</p></section>
       <div class="actions"><button type="button" @click="remove">삭제</button><button type="button" @click="router.push(`/schedule/${schedule.id}/edit`)">수정</button></div>
