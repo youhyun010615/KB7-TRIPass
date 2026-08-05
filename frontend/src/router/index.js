@@ -317,6 +317,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/financial-profile',
+      name: 'MypageFinancialProfile',
+      component: () => import('@/views/mypage/FinancialProfileDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/financial-profile/edit',
+      name: 'MypageFinancialProfileEdit',
+      component: () => import('@/views/mypage/FinancialProfileEditView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/travel',
       name: 'MypageTravel',
       component: () => import('@/views/mypage/TravelManageView.vue'),
@@ -368,6 +380,12 @@ const router = createRouter({
       path: '/mypage/notification',
       name: 'MypageNotification',
       component: () => import('@/views/mypage/NotificationView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/notifications',
+      name: 'NotificationInbox',
+      component: () => import('@/views/mypage/NotificationInboxView.vue'),
       meta: { requiresAuth: true },
     },
   ],
