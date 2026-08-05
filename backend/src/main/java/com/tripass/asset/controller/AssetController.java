@@ -3,14 +3,16 @@ package com.tripass.asset.controller;
 import com.tripass.asset.dto.*;
 import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/assets")
+@RequestMapping("/api/v1/accounts")
 public class AssetController {
 
     private final AssetService assetService;
@@ -28,7 +30,7 @@ public class AssetController {
     }
 
     //AST-002 계좌연동
-    @PostMapping("/link")
+    @PostMapping("/codef/connect")
     public ResponseEntity<ApiResponse<List<AccountDto>>> linkBank(
             @RequestAttribute("userId") Long userId,
             @RequestBody CodefLinkRequestDto req) {
@@ -50,6 +52,21 @@ public class AssetController {
     getInstitutions(){
         return
                 ResponseEntity.ok(ApiResponse.success(assetService.getSupportedInstitutions()));
+    }
+
+
+    //AST-004: 개별 계좌 거래내역 조회(DB 조회)
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<ApiResponse<AccountTransactionResponseDto>>
+    getAccountTransactions(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable("id") Long accountId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(required = false) String type) {
+        return ResponseEntity.ok(ApiResponse.success(
+                assetService.getAccountTransactions(userId, accountId, startDate, endDate, type
+                )));
     }
 
 }

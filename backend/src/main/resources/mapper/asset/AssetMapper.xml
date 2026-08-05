@@ -83,4 +83,50 @@
         AND a.is_deleted = 0
         AND i.is_deleted = 0
     </select>
+
+    <!-- 개별 계좌 거래내역 조회 (날짜/타입 필터) -->
+    <select id = "findTransactionsByAccountIdWithFilter" resultType="TransactionDto">
+        SELECT id, account_id, transaction_date, transaction_time,
+               transaction_type, transaction_region, amount, balance_after,
+               merchant_name
+        FROM transactions
+        WHERE account_id = #{accountId}
+        AND is_deleted = 0
+        <if test="startDate != null">
+            AND transaction_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND transaction_date &lt;= #{endDate}
+        </if>
+        <if test="type != null and type != ''">
+            AND transaction_type = #{type}
+        </if>
+        ORDER BY transaction_date DESC, transaction_time DESC
+    </select>
+
+    <!-- 거래 단건 상세 조회(userId로 소유권 검증) -->
+    <select id = "findTransactionById" resultType="TransactionDto">
+        SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after,
+               t.merchant_name
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.id
+        WHERE t.id = #{transactionId}
+        AND a.user_id = #{userId}
+        AND t.is_deleted = 0
+        AND a.is_deleted = 0
+    </select>
+
+    <!-- 전체 계좌 거래내역 조회(userId 기준) -->
+    <select id = "findTransactionsByUserId" resultType="TransactionDto">
+        SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name
+        FROM transactions t
+        JOIN accounts a  ON t.account_id = a.id
+        WHERE a.user_id = #{userId}
+        AND t.is_deleted = 0
+        AND a.is_deleted = 0
+        ORDER BY t.transaction_date DESC, t.transaction_time DESC
+    </select>
+
 </mapper>
