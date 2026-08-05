@@ -6,12 +6,18 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.tripass.auth.security.JwtAuthenticationFilter;
+import com.tripass.auth.security.handler.JwtAccessDeniedHandler;
+import com.tripass.auth.security.handler.JwtAuthenticationEntryPoint;
 
 import java.util.List;
 
@@ -25,23 +31,37 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // 인증 API는 항상 허용
-                        .antMatchers("/api/v1/auth/**").permitAll()
-                        // Swagger
-                        .antMatchers("/swagger-ui.html", "/v2/api-docs", "/webjars/**",
-                                "/swagger-resources/**").permitAll()
-                        // TODO: JWT 구현 후 .authenticated() 로 교체
-                        .anyRequest().permitAll()
+                .exceptionHandling(exception ->
+                        exception
+                                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                                .accessDeniedHandler(jwtAccessDeniedHandler)
+
+                )
+                .authorizeHttpRequests(auth ->
+                        auth
+                                // 인증 API는 항상 허용
+                                .antMatchers("/api/v1/auth/**").permitAll()
+                                .antMatchers("/swagger-ui.html", "/v2/api-docs", "/webjars/**",
+                                        "/swagger-resources/**").permitAll()
+                                .anyRequest().authenticated()
+                )
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 );
         return http.build();
     }
