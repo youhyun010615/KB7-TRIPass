@@ -70,9 +70,9 @@ const countries = [
   {
     id: 5, name: '홍콩', flag: '🇭🇰', code: 'HKG',
     image: '/images/Hong%20Kong.png',
-    headerBg: '#00685a',
-    progressBg: 'rgba(0,104,90,0.84)',
-    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFFFFF 58%,#DE2910 100%)',
+    headerBg: '#b8202e',
+    progressBg: 'rgba(184,32,46,0.84)',
+    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFDE00 100%)',
     dday: 230, currency: 'HKD', rate: 184.2,
     desc: '빛나는 야경과 활기찬 거리 · 홍콩에서 시작되는 특별한 하루',
   },

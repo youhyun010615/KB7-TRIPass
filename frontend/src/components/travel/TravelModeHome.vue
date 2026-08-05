@@ -69,7 +69,7 @@ const destinations = [
     ],
   },
   {
-    code: 'HK', name: '홍콩', title: '홍콩', flag: '🇭🇰', image: '/images/Hong%20Kong.png', theme: '#00685a', currency: 'HKD', rate: 184.2,
+    code: 'HK', name: '홍콩', title: '홍콩', flag: '🇭🇰', image: '/images/Hong%20Kong.png', theme: '#b8202e', currency: 'HKD', rate: 184.2,
     dday: 5, day: 2, totalDays: 7, remain: 480000, localAmount: 'HKD 2,606.95', daily: 'HKD 521.17', dailyWon: '약 96,000원', goal: 1800000, prepaid: 620000, progress: 38,
     categories: [
       { icon: '🍴', name: '식비', amount: 180000, percent: 57, color: '#e0a400' }, { icon: '☕', name: '카페', amount: 60000, percent: 32, color: '#638fe3' },
@@ -120,7 +120,7 @@ const overallAssets = [
   { code: 'CH', flag: '🇨🇭', city: '스위스', amount: 1000000, local: '약 CHF 586.65', image: '/images/switzerland.webp', theme: '#a81436' },
   { code: 'DE', flag: '🇩🇪', city: '베를린', amount: 720000, local: '약 EUR 484.46', image: '/images/germany.png', theme: '#202020' },
   { code: 'JP', flag: '🇯🇵', city: '도쿄', amount: 650000, local: '약 JPY 70,422', image: '/images/japan.webp', theme: '#c82770' },
-  { code: 'HK', flag: '🇭🇰', city: '홍콩', amount: 480000, local: '약 HKD 2,606.95', image: '/images/Hong%20Kong.png', theme: '#00685a' },
+  { code: 'HK', flag: '🇭🇰', city: '홍콩', amount: 480000, local: '약 HKD 2,606.95', image: '/images/Hong%20Kong.png', theme: '#b8202e' },
 ]
 
 const selected = computed(() => destinations.find(item => item.code === travelMode.selectedDestination) ?? destinations[0])
@@ -292,7 +292,7 @@ function switchMode(mode) {
 .country-CH .fund-track i{background:linear-gradient(90deg,#ff0000 0%,#fff 58%,#ff0000 100%)}
 .country-DE .fund-track i{background:linear-gradient(90deg,#111 0%,#dd0000 52%,#ffce00 100%)}
 .country-JP .fund-track i{background:linear-gradient(90deg,#fff 0%,#bc002d 48%,#fff 100%)}
-.country-HK .fund-track i{background:linear-gradient(90deg,#de2910 0%,#fff 58%,#de2910 100%)}
+.country-HK .fund-track i{background:linear-gradient(90deg,#de2910 0%,#ffde00 100%)}
 .country-all .fund-track i{background:linear-gradient(90deg,#002395 0%,#f4f4f4 30%,#ed2939 48%,#ff0000 66%,#fff 82%,#ff0000 100%)}
 .stub-action{display:flex;align-items:center;gap:8px}.barcode{display:flex;height:24px;align-items:flex-end;gap:2px}.barcode i{display:block;background:#fff;border-radius:1px}
 .ticket-top{height:44px;box-sizing:border-box}
