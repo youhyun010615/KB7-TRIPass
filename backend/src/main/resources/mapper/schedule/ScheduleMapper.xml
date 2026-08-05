@@ -44,4 +44,41 @@
         ORDER BY ts.start_at ASC, ts.id ASC
     </select>
 
+    <select id="findDetailByTripIdAndScheduleId" resultType="ScheduleDetailRowDto">
+        SELECT
+            ts.id,
+            ts.trip_id,
+            ts.trip_country_id,
+            c.country_name,
+            c.time_zone,
+            ts.schedule_name,
+            ts.start_at,
+            ts.end_at,
+            ts.amount,
+            cur.currency_code,
+            cur.symbol AS currency_symbol,
+            ts.payment_status,
+            ts.schedule_status,
+            ts.place_name,
+            ts.place_address,
+            ts.memo
+        FROM trip_schedules ts
+                 INNER JOIN trips t
+                            ON t.id = ts.trip_id
+                                AND t.is_deleted = 0
+                 LEFT JOIN trip_countries tc
+                           ON tc.id = ts.trip_country_id
+                               AND tc.is_deleted = 0
+                 LEFT JOIN countries c
+                           ON c.id = tc.country_id
+                 LEFT JOIN currencies cur
+                           ON cur.id = COALESCE(
+                                   ts.currency_id,
+                                   c.currency_id
+                                       )
+        WHERE ts.id = #{scheduleId}
+          AND ts.trip_id = #{tripId}
+          AND ts.is_deleted = 0
+    </select>
+
 </mapper>
