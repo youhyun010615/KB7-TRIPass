@@ -6,6 +6,10 @@ import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
 import com.tripass.auth.dto.request.LoginRequest;
 import com.tripass.auth.dto.response.LoginResponse;
+import com.tripass.auth.dto.internal.LoginResult;
+import com.tripass.auth.dto.internal.TokenRefreshResult;
+import com.tripass.auth.dto.response.TokenRefreshResponse;
+import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
 import com.tripass.common.exception.CustomException;
@@ -30,6 +34,7 @@ public class AuthServiceImpl implements AuthService{
     private final PhoneVerificationService phoneVerificationService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
 
     // 영문, 숫자, 특수문자를 각각 포함하는 8~64자
     private static final Pattern PASSWORD_PATTERN =
@@ -162,7 +167,8 @@ public class AuthServiceImpl implements AuthService{
 
 
     @Override
-    public LoginResponse login(LoginRequest request) {
+    @Transactional
+    public LoginResult login(LoginRequest request) {
         if(request == null){
             throw new IllegalArgumentException("로그인 정보를 입력해주세요");
         }
@@ -182,7 +188,18 @@ public class AuthServiceImpl implements AuthService{
                     "아이디 또는 비밀번호가 올바르지 않습니다."
             );
         }
-        String accessToken = jwtTokenProvider.createAccessToken(user);
+        String accessToken =
+                jwtTokenProvider.createAccessToken(user);
+
+        String refreshToken =
+                jwtTokenProvider.createRefreshToken(user);
+
+// Refresh Token 원문은 저장하지 않고 해시하여 DB에 저장한다.
+        refreshTokenService.saveRefreshToken(
+                user.getId(),
+                refreshToken
+        );
+
         LoginResponse.UserInfo userInfo =
                 new LoginResponse.UserInfo(
                         user.getId(),
@@ -190,11 +207,58 @@ public class AuthServiceImpl implements AuthService{
                         user.getName(),
                         user.getLoginProvider()
                 );
-        return  new LoginResponse(
-                accessToken,
-                "Bearer",
-                jwtTokenProvider.getAccessExpirationSeconds(),
-                userInfo
+
+        LoginResponse loginResponse =
+                new LoginResponse(
+                        accessToken,
+                        "Bearer",
+                        jwtTokenProvider
+                                .getAccessExpirationSeconds(),
+                        userInfo
+                );
+
+        return new LoginResult(
+                loginResponse,
+                refreshToken
+        );
+    }
+
+    //Refresh Token을 이용해 AccessToken과 RefreshToken을 재발급한다.
+    @Override
+    @Transactional
+    public TokenRefreshResult refreshToken(String refreshToken) {
+        //토큰ID, 해시, 만료 및 폐기 여부 검사
+        RefreshToken savedToken = refreshTokenService.validateRefreshToken(refreshToken);
+
+        //연결된 회원 조회
+        User user = userMapper.findActiveUserById(savedToken.getUserId());
+
+        if(user == null){
+            throw new CustomException(
+                    HttpStatus.UNAUTHORIZED,
+                    "INVALID_REFRESH_TOKEN",
+                    "로그인 정보가 만료되었거나 유효하지 않습니다."
+            );
+        }
+        //기존 RefreshToken 먼저 폐기
+        refreshTokenService.revokeRefreshToken(refreshToken);
+
+        //새로운 AccessToken과 RefreshToken 발급
+        String newAccessToken = jwtTokenProvider.createAccessToken(user);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(user);
+
+        //새로운 RefreshToken 해시 DB에 저장
+        refreshTokenService.saveRefreshToken(user.getId(), newRefreshToken);
+
+        TokenRefreshResponse response =
+                new TokenRefreshResponse(
+                        newAccessToken,
+                        "Bearer",
+                        jwtTokenProvider.getAccessExpirationSeconds()
+                );
+        return new TokenRefreshResult(
+                response,
+                newRefreshToken
         );
     }
 
@@ -263,5 +327,16 @@ public class AuthServiceImpl implements AuthService{
         }
 
         return value.trim();
+    }
+    // 현재 브라우저의 Refresh Token을 폐기한다.
+    @Override
+    @Transactional
+    public void logout(String refreshToken) {
+        if (refreshToken == null
+                || refreshToken.isBlank()) {
+            return;
+        }
+        refreshTokenService
+                .revokeRefreshToken(refreshToken);
     }
 }

@@ -33,6 +33,7 @@ DROP TABLE IF EXISTS currencies;
 DROP TABLE IF EXISTS exchange_bank_branches;
 DROP TABLE IF EXISTS travel_cards;
 DROP TABLE IF EXISTS supported_institutions;
+DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS phone_verifications;
 DROP TABLE IF EXISTS users;
 
@@ -66,6 +67,25 @@ CREATE TABLE users (
     UNIQUE KEY uk_users_provider_key (login_provider, provider_key)
 
 ) COMMENT '회원';
+CREATE TABLE refresh_tokens (
+    id                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'Refresh Token ID',
+    user_id            BIGINT       NOT NULL COMMENT '회원 ID',
+    token_id           VARCHAR(100) NOT NULL COMMENT 'JWT 고유 식별값(jti)',
+    token_hash         CHAR(64)     NOT NULL COMMENT 'Refresh Token SHA-256 해시값',
+    expires_at         DATETIME     NOT NULL COMMENT '만료일시',
+    revoked_at         DATETIME     NULL COMMENT '폐기일시',
+    created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    ON UPDATE CURRENT_TIMESTAMP
+                                    COMMENT '수정일시',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_refresh_tokens_token_id (token_id),
+    INDEX idx_refresh_tokens_user_id (user_id),
+    INDEX idx_refresh_tokens_expires_at (expires_at),
+    CONSTRAINT fk_refresh_tokens_users
+    FOREIGN KEY (user_id) REFERENCES users(id)
+
+) COMMENT 'Refresh Token';
 CREATE TABLE phone_verifications (
     id                     BIGINT       NOT NULL AUTO_INCREMENT COMMENT '휴대전화 인증 ID',
     request_id             VARCHAR(100) NOT NULL COMMENT '인증 요청 식별값(UUID)',

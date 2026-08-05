@@ -99,6 +99,10 @@ public class JwtTokenProvider {
     public String getTokenId(String token) {
         return parseClaims(token).getId();
     }
+    // JWT 만료일시 조회
+    public Date getExpirationDate(String token) {
+        return parseClaims(token).getExpiration();
+    }
     //JWT에서 로그인 아이디 조회
     public String getLoginId(String token){
         return parseClaims(token).get("loginId",String.class);
@@ -110,6 +114,10 @@ public class JwtTokenProvider {
     //Acces Token 만료시간 반환
     public long getAccessExpirationSeconds(){
         return accessExpirationMs / 1000;
+    }
+    // Refresh Token 만료시간을 초 단위로 반환
+    public long getRefreshExpirationSeconds() {
+        return refreshExpirationMs / 1000;
     }
     private Claims parseClaims(String token){
         return Jwts.parserBuilder()

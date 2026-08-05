@@ -4,7 +4,8 @@ import com.tripass.auth.dto.response.CheckLoginIdResponse;
 import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
 import com.tripass.auth.dto.request.LoginRequest;
-import com.tripass.auth.dto.response.LoginResponse;
+import com.tripass.auth.dto.internal.LoginResult;
+import com.tripass.auth.dto.internal.TokenRefreshResult;
 
 // 회원 가입 및 로그인 기능 정의하는 service의 인터페이스
 public interface AuthService {
@@ -13,5 +14,11 @@ public interface AuthService {
     //인증 후 회원가입 처리
     SignupResponse signup(SignupRequest request);
     //일반 로그인 처리
-    LoginResponse login(LoginRequest request);
+    LoginResult login(LoginRequest request);
+
+    // Refresh Token을 이용한 토큰 재발급
+    TokenRefreshResult refreshToken(String refreshToken);
+
+    // 현재 브라우저의 Refresh Token을 폐기한다.
+    void logout(String refreshToken);
 }

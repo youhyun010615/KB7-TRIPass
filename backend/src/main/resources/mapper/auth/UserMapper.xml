@@ -90,4 +90,27 @@
                    'LOCAL'
                )
     </insert>
+
+    <!-- 회원 PK로 활성 회원을 조회 -->
+    <select
+            id="findActiveUserById"
+            resultMap="userResultMap">
+
+        SELECT
+            id,
+            login_id,
+            password,
+            name,
+            phone_number,
+            login_provider,
+            provider_key,
+            current_view_mode,
+            is_deleted,
+            deleted_at,
+            created_at,
+            updated_at
+        FROM users
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </select>
 </mapper>

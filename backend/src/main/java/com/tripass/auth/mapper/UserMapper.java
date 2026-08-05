@@ -13,5 +13,6 @@ public interface UserMapper {
     User findLocalUserByLoginId(@Param("loginId") String loginId);
     //일반 회원을 users 테이블에 저장한다. - 저장된 행 갯수 리턴
     int insertLocalUser(User user);
-
+    // 회원 PK로 활성 회원 조회
+    User findActiveUserById(@Param("userId") Long userId);
 }
