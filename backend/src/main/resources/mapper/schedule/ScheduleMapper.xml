@@ -13,7 +13,7 @@
         )
     </select>
 
-    <select id="findAllByTripId" resultType="com.tripass.schedule.dto.ScheduleListRowDto">
+    <select id="findAllByTripId" resultType="ScheduleListRowDto">
         SELECT ts.id,
                ts.trip_id,
                ts.trip_country_id,
