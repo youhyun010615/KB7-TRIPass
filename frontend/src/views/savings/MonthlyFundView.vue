@@ -1,25 +1,35 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import MonthlyFundTicket from '@/components/savings/MonthlyFundTicket.vue'
 import { useMonthlyFundStore } from '@/stores/monthlyFund'
 import { useTravelStore } from '@/stores/travel'
+import { useTravelModeStore } from '@/stores/travelMode'
 
 const router = useRouter()
 const fund = useMonthlyFundStore()
 const travel = useTravelStore()
+const travelMode = useTravelModeStore()
 
 const countryThemes = [
-  { code: 'FR', name: '프랑스', city: '파리', flag: '🇫🇷', ticketGradient: 'linear-gradient(115deg,#12377f,#0587ef)' },
-  { code: 'CH', name: '스위스', city: '인터라켄', flag: '🇨🇭', ticketGradient: 'linear-gradient(115deg,#9c1034,#e32835)' },
-  { code: 'DE', name: '독일', city: '베를린', flag: '🇩🇪', ticketGradient: 'linear-gradient(115deg,#151515,#db1111)' },
-  { code: 'JP', name: '일본', city: '도쿄', flag: '🇯🇵', ticketGradient: 'linear-gradient(115deg,#a8155c,#f04c98)' },
-  { code: 'HK', name: '홍콩', city: '홍콩', flag: '🇭🇰', ticketGradient: 'linear-gradient(115deg,#971827,#d62d3c)' },
+  { code: 'all', name: '전체', city: '전체 여행', flag: '🌍', theme: '#174b5d', image: '' },
+  { code: 'FR', name: '프랑스', city: '파리', flag: '🇫🇷', theme: '#124a9b', image: '/images/france.png' },
+  { code: 'CH', name: '스위스', city: '인터라켄', flag: '🇨🇭', theme: '#a51333', image: '/images/switzerland.webp' },
+  { code: 'DE', name: '독일', city: '베를린', flag: '🇩🇪', theme: '#1b1b1b', image: '/images/germany.png' },
+  { code: 'JP', name: '일본', city: '도쿄', flag: '🇯🇵', theme: '#ce2b72', image: '/images/japan.webp' },
+  { code: 'HK', name: '홍콩', city: '홍콩', flag: '🇭🇰', theme: '#b8202e', image: '/images/Hong%20Kong.png' },
 ]
 
-const initialCode = travel.selectedCountryCodes[0] || 'FR'
-const selectedCode = ref(initialCode)
+const initialCode = countryThemes.some(item => item.code === travelMode.selectedDestination)
+  ? travelMode.selectedDestination
+  : (travel.selectedCountryCodes[0] || 'FR')
+const selectedCode = computed({
+  get: () => countryThemes.some(item => item.code === travelMode.selectedDestination)
+    ? travelMode.selectedDestination
+    : initialCode,
+  set: code => travelMode.selectDestination(code),
+})
 const selectedCountry = computed(() => countryThemes.find((item) => item.code === selectedCode.value) || countryThemes[0])
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
 </script>
