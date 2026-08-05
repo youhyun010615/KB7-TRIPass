@@ -159,20 +159,16 @@ function switchMode(mode) {
       </div>
     </header>
 
-    <article class="ticket" :class="{ combined: selected.code === 'all' }" :style="{ '--theme': selected.theme, '--photo': `url(${selected.image})` }">
+    <article class="ticket" :class="[{ combined: selected.code === 'all' }, `country-${selected.code}`]" :style="{ '--theme': selected.theme, '--photo': `url(${selected.image})` }">
       <div class="ticket-top"><span>BOARDING PASS</span><span>TRIPASS AIR</span><span>NO. {{ selected.code === 'all' ? 'EUR' : selected.code }}-230</span></div>
       <div class="perforation"><i/><span/><i/></div>
       <div class="ticket-main">
-        <div class="trip-line">
-          <div><small>DESTINATION</small><b>{{ selected.flag }} {{ selected.title }}</b></div>
-          <span class="flight-route"><i />✈<i /></span>
-          <div class="departure"><small>DEPARTURE</small><strong>D-{{ selected.dday }}</strong></div>
-        </div>
+        <div class="trip-line"><b>{{ selected.flag }} {{ selected.title }}</b><strong>D-{{ selected.dday }}</strong></div>
+        <div class="trip-progress"><small>{{ selected.day }}일차</small><div><i :style="{ width: `${selected.day / selected.totalDays * 100}%` }"/></div><small>{{ selected.totalDays }}일차</small></div>
         <p class="trip-description">{{ selected.code === 'all' ? '등록한 모든 여행의 남은 자산을 한눈에 확인해요' : `${selected.title}에서 시작되는 설레는 여행을 즐겨보세요` }} ✨</p>
         <div class="ticket-photo-space" />
 
-        <div class="travel-summary-panel">
-          <div class="trip-progress"><small>{{ selected.day }}일차</small><div><i :style="{ width: `${selected.day / selected.totalDays * 100}%` }"/></div><small>{{ selected.totalDays }}일차</small></div>
+        <div class="travel-summary-content">
           <template v-if="selected.code === 'all'">
             <div class="summary-title"><span>전체 남은 여행 자산 (합산)</span><strong>{{ formatWon(selected.remain) }}</strong></div>
             <div class="country-assets">
@@ -181,7 +177,7 @@ function switchMode(mode) {
             </div>
           </template>
           <template v-else>
-            <div class="summary-title"><span>{{ selected.title }} 남은 여행 자산</span><strong>{{ selected.localAmount }} <small>(약 {{ formatWon(selected.remain) }})</small></strong></div>
+            <div class="summary-title asset-title"><span>{{ selected.title }} 남은 여행 자산</span><strong>{{ selected.localAmount }} <small>(약 {{ formatWon(selected.remain) }})</small></strong></div>
             <div class="daily-budget"><span>남은 5일 동안 하루에 쓸 수 있는 금액</span><b>{{ selected.daily }} <small>({{ selected.dailyWon }})</small></b></div>
           </template>
           <div class="fund-label"><span>여행 자금 진행률</span><b>{{ selected.progress }}%</b></div>
@@ -190,7 +186,7 @@ function switchMode(mode) {
         </div>
       </div>
       <div class="perforation lower"><i/><span/><i/></div>
-      <div class="ticket-stub"><span>여행 목표 자금 관리</span><b>▥▥▥▥▥ ›</b></div>
+      <div class="ticket-stub"><span>여행 목표 자금 관리</span><div class="stub-action"><div class="barcode"><i v-for="(height,index) in [18,11,22,8,17,13,23,8,19,9,15,12,21,8,18]" :key="index" :style="{ height: `${height}px`, width: index % 4 === 0 ? '3px' : '2px' }" /></div><b>›</b></div></div>
     </article>
 
     <article class="card budget-card">
@@ -245,7 +241,7 @@ function switchMode(mode) {
 .flight-route{display:flex;align-items:center;color:#ffd829;font-size:16px}
 .flight-route i{width:100%;border-top:1px dashed #ffffff80}
 .trip-description{height:16px;margin-top:9px;overflow:hidden;color:#ffffffe0;font-size:9px;white-space:nowrap;text-overflow:ellipsis}
-.ticket-main{height:320px;min-height:320px;padding:20px}
+.ticket-main{height:320px;min-height:320px;padding:20px;overflow:hidden}
 .ticket-photo-space{height:36px}
 .travel-summary-panel{padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--theme) 78%,transparent);box-shadow:inset 0 0 0 1px #ffffff0d;backdrop-filter:blur(2px)}
 .travel-summary-panel .trip-progress{margin-top:0}
@@ -261,4 +257,27 @@ function switchMode(mode) {
 .travel-summary-panel .fund-label{margin-top:9px}.travel-summary-panel .fund-track{height:6px;margin-top:5px}.travel-summary-panel .fund-meta{margin-top:6px}
 .ticket-stub{height:45px;padding:0 18px;background:var(--theme);color:#fff}
 .ticket-stub b{color:#fff}
+.trip-line{display:flex;align-items:center;justify-content:space-between}
+.trip-line b{font-size:14px}.trip-line strong{font-size:22px}
+.trip-progress{grid-template-columns:42px 1fr 42px;margin-top:7px;font-size:9px}
+.trip-description{margin-top:7px;font-size:9px}
+.ticket-photo-space{height:34px}
+.travel-summary-content{color:#fff}
+.summary-title{display:block;margin-top:0}
+.summary-title>span{display:block;margin-bottom:3px;color:#ffffffd9;font-size:11px}
+.summary-title>strong{display:block;font-size:24px;line-height:1.15}
+.summary-title>strong small{margin-left:4px;color:#8ff0bf;font-size:10px}
+.asset-title{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:10px}
+.asset-title>span{margin:0;font-size:11px;font-weight:800}
+.asset-title>strong{text-align:right;font-size:23px}
+.travel-summary-content .daily-budget{margin-top:10px;padding:10px 12px;border:1px solid #ffffff0a;border-radius:11px;background:#ffffff17;backdrop-filter:blur(3px)}
+.travel-summary-content .daily-budget span{font-size:9px}.travel-summary-content .daily-budget b{margin-top:4px;font-size:15px}.travel-summary-content .daily-budget small{font-size:10px}
+.travel-summary-content .fund-label{margin-top:11px;font-size:11px}.travel-summary-content .fund-track{height:7px;margin-top:6px}.travel-summary-content .fund-meta{margin-top:7px;font-size:9px}
+.country-FR .fund-track i{background:linear-gradient(90deg,#002395 0%,#f4f4f4 52%,#ed2939 100%)}
+.country-CH .fund-track i{background:linear-gradient(90deg,#ff0000 0%,#fff 58%,#ff0000 100%)}
+.country-DE .fund-track i{background:linear-gradient(90deg,#111 0%,#dd0000 52%,#ffce00 100%)}
+.country-JP .fund-track i{background:linear-gradient(90deg,#fff 0%,#bc002d 48%,#fff 100%)}
+.country-VN .fund-track i{background:linear-gradient(90deg,#da251d 0%,#ffcd00 52%,#da251d 100%)}
+.country-all .fund-track i{background:linear-gradient(90deg,#002395 0%,#f4f4f4 30%,#ed2939 48%,#ff0000 66%,#fff 82%,#ff0000 100%)}
+.stub-action{display:flex;align-items:center;gap:8px}.barcode{display:flex;height:24px;align-items:flex-end;gap:2px}.barcode i{display:block;background:#fff;border-radius:1px}
 </style>
