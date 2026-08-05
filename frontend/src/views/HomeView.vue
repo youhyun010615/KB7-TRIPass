@@ -225,23 +225,23 @@ function formatCurrency(n) {
     <template v-else-if="travelModeStore.isSavingsMode">
 
       <!-- 헤더 -->
-      <div class="bg-white px-5 pt-10 pb-3 relative">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="mode-switch-control savings-selected">
-              <span class="mode-switch-thumb" />
-              <button type="button" @click="switchMode('travel')">여행</button>
-              <button type="button" class="selected" @click="switchMode('savings')">저축</button>
-            </div>
-            <h1 class="text-[20px] font-extrabold text-gray-900 mt-0.5">안녕하세요, {{ userName }}님</h1>
-            <button class="text-[11px] text-gray-400 mt-0.5" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
-          </div>
+      <div class="savings-home-header">
+        <div class="mode-switch-control savings-selected">
+          <span class="mode-switch-thumb" />
+          <button type="button" @click="switchMode('travel')">여행</button>
+          <button type="button" class="selected" @click="switchMode('savings')">저축</button>
+        </div>
+
+        <div class="savings-header-row savings-greeting-row">
+          <h1>안녕하세요, {{ userName }}님</h1>
+          <NotificationBell />
+        </div>
+
+        <div class="savings-header-row savings-action-row">
           <!-- 국가 드롭다운 -->
-          <div class="relative flex items-center gap-2 flex-none">
-            <NotificationBell />
-            <div class="relative">
+          <div class="relative">
             <button
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-[12px] font-bold text-gray-800"
+              class="savings-country-button"
               @click="showCountryDropdown = !showCountryDropdown"
             >
               <span>{{ selectedCountry.flag }}</span>
@@ -250,7 +250,7 @@ function formatCurrency(n) {
                 <path d="M6 9L12 15L18 9" stroke="#6B7280" stroke-width="2.5" stroke-linecap="round"/>
               </svg>
             </button>
-            <div v-if="showCountryDropdown" class="absolute right-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 min-w-[120px]">
+            <div v-if="showCountryDropdown" class="absolute left-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 min-w-[120px]">
               <button
                 v-for="c in countries" :key="c.id"
                 class="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-gray-700 hover:bg-gray-50 active:bg-gray-100"
@@ -260,8 +260,10 @@ function formatCurrency(n) {
                 <span>{{ c.flag }}</span><span>{{ c.name }}</span>
               </button>
             </div>
-            </div>
           </div>
+          <button class="travel-edit-link" type="button" @click="router.push('/travel/register')">
+            여행 계획 수정하기 <span>›</span>
+          </button>
         </div>
       </div>
 
@@ -608,11 +610,19 @@ function formatCurrency(n) {
 .ticket-notch-left { left: -12px; }
 .ticket-notch-right { right: -12px; }
 .ticket-dashed-line { width: calc(100% - 34px); margin: 0 auto; border-top: 1.5px dashed rgba(255, 255, 255, .42); }
-.mode-switch-control { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 84px; padding: 2px; overflow: hidden; border: 2px solid #173f8d; border-radius: 999px; background: #fff; }
-.mode-switch-control button { position: relative; z-index: 2; height: 25px; border-radius: 999px; color: #173f8d; font-size: 10px; font-weight: 900; transition: color .25s ease; }
+.mode-switch-control { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 84px; padding: 2px; overflow: hidden; border: 1px solid #d9dee7; border-radius: 999px; background: #eceff3; }
+.mode-switch-control button { position: relative; z-index: 2; height: 25px; border-radius: 999px; color: #6b7688; font-size: 10px; font-weight: 900; transition: color .25s ease; }
 .mode-switch-control button.selected { color: #fff; }
 .mode-switch-thumb { position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 25px; border-radius: 999px; background: #173f8d; transition: transform .3s cubic-bezier(.22,1,.36,1); }
 .mode-switch-control.savings-selected .mode-switch-thumb { transform: translateX(100%); }
+.savings-home-header { padding: 42px 20px 14px; background: #f7f4ee; }
+.savings-header-row { display: flex; align-items: center; justify-content: space-between; }
+.savings-greeting-row { margin-top: 10px; }
+.savings-greeting-row h1 { color: #111827; font-size: 20px; font-weight: 900; letter-spacing: -.04em; }
+.savings-action-row { margin-top: 9px; }
+.savings-country-button { display: flex; min-width: 78px; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #d8dee8; border-radius: 10px; background: #fff; color: #273449; font-size: 11px; font-weight: 800; box-shadow: 0 2px 7px rgba(27,43,75,.05); }
+.travel-edit-link { display: flex; align-items: center; gap: 4px; padding: 8px 11px; border-radius: 10px; background: #fff0e8; color: #e45f24; font-size: 11px; font-weight: 900; }
+.travel-edit-link span { font-size: 16px; line-height: 10px; }
 .app-home-shell { position: relative; width: min(100%, 390px); margin: 0 auto; overflow-x: hidden; }
 .mode-flight-loader { position: fixed; top: 0; bottom: 0; left: 50%; width: min(100vw,390px); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateX(-50%); background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
 .mode-flight-loader strong { margin-top: 22px; font-size: 18px; }
