@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.schedule.mapper.ScheduleMapper">
+    
+    <select id="existsTripById" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM trips
+            WHERE id = #{tripId}
+            AND is_deleted = 0
+        )
+    </select>
+
+    <select id="findAllByTripId" resultType="com.tripass.schedule.dto.ScheduleListRowDto">
+        SELECT ts.id,
+               ts.trip_id,
+               ts.trip_country_id,
+               c.country_name,
+               c.time_zone,
+               ts.schedule_name,
+               ts.start_at,
+               ts.end_at,
+               ts.amount,
+               cur.currency_code,
+               cur.symbol AS currency_symbol,
+               ts.payment_status,
+               ts.schedule_status,
+               ts.place_name,
+               ts.place_address
+        FROM trip_schedules ts
+        INNER JOIN trips t
+            ON t.id = ts.trip_id
+        LEFT JOIN trip_countries tc
+            ON tc.id = ts.trip_country_id
+            AND tc.is_deleted = 0
+        LEFT JOIN countries c
+            ON c.id = tc.country_id
+        LEFT JOIN currencies cur
+            ON cur.id = COALESCE(ts.currency_id, c.currency_id)
+        WHERE ts.trip_id = #{tripId}
+            AND ts.is_deleted = 0
+        ORDER BY ts.start_at ASC, ts.id ASC
+    </select>
+
+</mapper>
