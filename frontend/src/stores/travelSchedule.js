@@ -56,12 +56,19 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
 
   const schedules = ref(loadSaved() ?? makeSeeds())
   const sortedSchedules = computed(() => [...schedules.value].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)))
-  const travelStart = computed(() => countries.map(item => period(item.code).startDate).sort()[0])
-  const travelEnd = computed(() => countries.map(item => period(item.code).endDate).sort().at(-1))
+  const configuredPeriods = computed(() => travel.selectedPlans
+    .filter(plan => plan?.startDate && plan?.endDate)
+    .map(plan => ({ code: plan.code, startDate: plan.startDate, endDate: plan.endDate })))
+  const displayPeriods = computed(() => configuredPeriods.value.length
+    ? configuredPeriods.value
+    : countries.map(item => ({ code: item.code, ...period(item.code) })))
+  const travelStart = computed(() => displayPeriods.value.map(item => item.startDate).sort()[0])
+  const travelEnd = computed(() => displayPeriods.value.map(item => item.endDate).sort().at(-1))
   const demoToday = computed(() => sortedSchedules.value[0]?.date ?? travelStart.value)
 
   function countryForDate(date) {
-    return countries.find(country => date >= period(country.code).startDate && date <= period(country.code).endDate)
+    const matchedPeriod = displayPeriods.value.find(item => date >= item.startDate && date <= item.endDate)
+    return countries.find(country => country.code === matchedPeriod?.code)
   }
   function getSchedule(id) { return schedules.value.find(item => item.id === Number(id)) }
   function save(payload) {
@@ -94,5 +101,5 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
 
   watch(schedules, value => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)), { deep: true })
 
-  return { countries, schedules, sortedSchedules, travelStart, travelEnd, demoToday, period, countryForDate, getSchedule, save, update, remove, toggleComplete, markNotificationRead }
+  return { countries, schedules, sortedSchedules, configuredPeriods, travelStart, travelEnd, demoToday, period, countryForDate, getSchedule, save, update, remove, toggleComplete, markNotificationRead }
 })
