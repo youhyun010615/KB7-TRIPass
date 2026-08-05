@@ -280,4 +280,11 @@ function switchMode(mode) {
 .country-VN .fund-track i{background:linear-gradient(90deg,#da251d 0%,#ffcd00 52%,#da251d 100%)}
 .country-all .fund-track i{background:linear-gradient(90deg,#002395 0%,#f4f4f4 30%,#ed2939 48%,#ff0000 66%,#fff 82%,#ff0000 100%)}
 .stub-action{display:flex;align-items:center;gap:8px}.barcode{display:flex;height:24px;align-items:flex-end;gap:2px}.barcode i{display:block;background:#fff;border-radius:1px}
+.ticket-top{height:44px;box-sizing:border-box}
+.perforation{position:absolute;left:0;right:0;z-index:5;height:0}
+.perforation:not(.lower){top:44px}
+.perforation.lower{bottom:45px}
+.asset-title{display:block}
+.asset-title>span{display:block;margin-bottom:5px;color:#ffbd14;font-size:12px;line-height:1.2}
+.asset-title>strong{display:block;text-align:left;font-size:25px}
 </style>
