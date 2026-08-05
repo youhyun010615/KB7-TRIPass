@@ -14,8 +14,8 @@ const countryMenuOpen = ref(false)
 
 const destinations = [
   {
-    code: 'all', name: '전체', title: '전체 여행', flag: '🌍', image: '', theme: '#173f8d', currency: 'EUR', rate: 1486.2,
-    dday: 13, day: 2, totalDays: 15, remain: 1590000, localAmount: '1,590,000원', daily: '', goal: 5000000, prepaid: 1800000, progress: 32,
+    code: 'all', name: '전체', title: '전체 여행', flag: '🌍', image: '', theme: '#17485b', currency: 'EUR', rate: 1486.2,
+    dday: 13, day: 2, totalDays: 15, remain: 3440000, localAmount: '3,440,000원', daily: '', goal: 11500000, prepaid: 4010000, progress: 30,
     categories: [
       { icon: '🍴', name: '식비', amount: 600000, france: 27, swiss: 73 },
       { icon: '☕', name: '카페', amount: 320000, france: 60, swiss: 40 },
@@ -114,6 +114,14 @@ const recent = {
   VN: [{ icon: '☕', place: 'Cong Caphe', meta: '카페 · 오늘 15:30', amount: 4200 }],
 }
 
+const overallAssets = [
+  { code: 'FR', flag: '🇫🇷', city: '파리', amount: 590000, local: '약 €128.10', image: '/images/france.png', theme: '#124c9f' },
+  { code: 'CH', flag: '🇨🇭', city: '스위스', amount: 1000000, local: '약 CHF 586.65', image: '/images/switzerland.webp', theme: '#a81436' },
+  { code: 'DE', flag: '🇩🇪', city: '베를린', amount: 720000, local: '약 EUR 484.46', image: '/images/germany.png', theme: '#202020' },
+  { code: 'JP', flag: '🇯🇵', city: '도쿄', amount: 650000, local: '약 JPY 70,422', image: '/images/japan.webp', theme: '#c82770' },
+  { code: 'VN', flag: '🇻🇳', city: '다낭', amount: 480000, local: '약 VND 8,465,608', image: '/images/vietnam.png', theme: '#b98500' },
+]
+
 const selected = computed(() => destinations.find(item => item.code === travelMode.selectedDestination) ?? destinations[0])
 const selectedSchedules = computed(() => schedules[selected.value.code])
 const selectedRecent = computed(() => recent[selected.value.code])
@@ -171,9 +179,10 @@ function switchMode(mode) {
         <div class="travel-summary-content">
           <template v-if="selected.code === 'all'">
             <div class="summary-title"><span>전체 남은 여행 자산 (합산)</span><strong>{{ formatWon(selected.remain) }}</strong></div>
-            <div class="country-assets">
-              <div class="france-asset"><span>🇫🇷 파리 남은 여행 자산</span><b>590,000원</b><small>(약 €128.10)</small></div>
-              <div class="swiss-asset"><span>🇨🇭 스위스 남은 여행 자산</span><b>1,000,000원</b><small>(약 CHF 586.65)</small></div>
+            <div class="country-assets" aria-label="국가별 남은 여행 자산">
+              <div v-for="asset in overallAssets" :key="asset.code" class="country-asset-card" :style="{ '--asset-image': `url(${asset.image})`, '--asset-theme': asset.theme }">
+                <span>{{ asset.flag }} {{ asset.city }} 남은 여행 자산</span><b>{{ formatWon(asset.amount) }}</b><small>({{ asset.local }})</small>
+              </div>
             </div>
           </template>
           <template v-else>
@@ -287,4 +296,11 @@ function switchMode(mode) {
 .asset-title{display:block}
 .asset-title>span{display:block;margin-bottom:5px;color:#ffbd14;font-size:12px;line-height:1.2}
 .asset-title>strong{display:block;text-align:left;font-size:25px}
+.combined .ticket-main{background:linear-gradient(145deg,#12354c 0%,#17606a 58%,#1b485f 100%)}
+.country-assets{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;border-radius:10px;background:#ffffff0d;scrollbar-width:none}
+.country-assets::-webkit-scrollbar{display:none}
+.country-assets>div.country-asset-card{flex:0 0 calc(50% - 4px);min-width:0;padding:9px 10px;scroll-snap-align:start;background-image:var(--asset-image);background-position:center;background-size:cover}
+.country-assets>div.country-asset-card::before{background:var(--asset-theme);opacity:.84}
+.country-assets>div.country-asset-card span{font-size:8px;white-space:nowrap}.country-assets>div.country-asset-card b{font-size:13px;white-space:nowrap}.country-assets>div.country-asset-card small{font-size:7px;white-space:nowrap}
+.country-all .fund-track i{background:linear-gradient(90deg,#79d3d8 0%,#f8d56b 55%,#f29a55 100%)}
 </style>
