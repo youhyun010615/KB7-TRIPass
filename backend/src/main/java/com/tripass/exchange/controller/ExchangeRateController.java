@@ -61,4 +61,13 @@ public class ExchangeRateController {
         Long alertId = exchangeRateService.registerAlert(101L, request); // TODO: 실제 유저 ID
         return ApiResponse.success("환율 알림이 등록되었습니다.", Map.of("id", alertId));
     }
+
+    @PutMapping("/alerts/{id}")
+    public ApiResponse<ExchangeRateAlertUpdateResponseDto> updateAlert(
+            @PathVariable Long id,
+            @RequestBody ExchangeRateAlertRequestDto request) {
+        Long userId = 101L; // TODO: 실제 로그인한 유저 ID로 대체
+        ExchangeRateAlertUpdateResponseDto updatedAlert = exchangeRateService.updateAlert(id, userId, request);
+        return ApiResponse.success("환율 알림이 수정되었습니다.", updatedAlert);
+    }
 }

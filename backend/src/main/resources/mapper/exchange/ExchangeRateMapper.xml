@@ -76,7 +76,7 @@
 
     <select id="countAlertByUserAndCurrency" resultType="int">
         SELECT COUNT(*)
-        FROM exchange_rate_alerts sㅐ
+        FROM exchange_rate_alerts
         WHERE user_id = #{userId}
           AND currency_id = #{currencyId}
           AND is_deleted = 0
@@ -104,4 +104,24 @@
             fetched_at = VALUES(fetched_at)
     </insert>
 
-    </mapper>
+        <update id="updateAlert">
+        UPDATE exchange_rate_alerts
+        SET target_rate = #{request.targetRate},
+            target_amount = #{request.targetAmount}
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <select id="getAlertById" resultType="ExchangeRateAlertUpdateResponseDto">
+        SELECT
+            era.id AS id,
+            era.user_id AS userId,
+            c.currency_code AS currencyCode,
+            era.target_rate AS targetRate,
+            era.target_amount AS targetAmount,
+            NOW() AS updatedAt
+        FROM exchange_rate_alerts era
+        INNER JOIN currencies c ON era.currency_id = c.id
+        WHERE era.id = #{id}
+    </select>
+</mapper>

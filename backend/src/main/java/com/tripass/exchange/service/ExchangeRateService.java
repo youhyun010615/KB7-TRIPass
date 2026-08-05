@@ -38,6 +38,9 @@ public class ExchangeRateService {
         if (request.getCurrencyId() == null) {
             throw new IllegalArgumentException("currencyId는 필수입니다.");
         }
+        if (request.getTargetAmount() <= 0) {
+            throw new IllegalArgumentException("목표 금액은 0보다 커야 합니다.");
+        }
 
         // 1. 쿼리 결과(COUNT 숫자)를 직접 변수로 저장
         int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId());
@@ -52,6 +55,24 @@ public class ExchangeRateService {
         
         exchangeRateMapper.insertAlert(userId, request);
         return request.getId();
+    }
+
+    @Transactional
+    public ExchangeRateAlertUpdateResponseDto updateAlert(Long id, Long userId, ExchangeRateAlertRequestDto request) {
+        // 1. 알림 존재 여부 및 권한 확인
+        ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
+        if (existingAlert == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "ALERT_NOT_FOUND", "해당 알림을 찾을 수 없습니다.");
+        }
+        if (!existingAlert.getUserId().equals(userId)) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "FORBIDDEN", "수정 권한이 없습니다.");
+        }
+
+        // 2. 수정 실행
+        exchangeRateMapper.updateAlert(id, request);
+
+        // 3. 수정된 데이터 조회 및 반환
+        return exchangeRateMapper.getAlertById(id);
     }
 
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {

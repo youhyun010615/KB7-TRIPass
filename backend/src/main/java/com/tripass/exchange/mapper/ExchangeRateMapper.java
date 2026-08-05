@@ -50,4 +50,10 @@ public interface ExchangeRateMapper {
 
     // 특정 통화 히스토리 조회
     List<ExchangeRateHistoryResponseDto.RateInfo> getHistoryRates(@Param("currencyCode") String currencyCode, @Param("days") int days);
+
+    // 관심 환율 알림 수정
+    int updateAlert(@Param("id") Long id, @Param("request") ExchangeRateAlertRequestDto request);
+
+    // 관심 환율 알림 조회 (단건)
+    ExchangeRateAlertUpdateResponseDto getAlertById(@Param("id") Long id);
 }
