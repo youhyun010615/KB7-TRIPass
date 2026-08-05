@@ -1,10 +1,7 @@
 package com.tripass.exchange.controller;
 
 import com.tripass.common.response.ApiResponse;
-import com.tripass.exchange.dto.ExchangeRateConvertResponseDto;
-import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
-import com.tripass.exchange.dto.LatestExchangeRateDto;
-import com.tripass.exchange.dto.SyncResultDto;
+import com.tripass.exchange.dto.*;
 import com.tripass.exchange.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +40,13 @@ public class ExchangeRateController {
         }
         return ApiResponse.success("최근 " + days + "일 환율 추이 조회 성공", 
                                   exchangeRateService.getHistoryRates(currencyCode, days));
+    }
+
+    @GetMapping("/alerts")
+    public ApiResponse<List<ExchangeRateAlertResponseDto>> getAlerts() {
+        Long userId = 101L; // TODO: 실제 로그인한 유저 ID로 대체해야 함
+        List<ExchangeRateAlertResponseDto> alerts = exchangeRateService.getAlertsByUserId(userId);
+        return ApiResponse.success("관심 환율 알림 목록 조회 성공", alerts);
     }
 
     @PostMapping("/sync")

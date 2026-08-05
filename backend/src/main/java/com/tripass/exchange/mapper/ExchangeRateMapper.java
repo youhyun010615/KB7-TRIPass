@@ -1,6 +1,7 @@
 package com.tripass.exchange.mapper;
 
 import com.tripass.exchange.domain.ExchangeRate;
+import com.tripass.exchange.dto.ExchangeRateAlertResponseDto;
 import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
 import com.tripass.exchange.dto.ExchangeRateResponseDto;
 import com.tripass.exchange.dto.LatestExchangeRateDto;
@@ -36,6 +37,9 @@ public interface ExchangeRateMapper {
 
     // 최신 환율 목록 조회
     List<LatestExchangeRateDto> getLatestRates();
+
+    // 관심 환율 알림 목록 조회
+    List<ExchangeRateAlertResponseDto> getAlertsByUserId(@Param("userId") Long userId);
 
     // 특정 통화 히스토리 조회
     List<ExchangeRateHistoryResponseDto.RateInfo> getHistoryRates(@Param("currencyCode") String currencyCode, @Param("days") int days);

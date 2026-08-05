@@ -27,6 +27,11 @@ public class ExchangeRateService {
         return exchangeRateMapper.getLatestRates();
     }
 
+    public List<ExchangeRateAlertResponseDto> getAlertsByUserId(Long userId) {
+        List<ExchangeRateAlertResponseDto> result = exchangeRateMapper.getAlertsByUserId(userId);
+        return result;
+    }
+
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {
         List<ExchangeRateHistoryResponseDto.RateInfo> rates = exchangeRateMapper.getHistoryRates(currencyCode, days);
         String currencyName = exchangeRateMapper.getCurrencyNameByCode(currencyCode);

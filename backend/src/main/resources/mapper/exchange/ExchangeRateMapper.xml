@@ -57,6 +57,18 @@
         LIMIT 10
     </select>
 
+    <select id="getAlertsByUserId" resultType="ExchangeRateAlertResponseDto">
+        SELECT 
+            era.id AS id,
+            c.currency_code AS currencyCode,
+            era.target_rate AS targetRate,
+            era.target_amount AS targetAmount
+        FROM exchange_rate_alerts era
+        INNER JOIN currencies c ON era.currency_id = c.id
+        WHERE era.user_id = #{userId}
+          AND era.is_deleted = 0
+    </select>
+
     <select id="getHistoryRates" resultType="com.tripass.exchange.dto.ExchangeRateHistoryResponseDto$RateInfo">
         SELECT 
             er.rate_date AS rateDate,
