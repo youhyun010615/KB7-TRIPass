@@ -132,7 +132,7 @@
     <!-- 계좌 delete -->
     <update id = "deleteAccount">
         UPDATE accounts
-        SET is_deleted = 1, updated_at = NOW()
+        SET is_deleted = 1, updated_at = NOW(), deleted_at = NOW()
         WHERE id = #{accountId}
         AND user_id = #{userId}
         AND is_deleted = 0
