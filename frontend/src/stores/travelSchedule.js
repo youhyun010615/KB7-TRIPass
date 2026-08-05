@@ -87,8 +87,12 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
     const schedule = getSchedule(id)
     if (schedule) schedule.completed = !schedule.completed
   }
+  function markNotificationRead(id) {
+    const schedule = getSchedule(id)
+    if (schedule) schedule.notificationRead = true
+  }
 
   watch(schedules, value => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)), { deep: true })
 
-  return { countries, schedules, sortedSchedules, travelStart, travelEnd, demoToday, period, countryForDate, getSchedule, save, update, remove, toggleComplete }
+  return { countries, schedules, sortedSchedules, travelStart, travelEnd, demoToday, period, countryForDate, getSchedule, save, update, remove, toggleComplete, markNotificationRead }
 })

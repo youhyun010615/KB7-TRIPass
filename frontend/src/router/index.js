@@ -240,6 +240,30 @@ const router = createRouter({
       component: () => import('@/views/schedule/ScheduleView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/schedule/new',
+      name: 'ScheduleNew',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/notifications',
+      name: 'ScheduleNotifications',
+      component: () => import('@/views/schedule/ScheduleNotificationView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/:scheduleId/edit',
+      name: 'ScheduleEdit',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/:scheduleId',
+      name: 'ScheduleDetail',
+      component: () => import('@/views/schedule/ScheduleDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── OCR / EXP (담당: 홍유진) ────────────────────────────
     {
