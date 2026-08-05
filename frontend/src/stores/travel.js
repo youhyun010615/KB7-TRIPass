@@ -6,7 +6,7 @@ const countrySeed = [
   { code: 'CH', name: '스위스', city: '인터라켄', flag: '🇨🇭', accent: '#c8173c', securedBudget: 3_100_000 },
   { code: 'DE', name: '독일', city: '베를린', flag: '🇩🇪', accent: '#151515', securedBudget: 1_500_000 },
   { code: 'JP', name: '일본', city: '도쿄', flag: '🇯🇵', accent: '#ef4b91', securedBudget: 1_200_000 },
-  { code: 'VN', name: '베트남', city: '다낭', flag: '🇻🇳', accent: '#f2b705', securedBudget: 900_000 },
+  { code: 'HK', name: '홍콩', city: '홍콩', flag: '🇭🇰', accent: '#b8202e', securedBudget: 900_000 },
 ]
 
 const accountSeed = [

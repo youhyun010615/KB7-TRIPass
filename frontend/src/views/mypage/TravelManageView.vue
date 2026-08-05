@@ -16,7 +16,7 @@ const travels = [
   {
     id: 2,
     title: '동남아 단기 여행',
-    subtitle: '태국 · 베트남',
+    subtitle: '태국 · 홍콩',
     dateRange: '2025.09.01 ~ 2025.09.08',
     days: 7,
     status: '예정',

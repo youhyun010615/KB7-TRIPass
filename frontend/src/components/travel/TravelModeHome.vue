@@ -69,8 +69,8 @@ const destinations = [
     ],
   },
   {
-    code: 'VN', name: '베트남', title: '다낭', flag: '🇻🇳', image: '/images/vietnam.png', theme: '#d99b00', currency: 'VND', rate: 0.0567,
-    dday: 5, day: 2, totalDays: 7, remain: 480000, localAmount: 'VND 8,465,608', daily: 'VND 1,693,121', dailyWon: '약 96,000원', goal: 1800000, prepaid: 620000, progress: 38,
+    code: 'HK', name: '홍콩', title: '홍콩', flag: '🇭🇰', image: '/images/Hong%20Kong.png', theme: '#b8202e', currency: 'HKD', rate: 184.2,
+    dday: 5, day: 2, totalDays: 7, remain: 480000, localAmount: 'HKD 2,606.95', daily: 'HKD 521.17', dailyWon: '약 96,000원', goal: 1800000, prepaid: 620000, progress: 38,
     categories: [
       { icon: '🍴', name: '식비', amount: 180000, percent: 57, color: '#e0a400' }, { icon: '☕', name: '카페', amount: 60000, percent: 32, color: '#638fe3' },
       { icon: '📦', name: '생활비', amount: 120000, percent: 44, color: '#63c27e' }, { icon: '🛍️', name: '쇼핑', amount: 70000, percent: 36, color: '#e0a400' },
@@ -94,7 +94,7 @@ const schedules = {
   ],
   DE: [{ date: '2026.08.25 (화)', flag: '🇩🇪', title: '브란덴부르크 문 투어', time: '10:00 · EUR 35.00', status: '사전결제 완료' }],
   JP: [{ date: '2026.08.25 (화)', flag: '🇯🇵', title: '시부야 전망대', time: '18:00 · JPY 2,500', status: '사전결제 완료' }],
-  VN: [{ date: '2026.08.25 (화)', flag: '🇻🇳', title: '바나힐 투어', time: '09:00 · VND 850,000', status: '사전결제 완료' }],
+  HK: [{ date: '2026.08.25 (화)', flag: '🇭🇰', title: '빅토리아 피크 야경 투어', time: '18:30 · HKD 320', status: '사전결제 완료' }],
 }
 
 const recent = {
@@ -112,7 +112,7 @@ const recent = {
   ],
   DE: [{ icon: '🥨', place: 'Zeit für Brot', meta: '식비 · 오늘 10:20', amount: 14860 }],
   JP: [{ icon: '🍜', place: '이치란 라멘', meta: '식비 · 오늘 13:10', amount: 12400 }],
-  VN: [{ icon: '☕', place: 'Cong Caphe', meta: '카페 · 오늘 15:30', amount: 4200 }],
+  HK: [{ icon: '🥟', place: 'Tim Ho Wan', meta: '식비 · 오늘 13:20', amount: 38600 }],
 }
 
 const overallAssets = [
@@ -120,7 +120,7 @@ const overallAssets = [
   { code: 'CH', flag: '🇨🇭', city: '스위스', amount: 1000000, local: '약 CHF 586.65', image: '/images/switzerland.webp', theme: '#a81436' },
   { code: 'DE', flag: '🇩🇪', city: '베를린', amount: 720000, local: '약 EUR 484.46', image: '/images/germany.png', theme: '#202020' },
   { code: 'JP', flag: '🇯🇵', city: '도쿄', amount: 650000, local: '약 JPY 70,422', image: '/images/japan.webp', theme: '#c82770' },
-  { code: 'VN', flag: '🇻🇳', city: '다낭', amount: 480000, local: '약 VND 8,465,608', image: '/images/vietnam.png', theme: '#b98500' },
+  { code: 'HK', flag: '🇭🇰', city: '홍콩', amount: 480000, local: '약 HKD 2,606.95', image: '/images/Hong%20Kong.png', theme: '#b8202e' },
 ]
 
 const selected = computed(() => destinations.find(item => item.code === travelMode.selectedDestination) ?? destinations[0])
@@ -292,7 +292,7 @@ function switchMode(mode) {
 .country-CH .fund-track i{background:linear-gradient(90deg,#ff0000 0%,#fff 58%,#ff0000 100%)}
 .country-DE .fund-track i{background:linear-gradient(90deg,#111 0%,#dd0000 52%,#ffce00 100%)}
 .country-JP .fund-track i{background:linear-gradient(90deg,#fff 0%,#bc002d 48%,#fff 100%)}
-.country-VN .fund-track i{background:linear-gradient(90deg,#da251d 0%,#ffcd00 52%,#da251d 100%)}
+.country-HK .fund-track i{background:linear-gradient(90deg,#de2910 0%,#ffde00 100%)}
 .country-all .fund-track i{background:linear-gradient(90deg,#002395 0%,#f4f4f4 30%,#ed2939 48%,#ff0000 66%,#fff 82%,#ff0000 100%)}
 .stub-action{display:flex;align-items:center;gap:8px}.barcode{display:flex;height:24px;align-items:flex-end;gap:2px}.barcode i{display:block;background:#fff;border-radius:1px}
 .ticket-top{height:44px;box-sizing:border-box}
