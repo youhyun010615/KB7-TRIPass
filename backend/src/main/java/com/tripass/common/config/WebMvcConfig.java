@@ -1,9 +1,13 @@
 package com.tripass.common.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.validation.Validator;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -54,5 +58,29 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/META-INF/resources/");
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
+    }
+
+    /** Bean Validation validator 등록 */
+    @Bean
+    public LocalValidatorFactoryBean validator() {
+        return new LocalValidatorFactoryBean();
+    }
+
+    /** 메서드 파라미터의 검증 애노테이션 처리 */
+    @Bean
+    public MethodValidationPostProcessor
+    methodValidationPostProcessor() {
+        MethodValidationPostProcessor processor =
+                new MethodValidationPostProcessor();
+
+        processor.setValidator(validator());
+
+        return processor;
+    }
+
+    /** Spring MVC 요청값 검증에 사용할 Validator 설정 */
+    @Override
+    public Validator getValidator() {
+        return validator();
     }
 }
