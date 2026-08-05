@@ -83,12 +83,18 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}" // Java 8 Date/Time 지원
 
+    // JavaTimeModule
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.5'
+
     // HTTP 통신 (Codef API 호출용)
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
     // Test
     testImplementation          "org.springframework:spring-test:${springVersion}"
     testImplementation          "org.mockito:mockito-core:4.11.0"
+    testImplementation          'org.mockito:mockito-junit-jupiter:4.11.0'
+    testImplementation          'org.hamcrest:hamcrest:2.2'
+    testImplementation          'com.jayway.jsonpath:json-path:2.8.0'
     testCompileOnly             "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor     "org.projectlombok:lombok:${lombokVersion}"
     testImplementation          "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
