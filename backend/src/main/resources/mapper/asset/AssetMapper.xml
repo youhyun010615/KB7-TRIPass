@@ -129,4 +129,13 @@
         ORDER BY t.transaction_date DESC, t.transaction_time DESC
     </select>
 
+    <!-- 계좌 delete -->
+    <update id = "deleteAccount">
+        UPDATE accounts
+        SET is_deleted = 1, updated_at = NOW()
+        WHERE id = #{accountId}
+        AND user_id = #{userId}
+        AND is_deleted = 0
+    </update>
+
 </mapper>
