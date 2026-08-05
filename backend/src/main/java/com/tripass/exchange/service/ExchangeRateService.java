@@ -1,11 +1,13 @@
 package com.tripass.exchange.service;
 
+import com.tripass.common.exception.CustomException;
 import com.tripass.exchange.dto.*;
 import com.tripass.exchange.client.ExchangeRateClient;
 import com.tripass.exchange.domain.ExchangeRate;
 import com.tripass.exchange.mapper.ExchangeRateMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,9 +38,16 @@ public class ExchangeRateService {
         if (request.getCurrencyId() == null) {
             throw new IllegalArgumentException("currencyId는 필수입니다.");
         }
-        
-        if (exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId()) > 0) {
-            throw new IllegalStateException("이미 동일한 통화에 대한 알림이 존재합니다.");
+
+        // 1. 쿼리 결과(COUNT 숫자)를 직접 변수로 저장
+        int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId());
+
+        // 2. 숫자가 몇이 들어왔는지 로그나 출력으로 확인
+        log.info("조회된 알림 개수 count = {}", count);
+
+        // 3. 변수 count 값을 기반으로 로직 제어
+        if (count > 0) { // 또는 특정 숫자 검증
+            throw new CustomException(HttpStatus.BAD_REQUEST, "DUPLICATE_ALERT", "이미 동일한 통화에 대한 알림이 " + count + "개 존재합니다.");
         }
         
         exchangeRateMapper.insertAlert(userId, request);

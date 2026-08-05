@@ -58,7 +58,7 @@
     </select>
 
     <select id="getAlertsByUserId" resultType="ExchangeRateAlertResponseDto">
-        SELECT 
+        SELECT
             era.id AS id,
             c.currency_code AS currencyCode,
             era.target_rate AS targetRate,
@@ -75,10 +75,10 @@
     </insert>
 
     <select id="countAlertByUserAndCurrency" resultType="int">
-        SELECT COUNT(*) 
-        FROM exchange_rate_alerts 
-        WHERE user_id = #{userId} 
-          AND currency_id = #{currencyId} 
+        SELECT COUNT(*)
+        FROM exchange_rate_alerts sㅐ
+        WHERE user_id = #{userId}
+          AND currency_id = #{currencyId}
           AND is_deleted = 0
     </select>
 
