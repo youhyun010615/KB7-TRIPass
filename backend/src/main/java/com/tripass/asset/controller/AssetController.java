@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/assets")
+@RequestMapping("/api/v1/accounts")
 public class AssetController {
 
     private final AssetService assetService;
@@ -28,7 +28,7 @@ public class AssetController {
     }
 
     //AST-002 계좌연동
-    @PostMapping("/link")
+    @PostMapping("/codef/connect")
     public ResponseEntity<ApiResponse<List<AccountDto>>> linkBank(
             @RequestAttribute("userId") Long userId,
             @RequestBody CodefLinkRequestDto req) {
