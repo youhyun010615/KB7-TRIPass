@@ -14,6 +14,18 @@ const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
 const plan = useSavingsPlanStore()
 const router = useRouter()
+const isModeSwitching = ref(false)
+const nextMode = ref('travel')
+
+function switchMode(mode) {
+  if (mode === travelModeStore.mode || isModeSwitching.value) return
+  nextMode.value = mode
+  isModeSwitching.value = true
+  window.setTimeout(() => {
+    travelModeStore.setMode(mode)
+    isModeSwitching.value = false
+  }, 1000)
+}
 
 const userName = computed(() => authStore.user?.name ?? '권유현')
 
@@ -215,9 +227,10 @@ function formatCurrency(n) {
       <div class="bg-white px-5 pt-10 pb-3 relative">
         <div class="flex items-center justify-between">
           <div>
-            <div class="inline-flex p-0.5 rounded-full border border-blue-100 bg-white">
-              <button class="px-2.5 py-1 rounded-full text-[9px] font-extrabold text-white bg-[#173f8d]">저축</button>
-              <button class="px-2.5 py-1 rounded-full text-[9px] font-extrabold text-slate-400" @click="travelModeStore.setMode('travel')">여행</button>
+            <div class="mode-switch-control savings-selected">
+              <span class="mode-switch-thumb" />
+              <button type="button" @click="switchMode('travel')">여행</button>
+              <button type="button" class="selected" @click="switchMode('savings')">저축</button>
             </div>
             <h1 class="text-[20px] font-extrabold text-gray-900 mt-0.5">안녕하세요, {{ userName }}님</h1>
             <button class="text-[11px] text-gray-400 mt-0.5" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
@@ -562,7 +575,15 @@ function formatCurrency(n) {
 
     </template>
 
-    <TravelModeHome v-else :user-name="userName" />
+    <TravelModeHome v-else :user-name="userName" :on-switch-mode="switchMode" />
+
+    <Transition name="flight-fade">
+      <div v-if="isModeSwitching" class="mode-flight-loader" role="status" aria-live="polite">
+        <div class="flight-path"><span>✈</span></div>
+        <strong>{{ nextMode === 'travel' ? '여행 모드로 이동 중' : '저축 모드로 이동 중' }}</strong>
+        <small>TRIPass가 새로운 여정을 준비하고 있어요</small>
+      </div>
+    </Transition>
 
     <BottomNav />
   </div>
@@ -583,4 +604,18 @@ function formatCurrency(n) {
 .ticket-notch-left { left: -12px; }
 .ticket-notch-right { right: -12px; }
 .ticket-dashed-line { width: calc(100% - 34px); margin: 0 auto; border-top: 1.5px dashed rgba(255, 255, 255, .42); }
+.mode-switch-control { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 84px; padding: 2px; overflow: hidden; border: 2px solid #173f8d; border-radius: 999px; background: #fff; }
+.mode-switch-control button { position: relative; z-index: 2; height: 25px; border-radius: 999px; color: #173f8d; font-size: 10px; font-weight: 900; transition: color .25s ease; }
+.mode-switch-control button.selected { color: #fff; }
+.mode-switch-thumb { position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 25px; border-radius: 999px; background: #173f8d; transition: transform .3s cubic-bezier(.22,1,.36,1); }
+.mode-switch-control.savings-selected .mode-switch-thumb { transform: translateX(100%); }
+.mode-flight-loader { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
+.mode-flight-loader strong { margin-top: 22px; font-size: 18px; }
+.mode-flight-loader small { margin-top: 7px; color: #dbeafe; font-size: 11px; }
+.flight-path { position: relative; width: 230px; border-top: 2px dashed #ffffff7a; }
+.flight-path::before,.flight-path::after { position: absolute; top: -6px; width: 10px; height: 10px; border-radius: 50%; background: #fff; content: ''; }
+.flight-path::before { left: 0; }.flight-path::after { right: 0; }
+.flight-path span { position: absolute; top: -22px; left: 0; font-size: 32px; filter: drop-shadow(0 5px 8px #0c255b66); animation: fly-across 1s ease-in-out forwards; }
+.flight-fade-enter-active,.flight-fade-leave-active { transition: opacity .18s ease; }.flight-fade-enter-from,.flight-fade-leave-to { opacity: 0; }
+@keyframes fly-across { from { transform: translateX(0) rotate(5deg); } to { transform: translateX(202px) rotate(5deg); } }
 </style>

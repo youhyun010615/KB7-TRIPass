@@ -3,7 +3,10 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelModeStore } from '@/stores/travelMode'
 
-defineProps({ userName: { type: String, default: '권유현' } })
+const props = defineProps({
+  userName: { type: String, default: '권유현' },
+  onSwitchMode: { type: Function, default: null },
+})
 
 const router = useRouter()
 const travelMode = useTravelModeStore()
@@ -129,12 +132,20 @@ function selectDestination(item) {
 function openCalculator() {
   travelMode.openCalculator(selected.value.code === 'all' ? travelMode.calculatorCurrency : selected.value.currency)
 }
+function switchMode(mode) {
+  if (props.onSwitchMode) props.onSwitchMode(mode)
+  else travelMode.setMode(mode)
+}
 </script>
 
 <template>
   <section class="travel-home">
     <header class="travel-header">
-      <div class="mode-toggle" aria-label="서비스 모드 전환"><button class="active" type="button" @click="travelMode.setMode('travel')">여행</button><button type="button" @click="travelMode.setMode('savings')">저축</button></div>
+      <div class="mode-toggle travel-selected" aria-label="서비스 모드 전환">
+        <span class="mode-thumb" />
+        <button class="active" type="button" @click="switchMode('travel')">여행</button>
+        <button type="button" @click="switchMode('savings')">저축</button>
+      </div>
       <h1>안녕하세요, {{ userName }}님</h1>
       <div class="country-select">
         <button type="button" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen">
@@ -152,7 +163,12 @@ function openCalculator() {
       <div class="ticket-top"><span>BOARDING PASS</span><span>TRIPASS AIR</span><span>NO. {{ selected.code === 'all' ? 'EUR' : selected.code }}-230</span></div>
       <div class="perforation"><i/><span/><i/></div>
       <div class="ticket-main">
-        <div class="trip-line"><b>{{ selected.flag }} {{ selected.title }}</b><strong>D-{{ selected.dday }}</strong></div>
+        <div class="trip-line">
+          <div><small>DESTINATION</small><b>{{ selected.flag }} {{ selected.title }}</b></div>
+          <span class="flight-route"><i />✈<i /></span>
+          <div class="departure"><small>DEPARTURE</small><strong>D-{{ selected.dday }}</strong></div>
+        </div>
+        <p class="trip-description">{{ selected.code === 'all' ? '등록한 모든 여행의 남은 자산을 한눈에 확인해요' : `${selected.title}에서 시작되는 설레는 여행을 즐겨보세요` }} ✨</p>
         <div class="trip-progress"><small>{{ selected.day }}일차</small><div><i :style="{ width: `${selected.day / selected.totalDays * 100}%` }"/></div><small>{{ selected.totalDays }}일차</small></div>
 
         <template v-if="selected.code === 'all'">
@@ -216,4 +232,17 @@ function openCalculator() {
 
 <style scoped>
 .travel-home{width:min(100%,390px);margin:auto;padding-bottom:94px;background:#f8f6f1;color:#10192d}.travel-header{position:relative;display:flex;align-items:center;gap:10px;padding:46px 16px 14px;background:#fff}.travel-header h1{font-size:16px;font-weight:800;white-space:nowrap}.mode-toggle{display:flex;align-items:center;padding:2px;border:2px solid #173f8d;border-radius:999px;background:#fff}.mode-toggle button{padding:5px 7px;border-radius:999px;color:#173f8d;font-size:10px;font-weight:900}.mode-toggle button.active{background:#173f8d;color:#fff}.country-select{position:relative;margin-left:auto}.country-select>button{display:flex;align-items:center;gap:5px;padding:8px 9px;border:1px solid #d8e0eb;border-radius:11px;background:#fff;font-size:11px;font-weight:800}.country-select i{font-style:normal;color:#64748b}.country-menu{position:absolute;right:0;top:40px;z-index:80;width:138px;padding:5px;border:1px solid #dce3ed;border-radius:12px;background:#fff;box-shadow:0 10px 25px #15254724}.country-menu button{display:flex;width:100%;gap:7px;padding:10px;border-radius:8px;text-align:left;font-size:11px}.country-menu button.active{background:#eef4ff;color:#173f8d;font-weight:900}.ticket{position:relative;margin:0 16px;overflow:hidden;border-radius:18px;background:var(--theme);color:#fff;box-shadow:0 8px 18px #2037652b}.ticket-top{display:flex;justify-content:space-between;padding:15px 18px 14px;color:#ffffffa6;font-size:8px;font-weight:800;letter-spacing:.06em}.perforation{position:relative;z-index:3;display:grid;grid-template-columns:20px 1fr 20px;align-items:center;height:0}.perforation i{width:22px;height:22px;border-radius:50%;background:#f8f6f1}.perforation i:first-child{transform:translateX(-11px)}.perforation i:last-child{transform:translateX(9px)}.perforation span{border-top:1px dashed #ffffff70}.ticket-main{min-height:312px;padding:20px;background:linear-gradient(180deg,#091b4270,#071733b8),var(--photo) center/cover}.combined .ticket-main{background:linear-gradient(135deg,#103779,#1553a2)}.trip-line{display:flex;justify-content:space-between;align-items:center}.trip-line b{font-size:14px}.trip-line strong{font-size:24px}.trip-progress{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6px;margin-top:12px;color:#d8e5ff;font-size:10px}.trip-progress small:last-child{text-align:right}.trip-progress div{height:3px;background:#ffffff80}.trip-progress i{display:block;height:4px;background:#ffb800}.ticket-label{margin-top:18px;color:#ffbd14;font-size:11px;font-weight:800}.ticket h2{margin-top:5px;font-size:28px}.ticket h2 small{font-size:10px;color:#8cebbf}.country-assets{display:grid;grid-template-columns:1fr 1fr;margin-top:14px;overflow:hidden;border-radius:12px;background:#ffffff12}.country-assets>div{position:relative;padding:14px 12px;background-position:center;background-size:cover}.country-assets>div::before{position:absolute;inset:0;content:"";background:linear-gradient(135deg,#0c4b9fe8,#163c8adb)}.country-assets>div.swiss-asset::before{background:linear-gradient(135deg,#8d1639e8,#c91432dc)}.country-assets .france-asset{background-image:url('/images/france.png')}.country-assets .swiss-asset{background-image:url('/images/switzerland.webp')}.country-assets span,.country-assets b,.country-assets small{position:relative;display:block;z-index:1}.country-assets span{font-size:10px;color:#e3ecfa}.country-assets b{margin-top:6px;font-size:18px}.country-assets small{text-align:right;color:#8cebbf;font-size:8px}.daily-budget{margin-top:20px;padding:13px;border-radius:12px;background:#ffffff1a}.daily-budget span,.daily-budget b{display:block}.daily-budget span{font-size:10px;color:#dde7f8}.daily-budget b{margin-top:6px;font-size:15px}.daily-budget small{font-size:9px;color:#8cebbf}.fund-label{display:flex;justify-content:space-between;margin-top:16px;font-size:10px;font-weight:800}.fund-track{height:7px;margin-top:8px;overflow:hidden;border-radius:99px;background:#ffffff30}.fund-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#73c8e7,#fff1cc 55%,#ef5b54)}.fund-meta{display:flex;justify-content:space-between;margin-top:10px;color:#d6e1f2;font-size:9px}.ticket-stub{display:flex;width:100%;align-items:center;justify-content:space-between;padding:14px 18px;background:#fff;color:var(--theme);font-size:12px;font-weight:900}.ticket-stub b{color:#263a5b;letter-spacing:-1px}.card{display:block;width:calc(100% - 32px);margin:12px 16px 0;padding:16px;border:1px solid #dfe5ee;border-radius:16px;background:#fff;box-shadow:0 4px 12px #1425480d;text-align:left}.card-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.card-title h2{font-size:15px}.card-title button,.legend{font-size:9px;color:#4b77ca}.legend{display:flex;gap:8px}.legend span:first-child{color:#276ce0}.legend span:last-child{color:#c12b40}.budget-row{display:grid;grid-template-columns:92px 1fr 76px;align-items:center;gap:7px;height:43px}.category{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700}.category i{display:grid;width:28px;height:28px;place-items:center;border-radius:50%;background:#f3f5f8;font-style:normal}.single-bar,.split-bar{display:flex;height:7px;overflow:hidden;border-radius:99px;background:#e8ebf2}.single-bar i,.split-bar i,.split-bar em{display:block;height:100%}.split-bar i{background:#0b3c90}.split-bar em{background:#a51530}.budget-row>b{text-align:right;font-size:10px}.budget-total{display:flex;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:1px solid #26333f;font-size:11px}.budget-total strong{color:#2872e5}.schedule-row{display:flex;width:100%;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #edf0f4;text-align:left}.schedule-row span>*{display:block}.schedule-row b{margin-bottom:5px;color:#315fc0;font-size:10px}.schedule-row strong{font-size:11px}.schedule-row small{margin-top:4px;color:#8996a7;font-size:9px}.schedule-row em{padding:5px 7px;border-radius:6px;background:#eaf3ff;color:#2472da;font-size:8px;font-style:normal}.schedule-row em.warning{background:#fff0ef;color:#db6258}.recent-card{margin-bottom:12px}.recent-row{display:grid;width:100%;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;padding:11px 0;border-top:1px solid #edf0f4;text-align:left}.recent-row>i{font-style:normal}.recent-row span>*{display:block}.recent-row b,.recent-row strong{font-size:10px}.recent-row small{margin-top:3px;color:#8c98a9;font-size:8px}.quick-calculator{position:fixed;right:max(calc((100vw - 390px)/2 + 18px),18px);bottom:77px;z-index:45;width:320px;padding:14px;border:1px solid #dfe5ee;border-radius:15px;background:#fff;box-shadow:0 10px 30px #15254733}.calculator-head{display:flex;justify-content:space-between;font-size:13px}.calculator-head button{font-size:18px;color:#7b8798}.calculator-currencies{display:flex;gap:5px;margin-top:8px;overflow-x:auto}.calculator-currencies button{flex:none;padding:6px 8px;border-radius:7px;background:#f2f4f7;font-size:9px}.calculator-currencies button.active{background:#173f8d;color:#fff}.calculator-fields{display:grid;grid-template-columns:1fr 20px 1fr;align-items:center;gap:4px;margin-top:8px}.calculator-fields label,.calculator-fields output{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:9px;background:#f4f5f7;font-size:12px;font-weight:900}.calculator-fields input{width:70px;background:transparent;font-weight:900;outline:none}.calculator-fields span,.calculator-fields small{color:#9aa4b3;font-size:8px}.calculator-fab{position:fixed;right:max(calc((100vw - 390px)/2 + 18px),18px);bottom:74px;z-index:44;width:48px;height:48px;border:6px solid #dce5f2;border-radius:50%;background:#173f8d;color:#fff;font-size:22px;box-shadow:0 8px 18px #173f8d3d}
+.travel-header{padding:40px 16px 12px}
+.mode-toggle{position:relative;display:grid;grid-template-columns:1fr 1fr;width:84px;padding:2px;overflow:hidden}
+.mode-toggle button{position:relative;z-index:2;height:25px;padding:0;border-radius:999px;transition:color .25s ease}
+.mode-toggle button.active{background:transparent;color:#fff}
+.mode-thumb{position:absolute;top:2px;left:2px;width:calc(50% - 2px);height:25px;border-radius:999px;background:#173f8d;transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.ticket-main{height:335px;min-height:335px;background:linear-gradient(180deg,#091b4260,#071733bf),var(--photo) center/cover}
+.trip-line{display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:8px}
+.trip-line>div{display:flex;flex-direction:column;gap:4px}
+.trip-line small{color:#ffffff80;font-size:7px;letter-spacing:.12em}
+.trip-line b{font-size:15px}.departure{text-align:right}
+.flight-route{display:flex;align-items:center;color:#ffd829;font-size:16px}
+.flight-route i{width:100%;border-top:1px dashed #ffffff80}
+.trip-description{height:16px;margin-top:9px;overflow:hidden;color:#ffffffe0;font-size:9px;white-space:nowrap;text-overflow:ellipsis}
 </style>
