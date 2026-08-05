@@ -17,14 +17,18 @@ const upcomingGroups = computed(() => {
 })
 const country = code => store.countries.find(item => item.code === code)
 const dateLabel = date => new Intl.DateTimeFormat('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', weekday:'short' }).format(new Date(`${date}T00:00:00`))
-const periodMonths = computed(() => Math.max(1, Math.ceil((new Date(store.travelEnd) - new Date(store.travelStart)) / 2_592_000_000)))
+const travelDays = computed(() => {
+  const start = new Date(`${store.travelStart}T00:00:00`)
+  const end = new Date(`${store.travelEnd}T00:00:00`)
+  return Math.max(1, Math.floor((end - start) / 86_400_000) + 1)
+})
 const unreadCount = computed(() => store.schedules.filter(item => !item.notificationRead).length)
 </script>
 
 <template>
   <main class="schedule-page">
     <header class="page-header"><button type="button" @click="router.back()">‹</button><h1>여행 일정 목록</h1><button class="notice-button" type="button" aria-label="여행 일정 알림" @click="router.push('/schedule/notifications')">♢<i v-if="unreadCount" /></button></header>
-    <section class="period-card"><span>▣</span><b>{{ store.travelStart }} ~ {{ store.travelEnd }}</b><em>{{ periodMonths }}개월</em></section>
+    <section class="period-card"><span>▣</span><b>{{ store.travelStart }} ~ {{ store.travelEnd }}</b><em>{{ travelDays }}일</em></section>
 
     <section v-if="todaySchedules.length" class="today-ticket">
       <div class="ticket-head"><b>오늘 일정</b><small>{{ store.demoToday.replaceAll('-', '.') }}</small></div>
