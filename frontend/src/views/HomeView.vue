@@ -175,7 +175,7 @@ function formatCurrency(n) {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20" style="background: #F7F4EE">
+  <div class="app-home-shell min-h-screen pb-20" style="background: #F7F4EE">
 
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
     <template v-if="travelModeStore.isSavingsMode && !travelStore.hasTravelGoal">
@@ -609,7 +609,8 @@ function formatCurrency(n) {
 .mode-switch-control button.selected { color: #fff; }
 .mode-switch-thumb { position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 25px; border-radius: 999px; background: #173f8d; transition: transform .3s cubic-bezier(.22,1,.36,1); }
 .mode-switch-control.savings-selected .mode-switch-thumb { transform: translateX(100%); }
-.mode-flight-loader { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
+.app-home-shell { position: relative; width: min(100%, 390px); margin: 0 auto; overflow-x: hidden; }
+.mode-flight-loader { position: fixed; top: 0; bottom: 0; left: 50%; width: min(100vw,390px); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateX(-50%); background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
 .mode-flight-loader strong { margin-top: 22px; font-size: 18px; }
 .mode-flight-loader small { margin-top: 7px; color: #dbeafe; font-size: 11px; }
 .flight-path { position: relative; width: 230px; border-top: 2px dashed #ffffff7a; }

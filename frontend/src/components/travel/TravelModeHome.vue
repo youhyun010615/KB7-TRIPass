@@ -169,25 +169,25 @@ function switchMode(mode) {
           <div class="departure"><small>DEPARTURE</small><strong>D-{{ selected.dday }}</strong></div>
         </div>
         <p class="trip-description">{{ selected.code === 'all' ? '등록한 모든 여행의 남은 자산을 한눈에 확인해요' : `${selected.title}에서 시작되는 설레는 여행을 즐겨보세요` }} ✨</p>
-        <div class="trip-progress"><small>{{ selected.day }}일차</small><div><i :style="{ width: `${selected.day / selected.totalDays * 100}%` }"/></div><small>{{ selected.totalDays }}일차</small></div>
+        <div class="ticket-photo-space" />
 
-        <template v-if="selected.code === 'all'">
-          <p class="ticket-label">전체 남은 여행 자산 (합산)</p>
-          <h2>{{ formatWon(selected.remain) }}</h2>
-          <div class="country-assets">
-            <div class="france-asset"><span>🇫🇷 파리 남은 여행 자산</span><b>590,000원</b><small>(약 €128.10)</small></div>
-            <div class="swiss-asset"><span>🇨🇭 스위스 남은 여행 자산</span><b>1,000,000원</b><small>(약 CHF 586.65)</small></div>
-          </div>
-        </template>
-        <template v-else>
-          <p class="ticket-label">{{ selected.title }} 남은 여행 자산</p>
-          <h2>{{ selected.localAmount }} <small>(약 {{ formatWon(selected.remain) }})</small></h2>
-          <div class="daily-budget"><span>남은 5일 동안 하루에 쓸 수 있는 금액</span><b>{{ selected.daily }} <small>({{ selected.dailyWon }})</small></b></div>
-        </template>
-
-        <div class="fund-label"><span>여행 자금 진행률</span><b>{{ selected.progress }}%</b></div>
-        <div class="fund-track"><i :style="{ width: `${selected.progress}%` }"/></div>
-        <div class="fund-meta"><span>목표 {{ formatWon(selected.goal) }}</span><span>사전 지불 금액 {{ formatWon(selected.prepaid) }}</span></div>
+        <div class="travel-summary-panel">
+          <div class="trip-progress"><small>{{ selected.day }}일차</small><div><i :style="{ width: `${selected.day / selected.totalDays * 100}%` }"/></div><small>{{ selected.totalDays }}일차</small></div>
+          <template v-if="selected.code === 'all'">
+            <div class="summary-title"><span>전체 남은 여행 자산 (합산)</span><strong>{{ formatWon(selected.remain) }}</strong></div>
+            <div class="country-assets">
+              <div class="france-asset"><span>🇫🇷 파리 남은 여행 자산</span><b>590,000원</b><small>(약 €128.10)</small></div>
+              <div class="swiss-asset"><span>🇨🇭 스위스 남은 여행 자산</span><b>1,000,000원</b><small>(약 CHF 586.65)</small></div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="summary-title"><span>{{ selected.title }} 남은 여행 자산</span><strong>{{ selected.localAmount }} <small>(약 {{ formatWon(selected.remain) }})</small></strong></div>
+            <div class="daily-budget"><span>남은 5일 동안 하루에 쓸 수 있는 금액</span><b>{{ selected.daily }} <small>({{ selected.dailyWon }})</small></b></div>
+          </template>
+          <div class="fund-label"><span>여행 자금 진행률</span><b>{{ selected.progress }}%</b></div>
+          <div class="fund-track"><i :style="{ width: `${selected.progress}%` }"/></div>
+          <div class="fund-meta"><span>목표 {{ formatWon(selected.goal) }}</span><span>사전 지불 금액 {{ formatWon(selected.prepaid) }}</span></div>
+        </div>
       </div>
       <div class="perforation lower"><i/><span/><i/></div>
       <div class="ticket-stub"><span>여행 목표 자금 관리</span><b>▥▥▥▥▥ ›</b></div>
@@ -245,4 +245,20 @@ function switchMode(mode) {
 .flight-route{display:flex;align-items:center;color:#ffd829;font-size:16px}
 .flight-route i{width:100%;border-top:1px dashed #ffffff80}
 .trip-description{height:16px;margin-top:9px;overflow:hidden;color:#ffffffe0;font-size:9px;white-space:nowrap;text-overflow:ellipsis}
+.ticket-main{height:320px;min-height:320px;padding:20px}
+.ticket-photo-space{height:36px}
+.travel-summary-panel{padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--theme) 78%,transparent);box-shadow:inset 0 0 0 1px #ffffff0d;backdrop-filter:blur(2px)}
+.travel-summary-panel .trip-progress{margin-top:0}
+.summary-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:9px}
+.summary-title>span{color:#fff;font-size:10px;font-weight:800}
+.summary-title>strong{color:#fff;font-size:18px;white-space:nowrap}
+.summary-title>strong small{color:#8cebbf;font-size:8px}
+.travel-summary-panel .country-assets{margin-top:8px;border-radius:9px}
+.travel-summary-panel .country-assets>div{padding:8px 9px}
+.travel-summary-panel .country-assets span{font-size:8px}.travel-summary-panel .country-assets b{margin-top:3px;font-size:13px}.travel-summary-panel .country-assets small{font-size:7px}
+.travel-summary-panel .daily-budget{margin-top:8px;padding:8px 10px;border-radius:9px;background:#ffffff12}
+.travel-summary-panel .daily-budget span{font-size:8px}.travel-summary-panel .daily-budget b{margin-top:3px;font-size:12px}
+.travel-summary-panel .fund-label{margin-top:9px}.travel-summary-panel .fund-track{height:6px;margin-top:5px}.travel-summary-panel .fund-meta{margin-top:6px}
+.ticket-stub{height:45px;padding:0 18px;background:var(--theme);color:#fff}
+.ticket-stub b{color:#fff}
 </style>
