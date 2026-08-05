@@ -55,7 +55,7 @@ const unreadCount = computed(() => store.schedules.filter(item => !item.notifica
       <p v-if="!upcomingGroups.length" class="empty">다가오는 여행 일정이 없어요.</p>
     </section>
 
-    <button class="add-button" type="button" @click="router.push('/schedule/new')"><span>＋</span>새 여행 일정 추가하기</button>
+    <button class="add-button" type="button" @click="router.push({path:'/schedule/new',query:router.currentRoute.value.query})"><span>＋</span>새 여행 일정 추가하기</button>
     <BottomNav />
   </main>
 </template>
