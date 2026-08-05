@@ -236,6 +236,14 @@ public class AssetService {
         }
     }
 
+    @Transactional
+    public void deleteAccount(Long userId, Long accountId) {
+        AccountDto account = assetMapper.findAccountById(accountId, userId);
+        if (account == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");
+        }
+        assetMapper.deleteAccount(accountId, userId);
+    }
 
 
     public List<AccountDto> getAccounts(Long userId) {
