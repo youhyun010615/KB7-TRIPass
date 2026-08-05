@@ -1,107 +1,61 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
+import { useChecklistStore } from '@/stores/checklist'
 
+const route = useRoute()
 const router = useRouter()
-
-const checklists = ref([
-  {
-    id: 1,
-    travelTitle: '총 2개국 배낭여행',
-    dateRange: '2025.07.10 ~ 07.24',
-    items: [
-      { id: 1, text: '여권 유효기간 확인', done: true },
-      { id: 2, text: '항공권 예매', done: true },
-      { id: 3, text: '숙소 예약', done: true },
-      { id: 4, text: '여행자 보험 가입', done: true },
-      { id: 5, text: '환전', done: false },
-      { id: 6, text: '세계 어댑터 챙기기', done: false },
-    ],
-  },
-  {
-    id: 2,
-    travelTitle: '동남아 단기 여행',
-    dateRange: '2025.09.01 ~ 09.08',
-    items: [
-      { id: 1, text: '비자 확인', done: false },
-      { id: 2, text: '항공권 예매', done: true },
-      { id: 3, text: '예방접종 확인', done: false },
-    ],
-  },
-])
-
-function toggle(checklist, item) {
-  item.done = !item.done
-}
+const store = useChecklistStore()
+const tripId = computed(() => Number(route.query.tripId || 1))
+const data = computed(() => store.getTrip(tripId.value))
+const prepProgress = computed(() => store.progress(store.preparationItems(tripId.value)))
+const returnProgress = computed(() => store.progress(data.value.returns))
+const allProgress = computed(() => store.progress([...store.preparationItems(tripId.value), ...data.value.returns]))
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #F7F4EE">
-
-    <!-- 헤더 -->
-    <div class="flex items-center justify-between px-5 pt-14 pb-4">
-      <button @click="router.back()" class="p-1">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18L9 12L15 6" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h1 class="text-base font-bold text-gray-900">체크리스트</h1>
-      <div class="w-8" />
-    </div>
-
-    <!-- 체크리스트 카드 목록 -->
-    <div class="px-4 flex flex-col gap-3">
-      <div
-        v-for="checklist in checklists"
-        :key="checklist.id"
-        class="bg-white rounded-2xl px-5 py-5"
-      >
-        <!-- 제목 -->
-        <p class="text-sm font-bold text-gray-900">{{ checklist.travelTitle }}</p>
-        <div class="flex items-center justify-between mb-4 mt-0.5">
-          <p class="text-xs text-gray-400">{{ checklist.dateRange }}</p>
-          <p class="text-xs font-semibold" style="color: #3B5BDB">
-            {{ checklist.items.filter(i => i.done).length }}/{{ checklist.items.length }}
-          </p>
-        </div>
-
-        <!-- 진행 바 -->
-        <div class="h-1.5 rounded-full bg-gray-100 mb-4">
-          <div
-            class="h-full rounded-full transition-all"
-            style="background: #3B5BDB"
-            :style="{ width: (checklist.items.filter(i => i.done).length / checklist.items.length * 100) + '%' }"
-          />
-        </div>
-
-        <!-- 항목 목록 -->
-        <div class="flex flex-col gap-3">
-          <button
-            v-for="item in checklist.items"
-            :key="item.id"
-            class="flex items-center gap-3 text-left"
-            @click="toggle(checklist, item)"
-          >
-            <div
-              class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
-              :style="item.done
-                ? 'background: #3B5BDB; border: none'
-                : 'background: transparent; border: 1.5px solid #D1D5DB'"
-            >
-              <svg v-if="item.done" width="11" height="11" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span
-              class="text-sm transition-colors"
-              :class="item.done ? 'line-through text-gray-400' : 'text-gray-900'"
-            >{{ item.text }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
+  <main class="checklist-page">
+    <header><button type="button" @click="router.back()">‹</button><h1>체크리스트</h1><span /></header>
+    <section class="ticket">
+      <small>TRIP CHECKLIST PASS</small>
+      <div><h2>{{ data.trip.flags }} {{ data.trip.title }}</h2><b>D-{{ data.trip.dDay }}</b></div>
+      <i />
+      <p>전체 완료율</p>
+      <div class="total"><strong>{{ allProgress.done }} / {{ allProgress.total }}</strong><em>{{ allProgress.percent }}% 완료</em></div>
+      <div class="bar"><span :style="{ width: `${allProgress.percent}%` }" /></div>
+    </section>
+    <h3>체크리스트 목록</h3>
+    <button class="menu-card" @click="router.push(`/mypage/checklists/preparation?tripId=${tripId}`)">
+      <span class="menu-icon preparation">✓</span><span class="copy"><b>여행 준비 체크리스트</b><small>D-30 · D-7 · D-1 준비 항목</small></span><em>{{ prepProgress.done }}/{{ prepProgress.total }}</em><strong>›</strong>
+    </button>
+    <button class="menu-card" @click="router.push(`/mypage/checklists/return?tripId=${tripId}`)">
+      <span class="menu-icon returning">↩</span><span class="copy"><b>귀국 체크리스트</b><small>귀국일 점검 및 정리 항목</small></span><em :class="{ scheduled: !returnProgress.done }">{{ returnProgress.done ? `${returnProgress.done}/${returnProgress.total}` : '예정' }}</em><strong>›</strong>
+    </button>
+    <aside><span>✈️</span><span><b>완료하지 못한 준비 항목은 다음 단계로 이월돼요</b><small>체크리스트는 직접 추가할 수도 있어요.</small></span></aside>
     <BottomNav />
-  </div>
+  </main>
 </template>
+
+<style scoped>
+.checklist-page { min-height: 100vh; padding: 0 18px 96px; background: #f8f6f1; color: #111a2d; }
+.checklist-page > header { display: grid; height: 94px; grid-template-columns: 40px 1fr 40px; align-items: end; padding-bottom: 18px; }
+.checklist-page > header button { font-size: 31px; text-align: left; }
+.checklist-page > header h1 { text-align: center; font-size: 20px; font-weight: 900; }
+.ticket { position: relative; padding: 22px 20px; border-radius: 20px; background: linear-gradient(135deg, #17397f, #102b66); color: #fff; box-shadow: 0 12px 24px #19386d24; }
+.ticket::before, .ticket::after { position: absolute; top: 48%; width: 18px; height: 18px; border-radius: 50%; background: #f8f6f1; content: ''; }
+.ticket::before { left: -9px; } .ticket::after { right: -9px; }
+.ticket small { color: #c7d7f6; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.ticket > div { display: flex; align-items: center; justify-content: space-between; }
+.ticket h2 { margin-top: 18px; font-size: 17px; } .ticket > div > b { margin-top: 18px; color: #ffb21c; font-size: 13px; }
+.ticket i { display: block; margin: 18px 0 14px; border-top: 1px dashed #8fa9d5; }
+.ticket p { color: #b9cae7; font-size: 10px; }.ticket .total { margin-top: 7px; }.ticket .total strong { font-size: 22px; }
+.ticket .total em { color: #58c9ff; font-size: 12px; font-style: normal; font-weight: 900; }
+.bar { height: 5px; margin-top: 13px; border-radius: 8px; background: #ffffff24; }.bar span { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #45d7ff, #1e8bff); }
+.checklist-page > h3 { margin: 25px 2px 14px; font-size: 17px; }
+.menu-card { display: grid; width: 100%; grid-template-columns: 50px 1fr auto 12px; gap: 13px; align-items: center; margin-bottom: 12px; padding: 20px 16px; border: 1px solid #e4e8ef; border-radius: 20px; background: #fff; box-shadow: 0 8px 18px #1727490c; text-align: left; }
+.menu-icon { display: grid; width: 48px; height: 48px; border-radius: 15px; place-items: center; font-size: 23px; font-weight: 900; }.preparation { background: #eaf3ff; color: #0767e9; }.returning { background: #e9faf4; color: #13a17c; }
+.copy b, .copy small { display: block; }.copy b { font-size: 14px; }.copy small { margin-top: 6px; color: #7f8da2; font-size: 10px; }
+.menu-card em { padding: 7px 11px; border-radius: 15px; background: #e9f3ff; color: #0869eb; font-size: 10px; font-style: normal; font-weight: 900; }.menu-card em.scheduled { background: #e8faf4; color: #10a17c; }.menu-card > strong { color: #7d8999; font-size: 24px; }
+aside { display: flex; gap: 13px; margin-top: 22px; padding: 17px; border-radius: 16px; background: #e6f1ff; }aside b, aside small { display: block; }aside b { color: #143879; font-size: 11px; }aside small { margin-top: 7px; color: #71839f; font-size: 9px; }
+</style>

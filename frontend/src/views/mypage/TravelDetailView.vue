@@ -27,7 +27,7 @@ const menus = [
   {
     label: '체크리스트',
     desc: '준비물과 할 일 목록',
-    path: '/mypage/checklists',
+    path: `/mypage/checklists?tripId=${route.params.id}`,
     icon: 'checklist',
   },
   {
