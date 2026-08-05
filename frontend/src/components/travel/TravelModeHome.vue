@@ -156,23 +156,21 @@ function switchMode(mode) {
 <template>
   <section class="travel-home">
     <header class="travel-header">
-      <div class="mode-toggle travel-selected" aria-label="서비스 모드 전환">
-        <span class="mode-thumb" />
-        <button class="active" type="button" @click="switchMode('travel')">여행</button>
-        <button type="button" @click="switchMode('savings')">저축</button>
+      <div class="header-controls">
+        <div class="mode-toggle travel-selected" aria-label="서비스 모드 전환">
+          <span class="mode-thumb" />
+          <button class="active" type="button" @click="switchMode('travel')">여행</button>
+          <button type="button" @click="switchMode('savings')">저축</button>
+        </div>
+        <div class="country-select">
+          <button type="button" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen"><span>{{ selected.flag }}</span>{{ selected.name }}<i>⌄</i></button>
+          <div v-if="countryMenuOpen" class="country-menu">
+            <button v-for="item in destinations" :key="item.code" type="button" :class="{ active: item.code === selected.code }" @click="selectDestination(item)"><span>{{ item.flag }}</span>{{ item.name }}</button>
+          </div>
+        </div>
       </div>
       <h1>안녕하세요, {{ userName }}님</h1>
       <NotificationBell />
-      <div class="country-select">
-        <button type="button" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen">
-          <span>{{ selected.flag }}</span>{{ selected.name }}<i>⌄</i>
-        </button>
-        <div v-if="countryMenuOpen" class="country-menu">
-          <button v-for="item in destinations" :key="item.code" type="button" :class="{ active: item.code === selected.code }" @click="selectDestination(item)">
-            <span>{{ item.flag }}</span>{{ item.name }}
-          </button>
-        </div>
-      </div>
     </header>
 
     <article class="ticket" :class="[{ combined: selected.code === 'all' }, `country-${selected.code}`]" :style="{ '--theme': selected.theme, '--photo': `url(${selected.image})` }">
@@ -311,4 +309,10 @@ function switchMode(mode) {
 .country-assets>div.country-asset-card::before{background:var(--asset-theme);opacity:.84}
 .country-assets>div.country-asset-card span{font-size:8px;white-space:nowrap}.country-assets>div.country-asset-card b{font-size:13px;white-space:nowrap}.country-assets>div.country-asset-card small{font-size:7px;white-space:nowrap}
 .country-all .fund-track i{background:linear-gradient(90deg,#79d3d8 0%,#f8d56b 55%,#f29a55 100%)}
+.travel-header{display:grid;grid-template-columns:auto minmax(0,1fr) 34px;align-items:start;gap:10px;padding-bottom:14px}
+.travel-header h1{padding-top:6px}
+.header-controls{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.header-controls .country-select{margin-left:0}
+.header-controls .country-select>button{padding:7px 9px;font-size:10px}
+.header-controls .country-menu{right:auto;left:0;top:37px}
 </style>
