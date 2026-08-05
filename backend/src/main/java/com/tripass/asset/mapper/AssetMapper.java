@@ -18,6 +18,11 @@ public interface AssetMapper {
     void insertAccount(AccountDto dto);
     List<AccountDto> findAccountsByUserId(Long userId);
 
+    void deleteAccount(
+            @org.apache.ibatis.annotations.Param("accountId") Long accountId,
+            @org.apache.ibatis.annotations.Param("userId") Long userId
+    );
+
     // transactions
     void insertTransaction(TransactionDto dto);
     List<TransactionDto> findTransactionsByAccountId(Long accountId);
