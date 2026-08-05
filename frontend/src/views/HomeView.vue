@@ -7,12 +7,25 @@ import { useSavingsPlanStore } from '@/stores/savingsPlan'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
+import TravelModeHome from '@/components/travel/TravelModeHome.vue'
 
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
 const plan = useSavingsPlanStore()
 const router = useRouter()
+const isModeSwitching = ref(false)
+const nextMode = ref('travel')
+
+function switchMode(mode) {
+  if (mode === travelModeStore.mode || isModeSwitching.value) return
+  nextMode.value = mode
+  isModeSwitching.value = true
+  window.setTimeout(() => {
+    travelModeStore.setMode(mode)
+    isModeSwitching.value = false
+  }, 1000)
+}
 
 const userName = computed(() => authStore.user?.name ?? '권유현')
 
@@ -55,13 +68,13 @@ const countries = [
     desc: '익숙함 속 새로운 발견 · 도쿄에서의 하루를 기대하며',
   },
   {
-    id: 5, name: '다낭', flag: '🇻🇳', code: 'DAD',
-    image: '/images/vietnam.png',
-    headerBg: '#b8860b',
-    progressBg: 'rgba(184,134,11,0.82)',
-    barColor: 'linear-gradient(90deg,#DA251D 0%,#FFCD00 50%,#DA251D 100%)',
-    dday: 230, currency: 'VND', rate: 0.06,
-    desc: '바다와 햇살이 머무는 곳 · 다낭에서의 여유로운 하루',
+    id: 5, name: '홍콩', flag: '🇭🇰', code: 'HKG',
+    image: '/images/Hong%20Kong.png',
+    headerBg: '#b8202e',
+    progressBg: 'rgba(184,32,46,0.84)',
+    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFDE00 100%)',
+    dday: 230, currency: 'HKD', rate: 184.2,
+    desc: '빛나는 야경과 활기찬 거리 · 홍콩에서 시작되는 특별한 하루',
   },
 ]
 const selectedCountry = ref(countries[0])
@@ -162,7 +175,7 @@ function formatCurrency(n) {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20" style="background: #F7F4EE">
+  <div class="app-home-shell min-h-screen pb-20" style="background: #F7F4EE">
 
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
     <template v-if="travelModeStore.isSavingsMode && !travelStore.hasTravelGoal">
@@ -214,7 +227,11 @@ function formatCurrency(n) {
       <div class="bg-white px-5 pt-10 pb-3 relative">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-[10px] font-extrabold tracking-widest text-gray-300">TRIPASS</p>
+            <div class="mode-switch-control savings-selected">
+              <span class="mode-switch-thumb" />
+              <button type="button" @click="switchMode('travel')">여행</button>
+              <button type="button" class="selected" @click="switchMode('savings')">저축</button>
+            </div>
             <h1 class="text-[20px] font-extrabold text-gray-900 mt-0.5">안녕하세요, {{ userName }}님</h1>
             <button class="text-[11px] text-gray-400 mt-0.5" @click="router.push('/travel/register')">여행 계획 수정하기 ›</button>
           </div>
@@ -431,7 +448,7 @@ function formatCurrency(n) {
     </template>
 
     <!-- ══ 여행 모드 ══════════════════════════════════════════ -->
-    <template v-else>
+    <template v-else-if="false">
 
       <!-- 헤더 -->
       <div class="bg-white px-5 pt-14 pb-3">
@@ -558,6 +575,16 @@ function formatCurrency(n) {
 
     </template>
 
+    <TravelModeHome v-else :user-name="userName" :on-switch-mode="switchMode" />
+
+    <Transition name="flight-fade">
+      <div v-if="isModeSwitching" class="mode-flight-loader" role="status" aria-live="polite">
+        <div class="flight-path"><span>✈</span></div>
+        <strong>{{ nextMode === 'travel' ? '여행 모드로 이동 중' : '저축 모드로 이동 중' }}</strong>
+        <small>TRIPass가 새로운 여정을 준비하고 있어요</small>
+      </div>
+    </Transition>
+
     <BottomNav />
   </div>
 </template>
@@ -577,4 +604,19 @@ function formatCurrency(n) {
 .ticket-notch-left { left: -12px; }
 .ticket-notch-right { right: -12px; }
 .ticket-dashed-line { width: calc(100% - 34px); margin: 0 auto; border-top: 1.5px dashed rgba(255, 255, 255, .42); }
+.mode-switch-control { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 84px; padding: 2px; overflow: hidden; border: 2px solid #173f8d; border-radius: 999px; background: #fff; }
+.mode-switch-control button { position: relative; z-index: 2; height: 25px; border-radius: 999px; color: #173f8d; font-size: 10px; font-weight: 900; transition: color .25s ease; }
+.mode-switch-control button.selected { color: #fff; }
+.mode-switch-thumb { position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 25px; border-radius: 999px; background: #173f8d; transition: transform .3s cubic-bezier(.22,1,.36,1); }
+.mode-switch-control.savings-selected .mode-switch-thumb { transform: translateX(100%); }
+.app-home-shell { position: relative; width: min(100%, 390px); margin: 0 auto; overflow-x: hidden; }
+.mode-flight-loader { position: fixed; top: 0; bottom: 0; left: 50%; width: min(100vw,390px); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateX(-50%); background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
+.mode-flight-loader strong { margin-top: 22px; font-size: 18px; }
+.mode-flight-loader small { margin-top: 7px; color: #dbeafe; font-size: 11px; }
+.flight-path { position: relative; width: 230px; border-top: 2px dashed #ffffff7a; }
+.flight-path::before,.flight-path::after { position: absolute; top: -6px; width: 10px; height: 10px; border-radius: 50%; background: #fff; content: ''; }
+.flight-path::before { left: 0; }.flight-path::after { right: 0; }
+.flight-path span { position: absolute; top: -22px; left: 0; font-size: 32px; filter: drop-shadow(0 5px 8px #0c255b66); animation: fly-across 1s ease-in-out forwards; }
+.flight-fade-enter-active,.flight-fade-leave-active { transition: opacity .18s ease; }.flight-fade-enter-from,.flight-fade-leave-to { opacity: 0; }
+@keyframes fly-across { from { transform: translateX(0) rotate(5deg); } to { transform: translateX(202px) rotate(5deg); } }
 </style>

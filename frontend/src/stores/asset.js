@@ -10,7 +10,7 @@ export const PREPAID_SCOPE_META = {
   CH: { name: '스위스', flag: '🇨🇭', description: '스위스 여행 관련 사전 지출 항목' },
   DE: { name: '독일', flag: '🇩🇪', description: '독일 여행 관련 사전 지출 항목' },
   JP: { name: '일본', flag: '🇯🇵', description: '일본 여행 관련 사전 지출 항목' },
-  VN: { name: '베트남', flag: '🇻🇳', description: '베트남 여행 관련 사전 지출 항목' },
+  HK: { name: '홍콩', flag: '🇭🇰', description: '홍콩 여행 관련 사전 지출 항목' },
 }
 
 const accountSeed = [

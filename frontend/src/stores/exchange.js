@@ -6,7 +6,7 @@ const currencies = [
   { code:'EUR', name:'유로', flag:'🇫🇷', unit:1, rate:1486.20, change:-3.10, decimals:2, chart:[1477,1481,1488,1485,1491,1488,1486.2] },
   { code:'CHF', name:'스위스 프랑', flag:'🇨🇭', unit:1, rate:1704.60, change:2.40, decimals:2, chart:[1695,1698,1701,1700,1706,1703,1704.6] },
   { code:'JPY', name:'일본 엔', flag:'🇯🇵', unit:100, rate:923.10, change:-1.20, decimals:2, chart:[928,926,924,925,922,924,923.1] },
-  { code:'VND', name:'베트남 동', flag:'🇻🇳', unit:100, rate:5.67, change:-0.03, decimals:2, chart:[5.72,5.71,5.69,5.68,5.7,5.68,5.67] },
+  { code:'HKD', name:'홍콩 달러', flag:'🇭🇰', unit:1, rate:184.2, change:-0.18, decimals:2, chart:[184.7,184.5,184.3,184.4,184.1,184.3,184.2] },
 ]
 const banks = [
   { id:'kb-gangnam', name:'KB국민은행 강남역지점', distance:350, walk:5, address:'서울 강남구 강남대로 396', phone:'02-0000-0000', hours:'09:00 - 16:00', lat:44, top:43, preferentialRate:1480.10 },
