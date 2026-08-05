@@ -1,12 +1,8 @@
 package com.tripass.exchange.service;
 
-import com.tripass.exchange.dto.ExchangeRateHistoryResponseDto;
-import com.tripass.exchange.dto.ExchangeRateResponseDto;
-import com.tripass.exchange.dto.SyncResultDto;
+import com.tripass.exchange.dto.*;
 import com.tripass.exchange.client.ExchangeRateClient;
 import com.tripass.exchange.domain.ExchangeRate;
-import com.tripass.exchange.dto.ExternalExchangeRateDto;
-import com.tripass.exchange.dto.LatestExchangeRateDto;
 import com.tripass.exchange.mapper.ExchangeRateMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +40,9 @@ public class ExchangeRateService {
 
     @Transactional
     public SyncResultDto syncExchangeRates(String date) {
+        // KRW 존재 여부 확인 및 생성
+        ensureKrwExists();
+
         // 날짜 파싱
         LocalDate endDate;
         String normalizedDate = date.replace("-", "");
@@ -101,6 +100,14 @@ public class ExchangeRateService {
                 .syncedAt(LocalDateTime.now())
                 .syncedCurrencies(statusList)
                 .build();
+    }
+
+    private void ensureKrwExists() {
+        Long krwId = exchangeRateMapper.getCurrencyIdByCode("KRW");
+        if (krwId == null) {
+            log.info("KRW 통화 정보가 없어 새로 등록합니다.");
+            exchangeRateMapper.insertCurrency("KRW", "대한민국 원");
+        }
     }
 
     private List<ExchangeRateResponseDto> processAndSave(List<ExternalExchangeRateDto> dtoList, LocalDate rateDate) {
@@ -191,6 +198,62 @@ public class ExchangeRateService {
             log.warn("통화 단위 파싱 실패: {}, 기본값 1 적용", curUnit);
             return 1;
         }
+    }
+
+    public ExchangeRateConvertResponseDto convertCurrency(String fromCurrency, String toCurrency, double amount) {
+        if (fromCurrency == null || fromCurrency.isEmpty() || 
+            toCurrency == null || toCurrency.isEmpty() || 
+            amount <= 0) {
+            throw new IllegalArgumentException("필수 파라미터가 누락되었거나 금액이 0 이하입니다.");
+        }
+
+        if (fromCurrency.equals(toCurrency)) {
+            return ExchangeRateConvertResponseDto.builder()
+                    .fromAmount(amount)
+                    .fromCurrency(fromCurrency)
+                    .toAmount(amount)
+                    .toCurrency(toCurrency)
+                    .appliedRate(1.0)
+                    .build();
+        }
+
+        BigDecimal rate = getConversionRate(fromCurrency, toCurrency);
+        double convertedAmount = BigDecimal.valueOf(amount)
+                .multiply(rate)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+
+        return ExchangeRateConvertResponseDto.builder()
+                .fromAmount(amount)
+                .fromCurrency(fromCurrency)
+                .toAmount(convertedAmount)
+                .toCurrency(toCurrency)
+                .appliedRate(rate.doubleValue())
+                .build();
+    }
+
+    private BigDecimal getConversionRate(String fromCurrency, String toCurrency) {
+        // ... (환율 조회 로직)
+        // 1. 만약 from이 KRW이면: 1 / (to의 환율)
+        // 2. 만약 to가 KRW이면: (from의 환율)
+        // 3. 둘 다 KRW가 아니면: (from의 환율) / (to의 환율)
+        // 실제로는 exchange_rates에 KRW(base) -> 타겟(target) 데이터만 있음
+        
+        BigDecimal fromRate = getRateToKrw(fromCurrency);
+        BigDecimal toRate = getRateToKrw(toCurrency);
+        
+        return fromRate.divide(toRate, 8, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal getRateToKrw(String currencyCode) {
+        if ("KRW".equals(currencyCode)) return BigDecimal.ONE;
+        
+        List<LatestExchangeRateDto> latestRates = exchangeRateMapper.getLatestRates();
+        return latestRates.stream()
+                .filter(rate -> rate.getCurrencyCode().equals(currencyCode))
+                .map(LatestExchangeRateDto::getDealBaseRate)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 통화입니다: " + currencyCode));
     }
 
     private BigDecimal parseRate(String rateStr) {
