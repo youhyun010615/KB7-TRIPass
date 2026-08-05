@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.validation.ConstraintViolationException;
+
 /**
  * 전역 예외 핸들러 — 모든 컨트롤러에서 발생하는 예외를 ApiResponse 형태로 통일
  */
@@ -38,5 +40,27 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("INTERNAL_ERROR", "서버 내부 오류가 발생했습니다."));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>>
+    handleConstraintViolation(
+            ConstraintViolationException exception
+    ) {
+        String message = exception
+                .getConstraintViolations()
+                .stream()
+                .findFirst()
+                .map(violation -> violation.getMessage())
+                .orElse("잘못된 요청값입니다.");
+
+        return ResponseEntity
+                .badRequest()
+                .body(
+                        ApiResponse.error(
+                                "INVALID_INPUT",
+                                message
+                        )
+                );
     }
 }
