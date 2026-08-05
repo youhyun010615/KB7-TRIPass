@@ -50,6 +50,9 @@ public interface ExchangeRateMapper {
     // 관심 환율 알림 수정
     int updateAlert(@Param("id") Long id, @Param("request") ExchangeRateAlertUpdateRequestDto request);
 
+    // 관심 환율 알림 삭제 (논리 삭제)
+    int deleteAlert(@Param("id") Long id);
+
     // 관심 환율 알림 조회 (단건)
     ExchangeRateAlertUpdateResponseDto getAlertById(@Param("id") Long id);
 }

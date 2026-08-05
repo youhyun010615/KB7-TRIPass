@@ -70,4 +70,11 @@ public class ExchangeRateController {
         ExchangeRateAlertUpdateResponseDto updatedAlert = exchangeRateService.updateAlert(id, userId, request);
         return ApiResponse.success("환율 알림이 수정되었습니다.", updatedAlert);
     }
+
+    @DeleteMapping("/alerts/{id}")
+    public ApiResponse<Map<String, Long>> deleteAlert(@PathVariable Long id) {
+        Long userId = 101L; // TODO: 실제 로그인한 유저 ID로 대체
+        exchangeRateService.deleteAlert(id, userId);
+        return ApiResponse.success("환율 알림이 삭제되었습니다.", Map.of("id", id));
+    }
 }

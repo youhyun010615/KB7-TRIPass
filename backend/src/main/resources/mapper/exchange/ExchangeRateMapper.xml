@@ -112,6 +112,12 @@
           AND is_deleted = 0
     </update>
 
+    <update id="deleteAlert">
+        UPDATE exchange_rate_alerts
+        SET is_deleted = 1
+        WHERE id = #{id}
+    </update>
+
     <select id="getAlertById" resultType="ExchangeRateAlertUpdateResponseDto">
         SELECT
             era.id AS id,

@@ -79,6 +79,24 @@ public class ExchangeRateService {
         return updatedAlert;
     }
 
+    @Transactional
+    public Long deleteAlert(Long id, Long userId) {
+        // 1. 알림 존재 여부 및 권한 확인
+        ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
+        if (existingAlert == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "ALERT_NOT_FOUND", "해당 알림을 찾을 수 없습니다.");
+        }
+
+        if (!existingAlert.getUserId().equals(userId)) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "FORBIDDEN", "삭제 권한이 없습니다.");
+        }
+
+        // 2. 삭제 실행
+        exchangeRateMapper.deleteAlert(id);
+
+        return id;
+    }
+
 
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {
         List<ExchangeRateHistoryResponseDto.RateInfo> rates = exchangeRateMapper.getHistoryRates(currencyCode, days);
