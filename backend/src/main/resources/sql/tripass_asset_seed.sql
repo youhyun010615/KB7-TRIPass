@@ -1,4 +1,5 @@
 -- supported_institutions seed data
+--
 INSERT INTO `supported_institutions` (organization_code, institution_name, business_type, display_order, is_active)
 VALUES
     ('0004', 'KB국민은행', 'BK', 1, TRUE),
