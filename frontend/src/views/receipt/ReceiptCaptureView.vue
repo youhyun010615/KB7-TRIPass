@@ -19,7 +19,7 @@ function usePhoto() {
     progress.value += 22
     if (progress.value >= 100) {
       clearInterval(timer); progress.value = 100
-      store.draft = { tripId:tripId.value, country:trip.value.countries[0], flag:'🇫🇷', merchant:'RISTORANTE PIZZERIA da RITA', date:'2025-07-12', currency:'EUR', amount:17, wonAmount:25300, category:'식비', confidence:96, memo:'', items:[['COPERTO','테이블 요금',2],['PIZZA DIAVOLA','디아볼라 피자',8.5],['ACQUA MINERALE','생수',2.5],['BIRRA PERONI','페로니 맥주',4]] }
+      store.draft = { tripId:tripId.value, country:trip.value.countries[0], flag:'🇫🇷', merchant:'RISTORANTE PIZZERIA da RITA', date:'2025.07.12', time:'19:42', currency:'EUR', amount:17, wonAmount:25300, category:'식비', confidence:96, memo:'', items:[['COPERTO','테이블 요금',2],['PIZZA DIAVOLA','디아볼라 피자',8.5],['ACQUA MINERALE','생수',2.5],['BIRRA PERONI','페로니 맥주',4]] }
       router.push(`/receipt/result?tripId=${tripId.value}`)
     }
   }, 280)
