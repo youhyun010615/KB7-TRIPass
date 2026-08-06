@@ -42,4 +42,9 @@ public interface ScheduleMapper {
     int updateSchedule(
             ScheduleUpdateCommandDto command
     );
+
+    int softDeleteSchedule(
+            @Param("tripId") Long tripId,
+            @Param("scheduleId") Long scheduleId
+    );
 }

@@ -165,4 +165,13 @@
           AND is_deleted = 0
     </update>
 
+    <update id="softDeleteSchedule">
+        UPDATE trip_schedules
+        SET is_deleted = 1,
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE id = #{scheduleId}
+          AND trip_id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
