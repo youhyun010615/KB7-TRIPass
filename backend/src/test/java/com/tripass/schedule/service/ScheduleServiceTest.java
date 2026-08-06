@@ -1,13 +1,6 @@
 package com.tripass.schedule.service;
 
-import com.tripass.schedule.dto.ScheduleCreateCommandDto;
-import com.tripass.schedule.dto.ScheduleCreateRequestDto;
-import com.tripass.schedule.dto.ScheduleCreateResponseDto;
-import com.tripass.schedule.dto.ScheduleDetailResponseDto;
-import com.tripass.schedule.dto.ScheduleDetailRowDto;
-import com.tripass.schedule.dto.ScheduleListResponseDto;
-import com.tripass.schedule.dto.ScheduleListRowDto;
-import com.tripass.schedule.dto.TripCountryContextRowDto;
+import com.tripass.schedule.dto.*;
 import com.tripass.schedule.enums.SchedulePaymentStatus;
 import com.tripass.schedule.enums.ScheduleStatus;
 import com.tripass.schedule.exception.ScheduleException;
@@ -540,5 +533,145 @@ class ScheduleServiceTest {
                 )
                 .memo("입장 10분 전까지 도착")
                 .build();
+    }
+
+    @Test
+    void 여행_일정을_수정한다() {
+        ScheduleUpdateRequestDto request =
+                ScheduleUpdateRequestDto.builder()
+                        .tripCountryId(1L)
+                        .scheduleName(
+                                "루브르 박물관 자유 관람"
+                        )
+                        .scheduledAt(
+                                LocalDateTime.parse(
+                                        "2026-08-28T11:00:00"
+                                )
+                        )
+                        .amount(new BigDecimal("90.00"))
+                        .currencyCode("EUR")
+                        .paymentStatus(
+                                SchedulePaymentStatus.PREPAID
+                        )
+                        .placeName("루브르 박물관")
+                        .placeAddress(
+                                "Rue de Rivoli, Paris"
+                        )
+                        .memo("11시로 시간 변경")
+                        .build();
+
+        TripCountryContextRowDto tripCountry =
+                createTripCountryContext();
+
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper
+                        .existsScheduleByTripIdAndScheduleId(
+                                1L,
+                                10L
+                        )
+        ).thenReturn(true);
+
+        when(
+                scheduleMapper.findTripCountryContext(
+                        1L,
+                        1L
+                )
+        ).thenReturn(tripCountry);
+
+        when(
+                scheduleMapper.findCurrencyIdByCode(
+                        "EUR"
+                )
+        ).thenReturn(1L);
+
+        ScheduleUpdateResponseDto result =
+                scheduleService.updateSchedule(
+                        1L,
+                        10L,
+                        request
+                );
+
+        ArgumentCaptor<ScheduleUpdateCommandDto> captor =
+                ArgumentCaptor.forClass(
+                        ScheduleUpdateCommandDto.class
+                );
+
+        verify(scheduleMapper)
+                .updateSchedule(captor.capture());
+
+        ScheduleUpdateCommandDto command =
+                captor.getValue();
+
+        assertEquals(1L, command.getTripId());
+        assertEquals(10L, command.getScheduleId());
+        assertEquals(
+                "루브르 박물관 자유 관람",
+                command.getScheduleName()
+        );
+        assertEquals(
+                Timestamp.from(
+                        Instant.parse(
+                                "2026-08-28T09:00:00Z"
+                        )
+                ),
+                command.getScheduledAt()
+        );
+        assertEquals(
+                "PREPAID",
+                command.getPaymentStatus()
+        );
+        assertEquals(10L, result.getScheduleId());
+    }
+
+    @Test
+    void 수정할_여행_일정이_없으면_예외가_발생한다() {
+        ScheduleUpdateRequestDto request =
+                ScheduleUpdateRequestDto.builder()
+                        .tripCountryId(1L)
+                        .scheduleName("루브르 박물관")
+                        .scheduledAt(
+                                LocalDateTime.parse(
+                                        "2026-08-28T11:00:00"
+                                )
+                        )
+                        .paymentStatus(
+                                SchedulePaymentStatus.PREPAID
+                        )
+                        .build();
+
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper
+                        .existsScheduleByTripIdAndScheduleId(
+                                1L,
+                                999L
+                        )
+        ).thenReturn(false);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.updateSchedule(
+                        1L,
+                        999L,
+                        request
+                )
+        );
+
+        assertEquals(
+                "SCHEDULE_NOT_FOUND",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).updateSchedule(
+                any(ScheduleUpdateCommandDto.class)
+        );
     }
 }
