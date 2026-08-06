@@ -1,8 +1,12 @@
 package com.tripass.exchange.service;
 
+import org.springframework.dao.DuplicateKeyException;
+import com.tripass.exchange.domain.ExchangeRateAlert;
 import com.tripass.exchange.dto.*;
 import com.tripass.exchange.client.ExchangeRateClient;
 import com.tripass.exchange.domain.ExchangeRate;
+import com.tripass.exchange.exception.ExchangeErrorCode;
+import com.tripass.exchange.exception.ExchangeException;
 import com.tripass.exchange.mapper.ExchangeRateMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +31,99 @@ public class ExchangeRateService {
         return exchangeRateMapper.getLatestRates();
     }
 
+    public List<ExchangeRateAlertResponseDto> getAlertsByUserId(Long userId) {
+        return exchangeRateMapper.getAlertsByUserId(userId);
+    }
+
+    @Transactional
+    public Long registerAlert(Long userId, ExchangeRateAlertRequestDto request) {
+        validateAlertRequest(request.getCurrencyId(), request.getTargetAmount(), request.getTargetRate());
+
+        if (!exchangeRateMapper.existsCurrencyById(request.getCurrencyId())) {
+            throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
+        }
+
+        // 애플리케이션 레벨 사전 중복 검사 (userId 기반)
+        int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId());
+        if (count > 0) {
+            throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
+        }
+        
+        ExchangeRateAlert alert = new ExchangeRateAlert();
+        alert.setUserId(userId);
+        alert.setCurrencyId(request.getCurrencyId());
+        alert.setTargetRate(request.getTargetRate());
+        alert.setTargetAmount(request.getTargetAmount());
+        
+        try {
+            exchangeRateMapper.insertAlert(alert);
+        } catch (DuplicateKeyException e) {
+            throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
+        }
+        
+        return alert.getId();
+    }
+
+    @Transactional
+    public ExchangeRateAlertUpdateResponseDto updateAlert(Long id, Long userId, ExchangeRateAlertUpdateRequestDto request) {
+        validateAlertRequest(null, request.getTargetAmount(), request.getTargetRate());
+
+        ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
+        if (existingAlert == null) {
+            throw new ExchangeException(ExchangeErrorCode.ALERT_NOT_FOUND);
+        }
+
+        if (!existingAlert.getUserId().equals(userId)) {
+            throw new ExchangeException(ExchangeErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        exchangeRateMapper.updateAlert(id, request);
+        return exchangeRateMapper.getAlertById(id);
+    }
+
+    private void validateAlertRequest(Long currencyId, Double targetAmount, Double targetRate) {
+        if (currencyId != null && !exchangeRateMapper.existsCurrencyById(currencyId)) {
+             throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
+        }
+        if (targetAmount == null || targetAmount <= 0) {
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (targetRate == null || targetRate <= 0) {
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    @Transactional
+    public void deleteAlert(Long id, Long userId) {
+        ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
+        if (existingAlert == null) {
+            throw new ExchangeException(ExchangeErrorCode.ALERT_NOT_FOUND);
+        }
+
+        if (!existingAlert.getUserId().equals(userId)) {
+            throw new ExchangeException(ExchangeErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        exchangeRateMapper.deleteAlert(id);
+    }
+
+
     public ExchangeRateHistoryResponseDto getHistoryRates(String currencyCode, int days) {
+        // 1. 입력값 검증 (null/empty)
+        if (currencyCode == null || currencyCode.isEmpty()) {
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 2. days 정책 제한 (7, 30, 90일만 허용)
+        if (days != 7 && days != 30 && days != 90) {
+            throw new ExchangeException(ExchangeErrorCode.INVALID_DAYS_RANGE);
+        }
+
+        // 3. 통화 코드 존재 여부 확인
+        if (exchangeRateMapper.getCurrencyIdByCode(currencyCode) == null) {
+            throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
+        }
+
         List<ExchangeRateHistoryResponseDto.RateInfo> rates = exchangeRateMapper.getHistoryRates(currencyCode, days);
         String currencyName = exchangeRateMapper.getCurrencyNameByCode(currencyCode);
         
@@ -40,10 +136,8 @@ public class ExchangeRateService {
 
     @Transactional
     public SyncResultDto syncExchangeRates(String date) {
-        // KRW 존재 여부 확인 및 생성
         ensureKrwExists();
 
-        // 날짜 파싱
         LocalDate endDate;
         String normalizedDate = date.replace("-", "");
         try {
@@ -54,16 +148,14 @@ public class ExchangeRateService {
             );
         } catch (Exception e) {
             log.error("날짜 파싱 실패: {}", date);
-            return null; // 또는 적절한 에러 처리
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
         }
         
-        LocalDate startDate = endDate.minusDays(89); // 90일 범위 계산
+        LocalDate startDate = endDate.minusDays(89); 
         
-        // 통계용 맵 (CurrencyCode -> SavedDays)
         java.util.Map<String, Integer> currencySyncMap = new java.util.HashMap<>();
         int totalSavedCount = 0;
         
-        // 90일치 '달력' 날짜 루프
         LocalDate currentDate = endDate;
         for (int i = 0; i < 90; i++) {
             String dateParam = currentDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -74,7 +166,6 @@ public class ExchangeRateService {
                     List<ExchangeRateResponseDto> savedRates = processAndSave(dtoList, currentDate);
                     totalSavedCount += savedRates.size();
                     
-                    // 통화별 카운트 업데이트
                     for (ExchangeRateResponseDto rate : savedRates) {
                         String code = exchangeRateMapper.getCurrencyCodeById(rate.getTargetCurrencyId());
                         currencySyncMap.put(code, currencySyncMap.getOrDefault(code, 0) + 1);
@@ -86,7 +177,6 @@ public class ExchangeRateService {
             currentDate = currentDate.minusDays(1);
         }
         
-        // 결과 DTO 구성
         List<SyncResultDto.CurrencySyncStatus> statusList = currencySyncMap.entrySet().stream()
                 .map(entry -> SyncResultDto.CurrencySyncStatus.builder()
                         .currencyCode(entry.getKey())
@@ -119,36 +209,23 @@ public class ExchangeRateService {
                 String curCode = extractCurrencyCode(dto.getCurUnit());
                 Long targetId = exchangeRateMapper.getCurrencyIdByCode(curCode);
 
-                // 통화 정보가 없으면 동적 추가
                 if (targetId == null) {
-                    log.info("새로운 통화 등록 시작: {} ({})", curCode, dto.getCurNm());
                     exchangeRateMapper.insertCurrency(curCode, dto.getCurNm());
                     targetId = exchangeRateMapper.getCurrencyIdByCode(curCode);
-                    log.info("새로운 통화 등록 완료, 조회된 ID: {}", targetId);
                     
-                    if (targetId == null) {
-                        log.error("통화 등록 후 ID 조회 실패: {}", curCode);
-                        continue;
-                    }
+                    if (targetId == null) continue;
                 }
 
                 BigDecimal rate = parseRate(dto.getDealBasR());
                 int unit = extractUnit(dto.getCurUnit());
 
-                // 정규화 (unit이 1이 아닌 경우 해당 단위로 나누어 1단위로 변환)
                 if (unit != 1) {
                     rate = rate.divide(new BigDecimal(unit), 8, RoundingMode.HALF_UP);
                 }
                 
-                // 타겟 ID 유효성 확인
-                if (targetId == null) {
-                    log.error("통화 ID가 null입니다. curCode: {}", curCode);
-                    continue;
-                }
+                if (targetId == null) continue;
                 
-                // 이전 환율 조회
                 BigDecimal prevRate = exchangeRateMapper.getPreviousRate(targetId, rateDate);
-                log.debug("이전 환율 조회 결과: targetId={}, date={}, prevRate={}", targetId, rateDate, prevRate);
 
                 ExchangeRate exchangeRate = new ExchangeRate();
                 exchangeRate.setBaseCurrencyId(krwId);
@@ -178,24 +255,20 @@ public class ExchangeRateService {
                 log.error("환율 데이터 가공 실패: {} - 원인: {}", dto.getCurUnit(), e.getMessage(), e);
             }
         }
-        log.info("환율 데이터 동기화 완료 (날짜: {})", rateDate);
         return savedRates;
     }
 
     private String extractCurrencyCode(String curUnit) {
-        // "JPY(100)" -> "JPY"
         return curUnit.contains("(") ? curUnit.substring(0, curUnit.indexOf("(")) : curUnit;
     }
 
     private int extractUnit(String curUnit) {
-        // "JPY(100)" -> 100, "USD" -> 1
         if (!curUnit.contains("(") || !curUnit.contains(")")) return 1;
         
         String unitStr = curUnit.substring(curUnit.indexOf("(") + 1, curUnit.indexOf(")"));
         try {
             return Integer.parseInt(unitStr);
         } catch (NumberFormatException e) {
-            log.warn("통화 단위 파싱 실패: {}, 기본값 1 적용", curUnit);
             return 1;
         }
     }
@@ -204,7 +277,7 @@ public class ExchangeRateService {
         if (fromCurrency == null || fromCurrency.isEmpty() || 
             toCurrency == null || toCurrency.isEmpty() || 
             amount <= 0) {
-            throw new IllegalArgumentException("필수 파라미터가 누락되었거나 금액이 0 이하입니다.");
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
         }
 
         if (fromCurrency.equals(toCurrency)) {
@@ -233,12 +306,6 @@ public class ExchangeRateService {
     }
 
     private BigDecimal getConversionRate(String fromCurrency, String toCurrency) {
-        // ... (환율 조회 로직)
-        // 1. 만약 from이 KRW이면: 1 / (to의 환율)
-        // 2. 만약 to가 KRW이면: (from의 환율)
-        // 3. 둘 다 KRW가 아니면: (from의 환율) / (to의 환율)
-        // 실제로는 exchange_rates에 KRW(base) -> 타겟(target) 데이터만 있음
-        
         BigDecimal fromRate = getRateToKrw(fromCurrency);
         BigDecimal toRate = getRateToKrw(toCurrency);
         
@@ -253,7 +320,7 @@ public class ExchangeRateService {
                 .filter(rate -> rate.getCurrencyCode().equals(currencyCode))
                 .map(LatestExchangeRateDto::getDealBaseRate)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 통화입니다: " + currencyCode));
+                .orElseThrow(() -> new ExchangeException(ExchangeErrorCode.UNSUPPORTED_CURRENCY));
     }
 
     private BigDecimal parseRate(String rateStr) {

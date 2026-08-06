@@ -6,6 +6,10 @@
         SELECT id FROM currencies WHERE currency_code = #{currencyCode}
     </select>
 
+    <select id="existsCurrencyById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM currencies WHERE id = #{id})
+    </select>
+
     <select id="getCurrencyNameByCode" resultType="String">
         SELECT currency_name FROM currencies WHERE currency_code = #{currencyCode}
     </select>
@@ -57,6 +61,31 @@
         LIMIT 10
     </select>
 
+    <select id="getAlertsByUserId" resultType="ExchangeRateAlertResponseDto">
+        SELECT
+            era.id AS id,
+            c.currency_code AS currencyCode,
+            era.target_rate AS targetRate,
+            era.target_amount AS targetAmount
+        FROM exchange_rate_alerts era
+        INNER JOIN currencies c ON era.currency_id = c.id
+        WHERE era.user_id = #{userId}
+          AND era.is_deleted = 0
+    </select>
+
+    <insert id="insertAlert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, target_amount, is_deleted)
+        VALUES (#{userId}, #{currencyId}, #{targetRate}, #{targetAmount}, 0)
+    </insert>
+
+    <select id="countAlertByUserAndCurrency" resultType="int">
+        SELECT COUNT(*)
+        FROM exchange_rate_alerts
+        WHERE user_id = #{userId}
+          AND currency_id = #{currencyId}
+          AND is_deleted = 0
+    </select>
+
     <select id="getHistoryRates" resultType="com.tripass.exchange.dto.ExchangeRateHistoryResponseDto$RateInfo">
         SELECT 
             er.rate_date AS rateDate,
@@ -79,4 +108,33 @@
             fetched_at = VALUES(fetched_at)
     </insert>
 
-    </mapper>
+        <update id="updateAlert">
+        UPDATE exchange_rate_alerts
+        SET target_rate = #{request.targetRate},
+            target_amount = #{request.targetAmount},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <update id="deleteAlert">
+        UPDATE exchange_rate_alerts
+        SET is_deleted = 1,
+            deleted_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="getAlertById" resultType="ExchangeRateAlertUpdateResponseDto">
+        SELECT
+            era.id AS id,
+            era.user_id AS userId,
+            c.currency_code AS currencyCode,
+            era.target_rate AS targetRate,
+            era.target_amount AS targetAmount,
+            era.updated_at AS updatedAt
+        FROM exchange_rate_alerts era
+        INNER JOIN currencies c ON era.currency_id = c.id
+        WHERE era.id = #{id} AND era.is_deleted = 0
+    </select>
+</mapper>
