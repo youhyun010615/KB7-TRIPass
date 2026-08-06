@@ -1,13 +1,6 @@
 package com.tripass.schedule.service;
 
-import com.tripass.schedule.dto.ScheduleCreateCommandDto;
-import com.tripass.schedule.dto.ScheduleCreateRequestDto;
-import com.tripass.schedule.dto.ScheduleCreateResponseDto;
-import com.tripass.schedule.dto.ScheduleDetailResponseDto;
-import com.tripass.schedule.dto.ScheduleDetailRowDto;
-import com.tripass.schedule.dto.ScheduleListResponseDto;
-import com.tripass.schedule.dto.ScheduleListRowDto;
-import com.tripass.schedule.dto.TripCountryContextRowDto;
+import com.tripass.schedule.dto.*;
 import com.tripass.schedule.exception.ScheduleException;
 import com.tripass.schedule.mapper.ScheduleMapper;
 import com.tripass.schedule.enums.SchedulePaymentStatus;
@@ -272,5 +265,119 @@ public class ScheduleService {
         return timestamp.toInstant()
                 .atZone(zoneId)
                 .toOffsetDateTime();
+    }
+
+    /** 여행 국가의 현지 시간을 기준으로 기존 일정을 수정합니다. */
+    @Transactional
+    public ScheduleUpdateResponseDto updateSchedule(
+            Long tripId,
+            Long scheduleId,
+            ScheduleUpdateRequestDto request
+    ) {
+        validateTripExists(tripId);
+        validateScheduleExists(
+                tripId,
+                scheduleId
+        );
+
+        TripCountryContextRowDto tripCountry =
+                scheduleMapper.findTripCountryContext(
+                        tripId,
+                        request.getTripCountryId()
+                );
+
+        if (tripCountry == null) {
+            throw new ScheduleException(
+                    TRIP_COUNTRY_NOT_FOUND
+            );
+        }
+
+        ZoneId zoneId = ZoneId.of(
+                tripCountry.getTimeZone()
+        );
+
+        Long currencyId = resolveCurrencyId(
+                request.getCurrencyCode(),
+                tripCountry.getDefaultCurrencyId()
+        );
+
+        Instant scheduledInstant =
+                request.getScheduledAt()
+                        .atZone(zoneId)
+                        .toInstant();
+
+        ScheduleUpdateCommandDto command =
+                ScheduleUpdateCommandDto.builder()
+                        .tripId(tripId)
+                        .scheduleId(scheduleId)
+                        .tripCountryId(
+                                request.getTripCountryId()
+                        )
+                        .currencyId(currencyId)
+                        .scheduleName(
+                                request.getScheduleName()
+                        )
+                        .scheduledAt(
+                                Timestamp.from(
+                                        scheduledInstant
+                                )
+                        )
+                        .amount(request.getAmount())
+                        .paymentStatus(
+                                request.getPaymentStatus()
+                                        .name()
+                        )
+                        .placeName(request.getPlaceName())
+                        .placeAddress(
+                                request.getPlaceAddress()
+                        )
+                        .memo(request.getMemo())
+                        .build();
+
+        scheduleMapper.updateSchedule(command);
+
+        return ScheduleUpdateResponseDto.builder()
+                .scheduleId(scheduleId)
+                .build();
+    }
+
+    /** 일정이 해당 여행에 존재하는지 검증합니다. */
+    private void validateScheduleExists(
+            Long tripId,
+            Long scheduleId
+    ) {
+        boolean exists =
+                scheduleMapper
+                        .existsScheduleByTripIdAndScheduleId(
+                                tripId,
+                                scheduleId
+                        );
+
+        if (!exists) {
+            throw new ScheduleException(
+                    SCHEDULE_NOT_FOUND
+            );
+        }
+    }
+
+    /** 여행에 등록된 일정을 삭제(soft delete)합니다. */
+    @Transactional
+    public void deleteSchedule(
+            Long tripId,
+            Long scheduleId
+    ) {
+        validateTripExists(tripId);
+
+        int deletedCount =
+                scheduleMapper.softDeleteSchedule(
+                        tripId,
+                        scheduleId
+                );
+
+        if (deletedCount == 0) {
+            throw new ScheduleException(
+                    SCHEDULE_NOT_FOUND
+            );
+        }
     }
 }
