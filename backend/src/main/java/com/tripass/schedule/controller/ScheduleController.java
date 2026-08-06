@@ -1,6 +1,8 @@
 package com.tripass.schedule.controller;
 
 import com.tripass.common.response.ApiResponse;
+import com.tripass.schedule.dto.ScheduleCreateRequestDto;
+import com.tripass.schedule.dto.ScheduleCreateResponseDto;
 import com.tripass.schedule.dto.ScheduleDetailResponseDto;
 import com.tripass.schedule.dto.ScheduleListResponseDto;
 import com.tripass.schedule.service.ScheduleService;
@@ -8,10 +10,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import java.util.List;
 
@@ -61,5 +65,43 @@ public class ScheduleController {
 
         return ResponseEntity.ok(ApiResponse.success("여행 일정 상세 조회 성공", data)
         );
+    }
+
+    @ApiOperation(
+            value = "여행 일정 등록",
+            notes = "선택한 여행 국가의 현지 시간을 기준으로 여행 일정을 등록합니다."
+    )
+    @PostMapping
+    public ResponseEntity<ApiResponse<ScheduleCreateResponseDto>>
+    createSchedule(
+            @ApiParam(
+                    value = "여행 ID",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("tripId")
+            @Positive(
+                    message = "여행 ID는 양수여야 합니다."
+            )
+            Long tripId,
+
+            @Valid
+            @RequestBody
+            ScheduleCreateRequestDto request
+    ) {
+        ScheduleCreateResponseDto data =
+                scheduleService.createSchedule(
+                        tripId,
+                        request
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(
+                        ApiResponse.success(
+                                "여행 일정 등록 성공",
+                                data
+                        )
+                );
     }
 }

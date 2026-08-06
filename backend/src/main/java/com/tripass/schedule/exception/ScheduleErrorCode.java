@@ -36,6 +36,17 @@ public enum ScheduleErrorCode {
             HttpStatus.BAD_REQUEST,
             "INVALID_SCHEDULE_ID",
             "잘못된 여행 일정 ID입니다."
+    ),
+    TRIP_COUNTRY_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "TRIP_COUNTRY_NOT_FOUND",
+            "선택한 여행 국가 정보를 찾을 수 없습니다."
+    ),
+
+    CURRENCY_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "CURRENCY_NOT_FOUND",
+            "선택한 통화 정보를 찾을 수 없습니다."
     );
 
     private final HttpStatus status;
