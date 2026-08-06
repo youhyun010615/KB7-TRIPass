@@ -39,12 +39,12 @@ public class TransactionController {
 
     //거래내역 수정
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> updateTransaction(
+    public ResponseEntity<ApiResponse<Void>> updateTransaction(
             @RequestAttribute("userId") Long userId,
             @PathVariable("id") Long transactionId,
             @RequestBody TransactionUpdateRequestDto req) {
         assetService.updateTransaction(userId, transactionId, req);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
 }
