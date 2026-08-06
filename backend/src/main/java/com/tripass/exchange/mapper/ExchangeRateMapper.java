@@ -1,6 +1,7 @@
 package com.tripass.exchange.mapper;
 
 import com.tripass.exchange.domain.ExchangeRate;
+import com.tripass.exchange.domain.ExchangeRateAlert;
 import com.tripass.exchange.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -14,6 +15,9 @@ public interface ExchangeRateMapper {
     // Upsert를 위한 쿼리 (MyBatis XML에서 구현)
     void upsertExchangeRate(ExchangeRate exchangeRate);
     
+    // 통화 ID로 존재 여부 확인
+    boolean existsCurrencyById(Long id);
+
     // 통화 코드로 ID 조회
     Long getCurrencyIdByCode(String currencyCode);
 
@@ -39,7 +43,7 @@ public interface ExchangeRateMapper {
     List<ExchangeRateAlertResponseDto> getAlertsByUserId(@Param("userId") Long userId);
 
     // 관심 환율 알림 등록
-    void insertAlert(@Param("userId") Long userId, @Param("request") ExchangeRateAlertRequestDto request);
+    void insertAlert(ExchangeRateAlert alert);
 
     // 사용자별 통화 알림 존재 여부 확인
     int countAlertByUserAndCurrency(@Param("userId") Long userId, @Param("currencyId") Long currencyId);

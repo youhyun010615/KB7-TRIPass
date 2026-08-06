@@ -2,6 +2,8 @@ package com.tripass.exchange.controller;
 
 import com.tripass.common.response.ApiResponse;
 import com.tripass.exchange.dto.*;
+import com.tripass.exchange.exception.ExchangeErrorCode;
+import com.tripass.exchange.exception.ExchangeException;
 import com.tripass.exchange.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,11 +35,11 @@ public class ExchangeRateController {
     }
 
     @GetMapping("/history")
-    public ApiResponse<?> getHistoryRates(
+    public ApiResponse<ExchangeRateHistoryResponseDto> getHistoryRates(
             @RequestParam String currencyCode,
             @RequestParam(defaultValue = "7") int days) {
         if (currencyCode == null || currencyCode.isEmpty()) {
-            return ApiResponse.error("INVALID_INPUT_VALUE", "통화 코드는 필수입니다.");
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
         }
         return ApiResponse.success("최근 " + days + "일 환율 추이 조회 성공", 
                                   exchangeRateService.getHistoryRates(currencyCode, days));
