@@ -1,10 +1,7 @@
 package com.tripass.schedule.controller;
 
 import com.tripass.common.response.ApiResponse;
-import com.tripass.schedule.dto.ScheduleCreateRequestDto;
-import com.tripass.schedule.dto.ScheduleCreateResponseDto;
-import com.tripass.schedule.dto.ScheduleDetailResponseDto;
-import com.tripass.schedule.dto.ScheduleListResponseDto;
+import com.tripass.schedule.dto.*;
 import com.tripass.schedule.service.ScheduleService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -30,7 +27,7 @@ public class ScheduleController {
 
     @ApiOperation(
             value = "여행 일정 목록 조회",
-            notes = "선택한 여행의 삭제되지 않은 일정을 시작 일시 기준으로 조회합니다."
+            notes = "선택한 여행에 포함된 일정 목록을 조회합니다."
     )
     @GetMapping
     public ResponseEntity<ApiResponse<List<ScheduleListResponseDto>>> getSchedules(
@@ -48,7 +45,7 @@ public class ScheduleController {
 
     @ApiOperation(
             value = "여행 일정 상세 조회",
-            notes = "선택한 여행에 포함된 일정의 상세 정보를 조회합니다."
+            notes = "선택한 여행 일정의 상세 정보를 조회합니다."
     )
     @GetMapping("/{scheduleId}")
     public ResponseEntity<ApiResponse<ScheduleDetailResponseDto>> getScheduleDetail(
@@ -69,7 +66,7 @@ public class ScheduleController {
 
     @ApiOperation(
             value = "여행 일정 등록",
-            notes = "선택한 여행 국가의 현지 시간을 기준으로 여행 일정을 등록합니다."
+            notes = "선택한 여행에 일정을 등록합니다."
     )
     @PostMapping
     public ResponseEntity<ApiResponse<ScheduleCreateResponseDto>>
@@ -103,5 +100,53 @@ public class ScheduleController {
                                 data
                         )
                 );
+    }
+
+    @ApiOperation(
+            value = "여행 일정 수정",
+            notes = "기존 여행 일정 정보를 수정합니다."
+    )
+    @PutMapping("/{scheduleId}")
+    public ResponseEntity<ApiResponse<ScheduleUpdateResponseDto>>
+    updateSchedule(
+            @ApiParam(
+                    value = "여행 ID",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("tripId")
+            @Positive(
+                    message = "여행 ID는 양수여야 합니다."
+            )
+            Long tripId,
+
+            @ApiParam(
+                    value = "여행 일정 ID",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("scheduleId")
+            @Positive(
+                    message = "여행 일정 ID는 양수여야 합니다."
+            )
+            Long scheduleId,
+
+            @Valid
+            @RequestBody
+            ScheduleUpdateRequestDto request
+    ) {
+        ScheduleUpdateResponseDto data =
+                scheduleService.updateSchedule(
+                        tripId,
+                        scheduleId,
+                        request
+                );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "여행 일정 수정 성공",
+                        data
+                )
+        );
     }
 }
