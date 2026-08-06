@@ -6,6 +6,7 @@ import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class TransactionController {
     //AST-005: 전체 계좌 거래내역 조회
     @GetMapping
     public ResponseEntity<ApiResponse<List<TransactionDto>>> getAllTransactions(
-            @RequestAttribute("userId") Long userId) {
+            @ApiIgnore @RequestAttribute("userId") Long userId) {
         return
                 ResponseEntity.ok(ApiResponse.success(assetService.getAllTransactions(userId)));
     }
@@ -31,7 +32,7 @@ public class TransactionController {
     //AST-006: 거래내역 단건 상세 조회
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TransactionDto>> getTransactionDetail(
-            @RequestAttribute("userId") Long userId,
+            @ApiIgnore @RequestAttribute("userId") Long userId,
             @PathVariable("id") Long transactionId) {
         return
                 ResponseEntity.ok(ApiResponse.success(assetService.getTransactionDetail(userId, transactionId)));
@@ -40,7 +41,7 @@ public class TransactionController {
     //거래내역 수정
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateTransaction(
-            @RequestAttribute("userId") Long userId,
+            @ApiIgnore @RequestAttribute("userId") Long userId,
             @PathVariable("id") Long transactionId,
             @RequestBody TransactionUpdateRequestDto req) {
         assetService.updateTransaction(userId, transactionId, req);
