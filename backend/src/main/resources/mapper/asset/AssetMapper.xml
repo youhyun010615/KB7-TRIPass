@@ -138,4 +138,18 @@
         AND is_deleted = 0
     </update>
 
+    <!-- 거래내역 수정 (가맹점명, 메모) -->
+    <update id = "updateTransaction">
+        UPDATE transactions t
+        JOIN accounts a ON t.account_id = a.id
+        SET
+            <if test = "merchantName != null">t.merchant_name = #{merchantName}, </if>
+            <if test = "memo != null">t.memo = #{memo},</if>
+            t.updated_at = NOW()
+        WHERE t.id = #{transactionId}
+        AND a.user_id = #{userId}
+        AND t.is_deleted = 0
+        AND a.is_deleted = 0
+    </update>
+
 </mapper>
