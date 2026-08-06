@@ -65,6 +65,9 @@ export const useAssetStore = defineStore('asset', () => {
   const fixedExpenses = reactive(saved?.fixedExpenses ?? fixedExpenseSeed.map((item) => ({ ...item })))
   const prepaidExpenses = reactive(saved?.prepaidExpenses ?? prepaidSeed.map((item) => ({ ...item })))
   const transactionFilter = ref(saved?.transactionFilter ?? 'all')
+  const transactionPeriod = ref(saved?.transactionPeriod ?? '1month')
+  const transactionStartDate = ref(saved?.transactionStartDate ?? '2024-06-20')
+  const transactionEndDate = ref(saved?.transactionEndDate ?? '2024-07-19')
   const selectedDate = ref(saved?.selectedDate ?? '2024-07-19')
   const selectedPrepaidScope = ref(saved?.selectedPrepaidScope ?? 'ALL')
 
@@ -88,10 +91,11 @@ export const useAssetStore = defineStore('asset', () => {
         finalTotal: scope === 'COMMON' ? directTotal : directTotal + commonAllocation.value,
       }
     }))
-  const depositCount = computed(() => transactions.filter((item) => item.amount > 0).length)
-  const withdrawalCount = computed(() => transactions.filter((item) => item.amount < 0).length)
+  const periodTransactions = computed(() => transactions.filter((item) => item.date >= transactionStartDate.value && item.date <= transactionEndDate.value))
+  const depositCount = computed(() => periodTransactions.value.filter((item) => item.amount > 0).length)
+  const withdrawalCount = computed(() => periodTransactions.value.filter((item) => item.amount < 0).length)
 
-  const filteredTransactions = computed(() => transactions.filter((item) => {
+  const filteredTransactions = computed(() => periodTransactions.value.filter((item) => {
     if (transactionFilter.value === 'deposit') return item.amount > 0
     if (transactionFilter.value === 'withdrawal') return item.amount < 0
     return true
@@ -117,6 +121,12 @@ export const useAssetStore = defineStore('asset', () => {
     if (!item) return false
     Object.assign(item, patch)
     return true
+  }
+
+  function setTransactionPeriod(period, startDate, endDate) {
+    transactionPeriod.value = period
+    transactionStartDate.value = startDate
+    transactionEndDate.value = endDate
   }
 
   function getFixedExpense(id) {
@@ -197,6 +207,9 @@ export const useAssetStore = defineStore('asset', () => {
       fixedExpenses: fixedExpenses.map((item) => ({ ...item })),
       prepaidExpenses: prepaidExpenses.map((item) => ({ ...item })),
       transactionFilter: transactionFilter.value,
+      transactionPeriod: transactionPeriod.value,
+      transactionStartDate: transactionStartDate.value,
+      transactionEndDate: transactionEndDate.value,
       selectedDate: selectedDate.value,
       selectedPrepaidScope: selectedPrepaidScope.value,
     }),
@@ -206,10 +219,10 @@ export const useAssetStore = defineStore('asset', () => {
 
   return {
     accounts, transactions, fixedExpenses, prepaidExpenses,
-    transactionFilter, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
+    transactionFilter, transactionPeriod, transactionStartDate, transactionEndDate, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
     commonPrepaidTotal, prepaidCountryScopes, commonAllocation, prepaidGroups,
-    depositCount, withdrawalCount, filteredTransactions, groupedTransactions,
-    getAccount, getTransaction, updateTransaction, getFixedExpense, getPrepaidExpense, transactionsByAccount,
+    depositCount, withdrawalCount, periodTransactions, filteredTransactions, groupedTransactions,
+    getAccount, getTransaction, updateTransaction, setTransactionPeriod, getFixedExpense, getPrepaidExpense, transactionsByAccount,
     addFixedExpense, updateFixedExpense, removeFixedExpense,
     addPrepaidExpense, updatePrepaidExpense, removePrepaidExpense,
   }
