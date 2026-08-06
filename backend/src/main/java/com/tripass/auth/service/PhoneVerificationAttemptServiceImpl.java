@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 // 인증번호 확인 실패 횟수 저장 기능 구현체
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PhoneVerificationAttemptServiceImpl implements PhoneVerificationAttemptService{
     private final PhoneVerificationMapper phoneVerificationMapper;
 

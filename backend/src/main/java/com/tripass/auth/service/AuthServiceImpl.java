@@ -13,10 +13,10 @@ import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
 import com.tripass.common.exception.CustomException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
@@ -152,8 +152,8 @@ public class AuthServiceImpl implements AuthService{
                         "회원가입 처리에 실패했습니다."
                 );
             }
-        } catch (DataIntegrityViolationException exception) {
-            //중복 확인 직후 다른 요청이 같은 아이디를 저장하는 상황도 DB 유니크키로 방지한다.
+        } catch (DuplicateKeyException exception) {
+            // 동시 요청으로 LOCAL 로그인 아이디 유니크 제약조건이 위반된 경우
             throw new CustomException(
                     HttpStatus.CONFLICT,
                     "AUTH_LOGIN_ID_DUPLICATED",
