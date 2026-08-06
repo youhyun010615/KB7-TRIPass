@@ -43,7 +43,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                 return;
             }
             Long userId = jwtTokenProvider.getUserId(accessToken);
-            request.setAttribute("userId", userId);
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userId,
