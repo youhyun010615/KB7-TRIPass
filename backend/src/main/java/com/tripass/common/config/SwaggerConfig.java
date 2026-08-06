@@ -36,7 +36,8 @@ public class SwaggerConfig {
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
                 .title("TRIPass API")
-                .description("TRIPass 백엔드 API 문서")
+                .description("TRIPass 백엔드 API 문서\n"
+                        + "Authorize 입력 시 Bearer <Access Token> 전체 값을 입력하세요.")
                 .version("1.0")
                 .build();
     }

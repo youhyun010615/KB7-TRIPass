@@ -22,7 +22,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint{
         response.setContentType("application/json; charset=UTF-8");
 
         ApiResponse<Void> errorResponse = ApiResponse.error(
-                "UNAUTHORIZED",
+                "AUTH_UNAUTHORIZED",
                 "로그인이 필요합니다."
         );
 

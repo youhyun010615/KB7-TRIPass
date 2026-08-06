@@ -41,6 +41,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
+                // Access Token은 Authorization 헤더로 전달하고 세션은 STATELESS로 관리한다.
+                // Refresh Token 쿠키는 SameSite=Lax이므로 크로스사이트 POST에는 전송되지 않는다.
+                // SameSite=None으로 변경한다면 CSRF 보호를 다시 검토해야 한다.
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->

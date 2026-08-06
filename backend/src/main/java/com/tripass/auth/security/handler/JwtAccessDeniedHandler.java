@@ -25,7 +25,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
                 "application/json;charset=UTF-8"
         );
         ApiResponse<Void> errorResponse = ApiResponse.error(
-                "FORBIDDEN",
+                "AUTH_FORBIDDEN",
                 "해당 기능에 접근할 권한이 없습니다."
         );
         objectMapper.writeValue(response.getWriter(), errorResponse);

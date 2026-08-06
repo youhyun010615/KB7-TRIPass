@@ -57,11 +57,13 @@ CREATE TABLE users (
     COMMENT '현재 화면 모드(SAVING/TRAVEL)',
     is_deleted        TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '탈퇴 여부',
     deleted_at        DATETIME     NULL                    COMMENT '탈퇴일시',
-    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
-    updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '생성일자',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+        COMMENT '수정일자',
     PRIMARY KEY (id),
-    -- 동일한 이메일이라도 로그인 방식이 다르면 별도 계정으로 허용
+    -- 동일한 아이디라도 로그인 방식이 다르면 별도 계정으로 허용
     UNIQUE KEY uk_users_provider_login_id (login_provider, login_id),
     -- 동일 로그인 제공자의 동일 사용자가 중복 가입되는 것을 방지
     UNIQUE KEY uk_users_provider_key (login_provider, provider_key)
@@ -96,7 +98,10 @@ CREATE TABLE phone_verifications (
     verified_at            DATETIME     NULL COMMENT '인증 성공일시',
     used_at                DATETIME     NULL COMMENT '인증 결과 사용일시',
     attempt_count          INT          NOT NULL DEFAULT 0 COMMENT '인증번호 확인 시도 횟수',
-    created_at             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증 요청일시',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증 요청 생성일시',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+        COMMENT '수정일시',
     PRIMARY KEY (id),
     UNIQUE KEY uk_phone_verifications_request_id (request_id),
     INDEX idx_phone_verifications_lookup (phone_number, verification_purpose, created_at),

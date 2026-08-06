@@ -22,7 +22,7 @@ public class RefreshTokenCookieProvider {
 
     public RefreshTokenCookieProvider(
             JwtTokenProvider jwtTokenProvider,
-            @Value("${auth.refresh-cookie.secure:false}")
+            @Value("${auth.refresh-cookie.secure:true}")
             boolean secure
     ) {
         this.jwtTokenProvider = jwtTokenProvider;

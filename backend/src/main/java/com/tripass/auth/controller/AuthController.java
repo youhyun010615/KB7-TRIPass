@@ -15,6 +15,8 @@ import com.tripass.auth.dto.internal.TokenRefreshResult;
 import com.tripass.auth.dto.response.TokenRefreshResponse;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
 import com.tripass.auth.service.PhoneVerificationService;
+import com.tripass.common.exception.CustomException;
+import lombok.extern.log4j.Log4j2;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -36,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Log4j2
 public class AuthController {
 
     private final AuthService authService;
@@ -202,16 +205,30 @@ public class AuthController {
     ) {
         String refreshToken =
                 refreshTokenCookieProvider
-                        .getRefreshToken(
-                                servletRequest
-                        );
+                        .getRefreshToken(servletRequest);
 
         try {
-            // 쿠키가 존재하면 DB의 Refresh Token을 폐기한다.
+            // 쿠키가 존재하면 DB에 저장된 Refresh Token을 폐기한다.
             authService.logout(refreshToken);
 
+        } catch (CustomException exception) {
+             //만료되거나 이미 폐기된 토큰의 로그아웃 요청은
+             //사용자 관점에서 이미 로그아웃된 상태이므로 성공 처리한다.
+
+            if (!"AUTH_INVALID_REFRESH_TOKEN"
+                    .equals(exception.getErrorCode())) {
+
+                // DB 저장 실패 등 다른 예외는 숨기지 않는다.
+                throw exception;
+            }
+
+            log.debug(
+                    "이미 만료되거나 폐기된 Refresh Token 로그아웃 요청"
+            );
+
         } finally {
-            //토큰이 만료되거나 검증에 실패하더라도 브라우저 쿠키는 반드시 삭제한다.
+            //토큰이 없거나 만료됐거나 DB 폐기에 실패하더라도
+            // 브라우저의 Refresh Token 쿠키는 반드시 삭제한다.
             refreshTokenCookieProvider
                     .deleteRefreshTokenCookie(
                             servletResponse

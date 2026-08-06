@@ -31,4 +31,6 @@ public class PhoneVerification {
     private int attemptCount;
     //인증번호 요청 생성일시
     private Date createdAt;
+    // 수정일시
+    private Date updatedAt;
 }

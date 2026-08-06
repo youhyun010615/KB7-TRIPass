@@ -43,11 +43,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                 return;
             }
             Long userId = jwtTokenProvider.getUserId(accessToken);
-//            // 기존 Controller의 @RequestAttribute("userId") 지원
-//            request.setAttribute(
-//                    "userId",
-//                    userId
-//            );
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userId,

@@ -58,7 +58,6 @@
         FROM users
         WHERE login_provider='LOCAL'
         AND login_id = #{loginId}
-        AND is_deleted = 0
     </select>
 
     <!-- 로그인 시 아이디로 회원 조회 -->
@@ -99,7 +98,6 @@
         SELECT
             id,
             login_id,
-            password,
             name,
             phone_number,
             login_provider,

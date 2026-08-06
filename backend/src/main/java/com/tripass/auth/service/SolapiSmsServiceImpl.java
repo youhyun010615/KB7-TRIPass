@@ -4,10 +4,12 @@ import com.solapi.sdk.SolapiClient;
 import com.solapi.sdk.message.model.Message;
 import com.solapi.sdk.message.service.DefaultMessageService;
 import com.tripass.common.exception.CustomException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+@Log4j2
 @Service
 public class SolapiSmsServiceImpl implements SmsService {
     private final String apiKey;
@@ -48,10 +50,12 @@ public class SolapiSmsServiceImpl implements SmsService {
             messageService.send(message, null);
 
         } catch (Exception exception) {
+
+            log.error("SolAPI 문자 발송 실패", exception);
             //SOLAPI의 내부 오류나 API 키 정보가 클라이언트 응답으로 노출되지 않게 공통 오류로 변환한다.
             throw new CustomException(
                     HttpStatus.BAD_GATEWAY,
-                    "SMS_SEND_FAILED",
+                    "AUTH_SMS_SEND_FAILED",
                     "인증번호 문자 발송에 실패했습니다. 잠시 후 다시 시도해 주세요."
             );
         }
@@ -65,7 +69,7 @@ public class SolapiSmsServiceImpl implements SmsService {
 
             throw new CustomException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "SMS_NOT_CONFIGURED",
+                    "AUTH_SMS_NOT_CONFIGURED",
                     "문자 발송 설정이 완료되지 않았습니다."
             );
         }

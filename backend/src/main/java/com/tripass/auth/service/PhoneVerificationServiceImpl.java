@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.util.Date;
@@ -25,6 +26,9 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     //인증번호 유효시간 3분
     private static final long CODE_EXPIRATION_MILLIS=
             3*60*1000L;
+    // 인증 완료 결과를 회원가입에 사용할 수 있는 시간: 10분
+    private static final long VERIFIED_RESULT_VALIDITY_MILLIS =
+            10 * 60 * 1000L;
     //인증번호 재전송 제한: 60초
     private static final long RESEND_COOLDOWN_MILLIS =
             60 * 1000L;
@@ -40,6 +44,7 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     private final PhoneVerificationMapper phoneVerificationMapper;
     private final SmsService smsService;
     private final PasswordEncoder passwordEncoder;
+    private final PhoneVerificationAttemptService phoneVerificationAttemptService;
 
     private final SecureRandom secureRandom =
             new SecureRandom();
@@ -48,7 +53,9 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     @Override
     public PhoneCodeSendResponse sendVerificationCode(PhoneCodeSendRequest request) {
         if(request == null){
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_PHONE_VERIFICATION_REQUEST_REQUIRED",
                     "인증번호 요청 정보를 입력해 주세요."
             );
         }
@@ -58,7 +65,9 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         VerificationPurpose purpose =
                 request.getPurpose();
         if (purpose == null) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_VERIFICATION_PURPOSE_REQUIRED",
                     "휴대전화 인증 목적을 입력해 주세요."
             );
         }
@@ -84,7 +93,7 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         int insertedRows = phoneVerificationMapper.insertPhoneVerification(phoneVerification);
         if (insertedRows != 1) {throw new CustomException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "PHONE_VERIFICATION_SAVE_FAILED",
+                "AUTH_PHONE_VERIFICATION_SAVE_FAILED",
                     "휴대전화 인증 요청 저장에 실패했습니다."
             );
         }
@@ -96,9 +105,12 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     //사용자가 입력한 인증번호 확인
 
     @Override
+    @Transactional
     public void verifyCode(PhoneCodeVerifyRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_VERIFICATION_CHECK_REQUEST_REQUIRED",
                     "인증번호 확인 정보를 입력해 주세요."
             );
         }
@@ -109,7 +121,9 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         if (!VERIFICATION_CODE_PATTERN
                 .matcher(verificationCode)
                 .matches()) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_VERIFICATION_CODE",
                     "인증번호는 숫자 6자리로 입력해 주세요."
             );
         }
@@ -126,14 +140,24 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
 
         boolean matches = passwordEncoder.matches(verificationCode, phoneVerification.getVerificationCodeHash());
 
-        if (!matches) {phoneVerificationMapper.incrementAttemptCount(requestId);
-            throw new IllegalArgumentException(
+        if (!matches) {
+            phoneVerificationAttemptService
+                    .increaseFailedAttempt(requestId);
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_VERIFICATION_CODE_MISMATCH",
                     "인증번호가 일치하지 않습니다."
             );
         }
         int updatedRows = phoneVerificationMapper.markVerified(requestId);
 
-        if (updatedRows != 1) {throw new IllegalArgumentException("인증번호가 만료되었거나 인증할 수 없는 상태입니다.");}
+        if (updatedRows != 1) {
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "AUTH_VERIFICATION_NOT_AVAILABLE",
+                    "인증번호가 만료되었거나 인증할 수 없는 상태입니다."
+            );
+        }
     }
     //회원가입 인증 완료 확인
     @Override
@@ -147,26 +171,54 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         validatePhoneNumber(phoneVerification, normalizedPhoneNumber);
 
         if (phoneVerification.getVerificationPurpose() != VerificationPurpose.SIGNUP) {
-            throw new IllegalArgumentException("회원가입용 휴대전화 인증이 아닙니다.");
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_VERIFICATION_PURPOSE",
+                    "회원가입용 휴대전화 인증이 아닙니다."
+            );
         }
 
-        validateVerificationUsable(phoneVerification);
+        if (phoneVerification.getUsedAt() != null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_VERIFICATION_ALREADY_USED",
+                    "이미 사용된 휴대전화 인증입니다."
+            );
+        }
 
         if (phoneVerification.getVerifiedAt() == null) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_VERIFICATION_REQUIRED",
                     "휴대전화 인증을 완료해 주세요."
+            );
+        }
+        long verificationResultExpiresAt =
+                phoneVerification.getVerifiedAt().getTime()
+                        + VERIFIED_RESULT_VALIDITY_MILLIS;
+
+        if (verificationResultExpiresAt
+                <= System.currentTimeMillis()) {
+
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_VERIFICATION_RESULT_EXPIRED",
+                    "휴대전화 인증 유효시간이 만료되었습니다. 다시 인증해 주세요."
             );
         }
     }
     //인증 결과 사용 완료 처리
 
     @Override
+    @Transactional
     public void markVerificationAsUsed(String requestId) {
         String normalizedRequestId = requireText(requestId, "휴대전화 인증 요청 식별값이 필요합니다.");
 
         int updatedRows = phoneVerificationMapper.markUsed(normalizedRequestId);
         if (updatedRows != 1) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "AUTH_VERIFICATION_NOT_AVAILABLE",
                     "이미 사용됐거나 사용할 수 없는 휴대전화 인증입니다."
             );
         }
@@ -192,7 +244,7 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         if (elapsedMillis < RESEND_COOLDOWN_MILLIS) {
             throw new CustomException(
                     HttpStatus.TOO_MANY_REQUESTS,
-                    "SMS_RESEND_TOO_SOON",
+                    "AUTH_SMS_RESEND_TOO_SOON",
                     "인증번호는 60초 후 다시 요청할 수 있습니다."
             );
         }
@@ -202,7 +254,11 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         PhoneVerification phoneVerification = phoneVerificationMapper.findByRequestId(requestId);
 
         if (phoneVerification == null) {
-            throw new IllegalArgumentException("유효한 휴대전화 인증 요청을 찾을 수 없습니다.");
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "AUTH_VERIFICATION_NOT_FOUND",
+                    "유효한 휴대전화 인증 요청을 찾을 수 없습니다."
+            );
         }
         return phoneVerification;
     }
@@ -211,23 +267,35 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     ) {if (!phoneVerification
             .getPhoneNumber()
             .equals(phoneNumber)) {
-        throw new IllegalArgumentException("인증을 요청한 휴대전화번호와 일치하지 않습니다.");
+        throw new CustomException(
+                HttpStatus.BAD_REQUEST,
+                "AUTH_VERIFICATION_PHONE_MISMATCH",
+                "인증을 요청한 휴대전화번호와 일치하지 않습니다."
+        );
         }
     }
     //인증 만료 혹은 사용상태 확인
     private void validateVerificationUsable(PhoneVerification phoneVerification){
         if(phoneVerification.getUsedAt() !=null){
-            throw new IllegalArgumentException("이미 사용된 휴대전화 인증입니다.");
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "AUTH_VERIFICATION_ALREADY_USED",
+                    "이미 사용된 휴대전화 인증입니다."
+            );
         }
         Date now = new Date();
         if(!phoneVerification
                 .getExpiresAt()
                 .after(now)){
-            throw new IllegalArgumentException("인증번호가 만료되었습니다. 다시 요청해 주세요.");
+            throw new CustomException(
+                    HttpStatus.GONE,
+                    "AUTH_VERIFICATION_CODE_EXPIRED",
+                    "인증번호가 만료되었습니다. 다시 요청해 주세요."
+            );
         }
         if(phoneVerification.getAttemptCount() >= MAX_ATTEMPT_COUNT){
             throw new CustomException(HttpStatus.TOO_MANY_REQUESTS,
-                    "VERIFICATION_ATTEMPTS_EXCEEDED",
+                    "AUTH_VERIFICATION_ATTEMPTS_EXCEEDED",
                     "인증번호 확인 횟수를 초과했습니다. 다시 요청해 주세요."
             );
         }
@@ -235,20 +303,35 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     //전화번호 검사
     private String normalizePhoneNumber(String phoneNumber){
         if(phoneNumber == null){
-            throw new IllegalArgumentException("휴대전화번호를 입력해주세요");
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_PHONE_NUMBER_REQUIRED",
+                    "휴대전화번호를 입력해 주세요."
+            );
         }
         String normalizedPhoneNumber = phoneNumber.replaceAll("[^0-9]", "");
         if(!PHONE_NUMBER_PATTERN
                 .matcher(normalizedPhoneNumber)
                 .matches()){
-            throw new IllegalArgumentException("휴대전화번호는 010으로 시작하는 11자리 번호로 입력해 주세요.");
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_PHONE_NUMBER",
+                    "휴대전화번호는 010으로 시작하는 11자리 번호로 입력해 주세요."
+            );
         }
         return normalizedPhoneNumber;
     }
     //문자열 공백 여부 검사
-    private String requireText(String value, String errorMessage){
+    private String requireText(
+            String value,
+            String errorMessage
+    ) {
         if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_REQUIRED_FIELD_MISSING",
+                    errorMessage
+            );
         }
 
         return value.trim();

@@ -20,6 +20,7 @@ import java.util.Date;
 public class RefreshTokenServiceImpl implements RefreshTokenService{
     private final RefreshTokenMapper refreshTokenMapper;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRevocationService refreshTokenRevocationService;
 
     //발급한 Refresh Token을 해시하여 DB에 저장
 
@@ -27,7 +28,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
     @Transactional
     public void saveRefreshToken(Long userId, String refreshToken) {
         if(userId == null){
-            throw new IllegalArgumentException("회원 정보가 필요합니다.");
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AUTH_USER_CONTEXT_MISSING",
+                    "회원 정보가 필요합니다."
+            );
         }
         String requiredRefreshToken =requireRefreshToken(refreshToken);
 
@@ -75,7 +80,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
         if(insertRows !=1){
             throw new CustomException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "REFRESH_TOKEN_SAVE_FAILED",
+                    "AUTH_REFRESH_TOKEN_SAVE_FAILED",
                     "로그인 정보 저장에 실패했습니다."
             );
         }
@@ -96,9 +101,24 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
             throw invalidRefreshToken();
         }
 
-        RefreshToken savedToken = refreshTokenMapper.findByTokenId(tokenId);
-        // DB에 저장되지 않았거나 이미 폐기된 토큰인지 확인
-        if (savedToken == null || savedToken.getRevokedAt() != null) {
+        RefreshToken savedToken =
+                refreshTokenMapper.findByTokenId(tokenId);
+
+        // DB에서 찾을 수 없는 토큰
+        if (savedToken == null) {
+            throw invalidRefreshToken();
+        }
+        //이미 폐기된 Refresh Token이 다시 사용됐다면
+        //토큰 탈취 또는 재사용 가능성이 있다고 판단한다.
+        if (savedToken.getRevokedAt() != null) {
+
+//            별도 트랜잭션에서 해당 회원의 모든 유효한
+//            Refresh Token을 폐기한다.
+            refreshTokenRevocationService
+                    .revokeAllByUserIdRequiresNew(
+                            savedToken.getUserId()
+                    );
+
             throw invalidRefreshToken();
         }
         // JWT의 회원 PK와 DB에 저장된 회원 PK가 같은지 확인한다.
@@ -146,7 +166,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
     @Transactional
     public void revokeAllByUserId(Long userId) {
         if(userId == null){
-            throw new IllegalArgumentException("회원 정보가 필요합니다.");
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AUTH_USER_CONTEXT_MISSING",
+                    "회원 정보가 필요합니다."
+            );
         }
         refreshTokenMapper.revokeAllByUserId(userId);
     }
@@ -195,7 +219,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
     private CustomException invalidRefreshToken() {
         return new CustomException(
                 HttpStatus.UNAUTHORIZED,
-                "INVALID_REFRESH_TOKEN",
+                "AUTH_INVALID_REFRESH_TOKEN",
                 "로그인 정보가 만료되었거나 유효하지 않습니다."
         );
     }

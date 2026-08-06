@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 //일반 회원가입 및 로그인 기능 구현 service
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService{
     //로그인 아이디 형식 - 영문, 숫자 6~20자
     private static final Pattern LOGIN_ID_PATTERN =
@@ -59,7 +60,9 @@ public class AuthServiceImpl implements AuthService{
     // 아이디 앞 뒤 공백 제거하고 형식 검사
     private String normalizeLoginId(String loginId){
         if(loginId == null){
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_LOGIN_ID_REQUIRED",
                     "아이디를 입력해 주세요."
             );
         }
@@ -69,7 +72,9 @@ public class AuthServiceImpl implements AuthService{
                 .matcher(normalizedLoginId)
                 .matches()) {
 
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_LOGIN_ID",
                     "아이디는 영문과 숫자로 6~20자 이내로 입력해 주세요."
             );
         }
@@ -82,7 +87,9 @@ public class AuthServiceImpl implements AuthService{
     @Transactional
     public SignupResponse signup(SignupRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_SIGNUP_REQUEST_REQUIRED",
                     "회원가입 정보를 입력해 주세요."
             );
         }
@@ -111,7 +118,7 @@ public class AuthServiceImpl implements AuthService{
         if (userMapper.countLocalUserByLoginId(loginId) > 0) {
             throw new CustomException(
                     HttpStatus.CONFLICT,
-                    "LOGIN_ID_DUPLICATED",
+                    "AUTH_LOGIN_ID_DUPLICATED",
                     "이미 사용 중인 아이디입니다."
             );
         }
@@ -141,7 +148,7 @@ public class AuthServiceImpl implements AuthService{
             if (insertedRows != 1) {
                 throw new CustomException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        "SIGNUP_FAILED",
+                        "AUTH_SIGNUP_FAILED",
                         "회원가입 처리에 실패했습니다."
                 );
             }
@@ -149,7 +156,7 @@ public class AuthServiceImpl implements AuthService{
             //중복 확인 직후 다른 요청이 같은 아이디를 저장하는 상황도 DB 유니크키로 방지한다.
             throw new CustomException(
                     HttpStatus.CONFLICT,
-                    "LOGIN_ID_DUPLICATED",
+                    "AUTH_LOGIN_ID_DUPLICATED",
                     "이미 사용 중인 아이디입니다."
             );
         }
@@ -170,7 +177,11 @@ public class AuthServiceImpl implements AuthService{
     @Transactional
     public LoginResult login(LoginRequest request) {
         if(request == null){
-            throw new IllegalArgumentException("로그인 정보를 입력해주세요");
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_LOGIN_REQUEST_REQUIRED",
+                    "로그인 정보를 입력해 주세요."
+            );
         }
 
         String loginId = normalizeLoginId(request.getLoginId());
@@ -184,7 +195,7 @@ public class AuthServiceImpl implements AuthService{
                 || !passwordEncoder.matches(password, user.getPassword())){
             throw new CustomException(
                     HttpStatus.UNAUTHORIZED,
-                    "LOGIN_FAILED",
+                    "AUTH_LOGIN_FAILED",
                     "아이디 또는 비밀번호가 올바르지 않습니다."
             );
         }
@@ -236,7 +247,7 @@ public class AuthServiceImpl implements AuthService{
         if(user == null){
             throw new CustomException(
                     HttpStatus.UNAUTHORIZED,
-                    "INVALID_REFRESH_TOKEN",
+                    "AUTH_INVALID_REFRESH_TOKEN",
                     "로그인 정보가 만료되었거나 유효하지 않습니다."
             );
         }
@@ -274,7 +285,9 @@ public class AuthServiceImpl implements AuthService{
         if (normalizedName.length() < 2
                 || normalizedName.length() > 100) {
 
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_NAME",
                     "이름은 2~100자로 입력해 주세요."
             );
         }
@@ -289,7 +302,9 @@ public class AuthServiceImpl implements AuthService{
                 .matcher(password)
                 .matches()) {
 
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_PASSWORD",
                     "비밀번호는 영문, 숫자, 특수문자를 포함해 8~64자로 입력해 주세요."
             );
         }
@@ -300,7 +315,9 @@ public class AuthServiceImpl implements AuthService{
     //휴대전화번호를 숫자로 정규화하고 형식을 검사한다.
     private String normalizePhoneNumber(String phoneNumber) {
         if (phoneNumber == null) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_PHONE_NUMBER_REQUIRED",
                     "휴대전화번호를 입력해 주세요."
             );
         }
@@ -310,7 +327,11 @@ public class AuthServiceImpl implements AuthService{
 
         if (!PHONE_NUMBER_PATTERN
                 .matcher(normalizedPhoneNumber)
-                .matches()) {throw new IllegalArgumentException("휴대전화번호는 010으로 시작하는 11자리 번호로 입력해 주세요.");}
+                .matches()) {throw new CustomException(
+                HttpStatus.BAD_REQUEST,
+                "AUTH_INVALID_PHONE_NUMBER",
+                "휴대전화번호는 010으로 시작하는 11자리 번호로 입력해 주세요."
+        );}
 
         return normalizedPhoneNumber;
     }
@@ -321,7 +342,9 @@ public class AuthServiceImpl implements AuthService{
             String errorMessage
     ) {
         if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_REQUIRED_FIELD_MISSING",
                     errorMessage
             );
         }
