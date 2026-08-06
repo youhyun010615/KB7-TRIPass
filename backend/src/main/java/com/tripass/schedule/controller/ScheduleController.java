@@ -149,4 +149,46 @@ public class ScheduleController {
                 )
         );
     }
+
+    @ApiOperation(
+            value = "여행 일정 삭제",
+            notes = "여행에 등록된 일정을 소프트 삭제합니다."
+    )
+    @DeleteMapping("/{scheduleId}")
+    public ResponseEntity<ApiResponse<Void>>
+    deleteSchedule(
+            @ApiParam(
+                    value = "여행 ID",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("tripId")
+            @Positive(
+                    message = "여행 ID는 양수여야 합니다."
+            )
+            Long tripId,
+
+            @ApiParam(
+                    value = "여행 일정 ID",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable("scheduleId")
+            @Positive(
+                    message = "여행 일정 ID는 양수여야 합니다."
+            )
+            Long scheduleId
+    ) {
+        scheduleService.deleteSchedule(
+                tripId,
+                scheduleId
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>success(
+                        "여행 일정 삭제 성공",
+                        null
+                )
+        );
+    }
 }

@@ -359,4 +359,25 @@ public class ScheduleService {
             );
         }
     }
+
+    /** 여행에 등록된 일정을 삭제(soft delete)합니다. */
+    @Transactional
+    public void deleteSchedule(
+            Long tripId,
+            Long scheduleId
+    ) {
+        validateTripExists(tripId);
+
+        int deletedCount =
+                scheduleMapper.softDeleteSchedule(
+                        tripId,
+                        scheduleId
+                );
+
+        if (deletedCount == 0) {
+            throw new ScheduleException(
+                    SCHEDULE_NOT_FOUND
+            );
+        }
+    }
 }
