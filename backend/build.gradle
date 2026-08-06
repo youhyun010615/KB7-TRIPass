@@ -104,8 +104,14 @@ dependencies {
     testAnnotationProcessor     "org.projectlombok:lombok:${lombokVersion}"
     testImplementation          "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly             "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+    // SolAPI 문자 인증용 문자발신 API
+    implementation("com.solapi:sdk:1.1.0")
 }
 
+// Windows 환경에서도 Java 소스를 UTF-8로 컴파일
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
 test {
     useJUnitPlatform()
 }

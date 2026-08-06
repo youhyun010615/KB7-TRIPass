@@ -15,3 +15,8 @@ db.password=여기에_MySQL_비밀번호_입력
 # codef.client-secret=
 # exchange.api-key=
 # ocr.api-key=
+
+
+# --- Refresh Token Cookie ---
+# 로컬 HTTP 환경에서는 false, 운영 HTTPS 환경에서는 true
+auth.refresh-cookie.secure=false

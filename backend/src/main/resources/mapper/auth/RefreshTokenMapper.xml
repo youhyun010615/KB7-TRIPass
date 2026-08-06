@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.auth.mapper.RefreshTokenMapper">
+    <!-- 조회 결과를 RefreshToken 모델에 연결 -->
+    <resultMap id="refreshTokenResultMap" type="com.tripass.auth.model.RefreshToken">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="tokenId" column="token_id"/>
+        <result property="tokenHash" column="token_hash"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="revokedAt" column="revoked_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <!-- 로그인 시 발급한 RefreshToken 정보를 저장 -->
+    <insert id="insertRefreshToken"
+            parameterType="com.tripass.auth.model.RefreshToken"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO refresh_tokens(user_id, token_id, token_hash, expires_at)
+        VALUES (#{userId},#{tokenId},#{tokenHash},#{expiresAt})
+    </insert>
+
+    <!-- JWT의 고유 식별값으로 RefreshToken 조회 -->
+    <select id="findByTokenId" resultMap="refreshTokenResultMap">
+        SELECT id,user_id, token_id, token_hash, expires_at, revoked_at, created_at, updated_at
+        FROM refresh_tokens
+        WHERE token_id = #{tokenId}
+    </select>
+
+    <!-- 재발급 또는 로그아웃 시 RefreshToken 파기 -->
+    <update id="revokeByTokenId">
+        UPDATE refresh_tokens
+        SET revoked_at = NOW()
+        WHERE token_id = #{tokenId}
+        AND revoked_at IS NULL
+        AND expires_at > NOW()
+    </update>
+
+    <!-- 해당 회원의 RefreshToken 전부 파기 -->
+    <update id="revokeAllByUserId">
+        UPDATE refresh_tokens
+        SET revoked_at = NOW()
+        WHERE user_id = #{userId}
+        AND revoked_at IS NULL
+        AND expires_at > NOW()
+    </update>
+
+    <!-- 만료 토큰 파기 -->
+    <delete id="deleteExpiredTokens">
+        DELETE FROM refresh_tokens
+        WHERE expires_at &lt;= #{now}
+    </delete>
+</mapper>
