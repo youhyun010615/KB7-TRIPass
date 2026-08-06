@@ -111,14 +111,17 @@
         <update id="updateAlert">
         UPDATE exchange_rate_alerts
         SET target_rate = #{request.targetRate},
-            target_amount = #{request.targetAmount}
+            target_amount = #{request.targetAmount},
+            updated_at = NOW()
         WHERE id = #{id}
           AND is_deleted = 0
     </update>
 
     <update id="deleteAlert">
         UPDATE exchange_rate_alerts
-        SET is_deleted = 1
+        SET is_deleted = 1,
+            deleted_at = NOW(),
+            updated_at = NOW()
         WHERE id = #{id}
     </update>
 
@@ -129,7 +132,7 @@
             c.currency_code AS currencyCode,
             era.target_rate AS targetRate,
             era.target_amount AS targetAmount,
-            NOW() AS updatedAt
+            era.updated_at AS updatedAt
         FROM exchange_rate_alerts era
         INNER JOIN currencies c ON era.currency_id = c.id
         WHERE era.id = #{id} AND era.is_deleted = 0

@@ -1,5 +1,6 @@
 package com.tripass.exchange.service;
 
+import org.springframework.dao.DuplicateKeyException;
 import com.tripass.exchange.domain.ExchangeRateAlert;
 import com.tripass.exchange.dto.*;
 import com.tripass.exchange.client.ExchangeRateClient;
@@ -34,18 +35,16 @@ public class ExchangeRateService {
         return exchangeRateMapper.getAlertsByUserId(userId);
     }
 
+    @Transactional
     public Long registerAlert(Long userId, ExchangeRateAlertRequestDto request) {
-        if (request.getCurrencyId() == null || request.getTargetAmount() <= 0) {
-            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
-        }
+        validateAlertRequest(request.getCurrencyId(), request.getTargetAmount(), request.getTargetRate());
 
-        // 통화 존재 여부 확인
         if (!exchangeRateMapper.existsCurrencyById(request.getCurrencyId())) {
             throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
         }
 
+        // 애플리케이션 레벨 사전 중복 검사 (userId 기반)
         int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId());
-
         if (count > 0) {
             throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
         }
@@ -56,13 +55,18 @@ public class ExchangeRateService {
         alert.setTargetRate(request.getTargetRate());
         alert.setTargetAmount(request.getTargetAmount());
         
-        exchangeRateMapper.insertAlert(alert);
+        try {
+            exchangeRateMapper.insertAlert(alert);
+        } catch (DuplicateKeyException e) {
+            throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
+        }
         
         return alert.getId();
     }
 
     @Transactional
     public ExchangeRateAlertUpdateResponseDto updateAlert(Long id, Long userId, ExchangeRateAlertUpdateRequestDto request) {
+        validateAlertRequest(null, request.getTargetAmount(), request.getTargetRate());
 
         ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
         if (existingAlert == null) {
@@ -75,6 +79,18 @@ public class ExchangeRateService {
 
         exchangeRateMapper.updateAlert(id, request);
         return exchangeRateMapper.getAlertById(id);
+    }
+
+    private void validateAlertRequest(Long currencyId, Double targetAmount, Double targetRate) {
+        if (currencyId != null && !exchangeRateMapper.existsCurrencyById(currencyId)) {
+             throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
+        }
+        if (targetAmount == null || targetAmount <= 0) {
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (targetRate == null || targetRate <= 0) {
+            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     @Transactional

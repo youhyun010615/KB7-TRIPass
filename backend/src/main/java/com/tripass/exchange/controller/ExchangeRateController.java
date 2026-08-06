@@ -7,6 +7,8 @@ import com.tripass.exchange.exception.ExchangeException;
 import com.tripass.exchange.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,6 +60,7 @@ public class ExchangeRateController {
         return ApiResponse.success("환율 동기화 완료", result);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/alerts")
     public ApiResponse<Map<String, Long>> registerAlert(@RequestBody ExchangeRateAlertRequestDto request) {
         Long alertId = exchangeRateService.registerAlert(101L, request); // TODO: 실제 유저 ID
@@ -74,9 +77,9 @@ public class ExchangeRateController {
     }
 
     @DeleteMapping("/alerts/{id}")
-    public ApiResponse<Map<String, Long>> deleteAlert(@PathVariable Long id) {
+    public ApiResponse<Void> deleteAlert(@PathVariable Long id) {
         Long userId = 101L; // TODO: 실제 로그인한 유저 ID로 대체
         exchangeRateService.deleteAlert(id, userId);
-        return ApiResponse.success("환율 알림이 삭제되었습니다.", Map.of("id", id));
+        return ApiResponse.success("환율 알림이 삭제되었습니다.", null);
     }
 }
