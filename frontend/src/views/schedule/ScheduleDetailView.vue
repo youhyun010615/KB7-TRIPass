@@ -11,6 +11,7 @@ const schedule = computed(() => store.getSchedule(route.params.scheduleId))
 const country = computed(() => store.countries.find(item => item.code === schedule.value?.countryCode))
 const wonRate = { EUR:1486.2, USD:1380, CHF:1704.6, JPY:9.23, HKD:184.2 }
 const won = computed(() => Math.round((schedule.value?.amount || 0) * (wonRate[schedule.value?.currency] || 1)))
+const paymentLabel = computed(() => ({ prepaid:'💳 사전결제 완료', onsite:'💵 현장결제 필요', undecided:'❔ 미정' })[schedule.value?.paymentStatus] || '❔ 미정')
 function remove() {
   if (window.confirm('이 여행 일정을 삭제할까요?') && store.remove(route.params.scheduleId)) router.push('/schedule')
 }
@@ -20,11 +21,12 @@ function remove() {
   <main class="detail-page">
     <header><button type="button" @click="router.back()">‹</button><h1>여행일정 상세 정보</h1><span /></header>
     <template v-if="schedule">
-      <section class="hero"><span>{{ schedule.paymentStatus === 'prepaid' ? '💳 사전결제 완료' : '💵 현장결제 필요' }}</span><small>{{ country.flag }} {{ country.name }} 여행</small><h2>{{ schedule.title }}</h2><strong>{{ schedule.currency }} {{ schedule.amount.toLocaleString() }} <em>(약 {{ won.toLocaleString() }}원)</em></strong></section>
+      <section class="hero"><span>{{ paymentLabel }}</span><small>{{ country?.flag }} {{ country?.name }} 여행</small><h2>{{ schedule.title }}</h2><strong>{{ schedule.currency }} {{ schedule.amount.toLocaleString() }} <em>(약 {{ won.toLocaleString() }}원)</em></strong></section>
       <section class="details"><dl>
+        <div><dt>🌐 국가</dt><dd>{{ country?.flag }} {{ country?.name }}</dd></div>
         <div><dt>▣ 일시</dt><dd>{{ schedule.date }} {{ schedule.time }}</dd></div>
-        <div><dt>📍 장소 및 주소</dt><dd>{{ schedule.place }}</dd></div>
-        <div><dt>🔔 알림</dt><dd>일정 1시간 전 자동 알림</dd></div>
+        <div><dt>📍 장소명</dt><dd>{{ schedule.placeName || '장소 미정' }}</dd></div>
+        <div><dt>🗺 주소</dt><dd>{{ schedule.placeAddress || '주소 미정' }}</dd></div>
       </dl></section>
       <section class="memo"><h3>📝 메모</h3><p>{{ schedule.memo || '등록된 메모가 없어요.' }}</p></section>
       <div class="actions"><button type="button" @click="remove">삭제</button><button type="button" @click="router.push(`/schedule/${schedule.id}/edit`)">수정</button></div>
