@@ -39,6 +39,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 @ExtendWith(MockitoExtension.class)
 class ScheduleControllerTest {
@@ -616,5 +619,94 @@ class ScheduleControllerTest {
                         jsonPath("$.data.scheduleId")
                                 .value(10)
                 );
+    }
+
+    @Test
+    void 여행_일정을_삭제한다() throws Exception {
+        doNothing()
+                .when(scheduleService)
+                .deleteSchedule(
+                        1L,
+                        10L
+                );
+
+        mockMvc.perform(
+                        delete(
+                                "/api/v1/trips/{tripId}/schedules/{scheduleId}",
+                                1L,
+                                10L
+                        )
+                )
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("SUCCESS")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("여행 일정 삭제 성공")
+                )
+                .andExpect(
+                        jsonPath("$.data")
+                                .doesNotExist()
+                );
+    }
+
+    @Test
+    void 삭제할_여행_일정이_없으면_404를_반환한다()
+            throws Exception {
+        doThrow(
+                new ScheduleException(
+                        SCHEDULE_NOT_FOUND
+                )
+        ).when(scheduleService)
+                .deleteSchedule(
+                        1L,
+                        999L
+                );
+
+        mockMvc.perform(
+                        delete(
+                                "/api/v1/trips/{tripId}/schedules/{scheduleId}",
+                                1L,
+                                999L
+                        )
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("SCHEDULE_NOT_FOUND")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "여행 일정을 찾을 수 없습니다."
+                                )
+                );
+    }
+
+    @Test
+    void 삭제할_여행_일정_ID가_0이면_400을_반환한다()
+            throws Exception {
+        mockMvc.perform(
+                        delete(
+                                "/api/v1/trips/{tripId}/schedules/{scheduleId}",
+                                1L,
+                                0L
+                        )
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("INVALID_INPUT")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "여행 일정 ID는 양수여야 합니다."
+                                )
+                );
+
+        verifyNoInteractions(scheduleService);
     }
 }

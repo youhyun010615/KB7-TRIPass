@@ -674,4 +674,81 @@ class ScheduleServiceTest {
                 any(ScheduleUpdateCommandDto.class)
         );
     }
+
+    @Test
+    void 여행_일정을_삭제한다() {
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper.softDeleteSchedule(
+                        1L,
+                        10L
+                )
+        ).thenReturn(1);
+
+        scheduleService.deleteSchedule(
+                1L,
+                10L
+        );
+
+        verify(scheduleMapper)
+                .softDeleteSchedule(
+                        1L,
+                        10L
+                );
+    }
+
+    @Test
+    void 삭제할_여행_일정이_없으면_예외가_발생한다() {
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper.softDeleteSchedule(
+                        1L,
+                        999L
+                )
+        ).thenReturn(0);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.deleteSchedule(
+                        1L,
+                        999L
+                )
+        );
+
+        assertEquals(
+                "SCHEDULE_NOT_FOUND",
+                exception.getErrorCode()
+        );
+    }
+
+    @Test
+    void 여행이_없으면_일정을_삭제하지_않는다() {
+        when(scheduleMapper.existsTripById(99L))
+                .thenReturn(false);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.deleteSchedule(
+                        99L,
+                        10L
+                )
+        );
+
+        assertEquals(
+                "TRIP_NOT_FOUND",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).softDeleteSchedule(
+                99L,
+                10L
+        );
+    }
 }
