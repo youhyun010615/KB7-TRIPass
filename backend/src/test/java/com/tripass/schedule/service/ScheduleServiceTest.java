@@ -1,13 +1,20 @@
 package com.tripass.schedule.service;
 
+import com.tripass.schedule.dto.ScheduleCreateCommandDto;
+import com.tripass.schedule.dto.ScheduleCreateRequestDto;
+import com.tripass.schedule.dto.ScheduleCreateResponseDto;
 import com.tripass.schedule.dto.ScheduleDetailResponseDto;
 import com.tripass.schedule.dto.ScheduleDetailRowDto;
 import com.tripass.schedule.dto.ScheduleListResponseDto;
 import com.tripass.schedule.dto.ScheduleListRowDto;
+import com.tripass.schedule.dto.TripCountryContextRowDto;
+import com.tripass.schedule.enums.SchedulePaymentStatus;
+import com.tripass.schedule.enums.ScheduleStatus;
 import com.tripass.schedule.exception.ScheduleException;
 import com.tripass.schedule.mapper.ScheduleMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,15 +24,14 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -54,46 +60,14 @@ class ScheduleServiceTest {
                 exception.getErrorCode()
         );
 
-        verify(scheduleMapper)
-                .existsTripById(1L);
-
         verify(scheduleMapper, never())
                 .findAllByTripId(1L);
     }
 
     @Test
-    void 여행_일정_목록을_조회하고_현지_시간으로_변환한다() {
-        LocalDateTime inputStartAt =
-                LocalDateTime.parse(
-                        "2026-08-28T10:30:00"
-                );
-
-        LocalDateTime inputEndAt =
-                LocalDateTime.parse(
-                        "2026-08-28T11:30:00"
-                );
-
-        ZoneId parisZone =
-                ZoneId.of("Europe/Paris");
-
-        Instant storedStartInstant = inputStartAt
-                .atZone(parisZone)
-                .toInstant();
-
-        Instant storedEndInstant = inputEndAt
-                .atZone(parisZone)
-                .toInstant();
-
+    void 여행_일정_목록을_현지_시간으로_조회한다() {
         ScheduleListRowDto row =
-                createParisScheduleRow();
-
-        row.setStartAt(
-                Timestamp.from(storedStartInstant)
-        );
-
-        row.setEndAt(
-                Timestamp.from(storedEndInstant)
-        );
+                createScheduleListRow();
 
         when(scheduleMapper.existsTripById(1L))
                 .thenReturn(true);
@@ -110,51 +84,28 @@ class ScheduleServiceTest {
                 result.get(0);
 
         assertEquals(10L, schedule.getId());
-        assertEquals(1L, schedule.getTripId());
         assertEquals(
                 "루브르 박물관",
                 schedule.getScheduleName()
         );
-
         assertEquals(
-                inputStartAt,
-                schedule.getStartAt().toLocalDateTime()
+                OffsetDateTime.parse(
+                        "2026-08-28T10:30:00+02:00"
+                ),
+                schedule.getScheduledAt()
         );
-
-        assertEquals(
-                inputEndAt,
-                schedule.getEndAt().toLocalDateTime()
-        );
-
         assertEquals(
                 ZoneOffset.ofHours(2),
-                schedule.getStartAt().getOffset()
+                schedule.getScheduledAt().getOffset()
         );
-
         assertEquals(
-                "Europe/Paris",
-                schedule.getTimeZone()
+                SchedulePaymentStatus.PREPAID,
+                schedule.getPaymentStatus()
         );
-    }
-
-    @Test
-    void 종료_시간이_없으면_null을_반환한다() {
-        ScheduleListRowDto row =
-                createParisScheduleRow();
-
-        row.setEndAt(null);
-
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
-
-        when(scheduleMapper.findAllByTripId(1L))
-                .thenReturn(List.of(row));
-
-        List<ScheduleListResponseDto> result =
-                scheduleService.getSchedules(1L);
-
-        assertEquals(1, result.size());
-        assertNull(result.get(0).getEndAt());
+        assertEquals(
+                ScheduleStatus.UPCOMING,
+                schedule.getScheduleStatus()
+        );
     }
 
     @Test
@@ -169,9 +120,6 @@ class ScheduleServiceTest {
                 scheduleService.getSchedules(1L);
 
         assertTrue(result.isEmpty());
-
-        verify(scheduleMapper)
-                .existsTripById(1L);
 
         verify(scheduleMapper)
                 .findAllByTripId(1L);
@@ -195,9 +143,6 @@ class ScheduleServiceTest {
                 exception.getErrorCode()
         );
 
-        verify(scheduleMapper)
-                .existsTripById(1L);
-
         verify(scheduleMapper, never())
                 .findDetailByTripIdAndScheduleId(
                         1L,
@@ -206,7 +151,7 @@ class ScheduleServiceTest {
     }
 
     @Test
-    void 여행_일정_상세를_조회하고_현지_시간으로_변환한다() {
+    void 여행_일정_상세를_현지_시간으로_조회한다() {
         ScheduleDetailRowDto row =
                 createScheduleDetailRow();
 
@@ -228,27 +173,21 @@ class ScheduleServiceTest {
                 );
 
         assertEquals(2L, result.getId());
-        assertEquals(1L, result.getTripId());
         assertEquals("프랑스", result.getCountryName());
-        assertEquals(
-                "Europe/Paris",
-                result.getTimeZone()
-        );
-
         assertEquals(
                 OffsetDateTime.parse(
                         "2026-08-28T10:30:00+02:00"
                 ),
-                result.getStartAt()
+                result.getScheduledAt()
         );
-
         assertEquals(
-                OffsetDateTime.parse(
-                        "2026-08-28T12:00:00+02:00"
-                ),
-                result.getEndAt()
+                SchedulePaymentStatus.PREPAID,
+                result.getPaymentStatus()
         );
-
+        assertEquals(
+                ScheduleStatus.UPCOMING,
+                result.getScheduleStatus()
+        );
         assertEquals(
                 "입장 10분 전까지 도착",
                 result.getMemo()
@@ -280,56 +219,250 @@ class ScheduleServiceTest {
                 "SCHEDULE_NOT_FOUND",
                 exception.getErrorCode()
         );
-
-        verify(scheduleMapper)
-                .findDetailByTripIdAndScheduleId(
-                        1L,
-                        999L
-                );
     }
 
-    private ScheduleListRowDto createParisScheduleRow() {
+    @Test
+    void 국가_기본_통화로_여행_일정을_등록한다() {
+        ScheduleCreateRequestDto request =
+                createScheduleRequest(null);
+
+        TripCountryContextRowDto tripCountry =
+                createTripCountryContext();
+
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper.findTripCountryContext(
+                        1L,
+                        1L
+                )
+        ).thenReturn(tripCountry);
+
+        when(
+                scheduleMapper.insertSchedule(
+                        any(ScheduleCreateCommandDto.class)
+                )
+        ).thenAnswer(invocation -> {
+            ScheduleCreateCommandDto command =
+                    invocation.getArgument(0);
+
+            command.setId(10L);
+
+            return 1;
+        });
+
+        ScheduleCreateResponseDto result =
+                scheduleService.createSchedule(
+                        1L,
+                        request
+                );
+
+        ArgumentCaptor<ScheduleCreateCommandDto> captor =
+                ArgumentCaptor.forClass(
+                        ScheduleCreateCommandDto.class
+                );
+
+        verify(scheduleMapper)
+                .insertSchedule(captor.capture());
+
+        ScheduleCreateCommandDto saved =
+                captor.getValue();
+
+        assertEquals(1L, saved.getTripId());
+        assertEquals(1L, saved.getTripCountryId());
+        assertEquals(1L, saved.getCurrencyId());
+        assertEquals(
+                Timestamp.from(
+                        Instant.parse(
+                                "2026-08-28T08:30:00Z"
+                        )
+                ),
+                saved.getScheduledAt()
+        );
+        assertEquals(
+                "PREPAID",
+                saved.getPaymentStatus()
+        );
+        assertEquals(
+                "UPCOMING",
+                saved.getScheduleStatus()
+        );
+        assertEquals(10L, result.getScheduleId());
+
+        verify(
+                scheduleMapper,
+                never()
+        ).findCurrencyIdByCode(
+                any(String.class)
+        );
+    }
+
+    @Test
+    void 사용자가_선택한_통화로_여행_일정을_등록한다() {
+        ScheduleCreateRequestDto request =
+                createScheduleRequest("USD");
+
+        TripCountryContextRowDto tripCountry =
+                createTripCountryContext();
+
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper.findTripCountryContext(
+                        1L,
+                        1L
+                )
+        ).thenReturn(tripCountry);
+
+        when(
+                scheduleMapper.findCurrencyIdByCode(
+                        "USD"
+                )
+        ).thenReturn(3L);
+
+        when(
+                scheduleMapper.insertSchedule(
+                        any(ScheduleCreateCommandDto.class)
+                )
+        ).thenAnswer(invocation -> {
+            ScheduleCreateCommandDto command =
+                    invocation.getArgument(0);
+
+            command.setId(11L);
+
+            return 1;
+        });
+
+        ScheduleCreateResponseDto result =
+                scheduleService.createSchedule(
+                        1L,
+                        request
+                );
+
+        ArgumentCaptor<ScheduleCreateCommandDto> captor =
+                ArgumentCaptor.forClass(
+                        ScheduleCreateCommandDto.class
+                );
+
+        verify(scheduleMapper)
+                .insertSchedule(captor.capture());
+
+        ScheduleCreateCommandDto saved =
+                captor.getValue();
+
+        assertEquals(3L, saved.getCurrencyId());
+        assertEquals(11L, result.getScheduleId());
+    }
+
+    @Test
+    void 선택한_여행_국가가_없으면_예외가_발생한다() {
+        ScheduleCreateRequestDto request =
+                createScheduleRequest(null);
+
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper.findTripCountryContext(
+                        1L,
+                        1L
+                )
+        ).thenReturn(null);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.createSchedule(
+                        1L,
+                        request
+                )
+        );
+
+        assertEquals(
+                "TRIP_COUNTRY_NOT_FOUND",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).insertSchedule(
+                any(ScheduleCreateCommandDto.class)
+        );
+    }
+
+    @Test
+    void 선택한_통화가_없으면_예외가_발생한다() {
+        ScheduleCreateRequestDto request =
+                createScheduleRequest("ABC");
+
+        TripCountryContextRowDto tripCountry =
+                createTripCountryContext();
+
+        when(scheduleMapper.existsTripById(1L))
+                .thenReturn(true);
+
+        when(
+                scheduleMapper.findTripCountryContext(
+                        1L,
+                        1L
+                )
+        ).thenReturn(tripCountry);
+
+        when(
+                scheduleMapper.findCurrencyIdByCode(
+                        "ABC"
+                )
+        ).thenReturn(null);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.createSchedule(
+                        1L,
+                        request
+                )
+        );
+
+        assertEquals(
+                "CURRENCY_NOT_FOUND",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).insertSchedule(
+                any(ScheduleCreateCommandDto.class)
+        );
+    }
+
+    private ScheduleListRowDto createScheduleListRow() {
         ScheduleListRowDto row =
                 new ScheduleListRowDto();
 
         row.setId(10L);
         row.setTripId(1L);
-        row.setTripCountryId(2L);
+        row.setTripCountryId(1L);
         row.setCountryName("프랑스");
         row.setTimeZone("Europe/Paris");
         row.setScheduleName("루브르 박물관");
-
-        /*
-         * UTC 2026-08-28 08:30
-         * = 파리 2026-08-28 10:30 +02:00
-         */
-        row.setStartAt(
+        row.setScheduledAt(
                 Timestamp.from(
                         Instant.parse(
                                 "2026-08-28T08:30:00Z"
                         )
                 )
         );
-
-        /*
-         * UTC 2026-08-28 09:30
-         * = 파리 2026-08-28 11:30 +02:00
-         */
-        row.setEndAt(
-                Timestamp.from(
-                        Instant.parse(
-                                "2026-08-28T09:30:00Z"
-                        )
-                )
-        );
-
         row.setAmount(new BigDecimal("85.00"));
         row.setCurrencyCode("EUR");
         row.setCurrencySymbol("€");
         row.setPaymentStatus("PREPAID");
         row.setScheduleStatus("UPCOMING");
         row.setPlaceName("루브르 박물관");
-        row.setPlaceAddress("Rue de Rivoli, Paris");
+        row.setPlaceAddress(
+                "Rue de Rivoli, Paris"
+        );
 
         return row;
     }
@@ -346,31 +479,13 @@ class ScheduleServiceTest {
         row.setScheduleName(
                 "루브르 박물관 가이드 투어"
         );
-
-        /*
-         * UTC 2026-08-28 08:30
-         * = 파리 2026-08-28 10:30 +02:00
-         */
-        row.setStartAt(
+        row.setScheduledAt(
                 Timestamp.from(
                         Instant.parse(
                                 "2026-08-28T08:30:00Z"
                         )
                 )
         );
-
-        /*
-         * UTC 2026-08-28 10:00
-         * = 파리 2026-08-28 12:00 +02:00
-         */
-        row.setEndAt(
-                Timestamp.from(
-                        Instant.parse(
-                                "2026-08-28T10:00:00Z"
-                        )
-                )
-        );
-
         row.setAmount(new BigDecimal("85.00"));
         row.setCurrencyCode("EUR");
         row.setCurrencySymbol("€");
@@ -383,5 +498,47 @@ class ScheduleServiceTest {
         row.setMemo("입장 10분 전까지 도착");
 
         return row;
+    }
+
+    private TripCountryContextRowDto
+    createTripCountryContext() {
+        TripCountryContextRowDto row =
+                new TripCountryContextRowDto();
+
+        row.setTripCountryId(1L);
+        row.setCountryId(1L);
+        row.setCountryName("프랑스");
+        row.setTimeZone("Europe/Paris");
+        row.setDefaultCurrencyId(1L);
+        row.setDefaultCurrencyCode("EUR");
+
+        return row;
+    }
+
+    private ScheduleCreateRequestDto
+    createScheduleRequest(
+            String currencyCode
+    ) {
+        return ScheduleCreateRequestDto.builder()
+                .tripCountryId(1L)
+                .scheduleName(
+                        "루브르 박물관 가이드 투어"
+                )
+                .scheduledAt(
+                        LocalDateTime.parse(
+                                "2026-08-28T10:30:00"
+                        )
+                )
+                .amount(new BigDecimal("85.00"))
+                .currencyCode(currencyCode)
+                .paymentStatus(
+                        SchedulePaymentStatus.PREPAID
+                )
+                .placeName("루브르 박물관")
+                .placeAddress(
+                        "Rue de Rivoli, Paris"
+                )
+                .memo("입장 10분 전까지 도착")
+                .build();
     }
 }
