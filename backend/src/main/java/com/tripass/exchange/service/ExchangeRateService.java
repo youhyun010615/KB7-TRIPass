@@ -17,7 +17,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -135,6 +137,20 @@ public class ExchangeRateService {
     }
 
     @Transactional
+    public SyncResultDto syncExchangeRates() {
+        LocalDate today = LocalDate.now();
+        // 주말(토, 일)인 경우 금요일로 조정
+        if (today.getDayOfWeek() == java.time.DayOfWeek.SATURDAY) {
+            today = today.minusDays(1);
+        } else if (today.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            today = today.minusDays(2);
+        }
+        
+        String dateString = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return syncExchangeRates(dateString);
+    }
+
+    @Transactional
     public SyncResultDto syncExchangeRates(String date) {
         ensureKrwExists();
 
@@ -151,19 +167,24 @@ public class ExchangeRateService {
             throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
         }
         
-        LocalDate startDate = endDate.minusDays(89); 
+        LocalDate startDate = endDate.minusDays(89);
         
-        java.util.Map<String, Integer> currencySyncMap = new java.util.HashMap<>();
+        // 기존 전체 데이터 삭제
+        exchangeRateMapper.truncateExchangeRates();
+        
+        Map<String, Integer> currencySyncMap = new HashMap<>();
+        Map<Long, BigDecimal> lastRates = new HashMap<>(); // prevRate 계산용 맵
         int totalSavedCount = 0;
         
-        LocalDate currentDate = endDate;
+        LocalDate currentDate = startDate;
         for (int i = 0; i < 90; i++) {
-            String dateParam = currentDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String dateParam = currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
             
             try {
                 List<ExternalExchangeRateDto> dtoList = exchangeRateClient.fetchExchangeRates(dateParam);
                 if (!dtoList.isEmpty()) {
-                    List<ExchangeRateResponseDto> savedRates = processAndSave(dtoList, currentDate);
+                    // lastRates 맵을 전달
+                    List<ExchangeRateResponseDto> savedRates = processAndSave(dtoList, currentDate, lastRates);
                     totalSavedCount += savedRates.size();
                     
                     for (ExchangeRateResponseDto rate : savedRates) {
@@ -174,7 +195,7 @@ public class ExchangeRateService {
             } catch (Exception e) {
                 log.error("동기화 실패 - 날짜: {}", dateParam, e);
             }
-            currentDate = currentDate.minusDays(1);
+            currentDate = currentDate.plusDays(1);
         }
         
         List<SyncResultDto.CurrencySyncStatus> statusList = currencySyncMap.entrySet().stream()
@@ -200,8 +221,8 @@ public class ExchangeRateService {
         }
     }
 
-    private List<ExchangeRateResponseDto> processAndSave(List<ExternalExchangeRateDto> dtoList, LocalDate rateDate) {
-        List<ExchangeRateResponseDto> savedRates = new java.util.ArrayList<>();
+    private List<ExchangeRateResponseDto> processAndSave(List<ExternalExchangeRateDto> dtoList, LocalDate rateDate, Map<Long, BigDecimal> lastRates) {
+        List<ExchangeRateResponseDto> savedRates = new ArrayList<>();
         Long krwId = exchangeRateMapper.getCurrencyIdByCode("KRW");
 
         for (ExternalExchangeRateDto dto : dtoList) {
@@ -225,7 +246,8 @@ public class ExchangeRateService {
                 
                 if (targetId == null) continue;
                 
-                BigDecimal prevRate = exchangeRateMapper.getPreviousRate(targetId, rateDate);
+                // 메모리 맵에서 직전 환율 가져오기
+                BigDecimal prevRate = lastRates.get(targetId);
 
                 ExchangeRate exchangeRate = new ExchangeRate();
                 exchangeRate.setBaseCurrencyId(krwId);
@@ -237,6 +259,9 @@ public class ExchangeRateService {
                 exchangeRate.setFetchedAt(LocalDateTime.now());
                 
                 exchangeRateMapper.upsertExchangeRate(exchangeRate);
+                
+                // 다음날 prevRate를 위해 현재 rate를 맵에 저장
+                lastRates.put(targetId, rate);
                 
                 Long savedId = exchangeRateMapper.findIdByCurrencyAndDate(krwId, targetId, rateDate);
                 

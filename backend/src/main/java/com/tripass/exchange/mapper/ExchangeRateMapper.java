@@ -12,6 +12,9 @@ import java.util.List;
 
 @Mapper
 public interface ExchangeRateMapper {
+    // 전체 환율 데이터 삭제 (일괄 갱신을 위해)
+    void truncateExchangeRates();
+    
     // Upsert를 위한 쿼리 (MyBatis XML에서 구현)
     void upsertExchangeRate(ExchangeRate exchangeRate);
     

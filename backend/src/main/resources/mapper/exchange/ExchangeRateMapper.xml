@@ -108,6 +108,10 @@
             fetched_at = VALUES(fetched_at)
     </insert>
 
+    <delete id="truncateExchangeRates">
+        TRUNCATE TABLE exchange_rates
+    </delete>
+
         <update id="updateAlert">
         UPDATE exchange_rate_alerts
         SET target_rate = #{request.targetRate},

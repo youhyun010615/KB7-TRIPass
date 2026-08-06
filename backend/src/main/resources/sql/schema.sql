@@ -138,7 +138,6 @@ CREATE TABLE exchange_bank_branches (
     longitude         DECIMAL(10, 7) NULL                    COMMENT '경도',
     business_hours    VARCHAR(200)   NULL                    COMMENT '영업시간',
     phone_number      VARCHAR(30)    NULL                    COMMENT '전화번호',
-    preferential_rate DECIMAL(5, 2)  NULL                    COMMENT '환율 우대율(%)',
     is_active         BOOLEAN        NOT NULL DEFAULT TRUE   COMMENT '사용 여부',
     created_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
