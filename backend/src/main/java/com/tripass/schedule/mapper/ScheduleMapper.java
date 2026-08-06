@@ -1,10 +1,7 @@
 package com.tripass.schedule.mapper;
 
 
-import com.tripass.schedule.dto.ScheduleCreateCommandDto;
-import com.tripass.schedule.dto.ScheduleDetailRowDto;
-import com.tripass.schedule.dto.ScheduleListRowDto;
-import com.tripass.schedule.dto.TripCountryContextRowDto;
+import com.tripass.schedule.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -35,5 +32,14 @@ public interface ScheduleMapper {
 
     int insertSchedule(
             ScheduleCreateCommandDto command
+    );
+
+    boolean existsScheduleByTripIdAndScheduleId(
+            @Param("tripId") Long tripId,
+            @Param("scheduleId") Long scheduleId
+    );
+
+    int updateSchedule(
+            ScheduleUpdateCommandDto command
     );
 }

@@ -137,4 +137,32 @@
                )
     </insert>
 
+    <select id="existsScheduleByTripIdAndScheduleId"
+            resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM trip_schedules
+            WHERE id = #{scheduleId}
+              AND trip_id = #{tripId}
+              AND is_deleted = 0
+        )
+    </select>
+
+    <update id="updateSchedule"
+            parameterType="ScheduleUpdateCommandDto">
+        UPDATE trip_schedules
+        SET trip_country_id = #{tripCountryId},
+            currency_id = #{currencyId},
+            schedule_name = #{scheduleName},
+            scheduled_at = #{scheduledAt, jdbcType=TIMESTAMP},
+            amount = #{amount, jdbcType=DECIMAL},
+            payment_status = #{paymentStatus},
+            place_name = #{placeName, jdbcType=VARCHAR},
+            place_address = #{placeAddress, jdbcType=VARCHAR},
+            memo = #{memo, jdbcType=VARCHAR}
+        WHERE id = #{scheduleId}
+          AND trip_id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
