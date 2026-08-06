@@ -2,7 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useTravelStore } from '@/stores/travel'
 
-const STORAGE_KEY = 'tripass-travel-schedules'
+const STORAGE_KEY = 'tripass-travel-schedules-v2'
 const countries = [
   { code: 'FR', name: '프랑스', city: '파리', flag: '🇫🇷', currency: 'EUR', defaultStart: '2026-08-15', defaultEnd: '2026-08-22' },
   { code: 'CH', name: '스위스', city: '인터라켄', flag: '🇨🇭', currency: 'CHF', defaultStart: '2026-08-23', defaultEnd: '2026-08-26' },
@@ -15,6 +15,7 @@ const seedTemplates = {
   FR: [
     ['루브르 박물관 가이드 투어', '10:30', 85, 'prepaid', 'Musée du Louvre, 75001 Paris, France', '1시간 전', '리슐리외관 입구에서 가이드 미팅'],
     ['파리 → 인터라켄 TGV 열차', '14:00', 65, 'prepaid', 'Paris Gare de Lyon', '2시간 전', '좌석 번호와 플랫폼 확인'],
+    ['센강 유람선 야경 투어', '19:30', 42, 'undecided', 'Port de la Conférence, Paris, France', '1시간 전', '탑승 20분 전 선착장 도착'],
   ],
   CH: [
     ['체르마트 마터호른 샬레 숙소', '15:00', 220, 'onsite', 'Zermatt, Switzerland', '1일 전', '체크인 여권 준비'],
@@ -49,8 +50,10 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
   function makeSeeds() {
     let id = 1
     return countries.flatMap(country => seedTemplates[country.code].map((template, index) => ({
-      id: id++, countryCode: country.code, title: template[0], date: dateWithOffset(period(country.code).startDate, index * 2, period(country.code).endDate),
-      time: template[1], currency: country.currency, amount: template[2], paymentStatus: template[3], place: template[4], alert: template[5], memo: template[6], completed: false,
+      id: id++, countryCode: country.code, title: template[0], date: dateWithOffset(period(country.code).startDate, country.code === 'FR' ? 0 : index * 2, period(country.code).endDate),
+      time: template[1], currency: country.currency, amount: template[2], paymentStatus: template[3],
+      placeName: template[0].split(' ')[0], placeAddress: template[4], memo: template[6], completed: false,
+      notificationTriggered: country.code === 'FR' || index === 0,
     })))
   }
 
@@ -70,11 +73,15 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
     const matchedPeriod = displayPeriods.value.find(item => date >= item.startDate && date <= item.endDate)
     return countries.find(country => country.code === matchedPeriod?.code)
   }
-  function getSchedule(id) { return schedules.value.find(item => item.id === Number(id)) }
+  function normalizeSchedule(item) {
+    if (!item) return item
+    return { ...item, placeName: item.placeName || item.place || '', placeAddress: item.placeAddress || '', notificationTriggered: Boolean(item.notificationTriggered) }
+  }
+  function getSchedule(id) { return normalizeSchedule(schedules.value.find(item => item.id === Number(id))) }
   function save(payload) {
     const country = countryForDate(payload.date)
     if (!country) return false
-    schedules.value.push({ ...payload, id: Date.now(), countryCode: country.code, completed: false })
+    schedules.value.push({ ...payload, id: Date.now(), countryCode: country.code, completed: false, notificationTriggered: false })
     return true
   }
   function update(id, payload) {
@@ -101,5 +108,5 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
 
   watch(schedules, value => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)), { deep: true })
 
-  return { countries, schedules, sortedSchedules, configuredPeriods, travelStart, travelEnd, demoToday, period, countryForDate, getSchedule, save, update, remove, toggleComplete, markNotificationRead }
+  return { countries, schedules, sortedSchedules, configuredPeriods, travelStart, travelEnd, demoToday, period, countryForDate, getSchedule, save, update, remove, toggleComplete, markNotificationRead, normalizeSchedule }
 })
