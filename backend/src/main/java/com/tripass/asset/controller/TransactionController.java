@@ -1,6 +1,7 @@
 package com.tripass.asset.controller;
 
 import com.tripass.asset.dto.TransactionDto;
+import com.tripass.asset.dto.TransactionUpdateRequestDto;
 import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -35,4 +36,15 @@ public class TransactionController {
         return
                 ResponseEntity.ok(ApiResponse.success(assetService.getTransactionDetail(userId, transactionId)));
     }
+
+    //거래내역 수정
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateTransaction(
+            @RequestAttribute("userId") Long userId,
+            @PathVariable("id") Long transactionId,
+            @RequestBody TransactionUpdateRequestDto req) {
+        assetService.updateTransaction(userId, transactionId, req);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
 }
