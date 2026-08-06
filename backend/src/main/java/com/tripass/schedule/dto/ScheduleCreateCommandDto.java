@@ -1,29 +1,28 @@
 package com.tripass.schedule.dto;
 
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 @Getter
-@Setter
-@NoArgsConstructor
-public class ScheduleListRowDto {
+@Builder
+public class ScheduleCreateCommandDto {
 
+    @Setter
     private Long id;
+
     private Long tripId;
     private Long tripCountryId;
-    private String countryName;
-    private String timeZone;
+    private Long currencyId;
     private String scheduleName;
     private Timestamp scheduledAt;
     private BigDecimal amount;
-    private String currencyCode;
-    private String currencySymbol;
     private String paymentStatus;
     private String scheduleStatus;
     private String placeName;
     private String placeAddress;
+    private String memo;
 }

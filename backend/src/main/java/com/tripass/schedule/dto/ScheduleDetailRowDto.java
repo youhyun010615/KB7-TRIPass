@@ -21,8 +21,7 @@ public class ScheduleDetailRowDto {
 
     private String scheduleName;
 
-    private Timestamp startAt;
-    private Timestamp endAt;
+    private Timestamp scheduledAt;
 
     private BigDecimal amount;
     private String currencyCode;
