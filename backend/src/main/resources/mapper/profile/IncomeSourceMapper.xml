@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.profile.mapper.IncomeSourceMapper">
+    <!-- income_source 조회 결과와
+    accounts 조인 결과를
+    IncomeSource 모델에 연결 -->
+    <resultMap id="incomeSourceResultMap"
+               type="com.tripass.profile.model.IncomeSource">
+        <id
+                property="id"
+                column="id"/>
+        <result
+                property="userId"
+                column="user_id"/>
+        <result
+                property="accountId"
+                column="account_id"/>
+        <result
+                property="accountName"
+                column="account_name"/>
+        <result
+                property="accountNumber"
+                column="account_number"/>
+        <result
+                property="paymentName"
+                column="payment_name"/>
+        <result
+                property="paymentDay"
+                column="payment_day"/>
+        <result
+                property="memo"
+                column="memo"/>
+        <result
+                property="grossAmount"
+                column="gross_amount"/>
+        <result
+                property="deleted"
+                column="is_deleted"/>
+        <result
+                property="deletedAt"
+                column="deleted_at"/>
+        <result
+                property="createdAt"
+                column="created_at"/>
+        <result
+                property="updatedAt"
+                column="updated_at"/>
+    </resultMap>
+
+    <!-- 급여 정보 등록 -->
+    <insert id="insertIncomeSource"
+            parameterType="com.tripass.profile.model.IncomeSource"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO income_sources(user_id, account_id, payment_name, payment_day, memo, gross_amount)
+        VALUES (#{userId}, #{accountId}, #{paymentName}, #{paymentDay}, #{memo}, #{grossAmount})
+    </insert>
+
+    <!-- 로그인 회원의 급여 목록 조회 -->
+    <select id="findAllByUserId"
+            resultMap="incomeSourceResultMap">
+        SELECT
+            income_source.id,
+            income_source.user_id,
+            income_source.account_id,
+            account.account_name,
+            account.account_number,
+            income_source.payment_name,
+            income_source.payment_day,
+            income_source.memo,
+            income_source.gross_amount,
+            income_source.is_deleted,
+            income_source.deleted_at,
+            income_source.created_at,
+            income_source.updated_at
+        FROM income_sources income_source
+            JOIN accounts account
+        ON account.id = income_source.account_id
+        WHERE income_source.user_id = #{userId}
+            AND income_source.is_deleted = 0
+        ORDER BY
+            income_source.payment_day ASC,
+            income_source.id ASC
+    </select>
+
+    <!-- 로그인 회원의 급여 단건 조회 -->
+    <select id="findByIdAndUserId"
+            resultMap="incomeSourceResultMap">
+        SELECT
+            income_source.id,
+            income_source.user_id,
+            income_source.account_id,
+            account.account_name,
+            account.account_number,
+            income_source.payment_name,
+            income_source.payment_day,
+            income_source.memo,
+            income_source.gross_amount,
+            income_source.is_deleted,
+            income_source.deleted_at,
+            income_source.created_at,
+            income_source.updated_at
+        FROM income_sources income_source
+        JOIN accounts account
+            ON account.id = income_source.account_id
+        WHERE income_source.id = #{id}
+            AND income_source.user_id = #{userId}
+            AND income_source.is_deleted = 0
+    </select>
+
+    <!-- 로그인 회원의 활성 급여 합계 조회 -->
+    <select
+            id="sumGrossAmountByUserId"
+            resultType="java.math.BigDecimal">
+
+        SELECT COALESCE(
+                       SUM(gross_amount),
+                       0
+               )
+        FROM income_sources
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+    <!--
+    급여 정보 수정
+    id에 더해  user_id를 조건으로 사용하여
+    다른 회원의 급여 정보 수정을 방지
+     -->
+    <update id="updateIncomeSource"
+            parameterType="com.tripass.profile.model.IncomeSource">
+        UPDATE income_sources
+        SET account_id = #{accountId},
+            payment_name = #{paymentName},
+            payment_day = #{paymentDay},
+            memo = #{memo},
+            gross_amount = #{grossAmount}
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND is_deleted = 0
+    </update>
+
+    <!-- 급여 정보 논리 삭제 -->
+    <update id="softDeleteIncomeSource">
+        UPDATE income_sources
+        SET is_deleted = 1,
+            deleted_at = NOW()
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND is_deleted = 0
+    </update>
+    
+    <!--
+    선택한 걔좌가 로그인 회원 소유이며
+    활성 상태인지 확인한다.
+    -->
+    <select id="countActiveAccountByIdAndUserId"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM accounts
+        WHERE id = #{accountId}
+            AND user_id  = #{userId}
+            AND is_active = TRUE
+            AND is_deleted = 0
+    </select>
+
+</mapper>
