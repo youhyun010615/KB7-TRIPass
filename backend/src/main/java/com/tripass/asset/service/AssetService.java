@@ -245,6 +245,15 @@ public class AssetService {
         assetMapper.deleteAccount(accountId, userId);
     }
 
+    @Transactional
+    public void updateTransaction(Long userId, Long transactionId, TransactionUpdateRequestDto req ){
+        TransactionDto transaction = assetMapper.findTransactionById(transactionId, userId);
+        if(transaction == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "TRANSACTION_NOT_FOUND", "거래내역을 찾을 수 없습니다.");
+        }
+        assetMapper.updateTransaction(transactionId, userId, req.getMerchantName(), req.getMemo());
+    }
+
 
     public List<AccountDto> getAccounts(Long userId) {
         return assetMapper.findAccountsByUserId(userId);
