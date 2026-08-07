@@ -303,8 +303,10 @@ public class AssetService {
         return response;
     }
 
-    public List<TransactionDto> getAllTransactions(Long userId) {
-        return assetMapper.findTransactionsByUserId(userId);
+    public List<TransactionDto> getAllTransactions(Long userId, String startDate, String endDate) {
+        LocalDate start = (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
+        LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
+        return assetMapper.findTransactionsByUserId(userId, start, end);
     }
 
     public TransactionDto getTransactionDetail(Long userId, Long transactionId) {

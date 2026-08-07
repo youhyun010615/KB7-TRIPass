@@ -35,12 +35,26 @@ async function fetchCalendar() {
   } catch (e) { console.error('캘린더 조회 실패', e) }
 }
 
+function monthRange() {
+  const y = displayYear.value
+  const m = String(displayMonth.value).padStart(2, '0')
+  const lastDay = new Date(y, displayMonth.value, 0).getDate()
+  return { startDate: `${y}-${m}-01`, endDate: `${y}-${m}-${String(lastDay).padStart(2, '0')}` }
+}
+
+async function fetchTransactions() {
+  try {
+    const res = await api.get('/transactions', { params: monthRange() })
+    realTransactions.value = res.data.data ?? []
+  } catch (e) { console.error('거래내역 조회 실패', e) }
+}
+
 onMounted(async () => {
   loading.value = true
   try {
     await Promise.all([
       fetchCalendar(),
-      api.get('/transactions').then(res => { realTransactions.value = res.data.data ?? [] }),
+      fetchTransactions(),
       api.get('/accounts').then(res => {
         accountMap.value = Object.fromEntries((res.data.data ?? []).map(a => [a.id, a.accountName]))
       }),
@@ -50,6 +64,7 @@ onMounted(async () => {
 })
 
 watch([displayYear, displayMonth, filter], fetchCalendar)
+watch([displayYear, displayMonth], fetchTransactions)
 
 const dailyTotals = computed(() => {
   const map = {}

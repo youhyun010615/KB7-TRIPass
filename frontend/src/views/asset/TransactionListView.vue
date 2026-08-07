@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
@@ -20,23 +20,31 @@ const accountMap = ref({})
 const realAccountCount = ref(0)
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
-onMounted(async () => {
+async function fetchTransactions() {
   loading.value = true
   try {
-    const [txRes, accRes] = await Promise.all([
-      api.get('/transactions'),
-      api.get('/accounts'),
-    ])
-    realTransactions.value = txRes.data.data ?? []
-    const accounts = accRes.data.data ?? []
-    accountMap.value = Object.fromEntries(accounts.map(a => [a.id, a.accountName]))
-    realAccountCount.value = accounts.length
+    const res = await api.get('/transactions', { params: { startDate: startDate.value, endDate: endDate.value } })
+    realTransactions.value = res.data.data ?? []
   } catch (e) {
     console.error('거래내역 조회 실패', e)
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  try {
+    const accRes = await api.get('/accounts')
+    const accounts = accRes.data.data ?? []
+    accountMap.value = Object.fromEntries(accounts.map(a => [a.id, a.accountName]))
+    realAccountCount.value = accounts.length
+  } catch (e) {
+    console.error('계좌 조회 실패', e)
+  }
+  await fetchTransactions()
 })
+
+watch([startDate, endDate], fetchTransactions)
 
 const groups = computed(() => {
   const allItems = []
