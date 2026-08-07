@@ -84,13 +84,18 @@ const groups = computed(() => {
       const label = `${date.replaceAll('-', '.')} (${DAYS[jsDate.getDay()]})`
       const [h = 0, m = 0] = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00').split(':').map(Number)
       const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      const amount = t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount)
       const item = {
         id: t.id,
         merchant: t.merchantName ?? '(내용없음)',
         category: '기타',
         method: route.query.name ?? '',
-        amount: t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount),
+        amount,
         time,
+        dateLabel: label,
+        balanceAfter: Number(t.balanceAfter ?? 0),
+        memo: t.memo ?? '',
+        isReal: true,
       }
       const group = result.find((g) => g.date === date)
       if (group) group.items.push(item)
@@ -121,7 +126,7 @@ const groups = computed(() => {
     <section class="travel-recognized"><small>여행 자금 인정 금액</small><b>{{ travelRecognizedAmount.toLocaleString('ko-KR') }}원</b></section>
     <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>~</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label><button type="button" aria-label="거래내역 캘린더" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></section>
     <div class="tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" type="button" @click="filter = tab.id">{{ tab.label }}</button></div>
-    <TransactionGroups :groups="groups" :show-icons="false" @select="router.push(`/asset/transactions/${$event.id}`)" />
+    <TransactionGroups :groups="groups" :show-icons="false" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
   </main>
 </template>
 

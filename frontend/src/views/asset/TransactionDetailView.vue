@@ -1,11 +1,38 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TransactionEditModal from '@/components/asset/TransactionEditModal.vue'
 import { useAssetStore } from '@/stores/asset'
+import api from '@/api'
 const route=useRoute(), router=useRouter(), asset=useAssetStore()
-const item=computed(()=>asset.getTransaction(route.params.transactionId)), editMode=ref(null)
+const mockItem=computed(()=>asset.getTransaction(route.params.transactionId))
+const realItem=ref(null)
+const item=computed(()=>mockItem.value ?? realItem.value ?? null)
+const editMode=ref(null)
+const DAYS=['일','월','화','수','목','금','토']
+onMounted(async()=>{
+  if(mockItem.value) return
+  try {
+    const res=await api.get(`/transactions/${route.params.transactionId}`)
+    const t=res.data.data
+    const [y,mo,d]=t.transactionDate
+    const date=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    const jsDate=new Date(y,mo-1,d)
+    const [h=0,m=0]=t.transactionTime
+    realItem.value={
+      id:t.id,
+      merchant:t.merchantName??'(내용없음)',
+      amount:t.transactionType==='DEPOSIT'?Number(t.amount):-Number(t.amount),
+      dateLabel:`${date.replaceAll('-','.')} (${DAYS[jsDate.getDay()]})`,
+      time:`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,
+      balanceAfter:Number(t.balanceAfter??0),
+      memo:t.memo??'',
+      category:'기타',
+      method:history.state?.item?.method??'',
+    }
+  } catch(e){ console.error('거래내역 조회 실패',e) }
+})
 const categories=[
   {id:'식비',name:'식비',icon:'🍴',color:'#7547d8',description:'식사, 배달, 식료품'}, {id:'카페',name:'카페',icon:'☕',color:'#c46b19',description:'커피와 디저트'},
   {id:'생활비',name:'생활비',icon:'🛒',color:'#1c9a67',description:'마트, 편의점, 생활용품'}, {id:'쇼핑',name:'쇼핑',icon:'🛍️',color:'#d84a76',description:'의류, 화장품, 온라인 쇼핑'},
