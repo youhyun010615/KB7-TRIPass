@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(localStorage.getItem('accessToken') || null)
-  const user = ref(null)
+  const user = ref(JSON.parse(localStorage.getItem('tripass-user') || 'null'))
   const isProfileComplete = ref(localStorage.getItem('isProfileComplete') === 'true')
 
   const isLoggedIn = computed(() => !!accessToken.value)
@@ -15,6 +15,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setUser(userInfo) {
     user.value = userInfo
+    localStorage.setItem('tripass-user', JSON.stringify(userInfo))
+  }
+
+  function updateUser(userInfo) {
+    setUser({ ...user.value, ...userInfo })
   }
 
   function completeProfile() {
@@ -28,7 +33,8 @@ export const useAuthStore = defineStore('auth', () => {
     isProfileComplete.value = false
     localStorage.removeItem('accessToken')
     localStorage.removeItem('isProfileComplete')
+    localStorage.removeItem('tripass-user')
   }
 
-  return { accessToken, user, isLoggedIn, isProfileComplete, setToken, setUser, completeProfile, logout }
+  return { accessToken, user, isLoggedIn, isProfileComplete, setToken, setUser, updateUser, completeProfile, logout }
 })

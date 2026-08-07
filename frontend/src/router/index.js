@@ -308,7 +308,7 @@ const router = createRouter({
     {
       path: '/mypage/profile/edit',
       name: 'MypageProfileEdit',
-      component: () => import('@/views/mypage/ProfileEditView.vue'),
+      redirect: '/mypage/password',
       meta: { requiresAuth: true },
     },
     {
