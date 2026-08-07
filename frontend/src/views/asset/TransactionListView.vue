@@ -17,6 +17,7 @@ const endDate = ref(today)
 const loading = ref(false)
 const realTransactions = ref([])
 const accountMap = ref({})
+const realAccountCount = ref(0)
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 onMounted(async () => {
@@ -29,6 +30,7 @@ onMounted(async () => {
     realTransactions.value = txRes.data.data ?? []
     const accounts = accRes.data.data ?? []
     accountMap.value = Object.fromEntries(accounts.map(a => [a.id, a.accountName]))
+    realAccountCount.value = accounts.length
   } catch (e) {
     console.error('거래내역 조회 실패', e)
   } finally {
@@ -84,7 +86,7 @@ const totalCount = computed(() => groups.value.reduce((sum, g) => sum + g.items.
 <template>
   <main class="list-page">
     <header><button type="button" @click="router.back()">‹</button><h1>전체 계좌 거래내역</h1><span /></header>
-    <section class="summary"><small>연동 계좌 {{ asset.accounts.length }}개</small><b>총 {{ totalCount }}건의 거래내역</b></section>
+    <section class="summary"><small>연동 계좌 {{ asset.accounts.length + realAccountCount }}개</small><b>총 {{ totalCount }}건의 거래내역</b></section>
     <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>~</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label><button type="button" aria-label="거래내역 캘린더" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></section>
     <nav class="filter-tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" @click="filter = tab.id">{{ tab.label }}</button></nav>
     <TransactionGroups :groups="groups" :show-icons="false" :loading="loading" @select="$event._isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
