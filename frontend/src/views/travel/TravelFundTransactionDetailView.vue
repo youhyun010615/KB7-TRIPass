@@ -1,39 +1,17 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BottomNav from '@/components/common/BottomNav.vue'
+import TransactionEditModal from '@/components/asset/TransactionEditModal.vue'
 import { useTravelFundStore } from '@/stores/travelFund'
-
-const route = useRoute()
-const router = useRouter()
-const fund = useTravelFundStore()
-const transaction = computed(() => fund.getTransaction(route.params.transactionId))
-const category = computed(() => fund.getCategory(transaction.value?.categoryId))
-const country = computed(() => fund.getCountry(transaction.value?.countryCode))
-const money = value => `${Number(value || 0).toLocaleString('ko-KR')}원`
-const dateTime = value => `${value.replaceAll('-', '.')} 12:30`
+const route=useRoute(),router=useRouter(),fund=useTravelFundStore(),editMode=ref(null)
+const transaction=computed(()=>fund.getTransaction(route.params.transactionId)),category=computed(()=>fund.getCategory(transaction.value?.categoryId)),country=computed(()=>fund.getCountry(transaction.value?.countryCode))
+const currencyMeta={FR:{code:'EUR',rate:1486.2},CH:{code:'CHF',rate:1704.6},DE:{code:'EUR',rate:1486.2},JP:{code:'JPY',rate:9.23},HK:{code:'HKD',rate:184.2}}
+const localAmount=computed(()=>transaction.value&&country.value?Math.round(transaction.value.amount/currencyMeta[country.value.code].rate*100)/100:0)
+const money=value=>`${Number(value||0).toLocaleString('ko-KR')}원`,dateTime=value=>`${value.replaceAll('-','.')} 12:30`
+const rows=computed(()=>transaction.value?[{label:'거래일시',value:dateTime(transaction.value.date)},{label:'여행지',value:`${country.value.city} · ${country.value.name}`},{label:'카테고리',value:category.value.name,editable:true},{label:'거래구분',value:'지출'},{label:'결제수단',value:'KB국민은행 여행통장 ****5320'},{label:'사용처',value:transaction.value.merchant},{label:'거래 후 여행 잔액',value:money((country.value.target-country.value.prepaid)-transaction.value.amount)}]:[])
 </script>
-
-<template>
-  <main class="page">
-    <header><button type="button" @click="router.back()">‹</button><h1>거래내역 상세보기</h1></header>
-    <template v-if="transaction">
-      <section class="hero"><div><small>{{ country.flag }} {{ country.name }} 여행</small><h2>{{ transaction.merchant }}</h2><strong>-{{ money(transaction.amount) }}</strong></div><span :style="{ background: `${category.color}18` }">{{ transaction.icon }}</span></section>
-      <section class="details"><dl>
-        <div><dt>거래일시</dt><dd>{{ dateTime(transaction.date) }}</dd></div>
-        <div><dt>여행지</dt><dd>{{ country.city }} · {{ country.name }}</dd></div>
-        <div><dt>카테고리</dt><dd class="category" :style="{ color: category.color }">{{ category.name }}</dd></div>
-        <div><dt>거래구분</dt><dd>지출</dd></div>
-        <div><dt>결제수단</dt><dd>KB국민은행 여행통장<br>****5320</dd></div>
-        <div><dt>사용처</dt><dd>{{ transaction.merchant }}</dd></div>
-        <div><dt>거래 후 여행 잔액</dt><dd>{{ money((country.target - country.prepaid) - transaction.amount) }}</dd></div>
-      </dl></section>
-      <h3>메모</h3><section class="memo">{{ transaction.memo }}</section>
-      <p class="period-note">이 거래는 등록한 {{ country.name }} 여행 기간에 포함된 내역이에요.</p>
-    </template>
-    <p v-else class="empty">거래내역을 찾을 수 없어요.</p>
-  </main>
-</template>
-
+<template><main class="detail-page"><header><button @click="router.back()">‹</button><h1>거래내역 상세보기</h1><span/></header><template v-if="transaction"><section class="hero"><div><small>{{country.flag}} {{country.name}} 여행</small><b>{{transaction.merchant}}</b><strong>-{{currencyMeta[country.code].code}} {{localAmount.toLocaleString('ko-KR',{maximumFractionDigits:2})}}</strong><em>약 {{money(transaction.amount)}}</em></div><span :style="{background:`${category.color}18`}">{{transaction.icon}}</span></section><section class="info-card"><div v-for="row in rows" :key="row.label"><small>{{row.label}}</small><p><b :class="{accent:row.editable}" :style="row.editable?{color:category.color}:{}">{{row.value}}</b><button v-if="row.editable" @click="editMode='category'">수정</button></p></div></section><div class="section-heading"><h2>메모</h2><button @click="editMode='memo'">수정</button></div><section class="memo">{{transaction.memo||'등록된 메모가 없어요.'}}</section><p class="trip-note">이 거래는 등록한 {{country.name}} 여행 기간에 포함된 내역이에요.</p></template><p v-else class="empty">거래내역을 찾을 수 없어요.</p><BottomNav/><TransactionEditModal :model-value="Boolean(editMode)" :mode="editMode||'category'" :categories="fund.categories" :selected-category="transaction?.categoryId" :memo="transaction?.memo" @update:model-value="value=>{if(!value)editMode=null}" @save-category="value=>fund.updateTransaction(transaction.id,{categoryId:value})" @save-memo="value=>fund.updateTransaction(transaction.id,{memo:value})"/></main></template>
 <style scoped>
-.page{min-height:100vh;padding:52px 18px 30px;background:#f8f6f1;color:#10192d}header{display:flex;align-items:center;margin-bottom:18px}header button{width:26px;font-size:26px;text-align:left}header h1{flex:1;padding-right:26px;text-align:center;font-size:18px;font-weight:900}.hero{display:flex;align-items:center;justify-content:space-between;padding:18px;border:1px solid #dce4ef;border-radius:17px;background:#fff}.hero small{color:#64748b;font-size:9px}.hero h2{margin-top:5px;font-size:14px}.hero strong{display:block;margin-top:8px;color:#e5484d;font-size:24px}.hero span{display:grid;width:50px;height:50px;place-items:center;border-radius:50%;font-size:20px}.details{margin-top:13px;padding:6px 16px;border:1px solid #dce4ef;border-radius:17px;background:#fff}.details dl>div{display:grid;grid-template-columns:100px 1fr;padding:13px 0;border-bottom:1px solid #edf0f5;font-size:11px}.details dl>div:last-child{border:0}.details dt{color:#94a3b8}.details dd{text-align:right;font-weight:800;line-height:1.5}h3{margin:20px 3px 9px;font-size:12px}.memo{min-height:54px;padding:15px;border:1px solid #dce4ef;border-radius:13px;background:#fff;font-size:11px}.period-note{margin-top:12px;padding:11px;border-radius:10px;background:#eef4ff;color:#52719e;font-size:9px;text-align:center}.empty{padding:80px 0;text-align:center;color:#94a3b8}
+.detail-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 105px;background:#f8f6f1;color:#10192d}.detail-page>header{display:grid;grid-template-columns:30px 1fr 30px;align-items:center;margin-bottom:18px}.detail-page>header button{font-size:26px;text-align:left}.detail-page>header h1{text-align:center;font-size:18px;font-weight:900}.hero{display:flex;align-items:center;justify-content:space-between;padding:18px;border:1px solid #d8e2f0;border-radius:16px;background:#fff}.hero small,.hero b,.hero strong,.hero em{display:block}.hero small{margin-bottom:10px;color:#64748b;font-size:9px}.hero b{font-size:14px}.hero strong{margin-top:8px;color:#e8484f;font-size:24px}.hero em{margin-top:5px;color:#94a3b8;font-size:9px;font-style:normal}.hero>span{display:grid;width:50px;height:50px;place-items:center;border-radius:50%;font-size:21px}.info-card{margin-top:12px;padding:10px 16px;border:1px solid #dbe3ef;border-radius:17px;background:#fff}.info-card>div{display:grid;grid-template-columns:100px 1fr;padding:13px 0;border-bottom:1px solid #edf0f5}.info-card>div:last-child{border:0}.info-card small{color:#94a3b8;font-size:10px}.info-card p{display:flex;align-items:center;justify-content:flex-end;gap:8px;text-align:right}.info-card b{font-size:11px;line-height:1.4}.info-card button,.section-heading button{padding:4px 7px;border-radius:7px;background:#edf4ff;color:#286dd8;font-size:8px;font-weight:900}.section-heading{display:flex;justify-content:space-between;margin:20px 3px 9px}.section-heading h2{font-size:12px}.memo{min-height:54px;padding:15px;border:1px solid #dbe3ef;border-radius:12px;background:#fff;font-size:11px}.trip-note{margin-top:12px;padding:13px;border-radius:12px;background:#eaf2ff;color:#5274a8;text-align:center;font-size:9px}.empty{padding:80px;text-align:center;color:#94a3b8}
 </style>
