@@ -292,6 +292,15 @@ public class AssetService {
     public List<CalendarDayDto> getCalendar(Long userId, Integer year, Integer month, String type) {
         if (year == null) year = java.time.LocalDate.now().getYear();
         if (month == null) month = java.time.LocalDate.now().getMonthValue();
+
+        if (month < 1 || month > 12) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "INVALID_MONTH", "월은 1~12 사이여야 합니다.");
+        }
+
+        if (type != null && (type.isEmpty() || type.equals("ALL"))) {
+            type = null;
+        }
+
         return assetMapper.findCalendarByMonth(userId, year, month, type);
     }
 
