@@ -25,9 +25,11 @@ public class TransactionController {
     //AST-005: 전체 계좌 거래내역 조회
     @GetMapping
     public ResponseEntity<ApiResponse<List<TransactionDto>>> getAllTransactions(
-            Authentication authentication) {
+            Authentication authentication,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         Long userId = getAuthenticatedUserId(authentication);
-        return ResponseEntity.ok(ApiResponse.success(assetService.getAllTransactions(userId)));
+        return ResponseEntity.ok(ApiResponse.success(assetService.getAllTransactions(userId, startDate, endDate)));
     }
 
     //AST-006: 거래내역 단건 상세 조회

@@ -1,8 +1,8 @@
 package com.tripass.asset.mapper;
 
 import com.tripass.asset.dto.*;
-import org.apache.ibatis.annotations.Mapper;
 import java.time.LocalDate;
+import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
 
 @Mapper
@@ -16,6 +16,11 @@ public interface AssetMapper {
 
     // accounts
     void insertAccount(AccountDto dto);
+    void updateAccountOnReconnect(AccountDto dto);
+    AccountDto findAccountByUserIdAndNumber(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("accountNumber") String accountNumber
+    );
     List<AccountDto> findAccountsByUserId(Long userId);
 
     void deleteAccount(
@@ -46,7 +51,11 @@ public interface AssetMapper {
     );
 
     //전체 계좌 거래내역 조회
-    List<TransactionDto> findTransactionsByUserId(Long userId);
+    List<TransactionDto> findTransactionsByUserId(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("startDate") LocalDate startDate,
+            @org.apache.ibatis.annotations.Param("endDate") LocalDate endDate
+    );
 
     void updateTransaction(
             @org.apache.ibatis.annotations.Param("transactionId") Long transactionId,

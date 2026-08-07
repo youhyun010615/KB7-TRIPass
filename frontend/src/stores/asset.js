@@ -20,13 +20,13 @@ const accountSeed = [
 ]
 
 const transactionSeed = [
-  { id: 1, accountId: 1, date: '2024-07-18', dateLabel: '2024.07.18 (목)', time: '14:22', merchant: 'Boulangerie Utopie', category: '식비', amount: -42_000, localAmount: -28.26, currency: 'EUR', countryCode: 'FR', country: '프랑스', city: '파리', flag: '🇫🇷', method: 'KB국민은행 여행통장 ****5320', user: 'Boulangerie Utopie', balanceAfter: 1_148_000, memo: '아침 식사' },
-  { id: 2, accountId: 2, date: '2024-07-18', dateLabel: '2024.07.18 (목)', time: '18:40', merchant: '신한은행 정기적금', category: '자동이체', amount: -300_000, method: '신한은행 통장', user: '신한은행', balanceAfter: 3_000_000, memo: '7월 정기 적금' },
-  { id: 3, accountId: 1, date: '2024-07-19', dateLabel: '2024.07.19 (금)', time: '14:22', merchant: '스타벅스 강남점', category: '카페', amount: -10_000, method: 'KB국민은행 여행통장', user: '스타벅스', balanceAfter: 4_955_000, memo: '' },
-  { id: 4, accountId: 1, date: '2024-07-19', dateLabel: '2024.07.19 (금)', time: '15:22', merchant: '지에스리테일(GS25)', category: '생활비', amount: -4_500, method: 'KB국민은행 여행통장', user: 'GS25', balanceAfter: 4_950_500, memo: '' },
-  { id: 5, accountId: 1, date: '2024-07-19', dateLabel: '2024.07.19 (금)', time: '17:13', merchant: '쿠팡이츠', category: '식비', amount: -5_000, method: 'KB국민은행 여행통장', user: '쿠팡이츠', balanceAfter: 4_945_500, memo: '' },
-  { id: 6, accountId: 1, date: '2024-07-19', dateLabel: '2024.07.19 (금)', time: '20:30', merchant: '7월 급여', category: '급여', amount: 2_500_000, method: 'KB국민은행 여행통장', user: 'TRIPASS', balanceAfter: 5_200_000, memo: '7월 급여 입금' },
-  { id: 7, accountId: 3, date: '2024-07-17', dateLabel: '2024.07.17 (수)', time: '12:30', merchant: '교통카드 충전', category: '교통비', amount: -50_000, method: '카카오뱅크 입출금통장', user: '카카오페이', balanceAfter: 4_250_000, memo: '' },
+  { id: 1, accountId: 1, date: '2026-07-18', dateLabel: '2026.07.18 (토)', time: '14:22', merchant: 'Boulangerie Utopie', category: '식비', amount: -42_000, localAmount: -28.26, currency: 'EUR', countryCode: 'FR', country: '프랑스', city: '파리', flag: '🇫🇷', method: 'KB국민은행 여행통장 ****5320', user: 'Boulangerie Utopie', balanceAfter: 1_148_000, memo: '아침 식사' },
+  { id: 2, accountId: 2, date: '2026-07-18', dateLabel: '2026.07.18 (토)', time: '18:40', merchant: '신한은행 정기적금', category: '자동이체', amount: -300_000, method: '신한은행 통장', user: '신한은행', balanceAfter: 3_000_000, memo: '7월 정기 적금' },
+  { id: 3, accountId: 1, date: '2026-07-19', dateLabel: '2026.07.19 (일)', time: '14:22', merchant: '스타벅스 강남점', category: '카페', amount: -10_000, method: 'KB국민은행 여행통장', user: '스타벅스', balanceAfter: 4_955_000, memo: '' },
+  { id: 4, accountId: 1, date: '2026-07-19', dateLabel: '2026.07.19 (일)', time: '15:22', merchant: '지에스리테일(GS25)', category: '생활비', amount: -4_500, method: 'KB국민은행 여행통장', user: 'GS25', balanceAfter: 4_950_500, memo: '' },
+  { id: 5, accountId: 1, date: '2026-07-19', dateLabel: '2026.07.19 (일)', time: '17:13', merchant: '쿠팡이츠', category: '식비', amount: -5_000, method: 'KB국민은행 여행통장', user: '쿠팡이츠', balanceAfter: 4_945_500, memo: '' },
+  { id: 6, accountId: 1, date: '2026-07-19', dateLabel: '2026.07.19 (일)', time: '20:30', merchant: '7월 급여', category: '급여', amount: 2_500_000, method: 'KB국민은행 여행통장', user: 'TRIPASS', balanceAfter: 5_200_000, memo: '7월 급여 입금' },
+  { id: 7, accountId: 3, date: '2026-07-17', dateLabel: '2026.07.17 (금)', time: '12:30', merchant: '교통카드 충전', category: '교통비', amount: -50_000, method: '카카오뱅크 입출금통장', user: '카카오페이', balanceAfter: 4_250_000, memo: '' },
 ]
 
 const fixedExpenseSeed = [
@@ -66,9 +66,9 @@ export const useAssetStore = defineStore('asset', () => {
   const prepaidExpenses = reactive(saved?.prepaidExpenses ?? prepaidSeed.map((item) => ({ ...item })))
   const transactionFilter = ref(saved?.transactionFilter ?? 'all')
   const transactionPeriod = ref(saved?.transactionPeriod ?? '1month')
-  const transactionStartDate = ref(saved?.transactionStartDate ?? '2024-06-20')
-  const transactionEndDate = ref(saved?.transactionEndDate ?? '2024-07-19')
-  const selectedDate = ref(saved?.selectedDate ?? '2024-07-19')
+  const transactionStartDate = ref(saved?.transactionStartDate ?? '2026-06-20')
+  const transactionEndDate = ref(saved?.transactionEndDate ?? '2026-07-19')
+  const selectedDate = ref(saved?.selectedDate ?? '2026-07-19')
   const selectedPrepaidScope = ref(saved?.selectedPrepaidScope ?? 'ALL')
 
   const totalAssets = computed(() => accounts.reduce((sum, item) => sum + Number(item.balance || 0), 0))

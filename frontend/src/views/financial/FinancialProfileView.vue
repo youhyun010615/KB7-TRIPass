@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useFinancialScheduleStore } from '@/stores/financialSchedule'
+import api from '@/api'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,10 +12,16 @@ const scheduleStore = useFinancialScheduleStore()
 
 const requestedStep = Number(route.query.step)
 const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= 8 ? requestedStep : 0)
-const selectedBanks = ref(['신한은행', 'KB국민은행', '우리은행', '카카오뱅크', '토스뱅크'])
-const selectedCertificate = ref('카카오인증서')
-const agreed = ref(true)
-const connectionProgress = ref(67)
+
+const banks = ref([])
+const banksError = ref(false)
+const selectedBank = ref(null)
+const loginId = ref('')
+const password = ref('')
+const linkedAccounts = ref([])
+const connectionProgress = ref(0)
+const connectionError = ref('')
+
 const salaryItems = ref([
   {
     id: 1,
@@ -39,28 +46,11 @@ const categories = ref([
   { id: 6, name: '기타', icon: '…', amount: '100,000', tone: 'gray' },
 ])
 
-const banks = [
-  { name: '신한은행', mark: 'S', tone: 'mint' },
-  { name: 'KB국민은행', mark: 'K', tone: 'yellow' },
-  { name: '우리은행', mark: 'W', tone: 'blue' },
-  { name: '하나은행', mark: 'H', tone: 'green', pending: true },
-  { name: '카카오뱅크', mark: 'K', tone: 'yellow' },
-  { name: '토스뱅크', mark: 'T', tone: 'navy' },
-]
-
-const certificates = [
-  { name: '카카오인증서', mark: 'D', tone: 'kakao', description: '간편하고 안전한 카카오톡 인증서', badge: '간편인증' },
-  { name: '네이버인증서', mark: 'N', tone: 'naver' },
-  { name: '금융인증서', mark: '▣', tone: 'neutral' },
-  { name: '공동인증서', mark: '◇', tone: 'neutral' },
-]
 
 const salaryTotal = computed(() => salaryItems.value.reduce((sum, item) => sum + toNumber(item.amount), 0))
 const fixedTotal = computed(() => fixedExpenses.value.reduce((sum, item) => sum + toNumber(item.amount), 0))
 const hasValidFixedExpenseNames = computed(() => fixedExpenses.value.every((item) => item.name.trim()))
 const categoryTotal = computed(() => categories.value.reduce((sum, item) => sum + toNumber(item.amount), 0))
-
-let connectionTimer
 
 function toNumber(value) {
   return Number(String(value ?? '').replace(/[^0-9]/g, '')) || 0
@@ -74,25 +64,45 @@ function updateAmount(item, event) {
   item.amount = formatNumber(event.target.value)
 }
 
-function toggleBank(bank) {
-  if (bank.pending) return
-  const index = selectedBanks.value.indexOf(bank.name)
-  if (index >= 0) selectedBanks.value.splice(index, 1)
-  else selectedBanks.value.push(bank.name)
+async function goToBankSelect() {
+  step.value = 2
+  if (banks.value.length > 0) return
+  banksError.value = false
+  try {
+    const res = await api.get('/accounts/institutions')
+    banks.value = res.data.data
+  } catch (e) {
+    console.error('은행 목록 로딩 실패', e)
+    banksError.value = true
+  }
 }
 
-function startConnection() {
+async function startConnection() {
+  connectionError.value = ''
   step.value = 4
-  connectionProgress.value = 12
-  clearInterval(connectionTimer)
-  connectionTimer = window.setInterval(() => {
-    connectionProgress.value = Math.min(connectionProgress.value + 11, 100)
-    if (connectionProgress.value >= 100) {
-      clearInterval(connectionTimer)
-      window.setTimeout(() => { step.value = 5 }, 350)
-    }
-  }, 220)
+  connectionProgress.value = 20
+
+  try {
+    connectionProgress.value = 50
+    const res = await api.post('/accounts/codef/connect', {
+      organizationCode: selectedBank.value.organizationCode,
+      organizationName: selectedBank.value.institutionName,
+      businessType: selectedBank.value.businessType,
+      loginType: '1',
+      loginId: loginId.value,
+      password: password.value,
+    })
+    linkedAccounts.value = res.data.data
+    connectionProgress.value = 100
+    setTimeout(() => { step.value = 5 }, 350)
+  } catch (e) {
+    const msg = e.response?.data?.message ?? '연동에 실패했어요. 아이디/비밀번호를 확인해주세요.'
+    connectionError.value = msg
+    step.value = 3
+    connectionProgress.value = 0
+  }
 }
+
 
 function addSalary() {
   salaryItems.value.push({
@@ -130,7 +140,10 @@ function completeProfile() {
   router.replace('/')
 }
 
-onBeforeUnmount(() => clearInterval(connectionTimer))
+onMounted(() => {
+  if (step.value === 2) goToBankSelect()
+})
+
 </script>
 
 <template>
@@ -182,63 +195,67 @@ onBeforeUnmount(() => clearInterval(connectionTimer))
         <div class="page-content account-intro">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
           <p class="subcopy">연동할 금융사를 선택해 주세요</p>
-          <button class="load-bank-card" @click="step = 2">
+          <button class="load-bank-card" @click="goToBankSelect">
             <span class="bank-building">▦</span>
             <span><strong>은행</strong><small>모든 금융사</small></span>
             <b>›</b>
           </button>
           <div class="security-note"><span>▣</span><div><strong>안전하게 연결해요</strong><p>인증 정보는 연결 과정에서만 사용됩니다</p></div></div>
         </div>
-        <div class="sticky-action"><button class="primary-button" @click="step = 2">다음</button></div>
+        <div class="sticky-action"><button class="primary-button" @click="goToBankSelect">다음</button></div>
       </template>
 
       <template v-else-if="step === 2">
-        <header class="simple-header"><button @click="step = 1">‹</button><strong>은행 선택</strong></header>
+        <header class="simple-header"><button @click="route.query.from === 'asset' ? router.back() : step = 1">‹</button><strong>은행 선택</strong></header>
         <div class="page-content">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
-          <div class="selection-caption"><span>연동할 금융사를 선택해 주세요</span><b>복수 선택 가능</b></div>
-          <div class="bank-grid">
+          <div class="selection-caption"><span>연동할 금융사를 선택해 주세요</span></div>
+          <div v-if="banksError" style="text-align:center; padding: 40px 0; color: #94a3b8; font-size: 12px;">
+            은행 목록을 불러오지 못했어요.<br>
+            <button type="button" style="margin-top:12px; padding:8px 16px; border-radius:8px; background:#edf4ff; color:#286dd8; font-size:12px; font-weight:700;" @click="banks = []; goToBankSelect()">다시 시도</button>
+          </div>
+          <div v-else-if="banks.length === 0" style="text-align:center; padding: 40px 0; color: #94a3b8; font-size: 12px;">
+            불러오는 중...
+          </div>
+          <div v-else class="bank-grid">
             <button
-              v-for="bank in banks"
-              :key="bank.name"
-              class="bank-option"
-              :class="{ selected: selectedBanks.includes(bank.name), pending: bank.pending }"
-              @click="toggleBank(bank)"
+                v-for="bank in banks"
+                :key="bank.organizationCode"
+                class="bank-option"
+                :class="{ selected: selectedBank?.organizationCode === bank.organizationCode }"
+                @click="selectedBank = bank"
             >
-              <span class="bank-mark" :class="bank.tone">{{ bank.mark }}</span>
-              <strong>{{ bank.name }}</strong>
-              <i v-if="selectedBanks.includes(bank.name)">✓</i>
-              <small v-if="bank.pending">연동중</small>
+              <span class="bank-mark navy">{{ bank.institutionName.charAt(0) }}</span>
+              <strong>{{ bank.institutionName }}</strong>
+              <i v-if="selectedBank?.organizationCode === bank.organizationCode">✓</i>
             </button>
           </div>
         </div>
-        <div class="sticky-action"><button class="primary-button" :disabled="selectedBanks.length === 0" @click="step = 3">확인</button></div>
+        <div class="sticky-action">
+          <button class="primary-button" :disabled="!selectedBank" @click="step = 3">확인</button>
+        </div>
       </template>
 
       <template v-else-if="step === 3">
-        <div class="terms-backdrop">
-          <header class="simple-header"><button @click="step = 2">‹</button><strong>약관동의</strong></header>
-          <div class="terms-copy"><h3>정확한 내역 확인을 위한 동의(선택)</h3><p>동의하면 아래 정보를 볼 수 있어요.</p><small>(정보 제공은 확인의 목적과 관련하여 결정해주세요)</small></div>
+        <header class="simple-header"><button @click="step = 2">‹</button><strong>계좌 연동</strong></header>
+        <div class="page-content">
+          <h2>{{ selectedBank?.institutionName }} 로그인 정보를<br>입력해 주세요</h2>
+          <p class="subcopy">인증 정보는 연결 과정에서만 사용됩니다</p>
+          <p v-if="connectionError" style="margin-top: 12px; color: #e5484d; font-size: 12px;">{{ connectionError }}</p>
+          <div style="margin-top: 24px; display: grid; gap: 12px;">
+            <label class="full-field">
+              아이디
+              <input v-model="loginId" placeholder="인터넷뱅킹 아이디" autocomplete="off" />
+            </label>
+            <label class="full-field">
+              비밀번호
+              <input v-model="password" type="password" placeholder="인터넷뱅킹 비밀번호" autocomplete="off" />
+            </label>
+          </div>
         </div>
-        <section class="certificate-sheet">
-          <div class="sheet-heading"><h2>인증서 선택</h2><button @click="step = 2">×</button></div>
-          <button
-            v-for="certificate in certificates"
-            :key="certificate.name"
-            class="certificate-option"
-            :class="{ selected: selectedCertificate === certificate.name }"
-            @click="selectedCertificate = certificate.name"
-          >
-            <span class="certificate-mark" :class="certificate.tone">{{ certificate.mark }}</span>
-            <span><strong>{{ certificate.name }}</strong><em v-if="certificate.badge">{{ certificate.badge }}</em><small v-if="certificate.description">{{ certificate.description }}</small></span>
-            <b v-if="selectedCertificate === certificate.name">›</b>
-          </button>
-          <label v-if="selectedCertificate === '카카오인증서'" class="agreement-row">
-            <input v-model="agreed" type="checkbox">
-            <span>[필수] 정보제공처에 대한 개인정보 제공 동의</span><b>›</b>
-          </label>
-          <button class="primary-button sheet-button" :disabled="!selectedCertificate || !agreed" @click="startConnection">동의</button>
-        </section>
+        <div class="sticky-action">
+          <button class="primary-button" :disabled="!loginId || !password" @click="startConnection">연동하기</button>
+        </div>
       </template>
 
       <template v-else-if="step === 4">
@@ -269,12 +286,15 @@ onBeforeUnmount(() => clearInterval(connectionTimer))
             <div class="completion-check">✓</div>
             <h2>자산 연결이 완료됐어요</h2>
             <span>여행 자금 계획에 사용할 자산을 확인했어요.</span>
-            <div class="complete-stat"><span>연결 금융기관</span><strong>6개</strong></div>
-            <div class="complete-stat"><span>불러온 계좌 · 자산</span><strong>11개</strong></div>
+            <div class="complete-stat"><span>연결 금융기관</span><strong>{{ selectedBank?.institutionName }}</strong></div>
+            <div class="complete-stat"><span>불러온 계좌 수</span><strong>{{ linkedAccounts.length }}개</strong></div>
             <div class="barcode">|||| ||| ||||| || ||||</div>
           </div>
         </div>
-        <div class="sticky-action split"><button class="secondary-button" @click="step = 2">자산연결추가</button><button class="primary-button" @click="step = 6">확인</button></div>
+        <div class="sticky-action split">
+          <button class="secondary-button" @click="selectedBank = null; loginId = ''; password = ''; step = 2">자산연결추가</button>
+          <button class="primary-button" @click="route.query.from === 'asset' ? router.replace('/asset') : step = 6">확인</button>
+        </div>
       </template>
 
       <template v-else-if="step === 6">

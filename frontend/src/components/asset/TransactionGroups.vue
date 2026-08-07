@@ -1,5 +1,5 @@
 <script setup>
-defineProps({ groups: { type: Array, required: true }, showIcons: { type: Boolean, default: true } })
+defineProps({ groups: { type: Array, required: true }, showIcons: { type: Boolean, default: true }, loading: { type: Boolean, default: false } })
 defineEmits(['select'])
 const money = (value) => `${value > 0 ? '+' : '-'}${Math.abs(value).toLocaleString('ko-KR')}원`
 const categoryIcons = { 급여: '₩', 카페: '☕', 식비: '🍴', 생활비: '🛒', 교통비: '🚌', 자동이체: '↻' }
@@ -15,7 +15,8 @@ const categoryIcons = { 급여: '₩', 카페: '☕', 식비: '🍴', 생활비:
         <span class="amount"><strong :class="item.amount > 0 ? 'deposit' : 'withdrawal'">{{ money(item.amount) }}</strong><time>{{ item.time }}</time></span>
       </button>
     </section>
-    <p v-if="!groups.length" class="empty">조회된 거래내역이 없어요.</p>
+    <p v-if="loading" class="empty">거래내역을 불러오는 중...</p>
+    <p v-else-if="!groups.length" class="empty">조회된 거래내역이 없어요.</p>
   </div>
 </template>
 

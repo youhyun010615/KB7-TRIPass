@@ -1,14 +1,34 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import AssetTicket from '@/components/asset/AssetTicket.vue'
 import { useAssetStore } from '@/stores/asset'
+import api from '@/api'
 
 const router = useRouter()
 const asset = useAssetStore()
 const editingAccounts = ref(false)
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
+
+const realAccounts = ref([])
+const selectedId = ref(null)
+
+const ACCOUNT_TYPE_LABEL = { CHECKING: '입출금', DEPOSIT: '예금', SAVING: '적금' }
+
+const totalBalance = computed(() =>
+  asset.totalAssets + realAccounts.value.reduce((sum, acc) => sum + Number(acc.balance ?? 0), 0)
+)
+const totalAccountCount = computed(() => asset.accounts.length + realAccounts.value.length)
+
+onMounted(async () => {
+  try {
+    const res = await api.get('/accounts')
+    realAccounts.value = res.data.data ?? []
+  } catch (e) {
+    console.error('계좌 목록 조회 실패', e)
+  }
+})
 
 const menus = [
   { icon: '◎', title: '여행 목표 자금 관리', desc: '목표 설정 및 현황', path: '/savings' },
@@ -22,19 +42,29 @@ function removeAccount(account) {
   if (!window.confirm(`${account.name} 계좌 연결을 삭제할까요?`)) return
   asset.removeAccount(account.id)
 }
+
+async function removeRealAccount(acc) {
+  if (!window.confirm(`${acc.accountName} 계좌 연결을 해제할까요?`)) return
+  try {
+    await api.delete(`/accounts/${acc.id}`)
+    realAccounts.value = realAccounts.value.filter(a => a.id !== acc.id)
+  } catch (e) {
+    alert('계좌 연결 해제에 실패했어요.')
+  }
+}
 </script>
 
 <template>
   <main class="asset-page">
     <div class="shell">
       <h1>자산관리</h1>
-      <AssetTicket label="전체 보유금액" :amount="asset.totalAssets" :caption="`${asset.accounts.length}개 계좌 연동　·　출국까지 D-186`" action="거래내역 상세보기" @action="router.push('/asset/transactions')" />
+      <AssetTicket label="전체 보유금액" :amount="totalBalance" :caption="`${totalAccountCount}개 계좌 연동　·　출국까지 D-186`" action="거래내역 상세보기" @action="router.push('/asset/transactions')" />
 
       <div class="section-title"><h2>연동 계좌</h2><div><button type="button" @click="editingAccounts = !editingAccounts">{{ editingAccounts ? '완료' : '삭제하기' }}</button><button type="button" @click="router.push({ path: '/profile/financial', query: { step: 2, from: 'asset' } })">＋ 계좌 추가</button></div></div>
       <section class="accounts">
-        <article v-for="account in asset.accounts" :key="account.id" :class="{ primary: account.primary }">
+        <article v-for="account in asset.accounts" :key="account.id" :class="{ primary: selectedId === account.id }">
           <button v-if="editingAccounts" class="delete-account" type="button" :aria-label="`${account.name} 계좌 삭제`" @click="removeAccount(account)">−</button>
-          <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="router.push(`/asset/accounts/${account.id}`)">
+          <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="selectedId = account.id; router.push(`/asset/accounts/${account.id}`)">
             <span class="bank" :style="{ background: account.tone, color: account.accent }">{{ account.symbol }}</span>
             <span><b>{{ account.name }}</b><small>{{ account.type }} · {{ account.number }}</small></span>
             <strong>{{ money(account.balance) }}</strong>
@@ -42,6 +72,20 @@ function removeAccount(account) {
         </article>
         <p v-if="!asset.accounts.length" class="empty-account">연동된 계좌가 없어요.<br>계좌를 추가해 자산을 한눈에 확인해 보세요.</p>
       </section>
+
+      <template v-if="realAccounts.length > 0">
+        <div class="section-title" style="margin-top:18px"><h2>연동된 실제 계좌</h2></div>
+        <section class="accounts">
+          <article v-for="acc in realAccounts" :key="acc.id" :class="{ primary: selectedId === acc.id }">
+            <button v-if="editingAccounts" class="delete-account" type="button" @click="removeRealAccount(acc)">−</button>
+            <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="selectedId = acc.id; router.push({ path: `/asset/accounts/${acc.id}`, query: { isReal: 'true', name: acc.accountName, number: acc.accountNumber, type: acc.accountType } })">
+              <span class="bank" style="background:#e8f0fe;color:#1a56db">{{ acc.accountName?.charAt(0) ?? '계' }}</span>
+              <span><b>{{ acc.accountName }}</b><small>{{ ACCOUNT_TYPE_LABEL[acc.accountType] ?? acc.accountType }} · {{ acc.accountNumber }}</small></span>
+              <strong>{{ money(acc.balance) }}</strong>
+            </button>
+          </article>
+        </section>
+      </template>
 
       <h2 class="menu-title">자산관리 메뉴</h2>
       <section class="menus">
