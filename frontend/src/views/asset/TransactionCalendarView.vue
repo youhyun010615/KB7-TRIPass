@@ -1,8 +1,9 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
 import { useAssetStore } from '@/stores/asset'
+import api from '@/api'
 
 const router = useRouter()
 const asset = useAssetStore()
@@ -18,25 +19,92 @@ const calendarDays = computed(() => {
   const lastDate = new Date(displayYear.value, displayMonth.value, 0).getDate()
   return [...Array(firstDay).fill(null), ...Array.from({ length: lastDate }, (_, index) => index + 1)]
 })
-const visibleTransactions = computed(() => asset.transactions.filter((item) => {
-  if (filter.value === 'deposit') return item.amount > 0
-  if (filter.value === 'withdrawal') return item.amount < 0
-  return true
-}))
-const dailyTotals = computed(() => visibleTransactions.value.filter((item) => item.date.startsWith(monthKey.value)).reduce((map, item) => {
-  const day = Number(item.date.slice(-2))
-  map[day] = (map[day] || 0) + item.amount
+
+const loading = ref(false)
+const calendarData = ref([])
+const realTransactions = ref([])
+const accountMap = ref({})
+const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+async function fetchCalendar() {
+  try {
+    const params = { year: displayYear.value, month: displayMonth.value }
+    if (filter.value !== 'all') params.type = filter.value.toUpperCase()
+    const res = await api.get('/transactions/calendar', { params })
+    calendarData.value = res.data.data ?? []
+  } catch (e) { console.error('캘린더 조회 실패', e) }
+}
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      fetchCalendar(),
+      api.get('/transactions').then(res => { realTransactions.value = res.data.data ?? [] }),
+      api.get('/accounts').then(res => {
+        accountMap.value = Object.fromEntries((res.data.data ?? []).map(a => [a.id, a.accountName]))
+      }),
+    ])
+  } catch (e) { console.error('데이터 조회 실패', e) }
+  finally { loading.value = false }
+})
+
+watch([displayYear, displayMonth, filter], fetchCalendar)
+
+const dailyTotals = computed(() => {
+  const map = {}
+  calendarData.value.forEach(item => {
+    const day = Number(item.date.slice(-2))
+    const net = Number(item.totalDeposit || 0) - Number(item.totalWithdrawal || 0)
+    map[day] = (map[day] || 0) + net
+  })
+  asset.transactions.forEach(item => {
+    if (!item.date.startsWith(monthKey.value)) return
+    if (filter.value === 'deposit' && item.amount <= 0) return
+    if (filter.value === 'withdrawal' && item.amount >= 0) return
+    const day = Number(item.date.slice(-2))
+    map[day] = (map[day] || 0) + item.amount
+  })
   return map
-}, {}))
-const monthlyGroups = computed(() => visibleTransactions.value
-  .filter((item) => item.date.startsWith(monthKey.value))
-  .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
-  .reduce((groups, item) => {
-    const group = groups.find((entry) => entry.date === item.date)
-    if (group) group.items.push(item)
-    else groups.push({ date: item.date, label: item.dateLabel, items: [item] })
-    return groups
-  }, []))
+})
+
+const monthlyGroups = computed(() => {
+  const items = []
+  asset.transactions.forEach(item => {
+    if (!item.date.startsWith(monthKey.value)) return
+    if (filter.value === 'deposit' && item.amount <= 0) return
+    if (filter.value === 'withdrawal' && item.amount >= 0) return
+    items.push({ ...item, _isReal: false })
+  })
+  realTransactions.value.forEach(t => {
+    const [y, mo, d] = Array.isArray(t.transactionDate) ? t.transactionDate : t.transactionDate.split('-').map(Number)
+    const date = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    if (!date.startsWith(monthKey.value)) return
+    const amount = t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount)
+    if (filter.value === 'deposit' && amount <= 0) return
+    if (filter.value === 'withdrawal' && amount >= 0) return
+    const jsDate = new Date(y, mo - 1, d)
+    const label = `${date.replaceAll('-', '.')} (${DAYS[jsDate.getDay()]})`
+    const [h = 0, m = 0] = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00').split(':').map(Number)
+    items.push({
+      id: t.id, date, dateLabel: label,
+      merchant: t.merchantName ?? '(내용없음)',
+      category: '기타', method: accountMap.value[t.accountId] ?? '',
+      amount, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+      balanceAfter: Number(t.balanceAfter ?? 0), memo: t.memo ?? '',
+      _isReal: true,
+    })
+  })
+  return items
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.time ?? '').localeCompare(a.time ?? ''))
+    .reduce((groups, item) => {
+      const group = groups.find(e => e.date === item.date)
+      if (group) group.items.push(item)
+      else groups.push({ date: item.date, label: item.dateLabel, items: [item] })
+      return groups
+    }, [])
+})
+
 function selectDay(day) { asset.selectedDate = `${monthKey.value}-${String(day).padStart(2, '0')}` }
 function moveMonth(offset) {
   const next = new Date(displayYear.value, displayMonth.value - 1 + offset, 1)
@@ -62,7 +130,7 @@ function moveMonth(offset) {
         </span>
       </div>
     </section>
-    <TransactionGroups :groups="monthlyGroups" @select="router.push(`/asset/transactions/${$event.id}`)" />
+    <TransactionGroups :groups="monthlyGroups" :loading="loading" @select="$event._isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
   </main>
 </template>
 
