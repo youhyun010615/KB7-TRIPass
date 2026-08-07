@@ -187,7 +187,7 @@ public class AssetService {
             body.put("startDate", req.getStartDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
             body.put("endDate", req.getEndDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
             body.put("orderBy", "0");
-            body.put("inquiryType", "1");
+            body.put("inquiryType", "0");
 
             Map<String, Object> result = CodefUtil.callApi(accessToken, "/v1/kr/bank/p/account/transaction-list", body);
             Map<String, Object> resultCode = (Map<String, Object>) result.get("result");

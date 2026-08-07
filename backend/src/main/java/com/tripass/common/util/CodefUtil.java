@@ -21,7 +21,7 @@ import java.util.Map;
 public class CodefUtil {
 
     private static final String PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkBRQKFiP1f8XFUwKgI8G3i5EIttN+fIPJE2PKWSG+Im6aeUrzv+0bDs8SUWsO18H7KUUmVH46UN2LtawJtErzuiH0+ADl7OW6AGsp25lx0d9hOJTi1cRIL0jcDo5VmdE6wPdNgbdkZJ/Ee5J4GwseS+VrhwLz/Si72oWJtWYeS0hKl3Lb43BaNuPgOcTKjPUsDlieaFjPgcwrJ5voTxEGJAevjaW7+s9r4GiB9xd5Pmeswi/wuoR59rvpQN8J1YLGKzgmdn67dZoJ8lTN9lQyVHbOQvfIfSBcQOHDBoqJEILfmWoRSmhKBCJJPmwTtEskDFQF6YKDeS6laEvvFWtuwIDAQAB";
-    private static final String SANDBOX_URL = "https://sandbox.codef.io";
+    private static final String SANDBOX_URL = "https://development.codef.io";
     private static final String TOKEN_URL = "https://oauth.codef.io/oauth/token";
 
     public static String encryptRSA(String plainText) throws Exception {
@@ -32,7 +32,7 @@ public class CodefUtil {
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-        return URLEncoder.encode(Base64.getEncoder().encodeToString(encrypted), "UTF-8");
+        return Base64.getEncoder().encodeToString(encrypted);
     }
 
     public static String getAccessToken(String clientId, String clientSecret) throws Exception {
@@ -68,6 +68,10 @@ public class CodefUtil {
         CloseableHttpResponse response = client.execute(post);
         String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
         client.close();
+
+        if (json.startsWith("%")) {
+            json = java.net.URLDecoder.decode(json, StandardCharsets.UTF_8);
+        }
 
         return mapper.readValue(json, Map.class);
     }
