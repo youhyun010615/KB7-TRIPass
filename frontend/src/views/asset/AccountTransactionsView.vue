@@ -13,8 +13,8 @@ const isReal = route.query.isReal === 'true'
 const filter = ref('all')
 const today = new Date().toISOString().slice(0, 10)
 const threeMonthsAgo = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().slice(0, 10) })()
-const startDate = ref(isReal ? threeMonthsAgo : '2024-06-20')
-const endDate = ref(isReal ? today : '2024-07-19')
+const startDate = ref(isReal ? threeMonthsAgo : '2026-06-20')
+const endDate = ref(isReal ? today : '2026-07-19')
 const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
 const realAccount = ref({ name: '', number: '', type: '', bank: '', balance: 0 })
 const realTransactions = ref([])
