@@ -36,6 +36,16 @@ function removeAccount(account) {
   if (!window.confirm(`${account.name} 계좌 연결을 삭제할까요?`)) return
   asset.removeAccount(account.id)
 }
+
+async function removeRealAccount(acc) {
+  if (!window.confirm(`${acc.accountName} 계좌 연결을 해제할까요?`)) return
+  try {
+    await api.delete(`/accounts/${acc.id}`)
+    realAccounts.value = realAccounts.value.filter(a => a.id !== acc.id)
+  } catch (e) {
+    alert('계좌 연결 해제에 실패했어요.')
+  }
+}
 </script>
 
 <template>
@@ -61,7 +71,8 @@ function removeAccount(account) {
         <div class="section-title" style="margin-top:18px"><h2>연동된 실제 계좌</h2></div>
         <section class="accounts">
           <article v-for="acc in realAccounts" :key="acc.id">
-            <button class="account-main" type="button" @click="router.push({ path: `/asset/accounts/${acc.id}`, query: { isReal: 'true', name: acc.accountName, number: acc.accountNumber, type: acc.accountType } })">
+            <button v-if="editingAccounts" class="delete-account" type="button" @click="removeRealAccount(acc)">−</button>
+            <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="router.push({ path: `/asset/accounts/${acc.id}`, query: { isReal: 'true', name: acc.accountName, number: acc.accountNumber, type: acc.accountType } })">
               <span class="bank" style="background:#e8f0fe;color:#1a56db">{{ acc.accountName?.charAt(0) ?? '계' }}</span>
               <span><b>{{ acc.accountName }}</b><small>{{ ACCOUNT_TYPE_LABEL[acc.accountType] ?? acc.accountType }} · {{ acc.accountNumber }}</small></span>
               <strong>{{ money(acc.balance) }}</strong>
