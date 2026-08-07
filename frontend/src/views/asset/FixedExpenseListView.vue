@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import BottomNav from '@/components/common/BottomNav.vue'
 import AssetTicket from '@/components/asset/AssetTicket.vue'
 import { useAssetStore } from '@/stores/asset'
 
@@ -20,9 +21,9 @@ const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
       </button>
     </section>
     <button class="add" @click="router.push('/asset/fixed-expenses/new')">＋ 고정지출 항목 추가하기</button>
-  </div></main>
+  </div><BottomNav /></main>
 </template>
 
 <style scoped>
-.page{min-height:100vh;background:#e7ecf4;color:#10192d}.shell{width:min(100%,390px);min-height:100vh;margin:auto;padding:52px 18px 28px;background:#f7f5ef}header{display:flex;align-items:center;margin-bottom:18px}header button{font-size:25px}h1{flex:1;text-align:center;font-size:18px;font-weight:900;padding-right:20px}.list{margin-top:16px}.list button{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;width:100%;margin-bottom:9px;padding:12px;border:1px solid #e3e7ee;border-radius:14px;background:#fff;text-align:left;box-shadow:0 4px 12px #1b35650a}.icon{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;font-weight:900}.list b,.list small{display:block}.list b{font-size:12px}.list small{margin-top:4px;color:#9aa4b4;font-size:9px}.list strong{font-size:11px;white-space:nowrap}.list i{color:#94a3b8;font-size:18px}.add{width:100%;padding:14px;border:1px dashed #9cb6ec;border-radius:13px;background:#fff;color:#2457b8;font-size:12px;font-weight:900}
+.page{min-height:100vh;padding-bottom:80px;background:#e7ecf4;color:#10192d}.shell{width:min(100%,390px);min-height:100vh;margin:auto;padding:52px 18px 28px;background:#f7f5ef}header{display:flex;align-items:center;margin-bottom:18px}header button{font-size:25px}h1{flex:1;text-align:center;font-size:18px;font-weight:900;padding-right:20px}.list{margin-top:16px}.list button{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;width:100%;margin-bottom:9px;padding:12px;border:1px solid #e3e7ee;border-radius:14px;background:#fff;text-align:left;box-shadow:0 4px 12px #1b35650a}.icon{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;font-weight:900}.list b,.list small{display:block}.list b{font-size:12px}.list small{margin-top:4px;color:#9aa4b4;font-size:9px}.list strong{font-size:11px;white-space:nowrap}.list i{color:#94a3b8;font-size:18px}.add{width:100%;padding:14px;border:1px dashed #9cb6ec;border-radius:13px;background:#fff;color:#2457b8;font-size:12px;font-weight:900}
 </style>

@@ -57,6 +57,7 @@ const certificates = [
 
 const salaryTotal = computed(() => salaryItems.value.reduce((sum, item) => sum + toNumber(item.amount), 0))
 const fixedTotal = computed(() => fixedExpenses.value.reduce((sum, item) => sum + toNumber(item.amount), 0))
+const hasValidFixedExpenseNames = computed(() => fixedExpenses.value.every((item) => item.name.trim()))
 const categoryTotal = computed(() => categories.value.reduce((sum, item) => sum + toNumber(item.amount), 0))
 
 let connectionTimer
@@ -107,7 +108,7 @@ function addSalary() {
 function addFixedExpense() {
   fixedExpenses.value.push({
     id: Date.now(),
-    name: '새 고정지출',
+    name: '',
     day: '',
     amount: '',
     account: '연결 계좌를 선택해 주세요',
@@ -300,13 +301,14 @@ onBeforeUnmount(() => clearInterval(connectionTimer))
           <h2>매달 정해진 날짜에 나가는<br>고정 지출을 등록해 주세요</h2>
           <div class="summary-ticket"><small>월 고정지출 합계</small><strong>{{ formatNumber(fixedTotal) }}원</strong></div>
           <article v-for="item in fixedExpenses" :key="item.id" class="form-card expense-card">
-            <div class="form-card-title"><span class="feature-icon" :class="item.tone">{{ item.icon }}</span><input v-model="item.name" aria-label="고정지출명"><button @click="removeItem(fixedExpenses, item.id)">삭제</button></div>
+            <div class="form-card-title"><span class="feature-icon" :class="item.tone">{{ item.icon }}</span><strong>고정지출 항목</strong><button @click="removeItem(fixedExpenses, item.id)">삭제</button></div>
+            <label class="full-field expense-name">고정지출 이름 <em>*</em><input v-model.trim="item.name" placeholder="예: 월세, 통신비" aria-label="고정지출 이름"></label>
             <div class="field-grid two"><label>납부일<input v-model="item.day" inputmode="numeric"><em>일</em></label><label>금액<input :value="item.amount" inputmode="numeric" @input="updateAmount(item, $event)"><em>원</em></label></div>
             <div class="field-grid account-memo"><label>연결 계좌<select v-model="item.account"><option>하나은행 급여계좌 ****4821</option><option>KB국민은행 ****1234</option><option>신한은행 ****8888</option></select></label><label>메모 (선택)<input v-model="item.memo"></label></div>
           </article>
           <button class="add-row" @click="addFixedExpense">＋ 고정지출 항목 추가하기</button>
         </div>
-        <div class="sticky-action"><button class="primary-button" @click="step = 8">다음</button></div>
+        <div class="sticky-action"><button class="primary-button" :disabled="!hasValidFixedExpenseNames" @click="step = 8">다음</button></div>
       </template>
 
       <template v-else>
@@ -370,7 +372,7 @@ button { border: 0; cursor: pointer; }
 .step-progress { padding: 0 24px 16px; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }.step-progress i { height: 4px; border-radius: 4px; background: #dde3ee; }.step-progress i:first-child, .step-progress i.filled { background: #263f8c; }
 .form-content, .category-content { padding: 0 20px 100px; }.form-content h2, .category-content h2 { margin: 0; font-size: 19px; line-height: 1.45; }.summary-ticket { position: relative; margin: 16px 0 18px; padding: 15px 18px; min-height: 88px; border-radius: 18px; }.summary-ticket small { display: block; margin-bottom: 7px; color: #c8d6ff; font-size: 9px; }.summary-ticket strong { display: block; font-size: 25px; }.summary-ticket > span { position: absolute; right: 18px; bottom: 16px; font-size: 10px; }
 .form-card { margin-bottom: 10px; padding: 15px; border-radius: 17px; background: white; box-shadow: 0 6px 18px rgba(15,23,42,.08); }.form-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }.form-card-title input { min-width: 0; flex: 1; border: 0; outline: none; color: #111827; font-size: 13px; font-weight: 800; }.form-card-title button { padding: 5px; color: #e5484d; background: transparent; font-size: 9px; }.field-grid { display: grid; gap: 10px; }.field-grid.two { grid-template-columns: .75fr 1.25fr; }.field-grid.account-memo { grid-template-columns: 1.8fr .8fr; margin-top: 10px; }.field-grid label, .full-field { position: relative; color: #64748b; font-size: 9px; }.field-grid input, .field-grid select, .full-field input, .full-field select { width: 100%; height: 43px; margin-top: 6px; padding: 0 13px; border: 1px solid #e5eaf2; border-radius: 10px; outline: 0; color: #111827; background: white; font-size: 11px; }.field-grid em { position: absolute; right: 11px; bottom: 13px; color: #94a3b8; font-size: 9px; font-style: normal; }.field-grid input { padding-right: 27px; }.full-field { display: block; margin-top: 10px; }.add-row { width: 100%; height: 48px; border-radius: 14px; color: #0066ff; background: #dde5ff; font-size: 12px; font-weight: 800; }
-.fixed-form { padding-bottom: 90px; }.expense-card .feature-icon { width: 38px; height: 38px; }.expense-card .form-card-title { margin-bottom: 10px; }
+.fixed-form { padding-bottom: 90px; }.expense-card .feature-icon { width: 38px; height: 38px; }.expense-card .form-card-title { margin-bottom: 10px; }.expense-card .form-card-title strong { flex: 1; color: #111827; font-size: 13px; }.expense-name { margin: 0 0 10px; }.expense-name > em { color: #e5484d; font-style: normal; }.expense-name input:focus { border-color: #263f8c; }
 .category-content > .subcopy { margin-bottom: 23px; }.category-row { height: 66px; margin-bottom: 15px; padding: 10px 11px; display: flex; align-items: center; gap: 14px; border: 1px solid #e5eaf2; border-radius: 14px; background: white; }.category-row > div { flex: 1; }.category-row strong, .category-row small { display: block; }.category-row strong { font-size: 13px; }.category-row small { margin-top: 5px; color: #64748b; font-size: 9px; }.category-row label { display: flex; align-items: center; gap: 6px; }.category-row input { width: 130px; height: 44px; padding: 0 12px; border: 1.5px solid #d6dce7; border-radius: 11px; outline: none; color: #111827; background: white; text-align: right; font-size: 16px; font-weight: 800; }.category-row em { color: #96a1b5; font-size: 11px; font-style: normal; }.category-total { min-height: 76px; margin-top: 38px; padding: 15px 18px; display: flex; justify-content: space-between; align-items: flex-start; border-radius: 16px; color: #0066ff; background: #eef2ff; font-size: 11px; font-weight: 800; }.category-total strong { color: #263f8c; font-size: 20px; }
 @media (min-width: 500px) { .finance-shell { min-height: 879px; margin: 20px 0; border-radius: 28px; box-shadow: 0 10px 28px rgba(15,23,42,.16); } }
 </style>
