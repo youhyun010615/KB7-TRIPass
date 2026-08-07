@@ -338,6 +338,12 @@ public class ExchangeRateService {
         for (ExternalExchangeRateDto dto : dtoList) {
             try {
                 String curCode = extractCurrencyCode(dto.getCurUnit());
+                
+                // KRW는 건너뜀
+                if ("KRW".equals(curCode)) {
+                    continue;
+                }
+
                 Long targetId = exchangeRateMapper.getCurrencyIdByCode(curCode);
 
                 if (targetId == null) {

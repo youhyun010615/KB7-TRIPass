@@ -58,7 +58,6 @@
                 ELSE 2 
             END,
             c.currency_code
-        LIMIT 10
     </select>
 
     <select id="getAlertsByUserId" resultType="ExchangeRateAlertResponseDto">
