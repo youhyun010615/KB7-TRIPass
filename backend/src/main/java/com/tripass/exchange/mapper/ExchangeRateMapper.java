@@ -1,5 +1,6 @@
 package com.tripass.exchange.mapper;
 
+import com.tripass.exchange.domain.ExchangeMarketData;
 import com.tripass.exchange.domain.ExchangeRate;
 import com.tripass.exchange.domain.ExchangeRateAlert;
 import com.tripass.exchange.dto.*;
@@ -17,6 +18,9 @@ public interface ExchangeRateMapper {
     
     // Upsert를 위한 쿼리 (MyBatis XML에서 구현)
     void upsertExchangeRate(ExchangeRate exchangeRate);
+    
+    // 환전 시장 데이터 Upsert
+    void upsertMarketData(ExchangeMarketData marketData);
     
     // 통화 ID로 존재 여부 확인
     boolean existsCurrencyById(Long id);

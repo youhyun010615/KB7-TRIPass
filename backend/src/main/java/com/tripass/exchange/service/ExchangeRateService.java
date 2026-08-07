@@ -1,6 +1,12 @@
 package com.tripass.exchange.service;
 
 import org.springframework.dao.DuplicateKeyException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.tripass.exchange.domain.ExchangeMarketData;
+import org.springframework.dao.DuplicateKeyException;
 import com.tripass.exchange.domain.ExchangeRateAlert;
 import com.tripass.exchange.dto.*;
 import com.tripass.exchange.client.ExchangeRateClient;
@@ -21,6 +27,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,9 +37,61 @@ public class ExchangeRateService {
     private final ExchangeRateClient exchangeRateClient;
     private final ExchangeRateMapper exchangeRateMapper;
 
+    private static class CurrencyInfo {
+        String code;
+        int unit;
+        CurrencyInfo(String code, int unit) { this.code = code; this.unit = unit; }
+    }
+
+    private static final Map<String, CurrencyInfo> CURRENCY_INFO_MAP = Map.ofEntries(
+            entry("중국", new CurrencyInfo("CNY", 1)),
+            entry("일본", new CurrencyInfo("JPY", 100)),
+            entry("미국", new CurrencyInfo("USD", 1)),
+            entry("유럽연합", new CurrencyInfo("EUR", 1)),
+            entry("홍콩", new CurrencyInfo("HKD", 1)),
+            entry("대만", new CurrencyInfo("TWD", 1)),
+            entry("싱가폴", new CurrencyInfo("SGD", 1)),
+            entry("태국", new CurrencyInfo("THB", 1)),
+            entry("필리핀", new CurrencyInfo("PHP", 1)),
+            entry("베트남", new CurrencyInfo("VND", 100)),
+            entry("영국", new CurrencyInfo("GBP", 1)),
+            entry("호주", new CurrencyInfo("AUD", 1)),
+            entry("캐나다", new CurrencyInfo("CAD", 1)),
+            entry("브라질", new CurrencyInfo("BRL", 1)),
+            entry("칠레", new CurrencyInfo("CLP", 1)),
+            entry("멕시코", new CurrencyInfo("MXN", 1)),
+            entry("뉴질랜드", new CurrencyInfo("NZD", 1)),
+            entry("인도네시아", new CurrencyInfo("IDR", 100)),
+            entry("말레이시아", new CurrencyInfo("MYR", 1)),
+            entry("튀르키예", new CurrencyInfo("TRY", 1)),
+            entry("인도", new CurrencyInfo("INR", 1)),
+            entry("이스라엘", new CurrencyInfo("ILS", 1)),
+            entry("사우디", new CurrencyInfo("SAR", 1)),
+            entry("쿠웨이트", new CurrencyInfo("KWD", 1)),
+            entry("바레인", new CurrencyInfo("BHD", 1)),
+            entry("U.A.E", new CurrencyInfo("AED", 1)),
+            entry("카자흐스탄", new CurrencyInfo("KZT", 1)),
+            entry("파키스탄", new CurrencyInfo("PKR", 1)),
+            entry("방글라데시", new CurrencyInfo("BDT", 1)),
+            entry("브루나이", new CurrencyInfo("BND", 1)),
+            entry("오만", new CurrencyInfo("OMR", 1)),
+            entry("요르단", new CurrencyInfo("JOD", 1)),
+            entry("스위스", new CurrencyInfo("CHF", 1)),
+            entry("러시아", new CurrencyInfo("RUB", 1)),
+            entry("스웨덴", new CurrencyInfo("SEK", 1)),
+            entry("덴마크", new CurrencyInfo("DKK", 1)),
+            entry("노르웨이", new CurrencyInfo("NOK", 1)),
+            entry("헝가리", new CurrencyInfo("HUF", 1)),
+            entry("체코", new CurrencyInfo("CZK", 1)),
+            entry("폴란드", new CurrencyInfo("PLN", 1)),
+            entry("남아공", new CurrencyInfo("ZAR", 1)),
+            entry("이집트", new CurrencyInfo("EGP", 1))
+    );
+
     public List<LatestExchangeRateDto> getLatestRates() {
         return exchangeRateMapper.getLatestRates();
     }
+
 
     public List<ExchangeRateAlertResponseDto> getAlertsByUserId(Long userId) {
         return exchangeRateMapper.getAlertsByUserId(userId);
@@ -198,6 +258,9 @@ public class ExchangeRateService {
             currentDate = currentDate.plusDays(1);
         }
         
+        // 마이뱅크 크롤링 및 수수료 저장
+        crawlAndSaveMarketData();
+        
         List<SyncResultDto.CurrencySyncStatus> statusList = currencySyncMap.entrySet().stream()
                 .map(entry -> SyncResultDto.CurrencySyncStatus.builder()
                         .currencyCode(entry.getKey())
@@ -206,12 +269,59 @@ public class ExchangeRateService {
                 .collect(java.util.stream.Collectors.toList());
 
         return SyncResultDto.builder()
-                .syncPeriod(startDate.toString() + " ~ " + endDate.toString())
+                .syncPeriod(startDate + " ~ " + endDate)
                 .totalSavedCount(totalSavedCount)
                 .syncedAt(LocalDateTime.now())
                 .syncedCurrencies(statusList)
                 .build();
     }
+
+    private void crawlAndSaveMarketData() {
+        try {
+            Document doc = Jsoup.connect("https://exchange.mibank.me/bank?bank_cd=004&exchange_type=buy").get();
+            Elements rows = doc.select("table.main_table.content tbody tr");
+            
+            for (Element row : rows) {
+                Elements cols = row.select("td");
+                
+                // 유효성 체크
+                if (cols.size() < 9) continue; 
+                
+                String countryName = cols.get(1).text();
+                CurrencyInfo info = CURRENCY_INFO_MAP.get(countryName);
+                if (info == null) {
+                    log.warn("매핑되지 않은 국가명: {}", countryName);
+                    continue;
+                }
+                
+                Long currencyId = exchangeRateMapper.getCurrencyIdByCode(info.code);
+                if (currencyId == null) {
+                    log.warn("DB에 존재하지 않는 통화코드: {}", info.code);
+                    continue;
+                }
+                
+                ExchangeMarketData marketData = new ExchangeMarketData();
+                marketData.setCurrencyId(currencyId);
+                marketData.setUnit(info.unit);
+                
+                // 데이터 파싱
+                marketData.setBuyRate(parseRate(cols.get(2).select(".counter").text()));
+                marketData.setBuyFeeRate(new BigDecimal(cols.get(3).text().replace("%", "").trim()));
+                marketData.setSellRate(parseRate(cols.get(4).select(".counter").text()));
+                marketData.setSellFeeRate(new BigDecimal(cols.get(5).text().replace("%", "").trim()));
+                marketData.setBaseRate(parseRate(cols.get(8).select(".counter").text()));
+                marketData.setFetchedAt(LocalDateTime.now());
+                
+                log.info("저장할 환율시장 데이터: currencyId={}, unit={}, baseRate={}, buyRate={}, sellRate={}", 
+                         currencyId, info.unit, marketData.getBaseRate(), marketData.getBuyRate(), marketData.getSellRate());
+                
+                exchangeRateMapper.upsertMarketData(marketData);
+            }
+        } catch (Exception e) {
+            log.error("마이뱅크 크롤링 실패", e);
+        }
+    }
+
 
     private void ensureKrwExists() {
         Long krwId = exchangeRateMapper.getCurrencyIdByCode("KRW");
@@ -288,12 +398,13 @@ public class ExchangeRateService {
     }
 
     private int extractUnit(String curUnit) {
-        if (!curUnit.contains("(") || !curUnit.contains(")")) return 1;
-        
-        String unitStr = curUnit.substring(curUnit.indexOf("(") + 1, curUnit.indexOf(")"));
+        if (curUnit == null || !curUnit.contains("(") || !curUnit.contains(")")) return 1;
+
         try {
+            String unitStr = curUnit.substring(curUnit.indexOf("(") + 1, curUnit.indexOf(")"));
             return Integer.parseInt(unitStr);
         } catch (NumberFormatException e) {
+            log.warn("단위 추출 실패: {}. 기본값 1 적용", curUnit);
             return 1;
         }
     }
