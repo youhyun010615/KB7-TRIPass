@@ -9,12 +9,13 @@ import api from '@/api'
 const route = useRoute()
 const router = useRouter()
 const asset = useAssetStore()
-const filter = ref('all')
-const startDate = ref('2024-06-20')
-const endDate = ref('2024-07-19')
-const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
-
 const isReal = route.query.isReal === 'true'
+const filter = ref('all')
+const today = new Date().toISOString().slice(0, 10)
+const threeMonthsAgo = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().slice(0, 10) })()
+const startDate = ref(isReal ? threeMonthsAgo : '2024-06-20')
+const endDate = ref(isReal ? today : '2024-07-19')
+const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
 const realAccount = ref({ name: '', number: '', type: '', bank: '', balance: 0 })
 const realTransactions = ref([])
 
@@ -33,6 +34,23 @@ async function fetchRealTransactions() {
   }
 }
 
+const syncing = ref(false)
+async function syncTransactions() {
+  syncing.value = true
+  try {
+    await api.post('/accounts/transactions', {
+      accountId: Number(route.params.accountId),
+      startDate: startDate.value,
+      endDate: endDate.value,
+    })
+    await fetchRealTransactions()
+  } catch (e) {
+    console.error('거래내역 동기화 실패', e)
+  } finally {
+    syncing.value = false
+  }
+}
+
 onMounted(async () => {
   if (!isReal) return
   realAccount.value = {
@@ -43,6 +61,7 @@ onMounted(async () => {
     balance: 0,
   }
   await fetchRealTransactions()
+  if (realTransactions.value.length === 0) await syncTransactions()
 })
 
 watch([startDate, endDate, filter], () => {
@@ -59,16 +78,19 @@ const travelRecognizedAmount = computed(() => accountTransactions.value
 const groups = computed(() => {
   if (isReal) {
     return realTransactions.value.reduce((result, t) => {
-      const date = t.transactionDate
-      const d = new Date(date)
-      const label = `${date.replaceAll('-', '.')} (${DAYS[d.getDay()]})`
+      const [y, mo, d] = Array.isArray(t.transactionDate) ? t.transactionDate : t.transactionDate.split('-').map(Number)
+      const date = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      const jsDate = new Date(y, mo - 1, d)
+      const label = `${date.replaceAll('-', '.')} (${DAYS[jsDate.getDay()]})`
+      const [h = 0, m = 0] = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00').split(':').map(Number)
+      const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
       const item = {
         id: t.id,
         merchant: t.merchantName ?? '(내용없음)',
         category: '기타',
         method: route.query.name ?? '',
         amount: t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount),
-        time: (t.transactionTime ?? '').substring(0, 5),
+        time,
       }
       const group = result.find((g) => g.date === date)
       if (group) group.items.push(item)
@@ -104,5 +126,5 @@ const groups = computed(() => {
 </template>
 
 <style scoped>
-.account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 30px;background:#f4f6fc;color:#10192d}header{display:grid;grid-template-columns:30px 1fr;align-items:center;margin-bottom:17px}header button{font-size:26px;text-align:left}h1{font-size:17px;font-weight:900}.travel-recognized{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 13px;border-radius:11px;background:#eaf2ff;color:#315786}.travel-recognized small{font-size:9px}.travel-recognized b{font-size:12px}.date-filter{display:grid;grid-template-columns:1fr auto 1fr 34px;align-items:end;gap:7px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;font-size:9px}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}.date-filter>button{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#edf4ff;color:#286dd8}.tabs{display:grid;grid-template-columns:repeat(3,1fr);margin:12px 0 16px;text-align:center}.tabs button{padding:11px 0;border-bottom:2px solid #dce3ee;color:#b0bac9;font-size:11px;font-weight:900}.tabs button.active{border-color:#3475f4;color:#3475f4}
+.account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 30px;background:#f4f6fc;color:#10192d}header{display:grid;grid-template-columns:30px 1fr;align-items:center;margin-bottom:17px}header button{font-size:26px;text-align:left}h1{font-size:17px;font-weight:900}.travel-recognized{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 13px;border-radius:11px;background:#eaf2ff;color:#315786}.travel-recognized small{font-size:9px}.travel-recognized b{font-size:12px}.date-filter{display:grid;grid-template-columns:1fr auto 1fr 34px;align-items:end;gap:7px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;font-size:9px}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}.date-filter>button{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#edf4ff;color:#286dd8}.tabs{display:grid;grid-template-columns:repeat(3,1fr);margin:12px 0 16px;text-align:center}.tabs button{padding:11px 0;border-bottom:2px solid #dce3ee;color:#b0bac9;font-size:11px;font-weight:900}.tabs button.active{border-color:#3475f4;color:#3475f4}.sync-btn{display:block;width:100%;margin-bottom:12px;padding:10px;border-radius:10px;background:#edf4ff;color:#1a56db;font-size:12px;font-weight:700}.sync-btn:disabled{opacity:.6}
 </style>
