@@ -148,7 +148,7 @@ public class AssetService {
                 throw new CustomException(HttpStatus.BAD_REQUEST, "ACCOUNT_NOT_FOUND", "연동 가능한 계좌가 없습니다.");
             }
 
-            // accounts 테이블 저장
+            // accounts 테이블 저장 (재연동 시 중복 insert 방지 — 기존 계좌면 잔액 업데이트)
             List<AccountDto> saved = new ArrayList<>();
             for (Map<String, Object> acc : accountList) {
                 AccountDto dto = new AccountDto();
@@ -160,7 +160,14 @@ public class AssetService {
                 dto.setBalance(parseBigDecimal(acc.get("resAccountBalance")));
                 dto.setWithdrawableAmount(parseBigDecimal(acc.get("resWithdrawableAmount")));
                 dto.setConnectionType("CODEF");
-                assetMapper.insertAccount(dto);
+
+                AccountDto existing = assetMapper.findAccountByUserIdAndNumber(userId, dto.getAccountNumber());
+                if (existing != null) {
+                    assetMapper.updateAccountOnReconnect(dto);
+                    dto.setId(existing.getId());
+                } else {
+                    assetMapper.insertAccount(dto);
+                }
                 saved.add(dto);
             }
 

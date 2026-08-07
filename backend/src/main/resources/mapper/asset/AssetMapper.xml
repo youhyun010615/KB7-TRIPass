@@ -35,6 +35,28 @@
              #{balance}, #{withdrawableAmount}, 0, 'CODEF', NOW(), NOW(), NOW())
     </insert>
 
+    <select id="findAccountByUserIdAndNumber" resultType="AccountDto">
+        SELECT id, account_number, balance
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND account_number = #{accountNumber}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <update id="updateAccountOnReconnect">
+        UPDATE accounts
+        SET balance = #{balance},
+            withdrawable_amount = #{withdrawableAmount},
+            codef_connection_id = #{codefConnectionId},
+            is_active = TRUE,
+            last_synced_at = NOW(),
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND account_number = #{accountNumber}
+          AND is_deleted = 0
+    </update>
+
     <select id = "findAccountsByUserId" resultType = "AccountDto">
         SELECT id, account_name, account_number, account_type, balance,
                withdrawable_amount, recognized_amount, is_travel_fund_included, last_synced_at
