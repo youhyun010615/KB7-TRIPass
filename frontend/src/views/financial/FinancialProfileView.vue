@@ -14,6 +14,7 @@ const requestedStep = Number(route.query.step)
 const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= 8 ? requestedStep : 0)
 
 const banks = ref([])
+const banksError = ref(false)
 const selectedBank = ref(null)
 const loginId = ref('')
 const password = ref('')
@@ -66,11 +67,13 @@ function updateAmount(item, event) {
 async function goToBankSelect() {
   step.value = 2
   if (banks.value.length > 0) return
+  banksError.value = false
   try {
     const res = await api.get('/accounts/institutions')
     banks.value = res.data.data
   } catch (e) {
     console.error('은행 목록 로딩 실패', e)
+    banksError.value = true
   }
 }
 
@@ -207,7 +210,11 @@ onMounted(() => {
         <div class="page-content">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
           <div class="selection-caption"><span>연동할 금융사를 선택해 주세요</span></div>
-          <div v-if="banks.length === 0" style="text-align:center; padding: 40px 0; color: #94a3b8; font-size: 12px;">
+          <div v-if="banksError" style="text-align:center; padding: 40px 0; color: #94a3b8; font-size: 12px;">
+            은행 목록을 불러오지 못했어요.<br>
+            <button type="button" style="margin-top:12px; padding:8px 16px; border-radius:8px; background:#edf4ff; color:#286dd8; font-size:12px; font-weight:700;" @click="banks = []; goToBankSelect()">다시 시도</button>
+          </div>
+          <div v-else-if="banks.length === 0" style="text-align:center; padding: 40px 0; color: #94a3b8; font-size: 12px;">
             불러오는 중...
           </div>
           <div v-else class="bank-grid">

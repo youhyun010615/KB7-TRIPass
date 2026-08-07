@@ -6,7 +6,8 @@ import TransactionEditModal from '@/components/asset/TransactionEditModal.vue'
 import { useAssetStore } from '@/stores/asset'
 import api from '@/api'
 const route=useRoute(), router=useRouter(), asset=useAssetStore()
-const mockItem=computed(()=>asset.getTransaction(route.params.transactionId))
+const isRealTransaction = history.state?.item?._isReal === true
+const mockItem=computed(()=>isRealTransaction ? null : asset.getTransaction(route.params.transactionId))
 const realItem=ref(null)
 const item=computed(()=>mockItem.value ?? realItem.value ?? null)
 const editMode=ref(null)
@@ -16,10 +17,10 @@ onMounted(async()=>{
   try {
     const res=await api.get(`/transactions/${route.params.transactionId}`)
     const t=res.data.data
-    const [y,mo,d]=t.transactionDate
+    const [y,mo,d]=Array.isArray(t.transactionDate)?t.transactionDate:t.transactionDate.split('-').map(Number)
     const date=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`
     const jsDate=new Date(y,mo-1,d)
-    const [h=0,m=0]=t.transactionTime
+    const [h=0,m=0]=Array.isArray(t.transactionTime)?t.transactionTime:(t.transactionTime??'00:00').split(':').map(Number)
     realItem.value={
       id:t.id,
       merchant:t.merchantName??'(내용없음)',
