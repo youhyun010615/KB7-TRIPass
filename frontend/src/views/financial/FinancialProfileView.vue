@@ -63,14 +63,16 @@ function updateAmount(item, event) {
   item.amount = formatNumber(event.target.value)
 }
 
-onMounted(async () => {
+async function goToBankSelect() {
+  step.value = 2
+  if (banks.value.length > 0) return
   try {
     const res = await api.get('/accounts/institutions')
     banks.value = res.data.data
   } catch (e) {
     console.error('은행 목록 로딩 실패', e)
   }
-})
+}
 
 async function startConnection() {
   connectionError.value = ''
@@ -186,14 +188,14 @@ function completeProfile() {
         <div class="page-content account-intro">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
           <p class="subcopy">연동할 금융사를 선택해 주세요</p>
-          <button class="load-bank-card" @click="step = 2">
+          <button class="load-bank-card" @click="goToBankSelect">
             <span class="bank-building">▦</span>
             <span><strong>은행</strong><small>모든 금융사</small></span>
             <b>›</b>
           </button>
           <div class="security-note"><span>▣</span><div><strong>안전하게 연결해요</strong><p>인증 정보는 연결 과정에서만 사용됩니다</p></div></div>
         </div>
-        <div class="sticky-action"><button class="primary-button" @click="step = 2">다음</button></div>
+        <div class="sticky-action"><button class="primary-button" @click="goToBankSelect">다음</button></div>
       </template>
 
       <template v-else-if="step === 2">

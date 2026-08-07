@@ -1,14 +1,28 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import AssetTicket from '@/components/asset/AssetTicket.vue'
 import { useAssetStore } from '@/stores/asset'
+import api from '@/api'
 
 const router = useRouter()
 const asset = useAssetStore()
 const editingAccounts = ref(false)
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
+
+const realAccounts = ref([])
+
+const ACCOUNT_TYPE_LABEL = { CHECKING: '입출금', DEPOSIT: '예금', SAVING: '적금' }
+
+onMounted(async () => {
+  try {
+    const res = await api.get('/accounts')
+    realAccounts.value = res.data.data ?? []
+  } catch (e) {
+    console.error('계좌 목록 조회 실패', e)
+  }
+})
 
 const menus = [
   { icon: '◎', title: '여행 목표 자금 관리', desc: '목표 설정 및 현황', path: '/savings' },
@@ -42,6 +56,19 @@ function removeAccount(account) {
         </article>
         <p v-if="!asset.accounts.length" class="empty-account">연동된 계좌가 없어요.<br>계좌를 추가해 자산을 한눈에 확인해 보세요.</p>
       </section>
+
+      <template v-if="realAccounts.length > 0">
+        <div class="section-title" style="margin-top:18px"><h2>연동된 실제 계좌</h2></div>
+        <section class="accounts">
+          <article v-for="acc in realAccounts" :key="acc.id">
+            <button class="account-main" type="button" @click="router.push(`/asset/accounts/${acc.id}`)">
+              <span class="bank" style="background:#e8f0fe;color:#1a56db">{{ acc.accountName?.charAt(0) ?? '계' }}</span>
+              <span><b>{{ acc.accountName }}</b><small>{{ ACCOUNT_TYPE_LABEL[acc.accountType] ?? acc.accountType }} · {{ acc.accountNumber }}</small></span>
+              <strong>{{ money(acc.balance) }}</strong>
+            </button>
+          </article>
+        </section>
+      </template>
 
       <h2 class="menu-title">자산관리 메뉴</h2>
       <section class="menus">
