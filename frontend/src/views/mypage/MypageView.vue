@@ -1,21 +1,43 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {logout as logoutApi} from "@/api/auth"
 import { useAuthStore } from '@/stores/auth'
 import BottomNav from '@/components/common/BottomNav.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+const isLoggingOut = ref(false)
 const memberIdentity = computed(() => {
   const provider = authStore.user?.loginProvider ?? 'LOCAL'
   if (provider !== 'LOCAL') return authStore.user?.email ?? '이메일 미등록'
   return authStore.user?.loginId ?? authStore.user?.id ?? 'tripass'
 })
 
-function logout() {
-  if (!window.confirm('로그아웃할까요?')) return
-  authStore.logout()
-  router.replace('/login')
+async function logout() {
+  if (isLoggingOut.value) return
+
+  const confirmed = window.confirm('로그아웃할까요?')
+  if (!confirmed) return
+
+  isLoggingOut.value = true
+
+  try {
+    // 서버의 Refresh Token을 폐기하고 HttpOnly 쿠키를 삭제한다.
+    await logoutApi()
+  } catch (error) {
+    // 서버 요청이 실패하더라도 현재 브라우저의 로그인 상태는 제거한다.
+    console.error('로그아웃 요청에 실패했습니다.', error)
+  } finally {
+    // Access Token과 사용자 정보를 프론트에서 제거한다.
+    authStore.logout()
+
+    // 뒤로 가기로 보호 화면에 돌아가지 않도록 replace를 사용한다.
+    await router.replace('/login')
+
+    isLoggingOut.value = false
+  }
 }
 
 const myManageItems = [
@@ -157,7 +179,14 @@ const serviceItems = [
     </div>
 
     <div class="px-4 mt-5 mb-4">
-      <button type="button" class="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-500" @click="logout">로그아웃</button>
+      <button
+          type="button"
+          class="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="isLoggingOut"
+          @click="logout"
+      >
+        {{ isLoggingOut ? '로그아웃 중...' : '로그아웃' }}
+      </button>
     </div>
 
     <BottomNav />
