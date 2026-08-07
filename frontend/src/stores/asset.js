@@ -30,13 +30,13 @@ const transactionSeed = [
 ]
 
 const fixedExpenseSeed = [
-  { id: 1, name: '월세', day: 28, amount: 800_000, accountId: 1, alert: '3일 전', memo: '매월 월세', icon: '⌂', color: '#ff6973', active: true },
-  { id: 2, name: '통신비', day: 31, amount: 50_000, accountId: 1, alert: '당일', memo: '', icon: '⌕', color: '#4d79ff', active: true },
+  { id: 1, name: '월세', day: 28, amount: 800_000, accountId: 1, alert: '1일 전', memo: '매월 월세', icon: '⌂', color: '#ff6973', active: true },
+  { id: 2, name: '통신비', day: 31, amount: 50_000, accountId: 1, alert: '1일 전', memo: '', icon: '⌕', color: '#4d79ff', active: true },
   { id: 3, name: '공과금', day: 25, amount: 50_000, accountId: 2, alert: '1일 전', memo: '전기·수도·가스', icon: '●', color: '#f3a21a', active: true },
-  { id: 4, name: '교통비', day: 1, amount: 80_000, accountId: 3, alert: '당일', memo: '', icon: '▣', color: '#14af70', active: true },
+  { id: 4, name: '교통비', day: 1, amount: 80_000, accountId: 3, alert: '1일 전', memo: '', icon: '▣', color: '#14af70', active: true },
   { id: 5, name: '보험료', day: 1, amount: 120_000, accountId: 1, alert: '1일 전', memo: '', icon: '▤', color: '#124be1', active: true },
-  { id: 6, name: '구독료', day: 1, amount: 30_000, accountId: 3, alert: '당일', memo: '', icon: '▱', color: '#32c788', active: true },
-  { id: 7, name: '여행 저축 금액', day: 1, amount: 500_000, accountId: 1, alert: '당일', memo: '여행 목표 저축', icon: '▰', color: '#21a66f', active: true, travelSaving: true },
+  { id: 6, name: '구독료', day: 1, amount: 30_000, accountId: 3, alert: '1일 전', memo: '', icon: '▱', color: '#32c788', active: true },
+  { id: 7, name: '여행 저축 금액', day: 1, amount: 500_000, accountId: 1, alert: '1일 전', memo: '여행 목표 저축', icon: '▰', color: '#21a66f', active: true, travelSaving: true },
 ]
 
 const prepaidSeed = [
@@ -154,7 +154,7 @@ export const useAssetStore = defineStore('asset', () => {
     if (!payload.name?.trim() || day < 1 || day > 31 || !amount || !getAccount(payload.accountId)) return false
     fixedExpenses.push({
       id: Date.now(), name: payload.name.trim(), day, amount,
-      accountId: Number(payload.accountId), alert: payload.alert || '당일', memo: payload.memo?.trim() || '',
+      accountId: Number(payload.accountId), alert: '1일 전', memo: payload.memo?.trim() || '',
       icon: '▣', color: '#3475f4', active: true,
     })
     return true
