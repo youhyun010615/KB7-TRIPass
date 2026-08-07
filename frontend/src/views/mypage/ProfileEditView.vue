@@ -67,7 +67,7 @@ function saveProfile() {
         <label for="profile-phone" class="text-xs text-gray-400 mb-1.5 block">휴대폰 번호</label>
         <div class="flex gap-2">
           <div class="min-w-0 flex-1 bg-white rounded-2xl px-5 py-4"><input id="profile-phone" v-model="phone" type="tel" inputmode="numeric" class="w-full text-sm text-gray-900 bg-transparent outline-none" placeholder="010-1234-5678"></div>
-          <button type="button" :disabled="!isPhoneChanged || !isPhoneValid" class="px-3 rounded-2xl border text-xs font-semibold whitespace-nowrap disabled:text-gray-400 disabled:border-gray-200" style="color:#3B5BDB;border-color:#3B5BDB" @click="sendVerificationCode">{{ verificationStatus === 'sent' || verificationStatus === 'failed' ? '재요청' : '번호 인증' }}</button>
+          <button type="button" :disabled="!isPhoneValid" class="px-3 rounded-2xl border text-xs font-semibold whitespace-nowrap disabled:opacity-40" style="color:#3B5BDB;border-color:#3B5BDB" @click="sendVerificationCode">{{ verificationStatus === 'sent' || verificationStatus === 'failed' ? '재요청' : '번호 인증' }}</button>
         </div>
       </div>
 
