@@ -28,10 +28,15 @@ const dailyTotals = computed(() => visibleTransactions.value.filter((item) => it
   map[day] = (map[day] || 0) + item.amount
   return map
 }, {}))
-const selectedGroups = computed(() => {
-  const items = visibleTransactions.value.filter((item) => item.date === asset.selectedDate)
-  return items.length ? [{ date: asset.selectedDate, label: items[0].dateLabel, items }] : []
-})
+const monthlyGroups = computed(() => visibleTransactions.value
+  .filter((item) => item.date.startsWith(monthKey.value))
+  .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
+  .reduce((groups, item) => {
+    const group = groups.find((entry) => entry.date === item.date)
+    if (group) group.items.push(item)
+    else groups.push({ date: item.date, label: item.dateLabel, items: [item] })
+    return groups
+  }, []))
 function selectDay(day) { asset.selectedDate = `${monthKey.value}-${String(day).padStart(2, '0')}` }
 function moveMonth(offset) {
   const next = new Date(displayYear.value, displayMonth.value - 1 + offset, 1)
@@ -57,7 +62,7 @@ function moveMonth(offset) {
         </span>
       </div>
     </section>
-    <TransactionGroups :groups="selectedGroups" @select="router.push(`/asset/transactions/${$event.id}`)" />
+    <TransactionGroups :groups="monthlyGroups" @select="router.push(`/asset/transactions/${$event.id}`)" />
   </main>
 </template>
 
