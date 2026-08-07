@@ -54,7 +54,7 @@
 
     <!-- 거래내역 저장 — Codef 수시입출 거래내역 조회 결과를 transactions 테이블에 INSERT -->
     <insert id = "insertTransaction" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO transactions
+        INSERT IGNORE INTO transactions
         (account_id, external_key, transaction_date, transaction_time, transaction_type,
          transaction_region, amount, balance_after, merchant_name)
         VALUES
