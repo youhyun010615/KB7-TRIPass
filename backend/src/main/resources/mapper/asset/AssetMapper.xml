@@ -65,7 +65,7 @@
     <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
     <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
         SELECT id, account_id, transaction_date, transaction_time,
-               transaction_type, transaction_region, amount, balance_after, merchant_name, memo
+               transaction_type, transaction_region, amount, balance_after, merchant_name, memo, category_id
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
@@ -87,7 +87,7 @@
     <select id = "findTransactionsByAccountIdWithFilter" resultType="TransactionDto">
         SELECT id, account_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after,
-               merchant_name, memo
+               merchant_name, memo, category_id
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
@@ -107,7 +107,7 @@
     <select id = "findTransactionById" resultType="TransactionDto">
         SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
                t.transaction_type, t.transaction_region, t.amount, t.balance_after,
-               t.merchant_name, t.memo
+               t.merchant_name, t.memo, t.category_id
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
         WHERE t.id = #{transactionId}
@@ -119,7 +119,7 @@
     <!-- 전체 계좌 거래내역 조회(userId 기준) -->
     <select id = "findTransactionsByUserId" resultType="TransactionDto">
         SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
-               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.memo
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.memo, t.category_id
         FROM transactions t
         JOIN accounts a  ON t.account_id = a.id
         WHERE a.user_id = #{userId}
@@ -137,12 +137,12 @@
         AND is_deleted = 0
     </update>
 
-    <!-- 거래내역 수정 (가맹점명, 메모) -->
+    <!-- 거래내역 수정 (카테고리, 메모) -->
     <update id = "updateTransaction">
         UPDATE transactions t
         JOIN accounts a ON t.account_id = a.id
         SET
-            <if test = "merchantName != null">t.merchant_name = #{merchantName}, </if>
+            <if test = "categoryId != null">t.category_id = #{categoryId}, </if>
             <if test = "memo != null">t.memo = #{memo},</if>
             t.updated_at = NOW()
         WHERE t.id = #{transactionId}

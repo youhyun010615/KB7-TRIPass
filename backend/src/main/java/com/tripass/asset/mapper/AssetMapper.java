@@ -51,7 +51,7 @@ public interface AssetMapper {
     void updateTransaction(
             @org.apache.ibatis.annotations.Param("transactionId") Long transactionId,
             @org.apache.ibatis.annotations.Param("userId") Long userId,
-            @org.apache.ibatis.annotations.Param("merchantName") String merchantName,
+            @org.apache.ibatis.annotations.Param("categoryId") Long categoryId,
             @org.apache.ibatis.annotations.Param("memo") String memo
     );
 

@@ -251,7 +251,7 @@ public class AssetService {
         if(transaction == null) {
             throw new CustomException(HttpStatus.NOT_FOUND, "TRANSACTION_NOT_FOUND", "거래내역을 찾을 수 없습니다.");
         }
-        assetMapper.updateTransaction(transactionId, userId, req.getMerchantName(), req.getMemo());
+        assetMapper.updateTransaction(transactionId, userId, req.getCategoryId(), req.getMemo());
     }
 
 
