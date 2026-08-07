@@ -39,6 +39,7 @@ public class AssetService {
 
             CodefConnectionDto existingConn = assetMapper.findConnectionByUserId(userId);
             String connectedId;
+            boolean institutionAlreadyRegistered = false;
 
             if (existingConn == null) {
                 // 신규: connectedId 발급
@@ -88,18 +89,34 @@ public class AssetService {
                 Map<String, Object> addResult = CodefUtil.callApi(accessToken, "/v1/account/add", addBody);
                 Map<String, Object> addResultCode = (Map<String, Object>) addResult.get("result");
                 if (addResultCode == null || !"CF-00000".equals(addResultCode.get("code"))) {
-                    String msg = addResultCode != null ? (String) addResultCode.get("message") : "알 수 없는 오류";
-                    throw new CustomException(HttpStatus.BAD_REQUEST, "CODEF_LINK_FAIL", "기관 추가 실패: " + msg);
+                    // add 실패 시 기관이 이미 등록된 상태인지 계좌 목록 조회로 확인
+                    Map<String, Object> listCheckBody = new HashMap<>();
+                    listCheckBody.put("connectedId", connectedId);
+                    listCheckBody.put("organization", req.getOrganizationCode());
+                    listCheckBody.put("startDate", "19000101");
+                    listCheckBody.put("endDate", "99991231");
+                    listCheckBody.put("orderBy", "0");
+                    listCheckBody.put("inquiryType", "0");
+                    Map<String, Object> listCheck = CodefUtil.callApi(accessToken, "/v1/kr/bank/p/account/account-list", listCheckBody);
+                    Map<String, Object> listCheckCode = (Map<String, Object>) listCheck.get("result");
+                    if (listCheckCode == null || !"CF-00000".equals(listCheckCode.get("code"))) {
+                        String msg = addResultCode != null ? (String) addResultCode.get("message") : "알 수 없는 오류";
+                        throw new CustomException(HttpStatus.BAD_REQUEST, "CODEF_LINK_FAIL", "기관 추가 실패: " + msg);
+                    }
+                    // 계좌 조회 성공 → 기관이 이미 Codef에 등록된 상태, institution 중복 insert 생략
+                    institutionAlreadyRegistered = true;
                 }
             }
 
-            // 연동 기관 저장
-            CodefConnectedInstitutionDto instDto = new CodefConnectedInstitutionDto();
-            instDto.setCodefConnectionId(existingConn.getId());
-            instDto.setOrganizationCode(req.getOrganizationCode());
-            instDto.setOrganizationName(req.getOrganizationName());
-            instDto.setBusinessType(req.getBusinessType());
-            assetMapper.insertConnectedInstitution(instDto);
+            // 연동 기관 저장 (재연동으로 이미 등록된 기관이면 스킵)
+            if (!institutionAlreadyRegistered) {
+                CodefConnectedInstitutionDto instDto = new CodefConnectedInstitutionDto();
+                instDto.setCodefConnectionId(existingConn.getId());
+                instDto.setOrganizationCode(req.getOrganizationCode());
+                instDto.setOrganizationName(req.getOrganizationName());
+                instDto.setBusinessType(req.getBusinessType());
+                assetMapper.insertConnectedInstitution(instDto);
+            }
 
             // 계좌 목록 조회
             Map<String, Object> listBody = new HashMap<>();
