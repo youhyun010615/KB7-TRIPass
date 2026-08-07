@@ -27,4 +27,5 @@ public class TransactionDto {
     private BigDecimal balanceAfter;
     private String merchantName;      // 거래처
     private String memo;
+    private Long categoryId;
 }
