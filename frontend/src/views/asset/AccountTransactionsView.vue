@@ -34,7 +34,15 @@ async function fetchRealTransactions() {
   }
 }
 
+const loading = ref(false)
 const syncing = ref(false)
+
+async function fetchRealTransactionsWithLoading() {
+  loading.value = true
+  await fetchRealTransactions()
+  loading.value = false
+}
+
 async function syncTransactions() {
   syncing.value = true
   try {
@@ -60,8 +68,10 @@ onMounted(async () => {
     bank: (route.query.name ?? '').split(' ')[0],
     balance: 0,
   }
+  loading.value = true
   await fetchRealTransactions()
   if (realTransactions.value.length === 0) await syncTransactions()
+  loading.value = false
 })
 
 watch([startDate, endDate, filter], () => {
@@ -126,7 +136,7 @@ const groups = computed(() => {
     <section class="travel-recognized"><small>여행 자금 인정 금액</small><b>{{ travelRecognizedAmount.toLocaleString('ko-KR') }}원</b></section>
     <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>~</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label><button type="button" aria-label="거래내역 캘린더" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></section>
     <div class="tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" type="button" @click="filter = tab.id">{{ tab.label }}</button></div>
-    <TransactionGroups :groups="groups" :show-icons="false" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
+    <TransactionGroups :groups="groups" :show-icons="false" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
   </main>
 </template>
 
