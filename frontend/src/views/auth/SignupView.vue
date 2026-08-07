@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/api'
 
 const router = useRouter()
 
@@ -14,6 +15,18 @@ const password = ref('')
 const passwordConfirm = ref('')
 const showPassword = ref(false)
 const showPasswordConfirm = ref(false)
+const idCheckStatus = ref('idle')
+const idCheckMessage = ref('')
+
+const USER_ID_PATTERN = /^[A-Za-z0-9]{6,20}$/
+const isUserIdValid = computed(() => USER_ID_PATTERN.test(userId.value))
+const canProceedStep1 = computed(() => (
+  name.value.trim()
+  && isUserIdValid.value
+  && idCheckStatus.value === 'available'
+  && password.value.length >= 8
+  && password.value === passwordConfirm.value
+))
 
 // Step 2
 const phone = ref('')
@@ -22,11 +35,40 @@ const codeSent = ref(false)
 
 const errors = ref({})
 
+watch(userId, () => {
+  idCheckStatus.value = 'idle'
+  idCheckMessage.value = ''
+  delete errors.value.userId
+})
+
+async function checkUserId() {
+  if (!isUserIdValid.value || idCheckStatus.value === 'checking') return
+
+  idCheckStatus.value = 'checking'
+  idCheckMessage.value = '아이디를 확인하고 있어요.'
+  delete errors.value.userId
+
+  try {
+    const response = await api.get('/auth/check-id', {
+      params: { loginId: userId.value },
+    })
+    const available = response.data?.data?.available === true
+    idCheckStatus.value = available ? 'available' : 'duplicate'
+    idCheckMessage.value = available
+      ? '사용 가능한 아이디예요.'
+      : '이미 사용 중인 아이디예요.'
+  } catch (error) {
+    idCheckStatus.value = 'error'
+    idCheckMessage.value = error.response?.data?.message || '중복 확인 중 오류가 발생했어요. 다시 시도해 주세요.'
+  }
+}
+
 function validateStep1() {
   errors.value = {}
-  if (!name.value) errors.value.name = '이름을 입력해 주세요.'
+  if (!name.value.trim()) errors.value.name = '이름을 입력해 주세요.'
   if (!userId.value) errors.value.userId = '아이디를 입력해 주세요.'
-  else if (userId.value.length < 6) errors.value.userId = '6~20자 영문·숫자로 입력해 주세요.'
+  else if (!isUserIdValid.value) errors.value.userId = '6~20자 영문·숫자로 입력해 주세요.'
+  else if (idCheckStatus.value !== 'available') errors.value.userId = '아이디 중복 확인을 완료해 주세요.'
   if (!password.value) errors.value.password = '비밀번호를 입력해 주세요.'
   else if (password.value.length < 8) errors.value.password = '8자 이상 입력해 주세요.'
   if (password.value !== passwordConfirm.value) errors.value.passwordConfirm = '비밀번호가 일치하지 않아요.'
@@ -109,14 +151,38 @@ function signup() {
         <!-- 아이디 -->
         <div>
           <label class="text-sm font-medium text-gray-700 block mb-1.5">아이디</label>
-          <input
-            v-model="userId"
-            type="text"
-            placeholder="영문·숫자 6~20자"
-            class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
-            :class="errors.userId ? 'border-red-400' : ''"
-          />
+          <div class="flex gap-2">
+            <input
+              v-model="userId"
+              type="text"
+              inputmode="text"
+              autocomplete="username"
+              maxlength="20"
+              placeholder="영문·숫자 6~20자"
+              class="min-w-0 flex-1 h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
+              :class="errors.userId || idCheckStatus === 'duplicate' || idCheckStatus === 'error' ? 'border-red-400' : idCheckStatus === 'available' ? 'border-blue-500' : ''"
+              @keyup.enter="checkUserId"
+            />
+            <button
+              type="button"
+              :disabled="!isUserIdValid || idCheckStatus === 'checking'"
+              class="h-12 shrink-0 px-3.5 rounded-xl text-sm font-semibold whitespace-nowrap border transition-colors disabled:text-gray-400 disabled:border-gray-200 disabled:bg-gray-100"
+              :class="isUserIdValid && idCheckStatus !== 'checking' ? 'text-[#3B5BDB] border-[#3B5BDB] bg-white' : ''"
+              @click="checkUserId"
+            >
+              {{ idCheckStatus === 'checking' ? '확인 중' : '중복 확인' }}
+            </button>
+          </div>
           <p v-if="errors.userId" class="text-xs text-red-500 mt-1">{{ errors.userId }}</p>
+          <p
+            v-else-if="idCheckMessage"
+            role="status"
+            aria-live="polite"
+            class="text-xs mt-1"
+            :class="idCheckStatus === 'available' ? 'text-blue-600' : idCheckStatus === 'checking' ? 'text-gray-500' : 'text-red-500'"
+          >
+            {{ idCheckMessage }}
+          </p>
         </div>
 
         <!-- 비밀번호 -->
@@ -130,7 +196,7 @@ function signup() {
               class="w-full h-12 px-4 pr-12 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
               :class="errors.password ? 'border-red-400' : ''"
             />
-            <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" @click="showPassword = !showPassword">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" @click="showPassword = !showPassword">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path v-if="showPassword" d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <template v-else>
@@ -154,7 +220,7 @@ function signup() {
               class="w-full h-12 px-4 pr-12 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
               :class="errors.passwordConfirm ? 'border-red-400' : ''"
             />
-            <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" @click="showPasswordConfirm = !showPasswordConfirm">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" @click="showPasswordConfirm = !showPasswordConfirm">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path v-if="showPasswordConfirm" d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <template v-else>
@@ -169,8 +235,10 @@ function signup() {
 
         <!-- 다음 버튼 -->
         <button
+          type="button"
           @click="nextStep"
-          class="w-full h-14 rounded-2xl text-white font-bold text-base mt-2"
+          :disabled="!canProceedStep1"
+          class="w-full h-14 rounded-2xl text-white font-bold text-base mt-2 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
           style="background: #3B5BDB"
         >
           다음
