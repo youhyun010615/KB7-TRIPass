@@ -58,7 +58,6 @@
                 ELSE 2 
             END,
             c.currency_code
-        LIMIT 10
     </select>
 
     <select id="getAlertsByUserId" resultType="ExchangeRateAlertResponseDto">
@@ -107,6 +106,25 @@
             prev_rate = VALUES(prev_rate),
             fetched_at = VALUES(fetched_at)
     </insert>
+
+    <insert id="upsertMarketData">
+        INSERT INTO exchange_market_data 
+            (currency_id, unit, base_rate, buy_rate, buy_fee_rate, sell_rate, sell_fee_rate, fetched_at)
+        VALUES 
+            (#{currencyId}, #{unit}, #{baseRate}, #{buyRate}, #{buyFeeRate}, #{sellRate}, #{sellFeeRate}, #{fetchedAt})
+        ON DUPLICATE KEY UPDATE
+            unit = VALUES(unit),
+            base_rate = VALUES(base_rate),
+            buy_rate = VALUES(buy_rate),
+            buy_fee_rate = VALUES(buy_fee_rate),
+            sell_rate = VALUES(sell_rate),
+            sell_fee_rate = VALUES(sell_fee_rate),
+            fetched_at = VALUES(fetched_at)
+    </insert>
+
+    <delete id="truncateExchangeRates">
+        TRUNCATE TABLE exchange_rates
+    </delete>
 
         <update id="updateAlert">
         UPDATE exchange_rate_alerts

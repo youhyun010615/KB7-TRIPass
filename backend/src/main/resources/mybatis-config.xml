@@ -24,6 +24,7 @@
         <package name="com.tripass.asset.dto"/>
         <package name="com.tripass.saving.dto"/>
         <package name="com.tripass.exchange.dto"/>
+        <package name="com.tripass.bank.dto"/>
         <package name="com.tripass.prepay.dto"/>
         <package name="com.tripass.schedule.dto"/>
         <package name="com.tripass.expense.dto"/>

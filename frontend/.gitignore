@@ -43,3 +43,4 @@ __screenshots__/
 .env.*
 !.env.example
 !.env.*.example
+.vercel

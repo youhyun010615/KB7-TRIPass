@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { login as loginApi } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -12,27 +13,49 @@ const showPassword = ref(false)
 const errorMsg = ref('')
 const loading = ref(false)
 
-function login() {
+// 일반 로그인 API를 호출한다.
+async function login(){
   errorMsg.value = ''
-  if (!userId.value || !password.value) return
+  const loginId = userId.value.trim()
+
+  if(!loginId||!password.value){
+    errorMsg.value = '아이디와 비밀번호를 입력해 주세요.'
+    return
+  }
+  // 로그인 버튼을 연속으로 누르는 것을 막는다.
+  if (loading.value) {
+    return
+  }
+
   loading.value = true
-  setTimeout(() => {
-    loading.value = false
-    if (userId.value === 'tripass' && password.value === '1234') {
-      authStore.setToken('mock-token-tripass')
-      authStore.setUser({
-        id: 1,
-        loginId: userId.value,
-        name: '권유현',
-        phoneNumber: '010-1234-5678',
-        loginProvider: 'LOCAL',
-      })
-      router.push('/')
-    } else {
-      errorMsg.value = '아이디 또는 비밀번호가 올바르지 않아요.'
+
+  try{
+    const response = await loginApi({
+      loginId,
+      password: password.value,
+    })
+    const loginData = response.data?.data
+    if (!loginData?.accessToken || !loginData?.user) {
+      errorMsg.value =
+          '로그인 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      return
     }
-  }, 600)
+    //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
+    authStore.setToken(loginData.accessToken)
+    authStore.setUser(loginData.user)
+
+    //RefreshToken은 HttpOnly 쿠키로 자동 저장되므로
+    //프론트 JavaScript에서 직접 처리하지 않는다.
+    await router.replace('/')
+  }catch (error){
+    errorMsg.value=
+        error.response?.data?.message
+        || '로그인에 실패했습니다.'
+  }finally {
+    loading.value = false
+  }
 }
+
 </script>
 
 <template>
@@ -117,6 +140,7 @@ function login() {
 
       <!-- 로그인 버튼 -->
       <button
+          type="button"
         @click="login"
         :disabled="loading"
         class="w-full h-14 rounded-2xl text-white font-bold text-base mt-5 disabled:opacity-70 transition-opacity"
