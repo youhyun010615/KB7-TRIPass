@@ -31,6 +31,7 @@ const verifyCode = ref('')
 const codeSent = ref(false)
 const phoneVerified = ref(false)
 const phoneMessage = ref('')
+const phoneMessageType = ref('info')
 const phoneVerificationRequestId = ref(null)
 
 // 인증번호 만료 및 재전송 시간
@@ -185,6 +186,7 @@ function nextStep() {
 // 인증번호 발송
 async function sendCode() {
   phoneMessage.value = ''
+  phoneMessageType.value = 'info'
   delete errors.value.phone
 
   if (!isPhoneValid.value) {
@@ -212,12 +214,12 @@ async function sendCode() {
     phoneVerified.value = false
     verifyCode.value = ''
     phoneMessage.value = '인증번호를 발송했습니다.'
+    phoneMessageType.value = 'info'
 
     startVerificationTimer(sendResult.expireInSeconds || 180)
   } catch (error) {
     phoneMessage.value =
         error.response?.data?.message ||
-        error.message ||
         '인증번호 발송에 실패했습니다.'
   } finally {
     phoneSending.value = false
@@ -227,20 +229,24 @@ async function sendCode() {
 // 인증번호 확인
 async function verifyPhone() {
   phoneMessage.value = ''
+  phoneMessageType.value = 'info'
 
   if (!phoneVerificationRequestId.value) {
     phoneMessage.value = '먼저 인증번호를 요청해 주세요.'
+    phoneMessageType.value = 'error'
     return
   }
 
   if (!isVerificationCodeValid.value) {
     phoneMessage.value = '인증번호 숫자 6자리를 입력해 주세요.'
+    phoneMessageType.value = 'error'
     return
   }
 
   if (codeExpiresIn.value <= 0) {
     phoneMessage.value =
         '인증번호가 만료되었습니다. 다시 요청해 주세요.'
+    phoneMessageType.value = 'error'
     return
   }
 
@@ -259,12 +265,14 @@ async function verifyPhone() {
 
     phoneVerified.value = true
     phoneMessage.value = '휴대전화 인증이 완료되었습니다.'
+    phoneMessageType.value = 'success'
     stopVerificationTimer()
   } catch (error) {
     phoneVerified.value = false
     phoneMessage.value =
         error.response?.data?.message ||
         '인증번호가 올바르지 않습니다.'
+    phoneMessageType.value = 'error'
   } finally {
     phoneVerifying.value = false
   }
@@ -321,6 +329,15 @@ function startVerificationTimer(expireInSeconds) {
   verificationTimer = window.setInterval(() => {
     if (codeExpiresIn.value > 0) {
       codeExpiresIn.value -= 1
+      // 인증 완료 전에 만료시간이 끝나면 즉시 안내한다.
+      if (
+          codeExpiresIn.value === 0 &&
+          !phoneVerified.value
+      ) {
+        phoneMessage.value =
+            '인증번호가 만료되었습니다. 다시 요청해 주세요.'
+        phoneMessageType.value = 'error'
+      }
     }
 
     if (resendSeconds.value > 0) {
@@ -355,6 +372,7 @@ function resetPhoneVerification() {
   codeExpiresIn.value = 0
   resendSeconds.value = 0
   phoneMessage.value = ''
+  phoneMessageType.value = 'info'
 }
 
 // 초를 분:초 형식으로 변환한다.
@@ -658,9 +676,11 @@ onBeforeUnmount(() => {
           <p
               v-if="phoneMessage"
               class="text-xs mt-1"
-              :class="phoneVerified
-              ? 'text-blue-600'
-              : 'text-gray-500'"
+              :class="{
+                'text-blue-600': phoneMessageType === 'success',
+                'text-red-500': phoneMessageType === 'error',
+                'text-gray-500': phoneMessageType === 'info',
+                }"
           >
             {{ phoneMessage }}
           </p>

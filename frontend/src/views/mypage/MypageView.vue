@@ -28,7 +28,6 @@ async function logout() {
     await logoutApi()
   } catch (error) {
     // 서버 요청이 실패하더라도 현재 브라우저의 로그인 상태는 제거한다.
-    console.error('로그아웃 요청에 실패했습니다.', error)
   } finally {
     // Access Token과 사용자 정보를 프론트에서 제거한다.
     authStore.logout()

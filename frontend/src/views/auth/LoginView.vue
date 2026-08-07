@@ -35,8 +35,10 @@ async function login(){
       password: password.value,
     })
     const loginData = response.data?.data
-    if(!loginData?.accessToken || !loginData?.user){
-      throw new Error('로그인 응답 형식이 올바르지 않습니다.')
+    if (!loginData?.accessToken || !loginData?.user) {
+      errorMsg.value =
+          '로그인 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      return
     }
     //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.setToken(loginData.accessToken)
@@ -48,7 +50,6 @@ async function login(){
   }catch (error){
     errorMsg.value=
         error.response?.data?.message
-        || error.message
         || '로그인에 실패했습니다.'
   }finally {
     loading.value = false

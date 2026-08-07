@@ -26,6 +26,8 @@ const publicAuthUrls = [
     '/auth/signup',
     '/auth/phone/send',
     '/auth/phone/verify',
+    '/auth/refresh',
+    '/auth/logout',
 ]
 
 function isPublicAuthRequest(url) {
