@@ -12,6 +12,7 @@ const editingAccounts = ref(false)
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
 
 const realAccounts = ref([])
+const selectedId = ref(null)
 
 const ACCOUNT_TYPE_LABEL = { CHECKING: '입출금', DEPOSIT: '예금', SAVING: '적금' }
 
@@ -56,9 +57,9 @@ async function removeRealAccount(acc) {
 
       <div class="section-title"><h2>연동 계좌</h2><div><button type="button" @click="editingAccounts = !editingAccounts">{{ editingAccounts ? '완료' : '삭제하기' }}</button><button type="button" @click="router.push({ path: '/profile/financial', query: { step: 2, from: 'asset' } })">＋ 계좌 추가</button></div></div>
       <section class="accounts">
-        <article v-for="account in asset.accounts" :key="account.id" :class="{ primary: account.primary }">
+        <article v-for="account in asset.accounts" :key="account.id" :class="{ primary: selectedId === account.id }">
           <button v-if="editingAccounts" class="delete-account" type="button" :aria-label="`${account.name} 계좌 삭제`" @click="removeAccount(account)">−</button>
-          <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="router.push(`/asset/accounts/${account.id}`)">
+          <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="selectedId = account.id; router.push(`/asset/accounts/${account.id}`)">
             <span class="bank" :style="{ background: account.tone, color: account.accent }">{{ account.symbol }}</span>
             <span><b>{{ account.name }}</b><small>{{ account.type }} · {{ account.number }}</small></span>
             <strong>{{ money(account.balance) }}</strong>
@@ -70,9 +71,9 @@ async function removeRealAccount(acc) {
       <template v-if="realAccounts.length > 0">
         <div class="section-title" style="margin-top:18px"><h2>연동된 실제 계좌</h2></div>
         <section class="accounts">
-          <article v-for="acc in realAccounts" :key="acc.id">
+          <article v-for="acc in realAccounts" :key="acc.id" :class="{ primary: selectedId === acc.id }">
             <button v-if="editingAccounts" class="delete-account" type="button" @click="removeRealAccount(acc)">−</button>
-            <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="router.push({ path: `/asset/accounts/${acc.id}`, query: { isReal: 'true', name: acc.accountName, number: acc.accountNumber, type: acc.accountType } })">
+            <button class="account-main" type="button" :class="{ editing: editingAccounts }" :disabled="editingAccounts" @click="selectedId = acc.id; router.push({ path: `/asset/accounts/${acc.id}`, query: { isReal: 'true', name: acc.accountName, number: acc.accountNumber, type: acc.accountType } })">
               <span class="bank" style="background:#e8f0fe;color:#1a56db">{{ acc.accountName?.charAt(0) ?? '계' }}</span>
               <span><b>{{ acc.accountName }}</b><small>{{ ACCOUNT_TYPE_LABEL[acc.accountType] ?? acc.accountType }} · {{ acc.accountNumber }}</small></span>
               <strong>{{ money(acc.balance) }}</strong>

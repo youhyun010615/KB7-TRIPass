@@ -137,6 +137,10 @@ function completeProfile() {
   router.replace('/')
 }
 
+onMounted(() => {
+  if (step.value === 2) goToBankSelect()
+})
+
 </script>
 
 <template>
@@ -199,7 +203,7 @@ function completeProfile() {
       </template>
 
       <template v-else-if="step === 2">
-        <header class="simple-header"><button @click="step = 1">‹</button><strong>은행 선택</strong></header>
+        <header class="simple-header"><button @click="route.query.from === 'asset' ? router.back() : step = 1">‹</button><strong>은행 선택</strong></header>
         <div class="page-content">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
           <div class="selection-caption"><span>연동할 금융사를 선택해 주세요</span></div>
