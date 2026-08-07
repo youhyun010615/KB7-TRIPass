@@ -1,29 +1,18 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BottomNav from '@/components/common/BottomNav.vue'
+import TransactionEditModal from '@/components/asset/TransactionEditModal.vue'
+import PrepaidExpenseModal from '@/components/savings/PrepaidExpenseModal.vue'
 import { useMonthlyFundStore } from '@/stores/monthlyFund'
-
-const route = useRoute()
-const router = useRouter()
-const fund = useMonthlyFundStore()
-const transaction = computed(() => fund.transactions.find((item) => item.id === Number(route.params.transactionId)))
-const category = computed(() => transaction.value?.categoryId === 'prepaid'
-  ? { name:'여행비 사전 지출', icon:'✈️', color:'#3475f4' }
-  : fund.getCategory(transaction.value?.categoryId))
-const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
+const route=useRoute(),router=useRouter(),fund=useMonthlyFundStore(),editMode=ref(null),prepaidOpen=ref(false)
+const transaction=computed(()=>fund.transactions.find(item=>item.id===Number(route.params.transactionId)))
+const category=computed(()=>transaction.value?.categoryId==='prepaid'?{name:'여행비 사전지출',icon:'✈️',color:'#3475f4'}:fund.getCategory(transaction.value?.categoryId))
+const money=value=>`${Number(value||0).toLocaleString('ko-KR')}원`
+const rows=computed(()=>transaction.value?[{label:'거래일시',value:transaction.value.date},{label:'카테고리',value:category.value?.name||'미분류',editable:true},{label:'거래구분',value:'지출'},{label:'결제수단',value:'KB국민은행 여행통장 ****4821'},{label:'사용처',value:transaction.value.merchant},{label:'거래 후 잔액',value:money(5_200_000-transaction.value.amount)}]:[])
+function openPrepaid(){editMode.value=null;prepaidOpen.value=true}
 </script>
-
-<template><main class="page"><div class="shell">
-  <header><button @click="router.back()">‹</button><h1>거래내역 상세보기</h1></header>
-  <template v-if="transaction">
-    <section class="hero"><div><small>{{ transaction.date }}</small><h2>{{ transaction.merchant }}</h2><strong>-{{ money(transaction.amount) }}</strong></div><span :style="{background:`${category?.color || '#3475f4'}18`}">{{ category?.icon || transaction.icon }}</span></section>
-    <section class="details"><dl><div><dt>거래일시</dt><dd>{{ transaction.date }}</dd></div><div><dt>카테고리</dt><dd class="category">{{ category?.name || '미분류' }}</dd></div><div><dt>거래구분</dt><dd>지출</dd></div><div><dt>결제수단</dt><dd>KB국민은행 여행통장<br>****4821</dd></div><div><dt>사용처</dt><dd>{{ transaction.merchant }}</dd></div><div><dt>거래 후 잔액</dt><dd>{{ money(5_200_000 - transaction.amount) }}</dd></div></dl></section>
-    <h3>메모</h3><section class="memo">{{ transaction.memo || '등록된 메모가 없어요.' }}</section>
-    <button class="cta" @click="router.push(`/savings/monthly/transactions/${transaction.id}/category`)">카테고리 변경하기</button>
-  </template>
-  <p v-else class="empty">거래내역을 찾을 수 없어요.</p>
-</div></main></template>
-
+<template><main class="detail-page"><header><button @click="router.back()">‹</button><h1>거래내역 상세보기</h1><span/></header><template v-if="transaction"><section class="hero"><div><b>{{transaction.merchant}}</b><strong>-{{money(transaction.amount)}}</strong></div><span :style="{background:`${category?.color||'#3475f4'}18`}">{{category?.icon||transaction.icon}}</span></section><section class="info-card"><div v-for="row in rows" :key="row.label"><small>{{row.label}}</small><p><b :class="{accent:row.editable}">{{row.value}}</b><button v-if="row.editable" @click="editMode='category'">수정</button></p></div></section><div class="section-heading"><h2>메모</h2><button @click="editMode='memo'">수정</button></div><section class="memo">{{transaction.memo||'등록된 메모가 없어요.'}}</section></template><p v-else class="empty">거래내역을 찾을 수 없어요.</p><BottomNav/><TransactionEditModal :model-value="Boolean(editMode)" :mode="editMode||'category'" :categories="fund.categories" :selected-category="transaction?.categoryId" :memo="transaction?.memo" show-prepaid @update:model-value="value=>{if(!value)editMode=null}" @save-category="value=>fund.updateTransactionCategory(transaction.id,value)" @save-memo="value=>fund.updateTransactionMemo(transaction.id,value)" @prepaid="openPrepaid"/><PrepaidExpenseModal v-model="prepaidOpen" :transaction="transaction"/></main></template>
 <style scoped>
-.page{min-height:100vh;background:#e7ecf4;color:#10192d}.shell{width:min(100%,390px);min-height:100vh;margin:auto;padding:52px 18px 30px;background:#f4f6fc}header{display:flex;align-items:center;margin-bottom:18px}header button{width:26px;font-size:26px;text-align:left}header h1{flex:1;padding-right:26px;text-align:center;font-size:18px;font-weight:900}.hero{display:flex;align-items:center;justify-content:space-between;padding:18px;border:1px solid #dce4ef;border-radius:17px;background:#fff}.hero small{color:#94a3b8;font-size:9px}.hero h2{margin-top:5px;font-size:14px}.hero strong{display:block;margin-top:8px;color:#e5484d;font-size:24px}.hero span{display:grid;width:50px;height:50px;place-items:center;border-radius:50%;font-size:20px}.details{margin-top:13px;padding:6px 16px;border:1px solid #dce4ef;border-radius:17px;background:#fff}.details dl>div{display:grid;grid-template-columns:92px 1fr;padding:13px 0;border-bottom:1px solid #edf0f5;font-size:11px}.details dl>div:last-child{border:0}.details dt{color:#94a3b8}.details dd{text-align:right;font-weight:800;line-height:1.5}.details .category{color:#3475f4}h3{margin:20px 3px 9px;font-size:12px}.memo{min-height:54px;padding:15px;border:1px solid #dce4ef;border-radius:13px;background:#fff;font-size:11px}.cta{width:100%;margin-top:18px;padding:15px;border-radius:12px;background:#173f8d;color:#fff;font-weight:900}.empty{padding:80px 0;text-align:center;color:#94a3b8}
+.detail-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 105px;background:#f8f6f1;color:#10192d}.detail-page>header{display:grid;grid-template-columns:30px 1fr 30px;align-items:center;margin-bottom:18px}.detail-page>header button{font-size:26px;text-align:left}.detail-page>header h1{text-align:center;font-size:18px;font-weight:900}.hero{display:flex;align-items:center;justify-content:space-between;padding:18px;border:1px solid #d8e2f0;border-radius:16px;background:#fff}.hero b,.hero strong{display:block}.hero b{font-size:14px}.hero strong{margin-top:8px;color:#e8484f;font-size:24px}.hero>span{display:grid;width:50px;height:50px;place-items:center;border-radius:50%;font-size:21px}.info-card{margin-top:12px;padding:10px 16px;border:1px solid #dbe3ef;border-radius:17px;background:#fff}.info-card>div{display:grid;grid-template-columns:100px 1fr;padding:13px 0;border-bottom:1px solid #edf0f5}.info-card>div:last-child{border:0}.info-card small{color:#94a3b8;font-size:10px}.info-card p{display:flex;align-items:center;justify-content:flex-end;gap:8px;text-align:right}.info-card b{font-size:11px}.accent{color:#3475f4}.info-card button,.section-heading button{padding:4px 7px;border-radius:7px;background:#edf4ff;color:#286dd8;font-size:8px;font-weight:900}.section-heading{display:flex;justify-content:space-between;margin:20px 3px 9px}.section-heading h2{font-size:12px}.memo{min-height:54px;padding:15px;border:1px solid #dbe3ef;border-radius:12px;background:#fff;font-size:11px}.empty{padding:80px;text-align:center;color:#94a3b8}
 </style>

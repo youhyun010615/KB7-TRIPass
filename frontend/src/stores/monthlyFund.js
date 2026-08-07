@@ -83,6 +83,13 @@ export const useMonthlyFundStore = defineStore('monthlyFund', () => {
     return true
   }
 
+  function updateTransactionMemo(transactionId, memo) {
+    const transaction = transactions.find((item) => item.id === Number(transactionId))
+    if (!transaction) return false
+    transaction.memo = String(memo || '').trim()
+    return true
+  }
+
   function addPrepaidExpense(payload) {
     const amount = Math.max(0, Number(String(payload.amount).replace(/[^0-9]/g, '')) || 0)
     if (!payload.name?.trim() || !payload.countryCode || !payload.date || !amount) return false
@@ -125,6 +132,7 @@ export const useMonthlyFundStore = defineStore('monthlyFund', () => {
     categorySummary,
     updateCategoryTarget,
     updateTransactionCategory,
+    updateTransactionMemo,
     addPrepaidExpense,
   }
 })
