@@ -76,7 +76,8 @@ const router = createRouter({
     {
       path: '/savings/monthly/transactions/:transactionId',
       name: 'MonthlyFundTransactionDetail',
-      component: () => import('@/views/savings/MonthlyTransactionDetailView.vue'),
+      component: () =>
+        import('@/views/savings/MonthlyTransactionDetailView.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -108,13 +109,15 @@ const router = createRouter({
     {
       path: '/financial-schedule/calendar',
       name: 'FinancialScheduleCalendar',
-      component: () => import('@/views/financial/FinancialScheduleCalendarView.vue'),
+      component: () =>
+        import('@/views/financial/FinancialScheduleCalendarView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/financial-schedule/:eventId',
       name: 'FinancialScheduleDetail',
-      component: () => import('@/views/financial/FinancialScheduleDetailView.vue'),
+      component: () =>
+        import('@/views/financial/FinancialScheduleDetailView.vue'),
       meta: { requiresAuth: true },
     },
 
@@ -125,11 +128,38 @@ const router = createRouter({
       component: () => import('@/views/financial/FinancialView.vue'),
       meta: { requiresAuth: true },
     },
-    { path:'/financial/savings', name:'FinancialSavings', component:()=>import('@/views/financial/FinancialSavingsView.vue'), meta:{requiresAuth:true} },
-    { path:'/financial/savings/:productId', name:'FinancialSavingsDetail', component:()=>import('@/views/financial/FinancialSavingsDetailView.vue'), meta:{requiresAuth:true} },
-    { path:'/financial/cards', name:'FinancialCards', component:()=>import('@/views/financial/FinancialCardsView.vue'), meta:{requiresAuth:true} },
-    { path:'/financial/cards/compare', name:'FinancialCardsCompare', component:()=>import('@/views/financial/FinancialCardsCompareView.vue'), meta:{requiresAuth:true} },
-    { path:'/financial/cards/:productId', name:'FinancialCardDetail', component:()=>import('@/views/financial/FinancialCardDetailView.vue'), meta:{requiresAuth:true} },
+    {
+      path: '/financial/savings',
+      name: 'FinancialSavings',
+      component: () => import('@/views/financial/FinancialSavingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/savings/:productId',
+      name: 'FinancialSavingsDetail',
+      component: () =>
+        import('@/views/financial/FinancialSavingsDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/cards',
+      name: 'FinancialCards',
+      component: () => import('@/views/financial/FinancialCardsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/cards/compare',
+      name: 'FinancialCardsCompare',
+      component: () =>
+        import('@/views/financial/FinancialCardsCompareView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/cards/:productId',
+      name: 'FinancialCardDetail',
+      component: () => import('@/views/financial/FinancialCardDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── AST (담당: 이아영) ──────────────────────────────────
     {
@@ -200,13 +230,48 @@ const router = createRouter({
       component: () => import('@/views/exchange/ExchangeView.vue'),
       meta: { requiresAuth: true },
     },
-    { path:'/exchange/currencies', name:'ExchangeCurrencies', component:()=>import('@/views/exchange/CurrencyListView.vue'), meta:{requiresAuth:true} },
-    { path:'/exchange/currencies/:code', name:'ExchangeCurrencyDetail', component:()=>import('@/views/exchange/CurrencyDetailView.vue'), meta:{requiresAuth:true} },
-    { path:'/exchange/alerts', name:'ExchangeAlerts', component:()=>import('@/views/exchange/ExchangeAlertsView.vue'), meta:{requiresAuth:true} },
-    { path:'/exchange/alerts/new', name:'ExchangeAlertNew', component:()=>import('@/views/exchange/ExchangeAlertFormView.vue'), meta:{requiresAuth:true} },
-    { path:'/exchange/alerts/:alertId', name:'ExchangeAlertEdit', component:()=>import('@/views/exchange/ExchangeAlertFormView.vue'), meta:{requiresAuth:true} },
-    { path:'/exchange/banks', name:'ExchangeBanks', component:()=>import('@/views/exchange/NearbyBanksView.vue'), meta:{requiresAuth:true} },
-    { path:'/exchange/banks/:bankId', name:'ExchangeBankDetail', component:()=>import('@/views/exchange/BankDetailView.vue'), meta:{requiresAuth:true} },
+    {
+      path: '/exchange/currencies',
+      name: 'ExchangeCurrencies',
+      component: () => import('@/views/exchange/CurrencyListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/currencies/:code',
+      name: 'ExchangeCurrencyDetail',
+      component: () => import('@/views/exchange/CurrencyDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts',
+      name: 'ExchangeAlerts',
+      component: () => import('@/views/exchange/ExchangeAlertsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts/new',
+      name: 'ExchangeAlertNew',
+      component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts/:alertId',
+      name: 'ExchangeAlertEdit',
+      component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/banks',
+      name: 'ExchangeBanks',
+      component: () => import('@/views/exchange/NearbyBanksView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/banks/:bankId',
+      name: 'ExchangeBankDetail',
+      component: () => import('@/views/exchange/BankDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
 
     // ── TRV / BUD (담당: 권원영) ────────────────────────────
     {
@@ -224,13 +289,15 @@ const router = createRouter({
     {
       path: '/travel/funds/categories/:categoryId',
       name: 'TravelFundCategoryDetail',
-      component: () => import('@/views/travel/TravelFundCategoryDetailView.vue'),
+      component: () =>
+        import('@/views/travel/TravelFundCategoryDetailView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/travel/funds/transactions/:transactionId',
       name: 'TravelFundTransactionDetail',
-      component: () => import('@/views/travel/TravelFundTransactionDetailView.vue'),
+      component: () =>
+        import('@/views/travel/TravelFundTransactionDetailView.vue'),
       meta: { requiresAuth: true },
     },
 
