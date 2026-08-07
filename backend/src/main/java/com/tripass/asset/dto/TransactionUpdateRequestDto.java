@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class TransactionUpdateRequestDto {
 
-    private String merchantName;
+    private Long categoryId;
     private String memo;
 }
