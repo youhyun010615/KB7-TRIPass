@@ -200,6 +200,7 @@ const router = createRouter({
       component: () => import('@/views/exchange/ExchangeView.vue'),
       meta: { requiresAuth: true },
     },
+    { path:'/exchange/currencies', name:'ExchangeCurrencies', component:()=>import('@/views/exchange/CurrencyListView.vue'), meta:{requiresAuth:true} },
     { path:'/exchange/currencies/:code', name:'ExchangeCurrencyDetail', component:()=>import('@/views/exchange/CurrencyDetailView.vue'), meta:{requiresAuth:true} },
     { path:'/exchange/alerts', name:'ExchangeAlerts', component:()=>import('@/views/exchange/ExchangeAlertsView.vue'), meta:{requiresAuth:true} },
     { path:'/exchange/alerts/new', name:'ExchangeAlertNew', component:()=>import('@/views/exchange/ExchangeAlertFormView.vue'), meta:{requiresAuth:true} },
