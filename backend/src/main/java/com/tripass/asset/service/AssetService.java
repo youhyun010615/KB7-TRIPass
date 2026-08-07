@@ -289,6 +289,12 @@ public class AssetService {
         return assetMapper.findAllSupportedInstitutions();
     }
 
+    public List<CalendarDayDto> getCalendar(Long userId, Integer year, Integer month, String type) {
+        if (year == null) year = java.time.LocalDate.now().getYear();
+        if (month == null) month = java.time.LocalDate.now().getMonthValue();
+        return assetMapper.findCalendarByMonth(userId, year, month, type);
+    }
+
     private String resolveAccountType(String resAccountKind) {
         if (resAccountKind == null) return "CHECKING";
         return switch (resAccountKind) {
