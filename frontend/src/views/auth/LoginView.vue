@@ -20,7 +20,13 @@ function login() {
     loading.value = false
     if (userId.value === 'tripass' && password.value === '1234') {
       authStore.setToken('mock-token-tripass')
-      authStore.setUser({ id: userId.value, name: '권유현' })
+      authStore.setUser({
+        id: 1,
+        loginId: userId.value,
+        name: '권유현',
+        phoneNumber: '010-1234-5678',
+        loginProvider: 'LOCAL',
+      })
       router.push('/')
     } else {
       errorMsg.value = '아이디 또는 비밀번호가 올바르지 않아요.'

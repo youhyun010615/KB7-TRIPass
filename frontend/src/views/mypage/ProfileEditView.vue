@@ -1,101 +1,89 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import BottomNav from '@/components/common/BottomNav.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-
+const originalPhone = authStore.user?.phoneNumber ?? '010-1234-5678'
 const name = ref(authStore.user?.name ?? '권유현')
-const email = ref(authStore.user?.email ?? 'youhyun@email.com')
-const phone = ref('010-1234-5678')
+const phone = ref(originalPhone)
+const verificationCode = ref('')
+const verificationStatus = ref('idle')
+const verificationMessage = ref('')
+
+const normalizedPhone = computed(() => phone.value.replace(/[^0-9]/g, ''))
+const isPhoneValid = computed(() => /^01[016789]\d{7,8}$/.test(normalizedPhone.value))
+const isPhoneChanged = computed(() => normalizedPhone.value !== originalPhone.replace(/[^0-9]/g, ''))
+const canSave = computed(() => name.value.trim() && isPhoneValid.value && (!isPhoneChanged.value || verificationStatus.value === 'verified'))
+
+watch(phone, () => {
+  verificationCode.value = ''
+  verificationStatus.value = 'idle'
+  verificationMessage.value = isPhoneChanged.value ? '변경할 번호는 인증이 필요해요.' : ''
+})
+
+function sendVerificationCode() {
+  if (!isPhoneValid.value) return
+  verificationStatus.value = 'sent'
+  verificationMessage.value = '인증번호를 발송했어요. 시연용 인증번호는 123456이에요.'
+}
+
+function verifyPhone() {
+  if (verificationCode.value === '123456') {
+    verificationStatus.value = 'verified'
+    verificationMessage.value = '휴대폰 번호 인증이 완료됐어요.'
+  } else {
+    verificationStatus.value = 'failed'
+    verificationMessage.value = '인증번호가 일치하지 않아요.'
+  }
+}
+
+function saveProfile() {
+  if (!canSave.value) return
+  authStore.updateUser({ name: name.value.trim(), phoneNumber: phone.value })
+  router.replace('/mypage/profile')
+}
 </script>
 
 <template>
   <div class="min-h-screen pb-20 flex flex-col" style="background: #F7F4EE">
-
-    <!-- 헤더 -->
     <div class="flex items-center justify-between px-5 pt-14 pb-4">
-      <button @click="router.back()" class="p-1">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18L9 12L15 6" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <button type="button" class="p-1" aria-label="뒤로 가기" @click="router.back()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <h1 class="text-base font-bold text-gray-900">회원정보 수정</h1>
       <div class="w-8" />
     </div>
 
-    <!-- 수정 필드 -->
     <div class="px-4 mt-2 flex flex-col gap-3">
-      <!-- 이름 -->
       <div>
-        <p class="text-xs text-gray-400 mb-1.5">이름</p>
-        <div class="bg-white rounded-2xl px-5 py-4 flex items-center justify-between">
-          <input
-            v-model="name"
-            class="flex-1 text-sm text-gray-900 bg-transparent outline-none"
-            placeholder="이름 입력"
-          />
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10218 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <label for="profile-name" class="text-xs text-gray-400 mb-1.5 block">이름</label>
+        <div class="bg-white rounded-2xl px-5 py-4"><input id="profile-name" v-model="name" class="w-full text-sm text-gray-900 bg-transparent outline-none" placeholder="이름 입력"></div>
+      </div>
+
+      <div>
+        <label for="profile-phone" class="text-xs text-gray-400 mb-1.5 block">휴대폰 번호</label>
+        <div class="flex gap-2">
+          <div class="min-w-0 flex-1 bg-white rounded-2xl px-5 py-4"><input id="profile-phone" v-model="phone" type="tel" inputmode="numeric" class="w-full text-sm text-gray-900 bg-transparent outline-none" placeholder="010-1234-5678"></div>
+          <button type="button" :disabled="!isPhoneChanged || !isPhoneValid" class="px-3 rounded-2xl border text-xs font-semibold whitespace-nowrap disabled:text-gray-400 disabled:border-gray-200" style="color:#3B5BDB;border-color:#3B5BDB" @click="sendVerificationCode">{{ verificationStatus === 'sent' || verificationStatus === 'failed' ? '재요청' : '번호 인증' }}</button>
         </div>
       </div>
 
-      <!-- 이메일 -->
-      <div>
-        <p class="text-xs text-gray-400 mb-1.5">이메일</p>
-        <div class="bg-white rounded-2xl px-5 py-4 flex items-center justify-between">
-          <input
-            v-model="email"
-            type="email"
-            class="flex-1 text-sm text-gray-900 bg-transparent outline-none"
-            placeholder="이메일 입력"
-          />
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M18 13V6A2 2 0 0016 4H4a2 2 0 00-2 2v7" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M22 16C22 17.1046 21.1046 18 20 18H4C2.89543 18 2 17.1046 2 16V13H22V16Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M15 21H9" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
-            <path d="M12 18V21" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+      <div v-if="verificationStatus === 'sent' || verificationStatus === 'failed'">
+        <label for="verification-code" class="text-xs text-gray-400 mb-1.5 block">인증번호</label>
+        <div class="flex gap-2">
+          <div class="min-w-0 flex-1 bg-white rounded-2xl px-5 py-4"><input id="verification-code" v-model="verificationCode" inputmode="numeric" maxlength="6" class="w-full text-sm text-gray-900 bg-transparent outline-none" placeholder="6자리 입력"></div>
+          <button type="button" :disabled="verificationCode.length !== 6" class="px-4 rounded-2xl text-white text-xs font-semibold disabled:opacity-40" style="background:#3B5BDB" @click="verifyPhone">확인</button>
         </div>
       </div>
-
-      <!-- 휴대폰 번호 -->
-      <div>
-        <p class="text-xs text-gray-400 mb-1.5">휴대폰 번호</p>
-        <div class="bg-white rounded-2xl px-5 py-4 flex items-center justify-between">
-          <input
-            v-model="phone"
-            type="tel"
-            class="flex-1 text-sm text-gray-900 bg-transparent outline-none"
-            placeholder="휴대폰 번호 입력"
-          />
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10218 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      </div>
+      <p v-if="verificationMessage" class="text-xs" :class="verificationStatus === 'failed' ? 'text-red-500' : verificationStatus === 'verified' ? 'text-blue-600' : 'text-gray-500'">{{ verificationMessage }}</p>
     </div>
 
-    <!-- 하단 버튼 -->
     <div class="px-4 mt-auto pt-6 flex flex-col gap-3">
-      <button
-        class="w-full h-14 rounded-2xl text-white font-bold text-base"
-        style="background: #1A337A"
-      >
-        수정 내용 저장
-      </button>
-      <button
-        class="w-full h-14 rounded-2xl font-bold text-sm border"
-        style="color: #1A337A; border-color: #1A337A; background: transparent"
-        @click="router.push('/mypage/password')"
-      >
-        비밀번호 변경
-      </button>
+      <button type="button" :disabled="!canSave" class="w-full h-14 rounded-2xl text-white font-bold text-base disabled:opacity-40" style="background:#1A337A" @click="saveProfile">수정 내용 저장</button>
+      <button type="button" class="w-full h-14 rounded-2xl font-bold text-sm border" style="color:#1A337A;border-color:#1A337A;background:transparent" @click="router.push('/mypage/password')">비밀번호 변경</button>
     </div>
 
     <BottomNav />
