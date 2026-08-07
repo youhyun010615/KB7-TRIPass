@@ -112,6 +112,13 @@ export const useAssetStore = defineStore('asset', () => {
     return accounts.find((item) => item.id === Number(id))
   }
 
+  function removeAccount(id) {
+    const index = accounts.findIndex((item) => item.id === Number(id))
+    if (index < 0) return false
+    accounts.splice(index, 1)
+    return true
+  }
+
   function getTransaction(id) {
     return transactions.find((item) => item.id === Number(id))
   }
@@ -222,7 +229,7 @@ export const useAssetStore = defineStore('asset', () => {
     transactionFilter, transactionPeriod, transactionStartDate, transactionEndDate, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
     commonPrepaidTotal, prepaidCountryScopes, commonAllocation, prepaidGroups,
     depositCount, withdrawalCount, periodTransactions, filteredTransactions, groupedTransactions,
-    getAccount, getTransaction, updateTransaction, setTransactionPeriod, getFixedExpense, getPrepaidExpense, transactionsByAccount,
+    getAccount, removeAccount, getTransaction, updateTransaction, setTransactionPeriod, getFixedExpense, getPrepaidExpense, transactionsByAccount,
     addFixedExpense, updateFixedExpense, removeFixedExpense,
     addPrepaidExpense, updatePrepaidExpense, removePrepaidExpense,
   }

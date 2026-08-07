@@ -1,14 +1,16 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useFinancialScheduleStore } from '@/stores/financialSchedule'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const scheduleStore = useFinancialScheduleStore()
 
-const step = ref(0)
+const requestedStep = Number(route.query.step)
+const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= 8 ? requestedStep : 0)
 const selectedBanks = ref(['신한은행', 'KB국민은행', '우리은행', '카카오뱅크', '토스뱅크'])
 const selectedCertificate = ref('카카오인증서')
 const agreed = ref(true)
