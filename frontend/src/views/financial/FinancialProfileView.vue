@@ -286,7 +286,7 @@ onMounted(() => {
         </div>
         <div class="sticky-action split">
           <button class="secondary-button" @click="selectedBank = null; loginId = ''; password = ''; step = 2">자산연결추가</button>
-          <button class="primary-button" @click="step = 6">확인</button>
+          <button class="primary-button" @click="route.query.from === 'asset' ? router.replace('/asset') : step = 6">확인</button>
         </div>
       </template>
 
