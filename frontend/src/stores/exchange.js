@@ -3,10 +3,15 @@ import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'tripass-exchange'
 const currencies = [
-  { code:'EUR', name:'유로', flag:'🇫🇷', unit:1, rate:1486.20, change:-3.10, decimals:2, chart:[1477,1481,1488,1485,1491,1488,1486.2] },
-  { code:'CHF', name:'스위스 프랑', flag:'🇨🇭', unit:1, rate:1704.60, change:2.40, decimals:2, chart:[1695,1698,1701,1700,1706,1703,1704.6] },
-  { code:'JPY', name:'일본 엔', flag:'🇯🇵', unit:100, rate:923.10, change:-1.20, decimals:2, chart:[928,926,924,925,922,924,923.1] },
-  { code:'HKD', name:'홍콩 달러', flag:'🇭🇰', unit:1, rate:184.2, change:-0.18, decimals:2, chart:[184.7,184.5,184.3,184.4,184.1,184.3,184.2] },
+  { code:'EUR', name:'유로', country:'유럽연합', flag:'🇪🇺', unit:1, rate:1486.20, change:-3.10, decimals:2, chart:[1477,1481,1488,1485,1491,1488,1486.2] },
+  { code:'CHF', name:'스위스 프랑', country:'스위스', flag:'🇨🇭', unit:1, rate:1704.60, change:2.40, decimals:2, chart:[1695,1698,1701,1700,1706,1703,1704.6] },
+  { code:'JPY', name:'일본 엔', country:'일본', flag:'🇯🇵', unit:100, rate:923.10, change:-1.20, decimals:2, chart:[928,926,924,925,922,924,923.1] },
+  { code:'USD', name:'미국 달러', country:'미국', flag:'🇺🇸', unit:1, rate:1429.90, change:-3.10, decimals:2, chart:[1421,1425,1431,1428,1433,1430,1429.9] },
+  { code:'AUD', name:'호주 달러', country:'호주', flag:'🇦🇺', unit:1, rate:1000.60, change:2.40, decimals:2, chart:[993,997,1002,999,1004,1001,1000.6] },
+  { code:'CAD', name:'캐나다 달러', country:'캐나다', flag:'🇨🇦', unit:1, rate:1018.10, change:-1.20, decimals:2, chart:[1023,1021,1019,1020,1017,1019,1018.1] },
+  { code:'CNY', name:'중국 위안', country:'중국', flag:'🇨🇳', unit:1, rate:211.70, change:-3.10, decimals:2, chart:[214,213,212,213,211,212,211.7] },
+  { code:'HKD', name:'홍콩 달러', country:'홍콩', flag:'🇭🇰', unit:1, rate:184.2, change:2.40, decimals:2, chart:[184.7,184.5,184.3,184.4,184.1,184.3,184.2] },
+  { code:'GBP', name:'영국 파운드', country:'영국', flag:'🇬🇧', unit:1, rate:1923.10, change:-1.20, decimals:2, chart:[1912,1918,1925,1921,1927,1924,1923.1] },
 ]
 const banks = [
   { id:'kb-gangnam', name:'KB국민은행 강남역지점', distance:350, walk:5, address:'서울 강남구 강남대로 396', phone:'02-0000-0000', hours:'09:00 - 16:00', lat:44, top:43, preferentialRate:1480.10 },
