@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import AssetTicket from '@/components/asset/AssetTicket.vue'
@@ -15,6 +15,11 @@ const realAccounts = ref([])
 const selectedId = ref(null)
 
 const ACCOUNT_TYPE_LABEL = { CHECKING: '입출금', DEPOSIT: '예금', SAVING: '적금' }
+
+const totalBalance = computed(() =>
+  asset.totalAssets + realAccounts.value.reduce((sum, acc) => sum + Number(acc.balance ?? 0), 0)
+)
+const totalAccountCount = computed(() => asset.accounts.length + realAccounts.value.length)
 
 onMounted(async () => {
   try {
@@ -53,7 +58,7 @@ async function removeRealAccount(acc) {
   <main class="asset-page">
     <div class="shell">
       <h1>자산관리</h1>
-      <AssetTicket label="전체 보유금액" :amount="asset.totalAssets" :caption="`${asset.accounts.length}개 계좌 연동　·　출국까지 D-186`" action="거래내역 상세보기" @action="router.push('/asset/transactions')" />
+      <AssetTicket label="전체 보유금액" :amount="totalBalance" :caption="`${totalAccountCount}개 계좌 연동　·　출국까지 D-186`" action="거래내역 상세보기" @action="router.push('/asset/transactions')" />
 
       <div class="section-title"><h2>연동 계좌</h2><div><button type="button" @click="editingAccounts = !editingAccounts">{{ editingAccounts ? '완료' : '삭제하기' }}</button><button type="button" @click="router.push({ path: '/profile/financial', query: { step: 2, from: 'asset' } })">＋ 계좌 추가</button></div></div>
       <section class="accounts">
