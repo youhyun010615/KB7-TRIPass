@@ -198,7 +198,7 @@ public class AssetService {
 
             //거래내역 파싱 (1건이면 Map, 여러 건이면 List)
             Map<String, Object> data = (Map<String, Object>) result.get("data");
-            Object rawList = data.get("resTranList");
+            Object rawList = data.get("resTrHistoryList");
             List<Map<String, Object>> tranList;
             if (rawList instanceof List) {
                 tranList = (List<Map<String, Object>>) rawList;
@@ -214,16 +214,22 @@ public class AssetService {
                 TransactionDto dto = new TransactionDto();
                 String trDate = (String) tran.get("resAccountTrDate");
                 String trTime = (String) tran.get("resAccountTrTime");
-                String trAmt  = (String) tran.get("resAccountTrAmt");
+                BigDecimal resIn  = parseBigDecimal(tran.get("resAccountIn"));
+                BigDecimal resOut = parseBigDecimal(tran.get("resAccountOut"));
+                boolean isDeposit = resIn.compareTo(BigDecimal.ZERO) > 0;
+                BigDecimal amount = isDeposit ? resIn : resOut;
+                String desc2 = (String) tran.get("resAccountDesc2");
+                String desc1 = (String) tran.get("resAccountDesc1");
+                String merchantName = (desc2 != null && !desc2.isEmpty()) ? desc2 : desc1;
                 dto.setAccountId(req.getAccountId());
-                dto.setExternalKey(trDate + trTime + account.getAccountNumber() + trAmt);
+                dto.setExternalKey(trDate + trTime + account.getAccountNumber() + amount.toPlainString());
                 dto.setTransactionDate(LocalDate.parse(trDate, DateTimeFormatter.ofPattern("yyyyMMdd")));
                 dto.setTransactionTime(LocalTime.parse(trTime, DateTimeFormatter.ofPattern("HHmmss")));
-                dto.setTransactionType("1".equals(tran.get("resAccountTrType")) ? "DEPOSIT" : "WITHDRAWAL");
+                dto.setTransactionType(isDeposit ? "DEPOSIT" : "WITHDRAWAL");
                 dto.setTransactionRegion("DOMESTIC");
-                dto.setAmount(parseBigDecimal(trAmt));
+                dto.setAmount(amount);
                 dto.setBalanceAfter(parseBigDecimal(tran.get("resAfterTranBalance")));
-                dto.setMerchantName((String) tran.get("resAccountTrRemark"));
+                dto.setMerchantName(merchantName);
                 assetMapper.insertTransaction(dto);
                 saved.add(dto);
             }
