@@ -1,7 +1,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'tripass-asset-management'
+const STORAGE_KEY = 'tripass-asset-management-v2'
 
 export const PREPAID_SCOPE_META = {
   ALL: { name: '전체', flag: '🌍' },
@@ -20,7 +20,7 @@ const accountSeed = [
 ]
 
 const transactionSeed = [
-  { id: 1, accountId: 1, date: '2024-07-18', dateLabel: '2024.07.18 (목)', time: '14:22', merchant: '비엣포', category: '식비', amount: -85_000, method: 'KB국민은행 여행통장', user: '비엣포', balanceAfter: 4_965_000, memo: '여행 준비 식사' },
+  { id: 1, accountId: 1, date: '2024-07-18', dateLabel: '2024.07.18 (목)', time: '14:22', merchant: 'Boulangerie Utopie', category: '식비', amount: -42_000, localAmount: -28.26, currency: 'EUR', countryCode: 'FR', country: '프랑스', city: '파리', flag: '🇫🇷', method: 'KB국민은행 여행통장 ****5320', user: 'Boulangerie Utopie', balanceAfter: 1_148_000, memo: '아침 식사' },
   { id: 2, accountId: 2, date: '2024-07-18', dateLabel: '2024.07.18 (목)', time: '18:40', merchant: '신한은행 정기적금', category: '자동이체', amount: -300_000, method: '신한은행 통장', user: '신한은행', balanceAfter: 3_000_000, memo: '7월 정기 적금' },
   { id: 3, accountId: 1, date: '2024-07-19', dateLabel: '2024.07.19 (금)', time: '14:22', merchant: '스타벅스 강남점', category: '카페', amount: -10_000, method: 'KB국민은행 여행통장', user: '스타벅스', balanceAfter: 4_955_000, memo: '' },
   { id: 4, accountId: 1, date: '2024-07-19', dateLabel: '2024.07.19 (금)', time: '15:22', merchant: '지에스리테일(GS25)', category: '생활비', amount: -4_500, method: 'KB국민은행 여행통장', user: 'GS25', balanceAfter: 4_950_500, memo: '' },
@@ -65,6 +65,9 @@ export const useAssetStore = defineStore('asset', () => {
   const fixedExpenses = reactive(saved?.fixedExpenses ?? fixedExpenseSeed.map((item) => ({ ...item })))
   const prepaidExpenses = reactive(saved?.prepaidExpenses ?? prepaidSeed.map((item) => ({ ...item })))
   const transactionFilter = ref(saved?.transactionFilter ?? 'all')
+  const transactionPeriod = ref(saved?.transactionPeriod ?? '1month')
+  const transactionStartDate = ref(saved?.transactionStartDate ?? '2024-06-20')
+  const transactionEndDate = ref(saved?.transactionEndDate ?? '2024-07-19')
   const selectedDate = ref(saved?.selectedDate ?? '2024-07-19')
   const selectedPrepaidScope = ref(saved?.selectedPrepaidScope ?? 'ALL')
 
@@ -88,10 +91,11 @@ export const useAssetStore = defineStore('asset', () => {
         finalTotal: scope === 'COMMON' ? directTotal : directTotal + commonAllocation.value,
       }
     }))
-  const depositCount = computed(() => transactions.filter((item) => item.amount > 0).length)
-  const withdrawalCount = computed(() => transactions.filter((item) => item.amount < 0).length)
+  const periodTransactions = computed(() => transactions.filter((item) => item.date >= transactionStartDate.value && item.date <= transactionEndDate.value))
+  const depositCount = computed(() => periodTransactions.value.filter((item) => item.amount > 0).length)
+  const withdrawalCount = computed(() => periodTransactions.value.filter((item) => item.amount < 0).length)
 
-  const filteredTransactions = computed(() => transactions.filter((item) => {
+  const filteredTransactions = computed(() => periodTransactions.value.filter((item) => {
     if (transactionFilter.value === 'deposit') return item.amount > 0
     if (transactionFilter.value === 'withdrawal') return item.amount < 0
     return true
@@ -110,6 +114,19 @@ export const useAssetStore = defineStore('asset', () => {
 
   function getTransaction(id) {
     return transactions.find((item) => item.id === Number(id))
+  }
+
+  function updateTransaction(id, patch) {
+    const item = getTransaction(id)
+    if (!item) return false
+    Object.assign(item, patch)
+    return true
+  }
+
+  function setTransactionPeriod(period, startDate, endDate) {
+    transactionPeriod.value = period
+    transactionStartDate.value = startDate
+    transactionEndDate.value = endDate
   }
 
   function getFixedExpense(id) {
@@ -190,6 +207,9 @@ export const useAssetStore = defineStore('asset', () => {
       fixedExpenses: fixedExpenses.map((item) => ({ ...item })),
       prepaidExpenses: prepaidExpenses.map((item) => ({ ...item })),
       transactionFilter: transactionFilter.value,
+      transactionPeriod: transactionPeriod.value,
+      transactionStartDate: transactionStartDate.value,
+      transactionEndDate: transactionEndDate.value,
       selectedDate: selectedDate.value,
       selectedPrepaidScope: selectedPrepaidScope.value,
     }),
@@ -199,10 +219,10 @@ export const useAssetStore = defineStore('asset', () => {
 
   return {
     accounts, transactions, fixedExpenses, prepaidExpenses,
-    transactionFilter, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
+    transactionFilter, transactionPeriod, transactionStartDate, transactionEndDate, selectedDate, selectedPrepaidScope, totalAssets, activeFixedTotal, prepaidTotal,
     commonPrepaidTotal, prepaidCountryScopes, commonAllocation, prepaidGroups,
-    depositCount, withdrawalCount, filteredTransactions, groupedTransactions,
-    getAccount, getTransaction, getFixedExpense, getPrepaidExpense, transactionsByAccount,
+    depositCount, withdrawalCount, periodTransactions, filteredTransactions, groupedTransactions,
+    getAccount, getTransaction, updateTransaction, setTransactionPeriod, getFixedExpense, getPrepaidExpense, transactionsByAccount,
     addFixedExpense, updateFixedExpense, removeFixedExpense,
     addPrepaidExpense, updatePrepaidExpense, removePrepaidExpense,
   }

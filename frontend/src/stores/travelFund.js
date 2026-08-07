@@ -1,14 +1,14 @@
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useTravelStore } from '@/stores/travel'
 
 const categorySeed = [
-  { id: 'food', name: '식비', icon: '🍴', color: '#2378ea' },
-  { id: 'cafe', name: '카페', icon: '☕', color: '#7248df' },
-  { id: 'living', name: '생활비', icon: '📦', color: '#22ad6f' },
-  { id: 'shopping', name: '쇼핑', icon: '🛍️', color: '#ef3b86' },
-  { id: 'hobby', name: '취미·여가', icon: '🎨', color: '#ff912f' },
-  { id: 'other', name: '기타', icon: '•••', color: '#98a7ba' },
+  { id: 'food', name: '식비', icon: '🍴', color: '#2378ea', description:'식사, 배달, 식료품' },
+  { id: 'cafe', name: '카페', icon: '☕', color: '#7248df', description:'커피와 디저트' },
+  { id: 'living', name: '생활비', icon: '📦', color: '#22ad6f', description:'마트, 편의점, 생활용품' },
+  { id: 'shopping', name: '쇼핑', icon: '🛍️', color: '#ef3b86', description:'의류, 화장품, 기념품' },
+  { id: 'hobby', name: '취미·여가', icon: '🎨', color: '#ff912f', description:'관광, 공연, 액티비티' },
+  { id: 'other', name: '기타', icon: '•••', color: '#98a7ba', description:'그 외 여행 지출' },
 ]
 
 const countrySeed = [
@@ -54,6 +54,9 @@ export const useTravelFundStore = defineStore('travelFund', () => {
   const travel = useTravelStore()
   const countries = countrySeed
   const categories = categorySeed
+  let savedOverrides = {}
+  try { savedOverrides = JSON.parse(localStorage.getItem('tripass-travel-fund-overrides') || '{}') } catch { savedOverrides = {} }
+  const transactionOverrides = reactive(savedOverrides)
 
   function period(code) {
     const country = countries.find(item => item.code === code)
@@ -70,7 +73,7 @@ export const useTravelFundStore = defineStore('travelFund', () => {
       id: `${country.code}-${index + 1}`,
       countryCode: country.code,
       merchant: item[0], amount: item[1], categoryId: item[2], icon: item[3],
-      date: addDays(range.startDate, item[4], range.endDate), memo: item[5],
+      date: addDays(range.startDate, item[4], range.endDate), memo: item[5], ...transactionOverrides[`${country.code}-${index + 1}`],
     }))
   }))
 
@@ -85,6 +88,12 @@ export const useTravelFundStore = defineStore('travelFund', () => {
     return countryTransactions(code).filter(item => item.categoryId === categoryId)
   }
   function getTransaction(id) { return transactions.value.find(item => item.id === id) }
+  function updateTransaction(id, patch) {
+    if (!getTransaction(id)) return false
+    transactionOverrides[id] = { ...(transactionOverrides[id] || {}), ...patch }
+    return true
+  }
+  watch(transactionOverrides, value => localStorage.setItem('tripass-travel-fund-overrides', JSON.stringify(value)), { deep:true })
 
-  return { countries, categories, transactions, period, getCountry, getCategory, countryTransactions, categoryTransactions, getTransaction }
+  return { countries, categories, transactions, period, getCountry, getCategory, countryTransactions, categoryTransactions, getTransaction, updateTransaction }
 })
