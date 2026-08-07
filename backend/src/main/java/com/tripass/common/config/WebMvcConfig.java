@@ -30,6 +30,7 @@ import java.util.List;
         "com.tripass.saving.controller",
         "com.tripass.travel.controller",
         "com.tripass.exchange.controller",
+        "com.tripass.bank.controller",
         "com.tripass.prepay.controller",
         "com.tripass.schedule.controller",
         "com.tripass.expense.controller",

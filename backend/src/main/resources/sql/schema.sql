@@ -19,6 +19,7 @@ DROP TABLE IF EXISTS fixed_expenses;
 DROP TABLE IF EXISTS income_sources;
 DROP TABLE IF EXISTS category_budgets;
 DROP TABLE IF EXISTS exchange_rate_alerts;
+DROP TABLE IF EXISTS exchange_market_data;
 DROP TABLE IF EXISTS exchange_rates;
 DROP TABLE IF EXISTS codef_connected_institutions;
 DROP TABLE IF EXISTS accounts;
@@ -138,7 +139,6 @@ CREATE TABLE exchange_bank_branches (
     longitude         DECIMAL(10, 7) NULL                    COMMENT '경도',
     business_hours    VARCHAR(200)   NULL                    COMMENT '영업시간',
     phone_number      VARCHAR(30)    NULL                    COMMENT '전화번호',
-    preferential_rate DECIMAL(5, 2)  NULL                    COMMENT '환율 우대율(%)',
     is_active         BOOLEAN        NOT NULL DEFAULT TRUE   COMMENT '사용 여부',
     created_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
@@ -637,6 +637,23 @@ CREATE TABLE notification_settings (
     UNIQUE KEY uk_notification_settings_user (user_id),
     CONSTRAINT fk_notification_settings_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) COMMENT '알림 설정';
+
+-- 32. 환전 시장 데이터
+CREATE TABLE exchange_market_data (
+    id                 BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    currency_id        BIGINT         NOT NULL                COMMENT '통화 ID',
+    unit               INT            NOT NULL DEFAULT 1      COMMENT '통화 단위 (예: 100)',
+    base_rate          DECIMAL(20, 8) NOT NULL COMMENT '매매기준율 (Raw)',
+    buy_rate           DECIMAL(20, 8) NOT NULL COMMENT '살 때 환율 (Raw)',
+    buy_fee_rate       DECIMAL(5, 2)  NOT NULL DEFAULT 0 COMMENT '살 때 수수료율 (%)',
+    sell_rate          DECIMAL(20, 8) NOT NULL COMMENT '팔 때 환율 (Raw)',
+    sell_fee_rate      DECIMAL(5, 2)  NOT NULL DEFAULT 0 COMMENT '팔 때 수수료율 (%)',
+    fetched_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수신 일시',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_exchange_market_data_currency FOREIGN KEY (currency_id) REFERENCES currencies (id),
+    UNIQUE KEY uk_market_data_currency (currency_id)
+) COMMENT '환전 시장 데이터(환율+수수료)';
+
 
 
 -- ===== INDEXES =====

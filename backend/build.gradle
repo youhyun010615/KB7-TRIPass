@@ -88,6 +88,9 @@ dependencies {
 
     // HTTP 통신 (Codef API 호출용)
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    
+    // HTML 파싱 및 크롤링
+    implementation 'org.jsoup:jsoup:1.16.1'
 
     // Validation
     implementation 'javax.validation:validation-api:2.0.1.Final'

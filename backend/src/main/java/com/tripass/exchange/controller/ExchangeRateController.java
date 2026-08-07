@@ -55,8 +55,8 @@ public class ExchangeRateController {
     }
 
     @PostMapping("/sync")
-    public ApiResponse<SyncResultDto> manualSync(@RequestParam String date) {
-        SyncResultDto result = exchangeRateService.syncExchangeRates(date);
+    public ApiResponse<SyncResultDto> manualSync() {
+        SyncResultDto result = exchangeRateService.syncExchangeRates();
         return ApiResponse.success("환율 동기화 완료", result);
     }
 
