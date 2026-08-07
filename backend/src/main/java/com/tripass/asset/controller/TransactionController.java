@@ -1,5 +1,6 @@
 package com.tripass.asset.controller;
 
+import com.tripass.asset.dto.CalendarDayDto;
 import com.tripass.asset.dto.TransactionDto;
 import com.tripass.asset.dto.TransactionUpdateRequestDto;
 import com.tripass.asset.service.AssetService;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Calendar;
 import java.util.List;
 
 @RestController
@@ -50,5 +52,16 @@ public class TransactionController {
 
     private Long getAuthenticatedUserId(Authentication authentication) {
         return (Long) authentication.getPrincipal();
+    }
+
+    //거래내역 캘린더 조회
+    @GetMapping("/calendar")
+    public ResponseEntity<ApiResponse<List<CalendarDayDto>>> getCalendar(
+            Authentication authentication,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) String type) {
+        Long userId = getAuthenticatedUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.success(assetService.getCalendar(userId, year, month, type)));
     }
 }

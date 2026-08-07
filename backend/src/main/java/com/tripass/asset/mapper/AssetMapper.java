@@ -57,4 +57,13 @@ public interface AssetMapper {
 
     // supported_institutions
     List<SupportedInstitutionDto> findAllSupportedInstitutions();
+
+    //거래내역 캘린더 조회
+    List<CalendarDayDto> findCalendarByMonth(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("year") int year,
+            @org.apache.ibatis.annotations.Param("month") int month,
+            @org.apache.ibatis.annotations.Param("type") String type
+    );
+
 }

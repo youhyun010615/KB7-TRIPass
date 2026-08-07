@@ -151,4 +151,26 @@
         AND a.is_deleted = 0
     </update>
 
+
+    <!-- 거래내역 캘린더 조회 -->
+    <select id = "findCalendarByMonth" resultType="CalendarDayDto">
+        SELECT
+            DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS date,
+            SUM(CASE WHEN t.transaction_type = 'DEPOSIT' THEN t.amount ELSE 0 END) AS totalDeposit,
+            SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE 0 END) AS totalWithdrawal
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.id
+        WHERE a.user_id = #{userId}
+        AND YEAR(t.transaction_date) = #{year}
+        AND MONTH(t.transaction_date) = #{month}
+        AND t.is_deleted = 0
+        AND a.is_deleted = 0
+        <if test="type != null and type != 'ALL'">
+            AND t.transaction_type = #{type}
+        </if>
+        GROUP BY t.transaction_date
+        ORDER BY t.transaction_date
+    </select>
+
+
 </mapper>
