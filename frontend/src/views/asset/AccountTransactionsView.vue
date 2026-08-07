@@ -1,34 +1,95 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AssetTicket from '@/components/asset/AssetTicket.vue'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
 import { useAssetStore } from '@/stores/asset'
+import api from '@/api'
 
 const route = useRoute()
 const router = useRouter()
 const asset = useAssetStore()
-const account = computed(() => asset.getAccount(route.params.accountId) || asset.accounts[0])
 const filter = ref('all')
 const startDate = ref('2024-06-20')
 const endDate = ref('2024-07-19')
 const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
-const accountTransactions = computed(() => asset.transactionsByAccount(account.value.id))
-const filteredTransactions = computed(() => accountTransactions.value.filter((item) => {
-  if (item.date < startDate.value || item.date > endDate.value) return false
-  if (filter.value === 'deposit') return item.amount > 0
-  if (filter.value === 'withdrawal') return item.amount < 0
-  return true
-}))
+
+const isReal = route.query.isReal === 'true'
+const realAccount = ref({ name: '', number: '', type: '', bank: '', balance: 0 })
+const realTransactions = ref([])
+
+const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+async function fetchRealTransactions() {
+  try {
+    const params = { startDate: startDate.value, endDate: endDate.value }
+    if (filter.value !== 'all') params.type = filter.value.toUpperCase()
+    const res = await api.get(`/accounts/${route.params.accountId}/transactions`, { params })
+    const data = res.data.data
+    realAccount.value.balance = data.balance
+    realTransactions.value = data.transactions ?? []
+  } catch (e) {
+    console.error('거래내역 조회 실패', e)
+  }
+}
+
+onMounted(async () => {
+  if (!isReal) return
+  realAccount.value = {
+    name: route.query.name ?? '',
+    number: route.query.number ?? '',
+    type: route.query.type ?? '',
+    bank: (route.query.name ?? '').split(' ')[0],
+    balance: 0,
+  }
+  await fetchRealTransactions()
+})
+
+watch([startDate, endDate, filter], () => {
+  if (isReal) fetchRealTransactions()
+})
+
+const account = computed(() => isReal ? realAccount.value : (asset.getAccount(route.params.accountId) || asset.accounts[0]))
+
+const accountTransactions = computed(() => isReal ? [] : asset.transactionsByAccount(account.value?.id))
 const travelRecognizedAmount = computed(() => accountTransactions.value
   .filter((item) => item.country || item.category === '여행비')
   .reduce((sum, item) => sum + Math.abs(Math.min(0, item.amount)), 0))
-const groups = computed(() => filteredTransactions.value.reduce((result, item) => {
-  const group = result.find((entry) => entry.date === item.date)
-  if (group) group.items.push(item)
-  else result.push({ date: item.date, label: item.dateLabel, items: [item] })
-  return result
-}, []))
+
+const groups = computed(() => {
+  if (isReal) {
+    return realTransactions.value.reduce((result, t) => {
+      const date = t.transactionDate
+      const d = new Date(date)
+      const label = `${date.replaceAll('-', '.')} (${DAYS[d.getDay()]})`
+      const item = {
+        id: t.id,
+        merchant: t.merchantName ?? '(내용없음)',
+        category: '기타',
+        method: route.query.name ?? '',
+        amount: t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount),
+        time: (t.transactionTime ?? '').substring(0, 5),
+      }
+      const group = result.find((g) => g.date === date)
+      if (group) group.items.push(item)
+      else result.push({ date, label, items: [item] })
+      return result
+    }, [])
+  }
+  return accountTransactions.value
+    .filter((item) => {
+      if (item.date < startDate.value || item.date > endDate.value) return false
+      if (filter.value === 'deposit') return item.amount > 0
+      if (filter.value === 'withdrawal') return item.amount < 0
+      return true
+    })
+    .reduce((result, item) => {
+      const group = result.find((entry) => entry.date === item.date)
+      if (group) group.items.push(item)
+      else result.push({ date: item.date, label: item.dateLabel, items: [item] })
+      return result
+    }, [])
+})
 </script>
 
 <template>
