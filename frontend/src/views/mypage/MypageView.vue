@@ -1,10 +1,22 @@
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import BottomNav from '@/components/common/BottomNav.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const memberIdentity = computed(() => {
+  const provider = authStore.user?.loginProvider ?? 'LOCAL'
+  if (provider !== 'LOCAL') return authStore.user?.email ?? '이메일 미등록'
+  return authStore.user?.loginId ?? authStore.user?.id ?? 'tripass'
+})
+
+function logout() {
+  if (!window.confirm('로그아웃할까요?')) return
+  authStore.logout()
+  router.replace('/login')
+}
 
 const myManageItems = [
   {
@@ -47,9 +59,8 @@ const serviceItems = [
   <div class="min-h-screen pb-20 flex flex-col" style="background: #F7F4EE">
 
     <!-- 헤더 -->
-    <div class="flex items-center justify-between px-5 pt-14 pb-3">
+    <div class="flex items-center px-5 pt-14 pb-3">
       <h1 class="text-2xl font-bold text-gray-900">마이페이지</h1>
-      <button class="text-sm font-medium" style="color: #3B5BDB">설정</button>
     </div>
 
     <!-- 멤버 패스 카드 -->
@@ -64,7 +75,7 @@ const serviceItems = [
         </div>
         <div>
           <p class="text-white font-bold text-xl leading-tight">{{ authStore.user?.name ?? '권유현' }}</p>
-          <p class="text-white/60 text-sm mt-0.5">{{ authStore.user?.email ?? 'youhyun@email.com' }}</p>
+          <p class="text-white/60 text-sm mt-0.5">{{ memberIdentity }}</p>
         </div>
       </div>
     </div>
@@ -143,6 +154,10 @@ const serviceItems = [
           </svg>
         </button>
       </div>
+    </div>
+
+    <div class="px-4 mt-5 mb-4">
+      <button type="button" class="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-500" @click="logout">로그아웃</button>
     </div>
 
     <BottomNav />
