@@ -81,7 +81,6 @@
         WHERE a.id = #{accountId}
         AND a.user_id = #{userId}
         AND a.is_deleted = 0
-        AND i.is_deleted = 0
     </select>
 
     <!-- 개별 계좌 거래내역 조회 (날짜/타입 필터) -->
