@@ -1,94 +1,36 @@
 import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { fetchExchangeRates } from '@/api/exchange';
+import currencyUnits from '@/assets/currencyUnits.json';
 
 const STORAGE_KEY = 'tripass-exchange';
 const currencies = ref([]); // 빈 배열로 초기화
 
-// 국가 코드에 따른 국기 이모지 매핑 (KRW 제외)
-const flagMap = {
-  AED: '🇦🇪', // 아랍에미리트
-  AUD: '🇦🇺', // 호주
-  BDT: '🇧🇩', // 방글라데시
-  BHD: '🇧🇭', // 바레인
-  BND: '🇧🇳', // 브루나이
-  BRL: '🇧🇷', // 브라질
-  CAD: '🇨🇦', // 캐나다
-  CHF: '🇨🇭', // 스위스
-  CLP: '🇨🇱', // 칠레
-  CNY: '🇨🇳', // 중국
-  CZK: '🇨🇿', // 체코
-  DKK: '🇩🇰', // 덴마크
-  EGP: '🇪🇬', // 이집트
-  EUR: '🇪🇺', // 유럽연합
-  GBP: '🇬🇧', // 영국
-  HKD: '🇭🇰', // 홍콩
-  HUF: '🇭🇺', // 헝가리
-  IDR: '🇮🇩', // 인도네시아
-  ILS: '🇮🇱', // 이스라엘
-  INR: '🇮🇳', // 인도
-  JOD: '🇯🇴', // 요르단
-  JPY: '🇯🇵', // 일본
-  KWD: '🇰🇼', // 쿠웨이트
-  KZT: '🇰🇿', // 카자흐스탄
-  MXN: '🇲🇽', // 멕시코
-  MYR: '🇲🇾', // 말레이시아
-  NOK: '🇳🇴', // 노르웨이
-  NZD: '🇳🇿', // 뉴질랜드
-  OMR: '🇴🇲', // 오만
-  PHP: '🇵🇭', // 필리핀
-  PKR: '🇵🇰', // 파키스탄
-  PLN: '🇵🇱', // 폴란드
-  RUB: '🇷🇺', // 러시아
-  SAR: '🇸🇦', // 사우디아라비아
-  SEK: '🇸🇪', // 스웨덴
-  SGD: '🇸🇬', // 싱가포르
-  THB: '🇹🇭', // 태국
-  TRY: '🇹🇷', // 튀르키예
-  TWD: '🇹🇼', // 대만
-  USD: '🇺🇸', // 미국
-  VND: '🇻🇳', // 베트남
-  ZAR: '🇿🇦', // 남아프리카공화국
+// flag-icons 클래스 매핑 객체 (스토어 외부 export)
+export const flagClassMap = {
+  AED: 'fi fi-ae', // 아랍에미리트 디르함
+  AUD: 'fi fi-au', // 호주 달러
+  BHD: 'fi fi-bh', // 바레인 디나르
+  BND: 'fi fi-bn', // 브루나이 달러
+  CAD: 'fi fi-ca', // 캐나다 달러
+  CHF: 'fi fi-ch', // 스위스 프랑
+  CNY: 'fi fi-cn', // 위안화 (CNH 포함)
+  DKK: 'fi fi-dk', // 덴마크 크로네
+  EUR: 'fi fi-eu', // 유로
+  GBP: 'fi fi-gb', // 영국 파운드
+  HKD: 'fi fi-hk', // 홍콩 달러
+  IDR: 'fi fi-id', // 인도네시아 루피아
+  JPY: 'fi fi-jp', // 일본 엔
+  KWD: 'fi fi-kw', // 쿠웨이트 디나르
+  MYR: 'fi fi-my', // 말레이시아 링기트
+  NOK: 'fi fi-no', // 노르웨이 크로네
+  NZD: 'fi fi-nz', // 뉴질랜드 달러
+  SAR: 'fi fi-sa', // 사우디 리얄
+  SEK: 'fi fi-se', // 스웨덴 크로나
+  SGD: 'fi fi-sg', // 싱가포르 달러
+  THB: 'fi fi-th', // 태국 바트
+  USD: 'fi fi-us', // 미국 달러
 };
-
-const banks = [
-  {
-    id: 'kb-gangnam',
-    name: 'KB국민은행 강남역지점',
-    distance: 350,
-    walk: 5,
-    address: '서울 강남구 강남대로 396',
-    phone: '02-0000-0000',
-    hours: '09:00 - 16:00',
-    lat: 44,
-    top: 43,
-    preferentialRate: 1480.1,
-  },
-  {
-    id: 'kb-seolleung',
-    name: 'KB국민은행 선릉지점',
-    distance: 620,
-    walk: 8,
-    address: '서울 강남구 테헤란로 412',
-    phone: '02-1111-1111',
-    hours: '09:00 - 16:00',
-    lat: 70,
-    top: 28,
-    preferentialRate: 1482.3,
-  },
-  {
-    id: 'shinhan-gangnam',
-    name: '신한은행 강남중앙지점',
-    distance: 780,
-    walk: 11,
-    address: '서울 강남구 역삼로 152',
-    phone: '02-2222-2222',
-    hours: '09:00 - 16:00',
-    lat: 28,
-    top: 68,
-    preferentialRate: 1484.5,
-  },
-];
 
 function loadState() {
   try {
@@ -102,6 +44,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   const saved = loadState();
   const selectedCode = ref(saved?.selectedCode || 'EUR');
   const period = ref(saved?.period || '1w');
+  const currentTab = ref(saved?.currentTab || 'rate');
   const krwAmount = ref(saved?.krwAmount || 100_000);
   const alerts = ref(
     saved?.alerts || [
@@ -109,6 +52,7 @@ export const useExchangeStore = defineStore('exchange', () => {
       { id: 2, code: 'CHF', target: 1700, amount: 150_000, enabled: true },
     ],
   );
+
   const selectedBankId = ref(saved?.selectedBankId || 'kb-gangnam');
   const selectedCurrency = computed(
     () =>
@@ -154,28 +98,37 @@ export const useExchangeStore = defineStore('exchange', () => {
   async function updateExchangeRates() {
     try {
       const data = await fetchExchangeRates();
-      // API 응답 데이터를 스토어의 currencies 구조에 맞게 매핑하고 flag 추가
-      currencies.value = data.map((item) => ({
-        code: item.currencyCode,
-        name: item.currencyName,
-        rate: item.dealBaseRate,
-        change: item.changeAmount,
-        unit: 1,
-        flag: flagMap[item.currencyCode] || '🏳️', // 매핑된 국기 또는 기본값
-      }));
+
+      // API 응답 데이터를 스토어의 currencies 구조에 맞게 매핑하고 flagClass 추가
+      currencies.value = data.map((item) => {
+        let cleanCode = (item.currencyCode || '')
+          .replace(/\(100\)/g, '')
+          .trim();
+        if (cleanCode === 'CNH') cleanCode = 'CNY';
+
+        return {
+          code: item.currencyCode,
+          name: item.currencyName,
+          rate: item.dealBaseRate * currencyUnits[item.currencyCode],
+          change: (item.changeAmount || 0) * currencyUnits[item.currencyCode],
+          unit: currencyUnits[item.currencyCode] || 1,
+          flagClass: flagClassMap[cleanCode] || 'fi fi-un',
+        };
+      });
     } catch (error) {
       console.error('Failed to update exchange rates', error);
     }
   }
 
   watch(
-    [selectedCode, period, krwAmount, alerts, selectedBankId],
+    [selectedCode, period, currentTab, krwAmount, alerts, selectedBankId],
     () =>
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           selectedCode: selectedCode.value,
           period: period.value,
+          currentTab: currentTab.value,
           krwAmount: krwAmount.value,
           alerts: alerts.value,
           selectedBankId: selectedBankId.value,
@@ -183,17 +136,19 @@ export const useExchangeStore = defineStore('exchange', () => {
       ),
     { deep: true },
   );
+
   return {
     currencies,
-    banks,
     selectedCode,
     period,
+    currentTab,
     krwAmount,
     alerts,
     selectedBankId,
     selectedCurrency,
     selectedBank,
     foreignAmount,
+    flagClassMap,
     convertForeign,
     expectedForeign,
     saveAlert,

@@ -23,8 +23,12 @@ onMounted(async () => {
 });
 
 // 거리(정수) 및 도보 시간(1m/초 = 1분당 60m 이동 기준) 계산
-const displayDistance = computed(() => Math.round(distanceInfo.value?.distance || 0));
-const displayWalkTime = computed(() => Math.round((distanceInfo.value?.distance || 0) / 60) || 1);
+const displayDistance = computed(() =>
+  Math.round(distanceInfo.value?.distance || 0),
+);
+const displayWalkTime = computed(
+  () => Math.round((distanceInfo.value?.distance || 0) / 60) || 1,
+);
 
 const receive = computed(() =>
   exchange.expectedForeign(
@@ -49,7 +53,11 @@ const notice = (text) =>
       <template v-if="bank"
         ><ExchangeTicket
           :title="bank.name"
-          :subtitle="distanceInfo ? `현재 위치에서 ${displayDistance}m · 도보 ${displayWalkTime}분` : ''"
+          :subtitle="
+            distanceInfo
+              ? `현재 위치에서 ${displayDistance}m · 도보 ${displayWalkTime}분`
+              : ''
+          "
         />
         <section class="estimate">
           <small>100,000원 환전 시</small
@@ -73,13 +81,13 @@ const notice = (text) =>
         <section class="info">
           <h2>영업 정보</h2>
           <div>
-            <span>오늘 영업시간</span><b>{{ bank.hours }}</b>
+            <span>오늘 영업시간</span><b>{{ bank.businessHours }}</b>
           </div>
           <div>
             <span>주소</span><b>{{ bank.address }}</b>
           </div>
           <div>
-            <span>전화</span><b>{{ bank.phone }}</b>
+            <span>전화</span><b>{{ bank.telephone }}</b>
           </div>
         </section>
         <aside>

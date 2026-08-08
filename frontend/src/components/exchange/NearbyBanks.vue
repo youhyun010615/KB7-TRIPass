@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import BottomNav from '@/components/common/BottomNav.vue';
 import { useExchangeStore } from '@/stores/exchange';
 import { fetchNearbyBanks } from '@/api/exchange';
 
@@ -34,7 +33,7 @@ const unselectedMarkerImage = () => {
   return new window.kakao.maps.MarkerImage(
     getSvgIconUri('#4B433F', '#FFCC00', false),
     new window.kakao.maps.Size(14, 19),
-    { offset: new window.kakao.maps.Point(7, 19) } // 핀 하단 중앙 오프셋 (14/2, 19)
+    { offset: new window.kakao.maps.Point(7, 19) }, // 핀 하단 중앙 오프셋 (14/2, 19)
   );
 };
 
@@ -43,10 +42,9 @@ const selectedMarkerImage = () => {
   return new window.kakao.maps.MarkerImage(
     getSvgIconUri('#FFCC00', '#4B433F', true),
     new window.kakao.maps.Size(18, 24),
-    { offset: new window.kakao.maps.Point(9, 24) } // 핀 하단 중앙 오프셋 (18/2, 24)
+    { offset: new window.kakao.maps.Point(9, 24) }, // 핀 하단 중앙 오프셋 (18/2, 24)
   );
 };
-
 
 // 카카오 맵 SDK 로드
 const loadKakaoMap = () => {
@@ -83,10 +81,12 @@ const updateMapMarkers = () => {
       bank.latitude,
       bank.longitude,
     );
-    
+
     // 현재 선택된 은행인지 판별하여 최초 이미지 지정
     const isSelected = exchange.selectedBankId === bank.id;
-    const markerImg = isSelected ? selectedMarkerImage() : unselectedMarkerImage();
+    const markerImg = isSelected
+      ? selectedMarkerImage()
+      : unselectedMarkerImage();
 
     const marker = new window.kakao.maps.Marker({
       position: position,
@@ -95,7 +95,7 @@ const updateMapMarkers = () => {
     });
 
     marker.setMap(map);
-    
+
     // Z-Index 설정 (선택된 마커가 더 위에 오도록 처리)
     if (isSelected) marker.setZIndex(10);
 
@@ -123,9 +123,12 @@ const refreshMarkerStyles = () => {
 };
 
 // Pinia Store의 선택 은행 ID 변화 감시하여 마커 스타일 반응형 변경
-watch(() => exchange.selectedBankId, () => {
-  refreshMarkerStyles();
-});
+watch(
+  () => exchange.selectedBankId,
+  () => {
+    refreshMarkerStyles();
+  },
+);
 
 // 내 위치로 화면 이동 및 즉시 자동 조회
 const moveToCurrentLocation = () => {
@@ -182,7 +185,7 @@ const initMap = (lat, lng) => {
     center: new window.kakao.maps.LatLng(lat, lng),
     level: 4,
     draggable: true, // 명시적으로 드래그 활성화
-    zoomable: true,  // 명시적으로 휠 줌 활성화
+    zoomable: true, // 명시적으로 휠 줌 활성화
   };
   map = new window.kakao.maps.Map(mapContainer.value, options);
 
@@ -194,7 +197,7 @@ const initMap = (lat, lng) => {
   const gpsMarkerImg = new window.kakao.maps.MarkerImage(
     'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(gpsSvg),
     new window.kakao.maps.Size(30, 30),
-    { offset: new window.kakao.maps.Point(15, 15) }
+    { offset: new window.kakao.maps.Point(15, 15) },
   );
 
   const locPosition = new window.kakao.maps.LatLng(lat, lng);
@@ -216,14 +219,12 @@ const initMap = (lat, lng) => {
   });
 };
 
-
-
 onMounted(async () => {
   // 진입 시 이전 선택 상태 완전히 초기화 (깨끗한 첫 상태 제공)
   exchange.selectedBankId = null;
 
   await loadKakaoMap();
-  
+
   window.kakao.maps.load(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -243,9 +244,12 @@ onMounted(async () => {
 // 영업점 선택 및 지도 이동 (이동 및 선택만 수행, 상세 이동은 버튼으로 위임)
 function selectBank(bank) {
   exchange.selectedBankId = bank.id;
-  
+
   if (map) {
-    const position = new window.kakao.maps.LatLng(bank.latitude, bank.longitude);
+    const position = new window.kakao.maps.LatLng(
+      bank.latitude,
+      bank.longitude,
+    );
     map.panTo(position); // 부드럽게 지도의 포커스를 해당 마커로 이동
   }
 }
@@ -255,143 +259,102 @@ function goToDetail(bank) {
   exchange.selectedBankId = bank.id;
   router.push({
     path: `/exchange/banks/${bank.id}`,
-    state: { distance: bank.distance, walk: bank.walk }
+    state: { distance: bank.distance, walk: bank.walk },
   });
 }
 </script>
 
 <template>
-  <main class="page">
-    <div class="shell">
-      <header><h1>환율·환전</h1></header>
-      <nav>
-        <button @click="router.push('/exchange')">환율</button
-        ><button @click="router.push('/exchange/alerts')">환율 알림</button
-        ><button class="active">근처 은행</button>
-      </nav>
-      <label class="search">
-        ⌕
-        <input
-          v-model="query"
-          placeholder="지역명 검색 (예: 강남역, 여의도)"
-          @keyup.enter="searchLocation"
-        />
-      </label>
+  <div class="nearby-banks-component">
+    <label class="search">
+      ⌕
+      <input
+        v-model="query"
+        placeholder="지역명 검색 (예: 강남역, 여의도)"
+        @keyup.enter="searchLocation"
+      />
+    </label>
 
-      <!-- 카카오 맵 영역 -->
-      <section class="map-container-wrapper">
-        <div ref="mapContainer" class="kakao-map"></div>
+    <!-- 지도 영역 -->
+    <section class="map-container-wrapper">
+      <div ref="mapContainer" class="kakao-map"></div>
 
-        <!-- '이 지역 재검색' 플로팅 버튼 -->
-        <button
-          v-if="showSearchThisAreaBtn"
-          class="search-this-area-btn"
-          @click="searchThisArea"
+      <!-- 플로팅 버튼들 -->
+      <button
+        v-if="showSearchThisAreaBtn"
+        class="search-this-area-btn"
+        @click="searchThisArea"
+      >
+        🔍 이 지역 재검색
+      </button>
+
+      <button
+        class="current-btn"
+        title="내 위치로"
+        @click="moveToCurrentLocation"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         >
-          🔍 이 지역 재검색
-        </button>
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+          <line x1="12" y1="2" x2="12" y2="5"></line>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+          <line x1="2" y1="12" x2="5" y2="12"></line>
+          <line x1="19" y1="12" x2="22" y2="12"></line>
+        </svg>
+      </button>
+    </section>
 
-        <!-- 내 위치로 이동 버튼 (GPS) -->
-        <button
-          class="current-btn"
-          title="내 위치로"
-          @click="moveToCurrentLocation"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="10"></circle>
-            <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
-            <line x1="12" y1="2" x2="12" y2="5"></line>
-            <line x1="12" y1="19" x2="12" y2="22"></line>
-            <line x1="2" y1="12" x2="5" y2="12"></line>
-            <line x1="19" y1="12" x2="22" y2="12"></line>
-          </svg>
-        </button>
-      </section>
-
-      <div class="title">
-        <h2>근처 은행</h2>
-        <span>반경 2km 이내</span>
-      </div>
-      <section class="list">
-        <!-- 중첩 button 마크업 에러 해결을 위해 div(class="list-item")로 변경 -->
-        <div
-          v-for="bank in fetchedBanks"
-          :key="bank.id"
-          class="list-item"
-          :class="{ selected: exchange.selectedBankId === bank.id }"
-          @click="selectBank(bank)"
-        >
-          <i>KB</i>
-          <div>
-            <b>{{ bank.branchName }}</b>
-            <small>{{ bank.address }}</small>
-          </div>
-          
-          <!-- 현재 선택된 지점일 때만 '상세보기' 버튼 노출 -->
-          <button 
-            v-if="exchange.selectedBankId === bank.id" 
-            class="detail-btn"
-            @click.stop="goToDetail(bank)"
-          >
-            상세보기
-          </button>
-          <em v-else>›</em>
-        </div>
-        <p v-if="!fetchedBanks.length">
-          이 지역 반경 2km 이내에 국민은행 영업점이 없습니다.
-        </p>
-      </section>
-      <BottomNav />
+    <div class="title">
+      <h2>근처 은행</h2>
+      <span>반경 2km 이내</span>
     </div>
-  </main>
+
+    <!-- 스크롤 가능한 목록 영역 -->
+    <section class="list">
+      <div
+        v-for="bank in fetchedBanks"
+        :key="bank.id"
+        class="list-item"
+        :class="{ selected: exchange.selectedBankId === bank.id }"
+        @click="selectBank(bank)"
+      >
+        <i>KB</i>
+        <div>
+          <b>{{ bank.branchName }}</b>
+          <small>{{ bank.address }}</small>
+        </div>
+
+        <button
+          v-if="exchange.selectedBankId === bank.id"
+          class="detail-btn"
+          @click.stop="goToDetail(bank)"
+        >
+          상세보기
+        </button>
+        <em v-else>›</em>
+      </div>
+      <p v-if="!fetchedBanks.length">
+        이 지역 반경 2km 이내에 국민은행 영업점이 없습니다.
+      </p>
+    </section>
+  </div>
 </template>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  background: #e7ecf4;
-  color: #10192d;
-}
-.shell {
-  width: min(100%, 390px);
-  height: 100vh;
-  margin: auto;
+.nearby-banks-component {
   display: flex;
   flex-direction: column;
-  padding: 52px 18px 0;
-  background: #f7f5ef;
-  overflow: hidden;
-}
-header {
-  margin-bottom: 16px;
-  flex-shrink: 0;
-}
-nav {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-shrink: 0;
-}
-nav button {
-  padding: 10px;
-  border-radius: 16px;
-  background: #fff;
-  color: #758196;
-  font-size: 8px;
-}
-nav .active {
-  background: #1870e8;
-  color: #fff;
+  height: 100%;
+  overflow: hidden; /* 컨테이너 외부 스크롤 방지 */
 }
 .search {
   display: flex;
@@ -402,6 +365,7 @@ nav .active {
   background: #fff;
   color: #9aa5b5;
   flex-shrink: 0;
+  margin-bottom: 11px;
 }
 .search input {
   flex: 1;
@@ -409,11 +373,10 @@ nav .active {
   outline: none;
 }
 
-/* 지도 영역 및 플로팅 버튼 스타일 */
+/* 지도 영역 - 고정 높이 */
 .map-container-wrapper {
   position: relative;
   height: 230px;
-  margin-top: 11px;
   overflow: hidden;
   border-radius: 14px;
   flex-shrink: 0;
@@ -424,16 +387,11 @@ nav .active {
   background: #dfeaec;
 }
 
-/* Tailwind CSS가 카카오맵 이미지 레이아웃을 깨뜨리거나 드래그를 막는 현상 방지 */
-.kakao-map :deep(img) {
-  max-width: none !important;
-  height: auto !important;
-  background: none !important;
+/* 지도 내 버튼들 (절대 위치) */
+.search-this-area-btn,
+.current-btn {
+  z-index: 10;
 }
-.kakao-map :deep(div) {
-  box-sizing: content-box !important;
-}
-
 
 /* 이 지역 재검색 플로팅 버튼 */
 .search-this-area-btn {
@@ -504,7 +462,7 @@ nav .active {
 .list {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 80px; /* BottomNav와의 겹침 방지 */
+  padding-bottom: 20px;
 }
 .list-item {
   display: grid;
@@ -579,11 +537,4 @@ nav .active {
   color: #94a3b8;
   font-size: 9px;
 }
-.shell :deep(.fixed) {
-  display: flex;
-  grid-template-columns: none;
-  gap: 0;
-  margin-bottom: 0;
-}
 </style>
-

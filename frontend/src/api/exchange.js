@@ -16,11 +16,12 @@ export const fetchNearbyBanks = async (latitude, longitude, radius) => {
   const response = await api.get('/banks', {
     params: { latitude, longitude, radius },
   });
-  console.log(response.data);
   return response.data.data;
 };
 
 export const fetchBankDetail = async (bankId) => {
   const response = await api.get(`/banks/${bankId}`);
+
+  console.log('은행 영업점 상세 조회: ', response.data);
   return response.data.data;
 };
