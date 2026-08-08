@@ -140,6 +140,11 @@ function completeProfile() {
   router.replace('/')
 }
 
+function skipProfile() {
+  authStore.completeProfile()
+  router.replace('/')
+}
+
 onMounted(() => {
   if (step.value === 2) goToBankSelect()
 })
@@ -187,6 +192,7 @@ onMounted(() => {
         </div>
         <div class="sticky-action">
           <button class="primary-button" @click="step = 1">금융 프로필 등록하기</button>
+          <button class="skip-button" @click="skipProfile">건너뛰기</button>
         </div>
       </template>
 
@@ -377,6 +383,7 @@ button { border: 0; cursor: pointer; }
 .sticky-action.split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
 .primary-button, .secondary-button { width: 100%; min-height: 56px; border-radius: 16px; font-size: 15px; font-weight: 800; }
 .primary-button { color: #fff; background: #263f8c; }.primary-button:disabled { color: #94a3b8; background: #dfe4eb; cursor: not-allowed; }.secondary-button { color: #263f8c; background: #e8edfb; }
+.skip-button { display: block; width: 100%; padding: 10px 0 0; background: transparent; color: #94a3b8; font-size: 13px; text-align: center; }
 .simple-header { height: 49px; padding: 0 20px; display: flex; align-items: center; gap: 9px; }.simple-header button { width: 25px; padding: 0; color: #111827; background: transparent; font-size: 27px; line-height: 1; }.simple-header strong { font-size: 16px; }
 .page-content { padding: 25px 20px 100px; }.page-content h2 { font-size: 22px; }.subcopy { margin: 7px 0 0; color: #64748b; font-size: 11px; }
 .account-intro { padding-top: 42px; }.load-bank-card { width: 100%; margin-top: 28px; padding: 17px; display: flex; align-items: center; gap: 13px; text-align: left; border-radius: 15px; background: white; box-shadow: 0 7px 17px rgba(15,23,42,.09); }.load-bank-card > span:nth-child(2) { flex: 1; }.load-bank-card strong, .load-bank-card small { display: block; }.load-bank-card strong { font-size: 13px; }.load-bank-card small { margin-top: 3px; color: #64748b; font-size: 9px; }.load-bank-card b { color: #263f8c; font-size: 20px; }.bank-building { display: grid; width: 39px; height: 39px; place-items: center; border-radius: 10px; color: #0066ff; background: #e6f0ff; }
