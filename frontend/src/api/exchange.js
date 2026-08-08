@@ -11,3 +11,16 @@ export const fetchExchangeRatesHistory = async (currencyCode, days) => {
   });
   return response.data.data;
 };
+
+export const fetchNearbyBanks = async (latitude, longitude, radius) => {
+  const response = await api.get('/banks', {
+    params: { latitude, longitude, radius },
+  });
+  console.log(response.data);
+  return response.data.data;
+};
+
+export const fetchBankDetail = async (bankId) => {
+  const response = await api.get(`/banks/${bankId}`);
+  return response.data.data;
+};

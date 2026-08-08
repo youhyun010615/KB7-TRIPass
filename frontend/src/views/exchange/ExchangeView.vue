@@ -151,7 +151,7 @@ header {
   margin-bottom: 16px;
 }
 header h1 {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 900;
 }
 nav {
