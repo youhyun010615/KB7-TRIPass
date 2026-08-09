@@ -25,3 +25,10 @@ export const fetchBankDetail = async (bankId) => {
   console.log('은행 영업점 상세 조회: ', response.data);
   return response.data.data;
 };
+
+export const fetchExchangeEstimate = async (amount, currencyCode) => {
+  const response = await api.get('/banks/estimate', {
+    params: { amount, currencyCode },
+  });
+  return response.data.data;
+};

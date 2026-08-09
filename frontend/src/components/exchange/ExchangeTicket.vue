@@ -18,8 +18,7 @@ const props = defineProps({
 <template>
   <section class="ticket">
     <div class="header">
-      <small>{{ eyebrow }}</small>
-      <button @click="emit('add-alert')">{{ alertButtonLabel }}</button>
+      <span>{{ eyebrow }}</span>
     </div>
     <h2>
       <span :class="flagClass" style="margin-right: 8px"></span>

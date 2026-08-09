@@ -38,6 +38,7 @@ const scroll = (direction) => {
         :class="{ active: modelValue === item.code }"
         @click="selectTab(item.code)"
       >
+        <span class="fi" :class="item.flagClass"></span>
         {{ item.code }}
       </button>
     </div>
@@ -67,6 +68,9 @@ const scroll = (direction) => {
 }
 .nav-container::-webkit-scrollbar { display: none; }
 .nav-container button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
   border-radius: 16px;
   background: #fff;
@@ -75,6 +79,14 @@ const scroll = (direction) => {
   white-space: nowrap;
   color: #64748b;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-container button span.fi {
+  width: 14px;
+  height: 10px;
+  background-size: cover;
+  border-radius: 1px;
+  vertical-align: middle;
 }
 .nav-container button.active {
   background: #17387f;

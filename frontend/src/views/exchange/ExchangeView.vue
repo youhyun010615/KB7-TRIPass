@@ -8,23 +8,38 @@ import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
 import { useExchangeStore } from '@/stores/exchange';
+import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const exchange = useExchangeStore();
+const travel = useTravelStore();
+
+const isModalOpen = ref(false); // 모달 상태 추가
+
 const currentTab = computed({
   get: () => exchange.currentTab,
-  set: (val) => exchange.currentTab = val
+  set: (val) => (exchange.currentTab = val),
 });
 
 onMounted(() => {
   exchange.updateExchangeRates();
 });
 
+// 개인화된 통화 목록 계산
+const displayCurrencies = computed(() => {
+  const codes = new Set([
+    ...exchange.interestedCurrencyCodes,
+    ...exchange.alerts.map((a) => a.currencyCode),
+    ...travel.selectedPlans.map((p) => p.currency || 'USD'), // 임시: 통화 매핑 필요할 수 있음
+  ]);
+  return exchange.currencies.filter((c) => codes.has(c.code));
+});
+
 const format = (v, d = 2) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: d });
 
 const currentAlert = computed(() =>
-  exchange.alerts.find((a) => a.code === exchange.selectedCode)
+  exchange.alerts.find((a) => a.code === exchange.selectedCode),
 );
 
 function handleAlertAction() {
@@ -58,33 +73,73 @@ function handleAlertAction() {
 
       <!-- 환율 탭 -->
       <section v-if="currentTab === 'rate'">
-        <CurrencyTabNav
-          v-model="exchange.selectedCode"
-          :currencies="exchange.currencies"
-        />
+        <!-- 프리미엄 핀테크 대시보드 액션 카드 -->
+        <div class="header-actions">
+          <button @click="isModalOpen = true" class="action-card-btn">
+            <span class="icon-circle primary">💵</span>
+            <div class="btn-text">
+              <strong>통화 추가</strong>
+              <p>새 화폐 더보기</p>
+            </div>
+          </button>
+          <button @click="router.push('/exchange/alerts')" class="action-card-btn">
+            <span class="icon-circle secondary">🔔</span>
+            <div class="btn-text">
+              <strong>알림 목록</strong>
+              <p>환율 지정 알림</p>
+            </div>
+          </button>
+        </div>
+        <template v-if="displayCurrencies.length > 0">
+          <CurrencyTabNav
+            v-model="exchange.selectedCode"
+            :currencies="displayCurrencies"
+          />
 
-        <ExchangeTicket
-          v-if="exchange.selectedCurrency"
-          :name="exchange.selectedCurrency.name"
-          :rate="exchange.selectedCurrency.rate"
-          :unit="exchange.selectedCurrency.unit"
-          :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원`"
-          :selectedCode="exchange.selectedCode"
-          :flagClass="exchange.selectedCurrency.flagClass"
-          :alertButtonLabel="currentAlert ? '알림 설정 중' : '+ 환율 알림 추가'"
-          @add-alert="handleAlertAction"
-        />
+          <ExchangeTicket
+            v-if="exchange.selectedCurrency"
+            :name="exchange.selectedCurrency.name"
+            :rate="exchange.selectedCurrency.rate"
+            :unit="exchange.selectedCurrency.unit"
+            :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원`"
+            :selectedCode="exchange.selectedCode"
+            :flagClass="exchange.selectedCurrency.flagClass"
+            :alertButtonLabel="
+              currentAlert ? '알림 설정 중' : '+ 환율 알림 추가'
+            "
+            @add-alert="handleAlertAction"
+          />
 
-        <CurrencyChart :currency="exchange.selectedCurrency" />
+          <CurrencyChart :currency="exchange.selectedCurrency" />
 
-        <ExchangeCalculator />
+          <ExchangeCalculator />
+        </template>
+        <template v-else>
+          <div class="empty-state">
+            <div class="empty-icon">💸</div>
+            <p>
+              아직 관심 있는 환율이 없어요!<br />여행을 계획하거나 직접 통화를
+              추가해보세요.
+            </p>
+            <div class="empty-actions">
+              <button
+                @click="router.push('/travel/register')"
+                class="btn-primary"
+              >
+                여행 등록하기
+              </button>
+              <button @click="isModalOpen = true" class="btn-secondary">
+                통화 추가하기
+              </button>
+            </div>
+          </div>
+        </template>
       </section>
 
       <!-- 환전 탭 (지도/은행) -->
       <section v-else class="exchange-map">
         <NearbyBanks />
       </section>
-
       <BottomNav />
     </div>
   </main>
@@ -135,13 +190,111 @@ header h1 {
   flex-direction: column;
   overflow: hidden;
 }
-.map-placeholder {
-  height: 300px;
+.add-btn-wrapper {
+  text-align: right;
+  margin: 10px 0;
+}
+.header-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.action-card-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e1e6ed;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+.action-card-btn:active {
+  transform: scale(0.98);
+  background: #f8fafc;
+}
+.icon-circle {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e2e8f0;
-  border-radius: 15px;
-  margin-top: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 14px;
+}
+.icon-circle.primary {
+  background: #f0f4fc;
+  color: #17387f;
+}
+.icon-circle.secondary {
+  background: #fff8e7;
+  color: #ff9f0a;
+}
+.btn-text {
+  display: flex;
+  flex-direction: column;
+}
+.btn-text strong {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10192d;
+}
+.btn-text p {
+  font-size: 9px;
+  color: #8c98a8;
+  margin-top: 1px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  gap: 24px;
+}
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+.empty-state p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+.btn-primary,
+.btn-secondary {
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: #17387f;
+  color: #fff;
+  border: none;
+}
+.btn-primary:hover {
+  background: #0f2a63;
+}
+.btn-secondary {
+  background: #fff;
+  color: #17387f;
+  border: 1px solid #17387f;
+}
+.btn-secondary:hover {
+  background: #f1f5f9;
 }
 </style>

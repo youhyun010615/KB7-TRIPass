@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useExchangeStore } from '@/stores/exchange';
 import { fetchNearbyBanks } from '@/api/exchange';
@@ -8,16 +8,70 @@ const router = useRouter();
 const exchange = useExchangeStore();
 const query = ref('');
 const fetchedBanks = ref([]); // 실시간 영업점 목록
+const currentRadius = ref(2000);
+const userLocation = ref(null); // 사용자의 실제 GPS 원본 위치 저장용
+
+// 두 지점 간의 거리 계산 (Haversine 공식)
+const getDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371e3; // 지구 반경 (m)
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // 미터 단위 거리
+};
+
+// 현재 지도의 남서쪽 모서리와 중심 간의 거리를 구하여 동적으로 검색 반경 설정
+const getDynamicRadius = () => {
+  if (!map) return 2000;
+  const center = map.getCenter();
+  const bounds = map.getBounds();
+  const sw = bounds.getSouthWest();
+
+  const radius = getDistance(
+    center.getLat(),
+    center.getLng(),
+    sw.getLat(),
+    sw.getLng(),
+  );
+  // 최소 1km, 최대 20km로 제한하여 쿼리 최적화
+  return Math.min(20000, Math.max(1000, radius));
+};
+
+const displayRadius = computed(() => {
+  const r = currentRadius.value;
+  if (r >= 1000) {
+    return `${(r / 1000).toFixed(1)}km`;
+  }
+  return `${Math.round(r)}m`;
+});
+
+// 거리 기준으로 정렬된 은행 목록
+const sortedBanks = computed(() => {
+  return [...fetchedBanks.value].sort((a, b) => a.distance - b.distance);
+});
 
 const mapContainer = ref(null);
 let map = null;
-let markers = []; // 지도 마커 객체들을 { id, marker } 구조로 보관
-let currentPositionMarker = null; // 내 위치 마커
+let markers = [];
+let currentPositionMarker = null;
 
-// '이 지역 재검색' 버튼 표시 여부
 const showSearchThisAreaBtn = ref(false);
+const mapLevel = ref(4);
 
-// 커스텀 SVG 마커 생성 헬퍼 함수 (KB 브랜드 컬러)
+const isTooWide = computed(() => mapLevel.value > 6);
+
+const handleZoomChanged = () => {
+  if (map) {
+    mapLevel.value = map.getLevel();
+  }
+};
+
 const getSvgIconUri = (fillColor, centerColor, isLarge = false) => {
   const width = isLarge ? 18 : 14;
   const height = isLarge ? 24 : 19;
@@ -28,27 +82,35 @@ const getSvgIconUri = (fillColor, centerColor, isLarge = false) => {
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 };
 
-// 미선택 마커 이미지 (회색 핀 + KB 노란색 센터) - 절반 크기로 미니멀하게 축소
 const unselectedMarkerImage = () => {
   return new window.kakao.maps.MarkerImage(
     getSvgIconUri('#4B433F', '#FFCC00', false),
     new window.kakao.maps.Size(14, 19),
-    { offset: new window.kakao.maps.Point(7, 19) }, // 핀 하단 중앙 오프셋 (14/2, 19)
+    { offset: new window.kakao.maps.Point(7, 19) },
   );
 };
 
-// 선택된 마커 이미지 (KB 노란색 핀 + 회색 센터) - 절반 크기로 축소
 const selectedMarkerImage = () => {
   return new window.kakao.maps.MarkerImage(
     getSvgIconUri('#FFCC00', '#4B433F', true),
     new window.kakao.maps.Size(18, 24),
-    { offset: new window.kakao.maps.Point(9, 24) }, // 핀 하단 중앙 오프셋 (18/2, 24)
+    { offset: new window.kakao.maps.Point(9, 24) },
   );
 };
 
-// 카카오 맵 SDK 로드
 const loadKakaoMap = () => {
   return new Promise((resolve) => {
+    if (window.kakao && window.kakao.maps) {
+      resolve();
+      return;
+    }
+    const existingScript = document.querySelector(
+      'script[src*="dapi.kakao.com"]',
+    );
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve());
+      return;
+    }
     const script = document.createElement('script');
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
     script.onload = () => resolve();
@@ -56,205 +118,189 @@ const loadKakaoMap = () => {
   });
 };
 
-// 백엔드 API로부터 은행 데이터 로드 및 마커 표시
-const loadBanks = async (lat, lng) => {
+const loadBanks = async (lat, lng, searchRadius = null) => {
   try {
-    const radius = 2000; // 반경 2km
+    const radius = searchRadius || getDynamicRadius();
+    currentRadius.value = radius;
     const data = await fetchNearbyBanks(lat, lng, radius);
-    fetchedBanks.value = data || [];
+    fetchedBanks.value = (data || []).map((bank) => {
+      // 실제 유저의 물리적 원본 GPS 위치가 존재하면 그 기준 좌표로 거리를 재계산하여 표시
+      const finalDistance = userLocation.value
+        ? getDistance(
+            userLocation.value.lat,
+            userLocation.value.lng,
+            bank.latitude,
+            bank.longitude,
+          )
+        : bank.distance || 0;
+
+      return {
+        ...bank,
+        distance: finalDistance,
+      };
+    });
     updateMapMarkers();
-    showSearchThisAreaBtn.value = false; // 검색 완료 시 버튼 숨김
+    showSearchThisAreaBtn.value = false;
   } catch (error) {
     console.error('영업점 데이터를 가져오는데 실패했습니다:', error);
   }
 };
 
-// 지도 마커들 새로 그리기 및 매핑 저장
 const updateMapMarkers = () => {
-  // 기존 마커 전체 제거
   markers.forEach(({ marker }) => marker.setMap(null));
   markers = [];
 
-  // 새 영업점 마커 표시
   fetchedBanks.value.forEach((bank) => {
     const position = new window.kakao.maps.LatLng(
       bank.latitude,
       bank.longitude,
     );
-
-    // 현재 선택된 은행인지 판별하여 최초 이미지 지정
     const isSelected = exchange.selectedBankId === bank.id;
-    const markerImg = isSelected
-      ? selectedMarkerImage()
-      : unselectedMarkerImage();
-
     const marker = new window.kakao.maps.Marker({
       position: position,
       title: bank.branchName,
-      image: markerImg,
+      image: isSelected ? selectedMarkerImage() : unselectedMarkerImage(),
     });
-
     marker.setMap(map);
-
-    // Z-Index 설정 (선택된 마커가 더 위에 오도록 처리)
     if (isSelected) marker.setZIndex(10);
-
-    // 나중에 반응형으로 교체하기 위해 배열에 마커 정보 매핑 저장
     markers.push({ id: bank.id, marker });
-
-    // 마커 클릭 시 영업점 포커싱 실행
-    window.kakao.maps.event.addListener(marker, 'click', () => {
-      selectBank(bank);
-    });
+    window.kakao.maps.event.addListener(marker, 'click', () =>
+      selectBank(bank),
+    );
   });
 };
 
-// 선택된 은행이 바뀔 때 마커 이미지만 실시간 교체하는 로직
 const refreshMarkerStyles = () => {
   markers.forEach(({ id, marker }) => {
     if (id === exchange.selectedBankId) {
       marker.setImage(selectedMarkerImage());
-      marker.setZIndex(10); // 선택된 것을 맨 위로 올림
+      marker.setZIndex(10);
     } else {
       marker.setImage(unselectedMarkerImage());
-      marker.setZIndex(1); // 미선택은 기본 레이어 레벨
+      marker.setZIndex(1);
     }
   });
 };
 
-// Pinia Store의 선택 은행 ID 변화 감시하여 마커 스타일 반응형 변경
 watch(
   () => exchange.selectedBankId,
-  () => {
-    refreshMarkerStyles();
-  },
+  () => refreshMarkerStyles(),
 );
 
-// 내 위치로 화면 이동 및 즉시 자동 조회
 const moveToCurrentLocation = () => {
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
-
-      map.panTo(moveLatLon); // 부드럽게 이동
-
-      // 내 위치 빨간 마커 위치 갱신
-      if (currentPositionMarker) {
-        currentPositionMarker.setPosition(moveLatLon);
-      }
-
-      loadBanks(lat, lng); // 즉시 갱신
-    });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        userLocation.value = { lat, lng }; // 실제 물리 유저 GPS 위치 저장
+        map.panTo(new window.kakao.maps.LatLng(lat, lng));
+        if (currentPositionMarker)
+          currentPositionMarker.setPosition(
+            new window.kakao.maps.LatLng(lat, lng),
+          );
+        loadBanks(lat, lng);
+      },
+      (error) => {
+        console.warn('Geolocation error:', error);
+      },
+      { enableHighAccuracy: false, timeout: 3000, maximumAge: 60000 },
+    );
   }
 };
 
-// "이 지역 재검색" 클릭 시 작동
 const searchThisArea = () => {
   if (!map) return;
   const center = map.getCenter();
-  loadBanks(center.getLat(), center.getLng());
+  const radius = getDynamicRadius();
+  loadBanks(center.getLat(), center.getLng(), radius);
 };
 
-// 검색창 입력으로 지역 이동 및 즉시 자동 조회
 const searchLocation = () => {
   if (!query.value.trim()) return;
-
   const ps = new window.kakao.maps.services.Places();
   ps.keywordSearch(query.value, (data, status) => {
     if (status === window.kakao.maps.services.Status.OK) {
       const bounds = new window.kakao.maps.LatLngBounds();
-      for (let i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++)
         bounds.extend(new window.kakao.maps.LatLng(data[i].y, data[i].x));
-      }
-      map.setBounds(bounds); // 해당 영역으로 지도 축척 및 이동
-
-      // 이동한 중심점 기준 바로 실시간 은행 갱신
+      map.setBounds(bounds);
       const center = map.getCenter();
       loadBanks(center.getLat(), center.getLng());
-    } else {
-      alert('검색 결과가 없습니다. 지역명을 정확히 입력해 주세요.');
     }
   });
 };
 
-// 지도 초기화 및 바인딩
 const initMap = (lat, lng) => {
-  const options = {
+  userLocation.value = { lat, lng }; // 실제 물리 유저 GPS 위치 저장
+  map = new window.kakao.maps.Map(mapContainer.value, {
     center: new window.kakao.maps.LatLng(lat, lng),
     level: 4,
-    draggable: true, // 명시적으로 드래그 활성화
-    zoomable: true, // 명시적으로 휠 줌 활성화
-  };
-  map = new window.kakao.maps.Map(mapContainer.value, options);
-
-  // 내 GPS 위치 마커 (파란색 레이더 스타일 SVG 이미지 적용)
-  const gpsSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
-    <circle cx="15" cy="15" r="9" fill="#1870e8" stroke="#ffffff" stroke-width="3"/>
-    <circle cx="15" cy="15" r="3" fill="#ffffff"/>
-  </svg>`;
+  });
   const gpsMarkerImg = new window.kakao.maps.MarkerImage(
-    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(gpsSvg),
+    'data:image/svg+xml;charset=utf-8,' +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="9" fill="#1870e8" stroke="#ffffff" stroke-width="3"/><circle cx="15" cy="15" r="3" fill="#ffffff"/></svg>`,
+      ),
     new window.kakao.maps.Size(30, 30),
     { offset: new window.kakao.maps.Point(15, 15) },
   );
-
-  const locPosition = new window.kakao.maps.LatLng(lat, lng);
   currentPositionMarker = new window.kakao.maps.Marker({
-    position: locPosition,
+    position: new window.kakao.maps.LatLng(lat, lng),
     image: gpsMarkerImg,
   });
   currentPositionMarker.setMap(map);
-
-  // 초기 현재 위치 주변 은행 데이터 즉시 호출
-  loadBanks(lat, lng);
-
-  // 지도가 드래그되거나 확대/축소되었을 때만 '이 지역 재검색' 버튼 띄우기
-  window.kakao.maps.event.addListener(map, 'dragend', () => {
-    showSearchThisAreaBtn.value = true;
-  });
+  loadBanks(lat, lng, 2000); // 초기 진입 시에는 기본 2km 반경 탐색
+  window.kakao.maps.event.addListener(
+    map,
+    'dragend',
+    () => (showSearchThisAreaBtn.value = true),
+  );
   window.kakao.maps.event.addListener(map, 'zoom_changed', () => {
     showSearchThisAreaBtn.value = true;
+    handleZoomChanged();
   });
 };
 
 onMounted(async () => {
-  // 진입 시 이전 선택 상태 완전히 초기화 (깨끗한 첫 상태 제공)
   exchange.selectedBankId = null;
-
   await loadKakaoMap();
-
   window.kakao.maps.load(() => {
+    // 1. 기본 위치(강남역)로 지도를 대기 없이 즉시 렌더링 (체감 로딩 속도 0초!)
+    initMap(37.497942, 127.027621);
+
+    // 2. 백그라운드에서 유저의 실제 GPS를 가져와 성공 시 해당 위치로 슬라이드(panTo) 및 은행 정보 갱신
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          initMap(position.coords.latitude, position.coords.longitude);
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          userLocation.value = { lat, lng };
+          if (map) {
+            map.panTo(new window.kakao.maps.LatLng(lat, lng));
+            if (currentPositionMarker) {
+              currentPositionMarker.setPosition(
+                new window.kakao.maps.LatLng(lat, lng),
+              );
+            }
+            loadBanks(lat, lng);
+          }
         },
-        () => {
-          initMap(37.497942, 127.027621); // 거부 시 강남역
+        (error) => {
+          console.warn('Geolocation background fetch error:', error);
         },
+        { enableHighAccuracy: false, timeout: 3000, maximumAge: 60000 },
       );
-    } else {
-      initMap(37.497942, 127.027621);
     }
   });
 });
 
-// 영업점 선택 및 지도 이동 (이동 및 선택만 수행, 상세 이동은 버튼으로 위임)
 function selectBank(bank) {
   exchange.selectedBankId = bank.id;
-
-  if (map) {
-    const position = new window.kakao.maps.LatLng(
-      bank.latitude,
-      bank.longitude,
-    );
-    map.panTo(position); // 부드럽게 지도의 포커스를 해당 마커로 이동
-  }
+  if (map)
+    map.panTo(new window.kakao.maps.LatLng(bank.latitude, bank.longitude));
 }
 
-// 화살표(Chevron)나 상세보기 버튼 클릭 시 상세화면 이동
 function goToDetail(bank) {
   exchange.selectedBankId = bank.id;
   router.push({
@@ -275,19 +321,17 @@ function goToDetail(bank) {
       />
     </label>
 
-    <!-- 지도 영역 -->
     <section class="map-container-wrapper">
       <div ref="mapContainer" class="kakao-map"></div>
-
-      <!-- 플로팅 버튼들 -->
       <button
         v-if="showSearchThisAreaBtn"
         class="search-this-area-btn"
+        :class="{ disabled: isTooWide }"
+        :disabled="isTooWide"
         @click="searchThisArea"
       >
-        🔍 이 지역 재검색
+        {{ isTooWide ? '🔍 지도를 더 확대해 주세요' : '🔍 이 지역 재검색' }}
       </button>
-
       <button
         class="current-btn"
         title="내 위치로"
@@ -315,13 +359,12 @@ function goToDetail(bank) {
 
     <div class="title">
       <h2>근처 은행</h2>
-      <span>반경 2km 이내</span>
+      <span>반경 {{ displayRadius }} 이내</span>
     </div>
 
-    <!-- 스크롤 가능한 목록 영역 -->
     <section class="list">
       <div
-        v-for="bank in fetchedBanks"
+        v-for="bank in sortedBanks"
         :key="bank.id"
         class="list-item"
         :class="{ selected: exchange.selectedBankId === bank.id }"
@@ -329,8 +372,18 @@ function goToDetail(bank) {
       >
         <i>KB</i>
         <div>
-          <b>{{ bank.branchName }}</b>
-          <small>{{ bank.address }}</small>
+          <b class="branch-name">{{ bank.branchName }}</b>
+          <div class="bank-info">
+            <small>{{ bank.address }}</small>
+            <span class="distance">
+              ·
+              {{
+                bank.distance < 1000
+                  ? `${Math.round(bank.distance)}m`
+                  : `${(bank.distance / 1000).toFixed(1)}km`
+              }}
+            </span>
+          </div>
         </div>
 
         <button
@@ -342,8 +395,8 @@ function goToDetail(bank) {
         </button>
         <em v-else>›</em>
       </div>
-      <p v-if="!fetchedBanks.length">
-        이 지역 반경 2km 이내에 국민은행 영업점이 없습니다.
+      <p v-if="!sortedBanks.length">
+        이 지역 반경 {{ displayRadius }} 이내에 국민은행 영업점이 없습니다.
       </p>
     </section>
   </div>
@@ -354,7 +407,7 @@ function goToDetail(bank) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden; /* 컨테이너 외부 스크롤 방지 */
+  overflow: hidden;
 }
 .search {
   display: flex;
@@ -369,11 +422,9 @@ function goToDetail(bank) {
 }
 .search input {
   flex: 1;
-  font-size: 8px;
+  font-size: 10px;
   outline: none;
 }
-
-/* 지도 영역 - 고정 높이 */
 .map-container-wrapper {
   position: relative;
   height: 230px;
@@ -386,20 +437,15 @@ function goToDetail(bank) {
   height: 100%;
   background: #dfeaec;
 }
-
-/* 지도 내 버튼들 (절대 위치) */
 .search-this-area-btn,
 .current-btn {
   z-index: 10;
 }
-
-/* 이 지역 재검색 플로팅 버튼 */
 .search-this-area-btn {
   position: absolute;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -414,13 +460,12 @@ function goToDetail(bank) {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.search-this-area-btn:hover {
-  background: #145ec7;
+.search-this-area-btn.disabled {
+  background: #a1a1a1;
+  color: #f1f1f1;
+  box-shadow: none;
+  cursor: not-allowed;
 }
-.search-this-area-btn:active {
-  transform: translateX(-50%) scale(0.95);
-}
-
 .current-btn {
   position: absolute;
   right: 16px;
@@ -437,13 +482,7 @@ function goToDetail(bank) {
   color: #1672ed;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: all 0.2s ease;
 }
-.current-btn:active {
-  transform: scale(0.95);
-  background: #f8f9fa;
-}
-
 .title {
   display: flex;
   justify-content: space-between;
@@ -457,8 +496,6 @@ function goToDetail(bank) {
   color: #718097;
   font-size: 8px;
 }
-
-/* 카드 목록 레이아웃 개편 (div 구조 적용) */
 .list {
   flex: 1;
   overflow-y: auto;
@@ -467,7 +504,7 @@ function goToDetail(bank) {
 .list-item {
   display: grid;
   width: 100%;
-  grid-template-columns: 34px 1fr auto; /* 우측 상세보기 버튼을 위해 auto로 변경 */
+  grid-template-columns: 34px 1fr auto;
   align-items: center;
   gap: 9px;
   margin-top: 8px;
@@ -481,7 +518,7 @@ function goToDetail(bank) {
 }
 .list-item.selected {
   border-color: #8ebaf4;
-  background: #f0f6ff; /* 선택되었을 때 배경을 미세하게 푸른빛으로 강조 */
+  background: #f0f6ff;
 }
 .list i {
   display: grid;
@@ -495,20 +532,25 @@ function goToDetail(bank) {
   font-style: normal;
   font-weight: 900;
 }
-.list b,
-.list small {
-  display: block;
+.list-item b.branch-name {
+  font-size: 11px;
 }
-.list b {
-  font-size: 9px;
-}
-.list small {
+.bank-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-top: 4px;
-  color: #8995a6;
-  font-size: 7px;
 }
-
-/* 우측 상세보기 버튼 스타일 */
+.bank-info small {
+  margin-top: 0;
+  color: #8995a6;
+  font-size: 10px;
+}
+.distance {
+  color: #1870e8;
+  font-weight: 600;
+  font-size: 10px;
+}
 .detail-btn {
   padding: 6px 12px;
   border: none;
@@ -519,12 +561,7 @@ function goToDetail(bank) {
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(24, 112, 232, 0.2);
-  transition: all 0.2s ease;
 }
-.detail-btn:active {
-  transform: scale(0.95);
-}
-
 .list em {
   color: #9da7b5;
   font-size: 18px;

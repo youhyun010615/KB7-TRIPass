@@ -46,10 +46,11 @@ export const useExchangeStore = defineStore('exchange', () => {
   const period = ref(saved?.period || '1w');
   const currentTab = ref(saved?.currentTab || 'rate');
   const krwAmount = ref(saved?.krwAmount || 100_000);
+  const interestedCurrencyCodes = ref(saved?.interestedCurrencyCodes || ['EUR', 'JPY']);
   const alerts = ref(
     saved?.alerts || [
-      { id: 1, code: 'EUR', target: 1480, amount: 100_000, enabled: true },
-      { id: 2, code: 'CHF', target: 1700, amount: 150_000, enabled: true },
+      { id: 1, currencyCode: 'EUR', targetRate: 1480, targetAmount: 100_000, enabled: true },
+      { id: 2, currencyCode: 'CHF', targetRate: 1700, targetAmount: 150_000, enabled: true },
     ],
   );
 
@@ -88,6 +89,14 @@ export const useExchangeStore = defineStore('exchange', () => {
     alerts.value = alerts.value.filter((item) => item.id !== id);
   }
 
+  function toggleInterest(code) {
+    if (interestedCurrencyCodes.value.includes(code)) {
+      interestedCurrencyCodes.value = interestedCurrencyCodes.value.filter(c => c !== code);
+    } else {
+      interestedCurrencyCodes.value.push(code);
+    }
+  }
+
   function getCurrency(code) {
     return currencies.value.find((item) => item.code === code);
   }
@@ -121,7 +130,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   }
 
   watch(
-    [selectedCode, period, currentTab, krwAmount, alerts, selectedBankId],
+    [selectedCode, period, currentTab, krwAmount, alerts, selectedBankId, interestedCurrencyCodes],
     () =>
       localStorage.setItem(
         STORAGE_KEY,
@@ -132,6 +141,7 @@ export const useExchangeStore = defineStore('exchange', () => {
           krwAmount: krwAmount.value,
           alerts: alerts.value,
           selectedBankId: selectedBankId.value,
+          interestedCurrencyCodes: interestedCurrencyCodes.value,
         }),
       ),
     { deep: true },
@@ -145,6 +155,7 @@ export const useExchangeStore = defineStore('exchange', () => {
     krwAmount,
     alerts,
     selectedBankId,
+    interestedCurrencyCodes,
     selectedCurrency,
     selectedBank,
     foreignAmount,
@@ -153,6 +164,7 @@ export const useExchangeStore = defineStore('exchange', () => {
     expectedForeign,
     saveAlert,
     removeAlert,
+    toggleInterest,
     getCurrency,
     getBank,
     updateExchangeRates,
