@@ -88,28 +88,52 @@ const periods = [
 const format = (v) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
 
+let currentRequestId = 0;
+
 const fetchHistory = async () => {
   if (!props.currency?.code) return;
   const days = periods.find((p) => p[0] === exchange.period)?.[2] || 7;
+  const requestId = ++currentRequestId;
+
   try {
     const data = await fetchExchangeRatesHistory(props.currency.code, days);
-    history.value = data.rates;
+    
+    // 이전 요청의 결과는 무시
+    if (requestId !== currentRequestId) return;
+
+    const rates = data?.rates || [];
+    history.value = rates;
+
+    const unit = props.currency?.unit || 1;
 
     // Update chartData
     chartData.value = {
-      labels: history.value.map((item) => {
+      labels: rates.map((item) => {
         const date = new Date(item.rateDate);
         return `${date.getMonth() + 1}/${date.getDate()}`;
       }),
       datasets: [
         {
           ...chartData.value.datasets[0],
-          data: history.value.map((item) => item.dealBaseRate),
+          data: rates.map((item) => item.dealBaseRate * unit),
         },
       ],
     };
   } catch (e) {
-    console.error('Failed to fetch history', e);
+    if (requestId === currentRequestId) {
+      console.error('Failed to fetch history', e);
+      // 에러 발생 시 차트 및 히스토리 초기화로 이전 데이터 보존 방지
+      history.value = [];
+      chartData.value = {
+        labels: [],
+        datasets: [
+          {
+            ...chartData.value.datasets[0],
+            data: [],
+          },
+        ],
+      };
+    }
   }
 };
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useExchangeStore } from '@/stores/exchange';
 import { fetchNearbyBanks } from '@/api/exchange';
@@ -98,31 +98,71 @@ const selectedMarkerImage = () => {
   );
 };
 
+const mapLoadError = ref(false);
+
 const loadKakaoMap = () => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    // 1. 이미 정상 로드된 경우 즉시 완료
     if (window.kakao && window.kakao.maps) {
       resolve();
       return;
     }
+
+    // 7초 타임아웃 설정 (영구 대기 방지)
+    const timeout = setTimeout(() => {
+      reject(new Error('지도 서비스 로드 시간 초과'));
+    }, 7000);
+
+    const cleanup = () => clearTimeout(timeout);
+
     const existingScript = document.querySelector(
       'script[src*="dapi.kakao.com"]',
     );
+
     if (existingScript) {
-      existingScript.addEventListener('load', () => resolve());
+      const handleLoad = () => {
+        cleanup();
+        resolve();
+      };
+      const handleError = () => {
+        cleanup();
+        reject(new Error('기존 지도 스크립트 로드 실패'));
+      };
+
+      existingScript.addEventListener('load', handleLoad);
+      existingScript.addEventListener('error', handleError);
       return;
     }
+
     const script = document.createElement('script');
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
-    script.onload = () => resolve();
+    
+    script.onload = () => {
+      cleanup();
+      resolve();
+    };
+    
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('지도 스크립트 네트워크 로드 실패'));
+    };
+
     document.head.appendChild(script);
   });
 };
 
+let currentBanksRequestId = 0;
+
 const loadBanks = async (lat, lng, searchRadius = null) => {
+  const requestId = ++currentBanksRequestId;
   try {
     const radius = searchRadius || getDynamicRadius();
     currentRadius.value = radius;
     const data = await fetchNearbyBanks(lat, lng, radius);
+    
+    // 이전 요청의 결과는 무시 (레이스 컨디션 방어)
+    if (requestId !== currentBanksRequestId) return;
+
     fetchedBanks.value = (data || []).map((bank) => {
       // 실제 유저의 물리적 원본 GPS 위치가 존재하면 그 기준 좌표로 거리를 재계산하여 표시
       const finalDistance = userLocation.value
@@ -142,7 +182,11 @@ const loadBanks = async (lat, lng, searchRadius = null) => {
     updateMapMarkers();
     showSearchThisAreaBtn.value = false;
   } catch (error) {
-    console.error('영업점 데이터를 가져오는데 실패했습니다:', error);
+    if (requestId === currentBanksRequestId) {
+      console.error('영업점 데이터를 가져오는데 실패했습니다:', error);
+      fetchedBanks.value = [];
+      updateMapMarkers();
+    }
   }
 };
 
@@ -227,9 +271,29 @@ const searchLocation = () => {
       map.setBounds(bounds);
       const center = map.getCenter();
       loadBanks(center.getLat(), center.getLng());
+    } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
+      alert('검색 결과가 존재하지 않습니다.');
+    } else {
+      alert('검색 중 오류가 발생했습니다. 다시 시도해 주세요.');
     }
   });
 };
+
+onUnmounted(() => {
+  // 모든 마커의 맵 연결 해제 및 리스너 해제 유도
+  markers.forEach(({ marker }) => {
+    marker.setMap(null);
+  });
+  markers = [];
+
+  if (currentPositionMarker) {
+    currentPositionMarker.setMap(null);
+    currentPositionMarker = null;
+  }
+
+  // 지도 객체 해제
+  map = null;
+});
 
 const initMap = (lat, lng) => {
   userLocation.value = { lat, lng }; // 실제 물리 유저 GPS 위치 저장
@@ -264,35 +328,43 @@ const initMap = (lat, lng) => {
 
 onMounted(async () => {
   exchange.selectedBankId = null;
-  await loadKakaoMap();
-  window.kakao.maps.load(() => {
-    // 1. 기본 위치(강남역)로 지도를 대기 없이 즉시 렌더링 (체감 로딩 속도 0초!)
-    initMap(37.497942, 127.027621);
-
-    // 2. 백그라운드에서 유저의 실제 GPS를 가져와 성공 시 해당 위치로 슬라이드(panTo) 및 은행 정보 갱신
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          userLocation.value = { lat, lng };
-          if (map) {
-            map.panTo(new window.kakao.maps.LatLng(lat, lng));
-            if (currentPositionMarker) {
-              currentPositionMarker.setPosition(
-                new window.kakao.maps.LatLng(lat, lng),
-              );
-            }
-            loadBanks(lat, lng);
-          }
-        },
-        (error) => {
-          console.warn('Geolocation background fetch error:', error);
-        },
-        { enableHighAccuracy: false, timeout: 3000, maximumAge: 60000 },
-      );
+  try {
+    await loadKakaoMap();
+    if (!window.kakao || !window.kakao.maps) {
+      throw new Error('카카오 지도 객체 생성 실패');
     }
-  });
+    window.kakao.maps.load(() => {
+      // 1. 기본 위치(강남역)로 지도를 대기 없이 즉시 렌더링 (체감 로딩 속도 0초!)
+      initMap(37.497942, 127.027621);
+
+      // 2. 백그라운드에서 유저의 실제 GPS를 가져와 성공 시 해당 위치로 슬라이드(panTo) 및 은행 정보 갱신
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            userLocation.value = { lat, lng };
+            if (map) {
+              map.panTo(new window.kakao.maps.LatLng(lat, lng));
+              if (currentPositionMarker) {
+                currentPositionMarker.setPosition(
+                  new window.kakao.maps.LatLng(lat, lng),
+                );
+              }
+              loadBanks(lat, lng);
+            }
+          },
+          (error) => {
+            console.warn('Geolocation background fetch error:', error);
+          },
+          { enableHighAccuracy: false, timeout: 3000, maximumAge: 60000 },
+        );
+      }
+    });
+  } catch (error) {
+    console.error('카카오 지도 로드 실패:', error);
+    mapLoadError.value = true;
+  }
 });
 
 function selectBank(bank) {
@@ -323,8 +395,13 @@ function goToDetail(bank) {
 
     <section class="map-container-wrapper">
       <div ref="mapContainer" class="kakao-map"></div>
+      <div v-if="mapLoadError" class="map-error-overlay">
+        <span class="error-icon">⚠️</span>
+        <p class="error-msg">지도 서비스를 불러올 수 없습니다.</p>
+        <small class="error-sub">네트워크 상태 및 카카오 지도 API 키 설정을 확인해 주세요.</small>
+      </div>
       <button
-        v-if="showSearchThisAreaBtn"
+        v-if="showSearchThisAreaBtn && !mapLoadError"
         class="search-this-area-btn"
         :class="{ disabled: isTooWide }"
         :disabled="isTooWide"
@@ -333,6 +410,7 @@ function goToDetail(bank) {
         {{ isTooWide ? '🔍 지도를 더 확대해 주세요' : '🔍 이 지역 재검색' }}
       </button>
       <button
+        v-if="!mapLoadError"
         class="current-btn"
         title="내 위치로"
         @click="moveToCurrentLocation"
@@ -573,5 +651,35 @@ function goToDetail(bank) {
   text-align: center;
   color: #94a3b8;
   font-size: 9px;
+}
+.map-error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(240, 243, 246, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  text-align: center;
+  padding: 20px;
+}
+.error-icon {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+.error-msg {
+  font-size: 13px;
+  font-weight: bold;
+  color: #10192d;
+  margin: 0;
+}
+.error-sub {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 4px;
 }
 </style>

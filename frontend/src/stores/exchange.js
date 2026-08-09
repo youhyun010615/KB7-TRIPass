@@ -32,6 +32,15 @@ export const flagClassMap = {
   USD: 'fi fi-us', // 미국 달러
 };
 
+// 국가 코드에 따른 통화 코드 매핑 (공통 계약)
+export const countryToCurrency = {
+  FR: 'EUR',
+  CH: 'CHF',
+  DE: 'EUR',
+  JP: 'JPY',
+  HK: 'HKD',
+};
+
 function loadState() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -115,12 +124,14 @@ export const useExchangeStore = defineStore('exchange', () => {
           .trim();
         if (cleanCode === 'CNH') cleanCode = 'CNY';
 
+        const unit = currencyUnits[cleanCode] || 1;
+
         return {
-          code: item.currencyCode,
+          code: cleanCode,
           name: item.currencyName,
-          rate: item.dealBaseRate * currencyUnits[item.currencyCode],
-          change: (item.changeAmount || 0) * currencyUnits[item.currencyCode],
-          unit: currencyUnits[item.currencyCode] || 1,
+          rate: item.dealBaseRate * unit,
+          change: (item.changeAmount || 0) * unit,
+          unit: unit,
           flagClass: flagClassMap[cleanCode] || 'fi fi-un',
         };
       });

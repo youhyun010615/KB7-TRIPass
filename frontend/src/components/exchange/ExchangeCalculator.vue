@@ -15,9 +15,41 @@ const amountClass = (value) => ({
 });
 
 function updateKrw(event) {
-  const digits = event.target.value.replace(/[^0-9]/g, '').slice(0, 16);
+  const el = event.target;
+  const oldValue = el.value;
+  const selectionStart = el.selectionStart;
+
+  // 1. 숫자만 추출하고 최대 15자리로 제한 (Number.MAX_SAFE_INTEGER 범위 내 안전 보장)
+  const rawDigits = oldValue.replace(/[^0-9]/g, '');
+  const digits = rawDigits.slice(0, 15);
+
   exchange.krwAmount = Number(digits) || 0;
-  event.target.value = format(exchange.krwAmount, 0);
+  const newValue = format(exchange.krwAmount, 0);
+
+  // 2. 커서 앞의 실제 숫자 개수 구하기
+  const oldTextToLeft = oldValue.slice(0, selectionStart);
+  const digitCountToLeft = oldTextToLeft.replace(/[^0-9]/g, '').length;
+
+  // 3. 입력 제한(15자리)에 따른 보정
+  const finalDigitCountToLeft = Math.min(digitCountToLeft, digits.length);
+
+  // 4. DOM 값 직접 반영
+  el.value = newValue;
+
+  // 5. 새 문자열에서 해당 숫자 개수만큼 떨어진 위치로 커서 계산 및 복원
+  let newCursorPos = 0;
+  let digitsCount = 0;
+  for (let i = 0; i <= newValue.length; i++) {
+    if (digitsCount === finalDigitCountToLeft) {
+      newCursorPos = i;
+      break;
+    }
+    if (i < newValue.length && /[0-9]/.test(newValue[i])) {
+      digitsCount++;
+    }
+  }
+
+  el.setSelectionRange(newCursorPos, newCursorPos);
 }
 </script>
 

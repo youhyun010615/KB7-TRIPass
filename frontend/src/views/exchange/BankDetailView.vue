@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
-import { useExchangeStore } from '@/stores/exchange';
+import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
 import { fetchBankDetail, fetchExchangeEstimate } from '@/api/exchange';
 
@@ -15,15 +15,6 @@ const distanceInfo = ref(null);
 const estimate = ref(null);
 const inputAmount = ref(exchange.krwAmount || 100000);
 const displayAmount = ref('');
-
-// 국가 코드에 따른 통화 코드 매핑
-const countryToCurrency = {
-  FR: 'EUR',
-  CH: 'CHF',
-  DE: 'EUR',
-  JP: 'JPY',
-  HK: 'HKD',
-};
 
 // 사용자의 여행 일정 및 관심 통화를 수집하여 보여줄 통화 필터링
 const availableCurrencies = computed(() => {
@@ -94,6 +85,7 @@ onMounted(async () => {
 // 통화 변경 및 인메모리 캐싱 처리
 const selectCurrency = async (code) => {
   selectedCurrencyCode.value = code;
+  const requestedCode = code;
 
   // 1. 이미 캐시된 데이터가 존재하면 즉시 반환 (API 호출 0회, 0초 렉)
   if (cachedEstimates.value[code]) {
@@ -104,8 +96,10 @@ const selectCurrency = async (code) => {
   // 2. 캐시가 없으면 서버에 조회 요청 후 캐시에 보관
   try {
     const data = await fetchExchangeEstimate(inputAmount.value, code);
-    estimate.value = data;
     cachedEstimates.value[code] = data;
+    if (selectedCurrencyCode.value === requestedCode) {
+      estimate.value = data;
+    }
   } catch (error) {
     console.error(`${code} 우대 정보 갱신 실패:`, error);
   }

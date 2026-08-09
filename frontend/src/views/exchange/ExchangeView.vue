@@ -7,7 +7,7 @@ import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
-import { useExchangeStore } from '@/stores/exchange';
+import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
@@ -30,7 +30,7 @@ const displayCurrencies = computed(() => {
   const codes = new Set([
     ...exchange.interestedCurrencyCodes,
     ...exchange.alerts.map((a) => a.currencyCode),
-    ...travel.selectedPlans.map((p) => p.currency || 'USD'), // 임시: 통화 매핑 필요할 수 있음
+    ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
   ]);
   return exchange.currencies.filter((c) => codes.has(c.code));
 });
@@ -39,7 +39,7 @@ const format = (v, d = 2) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: d });
 
 const currentAlert = computed(() =>
-  exchange.alerts.find((a) => a.code === exchange.selectedCode),
+  exchange.alerts.find((a) => a.currencyCode === exchange.selectedCode),
 );
 
 function handleAlertAction() {
@@ -82,7 +82,10 @@ function handleAlertAction() {
               <p>새 화폐 더보기</p>
             </div>
           </button>
-          <button @click="router.push('/exchange/alerts')" class="action-card-btn">
+          <button
+            @click="router.push('/exchange/alerts')"
+            class="action-card-btn"
+          >
             <span class="icon-circle secondary">🔔</span>
             <div class="btn-text">
               <strong>알림 목록</strong>
@@ -104,9 +107,6 @@ function handleAlertAction() {
             :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원`"
             :selectedCode="exchange.selectedCode"
             :flagClass="exchange.selectedCurrency.flagClass"
-            :alertButtonLabel="
-              currentAlert ? '알림 설정 중' : '+ 환율 알림 추가'
-            "
             @add-alert="handleAlertAction"
           />
 

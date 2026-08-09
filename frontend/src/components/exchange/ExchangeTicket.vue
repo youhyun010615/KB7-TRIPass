@@ -11,7 +11,6 @@ const props = defineProps({
   subtitle: String,
   selectedCode: String,
   flagClass: { type: String, default: 'fi fi-un' },
-  alertButtonLabel: { type: String, default: '+ 환율 알림 추가' },
 });
 </script>
 

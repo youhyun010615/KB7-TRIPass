@@ -146,11 +146,13 @@ public class BankService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public List<BankBranchDto> findNearbyBanks(BigDecimal lat, BigDecimal lng, Double radius) {
         double searchRadius = (radius != null) ? radius : 2.0; // 기본 반경 2km
         return bankMapper.findNearbyBanks(lat, lng, searchRadius);
     }
 
+    @Transactional(readOnly = true)
     public BankBranchDto findById(Long id) {
         BankBranchDto bank = bankMapper.findById(id);
         if (bank == null) {
@@ -159,10 +161,12 @@ public class BankService {
         return bank;
     }
 
+    @Transactional(readOnly = true)
     public List<BankBranchDto> findAll(String keyword) {
         return bankMapper.findAllByKeyword(keyword);
     }
 
+    @Transactional(readOnly = true)
     public ExchangeEstimateDto getEstimate(BigDecimal amount, String currencyCode) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BankException(BankErrorCode.INVALID_CALCULATION_INPUT);
@@ -176,12 +180,12 @@ public class BankService {
         // 환전 계산 로직
         // 예상금액 = 원화 / (살 때 환율 / 단위)
         BigDecimal buyRate = marketData.getBuyRate();
-        BigDecimal unit = new BigDecimal(marketData.getUnit());
-        
-        if (buyRate.compareTo(BigDecimal.ZERO) <= 0) {
+        Integer unitValue = marketData.getUnit();
+        if (buyRate == null || buyRate.compareTo(BigDecimal.ZERO) <= 0
+                || unitValue == null || unitValue <= 0) {
             throw new BankException(BankErrorCode.INVALID_CALCULATION_INPUT);
         }
-
+        BigDecimal unit = BigDecimal.valueOf(unitValue);
         BigDecimal estimatedAmount = amount.divide(buyRate.divide(unit, 4, RoundingMode.HALF_UP), 2, RoundingMode.HALF_UP);
 
         return ExchangeEstimateDto.builder()
