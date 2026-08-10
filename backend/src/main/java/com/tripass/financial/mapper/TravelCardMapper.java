@@ -2,6 +2,7 @@ package com.tripass.financial.mapper;
 
 import com.tripass.financial.dto.TravelCardDetailResponseDto;
 import com.tripass.financial.dto.TravelCardListResponseDto;
+import com.tripass.financial.dto.TravelCardComparisonResponseDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -22,5 +23,9 @@ public interface TravelCardMapper {
 
     List<String> findCurrencyCodesByCardId(
             @Param("cardId") Long cardId
+    );
+
+    List<TravelCardComparisonResponseDto> findAllByIds(
+            @Param("cardIds") List<Long> cardIds
     );
 }
