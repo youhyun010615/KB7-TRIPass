@@ -34,6 +34,8 @@ DROP TABLE IF EXISTS currencies;
 DROP TABLE IF EXISTS exchange_bank_branches;
 DROP TABLE IF EXISTS travel_cards;
 DROP TABLE IF EXISTS supported_institutions;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS phone_verifications;
 DROP TABLE IF EXISTS users;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -43,21 +45,69 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- 1. 회원
 CREATE TABLE users (
-    id                BIGINT       NOT NULL AUTO_INCREMENT COMMENT '회원 ID',
-    email             VARCHAR(255) NOT NULL                COMMENT '이메일(로그인 아이디)',
-    password          VARCHAR(255) NULL                    COMMENT '비밀번호(소셜 전용 계정은 NULL)',
-    name              VARCHAR(100) NOT NULL                COMMENT '이름',
-    phone_number      VARCHAR(30)  NOT NULL                COMMENT '휴대전화번호',
-    login_provider    VARCHAR(20)  NOT NULL DEFAULT 'LOCAL' COMMENT '로그인 제공자(LOCAL/KAKAO/GOOGLE)',
-    provider_key      VARCHAR(255) NULL                    COMMENT '소셜 식별값',
-    current_view_mode VARCHAR(20)  NOT NULL DEFAULT 'SAVING' COMMENT '현재 화면 모드(SAVING/TRAVEL)',
-    is_deleted        TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '탈퇴 여부',
-    deleted_at        DATETIME     NULL                    COMMENT '탈퇴일시',
-    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
-    updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_users_email (email)
+                       id                BIGINT       NOT NULL AUTO_INCREMENT COMMENT '회원 ID',
+                       login_id             VARCHAR(255) NOT NULL                COMMENT '로그인 아이디',
+                       password          VARCHAR(255) NULL                    COMMENT '비밀번호(소셜 전용 계정은 NULL)',
+                       name              VARCHAR(100) NOT NULL                COMMENT '이름',
+                       phone_number      VARCHAR(30)  NULL                    COMMENT '휴대전화번호(소셜 가입 시 미등록 가능)',
+                       login_provider    VARCHAR(20)  NOT NULL DEFAULT 'LOCAL'
+                           COMMENT '로그인 제공자(LOCAL/KAKAO/GOOGLE)',
+                       provider_key      VARCHAR(255) NULL
+                           COMMENT '소셜 로그인 제공자의 사용자 고유 식별값',
+                       current_view_mode VARCHAR(20)  NOT NULL DEFAULT 'SAVING'
+                           COMMENT '현재 화면 모드(SAVING/TRAVEL)',
+                       is_deleted        TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '탈퇴 여부',
+                       deleted_at        DATETIME     NULL                    COMMENT '탈퇴일시',
+                       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                           COMMENT '생성일자',
+                       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                           ON UPDATE CURRENT_TIMESTAMP
+                           COMMENT '수정일자',
+                       PRIMARY KEY (id),
+    -- 동일한 아이디라도 로그인 방식이 다르면 별도 계정으로 허용
+                       UNIQUE KEY uk_users_provider_login_id (login_provider, login_id),
+    -- 동일 로그인 제공자의 동일 사용자가 중복 가입되는 것을 방지
+                       UNIQUE KEY uk_users_provider_key (login_provider, provider_key)
+
 ) COMMENT '회원';
+CREATE TABLE refresh_tokens (
+                                id                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'Refresh Token ID',
+                                user_id            BIGINT       NOT NULL COMMENT '회원 ID',
+                                token_id           VARCHAR(100) NOT NULL COMMENT 'JWT 고유 식별값(jti)',
+                                token_hash         CHAR(64)     NOT NULL COMMENT 'Refresh Token SHA-256 해시값',
+                                expires_at         DATETIME     NOT NULL COMMENT '만료일시',
+                                revoked_at         DATETIME     NULL COMMENT '폐기일시',
+                                created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+                                updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    ON UPDATE CURRENT_TIMESTAMP
+                                    COMMENT '수정일시',
+                                PRIMARY KEY (id),
+                                UNIQUE KEY uk_refresh_tokens_token_id (token_id),
+                                INDEX idx_refresh_tokens_user_id (user_id),
+                                INDEX idx_refresh_tokens_expires_at (expires_at),
+                                CONSTRAINT fk_refresh_tokens_users
+                                    FOREIGN KEY (user_id) REFERENCES users(id)
+
+) COMMENT 'Refresh Token';
+CREATE TABLE phone_verifications (
+                                     id                     BIGINT       NOT NULL AUTO_INCREMENT COMMENT '휴대전화 인증 ID',
+                                     request_id             VARCHAR(100) NOT NULL COMMENT '인증 요청 식별값(UUID)',
+                                     phone_number           VARCHAR(30)  NOT NULL COMMENT '인증 대상 휴대전화번호',
+                                     verification_purpose   VARCHAR(30)  NOT NULL COMMENT '인증 목적(SIGNUP/FIND_ID/RESET_PASSWORD)',
+                                     verification_code_hash VARCHAR(255) NOT NULL COMMENT '인증번호 해시값',
+                                     expires_at             DATETIME     NOT NULL COMMENT '인증번호 만료일시',
+                                     verified_at            DATETIME     NULL COMMENT '인증 성공일시',
+                                     used_at                DATETIME     NULL COMMENT '인증 결과 사용일시',
+                                     attempt_count          INT          NOT NULL DEFAULT 0 COMMENT '인증번호 확인 시도 횟수',
+                                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증 요청 생성일시',
+                                     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP
+                                         COMMENT '수정일시',
+                                     PRIMARY KEY (id),
+                                     UNIQUE KEY uk_phone_verifications_request_id (request_id),
+                                     INDEX idx_phone_verifications_lookup (phone_number, verification_purpose, created_at),
+                                     INDEX idx_phone_verifications_expiration (expires_at)
+) COMMENT '휴대전화 인증';
 
 
 -- 2. 통화
