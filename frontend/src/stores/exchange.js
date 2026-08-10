@@ -1,7 +1,14 @@
 import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { fetchExchangeRates } from '@/api/exchange';
+import {
+  fetchExchangeRates,
+  getExchangeAlerts,
+  registerExchangeAlert,
+  updateExchangeAlert,
+  deleteExchangeAlert,
+} from '@/api/exchange';
 import currencyUnits from '@/assets/currencyUnits.json';
+import currencySymbols from '@/assets/currencySymbols.json';
 
 const STORAGE_KEY = 'tripass-exchange';
 const currencies = ref([]); // 빈 배열로 초기화
@@ -55,13 +62,11 @@ export const useExchangeStore = defineStore('exchange', () => {
   const period = ref(saved?.period || '1w');
   const currentTab = ref(saved?.currentTab || 'rate');
   const krwAmount = ref(saved?.krwAmount || 100_000);
-  const interestedCurrencyCodes = ref(saved?.interestedCurrencyCodes || ['EUR', 'JPY']);
-  const alerts = ref(
-    saved?.alerts || [
-      { id: 1, currencyCode: 'EUR', targetRate: 1480, targetAmount: 100_000, enabled: true },
-      { id: 2, currencyCode: 'CHF', targetRate: 1700, targetAmount: 150_000, enabled: true },
-    ],
+  const interestedCurrencyCodes = ref(
+    saved?.interestedCurrencyCodes || ['EUR', 'JPY'],
   );
+  const alerts = ref([]); // Fetch from API instead of localStorage
+  const lastUpdateDate = ref('');
 
   const selectedBankId = ref(saved?.selectedBankId || 'kb-gangnam');
   const selectedCurrency = computed(
@@ -87,20 +92,57 @@ export const useExchangeStore = defineStore('exchange', () => {
     return (Number(amount || 0) / Number(rate || 1)) * unit;
   }
 
-  function saveAlert(payload) {
-    if (payload.id) {
-      const index = alerts.value.findIndex((item) => item.id === payload.id);
-      if (index >= 0) alerts.value[index] = { ...payload };
-    } else alerts.value.push({ ...payload, id: Date.now(), enabled: true });
+
+  // 알림 관련
+
+  async function fetchAlerts() {
+    try {
+      const data = await getExchangeAlerts();
+      alerts.value = data.map((item) => ({
+        ...item,
+      }));
+    } catch (e) {
+      console.error('Failed to fetch exchange alerts', e);
+    }
   }
 
-  function removeAlert(id) {
-    alerts.value = alerts.value.filter((item) => item.id !== id);
+  async function saveAlert(payload) {
+    try {
+      if (payload.id) {
+        // PUT: ExchangeRateAlertUpdateRequestDto
+        const updatePayload = {
+          targetRate: payload.targetRate,
+          targetAmount: payload.targetAmount,
+        };
+        await updateExchangeAlert(payload.id, updatePayload);
+      } else {
+        const createPayload = {
+          currencyCode: payload.currencyCode,
+          targetRate: payload.targetRate,
+          targetAmount: payload.targetAmount,
+        };
+        await registerExchangeAlert(createPayload);
+      }
+      await fetchAlerts();
+    } catch (e) {
+      console.error('Failed to save exchange alert', e);
+    }
+  }
+
+  async function removeAlert(id) {
+    try {
+      await deleteExchangeAlert(id);
+      await fetchAlerts();
+    } catch (e) {
+      console.error('Failed to delete exchange alert', e);
+    }
   }
 
   function toggleInterest(code) {
     if (interestedCurrencyCodes.value.includes(code)) {
-      interestedCurrencyCodes.value = interestedCurrencyCodes.value.filter(c => c !== code);
+      interestedCurrencyCodes.value = interestedCurrencyCodes.value.filter(
+        (c) => c !== code,
+      );
     } else {
       interestedCurrencyCodes.value.push(code);
     }
@@ -116,6 +158,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   async function updateExchangeRates() {
     try {
       const data = await fetchExchangeRates();
+      let maxDate = '';
 
       // API 응답 데이터를 스토어의 currencies 구조에 맞게 매핑하고 flagClass 추가
       currencies.value = data.map((item) => {
@@ -126,6 +169,10 @@ export const useExchangeStore = defineStore('exchange', () => {
 
         const unit = currencyUnits[cleanCode] || 1;
 
+        if (item.rateDate && item.rateDate > maxDate) {
+          maxDate = item.rateDate;
+        }
+
         return {
           code: cleanCode,
           name: item.currencyName,
@@ -133,15 +180,31 @@ export const useExchangeStore = defineStore('exchange', () => {
           change: (item.changeAmount || 0) * unit,
           unit: unit,
           flagClass: flagClassMap[cleanCode] || 'fi fi-un',
+          symbol: currencySymbols[cleanCode] || cleanCode,
         };
       });
+
+      if (maxDate) {
+        const dateObj = new Date(maxDate);
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        lastUpdateDate.value = `${yyyy}.${mm}.${dd} 11:00`;
+      }
     } catch (error) {
       console.error('Failed to update exchange rates', error);
     }
   }
 
   watch(
-    [selectedCode, period, currentTab, krwAmount, alerts, selectedBankId, interestedCurrencyCodes],
+    [
+      selectedCode,
+      period,
+      currentTab,
+      krwAmount,
+      selectedBankId,
+      interestedCurrencyCodes,
+    ],
     () =>
       localStorage.setItem(
         STORAGE_KEY,
@@ -150,7 +213,6 @@ export const useExchangeStore = defineStore('exchange', () => {
           period: period.value,
           currentTab: currentTab.value,
           krwAmount: krwAmount.value,
-          alerts: alerts.value,
           selectedBankId: selectedBankId.value,
           interestedCurrencyCodes: interestedCurrencyCodes.value,
         }),
@@ -165,6 +227,7 @@ export const useExchangeStore = defineStore('exchange', () => {
     currentTab,
     krwAmount,
     alerts,
+    lastUpdateDate,
     selectedBankId,
     interestedCurrencyCodes,
     selectedCurrency,
@@ -173,6 +236,7 @@ export const useExchangeStore = defineStore('exchange', () => {
     flagClassMap,
     convertForeign,
     expectedForeign,
+    fetchAlerts,
     saveAlert,
     removeAlert,
     toggleInterest,

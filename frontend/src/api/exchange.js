@@ -30,3 +30,23 @@ export const fetchExchangeEstimate = async (amount, currencyCode) => {
   });
   return response.data.data;
 };
+
+export const getExchangeAlerts = async () => {
+  const response = await api.get('/exchange-rates/alerts');
+  return response.data.data;
+};
+
+export const registerExchangeAlert = async (alertData) => {
+  const response = await api.post('/exchange-rates/alerts', alertData);
+  return response.data.data;
+};
+
+export const updateExchangeAlert = async (id, alertData) => {
+  const response = await api.put(`/exchange-rates/alerts/${id}`, alertData);
+  return response.data.data;
+};
+
+export const deleteExchangeAlert = async (id) => {
+  const response = await api.delete(`/exchange-rates/alerts/${id}`);
+  return response.data.data;
+};

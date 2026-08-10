@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelModeStore } from '@/stores/travelMode'
 import NotificationBell from '@/components/common/NotificationBell.vue'
+import currencySymbols from '@/assets/currencySymbols.json'
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },

@@ -99,30 +99,31 @@ public class ExchangeRateService {
 
     @Transactional
     public Long registerAlert(Long userId, ExchangeRateAlertRequestDto request) {
-        validateAlertRequest(request.getCurrencyId(), request.getTargetAmount(), request.getTargetRate());
-
-        if (!exchangeRateMapper.existsCurrencyById(request.getCurrencyId())) {
+        Long currencyId = exchangeRateMapper.getCurrencyIdByCode(request.getCurrencyCode());
+        if (currencyId == null) {
             throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
         }
 
+        validateAlertRequest(currencyId, request.getTargetAmount(), request.getTargetRate());
+
         // 애플리케이션 레벨 사전 중복 검사 (userId 기반)
-        int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, request.getCurrencyId());
+        int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, currencyId);
         if (count > 0) {
             throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
         }
-        
+
         ExchangeRateAlert alert = new ExchangeRateAlert();
         alert.setUserId(userId);
-        alert.setCurrencyId(request.getCurrencyId());
+        alert.setCurrencyId(currencyId);
         alert.setTargetRate(request.getTargetRate());
         alert.setTargetAmount(request.getTargetAmount());
-        
+
         try {
             exchangeRateMapper.insertAlert(alert);
         } catch (DuplicateKeyException e) {
             throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
         }
-        
+
         return alert.getId();
     }
 

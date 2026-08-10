@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
@@ -13,8 +13,6 @@ import { useTravelStore } from '@/stores/travel';
 const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
-
-const isModalOpen = ref(false); // 모달 상태 추가
 
 const currentTab = computed({
   get: () => exchange.currentTab,
@@ -35,6 +33,21 @@ const displayCurrencies = computed(() => {
   return exchange.currencies.filter((c) => codes.has(c.code));
 });
 
+watch(
+  displayCurrencies,
+  (newList) => {
+    if (newList && newList.length > 0) {
+      const isSelectedValid = newList.some(
+        (c) => c.code === exchange.selectedCode,
+      );
+      if (!isSelectedValid) {
+        exchange.selectedCode = newList[0].code;
+      }
+    }
+  },
+  { immediate: true },
+);
+
 const format = (v, d = 2) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: d });
 
@@ -50,11 +63,18 @@ function handleAlertAction() {
   }
 }
 </script>
+
 <template>
   <main class="page">
     <div class="shell">
       <header>
         <h1>환율·환전</h1>
+        <div
+          v-if="exchange.lastUpdateDate && currentTab === 'rate'"
+          class="update-info"
+        >
+          {{ exchange.lastUpdateDate }} 고시 기준
+        </div>
         <nav class="main-tabs">
           <button
             :class="{ active: currentTab === 'rate' }"
@@ -75,11 +95,14 @@ function handleAlertAction() {
       <section v-if="currentTab === 'rate'">
         <!-- 프리미엄 핀테크 대시보드 액션 카드 -->
         <div class="header-actions">
-          <button @click="isModalOpen = true" class="action-card-btn">
+          <button
+            @click="router.push('/exchange/currencies')"
+            class="action-card-btn"
+          >
             <span class="icon-circle primary">💵</span>
             <div class="btn-text">
-              <strong>통화 추가</strong>
-              <p>새 화폐 더보기</p>
+              <strong>환율 더보기</strong>
+              <p>모든 통화 환율</p>
             </div>
           </button>
           <button
@@ -88,7 +111,7 @@ function handleAlertAction() {
           >
             <span class="icon-circle secondary">🔔</span>
             <div class="btn-text">
-              <strong>알림 목록</strong>
+              <strong>내 알림 목록</strong>
               <p>환율 지정 알림</p>
             </div>
           </button>
@@ -109,9 +132,7 @@ function handleAlertAction() {
             :flagClass="exchange.selectedCurrency.flagClass"
             @add-alert="handleAlertAction"
           />
-
           <CurrencyChart :currency="exchange.selectedCurrency" />
-
           <ExchangeCalculator />
         </template>
         <template v-else>
@@ -128,8 +149,11 @@ function handleAlertAction() {
               >
                 여행 등록하기
               </button>
-              <button @click="isModalOpen = true" class="btn-secondary">
-                통화 추가하기
+              <button
+                @click="router.push('/exchange/currencies')"
+                class="btn-secondary"
+              >
+                모든 통화 보기
               </button>
             </div>
           </div>
@@ -162,6 +186,12 @@ header h1 {
   text-align: center;
   font-size: 18px;
   font-weight: 900;
+  margin-bottom: 8px;
+}
+.update-info {
+  text-align: center;
+  font-size: 11px;
+  color: #64748b;
   margin-bottom: 18px;
 }
 .main-tabs {

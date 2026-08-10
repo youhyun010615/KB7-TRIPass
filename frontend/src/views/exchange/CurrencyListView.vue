@@ -2,11 +2,13 @@
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
+import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import { useExchangeStore } from '@/stores/exchange';
 
 const router = useRouter();
 const exchange = useExchangeStore();
 const query = ref('');
+const openedCurrencyCode = ref(null);
 
 onMounted(() => {
   if (exchange.currencies.length === 0) {
@@ -38,9 +40,13 @@ const filteredCurrencies = computed(() => {
   });
 });
 
-function openCurrency(item) {
-  exchange.selectedCode = item.code;
-  router.push(`/exchange/currencies/${item.code}`);
+function toggleCurrency(item) {
+  if (openedCurrencyCode.value === item.code) {
+    openedCurrencyCode.value = null;
+  } else {
+    exchange.selectedCode = item.code;
+    openedCurrencyCode.value = item.code;
+  }
 }
 </script>
 
@@ -51,7 +57,13 @@ function openCurrency(item) {
         <button type="button" aria-label="이전 화면" @click="router.back()">
           ‹
         </button>
-        <h1>주요 통화</h1>
+        <div>
+          <h1>주요 통화</h1>
+          <div v-if="exchange.lastUpdateDate" class="update-info">
+            {{ exchange.lastUpdateDate }} 고시 기준
+          </div>
+        </div>
+        <div></div>
       </header>
 
       <label class="search">
@@ -97,29 +109,34 @@ function openCurrency(item) {
       </p>
 
       <section v-if="filteredCurrencies.length" class="currency-list">
-        <button
-          v-for="item in filteredCurrencies"
-          :key="item.code"
-          type="button"
-          @click="openCurrency(item)"
-        >
-          <span class="flag">{{ item.flag }}</span>
-          <span class="identity">
-            <b>
-              {{ item.code }}
-              <small v-if="item.unit > 1"> {{ item.unit }}</small>
-            </b>
-            <em>{{ item.name }}</em>
-          </span>
-          <span class="rate">
-            <strong>{{ format(item.rate) }}원</strong>
-            <small :class="{ up: item.change > 0 }">
-              {{ item.change > 0 ? '▲' : '▼' }}
-              {{ format(Math.abs(item.change)) }}
-            </small>
-          </span>
-          <i>›</i>
-        </button>
+        <div v-for="item in filteredCurrencies" :key="item.code" class="currency-item-wrapper">
+          <button
+            type="button"
+            class="currency-btn"
+            @click="toggleCurrency(item)"
+          >
+            <span :class="item.flagClass" class="list-flag"></span>
+            <span class="identity">
+              <b>
+                {{ item.code }}
+                <small v-if="item.unit > 1"> {{ item.unit }}</small>
+              </b>
+              <em>{{ item.name }}</em>
+            </span>
+            <span class="rate">
+              <strong>{{ format(item.rate) }}원</strong>
+              <small :class="{ up: item.change > 0 }">
+                {{ item.change > 0 ? '▲' : '▼' }}
+                {{ format(Math.abs(item.change)) }}
+              </small>
+            </span>
+            <i :class="{ rotated: openedCurrencyCode === item.code }">›</i>
+          </button>
+          
+          <div v-if="openedCurrencyCode === item.code" class="currency-chart-wrapper">
+            <CurrencyChart :currency="item" />
+          </div>
+        </div>
       </section>
 
       <section v-else class="empty">
@@ -163,6 +180,14 @@ header h1 {
   text-align: center;
   font-size: 18px;
   font-weight: 900;
+  margin-bottom: 2px;
+}
+
+.update-info {
+  text-align: center;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: normal;
 }
 
 .search {
@@ -197,13 +222,16 @@ header h1 {
   font-weight: 800;
 }
 
-.currency-list button {
+.currency-item-wrapper {
+  margin-bottom: 9px;
+}
+
+.currency-list .currency-btn {
   display: grid;
   width: 100%;
   grid-template-columns: 32px 1fr auto 10px;
   align-items: center;
   gap: 10px;
-  margin-bottom: 9px;
   padding: 13px 14px;
   border: 1px solid #dfe5ed;
   border-radius: 14px;
@@ -212,10 +240,19 @@ header h1 {
   text-align: left;
 }
 
-.flag {
+.currency-chart-wrapper {
+  margin-top: 8px;
+  padding: 0 10px;
+}
+
+.list-flag {
+  display: inline-block;
+  width: 1.33em;
+  height: 1em;
+  background-size: cover;
+  border-radius: 2px;
+  vertical-align: middle;
   font-size: 19px;
-  font-family:
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
 }
 
 .identity b,
@@ -262,6 +299,10 @@ header h1 {
   color: #9aa7b7;
   font-size: 18px;
   font-style: normal;
+  transition: transform 0.2s;
+}
+.currency-list i.rotated {
+  transform: rotate(90deg);
 }
 
 .empty {

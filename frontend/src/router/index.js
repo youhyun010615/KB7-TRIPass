@@ -231,6 +231,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/exchange/currencies',
+      name: 'CurrencyList',
+      component: () => import('@/views/exchange/CurrencyListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/exchange/alerts',
       name: 'ExchangeAlerts',
       component: () => import('@/views/exchange/ExchangeAlertsView.vue'),
@@ -243,7 +249,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/exchange/alerts/:alertId',
+       path: '/exchange/alerts/:alertId',
       name: 'ExchangeAlertEdit',
       component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
       meta: { requiresAuth: true },
