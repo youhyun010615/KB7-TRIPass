@@ -67,6 +67,24 @@ public interface AssetMapper {
     // supported_institutions
     List<SupportedInstitutionDto> findAllSupportedInstitutions();
 
+    // cards
+    void insertCard(CardDto dto);
+    List<CardDto> findCardsByUserId(Long userId);
+    CardDto findCardByIdAndUserId(
+            @org.apache.ibatis.annotations.Param("cardId") Long cardId,
+            @org.apache.ibatis.annotations.Param("userId") Long userId
+    );
+
+    // transactions (카드 — 중복 시 merchant_name 업데이트, 신규 시 INSERT)
+    void upsertTransactionFromCard(TransactionDto dto);
+
+    // 카드별 거래내역 조회
+    List<TransactionDto> findTransactionsByCardId(
+            @org.apache.ibatis.annotations.Param("cardId") Long cardId,
+            @org.apache.ibatis.annotations.Param("startDate") LocalDate startDate,
+            @org.apache.ibatis.annotations.Param("endDate") LocalDate endDate
+    );
+
     //거래내역 캘린더 조회
     List<CalendarDayDto> findCalendarByMonth(
             @org.apache.ibatis.annotations.Param("userId") Long userId,
