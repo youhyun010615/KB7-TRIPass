@@ -230,21 +230,25 @@ CREATE TABLE travel_cards
 
 CREATE TABLE travel_card_currencies
 (
-    id            BIGINT     NOT NULL AUTO_INCREMENT COMMENT '트래블카드 지원 통화 ID',
-    card_id       BIGINT     NOT NULL COMMENT '트래블카드 ID',
-    currency_code VARCHAR(3) NOT NULL COMMENT 'ISO 4217 통화 코드',
-    created_at    TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '트래블카드 지원 통화 ID',
+    card_id       BIGINT      NOT NULL COMMENT '트래블카드 ID',
+    currency_code VARCHAR(3)  NOT NULL COMMENT 'ISO 4217 통화 코드',
+
+    created_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
 
     PRIMARY KEY (id),
 
-    UNIQUE KEY uk_travel_card_currency (
-                                        card_id,
-                                        currency_code
-        ),
+    CONSTRAINT uq_travel_card_currencies_card_currency
+        UNIQUE (card_id, currency_code),
 
-    CONSTRAINT fk_travel_card_currencies_card
+    CONSTRAINT fk_travel_card_currencies_travel_card
         FOREIGN KEY (card_id)
-            REFERENCES travel_cards (id)
+            REFERENCES travel_cards (id),
+
+    INDEX idx_travel_card_currencies_card_id (card_id)
+
 ) COMMENT '트래블카드 지원 통화';
 
 
