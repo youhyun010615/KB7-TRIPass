@@ -1,133 +1,144 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
-import { useExchangeStore } from '@/stores/exchange';
+import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
+import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
+import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
+import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
+import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
 
-onMounted(() => {
-  exchange.updateExchangeRates();
-  console.log(exchange.currencies);
+const isModalOpen = ref(false); // 모달 상태 추가
+
+const currentTab = computed({
+  get: () => exchange.currentTab,
+  set: (val) => (exchange.currentTab = val),
 });
 
-const tabs = [
-  ['rate', '환율'],
-  ['alerts', '환율 알림'],
-  ['banks', '근처 은행'],
-];
+onMounted(() => {
+  exchange.updateExchangeRates();
+});
 
-function move(tab) {
-  if (tab === 'alerts') router.push('/exchange/alerts');
-  else if (tab === 'banks') router.push('/exchange/banks');
-}
+// 개인화된 통화 목록 계산
+const displayCurrencies = computed(() => {
+  const codes = new Set([
+    ...exchange.interestedCurrencyCodes,
+    ...exchange.alerts.map((a) => a.currencyCode),
+    ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
+  ]);
+  return exchange.currencies.filter((c) => codes.has(c.code));
+});
 
 const format = (v, d = 2) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: d });
 
-const currencyByCountry = {
-  FR: 'EUR',
-  DE: 'EUR',
-  CH: 'CHF',
-  JP: 'JPY',
-  HK: 'HKD',
-};
-const majorCurrencies = computed(() =>
-  [
-    ...new Set(
-      travel.selectedCountryCodes
-        .map((code) => currencyByCountry[code])
-        .filter(Boolean),
-    ),
-  ]
-    .map((code) => exchange.getCurrency(code))
-    .filter(Boolean),
+const currentAlert = computed(() =>
+  exchange.alerts.find((a) => a.currencyCode === exchange.selectedCode),
 );
 
-const sentAmount = computed(() => format(exchange.krwAmount, 0));
-const receivedAmount = computed(() => format(exchange.foreignAmount));
-const amountClass = (value) => ({
-  compact: String(value).length > 10,
-  tiny: String(value).length > 14,
-});
-
-function updateKrw(event) {
-  const digits = event.target.value.replace(/[^0-9]/g, '').slice(0, 16);
-  exchange.krwAmount = Number(digits) || 0;
-  event.target.value = format(exchange.krwAmount, 0);
+function handleAlertAction() {
+  if (currentAlert.value) {
+    router.push(`/exchange/alerts/${currentAlert.value.id}`);
+  } else {
+    router.push('/exchange/alerts/add');
+  }
 }
 </script>
 <template>
   <main class="page">
     <div class="shell">
-      <header><h1>환율·환전</h1></header>
-      <nav>
-        <button
-          v-for="tab in tabs"
-          :key="tab[0]"
-          :class="{ active: tab[0] === 'rate' }"
-          @click="move(tab[0])"
-        >
-          {{ tab[1] }}
-        </button>
-      </nav>
-      <ExchangeTicket
-        :title="`${exchange.selectedCurrency.flag} ${exchange.selectedCurrency.code} ${format(exchange.selectedCurrency.rate)}원`"
-        :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원 · 환전 계산 03:00`"
-        :selectedCode="exchange.selectedCode"
-      />
-      <section class="calculator">
-        <h2>빠른 환율 계산</h2>
-        <div>
-          <label
-            >보내는 금액<input
-              :value="sentAmount"
-              :class="amountClass(sentAmount)"
-              inputmode="numeric"
-              aria-label="보내는 금액"
-              @input="updateKrw"
-            /><b>KRW</b></label
-          ><span>→</span
-          ><label
-            >받는 금액<strong :class="amountClass(receivedAmount)">{{
-              receivedAmount
-            }}</strong
-            ><b>{{ exchange.selectedCode }}</b></label
+      <header>
+        <h1>환율·환전</h1>
+        <nav class="main-tabs">
+          <button
+            :class="{ active: currentTab === 'rate' }"
+            @click="currentTab = 'rate'"
           >
+            환율
+          </button>
+          <button
+            :class="{ active: currentTab === 'exchange' }"
+            @click="currentTab = 'exchange'"
+          >
+            환전
+          </button>
+        </nav>
+      </header>
+
+      <!-- 환율 탭 -->
+      <section v-if="currentTab === 'rate'">
+        <!-- 프리미엄 핀테크 대시보드 액션 카드 -->
+        <div class="header-actions">
+          <button @click="isModalOpen = true" class="action-card-btn">
+            <span class="icon-circle primary">💵</span>
+            <div class="btn-text">
+              <strong>통화 추가</strong>
+              <p>새 화폐 더보기</p>
+            </div>
+          </button>
+          <button
+            @click="router.push('/exchange/alerts')"
+            class="action-card-btn"
+          >
+            <span class="icon-circle secondary">🔔</span>
+            <div class="btn-text">
+              <strong>알림 목록</strong>
+              <p>환율 지정 알림</p>
+            </div>
+          </button>
         </div>
+        <template v-if="displayCurrencies.length > 0">
+          <CurrencyTabNav
+            v-model="exchange.selectedCode"
+            :currencies="displayCurrencies"
+          />
+
+          <ExchangeTicket
+            v-if="exchange.selectedCurrency"
+            :name="exchange.selectedCurrency.name"
+            :rate="exchange.selectedCurrency.rate"
+            :unit="exchange.selectedCurrency.unit"
+            :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원`"
+            :selectedCode="exchange.selectedCode"
+            :flagClass="exchange.selectedCurrency.flagClass"
+            @add-alert="handleAlertAction"
+          />
+
+          <CurrencyChart :currency="exchange.selectedCurrency" />
+
+          <ExchangeCalculator />
+        </template>
+        <template v-else>
+          <div class="empty-state">
+            <div class="empty-icon">💸</div>
+            <p>
+              아직 관심 있는 환율이 없어요!<br />여행을 계획하거나 직접 통화를
+              추가해보세요.
+            </p>
+            <div class="empty-actions">
+              <button
+                @click="router.push('/travel/register')"
+                class="btn-primary"
+              >
+                여행 등록하기
+              </button>
+              <button @click="isModalOpen = true" class="btn-secondary">
+                통화 추가하기
+              </button>
+            </div>
+          </div>
+        </template>
       </section>
-      <div class="title">
-        <h2>주요 통화</h2>
-        <RouterLink to="/exchange/currencies">전체 보기</RouterLink>
-      </div>
-      <section v-if="majorCurrencies.length" class="currencies">
-        <button
-          v-for="item in majorCurrencies"
-          :key="item.code"
-          @click="
-            exchange.selectedCode = item.code;
-            router.push(`/exchange/currencies/${item.code}`);
-          "
-        >
-          <span>{{ item.flag }}</span
-          ><b>{{ item.code }}</b
-          ><strong>{{ format(item.rate) }}원</strong
-          ><em :class="{ up: item.change > 0 }"
-            >{{ item.change > 0 ? '▲' : '▼' }}
-            {{ format(Math.abs(item.change)) }}</em
-          ><i>›</i>
-        </button>
-      </section>
-      <section v-else class="empty">
-        <b>등록된 여행 목표가 없어요.</b>
-        <p>여행 목표를 등록하면 해당 국가의 통화를 바로 확인할 수 있어요.</p>
-        <button type="button" @click="router.push('/travel/register')">
-          여행 목표 등록하기
-        </button>
+
+      <!-- 환전 탭 (지도/은행) -->
+      <section v-else class="exchange-map">
+        <NearbyBanks />
       </section>
       <BottomNav />
     </div>
@@ -147,172 +158,143 @@ function updateKrw(event) {
   padding: 52px 18px 100px;
   background: #f7f5ef;
 }
-header {
-  margin-bottom: 16px;
-}
 header h1 {
-  font-size: 19px;
-  font-weight: 900;
-}
-nav {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 13px;
-}
-nav button {
-  padding: 10px;
-  border-radius: 16px;
-  background: #fff;
-  color: #758196;
-  font-size: 8px;
-}
-nav .active {
-  background: #1870e8;
-  color: #fff;
-  font-weight: 900;
-}
-.calculator {
-  margin-top: 13px;
-  padding: 15px;
-  border: 1px solid #e1e6ed;
-  border-radius: 15px;
-  background: #fff;
-}
-.calculator h2 {
-  font-size: 11px;
-}
-.calculator > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
-  align-items: end;
-  gap: 4px;
-  margin-top: 12px;
-}
-.calculator label {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f7f8fa;
-  color: #8c97a7;
-  font-size: 7px;
-  overflow: hidden;
-}
-.calculator input,
-.calculator strong {
-  grid-column: 1;
-  min-width: 0;
-  width: 100%;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  outline: none;
-}
-.calculator input.compact,
-.calculator strong.compact {
-  font-size: 11px;
-}
-.calculator input.tiny,
-.calculator strong.tiny {
-  font-size: 9px;
-  letter-spacing: -0.04em;
-}
-.calculator label b {
-  grid-column: 2;
-  grid-row: 2;
-  margin-left: 4px;
-  color: #8d98a8;
-  font-size: 8px;
-}
-.calculator > div > span {
   text-align: center;
-  color: #6680a4;
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 18px;
 }
-.calculator button {
-  display: block;
-  margin: 10px 0 0 auto;
-  color: #1472ee;
-  font-size: 8px;
-}
-.title {
-  display: flex;
-  justify-content: space-between;
-  margin: 21px 2px 9px;
-}
-.title h2 {
-  font-size: 12px;
-}
-.title a {
-  color: #2870dc;
-  font-size: 8px;
-}
-.currencies button {
+.main-tabs {
   display: grid;
-  width: 100%;
-  grid-template-columns: 25px 1fr auto 42px 8px;
-  align-items: center;
-  gap: 7px;
-  margin-top: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.main-tabs button {
   padding: 12px;
-  border: 1px solid #e2e7ed;
+  border: none;
   border-radius: 12px;
-  background: #fff;
-  text-align: left;
+  background: #e2e8f0;
+  color: #64748b;
+  font-weight: bold;
+  cursor: pointer;
 }
-.currencies b {
-  font-size: 10px;
+.main-tabs button.active {
+  background: #17387f;
+  color: #fff;
 }
-.currencies strong {
-  font-size: 10px;
+
+.exchange-map {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.currencies em {
-  color: #0b9e74;
-  font-size: 7px;
-  font-style: normal;
+.add-btn-wrapper {
+  text-align: right;
+  margin: 10px 0;
 }
-.currencies em.up {
-  color: #de695c;
+.header-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
 }
-.currencies i {
-  color: #a2adbc;
-  font-size: 17px;
-  font-style: normal;
-}
-.empty {
-  padding: 22px 14px;
-  border: 1px dashed #cbd5e1;
+.action-card-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e1e6ed;
   border-radius: 14px;
   background: #fff;
-  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
 }
-.empty b {
-  font-size: 11px;
+.action-card-btn:active {
+  transform: scale(0.98);
+  background: #f8fafc;
 }
-.empty p {
-  margin-top: 6px;
-  color: #94a3b8;
-  font-size: 8px;
-  line-height: 1.5;
-}
-.empty button {
-  margin-top: 12px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #173f8d;
-  color: #fff;
-  font-size: 8px;
-  font-weight: 900;
-}
-.shell :deep(.fixed) {
+.icon-circle {
   display: flex;
-  grid-template-columns: none;
-  gap: 0;
-  margin-bottom: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 14px;
+}
+.icon-circle.primary {
+  background: #f0f4fc;
+  color: #17387f;
+}
+.icon-circle.secondary {
+  background: #fff8e7;
+  color: #ff9f0a;
+}
+.btn-text {
+  display: flex;
+  flex-direction: column;
+}
+.btn-text strong {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10192d;
+}
+.btn-text p {
+  font-size: 9px;
+  color: #8c98a8;
+  margin-top: 1px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  gap: 24px;
+}
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+.empty-state p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+.btn-primary,
+.btn-secondary {
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: #17387f;
+  color: #fff;
+  border: none;
+}
+.btn-primary:hover {
+  background: #0f2a63;
+}
+.btn-secondary {
+  background: #fff;
+  color: #17387f;
+  border: 1px solid #17387f;
+}
+.btn-secondary:hover {
+  background: #f1f5f9;
 }
 </style>

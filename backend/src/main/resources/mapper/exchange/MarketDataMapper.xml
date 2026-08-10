@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.exchange.mapper.MarketDataMapper">
+
+    <select id="getLatestMarketDataByCurrencyCode" resultType="ExchangeMarketDataDto">
+        SELECT emd.*
+        FROM exchange_market_data emd
+        JOIN currencies c ON emd.currency_id = c.id
+        WHERE c.currency_code = #{currencyCode}
+        ORDER BY emd.fetched_at DESC
+        LIMIT 1
+    </select>
+
+</mapper>

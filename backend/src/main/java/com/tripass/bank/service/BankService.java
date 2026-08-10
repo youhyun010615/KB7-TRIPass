@@ -1,16 +1,25 @@
 package com.tripass.bank.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tripass.bank.client.BankClient;
 import com.tripass.bank.domain.ExchangeBankBranch;
+import com.tripass.bank.dto.BankBranchDto;
+import com.tripass.bank.dto.ExchangeEstimateDto;
+import com.tripass.bank.exception.BankErrorCode;
+import com.tripass.bank.exception.BankException;
 import com.tripass.bank.mapper.BankMapper;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.tripass.exchange.dto.ExchangeMarketDataDto;
+import com.tripass.exchange.mapper.MarketDataMapper;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 @Slf4j
@@ -20,30 +29,29 @@ public class BankService {
 
     private final BankClient bankClient;
     private final BankMapper bankMapper;
+    private final MarketDataMapper marketDataMapper;
 
     @Transactional
     public int syncBankBranches() {
         // 1. 기존 데이터 초기화
         bankMapper.deleteAllBranches();
 
-        // 2. 대한민국 전역 격자 좌표 생성 (간격 0.15도, 약 15km)
-        List<Coordinate> grid = generateGridCoordinates();
-        log.info("Generated {} grid coordinates for nationwide coverage.", grid.size());
+        // 2. 지역 목록 로드
+        List<String> regions = loadRegions();
+        log.info("Loaded {} regions for KB bank sync.", regions.size());
 
         Set<String> processedKeys = new HashSet<>();
         List<ExchangeBankBranch> batchList = new ArrayList<>();
         int totalProcessed = 0;
 
-        // 3. 각 격자점을 순회하며 API 호출
-        for (Coordinate coord : grid) {
+        // 3. 각 지역을 순회하며 API 호출
+        for (String region : regions) {
             int page = 1;
             boolean isEnd = false;
 
             while (!isEnd) {
-                // 반경 20km(20000m) 검색으로 사각지대 완벽 방어
-                Map<String, Object> response = bankClient.fetchBankBranchesByLocation(
-                        coord.getLat(), coord.getLon(), 20000, page
-                );
+                // 키워드 검색 수행
+                Map<String, Object> response = bankClient.fetchBankBranches(region + " 국민은행", page);
 
                 if (response == null || !response.containsKey("documents")) {
                     break;
@@ -107,16 +115,17 @@ public class BankService {
         return totalProcessed;
     }
 
-    private List<Coordinate> generateGridCoordinates() {
-        List<Coordinate> coordinates = new ArrayList<>();
-        // 대한민국 경계 범위 (위도 33.1 ~ 38.5, 경도 124.6 ~ 129.6)
-        // 남북 5.4도, 동서 5.0도를 0.15도 단위로 순회하여 겹치는 원들로 전역 격자를 생성
-        for (double lat = 33.1; lat <= 38.5; lat += 0.15) {
-            for (double lon = 124.6; lon <= 129.6; lon += 0.15) {
-                coordinates.add(new Coordinate(lat, lon));
-            }
+    private List<String> loadRegions() {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(
+                    new ClassPathResource("regions.json").getInputStream(),
+                    new TypeReference<>() {}
+            );
+        } catch (Exception e) {
+            log.error("Failed to load regions.json", e);
+            throw new BankException(BankErrorCode.SYNC_FAILED);
         }
-        return coordinates;
     }
 
     private ExchangeBankBranch convertToEntity(Map<String, Object> doc) {
@@ -137,10 +146,58 @@ public class BankService {
                 .build();
     }
 
-    @Data
-    @AllArgsConstructor
-    private static class Coordinate {
-        private double lat;
-        private double lon;
+    @Transactional(readOnly = true)
+    public List<BankBranchDto> findNearbyBanks(BigDecimal lat, BigDecimal lng, Double radius) {
+        double searchRadius = (radius != null) ? radius : 2.0; // 기본 반경 2km
+        return bankMapper.findNearbyBanks(lat, lng, searchRadius);
+    }
+
+    @Transactional(readOnly = true)
+    public BankBranchDto findById(Long id) {
+        BankBranchDto bank = bankMapper.findById(id);
+        if (bank == null) {
+            throw new BankException(BankErrorCode.BANK_NOT_FOUND);
+        }
+        return bank;
+    }
+
+    @Transactional(readOnly = true)
+    public List<BankBranchDto> findAll(String keyword) {
+        return bankMapper.findAllByKeyword(keyword);
+    }
+
+    @Transactional(readOnly = true)
+    public ExchangeEstimateDto getEstimate(BigDecimal amount, String currencyCode) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BankException(BankErrorCode.INVALID_CALCULATION_INPUT);
+        }
+
+        ExchangeMarketDataDto marketData = marketDataMapper.getLatestMarketDataByCurrencyCode(currencyCode);
+        if (marketData == null) {
+            throw new BankException(BankErrorCode.CURRENCY_NOT_FOUND);
+        }
+
+        // 환전 계산 로직
+        // 예상금액 = 원화 / (살 때 환율 / 단위)
+        BigDecimal buyRate = marketData.getBuyRate();
+        Integer unitValue = marketData.getUnit();
+        if (buyRate == null || buyRate.compareTo(BigDecimal.ZERO) <= 0
+                || unitValue == null || unitValue <= 0) {
+            throw new BankException(BankErrorCode.INVALID_CALCULATION_INPUT);
+        }
+        BigDecimal unit = BigDecimal.valueOf(unitValue);
+        BigDecimal estimatedAmount = amount.divide(buyRate.divide(unit, 4, RoundingMode.HALF_UP), 2, RoundingMode.HALF_UP);
+
+        return ExchangeEstimateDto.builder()
+                .inputAmount(amount)
+                .estimatedAmount(estimatedAmount)
+                .buyRate(buyRate)
+                .buyFeeRate(marketData.getBuyFeeRate())
+                .sellRate(marketData.getSellRate())
+                .sellFeeRate(marketData.getSellFeeRate())
+                .baseRate(marketData.getBaseRate())
+                .unit(marketData.getUnit())
+                .currencyCode(currencyCode)
+                .build();
     }
 }
