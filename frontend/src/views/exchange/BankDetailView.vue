@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
+import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
 import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
 import { fetchBankDetail, fetchExchangeEstimate } from '@/api/exchange';
@@ -16,7 +17,7 @@ const estimate = ref(null);
 const inputAmount = ref(exchange.krwAmount || 100000);
 const displayAmount = ref('');
 
-// 사용자의 여행 일정 및 관심 통화를 수집하여 보여줄 통화 필터링
+// 사용자의 여행 일정 및 관심 통화를 앞쪽에 배치하고 나머지 모든 통화도 제공
 const availableCurrencies = computed(() => {
   const codes = new Set([
     ...exchange.interestedCurrencyCodes,
@@ -24,14 +25,21 @@ const availableCurrencies = computed(() => {
     ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
   ]);
 
-  // 만약 등록된 정보가 비어있다면 대중적인 3대 통화 제공
+  // 만약 등록된 정보가 비어있다면 대중적인 3대 통화 우선 배치
   if (codes.size === 0) {
     codes.add('USD');
     codes.add('JPY');
     codes.add('EUR');
   }
 
-  return exchange.currencies.filter((c) => codes.has(c.code));
+  const allCurrencies = [...exchange.currencies];
+  return allCurrencies.sort((a, b) => {
+    const aMatch = codes.has(a.code);
+    const bMatch = codes.has(b.code);
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0; // 둘 다 속하거나 속하지 않으면 원래 순서 유지
+  });
 });
 
 // 현재 활성화된 통화 코드 (기본값은 스토어에서 선택 중인 통화)
@@ -68,8 +76,7 @@ onMounted(async () => {
         (c) => c.code === selectedCurrencyCode.value,
       )
     ) {
-      selectedCurrencyCode.value =
-        availableCurrencies.value[0]?.code || 'USD';
+      selectedCurrencyCode.value = availableCurrencies.value[0]?.code || 'USD';
     }
 
     // 최초 통화로 우대 환율 정보 로드 및 캐시 저장
@@ -118,6 +125,10 @@ const onAmountInput = (event) => {
 // 실시간 프론트엔드 계산 (총액 상관없이 환율은 동일하므로 API 재요청 없음!)
 const computedEstimatedAmount = computed(() => {
   if (!estimate.value) return 0;
+  // 백엔드에서 주는 estimatedAmount 우선 사용, 없으면 프론트에서 계산
+  if (estimate.value.estimatedAmount)
+    return Number(estimate.value.estimatedAmount);
+
   const buyRate = Number(estimate.value.buyRate || 1);
   const unit = Number(estimate.value.unit || 1);
   return (inputAmount.value / buyRate) * unit;
@@ -158,24 +169,20 @@ const copyToClipboard = (text) => {
           <button @click="router.back()">‹</button>
           <div class="header-title">
             <h1>{{ bank.branchName }}</h1>
+
             <small v-if="distanceInfo" class="header-subtitle">
               {{ displayDistance }} · {{ displayWalkTime }}분
             </small>
           </div>
         </header>
         <section class="estimate">
-          <!-- 개인 맞춤형 미니 통화 셀렉터 -->
-          <div class="mini-currency-selector">
-            <button
-              v-for="curr in availableCurrencies"
-              :key="curr.code"
-              :class="{ active: selectedCurrencyCode === curr.code }"
-              @click="selectCurrency(curr.code)"
-            >
-              <span class="fi" :class="curr.flagClass"></span>
-              {{ curr.code }}
-            </button>
-          </div>
+          <!-- CurrencyTabNav 컴포넌트를 이용한 좌우 스크롤 통화 선택기 -->
+          <CurrencyTabNav
+            :modelValue="selectedCurrencyCode"
+            :currencies="availableCurrencies"
+            @update:modelValue="selectCurrency"
+            style="margin-bottom: 14px; border-bottom: 1px solid #f0f3f6"
+          />
 
           <div class="input-container">
             <input
@@ -188,17 +195,24 @@ const copyToClipboard = (text) => {
             <span class="currency-label">원 환전 시</span>
           </div>
           <strong
-            >약 {{ estimate.currencyCode }}
+            >약
+            {{
+              exchange.getCurrency(estimate.currencyCode)?.symbol ||
+              estimate.currencyCode
+            }}
             {{ format(computedEstimatedAmount) }}</strong
           >
+          <small v-if="exchange.lastUpdateDate" class="header-subtitle">
+            {{ exchange.lastUpdateDate }} 기준
+          </small>
           <dl>
             <div>
-              <dt>현재 환율</dt>
-              <dd>{{ format(estimate.baseRate) }}원</dd>
+              <dt>살 때 환율</dt>
+              <dd>{{ format(estimate.buyRate) }}원</dd>
             </div>
             <div>
-              <dt>은행 적용 환율</dt>
-              <dd>{{ format(estimate.buyRate) }}원</dd>
+              <dt>팔 때 환율</dt>
+              <dd>{{ format(estimate.sellRate) }}원</dd>
             </div>
             <div>
               <dt>기준 환율</dt>
@@ -271,6 +285,7 @@ header h1 {
   line-height: 1.2;
 }
 .header-subtitle {
+  align-items: center;
   font-size: 11px;
   color: #8c98a8;
   margin-top: 2px;
@@ -288,41 +303,6 @@ aside {
 .estimate small,
 .estimate strong {
   display: block;
-}
-.mini-currency-selector {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid #f0f3f6;
-  scrollbar-width: none; /* Firefox */
-}
-.mini-currency-selector::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
-}
-.mini-currency-selector button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid #e1e6ed;
-  border-radius: 15px;
-  background: #fff;
-  color: #5e6b7d;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-.mini-currency-selector button span.fi {
-  border-radius: 1px;
-}
-.mini-currency-selector button.active {
-  border-color: #173f8d;
-  background: #f0f4fc;
-  color: #173f8d;
 }
 .input-container {
   display: flex;

@@ -13,6 +13,7 @@ onMounted(async () => {
   if (exchange.currencies.length === 0) {
     await exchange.updateExchangeRates();
   }
+  await exchange.fetchAlerts();
 });
 
 // 도달한 알림 계산
@@ -39,14 +40,17 @@ const reachedAlerts = computed(() => {
           @click="router.push(`/exchange/alerts/${alert.id}`)"
           class="alert-item"
         >
-          <!-- {{ alert }} -->
           <span
             :class="exchange.getCurrency(alert.currencyCode)?.flagClass"
             class="flag"
           ></span>
 
           <div class="info">
-            <b>{{ alert.currencyCode }}</b>
+            <b
+              >{{ alert.currencyCode }}({{
+                exchange.getCurrency(alert.currencyCode)?.symbol || ''
+              }})</b
+            >
             <small>{{ exchange.getCurrency(alert.currencyCode)?.name }}</small>
           </div>
 
@@ -59,13 +63,6 @@ const reachedAlerts = computed(() => {
               {{ format(exchange.getCurrency(alert.currencyCode)?.rate) }}원</b
             >
           </div>
-
-          <div class="status">
-            <em :class="{ off: !alert.enabled }">{{
-              alert.enabled ? '활성' : '꺼짐'
-            }}</em>
-          </div>
-
           <i class="arrow">›</i>
         </button>
         <div v-if="!exchange.alerts.length" class="empty">
@@ -76,8 +73,10 @@ const reachedAlerts = computed(() => {
       <aside v-if="reachedAlerts.length > 0">
         <b>환율이 도달했어요!</b>
         <p v-for="alert in reachedAlerts" :key="alert.id">
-          {{ alert.currencyCode }}가 목표 환율 {{ format(alert.targetRate) }}원 이하에
-          도달했어요.
+          {{
+            exchange.getCurrency(alert.currencyCode)?.symbol ||
+            alert.currencyCode
+          }}가 목표 환율 {{ format(alert.targetRate) }}원 이하에 도달했어요.
         </p>
       </aside>
 
@@ -87,6 +86,7 @@ const reachedAlerts = computed(() => {
     </div>
   </main>
 </template>
+
 <style scoped>
 .page {
   min-height: 100vh;
@@ -134,7 +134,7 @@ header h1 {
 .alert-item {
   display: grid;
   width: 100%;
-  grid-template-columns: 28px 1fr auto 60px 16px;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center; /* 세로 중앙 정렬 */
   justify-items: center; /* 그리드 내부 요소들 중앙 정렬 */
   gap: 10px;
@@ -189,19 +189,15 @@ header h1 {
   color: #174494;
   font-weight: 700;
 }
-.status em {
-  font-size: 12px;
-  font-style: normal;
-  color: #0a9f73;
-  font-weight: 600;
-}
-.status em.off {
-  color: #9da7b5;
-}
+
 .arrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   color: #a2acba;
   font-size: 20px;
   font-style: normal;
+  margin-left: 4px; /* 환율 금액과의 최소 간격 */
 }
 .empty {
   padding: 50px;

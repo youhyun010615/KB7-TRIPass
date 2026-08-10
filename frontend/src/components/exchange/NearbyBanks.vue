@@ -238,17 +238,20 @@ const moveToCurrentLocation = () => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         userLocation.value = { lat, lng }; // 실제 물리 유저 GPS 위치 저장
-        map.panTo(new window.kakao.maps.LatLng(lat, lng));
-        if (currentPositionMarker)
+        if (map) {
+          map.panTo(new window.kakao.maps.LatLng(lat, lng));
+        }
+        if (currentPositionMarker) {
           currentPositionMarker.setPosition(
             new window.kakao.maps.LatLng(lat, lng),
           );
+        }
         loadBanks(lat, lng);
       },
       (error) => {
         console.warn('Geolocation error:', error);
       },
-      { enableHighAccuracy: false, timeout: 3000, maximumAge: 60000 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   }
 };
@@ -338,28 +341,7 @@ onMounted(async () => {
       initMap(37.497942, 127.027621);
 
       // 2. 백그라운드에서 유저의 실제 GPS를 가져와 성공 시 해당 위치로 슬라이드(panTo) 및 은행 정보 갱신
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            userLocation.value = { lat, lng };
-            if (map) {
-              map.panTo(new window.kakao.maps.LatLng(lat, lng));
-              if (currentPositionMarker) {
-                currentPositionMarker.setPosition(
-                  new window.kakao.maps.LatLng(lat, lng),
-                );
-              }
-              loadBanks(lat, lng);
-            }
-          },
-          (error) => {
-            console.warn('Geolocation background fetch error:', error);
-          },
-          { enableHighAccuracy: false, timeout: 3000, maximumAge: 60000 },
-        );
-      }
+      moveToCurrentLocation();
     });
   } catch (error) {
     console.error('카카오 지도 로드 실패:', error);

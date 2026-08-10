@@ -1,10 +1,9 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue';
-import { useExchangeStore } from '@/stores/exchange';
 
 const props = defineProps({
   modelValue: String,
-  currencies: Array
+  currencies: Array,
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -15,7 +14,11 @@ const selectTab = (code) => {
   nextTick(() => {
     const el = navRef.value.querySelector(`[data-code="${code}"]`);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
     }
   });
 };
@@ -52,7 +55,7 @@ const scroll = (direction) => {
   align-items: center;
   gap: 5px;
   padding: 10px 0;
-  background: #f7f5ef;
+  background: transparent;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -66,7 +69,9 @@ const scroll = (direction) => {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.nav-container::-webkit-scrollbar { display: none; }
+.nav-container::-webkit-scrollbar {
+  display: none;
+}
 .nav-container button {
   display: flex;
   align-items: center;

@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 public class LatestExchangeRateDto {
+    private Long id;
     private String currencyCode;
     private String currencyName;
     private BigDecimal dealBaseRate;
