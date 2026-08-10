@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Api(tags = "GDS 트래블카드")
+@Api(tags = "gds-트래블카드")
 @RestController
 @RequestMapping("/api/v1/products/travel-cards")
 @RequiredArgsConstructor
