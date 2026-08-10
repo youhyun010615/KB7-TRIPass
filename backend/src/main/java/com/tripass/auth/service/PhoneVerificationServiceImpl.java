@@ -26,7 +26,7 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     //인증번호 유효시간 3분
     private static final long CODE_EXPIRATION_MILLIS=
             3*60*1000L;
-    // 인증 완료 결과를 회원가입에 사용할 수 있는 시간: 10분
+    // 인증 완료 결과를 각 인증 목적에 사용할 수 있는 시간: 10분
     private static final long VERIFIED_RESULT_VALIDITY_MILLIS =
             10 * 60 * 1000L;
     //인증번호 재전송 제한: 60초
@@ -161,20 +161,79 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
     }
     //회원가입 인증 완료 확인
     @Override
-    public void validateSignupVerification(String requestId, String phoneNumber) {
+    public void validateSignupVerification(
+            String requestId,
+            String phoneNumber
+    ) {
+        validateCompletedVerification(
+                requestId,
+                phoneNumber,
+                VerificationPurpose.SIGNUP,
+                "회원가입용 휴대전화 인증이 아닙니다."
+        );
+    }
+
+    @Override
+    public void validateFindIdVerification(
+            String requestId,
+            String phoneNumber
+    ) {
+        validateCompletedVerification(
+                requestId,
+                phoneNumber,
+                VerificationPurpose.FIND_ID,
+                "아이디 찾기용 휴대전화 인증이 아닙니다."
+        );
+    }
+
+
+    //인증 결과 사용 완료 처리
+
+    @Override
+    @Transactional
+    public void markVerificationAsUsed(String requestId) {
         String normalizedRequestId = requireText(requestId, "휴대전화 인증 요청 식별값이 필요합니다.");
 
-        String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+        int updatedRows = phoneVerificationMapper.markUsed(normalizedRequestId);
+        if (updatedRows != 1) {
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "AUTH_VERIFICATION_NOT_AVAILABLE",
+                    "이미 사용됐거나 사용할 수 없는 휴대전화 인증입니다."
+            );
+        }
+    }
 
-        PhoneVerification phoneVerification = findVerification(normalizedRequestId);
 
-        validatePhoneNumber(phoneVerification, normalizedPhoneNumber);
+    private void validateCompletedVerification(
+            String requestId,
+            String phoneNumber,
+            VerificationPurpose expectedPurpose,
+            String invalidPurposeMessage
+    ) {
+        String normalizedRequestId =
+                requireText(
+                        requestId,
+                        "휴대전화 인증 요청 식별값이 필요합니다."
+                );
 
-        if (phoneVerification.getVerificationPurpose() != VerificationPurpose.SIGNUP) {
+        String normalizedPhoneNumber =
+                normalizePhoneNumber(phoneNumber);
+
+        PhoneVerification phoneVerification =
+                findVerification(normalizedRequestId);
+
+        validatePhoneNumber(
+                phoneVerification,
+                normalizedPhoneNumber
+        );
+
+        if (phoneVerification.getVerificationPurpose()
+                != expectedPurpose) {
             throw new CustomException(
                     HttpStatus.BAD_REQUEST,
                     "AUTH_INVALID_VERIFICATION_PURPOSE",
-                    "회원가입용 휴대전화 인증이 아닙니다."
+                    invalidPurposeMessage
             );
         }
 
@@ -193,13 +252,13 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
                     "휴대전화 인증을 완료해 주세요."
             );
         }
+
         long verificationResultExpiresAt =
                 phoneVerification.getVerifiedAt().getTime()
                         + VERIFIED_RESULT_VALIDITY_MILLIS;
 
         if (verificationResultExpiresAt
                 <= System.currentTimeMillis()) {
-
             throw new CustomException(
                     HttpStatus.BAD_REQUEST,
                     "AUTH_VERIFICATION_RESULT_EXPIRED",
@@ -207,23 +266,6 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
             );
         }
     }
-    //인증 결과 사용 완료 처리
-
-    @Override
-    @Transactional
-    public void markVerificationAsUsed(String requestId) {
-        String normalizedRequestId = requireText(requestId, "휴대전화 인증 요청 식별값이 필요합니다.");
-
-        int updatedRows = phoneVerificationMapper.markUsed(normalizedRequestId);
-        if (updatedRows != 1) {
-            throw new CustomException(
-                    HttpStatus.CONFLICT,
-                    "AUTH_VERIFICATION_NOT_AVAILABLE",
-                    "이미 사용됐거나 사용할 수 없는 휴대전화 인증입니다."
-            );
-        }
-    }
-
 
     //SecureRandom으로 숫자 6자리 인증번호를 생성한다.
     private String generateVerificationCode() {

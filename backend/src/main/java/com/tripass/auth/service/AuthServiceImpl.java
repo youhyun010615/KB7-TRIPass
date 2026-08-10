@@ -9,6 +9,8 @@ import com.tripass.auth.dto.response.LoginResponse;
 import com.tripass.auth.dto.internal.LoginResult;
 import com.tripass.auth.dto.internal.TokenRefreshResult;
 import com.tripass.auth.dto.response.TokenRefreshResponse;
+import com.tripass.auth.dto.request.FindIdRequest;
+import com.tripass.auth.dto.response.FindIdResponse;
 import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.stream.Collectors;
 
 //일반 회원가입 및 로그인 기능 구현 service
 @Service
@@ -273,6 +277,65 @@ public class AuthServiceImpl implements AuthService{
         );
     }
 
+    @Override
+    @Transactional
+    public FindIdResponse findId(FindIdRequest request) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_FIND_ID_REQUEST_REQUIRED",
+                    "아이디 찾기 정보를 입력해 주세요."
+            );
+        }
+
+        String name =
+                normalizeName(request.getName());
+
+        String phoneNumber =
+                normalizePhoneNumber(
+                        request.getPhoneNumber()
+                );
+
+        String verificationRequestId =
+                requireText(
+                        request.getPhoneVerificationRequestId(),
+                        "휴대전화 인증을 완료해 주세요."
+                );
+
+        phoneVerificationService
+                .validateFindIdVerification(
+                        verificationRequestId,
+                        phoneNumber
+                );
+
+        List<String> loginIds =
+                userMapper
+                        .findLocalLoginIdsByNameAndPhoneNumber(
+                                name,
+                                phoneNumber
+                        );
+
+        if (loginIds == null || loginIds.isEmpty()) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "AUTH_USER_NOT_FOUND",
+                    "입력한 정보와 일치하는 회원을 찾을 수 없습니다."
+            );
+        }
+
+        List<String> maskedLoginIds =
+                loginIds.stream()
+                        .map(this::maskLoginId)
+                        .collect(Collectors.toList());
+
+        phoneVerificationService
+                .markVerificationAsUsed(
+                        verificationRequestId
+                );
+
+        return new FindIdResponse(maskedLoginIds);
+    }
+
     //문자열 길이 검사
     private String normalizeName(String name) {
 
@@ -361,5 +424,21 @@ public class AuthServiceImpl implements AuthService{
         }
         refreshTokenService
                 .revokeRefreshToken(refreshToken);
+    }
+
+    //아이디 마스킹
+    private String maskLoginId(String loginId) {
+        if (loginId == null || loginId.isEmpty()) {
+            return "";
+        }
+
+        int visibleLength =
+                Math.max(1, loginId.length() / 2);
+
+        int maskedLength =
+                loginId.length() - visibleLength;
+
+        return loginId.substring(0, visibleLength)
+                + "*".repeat(maskedLength);
     }
 }

@@ -6,6 +6,8 @@ import com.tripass.auth.dto.response.SignupResponse;
 import com.tripass.auth.dto.request.LoginRequest;
 import com.tripass.auth.dto.internal.LoginResult;
 import com.tripass.auth.dto.internal.TokenRefreshResult;
+import com.tripass.auth.dto.request.FindIdRequest;
+import com.tripass.auth.dto.response.FindIdResponse;
 
 // 회원 가입 및 로그인 기능 정의하는 service의 인터페이스
 public interface AuthService {
@@ -21,4 +23,7 @@ public interface AuthService {
 
     // 현재 브라우저의 Refresh Token을 폐기한다.
     void logout(String refreshToken);
+
+    // 휴대전화 인증을 기반으로 마스킹된 로그인 아이디 조회
+    FindIdResponse findId(FindIdRequest request);
 }

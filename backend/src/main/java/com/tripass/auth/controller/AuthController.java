@@ -13,6 +13,8 @@ import com.tripass.auth.dto.response.LoginResponse;
 import com.tripass.auth.dto.internal.LoginResult;
 import com.tripass.auth.dto.internal.TokenRefreshResult;
 import com.tripass.auth.dto.response.TokenRefreshResponse;
+import com.tripass.auth.dto.request.FindIdRequest;
+import com.tripass.auth.dto.response.FindIdResponse;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
 import com.tripass.auth.service.PhoneVerificationService;
 import com.tripass.common.exception.CustomException;
@@ -238,6 +240,29 @@ public class AuthController {
         return ApiResponse.success(
                 "로그아웃이 완료되었습니다.",
                 null
+        );
+    }
+
+    // 휴대전화 인증 기반 아이디 찾기
+    @ApiOperation(
+            value = "아이디 찾기",
+            notes = "FIND_ID 목적으로 휴대전화 인증을 완료한 후 "
+                    + "이름과 전화번호가 일치하는 LOCAL 계정의 마스킹 아이디를 조회합니다."
+    )
+    @PostMapping("/find-id")
+    public ApiResponse<FindIdResponse> findId(
+            @ApiParam(
+                    value = "아이디 찾기 요청 정보",
+                    required = true
+            )
+            @RequestBody FindIdRequest request
+    ) {
+        FindIdResponse response =
+                authService.findId(request);
+
+        return ApiResponse.success(
+                "아이디 찾기가 완료되었습니다.",
+                response
         );
     }
 }
