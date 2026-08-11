@@ -4,6 +4,8 @@ import com.tripass.travel.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface TravelMapper {
     TravelStatusResponseDto getTripDashboard(@Param("tripId") Long tripId);
@@ -21,4 +23,11 @@ public interface TravelMapper {
 
     // 여행이 생성되는 순간, 기본 제공 체크리스트가 생성이 됨.
     int insertDefaultChecklistsFromTemplate(@Param("tripId") Long tripId);
+
+    // 단계별 체크리스트 상세 목록 조회
+    List<ChecklistResponseDto> selectChecklistsByTripIdAndType(
+            @Param("tripId") Long tripId,
+            @Param("checklistType") String checklistType,
+            @Param("ddayStage") String ddayStage
+    );
 }

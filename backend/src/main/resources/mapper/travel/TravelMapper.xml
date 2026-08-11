@@ -131,6 +131,25 @@
         WHERE id = #{tripId}
           AND is_deleted = 0
     </select>
+    <!-- 단계별 체크리스트 상세 목록 조회 -->
+    <select id="selectChecklistsByTripIdAndType" resultType="ChecklistResponseDto">
+        SELECT
+        id,
+        item_name AS itemName,
+        is_completed AS isCompleted,
+        is_custom AS isCustom,
+        is_carried_over AS isCarriedOver,
+        dday_stage AS ddayStage
+        FROM trip_checklist_items
+        WHERE trip_id = #{tripId}
+        AND checklist_type = #{checklistType}
+        AND is_deleted = 0
+        AND is_excluded = 0
+        <if test="ddayStage != null and ddayStage != ''">
+            AND dday_stage = #{ddayStage}
+        </if>
+        ORDER BY id ASC
+    </select>
 
     <!-- 여행 생성 시 기본 체크리스트 템플릿 일괄 복사/생성 -->
     <insert id="insertDefaultChecklistsFromTemplate">

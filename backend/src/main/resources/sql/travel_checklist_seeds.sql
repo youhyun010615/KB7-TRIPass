@@ -17,7 +17,7 @@ INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
 ('PRE_TRAVEL', 'D7', '해외 결제 카드 확인'),
 ('PRE_TRAVEL', 'D7', '포켓 와이파이 / 유심·eSIM 신청'),
 ('PRE_TRAVEL', 'D7', '여행 의류 및 착장 정하기'),
-('PRE_TRAVEL', 'D7', '상비약 챙기기 (소화제·진통제·대band)');
+('PRE_TRAVEL', 'D7', '상비약 챙기기 (소화제·진통제·밴드)');
 
 -- 3. 여행 준비 (PRE_TRAVEL) - D1 단계
 INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
