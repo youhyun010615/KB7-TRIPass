@@ -17,4 +17,7 @@ public interface PhoneVerificationService {
 
     //사용된 인증 결과를 사용 완료 처리한다.
     void markVerificationAsUsed(String requestId);
+
+    // 아이디 찾기용 인증 결과 검증
+    void validateFindIdVerification(String requestId, String phoneNumber);
 }
