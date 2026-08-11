@@ -5,41 +5,42 @@ import com.tripass.ocr.client.GoogleTranslationClient;
 import com.tripass.ocr.client.VisionOcrClient;
 import com.tripass.ocr.dto.internal.ParsedReceiptData;
 import com.tripass.ocr.dto.internal.ParsedReceiptItem;
+import com.tripass.ocr.dto.internal.ValidatedReceiptImage;
 import com.tripass.ocr.dto.internal.VisionOcrResult;
 import com.tripass.ocr.dto.response.ReceiptAnalyzeItemResponse;
 import com.tripass.ocr.dto.response.ReceiptAnalyzeResponse;
 import com.tripass.ocr.service.parser.ReceiptTextParser;
+import com.tripass.ocr.service.validation.ReceiptImageValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-//해외 영수증 OCR 분석 기능 구현체
+// 해외 영수증 OCR 분석 기능 구현체
 @Service
 public class ReceiptAnalysisServiceImpl
         implements ReceiptAnalysisService {
 
-    private static final long MAX_FILE_SIZE =
-            10L * 1024L * 1024L;
-
     private final VisionOcrClient visionOcrClient;
     private final GoogleTranslationClient translationClient;
     private final ReceiptTextParser receiptTextParser;
+    private final ReceiptImageValidator receiptImageValidator;
 
     public ReceiptAnalysisServiceImpl(
             VisionOcrClient visionOcrClient,
             GoogleTranslationClient translationClient,
-            ReceiptTextParser receiptTextParser
+            ReceiptTextParser receiptTextParser,
+            ReceiptImageValidator receiptImageValidator
     ) {
         this.visionOcrClient = visionOcrClient;
         this.translationClient = translationClient;
         this.receiptTextParser = receiptTextParser;
+        this.receiptImageValidator = receiptImageValidator;
     }
 
     @Override
@@ -55,11 +56,16 @@ public class ReceiptAnalysisServiceImpl
             );
         }
 
-        byte[] imageBytes =
-                validateAndReadImage(receiptImage);
+        // 이미지 형식과 크기를 검사하고 파일 내용을 읽는다.
+        ValidatedReceiptImage validatedImage =
+                receiptImageValidator.validateAndRead(
+                        receiptImage
+                );
 
         VisionOcrResult ocrResult =
-                visionOcrClient.analyze(imageBytes);
+                visionOcrClient.analyze(
+                        validatedImage.getImageBytes()
+                );
 
         ParsedReceiptData parsedReceipt =
                 receiptTextParser.parse(ocrResult);
@@ -73,8 +79,7 @@ public class ReceiptAnalysisServiceImpl
         List<ReceiptAnalyzeItemResponse> items =
                 createItemResponses(
                         parsedReceipt.getItems(),
-                        translationResult
-                                .getTranslatedItemNames()
+                        translationResult.getTranslatedItemNames()
                 );
 
         BigDecimal splitAmount =
@@ -83,8 +88,7 @@ public class ReceiptAnalysisServiceImpl
         return new ReceiptAnalyzeResponse(
                 ocrResult.getDetectedLanguageCode(),
                 parsedReceipt.getOriginalMerchantName(),
-                translationResult
-                        .getTranslatedMerchantName(),
+                translationResult.getTranslatedMerchantName(),
                 parsedReceipt.getPaymentDateTime(),
                 parsedReceipt.getCurrencyCode(),
                 parsedReceipt.getTotalAmount(),
@@ -96,128 +100,7 @@ public class ReceiptAnalysisServiceImpl
         );
     }
 
-    /**
-     * 업로드 파일을 검증하고 바이트 배열로 변환한다.
-     */
-    private byte[] validateAndReadImage(
-            MultipartFile receiptImage
-    ) {
-        if (receiptImage == null
-                || receiptImage.isEmpty()) {
-
-            throw new CustomException(
-                    HttpStatus.BAD_REQUEST,
-                    "OCR_IMAGE_REQUIRED",
-                    "영수증 이미지를 첨부해 주세요."
-            );
-        }
-
-        if (receiptImage.getSize() > MAX_FILE_SIZE) {
-            throw new CustomException(
-                    HttpStatus.PAYLOAD_TOO_LARGE,
-                    "OCR_IMAGE_TOO_LARGE",
-                    "영수증 이미지는 10MB 이하만 업로드할 수 있습니다."
-            );
-        }
-
-        String fileName =
-                receiptImage.getOriginalFilename();
-
-        if (!hasSupportedExtension(fileName)) {
-            throw new CustomException(
-                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "OCR_IMAGE_TYPE_NOT_SUPPORTED",
-                    "JPG, JPEG, PNG 형식의 이미지만 업로드할 수 있습니다."
-            );
-        }
-
-        try {
-            byte[] imageBytes =
-                    receiptImage.getBytes();
-
-            if (!hasSupportedImageSignature(imageBytes)) {
-                throw new CustomException(
-                        HttpStatus.BAD_REQUEST,
-                        "OCR_INVALID_IMAGE",
-                        "올바른 이미지 파일이 아닙니다."
-                );
-            }
-
-            return imageBytes;
-
-        } catch (IOException exception) {
-            throw new CustomException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "OCR_IMAGE_READ_FAILED",
-                    "영수증 이미지 파일을 읽지 못했습니다."
-            );
-        }
-    }
-
-    /**
-     * 지원하는 파일 확장자인지 확인한다.
-     */
-    private boolean hasSupportedExtension(
-            String fileName
-    ) {
-        if (fileName == null
-                || !fileName.contains(".")) {
-            return false;
-        }
-
-        String extension =
-                fileName.substring(
-                        fileName.lastIndexOf('.') + 1
-                ).toLowerCase(Locale.ROOT);
-
-        return extension.equals("jpg")
-                || extension.equals("jpeg")
-                || extension.equals("png");
-    }
-
-    /**
-     * 확장자만 위조한 파일이 아닌지 실제 파일 시그니처로 확인한다.
-     */
-    private boolean hasSupportedImageSignature(
-            byte[] imageBytes
-    ) {
-        return isJpeg(imageBytes)
-                || isPng(imageBytes);
-    }
-
-    private boolean isJpeg(byte[] bytes) {
-        return bytes.length >= 3
-                && (bytes[0] & 0xFF) == 0xFF
-                && (bytes[1] & 0xFF) == 0xD8
-                && (bytes[2] & 0xFF) == 0xFF;
-    }
-
-    private boolean isPng(byte[] bytes) {
-        int[] pngSignature = {
-                0x89, 0x50, 0x4E, 0x47,
-                0x0D, 0x0A, 0x1A, 0x0A
-        };
-
-        if (bytes.length < pngSignature.length) {
-            return false;
-        }
-
-        for (int index = 0;
-             index < pngSignature.length;
-             index++) {
-
-            if ((bytes[index] & 0xFF)
-                    != pngSignature[index]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * 상호명과 품목명을 한국어로 일괄 번역한다.
-     */
+    // 상호명과 품목명을 한국어로 일괄 번역한다.
     private TranslationResult translateNames(
             ParsedReceiptData parsedReceipt,
             String detectedLanguageCode
@@ -230,6 +113,7 @@ public class ReceiptAnalysisServiceImpl
                         ? Collections.emptyList()
                         : parsedReceipt.getItems();
 
+        // 원문이 한국어라면 외부 번역 API를 호출하지 않는다.
         if (isKorean(detectedLanguageCode)) {
             return new TranslationResult(
                     merchantName,
@@ -306,6 +190,7 @@ public class ReceiptAnalysisServiceImpl
         );
     }
 
+    // 파싱된 품목과 번역된 품목명을 응답 DTO로 변환한다.
     private List<ReceiptAnalyzeItemResponse>
     createItemResponses(
             List<ParsedReceiptItem> parsedItems,
@@ -360,9 +245,7 @@ public class ReceiptAnalysisServiceImpl
                 .startsWith("ko");
     }
 
-    /**
-     * 번역된 상호명과 품목명을 내부에서 함께 전달한다.
-     */
+    // 번역된 상호명과 품목명을 함께 전달하는 내부 처리 결과
     private static class TranslationResult {
 
         private final String translatedMerchantName;

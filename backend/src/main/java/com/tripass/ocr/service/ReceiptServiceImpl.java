@@ -1,0 +1,709 @@
+package com.tripass.ocr.service;
+
+import com.tripass.common.exception.CustomException;
+import com.tripass.ocr.dto.internal.ReceiptDetailRow;
+import com.tripass.ocr.dto.internal.ReceiptImageData;
+import com.tripass.ocr.dto.internal.ReceiptSummaryRow;
+import com.tripass.ocr.dto.internal.StoredReceiptFile;
+import com.tripass.ocr.dto.internal.ValidatedReceiptImage;
+import com.tripass.ocr.dto.request.ReceiptItemSaveRequest;
+import com.tripass.ocr.dto.request.ReceiptSaveRequest;
+import com.tripass.ocr.dto.response.ReceiptDetailResponse;
+import com.tripass.ocr.dto.response.ReceiptItemResponse;
+import com.tripass.ocr.dto.response.ReceiptSummaryResponse;
+import com.tripass.ocr.mapper.ReceiptMapper;
+import com.tripass.ocr.model.Receipt;
+import com.tripass.ocr.model.ReceiptItem;
+import com.tripass.ocr.service.storage.ReceiptFileStorage;
+import com.tripass.ocr.service.validation.ReceiptImageValidator;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+// 해외 영수증 저장·조회·수정·삭제 기능 구현체
+@Service
+@RequiredArgsConstructor
+@Log4j2
+public class ReceiptServiceImpl
+        implements ReceiptService {
+
+    private static final String COMPLETED_STATUS =
+            "COMPLETED";
+
+    private static final int SPLIT_AMOUNT_SCALE = 2;
+
+    private final ReceiptMapper receiptMapper;
+    private final ReceiptImageValidator receiptImageValidator;
+    private final ReceiptFileStorage receiptFileStorage;
+
+    // 이미지 파일과 영수증 정보를 저장한다.
+    @Override
+    @Transactional
+    public ReceiptDetailResponse createReceipt(
+            Long userId,
+            ReceiptSaveRequest request,
+            MultipartFile receiptImage
+    ) {
+        validateUserId(userId);
+        validateRequest(request);
+        validateReferenceData(
+                userId,
+                request
+        );
+
+        ValidatedReceiptImage validatedImage =
+                receiptImageValidator.validateAndRead(
+                        receiptImage
+                );
+
+        StoredReceiptFile storedFile =
+                receiptFileStorage.store(
+                        validatedImage
+                );
+
+        try {
+            Receipt receipt =
+                    createReceiptModel(
+                            userId,
+                            request,
+                            storedFile
+                    );
+
+            int insertedReceiptRows =
+                    receiptMapper.insertReceipt(receipt);
+
+            if (insertedReceiptRows != 1
+                    || receipt.getId() == null) {
+
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "RECEIPT_SAVE_FAILED",
+                        "영수증 저장에 실패했습니다."
+                );
+            }
+
+            List<ReceiptItem> receiptItems =
+                    createReceiptItems(
+                            receipt.getId(),
+                            request.getItems()
+                    );
+
+            insertReceiptItems(receiptItems);
+
+            return getReceipt(
+                    userId,
+                    receipt.getId()
+            );
+
+        } catch (RuntimeException exception) {
+            // DB 저장이 실패하면 먼저 저장한 이미지 파일을 제거한다.
+            deleteStoredFileAfterFailure(
+                    storedFile.getStoredPath()
+            );
+
+            throw exception;
+        }
+    }
+
+    // 로그인 회원의 영수증 목록을 조회한다.
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReceiptSummaryResponse> getReceipts(
+            Long userId
+    ) {
+        validateUserId(userId);
+
+        List<ReceiptSummaryRow> rows =
+                receiptMapper.findAllByUserId(userId);
+
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return rows.stream()
+                .map(this::createSummaryResponse)
+                .toList();
+    }
+
+    // 로그인 회원의 영수증 상세 정보를 조회한다.
+    @Override
+    @Transactional(readOnly = true)
+    public ReceiptDetailResponse getReceipt(
+            Long userId,
+            Long receiptId
+    ) {
+        validateUserId(userId);
+        validateReceiptId(receiptId);
+
+        ReceiptDetailRow receiptRow =
+                receiptMapper.findDetailByIdAndUserId(
+                        receiptId,
+                        userId
+                );
+
+        if (receiptRow == null) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_NOT_FOUND",
+                    "영수증을 찾을 수 없습니다."
+            );
+        }
+
+        List<ReceiptItem> receiptItems =
+                receiptMapper
+                        .findItemsByReceiptIdAndUserId(
+                                receiptId,
+                                userId
+                        );
+
+        List<ReceiptItemResponse> itemResponses =
+                receiptItems == null
+                        ? Collections.emptyList()
+                        : receiptItems.stream()
+                        .map(this::createItemResponse)
+                        .toList();
+
+        return createDetailResponse(
+                receiptRow,
+                itemResponses
+        );
+    }
+
+    // 영수증 정보와 품목을 일괄 수정한다.
+    @Override
+    @Transactional
+    public ReceiptDetailResponse updateReceipt(
+            Long userId,
+            Long receiptId,
+            ReceiptSaveRequest request
+    ) {
+        validateUserId(userId);
+        validateReceiptId(receiptId);
+        validateRequest(request);
+
+        // 수정하려는 영수증이 로그인 회원 소유인지 확인한다.
+        requireReceipt(
+                userId,
+                receiptId
+        );
+
+        validateReferenceData(
+                userId,
+                request
+        );
+
+        Receipt receipt =
+                createUpdatedReceiptModel(
+                        userId,
+                        receiptId,
+                        request
+                );
+
+        int updatedRows =
+                receiptMapper.updateReceipt(receipt);
+
+        if (updatedRows != 1) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "RECEIPT_UPDATE_FAILED",
+                    "영수증 수정에 실패했습니다."
+            );
+        }
+
+        // 기존 품목을 논리 삭제한 후 현재 요청의 품목을 다시 저장한다.
+        receiptMapper
+                .softDeleteItemsByReceiptIdAndUserId(
+                        receiptId,
+                        userId
+                );
+
+        List<ReceiptItem> receiptItems =
+                createReceiptItems(
+                        receiptId,
+                        request.getItems()
+                );
+
+        insertReceiptItems(receiptItems);
+
+        return getReceipt(
+                userId,
+                receiptId
+        );
+    }
+
+    // 영수증과 영수증 품목을 논리 삭제한다.
+    @Override
+    @Transactional
+    public void deleteReceipt(
+            Long userId,
+            Long receiptId
+    ) {
+        validateUserId(userId);
+        validateReceiptId(receiptId);
+
+        requireReceipt(
+                userId,
+                receiptId
+        );
+
+        receiptMapper
+                .softDeleteItemsByReceiptIdAndUserId(
+                        receiptId,
+                        userId
+                );
+
+        int deletedRows =
+                receiptMapper
+                        .softDeleteReceiptByIdAndUserId(
+                                receiptId,
+                                userId
+                        );
+
+        if (deletedRows != 1) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "RECEIPT_DELETE_FAILED",
+                    "영수증 삭제에 실패했습니다."
+            );
+        }
+
+        /*
+         * DB에서는 논리 삭제하지만 이미지 파일은 즉시 삭제하지 않는다.
+         * 복구 또는 정리 작업을 고려하여 파일 정리 정책은 별도로 적용한다.
+         */
+    }
+
+    // 회원 소유권을 확인한 후 영수증 이미지를 읽는다.
+    @Override
+    @Transactional(readOnly = true)
+    public ReceiptImageData getReceiptImage(
+            Long userId,
+            Long receiptId
+    ) {
+        validateUserId(userId);
+        validateReceiptId(receiptId);
+
+        ReceiptDetailRow receiptRow =
+                requireReceipt(
+                        userId,
+                        receiptId
+                );
+
+        byte[] imageBytes =
+                receiptFileStorage.load(
+                        receiptRow.getFileUrl()
+                );
+
+        return new ReceiptImageData(
+                receiptRow.getFileName(),
+                receiptRow.getFileType(),
+                imageBytes
+        );
+    }
+
+    // 영수증 저장 모델을 생성한다.
+    private Receipt createReceiptModel(
+            Long userId,
+            ReceiptSaveRequest request,
+            StoredReceiptFile storedFile
+    ) {
+        Receipt receipt = new Receipt();
+
+        receipt.setUserId(userId);
+        receipt.setTripId(request.getTripId());
+        receipt.setCountryId(request.getCountryId());
+        receipt.setCurrencyId(request.getCurrencyId());
+        receipt.setPaymentDateTime(
+                request.getPaymentDateTime()
+        );
+        receipt.setFileName(
+                storedFile.getOriginalFileName()
+        );
+        receipt.setFileUrl(
+                storedFile.getStoredPath()
+        );
+        receipt.setFileType(
+                storedFile.getFileType()
+        );
+        receipt.setStatus(COMPLETED_STATUS);
+        receipt.setMerchantOriginalName(
+                trimToNull(
+                        request.getMerchantOriginalName()
+                )
+        );
+        receipt.setMerchantTranslatedName(
+                trimToNull(
+                        request.getMerchantTranslatedName()
+                )
+        );
+        receipt.setTotalAmount(
+                request.getTotalAmount()
+        );
+        receipt.setTaxAmount(
+                request.getTaxAmount()
+        );
+        receipt.setOcrRawText(
+                request.getOcrRawText()
+        );
+        receipt.setSplitCount(
+                request.getSplitCount()
+        );
+        receipt.setErrorMessage(null);
+        receipt.setProcessedAt(
+                LocalDateTime.now()
+        );
+
+        return receipt;
+    }
+
+    // 영수증 수정 모델을 생성한다.
+    private Receipt createUpdatedReceiptModel(
+            Long userId,
+            Long receiptId,
+            ReceiptSaveRequest request
+    ) {
+        Receipt receipt = new Receipt();
+
+        receipt.setId(receiptId);
+        receipt.setUserId(userId);
+        receipt.setTripId(request.getTripId());
+        receipt.setCountryId(request.getCountryId());
+        receipt.setCurrencyId(request.getCurrencyId());
+        receipt.setPaymentDateTime(
+                request.getPaymentDateTime()
+        );
+        receipt.setMerchantOriginalName(
+                trimToNull(
+                        request.getMerchantOriginalName()
+                )
+        );
+        receipt.setMerchantTranslatedName(
+                trimToNull(
+                        request.getMerchantTranslatedName()
+                )
+        );
+        receipt.setTotalAmount(
+                request.getTotalAmount()
+        );
+        receipt.setTaxAmount(
+                request.getTaxAmount()
+        );
+        receipt.setOcrRawText(
+                request.getOcrRawText()
+        );
+        receipt.setSplitCount(
+                request.getSplitCount()
+        );
+
+        return receipt;
+    }
+
+    // 요청 품목을 DB 저장 모델로 변환한다.
+    private List<ReceiptItem> createReceiptItems(
+            Long receiptId,
+            List<ReceiptItemSaveRequest> itemRequests
+    ) {
+        if (itemRequests == null
+                || itemRequests.isEmpty()) {
+
+            return Collections.emptyList();
+        }
+
+        List<ReceiptItem> receiptItems =
+                new ArrayList<>();
+
+        for (int index = 0;
+             index < itemRequests.size();
+             index++) {
+
+            ReceiptItemSaveRequest itemRequest =
+                    itemRequests.get(index);
+
+            if (itemRequest == null) {
+                throw new CustomException(
+                        HttpStatus.BAD_REQUEST,
+                        "RECEIPT_ITEM_INVALID",
+                        "영수증 품목 정보를 올바르게 입력해 주세요."
+                );
+            }
+
+            ReceiptItem receiptItem =
+                    new ReceiptItem();
+
+            receiptItem.setReceiptId(receiptId);
+            receiptItem.setOriginalName(
+                    itemRequest.getOriginalName().trim()
+            );
+            receiptItem.setTranslatedName(
+                    trimToNull(
+                            itemRequest.getTranslatedName()
+                    )
+            );
+            receiptItem.setQuantity(
+                    itemRequest.getQuantity()
+            );
+            receiptItem.setAmount(
+                    itemRequest.getAmount()
+            );
+            receiptItem.setDisplayOrder(
+                    index + 1
+            );
+
+            receiptItems.add(receiptItem);
+        }
+
+        return receiptItems;
+    }
+
+    // 품목이 있을 때만 일괄 INSERT를 실행한다.
+    private void insertReceiptItems(
+            List<ReceiptItem> receiptItems
+    ) {
+        if (receiptItems.isEmpty()) {
+            return;
+        }
+
+        int insertedRows =
+                receiptMapper.insertReceiptItems(
+                        receiptItems
+                );
+
+        if (insertedRows != receiptItems.size()) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "RECEIPT_ITEMS_SAVE_FAILED",
+                    "영수증 품목 저장에 실패했습니다."
+            );
+        }
+    }
+
+    // 여행·국가·통화 참조값을 검증한다.
+    private void validateReferenceData(
+            Long userId,
+            ReceiptSaveRequest request
+    ) {
+        if (request.getTripId() != null
+                && !receiptMapper
+                .existsTripByIdAndUserId(
+                        request.getTripId(),
+                        userId
+                )) {
+
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_TRIP_INVALID",
+                    "선택한 여행 정보를 확인해 주세요."
+            );
+        }
+
+        if (request.getCountryId() != null
+                && !receiptMapper.existsCountryById(
+                request.getCountryId()
+        )) {
+
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_COUNTRY_INVALID",
+                    "선택한 국가 정보를 확인해 주세요."
+            );
+        }
+
+        if (!receiptMapper.existsCurrencyById(
+                request.getCurrencyId()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_CURRENCY_INVALID",
+                    "선택한 통화 정보를 확인해 주세요."
+            );
+        }
+    }
+
+    // 영수증 목록 조회 Row를 응답 DTO로 변환한다.
+    private ReceiptSummaryResponse createSummaryResponse(
+            ReceiptSummaryRow row
+    ) {
+        return new ReceiptSummaryResponse(
+                row.getId(),
+                row.getTripId(),
+                row.getMerchantOriginalName(),
+                row.getMerchantTranslatedName(),
+                row.getPaymentDateTime(),
+                row.getCurrencyCode(),
+                row.getCurrencySymbol(),
+                row.getTotalAmount(),
+                row.getSplitCount(),
+                calculateSplitAmount(
+                        row.getTotalAmount(),
+                        row.getSplitCount()
+                ),
+                createImageUrl(row.getId())
+        );
+    }
+
+    // 영수증 상세 조회 Row를 응답 DTO로 변환한다.
+    private ReceiptDetailResponse createDetailResponse(
+            ReceiptDetailRow row,
+            List<ReceiptItemResponse> items
+    ) {
+        return new ReceiptDetailResponse(
+                row.getId(),
+                row.getTripId(),
+                row.getCountryId(),
+                row.getCountryName(),
+                row.getCurrencyId(),
+                row.getCurrencyCode(),
+                row.getCurrencyName(),
+                row.getCurrencySymbol(),
+                row.getPaymentDateTime(),
+                row.getFileName(),
+                createImageUrl(row.getId()),
+                row.getFileType(),
+                row.getStatus(),
+                row.getMerchantOriginalName(),
+                row.getMerchantTranslatedName(),
+                row.getTotalAmount(),
+                row.getTaxAmount(),
+                row.getSplitCount(),
+                calculateSplitAmount(
+                        row.getTotalAmount(),
+                        row.getSplitCount()
+                ),
+                row.getOcrRawText(),
+                items,
+                row.getCreatedAt(),
+                row.getUpdatedAt()
+        );
+    }
+
+    // 품목 모델을 응답 DTO로 변환한다.
+    private ReceiptItemResponse createItemResponse(
+            ReceiptItem receiptItem
+    ) {
+        return new ReceiptItemResponse(
+                receiptItem.getId(),
+                receiptItem.getOriginalName(),
+                receiptItem.getTranslatedName(),
+                receiptItem.getQuantity(),
+                receiptItem.getAmount(),
+                receiptItem.getDisplayOrder()
+        );
+    }
+
+    // 1인당 분할 금액을 계산한다.
+    private BigDecimal calculateSplitAmount(
+            BigDecimal totalAmount,
+            Integer splitCount
+    ) {
+        if (totalAmount == null
+                || splitCount == null
+                || splitCount < 1) {
+
+            return null;
+        }
+
+        return totalAmount.divide(
+                BigDecimal.valueOf(splitCount),
+                SPLIT_AMOUNT_SCALE,
+                RoundingMode.HALF_UP
+        );
+    }
+
+    // 영수증 존재 여부와 회원 소유권을 함께 확인한다.
+    private ReceiptDetailRow requireReceipt(
+            Long userId,
+            Long receiptId
+    ) {
+        ReceiptDetailRow receiptRow =
+                receiptMapper.findDetailByIdAndUserId(
+                        receiptId,
+                        userId
+                );
+
+        if (receiptRow == null) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_NOT_FOUND",
+                    "영수증을 찾을 수 없습니다."
+            );
+        }
+
+        return receiptRow;
+    }
+
+    private void validateUserId(Long userId) {
+        if (userId == null) {
+            throw new CustomException(
+                    HttpStatus.UNAUTHORIZED,
+                    "AUTH_UNAUTHORIZED",
+                    "로그인이 필요합니다."
+            );
+        }
+    }
+
+    private void validateReceiptId(Long receiptId) {
+        if (receiptId == null || receiptId <= 0) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_ID_INVALID",
+                    "올바른 영수증 ID를 입력해 주세요."
+            );
+        }
+    }
+
+    private void validateRequest(
+            ReceiptSaveRequest request
+    ) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_REQUEST_REQUIRED",
+                    "영수증 정보를 입력해 주세요."
+            );
+        }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmedValue = value.trim();
+
+        return trimmedValue.isEmpty()
+                ? null
+                : trimmedValue;
+    }
+
+    // DB 저장 실패 후 남은 이미지 파일을 정리한다.
+    private void deleteStoredFileAfterFailure(
+            String storedPath
+    ) {
+        try {
+            receiptFileStorage.delete(storedPath);
+
+        } catch (RuntimeException deleteException) {
+            log.warn(
+                    "영수증 DB 저장 실패 후 이미지 파일 정리 실패: {}",
+                    storedPath,
+                    deleteException
+            );
+        }
+    }
+    // 내부 파일 경로 대신 인증이 적용되는 이미지 조회 API 주소를 반환한다.
+    private String createImageUrl(Long receiptId) {
+        return "/api/v1/ocr/receipts/"
+                + receiptId
+                + "/image";
+    }
+}
