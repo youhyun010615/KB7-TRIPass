@@ -7,7 +7,7 @@
     <resultMap id="DashboardResultMap" type="TravelStatusResponseDto">
         <result property="totalRemainingFund" column="total_remaining_fund"/>
         <result property="dailyAvailableAmount" column="daily_available_amount"/>
-        <collection property="countries" ofType="com.tripass.travel.dto.CountryStatusDto">
+        <collection property="countries" ofType="CountryStatusDto">
             <result property="countryName" column="country_name"/>
             <result property="remainingFund" column="country_remaining_fund"/>
             <result property="remainingDays" column="remaining_days"/>
@@ -92,4 +92,73 @@
         LEFT JOIN spending_categories sc ON tr.category_id = sc.id
         GROUP BY sc.category_name, b.target_budget, b.pre_expense_total, b.travel_expense_total
     </select>
+
+
+    <!-- 여행 데이터 존재 여부 확인 -->
+    <select id="existsByTripId" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM trips
+            WHERE id = #{tripId}
+              AND is_deleted = 0
+        )
+    </select>
+
+    <!-- 체크리스트 요약 통계 정보 조회 -->
+    <select id="selectChecklistSummaryByTripId" resultType="ChecklistSummaryResponseDto">
+        SELECT
+            -- 1. 전체 항목 수 및 완료 수
+            COUNT(*) AS totalItemCount,
+            COALESCE(SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END), 0) AS totalCompletedCount,
+
+            -- 2. 여행 준비 (PRE_TRAVEL) 전체 항목 수 및 완료 수
+            COALESCE(SUM(CASE WHEN checklist_type = 'PRE_TRAVEL' THEN 1 ELSE 0 END), 0) AS prepItemCount,
+            COALESCE(SUM(CASE WHEN checklist_type = 'PRE_TRAVEL' AND is_completed = 1 THEN 1 ELSE 0 END), 0) AS prepCompletedCount,
+
+            -- 3. 귀국 (RETURN) 전체 항목 수 및 완료 수
+            COALESCE(SUM(CASE WHEN checklist_type = 'RETURN' THEN 1 ELSE 0 END), 0) AS returnItemCount,
+            COALESCE(SUM(CASE WHEN checklist_type = 'RETURN' AND is_completed = 1 THEN 1 ELSE 0 END), 0) AS returnCompletedCount
+        FROM trip_checklist_items
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+          AND is_excluded = 0
+    </select>
+
+    <!-- 여행의 작성자(유저) ID 조회 -->
+    <select id="selectUserIdByTripId" resultType="Long">
+        SELECT user_id
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 여행 생성 시 기본 체크리스트 템플릿 일괄 복사/생성 -->
+    <insert id="insertDefaultChecklistsFromTemplate">
+        INSERT INTO trip_checklist_items (
+            trip_id,
+            template_id,
+            checklist_type,
+            dday_stage,
+            item_name,
+            is_completed,
+            is_excluded,
+            is_custom,
+            is_carried_over,
+            is_deleted
+        )
+        SELECT
+            #{tripId} AS trip_id,
+            id AS template_id,
+            checklist_type,
+            dday_stage,
+            item_name,
+            0 AS is_completed,    -- 초기 상태: 미완료 (false)
+            0 AS is_excluded,     -- 초기 상태: 제외 안 함 (false)
+            0 AS is_custom,       -- 초기 상태: 기본 제공 템플릿 (false)
+            0 AS is_carried_over, -- 초기 상태: 이월 안 됨 (false)
+            0 AS is_deleted       -- 초기 상태: 삭제 안 됨 (false)
+        FROM checklist_templates;
+    </insert>
+
+
 </mapper>
