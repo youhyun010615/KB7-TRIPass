@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
+// import { symbol } from '@/assets/currencySymbols.json';
 
 const router = useRouter();
 const emit = defineEmits(['add-alert']);
@@ -11,6 +12,7 @@ const props = defineProps({
   subtitle: String,
   selectedCode: String,
   flagClass: { type: String, default: 'fi fi-un' },
+  symbol: String,
 });
 </script>
 
@@ -21,12 +23,7 @@ const props = defineProps({
     </div>
     <h2>
       <span :class="flagClass" style="margin-right: 8px"></span>
-      {{ rate }}원
-      <small
-        v-if="unit > 1"
-        style="margin-left: 4px; font-size: 10px; opacity: 0.8"
-        >({{ unit }}{{ selectedCode }}당)</small
-      >
+      {{ unit }}{{ symbol }} = {{ rate.toFixed(2) }}원
     </h2>
     <p>{{ subtitle }}</p>
     <span class="decor">|||||||</span>

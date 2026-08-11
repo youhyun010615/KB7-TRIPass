@@ -10,6 +10,5 @@ public class ExchangeRateAlert {
     private Long userId;
     private Long currencyId;
     private Double targetRate;
-    private Double targetAmount;
     private Boolean isDeleted;
 }

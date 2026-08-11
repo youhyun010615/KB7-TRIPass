@@ -13,5 +13,4 @@ public class ExchangeRateAlertResponseDto {
     private Long id;
     private String currencyCode;
     private Double targetRate;
-    private Double targetAmount;
 }

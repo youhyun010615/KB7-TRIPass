@@ -17,7 +17,6 @@ public class ExchangeRateAlertUpdateResponseDto {
     private Long userId;
     private String currencyCode;
     private Double targetRate;
-    private Double targetAmount;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;

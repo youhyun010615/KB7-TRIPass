@@ -8,5 +8,4 @@ import lombok.Setter;
 public class ExchangeRateAlertRequestDto {
     private String currencyCode;
     private Double targetRate;
-    private Double targetAmount;
 }

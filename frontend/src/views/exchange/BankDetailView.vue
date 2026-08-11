@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
 import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
 import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
@@ -94,7 +93,7 @@ const selectCurrency = async (code) => {
   selectedCurrencyCode.value = code;
   const requestedCode = code;
 
-  // 1. 이미 캐시된 데이터가 존재하면 즉시 반환 (API 호출 0회, 0초 렉)
+  // 1. 이미 캐시된 데이터가 존재하면 즉시 사용
   if (cachedEstimates.value[code]) {
     estimate.value = cachedEstimates.value[code];
     return;
@@ -120,17 +119,32 @@ const onAmountInput = (event) => {
 
   // 실시간으로 스토어 금액 동기화
   exchange.krwAmount = rawNum;
+
+  // 💡 [수정] 금액이 변경되었으므로 기존의 캐시 데이터를 초기화합니다.
+  cachedEstimates.value = {};
+
+  // 💡 [수정] 백엔드에서 내려준 estimatedAmount가 있다면, 입력한 금액 비율에 맞춰 실시간 갱신해줍니다.
+  if (estimate.value) {
+    // 100,000원 기준 계산 데이터를 현재 입력금액 비율만큼 재계산
+    if (estimate.value.buyRate) {
+      const buyRate = Number(estimate.value.buyRate || 1);
+      const unit = Number(estimate.value.unit || 1);
+      estimate.value = {
+        ...estimate.value,
+        estimatedAmount: (rawNum / buyRate) * unit,
+      };
+    }
+  }
 };
 
-// 실시간 프론트엔드 계산 (총액 상관없이 환율은 동일하므로 API 재요청 없음!)
+// 실시간 프론트엔드 계산
 const computedEstimatedAmount = computed(() => {
   if (!estimate.value) return 0;
-  // 백엔드에서 주는 estimatedAmount 우선 사용, 없으면 프론트에서 계산
-  if (estimate.value.estimatedAmount)
-    return Number(estimate.value.estimatedAmount);
 
   const buyRate = Number(estimate.value.buyRate || 1);
   const unit = Number(estimate.value.unit || 1);
+
+  // buyRate(살 때 환율)와 unit(통화 단위, 예: JPY는 100) 기반으로 실시간 계산
   return (inputAmount.value / buyRate) * unit;
 });
 
