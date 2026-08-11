@@ -213,9 +213,10 @@ CREATE TABLE travel_cards
     card_name             VARCHAR(150)   NOT NULL COMMENT '카드명',
     card_company          VARCHAR(100)   NOT NULL COMMENT '카드사',
     bank_name             VARCHAR(100)   NULL COMMENT '발급/연계 은행',
-    required_account      VARCHAR(150)   NULL COMMENT '필요 외화통장',
+    required_account      VARCHAR(150)   NULL COMMENT '해외 결제에 필요한 외화계좌/외화서비스',
     instant_use           BOOLEAN        NOT NULL DEFAULT FALSE COMMENT '기존 계좌/서비스 연결로 이용 가능 여부(별도 계좌 신규 개설 불필요)',
     applied_rate_info     VARCHAR(255)   NULL COMMENT '적용 환율 정보',
+    settlement_type       VARCHAR(30)    NOT NULL COMMENT '해외 결제 통화 처리 방식(DIRECT/USD_CONVERSION)',
     exchange_fee          VARCHAR(200)   NULL COMMENT '환전 수수료',
     re_exchange_fee       VARCHAR(200)   NULL COMMENT '재환전 수수료',
     payment_fee           VARCHAR(200)   NULL COMMENT '결제 수수료',
@@ -232,7 +233,7 @@ CREATE TABLE travel_card_currencies
 (
     id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '트래블카드 지원 통화 ID',
     card_id       BIGINT      NOT NULL COMMENT '트래블카드 ID',
-    currency_code VARCHAR(3)  NOT NULL COMMENT 'ISO 4217 통화 코드',
+    currency_code VARCHAR(3)  NOT NULL COMMENT '직접 보유/차감 지원 통화 코드(ISO 4217)',
 
     created_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -249,7 +250,7 @@ CREATE TABLE travel_card_currencies
 
     INDEX idx_travel_card_currencies_card_id (card_id)
 
-) COMMENT '트래블카드 지원 통화';
+) COMMENT '트래블카드 직접 지원 통화';
 
 
 -- 9. 적금 상품
