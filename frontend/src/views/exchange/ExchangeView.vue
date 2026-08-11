@@ -130,6 +130,7 @@ function handleAlertAction() {
             :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원`"
             :selectedCode="exchange.selectedCode"
             :flagClass="exchange.selectedCurrency.flagClass"
+            :symbol="exchange.selectedCurrency.symbol"
             @add-alert="handleAlertAction"
           />
           <CurrencyChart :currency="exchange.selectedCurrency" />

@@ -7,5 +7,4 @@ import lombok.Setter;
 @Setter
 public class ExchangeRateAlertUpdateRequestDto {
     private Double targetRate;
-    private Double targetAmount;
 }

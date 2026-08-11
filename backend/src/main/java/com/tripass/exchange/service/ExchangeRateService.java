@@ -104,7 +104,7 @@ public class ExchangeRateService {
             throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
         }
 
-        validateAlertRequest(currencyId, request.getTargetAmount(), request.getTargetRate());
+        validateAlertRequest(currencyId, request.getTargetRate());
 
         // 애플리케이션 레벨 사전 중복 검사 (userId 기반)
         int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, currencyId);
@@ -116,7 +116,6 @@ public class ExchangeRateService {
         alert.setUserId(userId);
         alert.setCurrencyId(currencyId);
         alert.setTargetRate(request.getTargetRate());
-        alert.setTargetAmount(request.getTargetAmount());
 
         try {
             exchangeRateMapper.insertAlert(alert);
@@ -129,7 +128,7 @@ public class ExchangeRateService {
 
     @Transactional
     public ExchangeRateAlertUpdateResponseDto updateAlert(Long id, Long userId, ExchangeRateAlertUpdateRequestDto request) {
-        validateAlertRequest(null, request.getTargetAmount(), request.getTargetRate());
+        validateAlertRequest(null, request.getTargetRate());
 
         ExchangeRateAlertUpdateResponseDto existingAlert = exchangeRateMapper.getAlertById(id);
         if (existingAlert == null) {
@@ -144,13 +143,11 @@ public class ExchangeRateService {
         return exchangeRateMapper.getAlertById(id);
     }
 
-    private void validateAlertRequest(Long currencyId, Double targetAmount, Double targetRate) {
+    private void validateAlertRequest(Long currencyId, Double targetRate) {
         if (currencyId != null && !exchangeRateMapper.existsCurrencyById(currencyId)) {
              throw new ExchangeException(ExchangeErrorCode.RATE_NOT_FOUND);
         }
-        if (targetAmount == null || targetAmount <= 0) {
-            throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
-        }
+
         if (targetRate == null || targetRate <= 0) {
             throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
         }

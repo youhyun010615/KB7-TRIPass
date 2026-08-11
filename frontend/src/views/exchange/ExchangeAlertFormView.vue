@@ -15,7 +15,6 @@ const form = reactive({
   id: null,
   currencyCode: route.query.code || exchange.selectedCode || 'EUR',
   targetRate: 0,
-  targetAmount: 100000,
   enabled: true,
 });
 
@@ -29,29 +28,16 @@ const targetRateDisplay = computed({
   },
 });
 
-const targetAmountDisplay = computed({
-  get: () => form.targetAmount.toLocaleString('ko-KR'),
-  set: (val) => {
-    form.targetAmount = Number(val.replace(/[^0-9]/g, ''));
-  },
-});
-
-const valid = computed(
-  () => form.currencyCode && form.targetRate > 0 && form.targetAmount > 0,
-);
+const valid = computed(() => form.currencyCode && form.targetRate > 0);
 const expected = computed(() =>
-  exchange.expectedForeign(
-    form.targetAmount,
-    form.targetRate,
-    currency.value?.unit,
-  ),
+  exchange.expectedForeign(form.targetRate, currency.value?.unit),
 );
 const format = (v) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
 
 const availableCurrencies = computed(() => {
-  const alertCodes = exchange.alerts.map(a => a.currencyCode);
-  return exchange.currencies.filter(c => !alertCodes.includes(c.code));
+  const alertCodes = exchange.alerts.map((a) => a.currencyCode);
+  return exchange.currencies.filter((c) => !alertCodes.includes(c.code));
 });
 
 function save() {
@@ -81,18 +67,17 @@ onMounted(async () => {
 
   if (isEditMode.value) {
     const existing = exchange.alerts.find(
-      (item) => String(item.id) === String(route.params.alertId)
+      (item) => String(item.id) === String(route.params.alertId),
     );
     if (existing) {
       form.id = existing.id;
       form.currencyCode = existing.currencyCode;
       form.targetRate = existing.targetRate;
-      form.targetAmount = existing.targetAmount;
     }
   } else {
     // 신규 모드일 경우 이미 알림이 있는 통화는 제외
     if (availableCurrencies.value.length > 0) {
-      const alertCodes = exchange.alerts.map(a => a.currencyCode);
+      const alertCodes = exchange.alerts.map((a) => a.currencyCode);
       if (alertCodes.includes(form.currencyCode)) {
         form.currencyCode = availableCurrencies.value[0].code;
       }
@@ -114,7 +99,9 @@ onMounted(async () => {
       </header>
       <section class="current">
         <small>현재 주요 환율</small
-        ><strong>{{ format(currency?.rate) }}원</strong
+        ><strong
+          >{{ currency?.unit }}{{ currency?.symbol }} =
+          {{ format(currency?.rate) }}원</strong
         ><em :class="{ up: currency?.change > 0 }"
           >{{ currency?.change > 0 ? '▲' : '▼' }}
           {{ format(Math.abs(currency?.change || 0)) }}원</em
@@ -122,9 +109,14 @@ onMounted(async () => {
       </section>
 
       <!-- 커스텀 통화 선택 버튼 -->
-      <label style="position: relative;"
+      <label style="position: relative"
         >통화
-        <button v-if="!isEditMode" type="button" class="currency-selector" @click="isModalOpen = !isModalOpen">
+        <button
+          v-if="!isEditMode"
+          type="button"
+          class="currency-selector"
+          @click="isModalOpen = !isModalOpen"
+        >
           <span :class="currency?.flagClass" class="flag-icon"></span>
           {{ currency?.symbol }} · {{ currency?.name }}
         </button>
@@ -135,7 +127,11 @@ onMounted(async () => {
 
         <!-- 커스텀 드롭다운 목록 -->
         <ul v-if="isModalOpen && !isEditMode" class="custom-dropdown">
-          <li v-for="c in availableCurrencies" :key="c.code" @click.stop.prevent="selectCurrency(c.code)">
+          <li
+            v-for="c in availableCurrencies"
+            :key="c.code"
+            @click.stop.prevent="selectCurrency(c.code)"
+          >
             <span :class="c.flagClass" class="flag-icon"></span>
             {{ c.symbol }} · {{ c.name }}
           </li>
@@ -145,13 +141,8 @@ onMounted(async () => {
       <label
         >목표 환율
         <div>
-          <span>1 {{ currency?.symbol }} =</span
+          <span>{{ currency?.unit }} {{ currency?.symbol }} =</span
           ><input v-model="targetRateDisplay" type="text" /><b>원</b>
-        </div></label
-      ><label
-        >환전 예정 금액
-        <div>
-          <input v-model="targetAmountDisplay" type="text" /><b>원</b>
         </div></label
       >
       <section class="result">
@@ -166,7 +157,9 @@ onMounted(async () => {
       </section>
       <button class="save" :disabled="!valid" @click="save">
         환율 알림 {{ isEditMode ? '수정' : '저장' }}</button
-      ><button v-if="isEditMode" class="delete" @click="remove">알림 삭제</button>
+      ><button v-if="isEditMode" class="delete" @click="remove">
+        알림 삭제
+      </button>
     </div>
   </main>
 </template>
@@ -276,7 +269,7 @@ label {
   max-height: 200px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .custom-dropdown li {
   display: flex;
@@ -317,7 +310,7 @@ label input {
 }
 label span,
 label b {
-  font-size: 8px;
+  font-size: 14px;
 }
 .result small,
 .result strong {

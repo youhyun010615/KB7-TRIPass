@@ -97,7 +97,7 @@ const fetchHistory = async () => {
 
   try {
     const data = await fetchExchangeRatesHistory(props.currency.code, days);
-    
+
     // 이전 요청의 결과는 무시
     if (requestId !== currentRequestId) return;
 
@@ -156,7 +156,10 @@ watch(() => props.currency, fetchHistory, { immediate: true });
     <h2>
       최근 {{ periods.find((p) => p[0] === exchange.period)?.[1] }} 환율 추이
     </h2>
-    <strong>{{ format(safeCurrency.rate) }}<small>원</small></strong>
+    <strong
+      >{{ safeCurrency.unit }}{{ safeCurrency.symbol }} =
+      {{ format(safeCurrency.rate) }}<small>원</small></strong
+    >
     <p :class="{ up: safeCurrency.change > 0, down: safeCurrency.change <= 0 }">
       <span class="arrow">{{ safeCurrency.change > 0 ? '▲' : '▼' }}</span>
       {{ format(Math.abs(safeCurrency.change)) }}원

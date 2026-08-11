@@ -21,7 +21,7 @@ export const flagClassMap = {
   BND: 'fi fi-bn', // 브루나이 달러
   CAD: 'fi fi-ca', // 캐나다 달러
   CHF: 'fi fi-ch', // 스위스 프랑
-  CNY: 'fi fi-cn', // 위안화 (CNH 포함)
+  CNH: 'fi fi-cn', // 위안화 (CNH 포함)
   DKK: 'fi fi-dk', // 덴마크 크로네
   EUR: 'fi fi-eu', // 유로
   GBP: 'fi fi-gb', // 영국 파운드
@@ -92,7 +92,6 @@ export const useExchangeStore = defineStore('exchange', () => {
     return (Number(amount || 0) / Number(rate || 1)) * unit;
   }
 
-
   // 알림 관련
 
   async function fetchAlerts() {
@@ -112,14 +111,12 @@ export const useExchangeStore = defineStore('exchange', () => {
         // PUT: ExchangeRateAlertUpdateRequestDto
         const updatePayload = {
           targetRate: payload.targetRate,
-          targetAmount: payload.targetAmount,
         };
         await updateExchangeAlert(payload.id, updatePayload);
       } else {
         const createPayload = {
           currencyCode: payload.currencyCode,
           targetRate: payload.targetRate,
-          targetAmount: payload.targetAmount,
         };
         await registerExchangeAlert(createPayload);
       }
@@ -165,7 +162,6 @@ export const useExchangeStore = defineStore('exchange', () => {
         let cleanCode = (item.currencyCode || '')
           .replace(/\(100\)/g, '')
           .trim();
-        if (cleanCode === 'CNH') cleanCode = 'CNY';
 
         const unit = currencyUnits[cleanCode] || 1;
 

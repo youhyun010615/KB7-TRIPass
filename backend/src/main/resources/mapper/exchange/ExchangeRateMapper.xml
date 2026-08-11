@@ -64,8 +64,7 @@
         SELECT
             era.id AS id,
             c.currency_code AS currencyCode,
-            era.target_rate AS targetRate,
-            era.target_amount AS targetAmount
+            era.target_rate AS targetRate
         FROM exchange_rate_alerts era
         INNER JOIN currencies c ON era.currency_id = c.id
         WHERE era.user_id = #{userId}
@@ -73,8 +72,8 @@
     </select>
 
     <insert id="insertAlert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, target_amount, is_deleted)
-        VALUES (#{userId}, #{currencyId}, #{targetRate}, #{targetAmount}, 0)
+        INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, is_deleted)
+        VALUES (#{userId}, #{currencyId}, #{targetRate}, 0)
     </insert>
 
     <select id="countAlertByUserAndCurrency" resultType="int">
@@ -129,7 +128,6 @@
         <update id="updateAlert">
         UPDATE exchange_rate_alerts
         SET target_rate = #{request.targetRate},
-            target_amount = #{request.targetAmount},
             updated_at = NOW()
         WHERE id = #{id}
           AND is_deleted = 0
@@ -149,7 +147,6 @@
             era.user_id AS userId,
             c.currency_code AS currencyCode,
             era.target_rate AS targetRate,
-            era.target_amount AS targetAmount,
             era.updated_at AS updatedAt
         FROM exchange_rate_alerts era
         INNER JOIN currencies c ON era.currency_id = c.id

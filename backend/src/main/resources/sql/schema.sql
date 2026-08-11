@@ -464,7 +464,6 @@ CREATE TABLE exchange_rate_alerts
     user_id       BIGINT         NOT NULL COMMENT '회원 ID',
     currency_id   BIGINT         NOT NULL COMMENT '관심 통화 ID',
     target_rate   DECIMAL(20, 8) NULL COMMENT '목표 환율',
-    target_amount DECIMAL(18, 2) NULL COMMENT '환전 희망 금액',
     is_deleted    TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at    DATETIME       NULL COMMENT '삭제일시',
     created_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
