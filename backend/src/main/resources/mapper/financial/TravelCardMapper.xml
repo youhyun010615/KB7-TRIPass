@@ -14,6 +14,7 @@
         tc.bank_name,
         tc.instant_use,
         tc.applied_rate_info,
+        tc.settlement_type,
         tc.exchange_fee,
         tc.payment_fee,
         tc.auto_charge_supported,
@@ -22,10 +23,12 @@
         SELECT COUNT(*)
         FROM travel_card_currencies tcc
         WHERE tcc.card_id = tc.id
+        AND tcc.is_deleted = 0
         ) AS supported_currency_count
         FROM travel_cards tc
         <where>
             tc.is_active = TRUE
+            AND tc.is_deleted = 0
 
             <if test="keyword != null and keyword != ''">
                 AND (
@@ -36,11 +39,15 @@
             </if>
 
             <if test="currencyCode != null and currencyCode != ''">
-                AND EXISTS (
+                AND (
+                tc.settlement_type = 'USD_CONVERSION'
+                OR EXISTS (
                 SELECT 1
                 FROM travel_card_currencies filter_currency
                 WHERE filter_currency.card_id = tc.id
                 AND filter_currency.currency_code = #{currencyCode}
+                AND filter_currency.is_deleted = 0
+                )
                 )
             </if>
 
@@ -64,6 +71,7 @@
                tc.required_account,
                tc.instant_use,
                tc.applied_rate_info,
+               tc.settlement_type,
                tc.exchange_fee,
                tc.re_exchange_fee,
                tc.payment_fee,
@@ -73,13 +81,15 @@
         FROM travel_cards tc
         WHERE tc.id = #{cardId}
           AND tc.is_active = TRUE
+          AND tc.is_deleted = 0
     </select>
 
-    <!-- 카드별 지원 통화 코드 조회 -->
+    <!-- 카드별 직접 보유·차감 지원 통화 코드 조회 -->
     <select id="findCurrencyCodesByCardId" resultType="String">
         SELECT currency_code
         FROM travel_card_currencies
         WHERE card_id = #{cardId}
+          AND is_deleted = 0
         ORDER BY currency_code ASC
     </select>
 
@@ -94,6 +104,7 @@
         tc.required_account,
         tc.instant_use,
         tc.applied_rate_info,
+        tc.settlement_type,
         tc.exchange_fee,
         tc.re_exchange_fee,
         tc.payment_fee,
@@ -104,9 +115,11 @@
         SELECT COUNT(*)
         FROM travel_card_currencies tcc
         WHERE tcc.card_id = tc.id
+        AND tcc.is_deleted = 0
         ) AS supported_currency_count
         FROM travel_cards tc
         WHERE tc.is_active = TRUE
+        AND tc.is_deleted = 0
         AND tc.id IN
         <foreach
                 collection="cardIds"

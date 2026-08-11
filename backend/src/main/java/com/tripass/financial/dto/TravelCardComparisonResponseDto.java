@@ -46,6 +46,13 @@ public class TravelCardComparisonResponseDto {
     private String appliedRateInfo;
 
     @ApiModelProperty(
+            value = "해외 결제 통화 처리 방식",
+            allowableValues = "DIRECT, USD_CONVERSION",
+            example = "DIRECT"
+    )
+    private String settlementType;
+
+    @ApiModelProperty(
             value = "환전 수수료 정보",
             example = "56종 통화 환율우대 100%"
     )
