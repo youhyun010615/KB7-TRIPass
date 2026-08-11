@@ -3,6 +3,7 @@ package com.tripass.financial.controller;
 import com.tripass.common.response.ApiResponse;
 import com.tripass.financial.dto.TravelCardDetailResponseDto;
 import com.tripass.financial.dto.TravelCardListResponseDto;
+import com.tripass.financial.dto.TravelCardComparisonResponseDto;
 import com.tripass.financial.service.TravelCardService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -69,6 +70,30 @@ public class TravelCardController {
         );
     }
 
+
+    @ApiOperation(
+            value = "트래블카드 비교 조회",
+            notes = "선택한 1개 이상 3개 이하의 트래블카드 정보를 한 번에 조회합니다."
+    )
+    @GetMapping("/comparison")
+    public ResponseEntity<ApiResponse<List<TravelCardComparisonResponseDto>>>
+    getTravelCardComparison(
+            @ApiParam(
+                    value = "비교할 트래블카드 ID 목록",
+                    required = true,
+                    example = "1,2,3"
+            )
+            @RequestParam
+            List<Long> cardIds
+    ) {
+        List<TravelCardComparisonResponseDto> data =
+                travelCardService.getTravelCardComparison(cardIds);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("트래블카드 비교 조회 성공", data)
+        );
+    }
+
     @ApiOperation(
             value = "트래블카드 상세 조회",
             notes = "카드 ID로 트래블카드 상세 정보와 지원 통화 목록을 조회합니다."
@@ -90,4 +115,5 @@ public class TravelCardController {
                 ApiResponse.success("트래블카드 상세 조회 성공", data)
         );
     }
+
 }

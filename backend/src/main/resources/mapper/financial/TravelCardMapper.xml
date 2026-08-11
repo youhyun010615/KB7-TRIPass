@@ -83,4 +83,48 @@
         ORDER BY currency_code ASC
     </select>
 
+    <!-- 선택한 트래블카드 비교 정보 일괄 조회 -->
+    <select id="findAllByIds"
+            resultType="TravelCardComparisonResponseDto">
+        SELECT
+        tc.id,
+        tc.card_name,
+        tc.card_company,
+        tc.bank_name,
+        tc.required_account,
+        tc.instant_use,
+        tc.applied_rate_info,
+        tc.exchange_fee,
+        tc.re_exchange_fee,
+        tc.payment_fee,
+        tc.withdrawal_fee,
+        tc.auto_charge_supported,
+        tc.is_transit_card AS transit_card,
+        (
+        SELECT COUNT(*)
+        FROM travel_card_currencies tcc
+        WHERE tcc.card_id = tc.id
+        ) AS supported_currency_count
+        FROM travel_cards tc
+        WHERE tc.is_active = TRUE
+        AND tc.id IN
+        <foreach
+                collection="cardIds"
+                item="cardId"
+                open="("
+                separator=","
+                close=")">
+            #{cardId}
+        </foreach>
+        ORDER BY FIELD(
+        tc.id,
+        <foreach
+                collection="cardIds"
+                item="cardId"
+                separator=",">
+            #{cardId}
+        </foreach>
+        )
+    </select>
+
 </mapper>
