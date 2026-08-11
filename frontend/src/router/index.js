@@ -6,6 +6,12 @@ const router = createRouter({
   routes: [
     // ── AUTH (담당: 송형진) ─────────────────────────────────
     {
+      path: '/onboarding',
+      name: 'Onboarding',
+      component: () => import('@/views/auth/OnboardingView.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
       path: '/login',
       name: 'Login',
       component: () => import('@/views/auth/LoginView.vue'),
