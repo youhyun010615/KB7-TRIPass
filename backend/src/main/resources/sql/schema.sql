@@ -226,6 +226,8 @@ CREATE TABLE travel_cards
     is_active             BOOLEAN        NOT NULL DEFAULT TRUE COMMENT '사용 여부',
     created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    is_deleted             TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '논리 삭제 여부',
+    deleted_at             DATETIME       NULL COMMENT '논리 삭제일시',
     PRIMARY KEY (id)
 ) COMMENT '트래블카드';
 
@@ -238,6 +240,8 @@ CREATE TABLE travel_card_currencies
     created_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    is_deleted   TINYINT(1) NOT NULL DEFAULT 0 COMMENT '논리 삭제 여부',
+    deleted_at   DATETIME   NULL COMMENT '논리 삭제일시',
 
     PRIMARY KEY (id),
 
