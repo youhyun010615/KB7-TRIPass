@@ -1,5 +1,6 @@
 package com.tripass.travel.mapper;
 
+import com.tripass.travel.domain.Trip;
 import com.tripass.travel.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -30,4 +31,12 @@ public interface TravelMapper {
             @Param("checklistType") String checklistType,
             @Param("ddayStage") String ddayStage
     );
+
+    int updateCarriedOverStatus(
+            @Param("tripId") Long tripId,
+            @Param("daysUntilTrip") long daysUntilTrip
+    );
+
+
+    Trip selectTripById(@Param("tripId") Long tripId);
 }

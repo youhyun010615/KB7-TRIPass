@@ -14,6 +14,27 @@
         </collection>
     </resultMap>
 
+    <!-- 현재 시점(daysUntilTrip) 기준으로 이미 기한이 지난 과거 단계의 미완료 항목만 이월(is_carried_over = 1)로 변경 -->
+    <update id="updateCarriedOverStatus">
+        UPDATE trip_checklist_items
+        SET is_carried_over = 1
+        WHERE trip_id = #{tripId}
+          AND checklist_type = 'PRE_TRAVEL'
+          AND is_completed = 0       -- 아직 안 한 항목
+          AND is_carried_over = 0    -- 아직 이월 마킹 안 된 항목
+          AND is_deleted = 0
+          AND is_excluded = 0
+          AND (
+          <![CDATA[
+            -- 오늘이 D-7 시점 영역(7일 이하 남음)이면, 기한이 지난 'D30' 미완료 항목을 밀린 항목(이월)으로 마킹
+            (#{daysUntilTrip} <= 7 AND dday_stage = 'D30')
+                OR
+                -- 오늘이 D-1 시점 영역(1일 이하 남음)이면, 기한이 지난 'D30', 'D7' 미완료 항목 모두를 밀린 항목(이월)으로 마킹
+            (#{daysUntilTrip} <= 1 AND dday_stage IN ('D30', 'D7'))
+          ]]>
+      )
+    </update>
+
     <select id="getTripDashboard" resultMap="DashboardResultMap">
         WITH TripStats AS (
             SELECT
@@ -131,6 +152,7 @@
         WHERE id = #{tripId}
           AND is_deleted = 0
     </select>
+
     <!-- 단계별 체크리스트 상세 목록 조회 -->
     <select id="selectChecklistsByTripIdAndType" resultType="ChecklistResponseDto">
         SELECT
@@ -146,9 +168,29 @@
         AND is_deleted = 0
         AND is_excluded = 0
         <if test="ddayStage != null and ddayStage != ''">
-            AND dday_stage = #{ddayStage}
+            <!-- 💡 핵심: 해당 ddayStage 항목이거나, 이전 단계에서 이월된(is_carried_over = 1) 항목을 함께 가져옴 -->
+            AND (dday_stage = #{ddayStage} OR is_carried_over = 1)
         </if>
-        ORDER BY id ASC
+        ORDER BY is_carried_over DESC, id ASC
+    </select>
+
+    <!-- 여행 단건 정보 및 소유자 조회 (start_date 포함) -->
+    <select id="selectTripById" resultType="Trip">
+        SELECT
+            id,
+            user_id AS userId,
+            trip_name AS tripName,
+            status,
+            start_date AS startDate,
+            end_date AS endDate,
+            total_target_amount AS totalTargetAmount,
+            is_deleted AS isDeleted,
+            deleted_at AS deletedAt,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
     </select>
 
     <!-- 여행 생성 시 기본 체크리스트 템플릿 일괄 복사/생성 -->

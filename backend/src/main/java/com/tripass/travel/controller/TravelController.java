@@ -1,10 +1,7 @@
 package com.tripass.travel.controller;
 
 import com.tripass.common.response.ApiResponse;
-import com.tripass.travel.dto.BudgetCheckResponseDto;
-import com.tripass.travel.dto.ChecklistResponseDto;
-import com.tripass.travel.dto.ChecklistSummaryResponseDto;
-import com.tripass.travel.dto.TravelStatusResponseDto;
+import com.tripass.travel.dto.*;
 import com.tripass.travel.service.TravelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -70,14 +67,14 @@ public class TravelController {
      * 단계별 체크리스트 상세 목록 조회
      */
     @GetMapping("/{id}/checklists")
-    public ResponseEntity<ApiResponse<List<ChecklistResponseDto>>> getChecklists(
+    public ResponseEntity<ApiResponse<ChecklistGroupResponseDto>> getChecklists(
             @PathVariable Long id,
             @RequestParam String type,
             @RequestParam(required = false) String ddayStage,
             Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
 
-        List<ChecklistResponseDto> data = travelService.getChecklists(id, type, ddayStage, userId);
+        ChecklistGroupResponseDto data = travelService.getChecklists(id, type, ddayStage, userId);
         return ResponseEntity.ok(ApiResponse.success("체크리스트 상세 목록 조회 성공", data));
     }
 

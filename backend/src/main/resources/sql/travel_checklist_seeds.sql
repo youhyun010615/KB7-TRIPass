@@ -7,7 +7,9 @@ INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
 ('PRE_TRAVEL', 'D30', '국제운전면허증 발급'),
 ('PRE_TRAVEL', 'D30', '여행자보험 가입'),
 ('PRE_TRAVEL', 'D30', '여행지 맛집·카페 저장해두기'),
-('PRE_TRAVEL', 'D30', '가고 싶은 관광지·명소 코스 짜기');
+('PRE_TRAVEL', 'D30', '가고 싶은 관광지·명소 코스 짜기'),
+('PRE_TRAVEL', 'D30', '트래블카드·월렛 준비하기');
+
 
 -- 2. 여행 준비 (PRE_TRAVEL) - D7 단계
 INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
