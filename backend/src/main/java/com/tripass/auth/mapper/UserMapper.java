@@ -27,4 +27,10 @@ public interface UserMapper {
             @Param("name") String name,
             @Param("phoneNumber") String phoneNumber
     );
+
+    // 활성 LOCAL 회원의 비밀번호 변경
+    int updatePassword(
+            @Param("userId") Long userId,
+            @Param("encodedPassword") String encodedPassword
+    );
 }
