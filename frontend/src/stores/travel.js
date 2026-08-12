@@ -97,7 +97,9 @@ export const useTravelStore = defineStore('travel', () => {
     && !hasDateCollision.value
   ))
 
-  const canCompleteGoal = computed(() => totalTargetAmount.value > 0 && totalAllocatedAmount.value > 0)
+  // TRIP 월렛은 서비스가 제공하는 가상 지갑이다. 외부 계좌 배분이 아니라
+  // 여행 일정·국가별 목표 예산이 확정되면 저축 계획을 시작할 수 있다.
+  const canCompleteGoal = computed(() => canReviewPlan.value && totalTargetAmount.value > 0)
 
   watch(
     () => ({
