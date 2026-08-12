@@ -8,9 +8,10 @@ const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
 
-const tripId = computed(() =>
-    Number(route.query.tripId || 1),
-)
+const tripId = computed(() => {
+  const value = route.query.tripId
+  return value ? Number(value) : null
+})
 
 const trip = computed(() =>
     store.trip(tripId.value),
@@ -23,11 +24,15 @@ const previewUrl = ref('')
 const progress = ref(0)
 const errorMessage = ref('')
 const fileInput = ref(null)
+const cameraInput = ref(null)
 
 let progressTimer = null
 
 function openFilePicker() {
   fileInput.value?.click()
+}
+function openCamera() {
+  cameraInput.value?.click()
 }
 
 function selectFile(event) {
@@ -83,6 +88,10 @@ function resetFile() {
 
   if (fileInput.value) {
     fileInput.value.value = ''
+  }
+
+  if (cameraInput.value) {
+    cameraInput.value.value = ''
   }
 
   step.value = 'upload'
@@ -173,10 +182,17 @@ onBeforeUnmount(() => {
       <section class="trip-card"><small>저장할 여행</small><b>{{ trip.title }}</b><span>{{ trip.dateRange }}</span></section>
       <section class="upload-card"><div class="receipt-icon">▤</div><h2>영수증을 촬영하거나 업로드해 주세요</h2><p>해외 결제 영수증의 항목과 금액을<br>자동으로 인식하고 번역해 드려요.</p><label>
         <input
-            ref="fileInput"
+            ref="cameraInput"
+            class="hidden-file-input"
             type="file"
             accept="image/jpeg,image/png"
             capture="environment"
+            @change="selectFile"
+        >
+        <input
+            ref="fileInput"
+            type="file"
+            accept="image/jpeg,image/png"
             @change="selectFile"
         >
 
@@ -194,7 +210,7 @@ onBeforeUnmount(() => {
       <button
           class="camera-button"
           type="button"
-          @click="openFilePicker"
+          @click="openCamera"
       >
         📷 카메라로 촬영하기
       </button>

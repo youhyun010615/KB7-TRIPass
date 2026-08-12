@@ -39,9 +39,10 @@ const isExistingReceipt = computed(() =>
 const loading = ref(false)
 const loadErrorMessage = ref('')
 
-const tripId = computed(() =>
-    Number(route.query.tripId || 1),
-)
+const tripId = computed(() => {
+  const value = route.query.tripId
+  return value ? Number(value) : null
+})
 
 const trip = computed(() =>
     store.trip(tripId.value),
@@ -194,8 +195,45 @@ function applyReceiptData(data) {
 
 
 const editing = ref(false)
+const editSnapshot = ref(null)
 const translated = ref(true)
 const showOriginal = ref(false)
+
+// 편집 시작 시 현재 입력값을 복사해 보관한다.
+function startEditing() {
+  editSnapshot.value =
+      JSON.parse(
+          JSON.stringify(form),
+      )
+
+  editing.value = true
+}
+
+// 편집 중 변경한 값을 버리고 시작 시점으로 복원한다.
+function cancelEditing() {
+  if (editSnapshot.value) {
+    Object.assign(
+        form,
+        JSON.parse(
+            JSON.stringify(
+                editSnapshot.value,
+            ),
+        ),
+    )
+  }
+
+  editSnapshot.value = null
+  editing.value = false
+}
+
+function toggleEditing() {
+  if (editing.value) {
+    cancelEditing()
+    return
+  }
+
+  startEditing()
+}
 
 const displayedMerchantName = computed(() => {
   if (translated.value) {
@@ -297,6 +335,7 @@ const currencyIdMap = {
 }
 
 const saving = ref(false)
+
 function createReceiptRequestData() {
   const normalizedCurrencyCode =
       form.currencyCode
@@ -492,6 +531,7 @@ async function removeReceipt() {
 }
 
 // 서버에 저장된 원본 영수증 이미지를 조회한다.
+// 서버에 저장된 원본 영수증 이미지를 조회한다.
 async function loadOriginalImage() {
   if (!receiptId.value) {
     return
@@ -502,6 +542,17 @@ async function loadOriginalImage() {
           receiptId.value,
       )
 
+  const imageBlob = response.data
+
+  if (
+      !(imageBlob instanceof Blob) ||
+      !imageBlob.type.startsWith('image/')
+  ) {
+    throw new Error(
+        '영수증 원본 이미지 응답이 올바르지 않습니다.',
+    )
+  }
+
   if (originalImageUrl.value) {
     URL.revokeObjectURL(
         originalImageUrl.value,
@@ -509,9 +560,7 @@ async function loadOriginalImage() {
   }
 
   originalImageUrl.value =
-      URL.createObjectURL(
-          response.data,
-      )
+      URL.createObjectURL(imageBlob)
 }
 
 // 저장된 영수증 상세 정보와 품목을 조회한다.
@@ -587,7 +636,12 @@ onBeforeUnmount(() => {
               : '영수증 인식 결과'
         }}
       </h1>
-      <button @click="editing=!editing">{{ editing ? '취소' : '수정' }}</button>
+      <button
+          type="button"
+          @click="toggleEditing"
+      >
+        {{ editing ? '취소' : '수정' }}
+      </button>
     </header>
     <div
         v-if="loading"
@@ -862,10 +916,10 @@ onBeforeUnmount(() => {
             type="button"
             :disabled="saving || deleting"
             @click="
-        editing
-          ? prepareSave()
-          : editing = true
-      "
+  editing
+    ? prepareSave()
+    : startEditing()
+"
         >
           {{
             saving

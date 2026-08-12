@@ -13,9 +13,10 @@ const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
 
-const tripId = computed(() =>
-    Number(route.query.tripId || 1),
-)
+const tripId = computed(() => {
+  const value = route.query.tripId
+  return value ? Number(value) : null
+})
 
 const trip = computed(() =>
     store.trip(tripId.value),
@@ -79,9 +80,17 @@ function mapReceipt(item) {
         Number(item.splitCount) || 1,
 
     splitAmount:
-        item.splitAmount === null
-            ? null
-            : Number(item.splitAmount),
+        item.splitAmount != null &&
+        Number.isFinite(
+            Number(item.splitAmount),
+        )
+            ? Number(item.splitAmount)
+            : (
+                Number(item.splitCount) > 1
+                    ? Number(item.totalAmount || 0) /
+                    Number(item.splitCount)
+                    : null
+            ),
 
     fileUrl:
         item.fileUrl || '',
@@ -218,7 +227,12 @@ onMounted(loadReceipts)
                 {{ item.time }}
               </small>
 
-              <i v-if="item.splitCount > 1">
+              <i
+                  v-if="
+    item.splitCount > 1 &&
+    item.splitAmount != null
+  "
+              >
                 {{ item.splitCount }}명 분할 ·
                 1인당
                 {{ item.currencyCode }}
