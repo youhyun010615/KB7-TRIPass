@@ -12,6 +12,8 @@ import org.springframework.web.servlet.config.annotation.DefaultServletHandlerCo
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
 import java.util.List;
 
@@ -83,5 +85,18 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public Validator getValidator() {
         return validator();
+    }
+
+    /**
+     * multipart/form-data 파일 업로드 요청을 처리한다.
+     */
+    @Bean
+    public MultipartResolver multipartResolver() {
+        StandardServletMultipartResolver resolver =
+                new StandardServletMultipartResolver();
+
+        resolver.setResolveLazily(true);
+
+        return resolver;
     }
 }

@@ -42,6 +42,7 @@ import javax.sql.DataSource;
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
         "com.tripass.ocr.service",
+        "com.tripass.ocr.client",
         "com.tripass.report.service",
         "com.tripass.auth.security",
 })

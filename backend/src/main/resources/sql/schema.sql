@@ -646,15 +646,17 @@ CREATE TABLE receipts
     trip_id       BIGINT         NULL COMMENT '여행 ID',
     country_id    BIGINT         NULL COMMENT '국가 ID',
     currency_id   BIGINT         NULL COMMENT '통화 ID',
-    payment_date  DATE           NOT NULL COMMENT '결제일',
+    payment_datetime DATETIME NOT NULL COMMENT '결제일시',
     file_name     VARCHAR(255)   NOT NULL COMMENT '파일명',
     file_url      VARCHAR(1000)  NOT NULL COMMENT '파일 URL',
-    file_type     VARCHAR(10)    NOT NULL COMMENT '파일 형식(JPG/PNG/PDF, 10MB 이하)',
+    file_type     VARCHAR(10)    NOT NULL COMMENT '파일 형식(JPG/JPEG/PNG, 10MB 이하)',
     status        VARCHAR(20)    NOT NULL DEFAULT 'UPLOADED' COMMENT '처리 상태(UPLOADED/PROCESSING/COMPLETED/FAILED)',
-    merchant_name VARCHAR(255)   NULL COMMENT '상호명',
-    total_amount  DECIMAL(18, 2) NULL COMMENT '현지 총액',
-    tax_amount    DECIMAL(18, 2) NULL COMMENT '부가세',
+    merchant_original_name   VARCHAR(255) NULL COMMENT '원문 상호명',
+    merchant_translated_name VARCHAR(255) NULL COMMENT '번역 상호명',
+    total_amount  DECIMAL(15, 2) NULL COMMENT '현지 총액',
+    tax_amount    DECIMAL(15, 2) NULL COMMENT '부가세',
     ocr_raw_text  TEXT           NULL COMMENT 'OCR 원문 텍스트',
+    split_count INT NOT NULL DEFAULT 1 COMMENT '금액 분할 인원수',
     error_message TEXT           NULL COMMENT '오류 메시지',
     is_deleted    TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at    DATETIME       NULL COMMENT '삭제일시',
@@ -662,6 +664,12 @@ CREATE TABLE receipts
     updated_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     processed_at  TIMESTAMP      NULL COMMENT 'OCR 처리 완료 일시',
     PRIMARY KEY (id),
+    INDEX idx_receipts_user_datetime
+        (user_id, is_deleted, payment_datetime),
+
+    INDEX idx_receipts_trip_datetime
+        (trip_id, is_deleted, payment_datetime),
+    CONSTRAINT chk_receipts_split_count CHECK (split_count >= 1),
     CONSTRAINT fk_receipts_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_receipts_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_receipts_country FOREIGN KEY (country_id) REFERENCES countries (id),
@@ -677,7 +685,7 @@ CREATE TABLE receipt_items
     original_name   VARCHAR(255)   NOT NULL COMMENT '원문 품목명',
     translated_name VARCHAR(255)   NULL COMMENT '번역 품목명',
     quantity        INT            NULL COMMENT '수량',
-    amount          DECIMAL(18, 2) NULL COMMENT '현지 금액',
+    amount          DECIMAL(15, 2) NULL COMMENT '현지 금액',
     display_order   INT            NOT NULL COMMENT '표시 순서',
     is_deleted      TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at      DATETIME       NULL COMMENT '삭제일시',
@@ -775,8 +783,6 @@ CREATE INDEX idx_trip_schedules_trip_id ON trip_schedules (trip_id);
 CREATE INDEX idx_trip_schedules_scheduled_at ON trip_schedules (scheduled_at);
 CREATE INDEX idx_trip_schedules_trip_deleted_scheduled ON trip_schedules (trip_id, is_deleted, scheduled_at);
 CREATE INDEX idx_trip_checklist_items_trip_id ON trip_checklist_items (trip_id);
-CREATE INDEX idx_receipts_user_id ON receipts (user_id);
-CREATE INDEX idx_receipts_trip_id ON receipts (trip_id);
 CREATE INDEX idx_notifications_user_id ON notifications (user_id);
 CREATE INDEX idx_notifications_is_read ON notifications (user_id, is_read);
 CREATE INDEX idx_exchange_rates_rate_date ON exchange_rates (rate_date);
