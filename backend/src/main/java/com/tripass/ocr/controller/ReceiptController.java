@@ -224,29 +224,11 @@ public class ReceiptController {
                         receiptId
                 );
 
-        String downloadFileName =
-                resolveDownloadFileName(
-                        imageData,
-                        receiptId
-                );
-
-        ContentDisposition contentDisposition =
-                ContentDisposition.inline()
-                        .filename(
-                                downloadFileName,
-                                StandardCharsets.UTF_8
-                        )
-                        .build();
-
         return ResponseEntity.ok()
                 .contentType(
                         resolveMediaType(
                                 imageData.getFileType()
                         )
-                )
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        contentDisposition.toString()
                 )
                 .body(
                         imageData.getImageBytes()

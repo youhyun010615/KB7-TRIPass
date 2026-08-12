@@ -14,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 
 import java.util.List;
 
@@ -42,10 +43,20 @@ import java.util.List;
 })
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    /** JSON 메시지 컨버터 등록 */
+    /** JSON 및 이미지 byte[] 메시지 컨버터 등록 */
     @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(new MappingJackson2HttpMessageConverter());
+    public void configureMessageConverters(
+            List<HttpMessageConverter<?>> converters
+    ) {
+        // 이미지 파일의 byte[] 응답을 처리한다.
+        converters.add(
+                new ByteArrayHttpMessageConverter()
+        );
+
+        // ApiResponse 등의 JSON 응답을 처리한다.
+        converters.add(
+                new MappingJackson2HttpMessageConverter()
+        );
     }
 
     /** 정적 리소스 서빙 허용 */
