@@ -22,7 +22,7 @@ const nextMode = ref('travel')
 
 function switchMode(mode) {
   if (mode === travelModeStore.mode || isModeSwitching.value) return
-  if (mode === 'travel' && !travelModeStore.canEnterTravelMode) {
+  if (mode === 'travel' && !travelModeStore.demoMode && !travelModeStore.canEnterTravelMode) {
     window.alert('여행 모드는 등록한 여행 기간에만 이용할 수 있어요.')
     return
   }
