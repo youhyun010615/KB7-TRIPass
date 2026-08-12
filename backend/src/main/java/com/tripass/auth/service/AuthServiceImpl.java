@@ -11,6 +11,7 @@ import com.tripass.auth.dto.internal.TokenRefreshResult;
 import com.tripass.auth.dto.response.TokenRefreshResponse;
 import com.tripass.auth.dto.request.FindIdRequest;
 import com.tripass.auth.dto.response.FindIdResponse;
+import com.tripass.auth.dto.request.ResetPasswordRequest;
 import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AuthServiceImpl implements AuthService{
+public class AuthServiceImpl implements AuthService {
     //로그인 아이디 형식 - 영문, 숫자 6~20자
     private static final Pattern LOGIN_ID_PATTERN =
             Pattern.compile("^[A-Za-z0-9]{6,20}$");
@@ -57,13 +58,14 @@ public class AuthServiceImpl implements AuthService{
     @Override
     public CheckLoginIdResponse checkLoginId(String loginId) {
         String normalizedLoginId = normalizeLoginId(loginId);
-        int count =userMapper.countLocalUserByLoginId(normalizedLoginId);
+        int count = userMapper.countLocalUserByLoginId(normalizedLoginId);
 
         return new CheckLoginIdResponse(count == 0);
     }
+
     // 아이디 앞 뒤 공백 제거하고 형식 검사
-    private String normalizeLoginId(String loginId){
-        if(loginId == null){
+    private String normalizeLoginId(String loginId) {
+        if (loginId == null) {
             throw new CustomException(
                     HttpStatus.BAD_REQUEST,
                     "AUTH_LOGIN_ID_REQUIRED",
@@ -127,7 +129,7 @@ public class AuthServiceImpl implements AuthService{
             );
         }
 
-         //인증 목적, 전화번호, 성공 여부,만료 여부와 사용 여부를 검사한다.
+        //인증 목적, 전화번호, 성공 여부,만료 여부와 사용 여부를 검사한다.
 
         phoneVerificationService
                 .validateSignupVerification(
@@ -180,7 +182,7 @@ public class AuthServiceImpl implements AuthService{
     @Override
     @Transactional
     public LoginResult login(LoginRequest request) {
-        if(request == null){
+        if (request == null) {
             throw new CustomException(
                     HttpStatus.BAD_REQUEST,
                     "AUTH_LOGIN_REQUEST_REQUIRED",
@@ -194,9 +196,9 @@ public class AuthServiceImpl implements AuthService{
         User user = userMapper.findLocalUserByLoginId(loginId);
 
         //아이디가 없거나 비밀번호 틀린 경우 오류 반환
-        if(user == null
+        if (user == null
                 || user.getPassword() == null
-                || !passwordEncoder.matches(password, user.getPassword())){
+                || !passwordEncoder.matches(password, user.getPassword())) {
             throw new CustomException(
                     HttpStatus.UNAUTHORIZED,
                     "AUTH_LOGIN_FAILED",
@@ -248,7 +250,7 @@ public class AuthServiceImpl implements AuthService{
         //연결된 회원 조회
         User user = userMapper.findActiveUserById(savedToken.getUserId());
 
-        if(user == null){
+        if (user == null) {
             throw new CustomException(
                     HttpStatus.UNAUTHORIZED,
                     "AUTH_INVALID_REFRESH_TOKEN",
@@ -336,6 +338,98 @@ public class AuthServiceImpl implements AuthService{
         return new FindIdResponse(maskedLoginIds);
     }
 
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_RESET_PASSWORD_REQUEST_REQUIRED",
+                    "비밀번호 재설정 정보를 입력해 주세요."
+            );
+        }
+
+        String loginId =
+                normalizeLoginId(
+                        request.getLoginId()
+                );
+
+        String phoneNumber =
+                normalizePhoneNumber(
+                        request.getPhoneNumber()
+                );
+
+        String verificationRequestId =
+                requireText(
+                        request.getPhoneVerificationRequestId(),
+                        "휴대전화 인증을 완료해 주세요."
+                );
+
+        String newPassword =
+                validatePassword(
+                        request.getNewPassword()
+                );
+
+        phoneVerificationService
+                .validateResetPasswordVerification(
+                        verificationRequestId,
+                        phoneNumber
+                );
+
+        User user =
+                userMapper.findLocalUserByLoginId(
+                        loginId
+                );
+
+        if (user == null
+                || !phoneNumber.equals(user.getPhoneNumber())) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_ACCOUNT_INFORMATION_MISMATCH",
+                    "아이디와 인증한 휴대전화번호가 일치하지 않습니다."
+            );
+        }
+
+        if (user.getPassword() != null
+                && passwordEncoder.matches(
+                newPassword,
+                user.getPassword()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_PASSWORD_SAME_AS_CURRENT",
+                    "새 비밀번호는 기존 비밀번호와 다르게 설정해 주세요."
+            );
+        }
+
+        String encodedPassword =
+                passwordEncoder.encode(newPassword);
+
+        int updatedRows =
+                userMapper.updatePassword(
+                        user.getId(),
+                        encodedPassword
+                );
+
+        if (updatedRows != 1) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AUTH_PASSWORD_RESET_FAILED",
+                    "비밀번호 재설정에 실패했습니다."
+            );
+        }
+
+        refreshTokenService
+                .revokeAllByUserId(
+                        user.getId()
+                );
+
+        phoneVerificationService
+                .markVerificationAsUsed(
+                        verificationRequestId
+                );
+    }
+
     //문자열 길이 검사
     private String normalizeName(String name) {
 
@@ -390,11 +484,13 @@ public class AuthServiceImpl implements AuthService{
 
         if (!PHONE_NUMBER_PATTERN
                 .matcher(normalizedPhoneNumber)
-                .matches()) {throw new CustomException(
-                HttpStatus.BAD_REQUEST,
-                "AUTH_INVALID_PHONE_NUMBER",
-                "휴대전화번호는 010으로 시작하는 11자리 번호로 입력해 주세요."
-        );}
+                .matches()) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_INVALID_PHONE_NUMBER",
+                    "휴대전화번호는 010으로 시작하는 11자리 번호로 입력해 주세요."
+            );
+        }
 
         return normalizedPhoneNumber;
     }
@@ -414,6 +510,7 @@ public class AuthServiceImpl implements AuthService{
 
         return value.trim();
     }
+
     // 현재 브라우저의 Refresh Token을 폐기한다.
     @Override
     @Transactional

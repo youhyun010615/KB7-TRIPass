@@ -20,4 +20,7 @@ public interface PhoneVerificationService {
 
     // 아이디 찾기용 인증 결과 검증
     void validateFindIdVerification(String requestId, String phoneNumber);
+
+    // 비밀번호 재설정용 인증 결과 검증
+    void validateResetPasswordVerification(String requestId, String phoneNumber);
 }

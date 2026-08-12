@@ -123,4 +123,13 @@
           AND is_deleted = 0
         ORDER BY id ASC
     </select>
+
+    <!-- 활성 LOCAL 회원의 비밀번호 변경 -->
+    <update id="updatePassword">
+        UPDATE users
+        SET password = #{encodedPassword}
+        WHERE id = #{userId}
+          AND login_provider = 'LOCAL'
+          AND is_deleted = 0
+    </update>
 </mapper>
