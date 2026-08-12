@@ -1,5 +1,7 @@
 package com.tripass.ocr.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -37,6 +39,10 @@ public class ReceiptDetailResponse {
     private String currencySymbol;
 
     // 결제일시
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss"
+    )
     private LocalDateTime paymentDateTime;
 
     // 원본 파일명
@@ -76,8 +82,16 @@ public class ReceiptDetailResponse {
     private List<ReceiptItemResponse> items;
 
     // 생성일시
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss"
+    )
     private LocalDateTime createdAt;
 
     // 수정일시
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss"
+    )
     private LocalDateTime updatedAt;
 }

@@ -1,6 +1,8 @@
 package com.tripass.ocr.client;
 
 import com.google.api.gax.rpc.ApiException;
+import com.google.api.gax.retrying.RetrySettings;
+import com.google.cloud.vision.v1.ImageAnnotatorSettings;
 import com.google.cloud.vision.v1.AnnotateImageRequest;
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.BatchAnnotateImagesResponse;
@@ -21,17 +23,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.time.Duration;
 
 //Google Cloud Vision API를 호출하여 영수증 원문을 인식한다.
 @Component
 public class VisionOcrClient {
+    private static final Duration RPC_TIMEOUT =
+            Duration.ofSeconds(15);
+
+    private static final Duration TOTAL_TIMEOUT =
+            Duration.ofSeconds(20);
 
     //이미지 바이트를 OCR 처리
     public VisionOcrResult analyze(byte[] imageBytes) {
         validateImageBytes(imageBytes);
 
         try (ImageAnnotatorClient client =
-                     ImageAnnotatorClient.create()) {
+                     ImageAnnotatorClient.create(
+                             createClientSettings()
+                     )) {
 
             AnnotateImageRequest request =
                     createRequest(imageBytes);
@@ -55,6 +65,36 @@ public class VisionOcrClient {
                     "영수증 인식 서비스에 연결할 수 없습니다."
             );
         }
+    }
+    // Google Vision 클라이언트의 요청 제한시간을 설정한다.
+    private ImageAnnotatorSettings createClientSettings()
+            throws IOException {
+
+        ImageAnnotatorSettings.Builder settingsBuilder =
+                ImageAnnotatorSettings.newBuilder();
+
+        RetrySettings retrySettings =
+                settingsBuilder
+                        .batchAnnotateImagesSettings()
+                        .getRetrySettings()
+                        .toBuilder()
+                        .setInitialRpcTimeoutDuration(
+                                RPC_TIMEOUT
+                        )
+                        .setRpcTimeoutMultiplier(1.0)
+                        .setMaxRpcTimeoutDuration(
+                                RPC_TIMEOUT
+                        )
+                        .setTotalTimeoutDuration(
+                                TOTAL_TIMEOUT
+                        )
+                        .build();
+
+        settingsBuilder
+                .batchAnnotateImagesSettings()
+                .setRetrySettings(retrySettings);
+
+        return settingsBuilder.build();
     }
 
     //Document_Text_DETECTION 요청을 생성

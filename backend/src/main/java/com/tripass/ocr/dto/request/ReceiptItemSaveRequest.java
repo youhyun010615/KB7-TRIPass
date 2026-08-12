@@ -37,9 +37,9 @@ public class ReceiptItemSaveRequest {
             message = "품목 금액은 0 이상이어야 합니다."
     )
     @Digits(
-            integer = 16,
+            integer = 13,
             fraction = 2,
-            message = "품목 금액은 정수 16자리, 소수 2자리 이하여야 합니다."
+            message = "품목 금액은 정수 13자리, 소수 2자리 이하여야 합니다."
     )
     private BigDecimal amount;
 }

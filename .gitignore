@@ -22,6 +22,9 @@ node_modules/
 .env
 
 # Google Cloud 서비스 계정 인증 파일
+# Google Cloud 프로젝트 서비스 계정 키
 **/*service-account*.json
 **/*google-credentials*.json
 **/google-cloud-key*.json
+**/tripass-*.json
+**/credentials/*.json

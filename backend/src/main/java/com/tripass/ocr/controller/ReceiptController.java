@@ -224,10 +224,16 @@ public class ReceiptController {
                         receiptId
                 );
 
+        String downloadFileName =
+                resolveDownloadFileName(
+                        imageData,
+                        receiptId
+                );
+
         ContentDisposition contentDisposition =
                 ContentDisposition.inline()
                         .filename(
-                                imageData.getFileName(),
+                                downloadFileName,
                                 StandardCharsets.UTF_8
                         )
                         .build();
@@ -247,6 +253,31 @@ public class ReceiptController {
                 );
     }
 
+    // 저장된 파일명이 없으면 영수증 ID를 이용해 기본 파일명을 생성한다.
+    private String resolveDownloadFileName(
+            ReceiptImageData imageData,
+            Long receiptId
+    ) {
+        String fileName =
+                imageData.getFileName();
+
+        if (fileName != null
+                && !fileName.isBlank()) {
+
+            return fileName;
+        }
+
+        String extension =
+                "PNG".equalsIgnoreCase(
+                        imageData.getFileType()
+                )
+                        ? ".png"
+                        : ".jpg";
+
+        return "receipt-"
+                + receiptId
+                + extension;
+    }
     private MediaType resolveMediaType(
             String fileType
     ) {

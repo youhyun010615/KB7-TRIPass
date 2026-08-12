@@ -75,14 +75,15 @@ public class ReceiptTextParser {
     //세금을 나타내는 단어
     private static final Pattern TAX_PATTERN =
             Pattern.compile(
-                    "(?iu)(tax|vat|gst|消費税|税|세금|부가세)"
+                    "(?iu)(\\b(?:tax|vat|gst)\\b|"
+                            + "消費税|税|세금|부가세)"
             );
 
     //품목이 아닌 결제 정보 단어
     private static final Pattern PAYMENT_METADATA_PATTERN =
             Pattern.compile(
-                    "(?iu)(cash|credit|card|visa|mastercard|"
-                            + "change|subtotal|receipt|invoice|"
+                    "(?iu)(\\b(?:cash|credit|card|visa|mastercard|"
+                            + "change|subtotal|receipt|invoice)\\b|"
                             + "현금|카드|영수증)"
             );
 
@@ -429,15 +430,18 @@ public class ReceiptTextParser {
                                 sameLineMatcher.group(2)
                         );
 
-                if (!originalName.isBlank()
+                String cleanedName =
+                        cleanItemName(originalName);
+
+                if (!cleanedName.isBlank()
                         && amount != null
-                        && originalName.matches(
+                        && cleanedName.matches(
                         ".*[\\p{L}].*"
                 )) {
 
                     items.add(
                             new ParsedReceiptItem(
-                                    cleanItemName(originalName),
+                                    cleanedName,
                                     findQuantity(originalName),
                                     amount,
                                     displayOrder++
@@ -458,16 +462,24 @@ public class ReceiptTextParser {
                         );
 
                 if (nextLineAmount != null) {
-                    items.add(
-                            new ParsedReceiptItem(
-                                    cleanItemName(line),
-                                    findQuantity(line),
-                                    nextLineAmount,
-                                    displayOrder++
-                            )
-                    );
+                    String cleanedName =
+                            cleanItemName(line);
 
-                    // 금액 줄까지 처리했으므로 건너뛴다.
+                    if (!cleanedName.isBlank()
+                            && cleanedName.matches(
+                            ".*[\\p{L}].*"
+                    )) {
+
+                        items.add(
+                                new ParsedReceiptItem(
+                                        cleanedName,
+                                        findQuantity(line),
+                                        nextLineAmount,
+                                        displayOrder++
+                                )
+                        );
+                    }
+
                     index++;
                 }
             }

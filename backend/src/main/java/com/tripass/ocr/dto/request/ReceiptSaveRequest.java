@@ -48,9 +48,9 @@ public class ReceiptSaveRequest {
             message = "총 결제금액은 0보다 커야 합니다."
     )
     @Digits(
-            integer = 16,
+            integer = 13,
             fraction = 2,
-            message = "총 결제금액은 정수 16자리, 소수 2자리 이하여야 합니다."
+            message = "총 결제금액은 정수 13자리, 소수 2자리 이하여야 합니다."
     )
     private BigDecimal totalAmount;
 
@@ -60,9 +60,9 @@ public class ReceiptSaveRequest {
             message = "세금은 0 이상이어야 합니다."
     )
     @Digits(
-            integer = 16,
+            integer = 13,
             fraction = 2,
-            message = "세금은 정수 16자리, 소수 2자리 이하여야 합니다."
+            message = "세금은 정수 13자리, 소수 2자리 이하여야 합니다."
     )
     private BigDecimal taxAmount;
 

@@ -1,11 +1,13 @@
 package com.tripass.ocr.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
 
 
 //해외 영수증 OCR 분석 결과 응답 DTO
@@ -23,6 +25,10 @@ public class ReceiptAnalyzeResponse {
     private String translatedMerchantName;
 
     //결제일시 - 인식하지 못하면 null
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss"
+    )
     private LocalDateTime paymentDateTime;
 
     //ISO 4217 통화 코드 - USD, JPY, EUR 등
