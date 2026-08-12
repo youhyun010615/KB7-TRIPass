@@ -204,30 +204,16 @@ function goWallet() {
           <div class="py-1 text-center">
             <div class="mb-2 text-2xl">✈</div>
             <h2 class="text-[16px] font-extrabold">아직 등록된 여행이 없어요</h2>
-            <p class="mt-2 text-[10px] leading-4 text-blue-100">여행을 등록하면 목표 금액을 설정하고<br>저축 계획까지 한 번에 도와드려요.</p>
+            <p class="mt-2 text-[10px] leading-4 text-blue-100">여행명·국가·일정을 등록하면<br>AI가 목표 예산과 월 저축액을 제안해요.</p>
             <button class="w-full h-11 mt-4 rounded-xl text-[12px] font-extrabold text-white" style="background:#ff7a36" @click="router.push('/savings')">여행 계획 등록하기</button>
-            <div class="grid grid-cols-2 gap-3 mt-4 text-left">
-              <div><span class="block text-[8px] text-blue-200">보유 총자산</span><b class="text-[14px]">12,500,000원</b></div>
-              <div class="border-l border-white/20 pl-3"><span class="block text-[8px] text-blue-200">연결 계좌</span><b class="text-[14px]">2개</b></div>
-            </div>
           </div>
         </TravelTicket>
       </div>
 
-      <button class="block w-[calc(100%-2rem)] mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm text-left" @click="router.push('/savings/monthly')">
-        <div class="w-full flex justify-between items-center"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></div>
-        <p class="mt-3 text-[9px] text-slate-400">이달의 여유자금</p>
-        <p class="text-2xl font-extrabold" style="color:#0066ff">500,000원</p>
-        <p class="mt-1 text-[8px] text-slate-400">월급 3,500,000원 · 고정지출 1,800,000원 · 카테고리 목표 1,200,000원</p>
-        <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between"><h2 class="text-[13px] font-extrabold">카테고리별 사용 현황</h2><span class="text-[9px] text-slate-400">이번 달</span></div>
-        <div v-for="cat in savingsData.categories" :key="cat.name" class="grid grid-cols-[48px_1fr_34px] items-center gap-2 mt-3">
-          <span class="text-[9px] font-semibold">{{ cat.name }}</span><div class="h-1.5 rounded bg-slate-100"><i class="block h-full rounded" :style="`width:${cat.percent}%;background:${cat.color}`" /></div><b class="text-right text-[9px]" :style="`color:${cat.color}`">{{ cat.percent }}%</b>
-        </div>
-      </button>
-
-      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm cursor-pointer" role="button" tabindex="0" @click="router.push('/financial-schedule')" @keydown.enter="router.push('/financial-schedule')">
-        <button class="w-full flex justify-between" @click.stop="router.push('/financial-schedule')"><h2 class="text-[13px] font-extrabold">다가오는 금융 일정</h2><span>›</span></button>
-        <div v-for="item in savingsData.schedule" :key="item.date" class="grid grid-cols-[38px_1fr_30px] mt-3 text-[9px]"><b style="color:#0066ff">{{ item.date }}</b><span>{{ item.label }}</span><strong :style="item.type==='입금' ? 'color:#16a36a' : 'color:#263f8c'">{{ item.type }}</strong></div>
+      <section class="mx-4 mt-4 rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-4">
+        <p class="text-[10px] font-extrabold" style="color:#2864e8">TRIPASS GUIDE</p>
+        <h2 class="mt-1 text-[15px] font-extrabold">목표 설정부터 월렛 저축까지</h2>
+        <p class="mt-1 text-[10px] leading-4 text-slate-500">여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요.</p>
       </section>
     </template>
 
