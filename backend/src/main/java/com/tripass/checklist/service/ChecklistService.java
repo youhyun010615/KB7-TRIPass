@@ -1,5 +1,6 @@
 package com.tripass.checklist.service;
 
+import com.tripass.checklist.domain.DDayStage;
 import com.tripass.checklist.domain.TripChecklistItem;
 import com.tripass.checklist.dto.*;
 import com.tripass.checklist.exception.ChecklistErrorCode;
@@ -50,53 +51,50 @@ public class ChecklistService {
      */
     @Transactional
     public ChecklistGroupResponseDto getChecklists(Long tripId, String type, String ddayStage, Long currentUserId) {
-        // 유효하지 않은 type 검증 (400 BAD_REQUEST)
-        if (!"PRE_TRAVEL".equals(type) && !"PREV_TRAVEL".equals(type) && !"RETURN".equals(type)) {
-            throw new ChecklistException(ChecklistErrorCode.INVALID_INPUT_VALUE, "유효하지 않은 체크리스트 type입니다. (PRE_TRAVEL / RETURN)");
-        }
-
-        // RETURN 타입인데 ddayStage 파라미터가 들어온 경우 예외 처리 (400 BAD_REQUEST)
-        if ("RETURN".equals(type) && ddayStage != null && !ddayStage.isBlank()) {
-            throw new ChecklistException(ChecklistErrorCode.INVALID_INPUT_VALUE,
-                    "RETURN(귀국) 타입 조회 시에는 ddayStage 파라미터를 사용할 수 없습니다.");
-        }
-
         Trip trip = validateTripOwnerAndGetTrip(tripId, currentUserId);
-        // 1. ddayStage 재할당 전, 람다 및 조건용 변수 정리
         String checklistType = "PREV_TRAVEL".equals(type) ? "PRE_TRAVEL" : type;
 
+        // 1. 타입별 ddayStage 검증 및 정규화
         if ("PRE_TRAVEL".equals(checklistType)) {
-            long daysUntilTrip = ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate());
+            // PRE_TRAVEL 타입은 D30, D7, D1 중 하나인지 필수 검증 (null, D99 입력 시 400 Bad Request)
+            DDayStage stage = DDayStage.from(ddayStage);
+            ddayStage = stage.getValue();
 
+            long daysUntilTrip = ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate());
             if (daysUntilTrip <= 7) {
                 checklistMapper.updateCarriedOverStatus(tripId, daysUntilTrip);
             }
         } else if ("RETURN".equals(checklistType)) {
-            ddayStage = null; // 귀국 타입은 ddayStage 조건 제외
+            // RETURN(귀국) 타입에 ddayStage 값이 들어오면 거부 (400 Bad Request)
+            if (ddayStage != null && !ddayStage.isBlank()) {
+                throw new ChecklistException(ChecklistErrorCode.INVALID_INPUT_VALUE,
+                        "RETURN(귀국) 타입은 ddayStage 파라미터를 가질 수 없습니다.");
+            }
+            ddayStage = null; // 명시적 null 정규화
         }
 
-// DB에서 항목 조회
+        // 2. DB에서 항목 조회
         List<ChecklistResponseDto> allItems = checklistMapper.selectChecklistsByTripIdAndType(tripId, checklistType, ddayStage);
 
-// 람다 내부용 effectively final 변수
         final String targetDdayStage = ddayStage;
         final String finalChecklistType = checklistType;
 
-// 2. 이월 목록 분류 (PRE_TRAVEL이면서, 과거 다른 스텝에서 넘어온 항목만)
+        // 3. 이월 목록 및 현재 단계 목록 그룹화
         List<ChecklistResponseDto> carriedOverChecklists;
         List<ChecklistResponseDto> currentChecklists;
 
         if ("RETURN".equals(finalChecklistType)) {
-            // 💡 RETURN 타입: 이월 항목은 무조건 0건, 전체 항목이 이번 단계(귀국) 항목으로 직행!
+            // 💡 RETURN 타입: 이월 항목은 무조건 0건, 전체 항목이 이번 단계(귀국) 항목으로 진입!
             carriedOverChecklists = List.of();
             currentChecklists = allItems;
         } else {
-            // 💡 PRE_TRAVEL 타입: Objects.equals로 안전하게 null-safe 비교
+            // 💡 PRE_TRAVEL 타입: DB에서 이월(is_carried_over = true)로 판정된 항목만 carriedOverChecklists로 분류
             carriedOverChecklists = allItems.stream()
                     .filter(item -> Boolean.TRUE.equals(item.getIsCarriedOver())
                             && !Objects.equals(targetDdayStage, item.getDdayStage()))
                     .collect(Collectors.toList());
 
+            // 자기 본래 탭(ddayStage가 동일한 항목) 항목만 currentChecklists로 분류
             currentChecklists = allItems.stream()
                     .filter(item -> Objects.equals(targetDdayStage, item.getDdayStage()))
                     .collect(Collectors.toList());
@@ -143,7 +141,7 @@ public class ChecklistService {
      */
     @Transactional
     public ChecklistCreateResponseDto createChecklistItem(Long tripId, ChecklistCreateRequestDto request, Long currentUserId) {
-        // 1. Request Body 유효성 검증 (400 BAD_REQUEST)
+        // 1. Request Body 기본 유효성 검증 (400 BAD_REQUEST)
         if (request == null || request.getItemName() == null || request.getItemName().trim().isEmpty()) {
             throw new ChecklistException(ChecklistErrorCode.INVALID_INPUT_VALUE, "항목명(itemName)은 필수 입력값입니다.");
         }
@@ -156,9 +154,22 @@ public class ChecklistService {
         // 2. 여행 존재 여부 및 소유권 검증 (400, 404, 403)
         validateTripOwner(tripId, currentUserId);
 
-        // 3. 타입 명세 호환성 처리 (PREV_TRAVEL -> PRE_TRAVEL)
+        // 3. 타입 명세 호환성 처리 (PREV_TRAVEL -> PRE_TRAVEL) 및 ddayStage 검증/정규화
         String checklistType = "PREV_TRAVEL".equals(type) ? "PRE_TRAVEL" : type;
-        String ddayStage = "RETURN".equals(checklistType) ? null : request.getDdayStage();
+        String ddayStage;
+
+        if ("PRE_TRAVEL".equals(checklistType)) {
+            // PRE_TRAVEL 타입은 D30, D7, D1 중 하나인지 필수 검증 (null, D99 등 입력 시 400 BAD_REQUEST)
+            DDayStage stage = DDayStage.from(request.getDdayStage());
+            ddayStage = stage.getValue();
+        } else {
+            // RETURN 타입 생성 시 ddayStage 값이 들어온 경우 400 BAD_REQUEST 거부
+            if (request.getDdayStage() != null && !request.getDdayStage().isBlank()) {
+                throw new ChecklistException(ChecklistErrorCode.INVALID_INPUT_VALUE,
+                        "RETURN(귀국) 타입 생성 시 ddayStage를 입력할 수 없습니다.");
+            }
+            ddayStage = null; // 명시적 null 정규화
+        }
 
         // 4. DB Insert 객체 준비
         TripChecklistItem newItem = TripChecklistItem.builder()
@@ -168,12 +179,12 @@ public class ChecklistService {
                 .itemName(request.getItemName().trim())
                 .isCompleted(false)
                 .isExcluded(false)
-                .isCustom(true)
+                .isCustom(true)         // 커스텀 항목 (is_custom = 1)
                 .isCarriedOver(false)
                 .isDeleted(0)
                 .build();
 
-        // 5. DB Insert 실행
+        // 5. DB Insert 실행 (useGeneratedKeys로 생성된 PK 발급)
         checklistMapper.insertChecklistItem(newItem);
 
         // 6. Response 전달
