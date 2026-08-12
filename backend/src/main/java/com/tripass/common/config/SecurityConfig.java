@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -56,10 +57,22 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth ->
                         auth
-                                // 인증 API는 항상 허용
+                                // 로그인 상태 비밀번호 변경은 Access Token 필요
+                                .antMatchers(
+                                        HttpMethod.PUT,
+                                        "/api/v1/auth/password/change"
+                                ).authenticated()
+
+                                // 나머지 회원가입·로그인·인증 API는 비로그인 접근 허용
                                 .antMatchers("/api/v1/auth/**").permitAll()
-                                .antMatchers("/swagger-ui.html", "/v2/api-docs", "/webjars/**",
-                                        "/swagger-resources/**").permitAll()
+
+                                .antMatchers(
+                                        "/swagger-ui.html",
+                                        "/v2/api-docs",
+                                        "/webjars/**",
+                                        "/swagger-resources/**"
+                                ).permitAll()
+
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(

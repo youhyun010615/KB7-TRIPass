@@ -33,4 +33,8 @@ public interface UserMapper {
             @Param("userId") Long userId,
             @Param("encodedPassword") String encodedPassword
     );
+    // 비밀번호 변경을 위해 활성 LOCAL 회원의 인증정보 조회
+    User findActiveLocalUserWithPasswordById(
+            @Param("userId") Long userId
+    );
 }
