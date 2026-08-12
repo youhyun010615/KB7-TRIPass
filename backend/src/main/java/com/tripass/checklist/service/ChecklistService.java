@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,9 +62,9 @@ public class ChecklistService {
         }
 
         Trip trip = validateTripOwnerAndGetTrip(tripId, currentUserId);
+        // 1. ddayStage 재할당 전, 람다 및 조건용 변수 정리
         String checklistType = "PREV_TRAVEL".equals(type) ? "PRE_TRAVEL" : type;
 
-        // 오늘 날짜와 여행 출발일 간의 D-Day 계산 후 이월 UPDATE
         if ("PRE_TRAVEL".equals(checklistType)) {
             long daysUntilTrip = ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate());
 
@@ -71,18 +72,35 @@ public class ChecklistService {
                 checklistMapper.updateCarriedOverStatus(tripId, daysUntilTrip);
             }
         } else if ("RETURN".equals(checklistType)) {
-            ddayStage = null;
+            ddayStage = null; // 귀국 타입은 ddayStage 조건 제외
         }
 
+// DB에서 항목 조회
         List<ChecklistResponseDto> allItems = checklistMapper.selectChecklistsByTripIdAndType(tripId, checklistType, ddayStage);
 
-        List<ChecklistResponseDto> carriedOverChecklists = allItems.stream()
-                .filter(item -> Boolean.TRUE.equals(item.getIsCarriedOver()))
-                .collect(Collectors.toList());
+// 람다 내부용 effectively final 변수
+        final String targetDdayStage = ddayStage;
+        final String finalChecklistType = checklistType;
 
-        List<ChecklistResponseDto> currentChecklists = allItems.stream()
-                .filter(item -> !Boolean.TRUE.equals(item.getIsCarriedOver()))
-                .collect(Collectors.toList());
+// 2. 이월 목록 분류 (PRE_TRAVEL이면서, 과거 다른 스텝에서 넘어온 항목만)
+        List<ChecklistResponseDto> carriedOverChecklists;
+        List<ChecklistResponseDto> currentChecklists;
+
+        if ("RETURN".equals(finalChecklistType)) {
+            // 💡 RETURN 타입: 이월 항목은 무조건 0건, 전체 항목이 이번 단계(귀국) 항목으로 직행!
+            carriedOverChecklists = List.of();
+            currentChecklists = allItems;
+        } else {
+            // 💡 PRE_TRAVEL 타입: Objects.equals로 안전하게 null-safe 비교
+            carriedOverChecklists = allItems.stream()
+                    .filter(item -> Boolean.TRUE.equals(item.getIsCarriedOver())
+                            && !Objects.equals(targetDdayStage, item.getDdayStage()))
+                    .collect(Collectors.toList());
+
+            currentChecklists = allItems.stream()
+                    .filter(item -> Objects.equals(targetDdayStage, item.getDdayStage()))
+                    .collect(Collectors.toList());
+        }
 
         return ChecklistGroupResponseDto.builder()
                 .carriedOverChecklists(carriedOverChecklists)
