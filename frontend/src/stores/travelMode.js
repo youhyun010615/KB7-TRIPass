@@ -9,8 +9,9 @@ export const useTravelModeStore = defineStore('travelMode', () => {
   const calculatorCurrency = ref(localStorage.getItem('travelModeCurrency') ?? 'EUR')
   const calculatorAmount = ref(100)
 
-  // 실제 서비스에서는 여행 기간을 기준으로 계산하고, 데모에서는 항상 전환을 허용합니다.
-  const demoMode = ref(true)
+  // 여행 모드는 등록한 여행 기간에만 진입한다. 시연에서는 화면에서 날짜를 조정해
+  // 기간 진입 시나리오를 확인할 수 있도록 조건 자체는 동일하게 유지한다.
+  const demoMode = ref(false)
   const travelStartDate = ref('2026-08-15')
   const travelEndDate = ref('2026-08-29')
 
