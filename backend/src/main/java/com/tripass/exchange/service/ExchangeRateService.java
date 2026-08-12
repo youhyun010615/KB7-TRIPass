@@ -44,7 +44,7 @@ public class ExchangeRateService {
     }
 
     private static final Map<String, CurrencyInfo> CURRENCY_INFO_MAP = Map.ofEntries(
-            entry("중국", new CurrencyInfo("CNY", 1)),
+            entry("중국", new CurrencyInfo("CNH", 1)),
             entry("일본", new CurrencyInfo("JPY", 100)),
             entry("미국", new CurrencyInfo("USD", 1)),
             entry("유럽연합", new CurrencyInfo("EUR", 1)),

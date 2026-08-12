@@ -15,6 +15,7 @@ import com.tripass.auth.dto.internal.TokenRefreshResult;
 import com.tripass.auth.dto.response.TokenRefreshResponse;
 import com.tripass.auth.dto.request.FindIdRequest;
 import com.tripass.auth.dto.response.FindIdResponse;
+import com.tripass.auth.dto.request.ResetPasswordRequest;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
 import com.tripass.auth.service.PhoneVerificationService;
 import com.tripass.common.exception.CustomException;
@@ -263,6 +264,28 @@ public class AuthController {
         return ApiResponse.success(
                 "아이디 찾기가 완료되었습니다.",
                 response
+        );
+    }
+
+    // 휴대전화 인증 기반 비밀번호 재설정
+    @ApiOperation(
+            value = "비밀번호 재설정",
+            notes = "RESET_PASSWORD 목적으로 휴대전화 인증을 완료한 후 "
+                    + "아이디와 인증 전화번호가 일치하는 LOCAL 계정의 비밀번호를 재설정합니다."
+    )
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(
+            @ApiParam(
+                    value = "비밀번호 재설정 요청 정보",
+                    required = true
+            )
+            @RequestBody ResetPasswordRequest request
+    ) {
+        authService.resetPassword(request);
+
+        return ApiResponse.success(
+                "비밀번호가 재설정되었습니다.",
+                null
         );
     }
 }

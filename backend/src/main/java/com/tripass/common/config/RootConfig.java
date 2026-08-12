@@ -32,6 +32,7 @@ import javax.sql.DataSource;
         "com.tripass.financial.service",
         "com.tripass.asset.service",
         "com.tripass.saving.service",
+        "com.tripass.checklist.service",
         "com.tripass.travel.service",
         "com.tripass.exchange.service",
         "com.tripass.exchange.client",
@@ -42,6 +43,7 @@ import javax.sql.DataSource;
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
         "com.tripass.ocr.service",
+        "com.tripass.ocr.client",
         "com.tripass.report.service",
         "com.tripass.auth.security",
 })
@@ -50,6 +52,7 @@ import javax.sql.DataSource;
         "com.tripass.mypage.mapper",
         "com.tripass.profile.mapper",
         "com.tripass.financial.mapper",
+        "com.tripass.checklist.mapper",
         "com.tripass.asset.mapper",
         "com.tripass.saving.mapper",
         "com.tripass.travel.mapper",

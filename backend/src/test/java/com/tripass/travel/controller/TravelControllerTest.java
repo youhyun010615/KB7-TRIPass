@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,11 +48,12 @@ class TravelControllerTest {
         responseDto.setTotalRemainingFund(800000L);
         responseDto.setDailyAvailableAmount(80000L);
         responseDto.setCountries(Collections.singletonList(country));
+        Long userId = 1L;
 
-        when(travelService.getTravelStatus(tripId)).thenReturn(responseDto);
+        when(travelService.getTravelStatus(tripId, userId)).thenReturn(responseDto);
 
         // when
-        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response = travelController.getTravelStatus(tripId);
+        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response = travelController.getTravelStatus(tripId, userId);
 
         // then
         assertNotNull(response.getBody());

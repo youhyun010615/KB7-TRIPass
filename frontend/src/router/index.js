@@ -249,7 +249,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-       path: '/exchange/alerts/:alertId',
+      path: '/exchange/alerts/:alertId',
       name: 'ExchangeAlertEdit',
       component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
       meta: { requiresAuth: true },
@@ -417,19 +417,21 @@ const router = createRouter({
     {
       path: '/mypage/checklists',
       name: 'MypageChecklists',
-      component: () => import('@/views/mypage/ChecklistListView.vue'),
+      component: () => import('@/views/mypage/checklist/ChecklistListView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/mypage/checklists/preparation',
       name: 'MypagePreparationChecklist',
-      component: () => import('@/views/mypage/PreparationChecklistView.vue'),
+      component: () =>
+        import('@/views/mypage/checklist/PreparationChecklistView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/mypage/checklists/return',
       name: 'MypageReturnChecklist',
-      component: () => import('@/views/mypage/ReturnChecklistView.vue'),
+      component: () =>
+        import('@/views/mypage/checklist/ReturnChecklistView.vue'),
       meta: { requiresAuth: true },
     },
     {
