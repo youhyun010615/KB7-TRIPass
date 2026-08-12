@@ -50,32 +50,4 @@ public class TravelController {
         BudgetCheckResponseDto data = travelService.getTripBudget(id, scope, countryId, userId);
         return ResponseEntity.ok(ApiResponse.success("여행 자금 체크 조회 성공", data));
     }
-
-    /**
-     * 3. 여행 체크리스트 전체 현황 조회
-     */
-    @GetMapping("/{id}/checklists/summary")
-    public ResponseEntity<ApiResponse<ChecklistSummaryResponseDto>> getChecklistSummary(
-            @PathVariable Long id, Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-
-        ChecklistSummaryResponseDto data = travelService.getChecklistSummary(id, userId);
-        return ResponseEntity.ok(ApiResponse.success("체크리스트 요약 조회 성공", data));
-    }
-
-    /**
-     * 단계별 체크리스트 상세 목록 조회
-     */
-    @GetMapping("/{id}/checklists")
-    public ResponseEntity<ApiResponse<ChecklistGroupResponseDto>> getChecklists(
-            @PathVariable Long id,
-            @RequestParam String type,
-            @RequestParam(required = false) String ddayStage,
-            Authentication authentication) {
-        Long userId = getAuthenticatedUserId(authentication);
-
-        ChecklistGroupResponseDto data = travelService.getChecklists(id, type, ddayStage, userId);
-        return ResponseEntity.ok(ApiResponse.success("체크리스트 상세 목록 조회 성공", data));
-    }
-
 }

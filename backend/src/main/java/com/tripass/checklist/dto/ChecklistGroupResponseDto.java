@@ -1,4 +1,4 @@
-package com.tripass.travel.dto;
+package com.tripass.checklist.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
