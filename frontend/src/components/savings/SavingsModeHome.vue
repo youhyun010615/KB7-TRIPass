@@ -128,6 +128,13 @@ const exchangeChangePercent = computed(() => {
   const previousRate = Number(rate.rate) - Number(rate.change)
   return previousRate ? (Number(rate.change) / previousRate) * 100 : 0
 })
+const exchangeCardStyle = computed(() => ({
+  '--exchange-primary': selectedCountry.value.headerBg || '#173f8d',
+  '--exchange-accent': selectedCountry.value.code === 'DE' ? '#ffce00' : '#ffffff',
+  '--exchange-glow': selectedCountry.value.code === 'CH'
+    ? 'rgba(255,255,255,.16)'
+    : 'rgba(94,160,255,.22)',
+}))
 
 const ticketSavingCopy = computed(() => {
   if (!homeGoalAmount.value) {
@@ -420,25 +427,26 @@ function switchMode(mode) {
       </section>
 
       <!-- 오늘의 실시간 환율 -->
-      <div class="exchange-live-card mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
-        <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-          <span class="text-white/70 text-[12px] font-semibold">오늘의 환율</span>
-          <span class="text-white/55 text-[11px]">{{ exchangeStore.lastUpdateDate || '최신 고시 기준' }}</span>
+      <div class="exchange-live-card mx-4 mt-3 mb-4" :style="exchangeCardStyle">
+        <div class="exchange-card-head">
+          <div><i /><span>LIVE EXCHANGE</span></div>
+          <time>{{ exchangeStore.lastUpdateDate || '최신 고시 기준' }}</time>
         </div>
-        <div class="px-4 py-3 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-[17px]">{{ selectedCountry.flag }}</span>
-            <span class="text-white font-bold text-[15px]">{{ exchangeUnitLabel }}/KRW</span>
+        <div class="exchange-card-body">
+          <div class="exchange-country-mark">
+            <span>{{ selectedCountry.flag }}</span>
+            <div><small>{{ selectedCountry.name }} 여행 환율</small><b>{{ exchangeUnitLabel }} <i>→</i> KRW</b></div>
           </div>
-          <div v-if="selectedExchangeRate" class="flex items-center gap-2">
-            <span class="text-white text-[22px] font-extrabold">{{ formatRate(selectedExchangeRate.rate) }}원</span>
-            <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded" :class="exchangeChangePercent > 0 ? 'text-red-300' : exchangeChangePercent < 0 ? 'text-blue-300' : 'text-white/60'">
-              {{ exchangeChangePercent > 0 ? '+' : '' }}{{ exchangeChangePercent.toFixed(2) }}%
+          <div v-if="selectedExchangeRate" class="exchange-rate-value">
+            <b>{{ formatRate(selectedExchangeRate.rate) }}<small>원</small></b>
+            <span :class="exchangeChangePercent > 0 ? 'up' : exchangeChangePercent < 0 ? 'down' : ''">
+              전일 대비 {{ exchangeChangePercent > 0 ? '+' : '' }}{{ exchangeChangePercent.toFixed(2) }}%
               {{ exchangeChangePercent > 0 ? '↑' : exchangeChangePercent < 0 ? '↓' : '-' }}
             </span>
           </div>
-          <span v-else class="text-white/60 text-[10px]">환율 정보를 불러오는 중</span>
+          <span v-else class="exchange-rate-loading">환율 정보를 불러오는 중</span>
         </div>
+        <div class="exchange-route" aria-hidden="true"><i /><span>✈</span><i /></div>
       </div>
 
     </template>
@@ -447,6 +455,7 @@ function switchMode(mode) {
 </template>
 
 <style scoped>
+.savings-mode-home { min-height: 100vh; background: #f3f6ff; }
 .home-state { display: flex; min-height: 72vh; flex-direction: column; align-items: center; justify-content: center; padding: 28px; color: #173f8d; text-align: center; }
 .home-state>b { margin-top: 14px; font-size: 15px; }
 .home-state>small { margin-top: 6px; color: #8190a8; font-size: 10px; }
@@ -472,7 +481,7 @@ function switchMode(mode) {
 .mode-switch-control button.selected { color: #fff; }
 .mode-switch-thumb { position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 25px; border-radius: 999px; background: #173f8d; transition: transform .3s cubic-bezier(.22,1,.36,1); }
 .mode-switch-control.savings-selected .mode-switch-thumb { transform: translateX(100%); }
-.savings-home-header { padding: 42px 20px 14px; background: #f7f4ee; }
+.savings-home-header { padding: 42px 20px 14px; background: #f3f6ff; }
 .savings-header-row { display: flex; align-items: center; justify-content: space-between; }
 .savings-greeting-row { margin-top: 10px; }
 .savings-greeting-row h1 { color: #111827; font-size: 20px; font-weight: 900; letter-spacing: -.04em; }
@@ -501,7 +510,7 @@ function switchMode(mode) {
 .month-saving-progress i::after { position: absolute; inset: 0; content: ''; background: linear-gradient(90deg,transparent,#ffffff99,transparent); transform: translateX(-100%); animation: progress-shine 1.8s .5s ease-in-out infinite; }
 .travel-edit-link { transition: transform .2s ease, box-shadow .2s ease; }
 .travel-edit-link:active { transform: scale(.96); }
-.savings-home-header { position: relative; z-index: 60; padding: 42px 20px 18px; background: radial-gradient(circle at 100% 0,#fff4e9 0,transparent 42%),#f7f4ee; }
+.savings-home-header { position: relative; z-index: 60; padding: 42px 20px 18px; background: radial-gradient(circle at 100% 0,#e7efff 0,transparent 42%),#f3f6ff; }
 .savings-greeting-row { margin-top: 13px; }
 .savings-greeting-row h1 { font-size: 21px; line-height: 1.25; }
 .active-trip-heading { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 14px; border: 1px solid #dae6fb; border-radius: 17px; background: linear-gradient(135deg,#fff 0%,#eef5ff 100%); box-shadow: 0 8px 22px rgba(24,61,130,.09); }
@@ -521,7 +530,7 @@ function switchMode(mode) {
 .country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; opacity: .56; transform: translateY(5px) scale(.965); transition: opacity .34s ease, transform .42s cubic-bezier(.22,1,.36,1); scroll-snap-align: center; scroll-snap-stop: always; }
 .country-slide.active { opacity: 1; transform: translateY(0) scale(1); }
 .country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
-.country-slide.active .country-ticket { animation: ticket-swipe-reveal .46s cubic-bezier(.22,1,.36,1) both; }
+.country-slide.active .country-ticket { animation: ticket-card-enter .52s cubic-bezier(.22,1,.36,1) both; }
 .country-carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 5px 21px 0; color: #71809a; font-size: 9px; font-weight: 700; }
 .country-carousel-dots { display: flex; flex: none; align-items: center; gap: 5px; }
 .country-carousel-dots i { display: block; width: 6px; height: 6px; border-radius: 99px; background: #cbd5e4; transition: width .22s ease, background .22s ease; }
@@ -538,7 +547,7 @@ function switchMode(mode) {
 .month-saving-heading h2 { margin-top: 5px; color: #173f8d; font-size: 21px; font-weight: 950; letter-spacing: -.045em; }
 .month-saving-heading p { padding: 7px 11px; border: 0; background: #173f8d; color: #fff; font-size: 10px; box-shadow: 0 5px 12px rgba(23,63,141,.18); }
 .month-saving-values { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-top: 18px; }
-.month-saving-values>div { min-width: 0; padding: 11px 7px 10px; border: 1px solid rgba(198,213,238,.8); border-radius: 13px; background: rgba(255,255,255,.82); box-shadow: 0 4px 12px rgba(23,63,141,.05); }
+.month-saving-values>div { display: flex; min-width: 0; align-items: center; flex-direction: column; padding: 11px 7px 10px; border: 1px solid rgba(198,213,238,.8); border-radius: 13px; background: rgba(255,255,255,.82); text-align: center; box-shadow: 0 4px 12px rgba(23,63,141,.05); }
 .month-saving-values>div+div { border-left: 1px solid rgba(198,213,238,.8); }
 .month-saving-values>div>span { display: grid; width: 22px; height: 22px; place-items: center; margin-bottom: 8px; border-radius: 8px; background: #e7effe; color: #2469e8; font-size: 11px; font-weight: 900; }
 .month-saving-values>div:nth-child(2)>span { background: #e3f7f1; color: #0a9a82; }
@@ -567,12 +576,35 @@ function switchMode(mode) {
 .trip-summary-row { margin-top: 10px; padding: 13px; }
 .trip-summary-row span { font-size: 11px; font-weight: 700; }
 .trip-summary-row b { font-size: 12px; }
-.exchange-live-card { margin-top: 16px; border-radius: 20px; box-shadow: 0 12px 26px rgba(17,35,70,.16); }
+.exchange-live-card { position: relative; margin-top: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 22px; background: linear-gradient(135deg,var(--exchange-primary),color-mix(in srgb,var(--exchange-primary) 76%,#2f72df)); color: #fff; box-shadow: 0 14px 30px color-mix(in srgb,var(--exchange-primary) 25%,transparent); }
+.exchange-live-card::before { position: absolute; top: -58px; right: -38px; width: 155px; height: 155px; border-radius: 50%; background: var(--exchange-glow); content: ''; }
+.exchange-live-card::after { position: absolute; right: 38px; bottom: -58px; width: 120px; height: 120px; border: 20px solid rgba(255,255,255,.045); border-radius: 50%; content: ''; }
+.exchange-card-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 14px 17px 11px; border-bottom: 1px dashed rgba(255,255,255,.24); }
+.exchange-card-head>div { display: flex; align-items: center; gap: 6px; }
+.exchange-card-head i { width: 6px; height: 6px; border-radius: 50%; background: var(--exchange-accent); box-shadow: 0 0 0 4px rgba(255,255,255,.1); }
+.exchange-card-head span { color: rgba(255,255,255,.82); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
+.exchange-card-head time { color: rgba(255,255,255,.65); font-size: 9px; }
+.exchange-card-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 17px; }
+.exchange-country-mark { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.exchange-country-mark>span { display: grid; flex: 0 0 38px; height: 38px; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: rgba(255,255,255,.12); font-size: 21px; backdrop-filter: blur(8px); }
+.exchange-country-mark small { display: block; color: rgba(255,255,255,.65); font-size: 8px; font-weight: 700; }
+.exchange-country-mark b { display: block; margin-top: 4px; color: #fff; font-size: 13px; font-weight: 900; white-space: nowrap; }
+.exchange-country-mark b i { margin: 0 3px; color: var(--exchange-accent); font-style: normal; }
+.exchange-rate-value { flex: none; text-align: right; }
+.exchange-rate-value>b { display: block; color: #fff; font-size: 23px; font-weight: 950; letter-spacing: -.04em; }
+.exchange-rate-value>b small { margin-left: 2px; font-size: 12px; }
+.exchange-rate-value>span { display: inline-block; margin-top: 5px; padding: 3px 6px; border-radius: 6px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.72); font-size: 8px; font-weight: 800; }
+.exchange-rate-value>span.up { color: #ffd7d0; }
+.exchange-rate-value>span.down { color: #bfe0ff; }
+.exchange-rate-loading { color: rgba(255,255,255,.65); font-size: 9px; }
+.exchange-route { position: relative; z-index: 1; display: flex; align-items: center; padding: 0 17px 14px; color: var(--exchange-accent); opacity: .7; }
+.exchange-route i { flex: 1; border-top: 1px dashed rgba(255,255,255,.24); }
+.exchange-route span { margin: 0 8px; font-size: 12px; }
 @keyframes home-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes home-card-reveal { from { opacity: 0; transform: translateY(22px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
-@keyframes ticket-swipe-reveal { from { opacity: .55; transform: translateX(18px) scale(.975); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes ticket-card-enter { from { opacity: 0; transform: translateY(22px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes progress-shine { 60%,100% { transform: translateX(100%); } }
 @keyframes home-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
