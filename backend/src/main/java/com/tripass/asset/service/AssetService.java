@@ -192,7 +192,7 @@ public class AssetService {
             if (conn == null) {
                 Map<String, Object> account = new HashMap<>();
                 account.put("countryCode", "KR");
-                account.put("businessType", "CF");
+                account.put("businessType", "CD");
                 account.put("clientType", "P");
                 account.put("organization", req.getOrganizationCode());
                 account.put("loginType", req.getLoginType());
@@ -221,7 +221,7 @@ public class AssetService {
 
                 Map<String, Object> addAccount = new HashMap<>();
                 addAccount.put("countryCode", "KR");
-                addAccount.put("businessType", "CF");
+                addAccount.put("businessType", "CD");
                 addAccount.put("clientType", "P");
                 addAccount.put("organization", req.getOrganizationCode());
                 addAccount.put("loginType", req.getLoginType());
@@ -254,8 +254,20 @@ public class AssetService {
                 throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_FETCH_FAIL", "카드 목록 조회 실패: " + msg);
             }
 
-            Map<String, Object> listData = (Map<String, Object>) listResult.get("data");
-            Object rawList = listData.get("resCardList");
+            Object listData = listResult.get("data");
+            Object rawList;
+            if (listData instanceof List) {
+                // 개인 보유카드 API는 data 자체를 배열로 반환한다.
+                rawList = listData;
+            } else if (listData instanceof Map) {
+                // 일부 기관/응답 버전은 resCardList 안에 카드 배열을 반환한다.
+                rawList = ((Map<String, Object>) listData).get("resCardList");
+                if (rawList == null && ((Map<?, ?>) listData).containsKey("resCardNo")) {
+                    rawList = listData;
+                }
+            } else {
+                rawList = null;
+            }
             List<Map<String, Object>> cardList;
             if (rawList instanceof List) {
                 cardList = (List<Map<String, Object>>) rawList;
@@ -277,7 +289,12 @@ public class AssetService {
                 dto.setCardName((String) card.getOrDefault("resCardName", req.getOrganizationName() + " 카드"));
                 dto.setMaskedCardNumber((String) card.get("resCardNo"));
                 dto.setOrganizationCode(req.getOrganizationCode());
-                dto.setCardType("02".equals(card.get("resCardType")) ? "CHECK" : "CREDIT");
+                String resCardType = String.valueOf(card.getOrDefault("resCardType", ""));
+                dto.setCardType(
+                        "02".equals(resCardType) || resCardType.contains("체크")
+                                ? "CHECK"
+                                : "CREDIT"
+                );
                 assetMapper.insertCard(dto);
                 saved.add(dto);
             }
