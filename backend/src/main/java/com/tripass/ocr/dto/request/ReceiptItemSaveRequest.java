@@ -15,6 +15,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class ReceiptItemSaveRequest {
 
+
+    // 기존 품목 PK
+    // 신규 품목이면 null
+    private Long id;
+
     // 원문 품목명
     @NotBlank(message = "원문 품목명을 입력해 주세요.")
     @Size(max = 255, message = "품목명은 255자 이하로 입력해 주세요.")

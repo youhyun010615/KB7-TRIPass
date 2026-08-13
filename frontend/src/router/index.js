@@ -362,10 +362,9 @@ const router = createRouter({
       path: '/trips/:tripId/receipts/new',
       name: 'ReceiptManualNew',
       component: () =>
-          import('@/views/receipt/ReceiptResultView.vue'),
+          import('@/views/receipt/ReceiptManualView.vue'),
       meta: {
         requiresAuth: true,
-        receiptMode: 'manual',
       },
     },
     {

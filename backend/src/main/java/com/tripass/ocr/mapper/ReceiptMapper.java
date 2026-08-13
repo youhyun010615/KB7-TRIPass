@@ -101,4 +101,54 @@ public interface ReceiptMapper {
             @Param("userId") Long userId,
             @Param("tripId") Long tripId
     );
+
+    // 특정 품목이 해당 회원·여행·영수증의 활성 품목인지 확인
+    boolean existsActiveItemByIdAndReceiptIdAndUserIdAndTripId(
+            @Param("itemId") Long itemId,
+            @Param("receiptId") Long receiptId,
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
+    );
+
+    // 기존 영수증 품목 수정
+    int updateReceiptItem(
+            @Param("item") ReceiptItem item,
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
+    );
+
+    // 수정 요청에서 제거된 품목만 논리 삭제
+    int softDeleteMissingItems(
+            @Param("receiptId") Long receiptId,
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId,
+            @Param("keptItemIds") List<Long> keptItemIds
+    );
+
+    // 기존 공동결제 참여자 수정
+    int updateReceiptParticipant(
+            @Param("participant")
+            ReceiptParticipant participant,
+
+            @Param("userId")
+            Long userId,
+
+            @Param("tripId")
+            Long tripId
+    );
+
+    // 수정 요청에서 제거된 공동결제 참여자만 논리 삭제
+    int softDeleteMissingParticipants(
+            @Param("receiptId")
+            Long receiptId,
+
+            @Param("userId")
+            Long userId,
+
+            @Param("tripId")
+            Long tripId,
+
+            @Param("keptParticipantIds")
+            List<Long> keptParticipantIds
+    );
 }

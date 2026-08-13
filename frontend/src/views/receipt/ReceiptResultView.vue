@@ -6,8 +6,9 @@ import {
   reactive,
   ref,
 } from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {useReceiptStore} from '@/stores/receipt'
+import { useRoute, useRouter } from 'vue-router'
+import { useReceiptStore } from '@/stores/receipt'
+import { fetchTripGoal } from '@/api/travel'
 import {
   createReceipt,
   deleteReceipt,
@@ -20,36 +21,50 @@ const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
 
-// URL의 receiptId가 있으면 저장된 영수증 상세 화면이다.
-const receiptId = computed(() => {
-  const value = Number(
-      route.params.receiptId,
-  )
+const tripId = computed(() => {
+  const value = Number(route.params.tripId)
 
-  return Number.isInteger(value) &&
-  value > 0
+  return Number.isInteger(value) && value > 0
       ? value
       : null
 })
 
-const isExistingReceipt = computed(() =>
-    receiptId.value !== null,
-)
+const receiptId = computed(() => {
+  const value = Number(route.params.receiptId)
 
-const loading = ref(false)
-const loadErrorMessage = ref('')
-
-const tripId = computed(() => {
-  const value = route.query.tripId
-  return value ? Number(value) : null
+  return Number.isInteger(value) && value > 0
+      ? value
+      : null
 })
 
-const trip = computed(() =>
-    store.trip(tripId.value),
+const isExistingReceipt = computed(
+    () => receiptId.value !== null,
 )
 
+const isOcrResult = computed(
+    () => !isExistingReceipt.value,
+)
+
+const trip = ref(null)
+const loading = ref(false)
+const saving = ref(false)
+const deleting = ref(false)
+const loadErrorMessage = ref('')
+
+/*
+ * 카테고리 API와 초기 데이터가 준비되기 전까지
+ * 프론트에서 식비만 임시로 사용합니다.
+ */
+const categories = [
+  {
+    id: 1,
+    name: '식비',
+  },
+]
+
 const draft = store.draft
-const sourceFile = draft?.sourceFile ?? null
+const sourceFile =
+    draft?.sourceFile ?? null
 
 const originalImageUrl = ref(
     sourceFile
@@ -74,20 +89,17 @@ function separatePaymentDateTime(value) {
   }
 }
 
-const paymentDateTime =
+const initialDateTime =
     separatePaymentDateTime(
         draft?.paymentDateTime,
     )
 
 const form = reactive({
-  tripId:
-      draft?.tripId ?? null,
-
   countryId:
       draft?.countryId ?? null,
 
-  currencyId:
-      draft?.currencyId ?? null,
+  categoryId:
+      draft?.categoryId ?? 1,
 
   merchantOriginalName:
       draft?.originalMerchantName ?? '',
@@ -95,121 +107,368 @@ const form = reactive({
   merchantTranslatedName:
       draft?.translatedMerchantName ?? '',
 
-  paymentDate: paymentDateTime.date,
-  paymentTime: paymentDateTime.time,
+  paymentDate:
+  initialDateTime.date,
+
+  paymentTime:
+  initialDateTime.time,
 
   currencyCode:
       draft?.currencyCode ?? '',
 
   totalAmount:
-      draft?.totalAmount ?? 0,
+      draft?.totalAmount ?? '',
 
-  taxAmount:
-      draft?.taxAmount ?? null,
-
-  splitCount:
-      draft?.splitCount ?? 1,
-
-  rawText:
+  ocrRawText:
       draft?.rawText ?? '',
 
-  items: (draft?.items ?? []).map(
-      (item, index) => ({
-        originalName:
-            item.originalName ?? '',
+  items:
+      (draft?.items ?? []).map(
+          (item, index) => ({
+            originalName:
+                item.originalName ?? '',
 
-        translatedName:
-            item.translatedName ?? '',
+            translatedName:
+                item.translatedName ?? '',
 
-        quantity:
-            item.quantity ?? 1,
+            quantity:
+                item.quantity ?? 1,
 
-        amount:
-            item.amount ?? 0,
+            amount:
+                item.amount ?? '',
 
-        displayOrder:
-            item.displayOrder ?? index + 1,
-      }),
-  ),
+            displayOrder:
+                item.displayOrder ??
+                index + 1,
+          }),
+      ),
+
+  sharedPayment:
+      Number(draft?.splitCount ?? 1) > 1,
+
+  splitCount:
+      Math.max(
+          Number(draft?.splitCount ?? 1),
+          1,
+      ),
+
+  participantNames: [],
+
+  memo:
+      draft?.memo ?? '',
 })
 
-// OCR 분석 응답 또는 상세 조회 응답을 화면 입력값에 적용한다.
+/*
+ * OCR에서 품목을 인식하지 못한 경우에도
+ * 사용자가 품목을 직접 입력할 수 있게 합니다.
+ */
+if (!form.items.length) {
+  form.items.push(
+      createEmptyItem(1),
+  )
+}
+
+const editing = ref(
+    route.meta.receiptMode === 'edit',
+)
+
+const editSnapshot = ref(null)
+const translated = ref(true)
+const showOriginal = ref(false)
+
+const selectedCountry = computed(() => {
+  return (
+      trip.value?.countries?.find(
+          country =>
+              Number(country.countryId) ===
+              Number(form.countryId),
+      ) || null
+  )
+})
+
+const selectedCountryName = computed(() => {
+  return (
+      selectedCountry.value?.countryName ||
+      '국가 미지정'
+  )
+})
+
+const selectedCategoryName = computed(() => {
+  return (
+      categories.find(
+          category =>
+              category.id ===
+              Number(form.categoryId),
+      )?.name ||
+      '카테고리 미지정'
+  )
+})
+
+const displayedMerchantName = computed(() => {
+  if (translated.value) {
+    return (
+        form.merchantTranslatedName ||
+        form.merchantOriginalName ||
+        '상호명 미인식'
+    )
+  }
+
+  return (
+      form.merchantOriginalName ||
+      '상호명 미인식'
+  )
+})
+
+const splitAmount = computed(() => {
+  const amount =
+      Number(form.totalAmount)
+
+  const count =
+      Number(form.splitCount)
+
+  if (
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !Number.isInteger(count) ||
+      count <= 0
+  ) {
+    return 0
+  }
+
+  return amount / count
+})
+
+function createEmptyItem(displayOrder) {
+  return {
+    originalName: '',
+    translatedName: '',
+    quantity: 1,
+    amount: '',
+    displayOrder,
+  }
+}
+
+function normalizeCurrencyCode() {
+  form.currencyCode =
+      String(form.currencyCode || '')
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z]/g, '')
+          .slice(0, 3)
+}
+
+function getDisplayedItemName(item) {
+  if (translated.value) {
+    return (
+        item.translatedName ||
+        item.originalName ||
+        '품목명 미인식'
+    )
+  }
+
+  return (
+      item.originalName ||
+      '품목명 미인식'
+  )
+}
+
+function addItem() {
+  form.items.push(
+      createEmptyItem(
+          form.items.length + 1,
+      ),
+  )
+}
+
+function removeItem(index) {
+  if (form.items.length <= 1) {
+    window.alert(
+        '품목은 최소 한 개 이상 필요합니다.',
+    )
+    return
+  }
+
+  form.items.splice(index, 1)
+
+  form.items.forEach(
+      (item, itemIndex) => {
+        item.displayOrder =
+            itemIndex + 1
+      },
+  )
+}
+
+function updateParticipantCount() {
+  const participantCount =
+      form.sharedPayment
+          ? Math.max(
+              Number(form.splitCount) - 1,
+              0,
+          )
+          : 0
+
+  while (
+      form.participantNames.length <
+      participantCount
+      ) {
+    form.participantNames.push('')
+  }
+
+  if (
+      form.participantNames.length >
+      participantCount
+  ) {
+    form.participantNames.splice(
+        participantCount,
+    )
+  }
+}
+
+function toggleSharedPayment() {
+  form.splitCount =
+      form.sharedPayment ? 2 : 1
+
+  updateParticipantCount()
+}
+
+function increaseSplitCount() {
+  /*
+   * 백엔드는 로그인 사용자를 제외한
+   * 참여자를 최대 20명까지 받으므로
+   * 전체 인원은 최대 21명입니다.
+   */
+  if (form.splitCount >= 21) {
+    return
+  }
+
+  form.splitCount += 1
+  updateParticipantCount()
+}
+
+function decreaseSplitCount() {
+  if (form.splitCount <= 2) {
+    return
+  }
+
+  form.splitCount -= 1
+  updateParticipantCount()
+}
+
 function applyReceiptData(data) {
   const dateTime =
       separatePaymentDateTime(
           data.paymentDateTime,
       )
 
-  form.tripId =
-      data.tripId ?? null
-
   form.countryId =
       data.countryId ?? null
 
-  form.currencyId =
-      data.currencyId ?? null
+  form.categoryId =
+      data.categoryId ?? 1
 
   form.merchantOriginalName =
-      data.merchantOriginalName ??
-      data.originalMerchantName ??
-      ''
+      data.merchantOriginalName ?? ''
 
   form.merchantTranslatedName =
-      data.merchantTranslatedName ??
-      data.translatedMerchantName ??
-      ''
+      data.merchantTranslatedName ?? ''
 
-  form.paymentDate = dateTime.date
-  form.paymentTime = dateTime.time
+  form.paymentDate =
+      dateTime.date
+
+  form.paymentTime =
+      dateTime.time
+
   form.currencyCode =
       data.currencyCode ?? ''
+
   form.totalAmount =
-      data.totalAmount ?? 0
-  form.taxAmount =
-      data.taxAmount ?? null
+      data.totalAmount ?? ''
+
+  form.ocrRawText =
+      data.ocrRawText ?? ''
+
+  form.memo =
+      data.memo ?? ''
+
+  form.items =
+      (data.items ?? []).map(
+          (item, index) => ({
+            id:
+                item.id ?? null,
+
+            originalName:
+                item.originalName ?? '',
+
+            translatedName:
+                item.translatedName ?? '',
+
+            quantity:
+                item.quantity ?? 1,
+
+            amount:
+                item.amount ?? '',
+
+            displayOrder:
+                item.displayOrder ??
+                index + 1,
+          }),
+      )
+
+  if (!form.items.length) {
+    form.items.push(
+        createEmptyItem(1),
+    )
+  }
+
+  form.participantNames =
+      (data.participants ?? []).map(
+          participant =>
+              participant.participantName ?? '',
+      )
+
+  form.sharedPayment =
+      form.participantNames.length > 0
+
   form.splitCount =
-      data.splitCount ?? 1
-
-  form.rawText =
-      data.ocrRawText ??
-      data.rawText ??
-      ''
-
-  form.items = (data.items ?? []).map(
-      (item, index) => ({
-        id: item.id ?? null,
-        originalName:
-            item.originalName ?? '',
-        translatedName:
-            item.translatedName ?? '',
-        quantity:
-            item.quantity ?? 1,
-        amount:
-            item.amount ?? 0,
-        displayOrder:
-            item.displayOrder ??
-            index + 1,
-      }),
-  )
+      form.sharedPayment
+          ? form.participantNames.length + 1
+          : 1
 }
 
-
-const editing = ref(false)
-const editSnapshot = ref(null)
-const translated = ref(true)
-const showOriginal = ref(false)
-
-// 편집 시작 시 현재 입력값을 복사해 보관한다.
 function startEditing() {
   editSnapshot.value =
       JSON.parse(
           JSON.stringify(form),
       )
 
+  const hasTranslatedMerchant =
+      Boolean(
+          form.merchantTranslatedName?.trim(),
+      )
+
+  const hasTranslatedItem =
+      form.items.some(
+          item =>
+              Boolean(
+                  item.translatedName?.trim(),
+              ),
+      )
+
+  /*
+   * 수기 입력처럼 번역 데이터가 없으면
+   * 실제 저장된 원문 값을 수정하도록
+   * 원문 탭으로 자동 전환합니다.
+   */
+  if (
+      !hasTranslatedMerchant &&
+      !hasTranslatedItem
+  ) {
+    translated.value = false
+  }
+
   editing.value = true
 }
 
-// 편집 중 변경한 값을 버리고 시작 시점으로 복원한다.
 function cancelEditing() {
   if (editSnapshot.value) {
     Object.assign(
@@ -235,198 +494,211 @@ function toggleEditing() {
   startEditing()
 }
 
-const displayedMerchantName = computed(() => {
-  if (translated.value) {
+function validateForm() {
+  if (!tripId.value) {
+    return '여행 정보를 확인해 주세요.'
+  }
+
+  if (!form.countryId) {
+    return '결제 국가를 선택해 주세요.'
+  }
+
+  if (!form.categoryId) {
+    return '소비 카테고리를 선택해 주세요.'
+  }
+
+  if (!form.paymentDate) {
+    return '결제 날짜를 입력해 주세요.'
+  }
+
+  normalizeCurrencyCode()
+
+  if (
+      !/^[A-Z]{3}$/.test(
+          form.currencyCode,
+      )
+  ) {
     return (
-        form.merchantTranslatedName ||
-        form.merchantOriginalName ||
-        '상호명 미인식'
-    )
-  }
-
-  return (
-      form.merchantOriginalName ||
-      '상호명 미인식'
-  )
-})
-
-const splitAmount = computed(() => {
-  const totalAmount =
-      Number(form.totalAmount) || 0
-
-  const splitCount =
-      Math.max(Number(form.splitCount) || 1, 1)
-
-  return totalAmount / splitCount
-})
-
-function getDisplayedItemName(item) {
-  if (translated.value) {
-    return (
-        item.translatedName ||
-        item.originalName ||
-        '품목명 미인식'
-    )
-  }
-
-  return (
-      item.originalName ||
-      '품목명 미인식'
-  )
-}
-
-function addItem() {
-  form.items.push({
-    originalName: '',
-    translatedName: '',
-    quantity: 1,
-    amount: 0,
-    displayOrder: form.items.length + 1,
-  })
-}
-
-function removeItem(index) {
-  form.items.splice(index, 1)
-
-  form.items.forEach((item, itemIndex) => {
-    item.displayOrder = itemIndex + 1
-  })
-}
-
-function discard() {
-  if (!isExistingReceipt.value) {
-    store.$patch({
-      draft: null,
-    })
-  }
-
-  router.push({
-    path: '/receipt',
-    query: {
-      tripId: tripId.value,
-    },
-  })
-}
-
-const currencyIdMap = {
-  KRW: 1,
-  AED: 2,
-  AUD: 3,
-  BHD: 4,
-  BND: 5,
-  CAD: 6,
-  CHF: 7,
-  CNH: 8,
-  DKK: 9,
-  EUR: 10,
-  GBP: 11,
-  HKD: 12,
-  IDR: 13,
-  JPY: 14,
-  KWD: 15,
-  MYR: 16,
-  NOK: 17,
-  NZD: 18,
-  SAR: 19,
-  SEK: 20,
-  SGD: 21,
-  THB: 22,
-  USD: 23,
-}
-
-const saving = ref(false)
-
-function createReceiptRequestData() {
-  const normalizedCurrencyCode =
-      form.currencyCode
-          .trim()
-          .toUpperCase()
-
-  const currencyId =
-      currencyIdMap[normalizedCurrencyCode]
-
-  if (!currencyId) {
-    throw new Error(
-        '등록되지 않은 통화 코드입니다.',
+        '통화 코드는 EUR, CHF처럼 ' +
+        '영문 3자리로 입력해 주세요.'
     )
   }
 
   if (
-      !form.paymentDate ||
+      !Number.isFinite(
+          Number(form.totalAmount),
+      ) ||
       Number(form.totalAmount) <= 0
   ) {
-    throw new Error(
-        '결제일과 결제 금액을 확인해 주세요.',
+    return (
+        '최종 결제 금액은 ' +
+        '0보다 커야 합니다.'
     )
   }
 
+  if (!form.items.length) {
+    return '품목을 한 개 이상 입력해 주세요.'
+  }
+
+  if (
+      form.items.some(
+          item =>
+              !String(
+                  item.originalName || '',
+              ).trim(),
+      )
+  ) {
+    return (
+        '모든 품목의 원문 품목명을 ' +
+        '입력해 주세요.'
+    )
+  }
+
+  if (
+      form.items.some(
+          item =>
+              !Number.isInteger(
+                  Number(item.quantity),
+              ) ||
+              Number(item.quantity) < 1,
+      )
+  ) {
+    return '품목 수량은 1 이상이어야 합니다.'
+  }
+
+  if (
+      form.items.some(
+          item =>
+              item.amount !== '' &&
+              item.amount !== null &&
+              (
+                  !Number.isFinite(
+                      Number(item.amount),
+                  ) ||
+                  Number(item.amount) < 0
+              ),
+      )
+  ) {
+    return (
+        '품목 금액은 0 이상의 ' +
+        '숫자로 입력해 주세요.'
+    )
+  }
+
+  if (
+      form.sharedPayment &&
+      form.participantNames.some(
+          name => !name.trim(),
+      )
+  ) {
+    return (
+        '공동결제 참여자 이름을 ' +
+        '모두 입력해 주세요.'
+    )
+  }
+
+  return ''
+}
+
+function createReceiptRequestData() {
   return {
-    tripId:
-        form.tripId ?? null,
-
     countryId:
-        form.countryId ?? null,
+        Number(form.countryId),
 
-    currencyId,
+    categoryId:
+        Number(form.categoryId),
+
+    currencyCode:
+        form.currencyCode
+            .trim()
+            .toUpperCase(),
 
     paymentDateTime:
         `${form.paymentDate}T` +
         `${form.paymentTime || '00:00'}:00`,
 
+    memo:
+        form.memo.trim() || null,
+
     merchantOriginalName:
-        form.merchantOriginalName || null,
+        form.merchantOriginalName
+            .trim() ||
+        null,
 
     merchantTranslatedName:
-        form.merchantTranslatedName || null,
+        form.merchantTranslatedName
+            .trim() ||
+        null,
 
     totalAmount:
         Number(form.totalAmount),
 
-    taxAmount:
-        form.taxAmount === null ||
-        form.taxAmount === ''
-            ? null
-            : Number(form.taxAmount),
-
     ocrRawText:
-        form.rawText || null,
+        form.ocrRawText || null,
 
-    splitCount:
-        Math.max(
-            Number(form.splitCount) || 1,
-            1,
-        ),
+    items: form.items.map(item => ({
+      /*
+       * 상세 조회로 받은 기존 품목은 ID 전송,
+       * 수정 화면에서 새로 추가한 품목은 null 전송
+       */
+      id: item.id ?? null,
 
-    items: form.items.map(
-        (item, index) => ({
-          originalName:
-              item.originalName ||
-              '미인식 품목',
+      originalName:
+          item.originalName.trim(),
 
-          translatedName:
-              item.translatedName || null,
+      translatedName:
+          item.translatedName.trim() ||
+          null,
 
-          quantity:
-              Math.max(
-                  Number(item.quantity) || 1,
-                  1,
-              ),
+      quantity:
+          Number(item.quantity),
 
-          amount:
-              item.amount === null ||
-              item.amount === ''
-                  ? null
-                  : Number(item.amount),
+      amount:
+          item.amount === '' ||
+          item.amount === null
+              ? null
+              : Number(item.amount),
+    })),
 
-          displayOrder: index + 1,
-        }),
-    ),
+    /*
+     * 로그인 사용자는 포함하지 않고
+     * 추가 참여자의 이름만 전송합니다.
+     */
+    participantNames:
+        form.sharedPayment
+            ? form.participantNames.map(
+                name => name.trim(),
+            )
+            : [],
   }
 }
 
-async function prepareSave() {
+function goToReceiptList() {
+  return router.replace({
+    name: 'Receipt',
+    params: {
+      tripId: tripId.value,
+    },
+  })
+}
+
+function discard() {
+  if (isOcrResult.value) {
+    store.$patch({
+      draft: null,
+    })
+  }
+
+  goToReceiptList()
+}
+
+async function saveReceipt() {
+  if (saving.value) {
+    return
+  }
+
   if (
-      !isExistingReceipt.value &&
+      isOcrResult.value &&
       !sourceFile
   ) {
     window.alert(
@@ -435,16 +707,25 @@ async function prepareSave() {
     return
   }
 
+  const validationMessage =
+      validateForm()
+
+  if (validationMessage) {
+    window.alert(validationMessage)
+    return
+  }
+
   saving.value = true
 
   try {
-    const receiptData =
+    const requestData =
         createReceiptRequestData()
 
     if (isExistingReceipt.value) {
       await updateReceipt(
+          tripId.value,
           receiptId.value,
-          receiptData,
+          requestData,
       )
 
       window.alert(
@@ -452,7 +733,8 @@ async function prepareSave() {
       )
     } else {
       await createReceipt(
-          receiptData,
+          tripId.value,
+          requestData,
           sourceFile,
       )
 
@@ -465,15 +747,13 @@ async function prepareSave() {
       )
     }
 
-    editing.value = false
-
-    await router.push({
-      path: '/receipt',
-      query: {
-        tripId: tripId.value,
-      },
-    })
+    await goToReceiptList()
   } catch (error) {
+    console.error(
+        '영수증 저장 실패:',
+        error,
+    )
+
     window.alert(
         error.response?.data?.message ||
         error.message ||
@@ -488,16 +768,16 @@ async function prepareSave() {
   }
 }
 
-const deleting = ref(false)
-
 async function removeReceipt() {
   if (!receiptId.value) {
+    discard()
     return
   }
 
-  const confirmed = window.confirm(
-      '이 영수증을 삭제할까요?',
-  )
+  const confirmed =
+      window.confirm(
+          '이 영수증을 삭제할까요?',
+      )
 
   if (!confirmed) {
     return
@@ -507,6 +787,7 @@ async function removeReceipt() {
 
   try {
     await deleteReceipt(
+        tripId.value,
         receiptId.value,
     )
 
@@ -514,12 +795,7 @@ async function removeReceipt() {
         '영수증이 삭제되었습니다.',
     )
 
-    await router.push({
-      path: '/receipt',
-      query: {
-        tripId: tripId.value,
-      },
-    })
+    await goToReceiptList()
   } catch (error) {
     window.alert(
         error.response?.data?.message ||
@@ -530,8 +806,6 @@ async function removeReceipt() {
   }
 }
 
-// 서버에 저장된 원본 영수증 이미지를 조회한다.
-// 서버에 저장된 원본 영수증 이미지를 조회한다.
 async function loadOriginalImage() {
   if (!receiptId.value) {
     return
@@ -539,10 +813,12 @@ async function loadOriginalImage() {
 
   const response =
       await getReceiptImage(
+          tripId.value,
           receiptId.value,
       )
 
-  const imageBlob = response.data
+  const imageBlob =
+      response.data
 
   if (
       !(imageBlob instanceof Blob) ||
@@ -563,9 +839,40 @@ async function loadOriginalImage() {
       URL.createObjectURL(imageBlob)
 }
 
-// 저장된 영수증 상세 정보와 품목을 조회한다.
 async function loadReceiptDetail() {
-  if (!receiptId.value) {
+  const response =
+      await getReceipt(
+          tripId.value,
+          receiptId.value,
+      )
+
+  const receiptData =
+      response.data?.data
+
+  if (!receiptData) {
+    throw new Error(
+        '영수증 상세 응답이 올바르지 않습니다.',
+    )
+  }
+
+  applyReceiptData(receiptData)
+
+  try {
+    await loadOriginalImage()
+  } catch (imageError) {
+    console.error(
+        '영수증 원본 이미지 조회 실패:',
+        imageError,
+    )
+
+    originalImageUrl.value = ''
+  }
+}
+
+async function initialize() {
+  if (!tripId.value) {
+    loadErrorMessage.value =
+        '여행 정보를 확인해 주세요.'
     return
   }
 
@@ -573,33 +880,41 @@ async function loadReceiptDetail() {
   loadErrorMessage.value = ''
 
   try {
-    const response =
-        await getReceipt(
-            receiptId.value,
+    trip.value =
+        await fetchTripGoal(
+            tripId.value,
         )
 
-    const receiptData =
-        response.data?.data
-
-    if (!receiptData) {
+    if (!trip.value?.tripId) {
       throw new Error(
-          '영수증 상세 응답이 올바르지 않습니다.',
+          '여행 상세 응답이 올바르지 않습니다.',
       )
     }
 
-    applyReceiptData(receiptData)
+    if (isExistingReceipt.value) {
+      await loadReceiptDetail()
+    } else if (
+        trip.value.countries?.length === 1
+    ) {
+      /*
+       * OCR 응답에는 국가가 없으므로
+       * 여행 국가가 하나인 경우 자동 선택합니다.
+       */
+      form.countryId =
+          trip.value.countries[0].countryId
 
-    try {
-      await loadOriginalImage()
-    } catch (imageError) {
-      console.error(
-          '영수증 원본 이미지 조회 실패',
-          imageError,
-      )
-
-      originalImageUrl.value = ''
+      if (!form.currencyCode) {
+        form.currencyCode =
+            trip.value.countries[0]
+                .currencyCode || ''
+      }
     }
   } catch (error) {
+    console.error(
+        '영수증 화면 초기화 실패:',
+        error,
+    )
+
     loadErrorMessage.value =
         error.response?.data?.message ||
         error.message ||
@@ -609,12 +924,7 @@ async function loadReceiptDetail() {
   }
 }
 
-
-onMounted(() => {
-  if (isExistingReceipt.value) {
-    loadReceiptDetail()
-  }
-})
+onMounted(initialize)
 
 onBeforeUnmount(() => {
   if (originalImageUrl.value) {
@@ -627,15 +937,29 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="result-page">
-    <header>
-      <button @click="router.back()">‹</button>
+    <header class="page-header">
+      <button
+          type="button"
+          aria-label="뒤로 가기"
+          @click="router.back()"
+      >
+        ‹
+      </button>
+
       <h1>
-        {{
-          isExistingReceipt
-              ? '영수증 상세'
-              : '영수증 인식 결과'
-        }}
+        <template v-if="editing">
+          인식 결과 수정
+        </template>
+
+        <template v-else-if="isExistingReceipt">
+          영수증 상세
+        </template>
+
+        <template v-else>
+          영수증 인식 결과
+        </template>
       </h1>
+
       <button
           type="button"
           @click="toggleEditing"
@@ -643,14 +967,17 @@ onBeforeUnmount(() => {
         {{ editing ? '취소' : '수정' }}
       </button>
     </header>
-    <div
+
+    <!-- 로딩 -->
+    <section
         v-if="loading"
         class="detail-state"
     >
       영수증 정보를 불러오고 있습니다.
-    </div>
+    </section>
 
-    <div
+    <!-- 조회 실패 -->
+    <section
         v-else-if="loadErrorMessage"
         class="detail-state error"
     >
@@ -658,302 +985,488 @@ onBeforeUnmount(() => {
 
       <button
           type="button"
-          @click="loadReceiptDetail"
+          @click="initialize"
       >
         다시 시도
       </button>
-    </div>
+    </section>
 
-    <div
-        v-if="
-    !loading &&
-    !loadErrorMessage
-  "
-        class="toggle"
-    >
-      <button :class="{active:!translated}" @click="translated=false">원문</button>
-      <button :class="{active:translated}" @click="translated=true">번역</button>
-    </div>
-    <section
-        v-if="
-    !loading &&
-    !loadErrorMessage
-  "
-        class="receipt-paper"
-    ><input
-        v-if="editing && translated"
-        v-model="form.merchantTranslatedName"
-    >
+    <template v-else>
+      <!-- 원문·번역 전환 -->
+      <div class="translation-toggle">
+        <button
+            type="button"
+            :class="{ active: !translated }"
+            @click="translated = false"
+        >
+          원문
+        </button>
 
-      <input
-          v-else-if="editing"
-          v-model="form.merchantOriginalName"
-      >
+        <button
+            type="button"
+            :class="{ active: translated }"
+            @click="translated = true"
+        >
+          번역
+        </button>
+      </div>
 
-      <h2 v-else>
-        {{ displayedMerchantName }}
-      </h2>
-
-      <small>
-        {{ form.paymentDate || '결제일 미인식' }}
-        ·
-        {{ form.paymentTime || '시간 미인식' }}
-      </small>
-      <div class="dash"/>
-      <div
-          v-for="(item, index) in form.items"
-          :key="item.displayOrder"
-          class="item"
-      >
-  <span>
-    <template v-if="editing &&
-  !loading &&
-  !loadErrorMessage">
-      <input
-          v-if="translated"
-          v-model="item.translatedName"
-          placeholder="번역 품목명"
-      >
-
-      <input
-          v-else
-          v-model="item.originalName"
-          placeholder="원문 품목명"
-      >
-    </template>
-
-    <b v-else>
-      {{ getDisplayedItemName(item) }}
-    </b>
-
-    <small
-        v-if="
-        translated &&
-        item.originalName
-      "
-    >
-      {{ item.originalName }}
-    </small>
-
-    <small>
-      수량 {{ item.quantity }}
-    </small>
-  </span>
-
-        <div v-if="editing &&
-  !loading &&
-  !loadErrorMessage">
+      <!-- 영수증 인식 결과 -->
+      <section class="receipt-paper">
+        <!-- 상호명 -->
+        <template v-if="editing">
           <input
-              v-model.number="item.quantity"
-              type="number"
-              min="1"
-              placeholder="수량"
+              v-if="translated"
+              v-model.trim="
+              form.merchantTranslatedName
+            "
+              class="merchant-input"
+              type="text"
+              maxlength="255"
+              placeholder="번역된 상호명"
           >
 
           <input
-              v-model.number="item.amount"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="금액"
+              v-else
+              v-model.trim="
+              form.merchantOriginalName
+            "
+              class="merchant-input"
+              type="text"
+              maxlength="255"
+              placeholder="원문 상호명"
           >
+        </template>
+
+        <h2 v-else>
+          {{ displayedMerchantName }}
+        </h2>
+
+        <!-- 국가·날짜·시간 -->
+        <div
+            v-if="editing"
+            class="receipt-information-edit"
+        >
+          <select
+              v-model.number="form.countryId"
+              aria-label="결제 국가"
+          >
+            <option :value="null">
+              국가 선택
+            </option>
+
+            <option
+                v-for="country in
+                trip?.countries || []"
+                :key="country.countryId"
+                :value="country.countryId"
+            >
+              {{ country.countryName }}
+            </option>
+          </select>
+
+          <input
+              v-model="form.paymentDate"
+              type="date"
+              aria-label="결제 날짜"
+          >
+
+          <input
+              v-model="form.paymentTime"
+              type="time"
+              aria-label="결제 시간"
+          >
+        </div>
+
+        <small
+            v-else
+            class="receipt-information"
+        >
+          {{ selectedCountryName }}
+          ·
+          {{ form.paymentDate || '날짜 미지정' }}
+          ·
+          {{ form.paymentTime || '시간 미지정' }}
+        </small>
+
+        <div class="dash" />
+
+        <!-- 품목 목록 -->
+        <article
+            v-for="(item, index) in form.items"
+            :key="
+            item.id ||
+            item.displayOrder ||
+            index
+          "
+            class="receipt-item"
+        >
+          <template v-if="editing">
+            <div class="item-name-area">
+              <input
+                  v-if="translated"
+                  v-model.trim="
+                  item.translatedName
+                "
+                  type="text"
+                  maxlength="255"
+                  placeholder="번역 품목명"
+              >
+
+              <input
+                  v-else
+                  v-model.trim="
+                  item.originalName
+                "
+                  type="text"
+                  maxlength="255"
+                  placeholder="원문 품목명"
+              >
+
+              <small
+                  v-if="
+                  translated &&
+                  item.originalName
+                "
+              >
+                {{ item.originalName }}
+              </small>
+            </div>
+
+            <div class="item-edit-area">
+              <label>
+                <span>수량</span>
+
+                <input
+                    v-model.number="
+                    item.quantity
+                  "
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                >
+              </label>
+
+              <label>
+                <span>금액</span>
+
+                <input
+                    v-model="item.amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                >
+              </label>
+
+              <button
+                  type="button"
+                  :disabled="
+                  form.items.length <= 1
+                "
+                  @click="removeItem(index)"
+              >
+                삭제
+              </button>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="item-name-area">
+              <b>
+                {{ getDisplayedItemName(item) }}
+              </b>
+
+              <small
+                  v-if="
+                  translated &&
+                  item.originalName
+                "
+              >
+                {{ item.originalName }}
+              </small>
+
+              <small>
+                수량 {{ item.quantity }}
+              </small>
+            </div>
+
+            <strong>
+              {{ form.currencyCode }}
+              {{
+                Number(
+                    item.amount || 0,
+                ).toFixed(2)
+              }}
+            </strong>
+          </template>
+        </article>
+
+        <div class="dash" />
+
+        <!-- 최종 결제 금액 -->
+        <div class="total">
+          <span>
+            TOTALE · 최종 결제 금액
+          </span>
+
+          <strong>
+            <template v-if="editing">
+              <input
+                  v-model="form.currencyCode"
+                  class="currency-input"
+                  type="text"
+                  maxlength="3"
+                  placeholder="EUR"
+                  @input="normalizeCurrencyCode"
+              >
+
+              <input
+                  v-model="form.totalAmount"
+                  class="total-input"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputmode="decimal"
+              >
+            </template>
+
+            <template v-else>
+              {{ form.currencyCode }}
+              {{
+                Number(
+                    form.totalAmount || 0,
+                ).toFixed(2)
+              }}
+            </template>
+          </strong>
+        </div>
+
+        <p
+            v-if="
+            !editing &&
+            form.splitCount > 1
+          "
+            class="split-summary"
+        >
+          {{ form.splitCount }}명 분할
+          · 1인당
+          {{ form.currencyCode }}
+          {{ splitAmount.toFixed(2) }}
+        </p>
+
+        <!-- 최종 결제 금액과 원본 사진 사이 -->
+        <button
+            v-if="editing"
+            type="button"
+            class="add-item-button"
+            @click="addItem"
+        >
+          ＋ 품목 추가
+        </button>
+      </section>
+
+      <!-- 실제 영수증 사진 -->
+      <button
+          class="original-button"
+          type="button"
+          @click="showOriginal = true"
+      >
+        ▧ 실제 영수증 원본 사진 보기
+      </button>
+
+      <!-- 원본 사진과 공동결제 사이 -->
+      <section class="category-card">
+        <span>소비 카테고리</span>
+
+        <select
+            v-if="editing"
+            v-model.number="form.categoryId"
+        >
+          <option
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.id"
+          >
+            {{ category.name }}
+          </option>
+        </select>
+
+        <strong v-else>
+          {{ selectedCategoryName }}
+        </strong>
+      </section>
+
+      <!-- 수정 상태에서만 공동결제 표시 -->
+      <section
+          v-if="editing"
+          class="shared-payment-card"
+      >
+        <div class="shared-heading">
+          <div>
+            <b>♧ 공동 인원 추가</b>
+
+            <small>
+              로그인 사용자를 포함한 전체
+              결제 인원을 설정합니다.
+            </small>
+          </div>
+
+          <label class="switch">
+            <input
+                v-model="form.sharedPayment"
+                type="checkbox"
+                @change="
+                toggleSharedPayment
+              "
+            >
+
+            <i />
+          </label>
+        </div>
+
+        <template v-if="form.sharedPayment">
+          <div class="people-count">
+            <span>전체 인원 수</span>
+
+            <div>
+              <button
+                  type="button"
+                  aria-label="인원 감소"
+                  @click="
+                  decreaseSplitCount
+                "
+              >
+                −
+              </button>
+
+              <b>{{ form.splitCount }}</b>
+
+              <button
+                  type="button"
+                  aria-label="인원 증가"
+                  @click="
+                  increaseSplitCount
+                "
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div class="per-person">
+            <span>1인당 결제 금액</span>
+
+            <b>
+              {{ form.currencyCode }}
+              {{ splitAmount.toFixed(2) }}
+            </b>
+          </div>
+
+          <div class="participants">
+            <b>결제 인원</b>
+
+            <small>
+              로그인 사용자를 제외한
+              참여자 이름
+            </small>
+
+            <input
+                v-for="(_, index) in
+                form.participantNames"
+                :key="index"
+                v-model.trim="
+                form.participantNames[index]
+              "
+                type="text"
+                maxlength="100"
+                :placeholder="
+                `참여자 ${index + 1} 이름`
+              "
+            >
+          </div>
+        </template>
+      </section>
+
+      <!-- 모든 상태에서 메모 표시 -->
+      <section class="memo-card">
+        <span>메모</span>
+
+        <textarea
+            v-if="editing"
+            v-model.trim="form.memo"
+            maxlength="500"
+            placeholder="메모를 입력하세요"
+        />
+
+        <p v-else>
+          {{
+            form.memo ||
+            '작성된 메모가 없습니다.'
+          }}
+        </p>
+      </section>
+
+      <!-- 하단 작업 버튼 -->
+      <div class="actions">
+        <template v-if="isExistingReceipt">
+          <button
+              type="button"
+              :disabled="saving || deleting"
+              @click="removeReceipt"
+          >
+            {{
+              deleting
+                  ? '삭제 중...'
+                  : '삭제'
+            }}
+          </button>
 
           <button
               type="button"
-              @click="removeItem(index)"
+              :disabled="saving || deleting"
+              @click="
+              editing
+                ? saveReceipt()
+                : startEditing()
+            "
           >
-            삭제
+            {{
+              saving
+                  ? '저장 중...'
+                  : editing
+                      ? '수정 저장'
+                      : '인식 결과 수정'
+            }}
           </button>
-        </div>
+        </template>
 
-        <strong v-else>
-          {{ form.currencyCode }}
-          {{ Number(item.amount).toFixed(2) }}
-        </strong>
-      </div>
-
-      <button
-          v-if="editing &&
-  !loading &&
-  !loadErrorMessage"
-          type="button"
-          class="add-item-button"
-          @click="addItem"
-      >
-        + 품목 추가
-      </button>
-      <div class="dash"/>
-
-      <div class="total">
-        <span>최종 결제 금액</span>
-
-        <strong>
-          {{ form.currencyCode }}
-
-          <input
-              v-if="editing &&
-  !loading &&
-  !loadErrorMessage"
-              v-model.number="form.totalAmount"
-              type="number"
-              min="0"
-              step="0.01"
+        <template v-else>
+          <button
+              type="button"
+              :disabled="saving"
+              @click="discard"
           >
+            추가하지 않기
+          </button>
 
-          <template v-else>
-            {{ Number(form.totalAmount).toFixed(2) }}
-          </template>
-        </strong>
-      </div>
-
-      <p v-if="form.splitCount > 1">
-        {{ form.splitCount }}명 분할 ·
-        1인당
-        {{ form.currencyCode }}
-        {{ splitAmount.toFixed(2) }}
-      </p>
-    </section>
-    <button v-if="
-    !loading &&
-    !loadErrorMessage" class="original-button" type="button" @click="showOriginal=true">▧ 실제 영수증 원본 사진 보기
-    </button>
-    <section
-        v-if="editing &&
-  !loading &&
-  !loadErrorMessage"
-        class="meta"
-    >
-      <label>
-        <span>결제 날짜</span>
-
-        <input
-            v-model="form.paymentDate"
-            type="date"
-        >
-      </label>
-
-      <label>
-        <span>결제 시간</span>
-
-        <input
-            v-model="form.paymentTime"
-            type="time"
-        >
-      </label>
-
-      <label>
-        <span>통화 코드</span>
-
-        <input
-            v-model.trim="
-        form.currencyCode
-      "
-            maxlength="3"
-            placeholder="EUR"
-        >
-      </label>
-
-      <label>
-        <span>결제 금액</span>
-
-        <div class="amount-input">
-          <b>{{ form.currencyCode }}</b>
-
-          <input
-              v-model.number="
-          form.totalAmount
-        "
-              min="0"
-              step="0.01"
-              type="number"
+          <button
+              type="button"
+              :disabled="saving"
+              @click="saveReceipt"
           >
-        </div>
-      </label>
+            {{
+              saving
+                  ? '저장 중...'
+                  : '보관함에 추가'
+            }}
+          </button>
+        </template>
+      </div>
+    </template>
 
-      <label>
-        <span>세금</span>
-
-        <input
-            v-model.number="form.taxAmount"
-            min="0"
-            step="0.01"
-            type="number"
-        >
-      </label>
-
-      <label>
-        <span>공동 결제 인원</span>
-
-        <input
-            v-model.number="form.splitCount"
-            min="1"
-            type="number"
-        >
-      </label>
-    </section>
-    <div
-        v-if="
-    !loading &&
-    !loadErrorMessage
-  "
-        class="actions"
-    >
-      <!-- 기존에 저장된 영수증 상세 화면 -->
-      <template v-if="isExistingReceipt">
-        <button
-            type="button"
-            :disabled="saving || deleting"
-            @click="removeReceipt"
-        >
-          {{
-            deleting
-                ? '삭제 중...'
-                : '삭제'
-          }}
-        </button>
-
-        <button
-            type="button"
-            :disabled="saving || deleting"
-            @click="
-  editing
-    ? prepareSave()
-    : startEditing()
-"
-        >
-          {{
-            saving
-                ? '저장 중...'
-                : editing
-                    ? '수정 저장'
-                    : '인식 결과 수정'
-          }}
-        </button>
-      </template>
-
-      <!-- 새 OCR 분석 결과 화면 -->
-      <template v-else>
-        <button
-            type="button"
-            :disabled="saving"
-            @click="discard"
-        >
-          추가하지 않기
-        </button>
-
-        <button
-            type="button"
-            :disabled="saving"
-            @click="prepareSave"
-        >
-          {{
-            saving
-                ? '저장 중...'
-                : '보관함에 추가'
-          }}
-        </button>
-      </template>
-    </div>
+    <!-- 원본 이미지 모달 -->
     <div
         v-if="showOriginal"
         class="original-modal"
@@ -1389,5 +1902,459 @@ onBeforeUnmount(() => {
   border-radius: 9px;
   color: #2670dd;
   font-size: 10px;
+}
+.page-header {
+  display: grid;
+  height: 88px;
+  grid-template-columns: 50px 1fr 50px;
+  align-items: end;
+  padding-bottom: 16px;
+}
+
+.page-header h1 {
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.page-header > button:first-child {
+  font-size: 29px;
+  text-align: left;
+}
+
+.page-header > button:last-child {
+  color: #2670dd;
+  font-size: 11px;
+  text-align: right;
+}
+
+.translation-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 14px;
+}
+
+.translation-toggle button {
+  height: 36px;
+  border: 1px solid #dce3ed;
+  color: #8491a3;
+  font-size: 10px;
+}
+
+.translation-toggle button:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.translation-toggle button:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.translation-toggle .active {
+  border-color: #173f8c;
+  background: #173f8c;
+  color: #fff;
+}
+
+.merchant-input {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #cfdbea;
+  border-radius: 9px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.receipt-information {
+  display: block;
+  margin-top: 8px;
+  color: #8793a4;
+  font-size: 8px;
+  text-align: center;
+}
+
+.receipt-information-edit {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1.25fr)
+    minmax(0, 1fr);
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.receipt-information-edit select,
+.receipt-information-edit input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 4px;
+  border: 1px solid #cfdbea;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 8px;
+  text-align: center;
+}
+
+.receipt-item {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  text-align: left;
+}
+
+.receipt-item strong {
+  font-size: 9px;
+}
+
+.item-name-area {
+  min-width: 0;
+}
+
+.item-name-area b,
+.item-name-area small {
+  display: block;
+}
+
+.item-name-area b {
+  font-size: 10px;
+}
+
+.item-name-area small {
+  margin-top: 4px;
+  color: #8995a6;
+  font-size: 7px;
+}
+
+.item-name-area input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #cfdbea;
+  border-radius: 8px;
+}
+
+.item-edit-area {
+  display: grid;
+  grid-template-columns: 55px 72px auto;
+  align-items: end;
+  gap: 5px;
+}
+
+.item-edit-area label span {
+  display: block;
+  margin-bottom: 3px;
+  color: #7d8a9c;
+  font-size: 7px;
+}
+
+.item-edit-area input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 1px solid #cfdbea;
+  border-radius: 8px;
+}
+
+.item-edit-area button {
+  padding: 8px 2px;
+  color: #e5484d;
+  font-size: 8px;
+}
+
+.item-edit-area button:disabled {
+  opacity: 0.35;
+}
+
+.total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.total > span {
+  color: #536175;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.total strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e67a22;
+  font-size: 15px;
+}
+
+.currency-input {
+  width: 54px;
+  padding: 8px 4px;
+  border: 1px solid #cfdbea;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.total-input {
+  width: 78px;
+  padding: 8px;
+  border: 1px solid #e67a22;
+  border-radius: 8px;
+  color: #e67a22;
+  text-align: right;
+}
+
+.split-summary {
+  margin-top: 8px;
+  color: #7d8a9c;
+  font-size: 8px;
+  text-align: right;
+}
+
+.add-item-button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 11px;
+  border: 1px dashed #2670dd;
+  border-radius: 10px;
+  color: #2670dd;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.category-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 15px 16px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.category-card span {
+  color: #536175;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.category-card strong {
+  font-size: 11px;
+}
+
+.category-card select {
+  min-width: 130px;
+  padding: 9px;
+  border: 1px solid #d8e1ec;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.shared-payment-card {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff2ad;
+}
+
+.shared-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shared-heading b,
+.shared-heading small {
+  display: block;
+}
+
+.shared-heading b {
+  color: #155fbb;
+  font-size: 11px;
+}
+
+.shared-heading small {
+  margin-top: 5px;
+  color: #5f6d80;
+  font-size: 8px;
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 25px;
+  flex: 0 0 auto;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+}
+
+.switch i {
+  position: absolute;
+  border-radius: 14px;
+  background: #cbd6e5;
+  inset: 0;
+}
+
+.switch i::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  content: '';
+  transition: transform 0.2s;
+}
+
+.switch input:checked + i {
+  background: #2670dd;
+}
+
+.switch input:checked + i::after {
+  transform: translateX(19px);
+}
+
+.people-count,
+.per-person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.people-count > span,
+.per-person > span {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.people-count > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.people-count button {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #173f8c;
+}
+
+.people-count button:last-child {
+  background: #173f8c;
+  color: #fff;
+}
+
+.per-person b {
+  color: #173f8c;
+  font-size: 11px;
+}
+
+.participants {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.participants > b {
+  font-size: 10px;
+}
+
+.participants > small {
+  color: #6f7b8d;
+  font-size: 8px;
+}
+
+.participants input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e3d893;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.memo-card {
+  margin-top: 12px;
+}
+
+.memo-card > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #536175;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.memo-card textarea,
+.memo-card p {
+  width: 100%;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid #d8e1ec;
+  border-radius: 11px;
+  background: #fff;
+  color: #111a2d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.memo-card textarea {
+  resize: vertical;
+}
+
+.memo-card p {
+  margin: 0;
+  color: #667487;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.actions button {
+  height: 52px;
+  border: 1px solid #f0aaa7;
+  border-radius: 13px;
+  color: #e5484d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.actions button:last-child {
+  border: 0;
+  background: #173f8c;
+  color: #fff;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 360px) {
+  .receipt-information-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-item {
+    grid-template-columns: 1fr;
+  }
+
+  .item-edit-area {
+    grid-template-columns: 1fr 1fr auto;
+  }
 }
 </style>

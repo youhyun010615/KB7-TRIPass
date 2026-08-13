@@ -416,6 +416,72 @@
           AND is_deleted = 0
     </update>
 
+    <!--품목 소유권 확인-->
+    <select
+            id="existsActiveItemByIdAndReceiptIdAndUserIdAndTripId"
+            resultType="boolean">
+
+        SELECT COUNT(*) > 0
+        FROM receipt_items item
+                 INNER JOIN receipts receipt
+                            ON receipt.id = item.receipt_id
+        WHERE item.id = #{itemId}
+          AND item.receipt_id = #{receiptId}
+          AND item.is_deleted = 0
+          AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
+          AND receipt.is_deleted = 0
+    </select>
+
+    <!-- 기존 품목 UPDATE -->
+    <update id="updateReceiptItem">
+
+        UPDATE receipt_items item
+            INNER JOIN receipts receipt
+            ON receipt.id = item.receipt_id
+        SET item.original_name = #{item.originalName},
+            item.translated_name = #{item.translatedName},
+            item.quantity = #{item.quantity},
+            item.amount = #{item.amount},
+            item.display_order = #{item.displayOrder}
+        WHERE item.id = #{item.id}
+          AND item.receipt_id = #{item.receiptId}
+          AND item.is_deleted = 0
+          AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
+          AND receipt.is_deleted = 0
+    </update>
+
+    <!-- 화면에서 제거된 품목만 논리 삭제 -->
+    <update id="softDeleteMissingItems">
+
+        UPDATE receipt_items item
+        INNER JOIN receipts receipt
+        ON receipt.id = item.receipt_id
+        SET item.is_deleted = 1,
+        item.deleted_at = NOW()
+        WHERE item.receipt_id = #{receiptId}
+        AND item.is_deleted = 0
+        AND receipt.user_id = #{userId}
+        AND receipt.trip_id = #{tripId}
+        AND receipt.is_deleted = 0
+
+        <if test="
+        keptItemIds != null and
+        keptItemIds.size() > 0
+    ">
+            AND item.id NOT IN
+            <foreach
+                    collection="keptItemIds"
+                    item="itemId"
+                    open="("
+                    separator=","
+                    close=")">
+                #{itemId}
+            </foreach>
+        </if>
+    </update>
+
     <!-- 기존 영수증 품목 전체 논리 삭제 -->
     <update id="softDeleteItemsByReceiptIdAndUserIdAndTripId">
 
@@ -456,6 +522,78 @@
           AND user_id = #{userId}
           AND trip_id = #{tripId}
           AND is_deleted = 0
+    </update>
+
+    <!-- 기존 공동결제 참여자 수정 -->
+    <update id="updateReceiptParticipant">
+
+        UPDATE receipt_participants participant
+            INNER JOIN receipts receipt
+            ON receipt.id = participant.receipt_id
+
+        SET participant.participant_name =
+                #{participant.participantName},
+
+            participant.display_order =
+                #{participant.displayOrder}
+
+        WHERE participant.id =
+              #{participant.id}
+
+          AND participant.receipt_id =
+              #{participant.receiptId}
+
+          AND participant.is_deleted = 0
+
+          AND receipt.user_id =
+              #{userId}
+
+          AND receipt.trip_id =
+              #{tripId}
+
+          AND receipt.is_deleted = 0
+
+    </update>
+
+    <!-- 수정 요청에서 제거된 공동결제 참여자만 논리 삭제 -->
+    <update id="softDeleteMissingParticipants">
+
+        UPDATE receipt_participants participant
+        INNER JOIN receipts receipt
+        ON receipt.id = participant.receipt_id
+
+        SET participant.is_deleted = 1,
+        participant.deleted_at = NOW()
+
+        WHERE participant.receipt_id =
+        #{receiptId}
+
+        AND participant.is_deleted = 0
+
+        AND receipt.user_id =
+        #{userId}
+
+        AND receipt.trip_id =
+        #{tripId}
+
+        AND receipt.is_deleted = 0
+
+        <if test="
+        keptParticipantIds != null
+        and keptParticipantIds.size() > 0
+    ">
+            AND participant.id NOT IN
+
+            <foreach
+                    collection="keptParticipantIds"
+                    item="participantId"
+                    open="("
+                    separator=","
+                    close=")">
+                #{participantId}
+            </foreach>
+        </if>
+
     </update>
 
 </mapper>
