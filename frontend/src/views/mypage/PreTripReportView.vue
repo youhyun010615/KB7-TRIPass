@@ -9,13 +9,12 @@ function download(){downloading.value=true;setTimeout(()=>downloading.value=fals
 </script>
 
 <template><main class="page"><header><button @click="router.back()">‹</button><h1>D-{{ r.trip.dDay }} 여행 대비 리포트</h1><span/></header>
-<section class="summary"><small>TRIP READINESS REPORT</small><h2>{{ r.trip.flags }} {{ r.trip.title }}</h2><p>{{ r.trip.dateRange }}</p></section>
+<section class="summary"><small>TRIP SAVING REPORT</small><h2>{{ r.trip.flags }} {{ r.trip.title }}</h2><p>{{ r.trip.dateRange }} · 출국까지 {{ r.trip.dDay }}일</p></section>
 <section class="card"><h3><i>1</i> 여행 준비 체크리스트</h3><div class="readiness"><div class="ring" :style="{'--value':`${checklist.percent*3.6}deg`}"><b>{{ checklist.percent }}%</b><small>준비 완료</small></div><ul><li><b>D-30</b><span>기본 준비 항목</span><em>100%</em></li><li><b>D-7</b><span>출국 전 점검</span><em>83%</em></li><li><b>D-1</b><span>최종 준비</span><em class="warn">67%</em></li></ul></div></section>
-<section class="card"><h3><i>2</i> 여행 목표 저축 현황</h3><div class="numbers"><span><small>목표 금액</small><b>{{ money(r.targetBudget) }}</b></span><span><small>확보 금액</small><b>{{ money(r.securedFund) }}</b></span><span><small>달성률</small><b>{{ saving }}%</b></span></div><div class="progress"><span :style="{width:`${saving}%`}"/></div></section>
-<section class="card"><h3><i>3</i> 사전 지출·현재 자금 분석</h3><div class="split"><span><small>사전 지출</small><b>{{ money(r.prepaid) }}</b></span><span><small>출국 전 사용 가능</small><b>{{ money(r.securedFund-r.prepaid) }}</b></span></div><p class="hint">반영 계좌 {{ r.accounts }}개 · 여행 자금의 {{ Math.round(r.prepaid/r.securedFund*100) }}% 사전 사용</p></section>
+<section class="card"><h3><i>2</i> 여행 목표 저축 현황</h3><div class="numbers"><span><small>여행 목표</small><b>{{ money(r.targetBudget) }}</b></span><span><small>TRIP 월렛</small><b>{{ money(r.securedFund) }}</b></span><span><small>달성률</small><b>{{ saving }}%</b></span></div><div class="progress"><span :style="{width:`${saving}%`}"/></div><p class="hint">여행 목표는 현지 사용 자금 기준이며, 월렛 입금액으로 저축 현황을 계산해요.</p></section>
+<section class="card"><h3><i>3</i> 사전 지출 현황</h3><div class="split"><span><small>항공·숙소 사전 지출</small><b>{{ money(r.prepaid) }}</b></span><span><small>여행 목표 반영</small><b class="green">0원</b></span></div><p class="hint">사전 지출은 여행 목표 금액에는 포함되지 않고, 여행 후 리포트에 기록돼요.</p></section>
 <section class="card"><h3><i>4</i> 여행 일정 준비 현황</h3><div class="schedule"><span><b>{{ r.schedules }}</b><small>전체 일정</small></span><span><b>{{ r.paidSchedules }}</b><small>사전 결제</small></span><span><b>{{ r.pendingSchedules }}</b><small>현장 결제</small></span></div></section>
-<section class="card"><h3><i>5</i> 출국 전 확인 필요</h3><p class="todo">● D-1 체크리스트 미완료 항목을 확인해 주세요</p><p class="todo">● 현장 결제 일정의 결제수단을 준비해 주세요</p></section>
-<section class="final"><b>✈️ 여행 준비가 거의 완료됐어요</b><small>남은 체크리스트만 확인하면 안심하고 출발할 수 있어요.</small></section>
+<section class="final"><b>✈️ 여행 전 자금 준비 상태</b><small>여행 날짜가 되면 여행 모드에서 TRIP 월렛과 트래블 카드 잔액을 이어서 관리할 수 있어요.</small></section>
 <button class="pdf" @click="download">{{ downloading?'PDF 생성 중...':'▣ PDF 저장하기' }}</button><BottomNav/></main></template>
 
 <style scoped>

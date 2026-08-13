@@ -2,16 +2,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useFinancialScheduleStore } from '@/stores/financialSchedule'
 import api from '@/api'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const scheduleStore = useFinancialScheduleStore()
 
 const requestedStep = Number(route.query.step)
-const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= 8 ? requestedStep : 0)
+const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= 5 ? requestedStep : 0)
 
 const banks = ref([])
 const banksError = ref(false)
@@ -135,7 +133,6 @@ function removeItem(items, id) {
 }
 
 function completeProfile() {
-  scheduleStore.replaceSalaries(salaryItems.value)
   authStore.completeProfile()
   router.replace('/')
 }
@@ -163,35 +160,35 @@ onMounted(() => {
       <template v-if="step === 0">
         <div class="intro-content">
           <p class="eyebrow">TRIPASS FINANCE</p>
-          <h1>{{ authStore.user?.name ?? '로드투제주' }}님,<br>여행 자금 계획을 위해<br>금융 프로필을 등록해요</h1>
-          <p class="intro-description">3분이면 충분해요. 수입과 지출을 알려주시면<br>출국일까지 저축 계획을 자동으로 계산해드려요.</p>
+          <h1>{{ authStore.user?.name ?? '로드투제주' }}님,<br>주거래 계좌를 연결하고<br>여행 준비를 시작해요</h1>
+          <p class="intro-description">연결한 계좌의 거래내역을 바탕으로<br>AI가 소비 패턴과 저축 미션을 안내해드려요.</p>
 
           <div class="boarding-ticket">
             <p>FINANCIAL BOARDING PASS</p>
             <div class="ticket-main">
-              <strong>3분</strong>
-              <span>이면 여행 저축 계획 완성</span>
+              <strong>1분</strong>
+              <span>이면 계좌 연결 완료</span>
             </div>
-            <div class="ticket-route">수입 → 고정지출 → 카테고리 목표</div>
+            <div class="ticket-route">주거래 계좌 연결 → 소비 분석 → 여행 저축</div>
           </div>
 
           <div class="intro-list">
             <article>
               <span class="feature-icon blue">▣</span>
-              <div><strong>이번 달 수입 등록</strong><p>급여일과 월 급여를 알려주세요</p></div>
+              <div><strong>주거래 계좌 연결</strong><p>분석에 사용할 계좌를 선택해요</p></div>
             </article>
             <article>
               <span class="feature-icon orange">₩</span>
-              <div><strong>고정지출 등록</strong><p>월세·통신비 등 매달 나가는 돈</p></div>
+              <div><strong>소비 패턴 분석</strong><p>지난 거래내역을 기반으로 분석해요</p></div>
             </article>
             <article>
               <span class="feature-icon violet">◎</span>
-              <div><strong>카테고리별 목표 설정</strong><p>식비·쇼핑 등 쓰고 싶은 만큼</p></div>
+              <div><strong>AI 저축 미션 추천</strong><p>줄일 소비와 실천 미션을 제안해요</p></div>
             </article>
           </div>
         </div>
         <div class="sticky-action">
-          <button class="primary-button" @click="step = 1">금융 프로필 등록하기</button>
+          <button class="primary-button" @click="step = 1">주거래 계좌 연결하기</button>
           <button class="skip-button" @click="skipProfile">건너뛰기</button>
         </div>
       </template>
@@ -299,7 +296,7 @@ onMounted(() => {
         </div>
         <div class="sticky-action split">
           <button class="secondary-button" @click="selectedBank = null; loginId = ''; password = ''; step = 2">자산연결추가</button>
-          <button class="primary-button" @click="route.query.from === 'asset' ? router.replace('/asset') : step = 6">확인</button>
+          <button class="primary-button" @click="completeProfile">여행 목표 설정하기</button>
         </div>
       </template>
 
