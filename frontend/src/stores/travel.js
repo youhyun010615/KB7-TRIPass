@@ -88,6 +88,14 @@ function createPlan(country, initial = {}) {
       foodAmount: 0,
       otherAmount: 0,
     },
+    recommendedBudget: {
+      airfareAmount: 0,
+      lodgingAmount: 0,
+      activityAmount: 0,
+      transportAmount: 0,
+      foodAmount: 0,
+      otherAmount: 0,
+    },
     aiReason: '',
     isConfirmed: false,
   }
@@ -188,6 +196,15 @@ export const useTravelStore = defineStore('travel', () => {
     Object.assign(plan, patch)
   }
 
+  function reorderCountries(fromIndex, toIndex) {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return
+    if (fromIndex >= selectedCountryCodes.value.length || toIndex >= selectedCountryCodes.value.length) return
+    const nextOrder = [...selectedCountryCodes.value]
+    const [movedCountry] = nextOrder.splice(fromIndex, 1)
+    nextOrder.splice(toIndex, 0, movedCountry)
+    selectedCountryCodes.value = nextOrder
+  }
+
   function updateBudget(countryId, field, value) {
     const plan = plans[String(countryId)]
     if (!plan || !budgetFields.includes(field)) return
@@ -247,6 +264,8 @@ export const useTravelStore = defineStore('travel', () => {
       plan.aiReason = country.aiReason || ''
       plan.isConfirmed = Boolean(country.isConfirmed)
       for (const field of budgetFields) {
+        const recommendedField = field.replace('Amount', '').replace(/^./, (value) => value.toUpperCase())
+        plan.recommendedBudget[field] = Number(country[`recommended${recommendedField}Amount`] ?? 0)
         plan.budget[field] = selectedAmount(country, field)
       }
       plan.targetBudget = localBudgetFields.reduce((sum, field) => sum + Number(plan.budget[field] || 0), 0)
@@ -414,6 +433,7 @@ export const useTravelStore = defineStore('travel', () => {
     loadCountries,
     loadActiveGoal,
     toggleCountry,
+    reorderCountries,
     updatePlan,
     updateBudget,
     setAllocation,
