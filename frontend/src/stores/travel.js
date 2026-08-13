@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import {
   confirmTripBudget,
   createTripGoal,
+  fetchActiveTripHome,
   fetchActiveTripGoal,
   fetchTripBudget,
   fetchTripCountries,
@@ -116,6 +117,9 @@ export const useTravelStore = defineStore('travel', () => {
   const initialized = ref(false)
   const tripId = ref(null)
   const activeTrip = ref(null)
+  const homeDashboard = ref(null)
+  const homeLoading = ref(false)
+  const homeError = ref('')
   const recommendation = ref(null)
   const completion = ref(null)
   const tripName = ref('')
@@ -385,11 +389,42 @@ export const useTravelStore = defineStore('travel', () => {
     }
   }
 
+  async function loadHomeDashboard({ force = false } = {}) {
+    if (homeDashboard.value && !force) return homeDashboard.value
+    homeLoading.value = true
+    homeError.value = ''
+    try {
+      const result = await fetchActiveTripHome()
+      homeDashboard.value = result
+      activeTrip.value = result
+      tripId.value = result.tripId
+      tripName.value = result.tripName || ''
+      hasTravelGoal.value = Boolean(result.tripId)
+      return result
+    } catch (error) {
+      if (error.response?.data?.code === 'TRIP_NOT_FOUND') {
+        homeDashboard.value = null
+        hasTravelGoal.value = false
+        tripId.value = null
+        activeTrip.value = null
+        tripName.value = ''
+        return null
+      }
+      homeError.value = apiErrorMessage(error, '여행 저축 홈을 불러오지 못했습니다.')
+      return null
+    } finally {
+      initialized.value = true
+      homeLoading.value = false
+    }
+  }
+
   function resetGoal() {
     hasTravelGoal.value = false
     initialized.value = false
     tripId.value = null
     activeTrip.value = null
+    homeDashboard.value = null
+    homeError.value = ''
     recommendation.value = null
     completion.value = null
     tripName.value = ''
@@ -418,6 +453,9 @@ export const useTravelStore = defineStore('travel', () => {
     initialized,
     tripId,
     activeTrip,
+    homeDashboard,
+    homeLoading,
+    homeError,
     recommendation,
     completion,
     tripName,
@@ -441,6 +479,7 @@ export const useTravelStore = defineStore('travel', () => {
     canCompleteGoal,
     loadCountries,
     loadActiveGoal,
+    loadHomeDashboard,
     toggleCountry,
     reorderCountries,
     updatePlan,
