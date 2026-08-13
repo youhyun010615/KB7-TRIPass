@@ -32,7 +32,7 @@ INSERT IGNORE INTO countries (country_name, currency_id, time_zone) VALUES
 ('브루나이', (SELECT id FROM currencies WHERE currency_code = 'BND'), 'Asia/Brunei'),
 ('캐나다', (SELECT id FROM currencies WHERE currency_code = 'CAD'), 'America/Toronto'),
 ('스위스', (SELECT id FROM currencies WHERE currency_code = 'CHF'), 'Europe/Zurich'),
-('중국', (SELECT id FROM currencies WHERE currency_code = 'CNY'), 'Asia/Shanghai'),
+('중국', (SELECT id FROM currencies WHERE currency_code = 'CNH'), 'Asia/Shanghai'),
 ('덴마크', (SELECT id FROM currencies WHERE currency_code = 'DKK'), 'Europe/Copenhagen'),
 ('프랑스', (SELECT id FROM currencies WHERE currency_code = 'EUR'), 'Europe/Paris'),
 ('영국', (SELECT id FROM currencies WHERE currency_code = 'GBP'), 'Europe/London'),
