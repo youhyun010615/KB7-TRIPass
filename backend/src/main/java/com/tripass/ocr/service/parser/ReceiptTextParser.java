@@ -51,7 +51,7 @@ public class ReceiptTextParser {
                             + "(\\d{4})\\s*年\\s*"
                             + "(\\d{1,2})\\s*月\\s*"
                             + "(\\d{1,2})\\s*日"
-                            + "(?:\\s*\\([^)]*\\))?"
+                            + "(?:\\s*[（(][^）)]*[）)])?"
                             + "\\s*"
                             + "(\\d{1,2})[:：](\\d{2})"
                             + "(?::(\\d{2}))?"
@@ -95,7 +95,7 @@ public class ReceiptTextParser {
                             + "(grand\\s+total"
                             + "|amount\\s+due"
                             + "|balance\\s+due"
-                            + "|(?<!sub)total"
+                            + "|\\btotal\\b"
                             + "|\\btot\\b"
                             + "|tot\\s+euro"
                             + "|결제\\s*금액"
@@ -151,7 +151,7 @@ public class ReceiptTextParser {
                             + ".*(?:시|군|구|로|길)\\s*\\d|"
                             + "\\bno\\.?\\s*\\d+|"
                             + "공급가액|부가세|결제금액|"
-                            + "subtotal|change|cash|"
+                            + "\\b(?:subtotal|change|cash)\\b|"
                             + "お預り|お釣|現金|カード|クレジット|消費税|"
                             + "www\\.|https?://|"
                             + "merci|스탬프|광고|"
@@ -480,7 +480,10 @@ public class ReceiptTextParser {
                 || rawText.contains("領取証")
                 || rawText.contains("お預り")
                 || rawText.contains("お釣")
-                || rawText.contains("消費税");
+                || rawText.contains("消費税")
+                || rawText.contains("現金")
+                || rawText.contains("カード")
+                || rawText.contains("クレジット");
     }
 
     private boolean looksLikeKoreanReceipt(
@@ -789,6 +792,7 @@ public class ReceiptTextParser {
                     extractStandaloneAmount(candidateLine);
 
             if (amount != null
+                    && amount.signum() >= 0
                     && !isLikelyIdentifier(amount)) {
                 /*
                  * 수량 2, 단가 2.50, 합계 5.00처럼

@@ -532,6 +532,128 @@ class ReceiptTextParserTest {
     }
 
     @Test
+    void parsesEastAsianDateWithFullWidthParentheses() {
+        String rawText =
+                """
+                FamilyMart
+                2017年2月26日（日）20:46
+                合計
+                ¥281
+                """;
+
+        ParsedReceiptData result =
+                parse(rawText, "ja");
+
+        assertEquals(
+                LocalDateTime.of(
+                        2017,
+                        2,
+                        26,
+                        20,
+                        46
+                ),
+                result.getPaymentDateTime()
+        );
+    }
+
+    @Test
+    void doesNotMatchEnglishKeywordsInsideWords() {
+        String rawText =
+                """
+                TotalEnergies
+                Cashmere Scarf 12.00
+                TOTAL 12.00 EUR
+                """;
+
+        ParsedReceiptData result =
+                parse(rawText, "en");
+
+        assertEquals(
+                "TotalEnergies",
+                result.getOriginalMerchantName()
+        );
+
+        assertEquals(
+                new BigDecimal("12.00"),
+                result.getTotalAmount()
+        );
+
+        assertEquals(
+                1,
+                result.getItems().size()
+        );
+
+        ParsedReceiptItem item =
+                result.getItems().get(0);
+
+        assertEquals(
+                "Cashmere Scarf",
+                item.getOriginalName()
+        );
+
+        assertEquals(
+                new BigDecimal("12.00"),
+                item.getAmount()
+        );
+    }
+
+    @Test
+    void detectsJapaneseYenFromPaymentTokenWhenLanguageIsChinese() {
+        String rawText =
+                """
+                JAPAN STORE
+                カード
+                ¥1,000
+                """;
+
+        ParsedReceiptData result =
+                parse(rawText, "zh");
+
+        assertEquals(
+                "JPY",
+                result.getCurrencyCode()
+        );
+    }
+
+    @Test
+    void ignoresNegativeNearbyAmountCandidate() {
+        String rawText =
+                """
+                TEST STORE
+                1 Coffee
+                5.00
+                -1.00
+                TOTAL 5.00 USD
+                """;
+
+        ParsedReceiptData result =
+                parse(rawText, "en");
+
+        assertEquals(
+                1,
+                result.getItems().size()
+        );
+
+        ParsedReceiptItem item =
+                result.getItems().get(0);
+
+        assertEquals(
+                "Coffee",
+                item.getOriginalName()
+        );
+
+        assertEquals(
+                1,
+                item.getQuantity()
+        );
+
+        assertEquals(
+                new BigDecimal("5.00"),
+                item.getAmount()
+        );
+    }
+
+    @Test
     void returnsNullForUnrecognizedValues() {
         ParsedReceiptData result =
                 parse(

@@ -229,8 +229,7 @@ public class ReceiptController {
                     + "영수증, 품목 및 공동결제 참여자를 논리 삭제합니다."
     )
     @DeleteMapping("/{receiptId}")
-    public ResponseEntity<ApiResponse<Void>>
-    deleteReceipt(
+    public ResponseEntity<Void> deleteReceipt(
             @ApiIgnore
             @AuthenticationPrincipal
             Long userId,
@@ -255,12 +254,7 @@ public class ReceiptController {
                 receiptId
         );
 
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "영수증이 삭제되었습니다.",
-                        null
-                )
-        );
+        return ResponseEntity.noContent().build();
     }
 
     // 회원과 여행 소유권을 확인한 후 영수증 원본 이미지를 반환한다.
