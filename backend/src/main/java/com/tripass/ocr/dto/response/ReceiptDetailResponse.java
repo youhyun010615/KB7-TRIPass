@@ -26,6 +26,12 @@ public class ReceiptDetailResponse {
     // 결제 국가명
     private String countryName;
 
+    // 지출 카테고리 PK
+    private Long categoryId;
+
+    // 지출 카테고리 이름
+    private String categoryName;
+
     // 결제 통화 PK
     private Long currencyId;
 
@@ -54,6 +60,9 @@ public class ReceiptDetailResponse {
     // 파일 형식
     private String fileType;
 
+    // 영수증 메모
+    private String memo;
+
     // 처리 상태
     private String status;
 
@@ -66,9 +75,6 @@ public class ReceiptDetailResponse {
     // 현지 통화 기준 총액
     private BigDecimal totalAmount;
 
-    // 현지 통화 기준 세금
-    private BigDecimal taxAmount;
-
     // 금액 분할 인원수
     private Integer splitCount;
 
@@ -80,6 +86,9 @@ public class ReceiptDetailResponse {
 
     // 영수증 품목 목록
     private List<ReceiptItemResponse> items;
+
+    // 로그인 회원을 제외한 공동결제 참여자 목록
+    private List<ReceiptParticipantResponse> participants;
 
     // 생성일시
     @JsonFormat(

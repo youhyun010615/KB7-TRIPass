@@ -25,6 +25,9 @@ public class Receipt {
     // 결제 국가 PK
     private Long countryId;
 
+    // 지출 카테고리 PK
+    private Long categoryId;
+
     // 결제 통화 PK
     private Long currencyId;
 
@@ -40,6 +43,9 @@ public class Receipt {
     // 파일 형식
     private String fileType;
 
+    // 사용자가 입력한 영수증 메모
+    private String memo;
+
     // 영수증 처리 상태
     private String status;
 
@@ -51,9 +57,6 @@ public class Receipt {
 
     // 현지 통화 기준 총액
     private BigDecimal totalAmount;
-
-    // 현지 통화 기준 세금
-    private BigDecimal taxAmount;
 
     // OCR 전체 원문
     private String ocrRawText;
