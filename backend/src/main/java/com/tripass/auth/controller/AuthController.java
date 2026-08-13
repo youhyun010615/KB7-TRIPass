@@ -16,6 +16,9 @@ import com.tripass.auth.dto.response.TokenRefreshResponse;
 import com.tripass.auth.dto.request.FindIdRequest;
 import com.tripass.auth.dto.response.FindIdResponse;
 import com.tripass.auth.dto.request.ResetPasswordRequest;
+import com.tripass.auth.dto.request.ChangePasswordRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PutMapping;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
 import com.tripass.auth.service.PhoneVerificationService;
 import com.tripass.common.exception.CustomException;
@@ -32,6 +35,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -285,6 +289,40 @@ public class AuthController {
 
         return ApiResponse.success(
                 "비밀번호가 재설정되었습니다.",
+                null
+        );
+    }
+
+    @ApiOperation(
+            value = "로그인 상태 비밀번호 변경",
+            notes = "로그인한 LOCAL 회원의 현재 비밀번호를 확인한 후 "
+                    + "새 비밀번호로 변경합니다. 변경 후 모든 Refresh Token을 폐기합니다."
+    )
+    @PutMapping("/password/change")
+    public ApiResponse<Void> changePassword(
+            @ApiIgnore Authentication authentication,
+
+            @ApiParam(
+                    value = "비밀번호 변경 요청 정보",
+                    required = true
+            )
+            @RequestBody ChangePasswordRequest request,
+
+            HttpServletResponse servletResponse
+    ) {
+        Long userId =
+                (Long) authentication.getPrincipal();
+
+        authService.changePassword(
+                userId,
+                request
+        );
+
+        refreshTokenCookieProvider
+                .deleteRefreshTokenCookie(servletResponse);
+
+        return ApiResponse.success(
+                "비밀번호가 변경되었습니다. 다시 로그인해 주세요.",
                 null
         );
     }

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { useTravelStore } from '@/stores/travel'
 import { useSavingsPlanStore } from '@/stores/savingsPlan'
+import { useTripWalletStore } from '@/stores/tripWallet'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
@@ -14,12 +15,17 @@ const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
 const plan = useSavingsPlanStore()
+const wallet = useTripWalletStore()
 const router = useRouter()
 const isModeSwitching = ref(false)
 const nextMode = ref('travel')
 
 function switchMode(mode) {
   if (mode === travelModeStore.mode || isModeSwitching.value) return
+  if (mode === 'travel' && !travelModeStore.demoMode && !travelModeStore.canEnterTravelMode) {
+    window.alert('여행 모드는 등록한 여행 기간에만 이용할 수 있어요.')
+    return
+  }
   nextMode.value = mode
   isModeSwitching.value = true
   window.setTimeout(() => {
@@ -91,6 +97,10 @@ const savingsCardState = computed(() => {
 const homeGoalAmount = computed(() => plan.totalTargetAmount)
 const homeSavedAmount = computed(() => plan.securedAmount)
 const homeSavingsPercent = computed(() => plan.securedPercent)
+const monthlyTarget = computed(() => Math.max(0, Math.ceil((homeGoalAmount.value - wallet.balance.value) / 5 / 10_000) * 10_000))
+const monthlySaved = computed(() => wallet.monthDeposit)
+const monthlyRemaining = computed(() => Math.max(0, monthlyTarget.value - monthlySaved.value))
+const monthlyProgress = computed(() => monthlyTarget.value ? Math.min(100, Math.round(monthlySaved.value / monthlyTarget.value * 100)) : 100)
 const ticketSavingCopy = computed(() => {
   if (savingsCardState.value === 'unset') {
     return {
@@ -173,6 +183,10 @@ const travelSelectedCountry = ref(travelData.countries[0])
 function formatCurrency(n) {
   return Math.abs(n).toLocaleString('ko-KR') + '원'
 }
+
+function goWallet() {
+  router.push('/wallet')
+}
 </script>
 
 <template>
@@ -194,30 +208,16 @@ function formatCurrency(n) {
           <div class="py-1 text-center">
             <div class="mb-2 text-2xl">✈</div>
             <h2 class="text-[16px] font-extrabold">아직 등록된 여행이 없어요</h2>
-            <p class="mt-2 text-[10px] leading-4 text-blue-100">여행을 등록하면 목표 금액을 설정하고<br>저축 계획까지 한 번에 도와드려요.</p>
+            <p class="mt-2 text-[10px] leading-4 text-blue-100">여행명·국가·일정을 등록하면<br>AI가 목표 예산과 월 저축액을 제안해요.</p>
             <button class="w-full h-11 mt-4 rounded-xl text-[12px] font-extrabold text-white" style="background:#ff7a36" @click="router.push('/savings')">여행 계획 등록하기</button>
-            <div class="grid grid-cols-2 gap-3 mt-4 text-left">
-              <div><span class="block text-[8px] text-blue-200">보유 총자산</span><b class="text-[14px]">12,500,000원</b></div>
-              <div class="border-l border-white/20 pl-3"><span class="block text-[8px] text-blue-200">연결 계좌</span><b class="text-[14px]">2개</b></div>
-            </div>
           </div>
         </TravelTicket>
       </div>
 
-      <button class="block w-[calc(100%-2rem)] mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm text-left" @click="router.push('/savings/monthly')">
-        <div class="w-full flex justify-between items-center"><h2 class="text-[13px] font-extrabold">이달의 자금 체크</h2><span>›</span></div>
-        <p class="mt-3 text-[9px] text-slate-400">이달의 여유자금</p>
-        <p class="text-2xl font-extrabold" style="color:#0066ff">500,000원</p>
-        <p class="mt-1 text-[8px] text-slate-400">월급 3,500,000원 · 고정지출 1,800,000원 · 카테고리 목표 1,200,000원</p>
-        <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between"><h2 class="text-[13px] font-extrabold">카테고리별 사용 현황</h2><span class="text-[9px] text-slate-400">이번 달</span></div>
-        <div v-for="cat in savingsData.categories" :key="cat.name" class="grid grid-cols-[48px_1fr_34px] items-center gap-2 mt-3">
-          <span class="text-[9px] font-semibold">{{ cat.name }}</span><div class="h-1.5 rounded bg-slate-100"><i class="block h-full rounded" :style="`width:${cat.percent}%;background:${cat.color}`" /></div><b class="text-right text-[9px]" :style="`color:${cat.color}`">{{ cat.percent }}%</b>
-        </div>
-      </button>
-
-      <section class="mx-4 mt-3 p-4 rounded-2xl bg-white shadow-sm cursor-pointer" role="button" tabindex="0" @click="router.push('/financial-schedule')" @keydown.enter="router.push('/financial-schedule')">
-        <button class="w-full flex justify-between" @click.stop="router.push('/financial-schedule')"><h2 class="text-[13px] font-extrabold">다가오는 금융 일정</h2><span>›</span></button>
-        <div v-for="item in savingsData.schedule" :key="item.date" class="grid grid-cols-[38px_1fr_30px] mt-3 text-[9px]"><b style="color:#0066ff">{{ item.date }}</b><span>{{ item.label }}</span><strong :style="item.type==='입금' ? 'color:#16a36a' : 'color:#263f8c'">{{ item.type }}</strong></div>
+      <section class="mx-4 mt-4 rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-4">
+        <p class="text-[10px] font-extrabold" style="color:#2864e8">TRIPASS GUIDE</p>
+        <h2 class="mt-1 text-[15px] font-extrabold">목표 설정부터 월렛 저축까지</h2>
+        <p class="mt-1 text-[10px] leading-4 text-slate-500">여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요.</p>
       </section>
     </template>
 
@@ -261,7 +261,7 @@ function formatCurrency(n) {
               </button>
             </div>
           </div>
-          <button class="travel-edit-link" type="button" @click="router.push('/travel/register')">
+          <button class="travel-edit-link" type="button" @click="router.push('/savings')">
             여행 계획 수정하기 <span>›</span>
           </button>
         </div>
@@ -345,8 +345,8 @@ function formatCurrency(n) {
           <div class="relative z-10" :style="`background:${selectedCountry.headerBg}`">
             <button
               class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
-              @click="router.push(savingsCardState === 'ok' ? '/savings' : '/savings/plan')">
-              <span class="text-[10px] font-bold text-white">{{ ticketSavingCopy.action }}</span>
+              @click="goWallet">
+              <span class="text-[10px] font-bold text-white">송금하기</span>
               <div class="flex items-center gap-2">
                 <div class="flex gap-[1.5px] items-end h-5">
                   <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
@@ -362,76 +362,21 @@ function formatCurrency(n) {
         </div>
       </div>
 
-      <!-- 보유 총자산 / 연동 계좌 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 flex items-center shadow-sm">
-        <div class="flex-1">
-          <p class="text-[10px] text-gray-400 mb-1">보유 총자산</p>
-          <p class="text-[16px] font-extrabold text-gray-900">{{ formatCurrency(savingsData.balance) }}</p>
-        </div>
-        <div class="w-px h-8 bg-gray-100 mx-4" />
-        <div class="text-right">
-          <p class="text-[10px] text-gray-400 mb-1">연동 계좌</p>
-          <p class="text-[16px] font-extrabold text-gray-900">{{ savingsData.accounts }}개</p>
-        </div>
-        <svg class="ml-2 flex-none" width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
+      <section class="month-saving-card mx-4 mt-3">
+        <div class="month-saving-heading"><div><p>8월</p><h2>이번 달 저축</h2></div><span v-if="monthlyProgress >= 100">달성</span></div>
+        <div class="month-saving-values"><div><small>목표 금액</small><b>{{ formatCurrency(monthlyTarget) }}</b></div><div><small>저축한 금액</small><b>{{ formatCurrency(monthlySaved) }}</b></div><div><small>남은 저축</small><b>{{ formatCurrency(monthlyRemaining) }}</b></div></div>
+        <div class="month-saving-progress"><i :style="{ width: `${monthlyProgress}%` }"/><strong>{{ monthlyProgress }}%</strong></div>
+        <div v-if="monthlyProgress >= 100" class="month-saving-success"><span>✓</span><div><b>이번 달 목표 달성!</b><small>{{ formatCurrency(monthlySaved) }} 송금을 완료했어요.</small></div></div>
+        <button class="month-wallet-button" @click="goWallet">월렛으로 송금하기 <span>›</span></button>
+      </section>
 
-      <!-- 이달의 자금 체크 + 카테고리별 사용 현황 -->
-      <button class="block w-[calc(100%-2rem)] mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm text-left" @click="router.push('/savings/monthly')">
-        <div class="w-full flex items-center justify-between mb-2">
-          <p class="text-[14px] font-extrabold text-gray-900">이달의 자금 체크</p>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <p class="text-[11px] text-gray-400 mb-1.5">이달의 여유자금</p>
-        <p class="text-[28px] font-extrabold" style="color:#3B5BDB">{{ formatCurrency(savingsData.monthly.available) }}</p>
-        <p class="text-[10px] text-gray-400 mt-1 leading-relaxed">{{ savingsData.monthly.details }}</p>
-        <div class="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between mb-3">
-          <p class="text-[14px] font-extrabold text-gray-900">카테고리별 사용 현황</p>
-          <span class="text-[11px] text-gray-400">이번 달</span>
-        </div>
-        <div class="flex flex-col gap-3">
-          <div v-for="cat in savingsData.categories" :key="cat.name" class="flex items-center gap-2">
-            <span class="text-[15px] w-5 flex-none">{{ cat.icon }}</span>
-            <span class="text-[11px] text-gray-600 w-10 flex-none">{{ cat.name }}</span>
-            <div class="flex-1 h-1.5 rounded-full bg-gray-100">
-              <div class="h-full rounded-full" :style="`width:${cat.percent}%;background:${cat.color}`" />
-            </div>
-            <span class="text-[10px] text-gray-400 w-[90px] text-right flex-none">
-              {{ cat.spent.toLocaleString('ko-KR') }}/{{ cat.budget.toLocaleString('ko-KR') }}
-            </span>
-            <span class="text-[11px] font-bold w-8 text-right flex-none" :style="`color:${cat.color}`">{{ cat.percent }}%</span>
-          </div>
-        </div>
-      </button>
-
-      <!-- 다가오는 금융 일정 -->
-      <div class="mx-4 mt-3 bg-white rounded-2xl px-5 py-4 shadow-sm cursor-pointer" role="button" tabindex="0" @click="router.push('/financial-schedule')" @keydown.enter="router.push('/financial-schedule')">
-        <button class="w-full flex items-center justify-between mb-3" @click.stop="router.push('/financial-schedule')">
-          <p class="text-[14px] font-extrabold text-gray-900">다가오는 금융 일정</p>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="flex flex-col gap-3">
-          <div v-for="item in savingsData.schedule" :key="item.date" class="flex items-center gap-3">
-            <p class="text-[13px] font-extrabold w-8 flex-none" style="color:#3B5BDB">{{ item.date }}</p>
-            <div class="flex-1 min-w-0">
-              <p class="text-[13px] font-semibold text-gray-900">{{ item.label }}</p>
-              <p class="text-[10px] text-gray-400 mt-0.5">{{ item.desc }}</p>
-            </div>
-            <span
-              class="text-[10px] font-semibold px-2.5 py-1 rounded-full flex-none"
-              :style="item.type === '입금'
-                ? 'background:#F0FDF4;color:#16A34A'
-                : 'background:#EEF2FF;color:#3B5BDB'"
-            >{{ item.type }}</span>
-          </div>
-        </div>
-      </div>
+      <section class="ai-report-card mx-4 mt-3" @click="router.push('/missions')">
+        <div class="ai-report-heading"><div><p>7월 AI 분석 리포트</p><small>지난달 여행 저축 목표</small></div><button @click.stop="router.push('/missions')">상세 보기 ›</button></div>
+        <div class="ai-goal-status"><span class="status-icon">✦</span><div><strong>{{ monthlySaved >= monthlyTarget ? '목표 달성' : '목표 미도달' }}</strong><p v-if="monthlySaved >= monthlyTarget">목표보다 {{ formatCurrency(monthlySaved - monthlyTarget) }} 더 모았어요.</p><p v-else>목표까지 {{ formatCurrency(monthlyTarget - monthlySaved) }}이 부족했어요.</p></div></div>
+        <div class="ai-top-title"><span>AI 소비 분석</span><small>최근 거래내역 기준</small></div>
+        <div v-for="(item, index) in [{ name:'식비', amount:'120,000원' },{ name:'카페', amount:'60,000원' },{ name:'쇼핑', amount:'40,000원' }]" :key="item.name" class="ai-coaching-row"><b>{{ index + 1 }}</b><span>{{ item.name }}</span><small>{{ index === 0 ? '342,000원 · 38%' : index === 1 ? '171,000원 · 19%' : '126,000원 · 14%' }}</small><strong>{{ item.amount }} 줄이기</strong></div>
+        <div class="ai-saving-total"><small>이달의 절약 가능 금액</small><b>월 220,000원 확보 가능</b></div>
+      </section>
 
       <!-- 오늘의 환율 -->
       <div class="mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
@@ -624,6 +569,7 @@ function formatCurrency(n) {
 .travel-edit-link { display: flex; align-items: center; gap: 4px; padding: 8px 11px; border-radius: 10px; background: #fff0e8; color: #e45f24; font-size: 11px; font-weight: 900; }
 .travel-edit-link span { font-size: 16px; line-height: 10px; }
 .app-home-shell { position: relative; width: min(100%, 390px); margin: 0 auto; overflow-x: hidden; }
+.month-saving-card{padding:16px;border:1.5px solid #2bb69f;border-radius:19px;background:#fff;box-shadow:0 7px 16px rgba(19,59,123,.06)}.month-saving-heading{display:flex;align-items:center;justify-content:space-between}.month-saving-heading p{display:inline-block;padding:5px 11px;border:1px solid #20aa94;border-radius:99px;color:#089b83;font-size:10px;font-weight:900}.month-saving-heading h2{margin-top:6px;color:#079982;font-size:19px;font-weight:900}.month-saving-heading>span{padding:5px 9px;border-radius:99px;background:#e2f8f1;color:#08a084;font-size:10px;font-weight:900}.month-saving-values{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px}.month-saving-values>div{padding:0 8px}.month-saving-values>div:first-child{padding-left:0}.month-saving-values>div+div{border-left:1px solid #5bcab9}.month-saving-values small{display:block;color:#079982;font-size:9px;font-weight:700}.month-saving-values b{display:block;margin-top:5px;color:#079982;font-size:13px;font-weight:900;letter-spacing:-.04em}.month-saving-progress{position:relative;height:8px;margin-top:19px;border-radius:99px;background:#dff3ef}.month-saving-progress i{display:block;height:100%;border-radius:inherit;background:#25b59d}.month-saving-progress strong{position:absolute;right:0;top:-18px;color:#08a084;font-size:10px}.month-saving-success{display:flex;align-items:center;gap:9px;margin-top:15px;padding:10px;border-radius:13px;background:#e2f8f1}.month-saving-success>span{display:grid;width:28px;height:28px;place-items:center;border-radius:10px;background:#c8f0e6;color:#00a489;font-size:17px;font-weight:900}.month-saving-success b,.month-saving-success small{display:block}.month-saving-success b{color:#048c77;font-size:11px}.month-saving-success small{margin-top:2px;color:#229d89;font-size:9px}.month-wallet-button{display:flex;width:100%;align-items:center;justify-content:space-between;margin-top:13px;padding:11px 13px;border:1px solid #9adfd1;border-radius:12px;color:#049781;font-size:11px;font-weight:900}.month-wallet-button span{font-size:17px}.ai-report-card{padding:17px;border:1px solid #bfd7ff;border-radius:20px;background:#eaf3ff;box-shadow:0 8px 18px rgba(27,64,129,.05);cursor:pointer}.ai-report-heading{display:flex;justify-content:space-between;align-items:start}.ai-report-heading p{color:#286ce0;font-size:18px;font-weight:900;letter-spacing:-.05em}.ai-report-heading small{display:block;margin-top:5px;color:#6e88b2;font-size:10px}.ai-report-heading button{color:#286ce0;font-size:10px;font-weight:800}.ai-goal-status{display:flex;align-items:center;gap:9px;margin-top:13px;padding:11px;border-radius:13px;background:#fff}.status-icon{display:grid;width:31px;height:31px;place-items:center;border-radius:11px;background:#e1f8f2;color:#03a084;font-size:18px}.ai-goal-status strong{color:#109482;font-size:12px}.ai-goal-status p{margin-top:3px;color:#6681a6;font-size:9px}.ai-top-title{display:flex;align-items:center;justify-content:space-between;margin-top:16px}.ai-top-title span{color:#3b68aa;font-size:10px;font-weight:900}.ai-top-title small{color:#8aa0bf;font-size:8px}.ai-coaching-row{display:grid;grid-template-columns:22px 34px 1fr auto;align-items:center;gap:5px;margin-top:8px;padding:9px;border-radius:11px;background:#fff}.ai-coaching-row>b{display:grid;width:19px;height:19px;place-items:center;border-radius:50%;background:#dce9ff;color:#2c68d7;font-size:9px}.ai-coaching-row span{font-size:11px;font-weight:900}.ai-coaching-row small{color:#7186a8;font-size:8px}.ai-coaching-row strong{padding:5px 7px;border:1px solid #ffc6c6;border-radius:99px;color:#ef5050;font-size:8px}.ai-saving-total{margin-top:12px;padding:13px;border-radius:13px;background:#e2f8f1}.ai-saving-total small{display:block;color:#179980;font-size:9px;font-weight:800}.ai-saving-total b{display:block;margin-top:5px;color:#173b75;font-size:18px;font-weight:900;letter-spacing:-.05em}
 .mode-flight-loader { position: fixed; top: 0; bottom: 0; left: 50%; width: min(100vw,390px); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateX(-50%); background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
 .mode-flight-loader strong { margin-top: 22px; font-size: 18px; }
 .mode-flight-loader small { margin-top: 7px; color: #dbeafe; font-size: 11px; }

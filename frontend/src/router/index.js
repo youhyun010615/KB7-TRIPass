@@ -44,6 +44,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/missions',
+      name: 'SavingsMissions',
+      component: () => import('@/views/savings/SavingsMissionView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet',
+      name: 'TripWallet',
+      component: () => import('@/views/savings/TripWalletView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/savings/plan',
       name: 'SavingsPlanSetup',
       component: () => import('@/views/savings/SavingsPlanSetupView.vue'),

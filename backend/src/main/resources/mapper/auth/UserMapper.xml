@@ -132,4 +132,19 @@
           AND login_provider = 'LOCAL'
           AND is_deleted = 0
     </update>
+
+    <!-- 비밀번호 변경용 활성 LOCAL 회원 인증정보 조회 -->
+    <select id="findActiveLocalUserWithPasswordById"
+            resultMap="userResultMap">
+        SELECT
+            id,
+            login_id,
+            password,
+            login_provider,
+            is_deleted
+        FROM users
+        WHERE id = #{userId}
+          AND login_provider = 'LOCAL'
+          AND is_deleted = 0
+    </select>
 </mapper>

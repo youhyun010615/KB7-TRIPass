@@ -30,7 +30,10 @@ public class SwaggerConfig {
                 .build()
                 .apiInfo(apiInfo())
                 .securitySchemes(List.of(jwtSecurityScheme()))
-                .securityContexts(List.of(jwtSecurityContext()));
+                .securityContexts(List.of(
+                        jwtSecurityContext(),
+                        authPasswordChangeSecurityContext()
+                ));
     }
 
     private ApiInfo apiInfo() {
@@ -57,6 +60,20 @@ public class SwaggerConfig {
                 .forPaths(
                         PathSelectors.regex(
                                 "/api/v1/(?!auth(?:/|$)).*"
+                        )
+                )
+                .build();
+    }
+
+    private SecurityContext authPasswordChangeSecurityContext() {
+        return SecurityContext
+                .builder()
+                .securityReferences(
+                        jwtSecurityReferences()
+                )
+                .forPaths(
+                        PathSelectors.ant(
+                                "/api/v1/auth/password/change"
                         )
                 )
                 .build();
