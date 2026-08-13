@@ -1,4 +1,5 @@
 <script setup>
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
@@ -7,6 +8,10 @@ import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const travelStore = useTravelStore()
+
+onMounted(() => {
+  travelStore.loadActiveGoal({ force: true })
+})
 </script>
 
 <template>
