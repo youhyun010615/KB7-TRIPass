@@ -36,7 +36,11 @@ const recommendedLocalTotal = (plan) => ['foodAmount', 'activityAmount', 'transp
 const recommendedPrepaidTotal = (plan) => Number(plan.recommendedBudget.airfareAmount || 0) + Number(plan.recommendedBudget.lodgingAmount || 0)
 
 onMounted(async () => {
-  await store.loadActiveGoal({ force: true })
+  // 수정 단계 이동 중에는 이미 불러온 여행명·국가·일정·예산을 유지한다.
+  // 일정 URL을 직접 새로고침해 메모리 상태가 없을 때만 활성 여행을 조회한다.
+  if (!store.tripId || !store.selectedPlans.length) {
+    await store.loadActiveGoal({ force: store.initialized })
+  }
   if (!store.countries.length) await store.loadCountries()
 })
 
