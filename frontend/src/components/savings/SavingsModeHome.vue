@@ -239,13 +239,22 @@ function switchMode(mode) {
         </div>
 
         <div class="savings-header-row savings-greeting-row">
-          <div><h1>안녕하세요, {{ userName }}님</h1><p>{{ homeDashboard.tripName }}</p></div>
+          <h1>안녕하세요, {{ userName }}님</h1>
           <NotificationBell />
         </div>
 
+        <section class="active-trip-heading">
+          <div class="active-trip-icon">✈</div>
+          <div class="active-trip-copy">
+            <small>MY NEXT TRIP</small>
+            <h2>{{ homeDashboard.tripName }}</h2>
+            <p><span>출발</span>{{ formatDate(homeDashboard.startDate) }} <i>·</i> D-{{ daysUntilDeparture }}</p>
+          </div>
+        </section>
+
         <div class="savings-header-row savings-action-row">
           <!-- 국가 드롭다운 -->
-          <div class="relative">
+          <div class="country-picker">
             <button
               class="savings-country-button"
               @click="showCountryDropdown = !showCountryDropdown"
@@ -256,16 +265,18 @@ function switchMode(mode) {
                 <path d="M6 9L12 15L18 9" stroke="#6B7280" stroke-width="2.5" stroke-linecap="round"/>
               </svg>
             </button>
-            <div v-if="showCountryDropdown" class="absolute left-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 min-w-[120px]">
+            <Transition name="country-menu">
+              <div v-if="showCountryDropdown" class="country-dropdown">
               <button
                 v-for="c in countries" :key="c.id"
-                class="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                class="country-dropdown-item"
                 :class="{ 'font-extrabold': selectedCountry.id === c.id }"
                 @click="selectCountry(c.id)"
               >
-                <span>{{ c.flag }}</span><span>{{ c.name }}</span>
+                <span>{{ c.flag }}</span><strong>{{ c.name }}</strong><small>{{ c.currency }}</small>
               </button>
-            </div>
+              </div>
+            </Transition>
           </div>
           <RouterLink class="travel-edit-link" :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">
             여행 계획 수정하기 <span>›</span>
@@ -279,9 +290,9 @@ function switchMode(mode) {
         <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
         <div class="px-5 pt-4 pb-3 flex items-center justify-between"
              :style="`background:${selectedCountry.headerBg}`">
-          <span class="text-white/65 text-[9px] font-bold tracking-widest">BOARDING PASS</span>
-          <span class="text-white/40 text-[9px] tracking-widest">TRIPASS AIR</span>
-          <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.displayOrder }}</span>
+          <span class="text-white/70 text-[10px] font-bold tracking-widest">BOARDING PASS</span>
+          <span class="text-white/50 text-[10px] tracking-widest">TRIPASS AIR</span>
+          <span class="text-white/70 text-[10px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.displayOrder }}</span>
         </div>
 
         <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
@@ -305,8 +316,8 @@ function switchMode(mode) {
             <!-- DESTINATION / DEPARTURE / 설명 -->
             <div class="flex items-center gap-2">
               <div class="flex-none">
-                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Destination</p>
-                <p class="text-white text-[22px] font-extrabold leading-none">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
+                <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Destination</p>
+                <p class="text-white text-[26px] font-extrabold leading-none">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
               </div>
               <div class="flex-1 flex items-center mt-3.5">
                 <div class="flex-1 border-t border-dashed border-white/40" />
@@ -314,11 +325,11 @@ function switchMode(mode) {
                 <div class="flex-1 border-t border-dashed border-white/40" />
               </div>
               <div class="text-right flex-none">
-                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Departure</p>
-                <p class="text-white text-[22px] font-extrabold leading-none">D-{{ daysUntilDeparture }}</p>
+                <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Departure</p>
+                <p class="text-white text-[26px] font-extrabold leading-none">D-{{ daysUntilDeparture }}</p>
               </div>
             </div>
-            <p class="ticket-description text-white/80 text-[10px] mt-2">{{ selectedCountry.desc }} ✨</p>
+            <p class="ticket-description text-white/90 text-[12px] mt-3">{{ selectedCountry.desc }} ✨</p>
 
             <!-- 사진이 보이는 여백 -->
             <div class="ticket-photo-space" />
@@ -326,20 +337,20 @@ function switchMode(mode) {
             <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
             <div class="rounded-xl px-4 py-4" :style="`background:${selectedCountry.progressBg}`">
               <div class="flex justify-between mb-2">
-                <span class="font-semibold text-[11px] text-white">{{ ticketSavingCopy.title }}</span>
-                <span class="text-white font-extrabold text-[12px]">{{ homeSavingsPercent }}%</span>
+                <span class="font-semibold text-[13px] text-white">{{ ticketSavingCopy.title }}</span>
+                <span class="text-white font-extrabold text-[14px]">{{ homeSavingsPercent }}%</span>
               </div>
               <div class="h-2 rounded-full bg-white/25 overflow-hidden">
                 <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${selectedCountry.barColor}`" />
               </div>
               <div class="flex justify-between mt-2.5">
                 <div>
-                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
-                  <p class="text-white/55 text-[7px] tracking-wider mt-0.5">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
+                  <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
+                  <p class="text-white/65 text-[9px] tracking-wider mt-1">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
-                  <p class="text-white/50 text-[7px] tracking-wider mt-0.5">GOAL</p>
+                  <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
+                  <p class="text-white/60 text-[9px] tracking-wider mt-1">GOAL</p>
                 </div>
               </div>
             </div>
@@ -357,7 +368,7 @@ function switchMode(mode) {
             <button
               class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
               @click="goWallet">
-              <span class="text-[10px] font-bold text-white">송금하기</span>
+              <span class="text-[13px] font-bold text-white">송금하기</span>
               <div class="flex items-center gap-2">
                 <div class="flex gap-[1.5px] items-end h-5">
                   <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
@@ -392,17 +403,17 @@ function switchMode(mode) {
       <!-- 오늘의 실시간 환율 -->
       <div class="exchange-live-card mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
         <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-          <span class="text-white/60 text-[11px] font-semibold">오늘의 환율</span>
-          <span class="text-white/40 text-[10px]">{{ exchangeStore.lastUpdateDate || '최신 고시 기준' }}</span>
+          <span class="text-white/70 text-[12px] font-semibold">오늘의 환율</span>
+          <span class="text-white/55 text-[11px]">{{ exchangeStore.lastUpdateDate || '최신 고시 기준' }}</span>
         </div>
         <div class="px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-[14px]">{{ selectedCountry.flag }}</span>
-            <span class="text-white font-bold text-[14px]">{{ exchangeUnitLabel }}/KRW</span>
+            <span class="text-[17px]">{{ selectedCountry.flag }}</span>
+            <span class="text-white font-bold text-[15px]">{{ exchangeUnitLabel }}/KRW</span>
           </div>
           <div v-if="selectedExchangeRate" class="flex items-center gap-2">
             <span class="text-white text-[22px] font-extrabold">{{ formatRate(selectedExchangeRate.rate) }}원</span>
-            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded" :class="exchangeChangePercent > 0 ? 'text-red-300' : exchangeChangePercent < 0 ? 'text-blue-300' : 'text-white/60'">
+            <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded" :class="exchangeChangePercent > 0 ? 'text-red-300' : exchangeChangePercent < 0 ? 'text-blue-300' : 'text-white/60'">
               {{ exchangeChangePercent > 0 ? '+' : '' }}{{ exchangeChangePercent.toFixed(2) }}%
               {{ exchangeChangePercent > 0 ? '↑' : exchangeChangePercent < 0 ? '↓' : '-' }}
             </span>
@@ -470,6 +481,52 @@ function switchMode(mode) {
 .month-saving-progress i::after { position: absolute; inset: 0; content: ''; background: linear-gradient(90deg,transparent,#ffffff99,transparent); transform: translateX(-100%); animation: progress-shine 1.8s .5s ease-in-out infinite; }
 .travel-edit-link { transition: transform .2s ease, box-shadow .2s ease; }
 .travel-edit-link:active { transform: scale(.96); }
+.savings-home-header { position: relative; z-index: 60; padding: 42px 20px 18px; background: radial-gradient(circle at 100% 0,#fff4e9 0,transparent 42%),#f7f4ee; }
+.savings-greeting-row { margin-top: 13px; }
+.savings-greeting-row h1 { font-size: 21px; line-height: 1.25; }
+.active-trip-heading { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 14px; border: 1px solid #dae6fb; border-radius: 17px; background: linear-gradient(135deg,#fff 0%,#eef5ff 100%); box-shadow: 0 8px 22px rgba(24,61,130,.09); }
+.active-trip-icon { display: grid; flex: 0 0 42px; height: 42px; place-items: center; border-radius: 14px; background: linear-gradient(145deg,#173f8d,#3475e6); color: #fff; font-size: 20px; box-shadow: 0 7px 14px rgba(36,105,232,.24); }
+.active-trip-copy { min-width: 0; }
+.active-trip-copy small { color: #6d8dc0; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
+.active-trip-copy h2 { overflow: hidden; margin-top: 3px; color: #173f8d; font-size: 19px; font-weight: 950; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.active-trip-copy p { margin-top: 6px; color: #526b93; font-size: 12px; font-weight: 750; }
+.active-trip-copy p span { margin-right: 6px; padding: 3px 6px; border-radius: 6px; background: #dceaff; color: #2469e8; font-size: 9px; font-weight: 900; }
+.active-trip-copy p i { margin: 0 4px; color: #9cb0cf; font-style: normal; }
+.savings-action-row { position: relative; z-index: 80; margin-top: 13px; }
+.country-picker { position: relative; z-index: 90; }
+.savings-country-button { min-width: 102px; gap: 7px; padding: 10px 12px; border-color: #c9d7eb; border-radius: 12px; font-size: 13px; box-shadow: 0 5px 12px rgba(27,43,75,.08); }
+.country-dropdown { position: absolute; z-index: 200; top: calc(100% + 7px); left: 0; min-width: 154px; overflow: hidden; padding: 6px; border: 1px solid #d9e3f1; border-radius: 14px; background: #fff; box-shadow: 0 18px 36px rgba(17,35,70,.22); }
+.country-dropdown-item { display: grid; width: 100%; grid-template-columns: 22px 1fr auto; align-items: center; gap: 7px; padding: 10px; border-radius: 9px; color: #273449; text-align: left; }
+.country-dropdown-item:hover,.country-dropdown-item:active { background: #edf4ff; }
+.country-dropdown-item strong { font-size: 13px; }
+.country-dropdown-item small { color: #8190a8; font-size: 9px; }
+.country-menu-enter-active,.country-menu-leave-active { transition: opacity .18s ease,transform .18s ease; transform-origin: top left; }
+.country-menu-enter-from,.country-menu-leave-to { opacity: 0; transform: translateY(-5px) scale(.96); }
+.travel-edit-link { padding: 10px 13px; border: 1px solid #ffd9c5; border-radius: 12px; font-size: 12px; box-shadow: 0 5px 14px rgba(228,95,36,.08); }
+.country-ticket { position: relative; z-index: 1; margin-top: 7px; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
+.ticket-photo-space { height: 112px; }
+.ticket-stub { height: 49px; }
+.month-saving-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; box-shadow: 0 10px 24px rgba(4,151,129,.10); }
+.month-saving-heading h2 { margin-top: 0; font-size: 21px; }
+.month-saving-heading p { padding: 6px 13px; font-size: 12px; }
+.month-saving-values { margin-top: 20px; }
+.month-saving-values small { font-size: 11px; }
+.month-saving-values b { margin-top: 7px; font-size: 15px; }
+.month-saving-progress { height: 10px; margin-top: 24px; }
+.month-saving-progress strong { top: -21px; font-size: 12px; }
+.month-wallet-button { margin-top: 17px; padding: 13px 14px; border-radius: 13px; font-size: 13px; }
+.ai-report-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; background: linear-gradient(145deg,#eaf3ff,#f5f8ff); box-shadow: 0 10px 25px rgba(36,105,232,.10); }
+.ai-report-heading p { font-size: 21px; }
+.ai-report-heading small { font-size: 11px; }
+.ai-report-heading a { font-size: 12px; }
+.ai-goal-status { gap: 12px; margin-top: 16px; padding: 14px; }
+.status-icon { width: 38px; height: 38px; font-size: 20px; }
+.ai-goal-status strong { font-size: 14px; }
+.ai-goal-status p { margin-top: 5px; color: #526b93; font-size: 11px; font-weight: 650; }
+.trip-summary-row { margin-top: 10px; padding: 13px; }
+.trip-summary-row span { font-size: 11px; font-weight: 700; }
+.trip-summary-row b { font-size: 12px; }
+.exchange-live-card { margin-top: 16px; border-radius: 20px; box-shadow: 0 12px 26px rgba(17,35,70,.16); }
 @keyframes home-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
