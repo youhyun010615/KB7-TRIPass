@@ -1,31 +1,40 @@
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
+import {
+  confirmTripBudget,
+  createTripGoal,
+  fetchActiveTripGoal,
+  fetchTripBudget,
+  fetchTripCountries,
+  generateTripBudget,
+  updateTripGoal,
+} from '@/api/travel'
 
-const countrySeed = [
-  { code: 'FR', name: '프랑스', city: '파리', flag: '🇫🇷', accent: '#0066ff', securedBudget: 1_900_000 },
-  { code: 'CH', name: '스위스', city: '인터라켄', flag: '🇨🇭', accent: '#c8173c', securedBudget: 3_100_000 },
-  { code: 'DE', name: '독일', city: '베를린', flag: '🇩🇪', accent: '#151515', securedBudget: 1_500_000 },
-  { code: 'JP', name: '일본', city: '도쿄', flag: '🇯🇵', accent: '#ef4b91', securedBudget: 1_200_000 },
-  { code: 'HK', name: '홍콩', city: '홍콩', flag: '🇭🇰', accent: '#b8202e', securedBudget: 900_000 },
-  { code: 'AE', name: '아랍에미리트', city: '두바이', flag: '🇦🇪', accent: '#0f766e', securedBudget: 1_700_000 },
-  { code: 'AU', name: '호주', city: '시드니', flag: '🇦🇺', accent: '#1565c0', securedBudget: 1_800_000 },
-  { code: 'BH', name: '바레인', city: '마나마', flag: '🇧🇭', accent: '#c62828', securedBudget: 1_600_000 },
-  { code: 'BN', name: '브루나이', city: '반다르스리브가완', flag: '🇧🇳', accent: '#f2b705', securedBudget: 1_300_000 },
-  { code: 'CA', name: '캐나다', city: '밴쿠버', flag: '🇨🇦', accent: '#e53935', securedBudget: 1_600_000 },
-  { code: 'CN', name: '중국', city: '상하이', flag: '🇨🇳', accent: '#d32f2f', securedBudget: 1_100_000 },
-  { code: 'DK', name: '덴마크', city: '코펜하겐', flag: '🇩🇰', accent: '#b71c1c', securedBudget: 1_700_000 },
-  { code: 'GB', name: '영국', city: '런던', flag: '🇬🇧', accent: '#1e3a8a', securedBudget: 2_000_000 },
-  { code: 'ID', name: '인도네시아', city: '발리', flag: '🇮🇩', accent: '#c62828', securedBudget: 950_000 },
-  { code: 'KW', name: '쿠웨이트', city: '쿠웨이트시티', flag: '🇰🇼', accent: '#00897b', securedBudget: 1_600_000 },
-  { code: 'MY', name: '말레이시아', city: '쿠알라룸푸르', flag: '🇲🇾', accent: '#1565c0', securedBudget: 950_000 },
-  { code: 'NO', name: '노르웨이', city: '오슬로', flag: '🇳🇴', accent: '#c62828', securedBudget: 1_900_000 },
-  { code: 'NZ', name: '뉴질랜드', city: '오클랜드', flag: '🇳🇿', accent: '#1565c0', securedBudget: 1_700_000 },
-  { code: 'SA', name: '사우디아라비아', city: '리야드', flag: '🇸🇦', accent: '#15803d', securedBudget: 1_450_000 },
-  { code: 'SE', name: '스웨덴', city: '스톡홀름', flag: '🇸🇪', accent: '#1e40af', securedBudget: 1_800_000 },
-  { code: 'SG', name: '싱가포르', city: '싱가포르', flag: '🇸🇬', accent: '#dc2626', securedBudget: 1_450_000 },
-  { code: 'TH', name: '태국', city: '방콕', flag: '🇹🇭', accent: '#2563eb', securedBudget: 900_000 },
-  { code: 'US', name: '미국', city: '뉴욕', flag: '🇺🇸', accent: '#1d4ed8', securedBudget: 1_900_000 },
-]
+const countryPresentation = {
+  아랍에미리트: { code: 'AE', city: '두바이', flag: '🇦🇪', accent: '#0f766e' },
+  호주: { code: 'AU', city: '시드니', flag: '🇦🇺', accent: '#1565c0' },
+  바레인: { code: 'BH', city: '마나마', flag: '🇧🇭', accent: '#c62828' },
+  브루나이: { code: 'BN', city: '반다르스리브가완', flag: '🇧🇳', accent: '#f2b705' },
+  캐나다: { code: 'CA', city: '밴쿠버', flag: '🇨🇦', accent: '#e53935' },
+  스위스: { code: 'CH', city: '인터라켄', flag: '🇨🇭', accent: '#c8173c' },
+  중국: { code: 'CN', city: '상하이', flag: '🇨🇳', accent: '#d32f2f' },
+  덴마크: { code: 'DK', city: '코펜하겐', flag: '🇩🇰', accent: '#b71c1c' },
+  프랑스: { code: 'FR', city: '파리', flag: '🇫🇷', accent: '#0066ff' },
+  독일: { code: 'DE', city: '베를린', flag: '🇩🇪', accent: '#151515' },
+  영국: { code: 'GB', city: '런던', flag: '🇬🇧', accent: '#1e3a8a' },
+  홍콩: { code: 'HK', city: '홍콩', flag: '🇭🇰', accent: '#b8202e' },
+  인도네시아: { code: 'ID', city: '발리', flag: '🇮🇩', accent: '#c62828' },
+  일본: { code: 'JP', city: '도쿄', flag: '🇯🇵', accent: '#ef4b91' },
+  쿠웨이트: { code: 'KW', city: '쿠웨이트시티', flag: '🇰🇼', accent: '#00897b' },
+  말레이시아: { code: 'MY', city: '쿠알라룸푸르', flag: '🇲🇾', accent: '#1565c0' },
+  노르웨이: { code: 'NO', city: '오슬로', flag: '🇳🇴', accent: '#c62828' },
+  뉴질랜드: { code: 'NZ', city: '오클랜드', flag: '🇳🇿', accent: '#1565c0' },
+  사우디아라비아: { code: 'SA', city: '리야드', flag: '🇸🇦', accent: '#15803d' },
+  스웨덴: { code: 'SE', city: '스톡홀름', flag: '🇸🇪', accent: '#1e40af' },
+  싱가포르: { code: 'SG', city: '싱가포르', flag: '🇸🇬', accent: '#dc2626' },
+  태국: { code: 'TH', city: '방콕', flag: '🇹🇭', accent: '#2563eb' },
+  미국: { code: 'US', city: '뉴욕', flag: '🇺🇸', accent: '#1d4ed8' },
+}
 
 const accountSeed = [
   { id: 1, bank: 'KB국민은행', name: 'KB국민은행 여행통장', number: '**** 5320', balance: 1_500_000 },
@@ -33,80 +42,201 @@ const accountSeed = [
   { id: 3, bank: '카카오뱅크', name: '카카오뱅크 입출금통장', number: '**** 1108', balance: 2_450_000 },
 ]
 
-const createPlan = (country) => ({
-  ...country,
-  startDate: '',
-  endDate: '',
-  targetBudget: country.securedBudget,
-})
+const budgetFields = [
+  'airfareAmount',
+  'lodgingAmount',
+  'activityAmount',
+  'transportAmount',
+  'foodAmount',
+  'otherAmount',
+]
 
-const STORAGE_KEY = 'tripass-travel-goal'
+const localBudgetFields = ['activityAmount', 'transportAmount', 'foodAmount', 'otherAmount']
 
-function loadSavedGoal() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-  } catch {
-    return null
+function apiErrorMessage(error, fallback) {
+  return error.response?.data?.message || fallback
+}
+
+function decorateCountry(country) {
+  const presentation = countryPresentation[country.countryName] || {}
+  return {
+    id: country.countryId,
+    countryId: country.countryId,
+    name: country.countryName,
+    currencyCode: country.currencyCode,
+    currencyName: country.currencyName,
+    flagUrl: country.flagUrl,
+    code: presentation.code || country.currencyCode,
+    city: presentation.city || country.countryName,
+    flag: presentation.flag || '✈️',
+    accent: presentation.accent || '#2469e8',
   }
 }
 
+function createPlan(country, initial = {}) {
+  return {
+    ...country,
+    startDate: initial.arrivalDate || initial.startDate || '',
+    endDate: initial.departureDate || initial.endDate || '',
+    tripCountryId: initial.tripCountryId || null,
+    targetBudget: Number(initial.targetBudget || 0),
+    budget: {
+      airfareAmount: 0,
+      lodgingAmount: 0,
+      activityAmount: 0,
+      transportAmount: 0,
+      foodAmount: 0,
+      otherAmount: 0,
+    },
+    recommendedBudget: {
+      airfareAmount: 0,
+      lodgingAmount: 0,
+      activityAmount: 0,
+      transportAmount: 0,
+      foodAmount: 0,
+      otherAmount: 0,
+    },
+    aiReason: '',
+    isConfirmed: false,
+  }
+}
+
+function selectedAmount(country, field) {
+  const confirmedField = field.replace('Amount', '').replace(/^./, (value) => value.toUpperCase())
+  const confirmed = country[`confirmed${confirmedField}Amount`]
+  const recommended = country[`recommended${confirmedField}Amount`]
+  return Number(confirmed ?? recommended ?? 0)
+}
+
 export const useTravelStore = defineStore('travel', () => {
-  const savedGoal = loadSavedGoal()
   const isTravelMode = ref(false)
   const selectedCountry = ref(null)
   const travelBudget = ref(null)
-  const hasTravelGoal = ref(savedGoal?.hasTravelGoal ?? false)
-  const tripName = ref(savedGoal?.tripName ?? '')
-  const selectedCountryCodes = ref(savedGoal?.selectedCountryCodes ?? [])
-  const plans = reactive(savedGoal?.plans ?? {})
-  const allocations = reactive(savedGoal?.allocations ?? {})
+  const hasTravelGoal = ref(false)
+  const initialized = ref(false)
+  const tripId = ref(null)
+  const activeTrip = ref(null)
+  const recommendation = ref(null)
+  const completion = ref(null)
+  const tripName = ref('')
+  const countries = ref([])
+  const selectedCountryCodes = ref([])
+  const plans = reactive({})
+  const allocations = reactive({})
+  const loading = ref(false)
+  const countryLoading = ref(false)
+  const errorMessage = ref('')
 
-  const countries = countrySeed
   const accounts = accountSeed
-  const selectedPlans = computed(() => selectedCountryCodes.value.map((code) => plans[code]))
-  const totalTargetAmount = computed(() => selectedPlans.value.reduce((sum, plan) => sum + Number(plan.targetBudget || 0), 0))
+  const selectedPlans = computed(() => selectedCountryCodes.value.map((key) => plans[key]).filter(Boolean))
+  const totalTargetAmount = computed(() => {
+    if (completion.value) return Number(completion.value.localTravelTargetTotal || 0)
+    return selectedPlans.value.reduce((sum, plan) => (
+      sum + localBudgetFields.reduce((subtotal, field) => subtotal + Number(plan.budget[field] || 0), 0)
+    ), 0)
+  })
+  const prepaidExpenseTotal = computed(() => {
+    if (completion.value) return Number(completion.value.prepaidExpenseTotal || 0)
+    return selectedPlans.value.reduce((sum, plan) => (
+      sum + Number(plan.budget.airfareAmount || 0) + Number(plan.budget.lodgingAmount || 0)
+    ), 0)
+  })
+  const monthlySavingTarget = computed(() => Number(completion.value?.monthlySavingTarget || 0))
+  const currentWalletBalance = computed(() => Number(completion.value?.currentWalletBalance || 0))
+  const remainingMonths = computed(() => Number(completion.value?.remainingMonths || 0))
   const totalAllocatedAmount = computed(() => Object.values(allocations).reduce((sum, amount) => sum + Number(amount || 0), 0))
   const selectedAccountCount = computed(() => Object.values(allocations).filter((amount) => Number(amount) > 0).length)
 
-  function toggleCountry(code) {
-    const index = selectedCountryCodes.value.indexOf(code)
-    if (index >= 0) {
-      selectedCountryCodes.value.splice(index, 1)
-      delete plans[code]
-      return
-    }
-    const country = countries.find((item) => item.code === code)
-    if (!country) return
-    selectedCountryCodes.value.push(code)
-    plans[code] = createPlan(country)
+  function clearError() {
+    errorMessage.value = ''
   }
 
-  function updatePlan(code, patch) {
-    if (!plans[code]) return
-    Object.assign(plans[code], patch)
+  function clearPlans() {
+    selectedCountryCodes.value = []
+    Object.keys(plans).forEach((key) => delete plans[key])
+  }
+
+  async function loadCountries(keyword = '') {
+    countryLoading.value = true
+    try {
+      const result = await fetchTripCountries(keyword)
+      countries.value = (result || []).map(decorateCountry)
+      return countries.value
+    } catch (error) {
+      errorMessage.value = apiErrorMessage(error, '국가 목록을 불러오지 못했습니다.')
+      return []
+    } finally {
+      countryLoading.value = false
+    }
+  }
+
+  function toggleCountry(countryId) {
+    const key = String(countryId)
+    const index = selectedCountryCodes.value.indexOf(key)
+    if (index >= 0) {
+      selectedCountryCodes.value.splice(index, 1)
+      delete plans[key]
+      return true
+    }
+    if (selectedCountryCodes.value.length >= 5) {
+      errorMessage.value = '여행 국가는 최대 5개까지 선택할 수 있어요.'
+      return false
+    }
+    const country = countries.value.find((item) => String(item.countryId) === key)
+    if (!country) return false
+    clearError()
+    selectedCountryCodes.value.push(key)
+    plans[key] = createPlan(country)
+    return true
+  }
+
+  function updatePlan(countryId, patch) {
+    const plan = plans[String(countryId)]
+    if (!plan) return
+    Object.assign(plan, patch)
+  }
+
+  function reorderCountries(fromIndex, toIndex) {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return
+    if (fromIndex >= selectedCountryCodes.value.length || toIndex >= selectedCountryCodes.value.length) return
+    const nextOrder = [...selectedCountryCodes.value]
+    const [movedCountry] = nextOrder.splice(fromIndex, 1)
+    nextOrder.splice(toIndex, 0, movedCountry)
+    selectedCountryCodes.value = nextOrder
+  }
+
+  function updateBudget(countryId, field, value) {
+    const plan = plans[String(countryId)]
+    if (!plan || !budgetFields.includes(field)) return
+    plan.budget[field] = Math.max(0, Number(value) || 0)
+    plan.targetBudget = localBudgetFields.reduce((sum, key) => sum + Number(plan.budget[key] || 0), 0)
+  }
+
+  function resetBudgetToRecommendation(countryId) {
+    const plan = plans[String(countryId)]
+    if (!plan) return
+    for (const field of budgetFields) {
+      plan.budget[field] = Number(plan.recommendedBudget[field] || 0)
+    }
+    plan.targetBudget = localBudgetFields.reduce((sum, key) => sum + Number(plan.budget[key] || 0), 0)
   }
 
   function setAllocation(accountId, value) {
     const account = accounts.find((item) => item.id === accountId)
     if (!account) return
-    const amount = Math.max(0, Math.min(Number(value) || 0, account.balance))
-    allocations[accountId] = amount
+    allocations[accountId] = Math.max(0, Math.min(Number(value) || 0, account.balance))
   }
 
   function planError(plan) {
     if (!plan.startDate || !plan.endDate) return '여행 날짜를 선택해 주세요.'
-    if (new Date(plan.endDate) < new Date(plan.startDate)) return '도착일은 출국일보다 빠를 수 없어요.'
-    if (Number(plan.targetBudget) < Number(plan.securedBudget)) return '목표 예산은 사전 확보 예산보다 커야 해요.'
+    if (new Date(plan.endDate) <= new Date(plan.startDate)) return '출발일은 도착일보다 늦어야 해요.'
     return ''
   }
 
-  const hasDateCollision = computed(() => {
-    const dated = selectedPlans.value.filter((plan) => plan.startDate && plan.endDate)
-    return dated.some((plan, index) => dated.slice(index + 1).some((other) => (
-      new Date(plan.startDate) <= new Date(other.endDate)
-      && new Date(other.startDate) <= new Date(plan.endDate)
-    )))
-  })
+  const hasDateCollision = computed(() => selectedPlans.value.some((plan, index, list) => {
+    if (index === 0 || !plan.startDate || !list[index - 1]?.endDate) return false
+    return new Date(plan.startDate) < new Date(list[index - 1].endDate)
+  }))
 
   const canReviewPlan = computed(() => (
     tripName.value.trim().length > 0
@@ -115,35 +245,157 @@ export const useTravelStore = defineStore('travel', () => {
     && !hasDateCollision.value
   ))
 
-  // TRIP 월렛은 서비스가 제공하는 가상 지갑이다. 외부 계좌 배분이 아니라
-  // 여행 일정·국가별 목표 예산이 확정되면 저축 계획을 시작할 수 있다.
-  const canCompleteGoal = computed(() => canReviewPlan.value && totalTargetAmount.value > 0)
+  const canCompleteGoal = computed(() => (
+    Boolean(recommendation.value)
+    && selectedPlans.value.length > 0
+    && selectedPlans.value.every((plan) => budgetFields.every((field) => Number.isFinite(Number(plan.budget[field])) && Number(plan.budget[field]) >= 0))
+    && totalTargetAmount.value > 0
+  ))
 
-  watch(
-    () => ({
-      hasTravelGoal: hasTravelGoal.value,
-      tripName: tripName.value,
-      selectedCountryCodes: [...selectedCountryCodes.value],
-      plans: { ...plans },
-      allocations: { ...allocations },
-    }),
-    (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)),
-    { deep: true },
-  )
+  function goalPayload() {
+    return {
+      tripName: tripName.value.trim(),
+      countries: selectedPlans.value.map((plan, index) => ({
+        countryId: plan.countryId,
+        arrivalDate: plan.startDate,
+        departureDate: plan.endDate,
+        displayOrder: index + 1,
+      })),
+    }
+  }
 
-  function completeGoal() {
-    if (!canCompleteGoal.value) return false
-    hasTravelGoal.value = true
-    return true
+  function applyRecommendation(result) {
+    recommendation.value = result
+    for (const country of result?.countries || []) {
+      const plan = selectedPlans.value.find((item) => item.name === country.countryName)
+      if (!plan) continue
+      plan.tripCountryId = country.tripCountryId
+      plan.aiReason = country.aiReason || ''
+      plan.isConfirmed = Boolean(country.isConfirmed)
+      for (const field of budgetFields) {
+        const recommendedField = field.replace('Amount', '').replace(/^./, (value) => value.toUpperCase())
+        plan.recommendedBudget[field] = Number(country[`recommended${recommendedField}Amount`] ?? 0)
+        plan.budget[field] = selectedAmount(country, field)
+      }
+      plan.targetBudget = localBudgetFields.reduce((sum, field) => sum + Number(plan.budget[field] || 0), 0)
+    }
+  }
+
+  async function savePlanAndRecommend() {
+    if (!canReviewPlan.value) return false
+    loading.value = true
+    clearError()
+    try {
+      if (tripId.value) {
+        await updateTripGoal(tripId.value, goalPayload())
+      } else {
+        const created = await createTripGoal(goalPayload())
+        tripId.value = created.tripId
+      }
+      applyRecommendation(await generateTripBudget(tripId.value))
+      return true
+    } catch (error) {
+      errorMessage.value = apiErrorMessage(error, '여행 예산을 추천하지 못했습니다.')
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function completeGoal() {
+    if (!canCompleteGoal.value || !tripId.value) return false
+    loading.value = true
+    clearError()
+    try {
+      completion.value = await confirmTripBudget(tripId.value, {
+        countries: selectedPlans.value.map((plan) => ({
+          tripCountryId: plan.tripCountryId,
+          ...Object.fromEntries(budgetFields.map((field) => [field, Number(plan.budget[field] || 0)])),
+        })),
+      })
+      applyRecommendation({ ...completion.value, tripId: tripId.value })
+      hasTravelGoal.value = true
+      activeTrip.value = {
+        tripId: tripId.value,
+        tripName: tripName.value,
+        totalTargetAmount: completion.value.localTravelTargetTotal,
+      }
+      return true
+    } catch (error) {
+      errorMessage.value = apiErrorMessage(error, '여행 목표 예산을 확정하지 못했습니다.')
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function hydrateActiveTrip(result) {
+    activeTrip.value = result
+    tripId.value = result.tripId
+    tripName.value = result.tripName || ''
+    completion.value = null
+    hasTravelGoal.value = Number(result.totalTargetAmount || 0) > 0
+    clearPlans()
+    for (const item of result.countries || []) {
+      const country = countries.value.find((entry) => entry.countryId === item.countryId)
+        || decorateCountry({
+          countryId: item.countryId,
+          countryName: item.countryName,
+          currencyCode: item.currencyCode,
+          currencyName: item.currencyCode,
+          flagUrl: null,
+        })
+      const key = String(item.countryId)
+      selectedCountryCodes.value.push(key)
+      plans[key] = createPlan(country, item)
+    }
+  }
+
+  async function loadActiveGoal({ force = false } = {}) {
+    if (initialized.value && !force) return activeTrip.value
+    loading.value = true
+    try {
+      if (!countries.value.length) await loadCountries()
+      const result = await fetchActiveTripGoal()
+      hydrateActiveTrip(result)
+      try {
+        const savedRecommendation = await fetchTripBudget(result.tripId)
+        if (savedRecommendation?.countries?.some((country) => country.recommendedAirfareAmount != null)) {
+          applyRecommendation(savedRecommendation)
+        }
+      } catch {
+        recommendation.value = null
+      }
+      return result
+    } catch (error) {
+      if (error.response?.data?.code !== 'TRIP_NOT_FOUND') {
+        errorMessage.value = apiErrorMessage(error, '진행 중인 여행 목표를 불러오지 못했습니다.')
+      }
+      hasTravelGoal.value = false
+      tripId.value = null
+      activeTrip.value = null
+      recommendation.value = null
+      completion.value = null
+      tripName.value = ''
+      clearPlans()
+      return null
+    } finally {
+      initialized.value = true
+      loading.value = false
+    }
   }
 
   function resetGoal() {
     hasTravelGoal.value = false
+    initialized.value = false
+    tripId.value = null
+    activeTrip.value = null
+    recommendation.value = null
+    completion.value = null
     tripName.value = ''
-    selectedCountryCodes.value = []
-    Object.keys(plans).forEach((key) => delete plans[key])
+    clearPlans()
     Object.keys(allocations).forEach((key) => delete allocations[key])
-    localStorage.removeItem(STORAGE_KEY)
+    clearError()
   }
 
   function enterTravelMode(country, budget) {
@@ -163,24 +415,43 @@ export const useTravelStore = defineStore('travel', () => {
     selectedCountry,
     travelBudget,
     hasTravelGoal,
+    initialized,
+    tripId,
+    activeTrip,
+    recommendation,
+    completion,
     tripName,
     countries,
     accounts,
     selectedCountryCodes,
     selectedPlans,
     allocations,
+    loading,
+    countryLoading,
+    errorMessage,
     totalTargetAmount,
+    prepaidExpenseTotal,
+    monthlySavingTarget,
+    currentWalletBalance,
+    remainingMonths,
     totalAllocatedAmount,
     selectedAccountCount,
     hasDateCollision,
     canReviewPlan,
     canCompleteGoal,
+    loadCountries,
+    loadActiveGoal,
     toggleCountry,
+    reorderCountries,
     updatePlan,
+    updateBudget,
+    resetBudgetToRecommendation,
     setAllocation,
     planError,
+    savePlanAndRecommend,
     completeGoal,
     resetGoal,
+    clearError,
     enterTravelMode,
     exitTravelMode,
   }
