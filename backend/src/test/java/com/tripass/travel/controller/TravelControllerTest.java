@@ -3,6 +3,7 @@ package com.tripass.travel.controller;
 import com.tripass.common.response.ApiResponse;
 import com.tripass.travel.dto.CountryStatusDto;
 import com.tripass.travel.dto.TravelStatusResponseDto;
+import com.tripass.travel.dto.TripHomeDashboardResponseDto;
 import com.tripass.travel.service.TravelService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,7 @@ import org.springframework.security.core.Authentication;
 
 import java.util.Collections;
 import java.util.List;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,5 +75,28 @@ class TravelControllerTest {
         assertEquals("일본", countries.get(0).getCountryName());
         assertEquals(800000L, countries.get(0).getRemainingFund());
         assertEquals(10L, countries.get(0).getRemainingDays());
+    }
+
+    @Test
+    @DisplayName("활성 여행 홈 대시보드 조회 응답을 반환한다")
+    void getActiveTripHome() {
+        Long userId = 1L;
+        Authentication authentication = mock(Authentication.class);
+        TripHomeDashboardResponseDto responseDto = TripHomeDashboardResponseDto.builder()
+                .tripId(10L)
+                .tripName("유럽 여행")
+                .totalTargetAmount(new BigDecimal("2000000"))
+                .walletBalance(new BigDecimal("500000"))
+                .build();
+        when(authentication.getPrincipal()).thenReturn(userId);
+        when(travelService.getActiveTripHome(userId)).thenReturn(responseDto);
+
+        ResponseEntity<ApiResponse<TripHomeDashboardResponseDto>> response =
+                travelController.getActiveTripHome(authentication);
+
+        assertNotNull(response.getBody());
+        assertEquals("SUCCESS", response.getBody().getCode());
+        assertEquals("유럽 여행", response.getBody().getData().getTripName());
+        assertEquals(new BigDecimal("500000"), response.getBody().getData().getWalletBalance());
     }
 }
