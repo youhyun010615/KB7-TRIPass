@@ -292,7 +292,7 @@
     </select>
 
     <!-- 로그인 회원의 영수증 상세 조회 -->
-    <select id="findDetailByIdAndUserId"
+    <select id="findDetailByIdAndUserIdAndTripId"
             resultMap="receiptDetailRowMap">
 
         SELECT
@@ -335,11 +335,12 @@
                            ON currency.id = receipt.currency_id
         WHERE receipt.id = #{receiptId}
           AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
           AND receipt.is_deleted = 0
     </select>
 
     <!-- 로그인 회원의 영수증 품목 조회 -->
-    <select id="findItemsByReceiptIdAndUserId"
+    <select id="findItemsByReceiptIdAndUserIdAndTripId"
             resultMap="receiptItemMap">
 
         SELECT
@@ -359,6 +360,7 @@
                             ON receipt.id = item.receipt_id
         WHERE item.receipt_id = #{receiptId}
           AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
           AND receipt.is_deleted = 0
           AND item.is_deleted = 0
         ORDER BY item.display_order ASC,
@@ -366,7 +368,7 @@
     </select>
 
     <!-- 로그인 회원의 공동결제 참여자 조회 -->
-    <select id="findParticipantsByReceiptIdAndUserId"
+    <select id="findParticipantsByReceiptIdAndUserIdAndTripId"
             resultMap="receiptParticipantMap">
 
         SELECT
@@ -383,6 +385,7 @@
                             ON receipt.id = participant.receipt_id
         WHERE participant.receipt_id = #{receiptId}
           AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
           AND receipt.is_deleted = 0
           AND participant.is_deleted = 0
         ORDER BY participant.display_order ASC,
@@ -409,11 +412,12 @@
             split_count = #{splitCount}
         WHERE id = #{id}
           AND user_id = #{userId}
+          AND trip_id = #{tripId}
           AND is_deleted = 0
     </update>
 
     <!-- 기존 영수증 품목 전체 논리 삭제 -->
-    <update id="softDeleteItemsByReceiptIdAndUserId">
+    <update id="softDeleteItemsByReceiptIdAndUserIdAndTripId">
 
         UPDATE receipt_items item
             INNER JOIN receipts receipt
@@ -422,12 +426,13 @@
             item.deleted_at = NOW()
         WHERE item.receipt_id = #{receiptId}
           AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
           AND receipt.is_deleted = 0
           AND item.is_deleted = 0
     </update>
 
     <!-- 기존 공동결제 참여자 전체 논리 삭제 -->
-    <update id="softDeleteParticipantsByReceiptIdAndUserId">
+    <update id="softDeleteParticipantsByReceiptIdAndUserIdAndTripId">
 
         UPDATE receipt_participants participant
             INNER JOIN receipts receipt
@@ -436,18 +441,20 @@
             participant.deleted_at = NOW()
         WHERE participant.receipt_id = #{receiptId}
           AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
           AND receipt.is_deleted = 0
           AND participant.is_deleted = 0
     </update>
 
     <!-- 로그인 회원의 영수증 논리 삭제 -->
-    <update id="softDeleteReceiptByIdAndUserId">
+    <update id="softDeleteReceiptByIdAndUserIdAndTripId">
 
         UPDATE receipts
         SET is_deleted = 1,
             deleted_at = NOW()
         WHERE id = #{receiptId}
           AND user_id = #{userId}
+          AND trip_id = #{tripId}
           AND is_deleted = 0
     </update>
 

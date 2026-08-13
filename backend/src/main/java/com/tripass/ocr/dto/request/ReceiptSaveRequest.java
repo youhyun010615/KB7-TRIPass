@@ -20,9 +20,6 @@ import java.util.List;
 @NoArgsConstructor
 public class ReceiptSaveRequest {
 
-    // 영수증을 연결할 여행 PK
-    @NotNull(message = "여행을 선택해 주세요.")
-    private Long tripId;
 
     // 결제 국가 PK
     @NotNull(message = "결제 국가를 선택해 주세요.")

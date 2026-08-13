@@ -58,41 +58,47 @@ public interface ReceiptMapper {
     );
 
     // 로그인 회원의 영수증 상세 조회
-    ReceiptDetailRow findDetailByIdAndUserId(
+    ReceiptDetailRow findDetailByIdAndUserIdAndTripId(
             @Param("receiptId") Long receiptId,
-            @Param("userId") Long userId
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
     );
 
     // 로그인 회원의 영수증 품목 조회
-    List<ReceiptItem> findItemsByReceiptIdAndUserId(
+    List<ReceiptItem> findItemsByReceiptIdAndUserIdAndTripId(
             @Param("receiptId") Long receiptId,
-            @Param("userId") Long userId
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
     );
 
     // 로그인 회원의 영수증 공동결제 참여자 조회
-    List<ReceiptParticipant> findParticipantsByReceiptIdAndUserId(
+    List<ReceiptParticipant> findParticipantsByReceiptIdAndUserIdAndTripId(
             @Param("receiptId") Long receiptId,
-            @Param("userId") Long userId
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
     );
 
     // 로그인 회원의 영수증 수정
     int updateReceipt(Receipt receipt);
 
     // 기존 영수증 품목 전체 논리 삭제
-    int softDeleteItemsByReceiptIdAndUserId(
+    int softDeleteItemsByReceiptIdAndUserIdAndTripId(
             @Param("receiptId") Long receiptId,
-            @Param("userId") Long userId
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
     );
 
     // 기존 공동결제 참여자 전체 논리 삭제
-    int softDeleteParticipantsByReceiptIdAndUserId(
+    int softDeleteParticipantsByReceiptIdAndUserIdAndTripId(
             @Param("receiptId") Long receiptId,
-            @Param("userId") Long userId
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
     );
 
     // 로그인 회원의 영수증 논리 삭제
-    int softDeleteReceiptByIdAndUserId(
+    int softDeleteReceiptByIdAndUserIdAndTripId(
             @Param("receiptId") Long receiptId,
-            @Param("userId") Long userId
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
     );
 }

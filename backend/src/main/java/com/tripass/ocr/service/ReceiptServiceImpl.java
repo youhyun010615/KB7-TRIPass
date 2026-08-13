@@ -48,17 +48,23 @@ public class ReceiptServiceImpl
     private final ReceiptImageValidator receiptImageValidator;
     private final ReceiptFileStorage receiptFileStorage;
 
-    // 이미지 파일과 영수증 정보를 저장한다.
+    // 이미지 파일과 영수증 정보를 특정 여행에 저장한다.
     @Override
     @Transactional
     public ReceiptDetailResponse createReceipt(
             Long userId,
+            Long tripId,
             ReceiptSaveRequest request,
             MultipartFile receiptImage
     ) {
         validateUserId(userId);
+        validateTripId(tripId);
         validateRequest(request);
-        validateReferenceData(userId, request);
+        validateReferenceData(
+                userId,
+                tripId,
+                request
+        );
 
         StoredReceiptFile storedFile =
                 storeReceiptImageIfPresent(receiptImage);
@@ -66,6 +72,7 @@ public class ReceiptServiceImpl
         try {
             Receipt receipt = createReceiptModel(
                     userId,
+                    tripId,
                     request,
                     storedFile
             );
@@ -98,7 +105,11 @@ public class ReceiptServiceImpl
 
             insertReceiptParticipants(participants);
 
-            return getReceipt(userId, receipt.getId());
+            return getReceipt(
+                    userId,
+                    tripId,
+                    receipt.getId()
+            );
 
         } catch (RuntimeException exception) {
             if (storedFile != null) {
@@ -147,36 +158,31 @@ public class ReceiptServiceImpl
                 .toList();
     }
 
-    // 로그인 회원의 영수증 상세 정보를 조회한다.
+    // 로그인 회원의 특정 여행 영수증 상세 정보를 조회한다.
     @Override
     @Transactional(readOnly = true)
     public ReceiptDetailResponse getReceipt(
             Long userId,
+            Long tripId,
             Long receiptId
     ) {
         validateUserId(userId);
+        validateTripId(tripId);
         validateReceiptId(receiptId);
 
         ReceiptDetailRow receiptRow =
-                receiptMapper.findDetailByIdAndUserId(
-                        receiptId,
-                        userId
+                requireReceipt(
+                        userId,
+                        tripId,
+                        receiptId
                 );
 
-        if (receiptRow == null) {
-            throw new CustomException(
-                    HttpStatus.NOT_FOUND,
-                    "RECEIPT_NOT_FOUND",
-                    "영수증을 찾을 수 없습니다."
-            );
-        }
-
         List<ReceiptItem> receiptItems =
-                receiptMapper
-                        .findItemsByReceiptIdAndUserId(
-                                receiptId,
-                                userId
-                        );
+                receiptMapper.findItemsByReceiptIdAndUserIdAndTripId(
+                        receiptId,
+                        userId,
+                        tripId
+                );
 
         List<ReceiptItemResponse> itemResponses =
                 receiptItems == null
@@ -186,11 +192,11 @@ public class ReceiptServiceImpl
                         .toList();
 
         List<ReceiptParticipant> participants =
-                receiptMapper
-                        .findParticipantsByReceiptIdAndUserId(
-                                receiptId,
-                                userId
-                        );
+                receiptMapper.findParticipantsByReceiptIdAndUserIdAndTripId(
+                        receiptId,
+                        userId,
+                        tripId
+                );
 
         List<ReceiptParticipantResponse> participantResponses =
                 participants == null
@@ -206,32 +212,36 @@ public class ReceiptServiceImpl
         );
     }
 
-    // 영수증 정보와 품목을 일괄 수정한다.
+    // 특정 여행의 영수증 정보와 품목을 일괄 수정한다.
     @Override
     @Transactional
     public ReceiptDetailResponse updateReceipt(
             Long userId,
+            Long tripId,
             Long receiptId,
             ReceiptSaveRequest request
     ) {
         validateUserId(userId);
+        validateTripId(tripId);
         validateReceiptId(receiptId);
         validateRequest(request);
 
-        // 수정하려는 영수증이 로그인 회원 소유인지 확인한다.
         requireReceipt(
                 userId,
+                tripId,
                 receiptId
         );
 
         validateReferenceData(
                 userId,
+                tripId,
                 request
         );
 
         Receipt receipt =
                 createUpdatedReceiptModel(
                         userId,
+                        tripId,
                         receiptId,
                         request
                 );
@@ -247,21 +257,18 @@ public class ReceiptServiceImpl
             );
         }
 
-        // 기존 품목을 논리 삭제한다.
-        receiptMapper
-                .softDeleteItemsByReceiptIdAndUserId(
-                        receiptId,
-                        userId
-                );
+        receiptMapper.softDeleteItemsByReceiptIdAndUserIdAndTripId(
+                receiptId,
+                userId,
+                tripId
+        );
 
-        // 기존 공동결제 참여자를 논리 삭제한다.
-        receiptMapper
-                .softDeleteParticipantsByReceiptIdAndUserId(
-                        receiptId,
-                        userId
-                );
+        receiptMapper.softDeleteParticipantsByReceiptIdAndUserIdAndTripId(
+                receiptId,
+                userId,
+                tripId
+        );
 
-        // 현재 요청의 품목을 다시 저장한다.
         List<ReceiptItem> receiptItems =
                 createReceiptItems(
                         receiptId,
@@ -270,7 +277,6 @@ public class ReceiptServiceImpl
 
         insertReceiptItems(receiptItems);
 
-        // 현재 요청의 공동결제 참여자를 다시 저장한다.
         List<ReceiptParticipant> participants =
                 createReceiptParticipants(
                         receiptId,
@@ -281,41 +287,48 @@ public class ReceiptServiceImpl
 
         return getReceipt(
                 userId,
+                tripId,
                 receiptId
         );
     }
 
-    // 영수증과 영수증 품목을 논리 삭제한다.
+    // 특정 여행의 영수증과 관련 데이터를 논리 삭제한다.
     @Override
     @Transactional
     public void deleteReceipt(
             Long userId,
+            Long tripId,
             Long receiptId
     ) {
         validateUserId(userId);
+        validateTripId(tripId);
         validateReceiptId(receiptId);
 
         requireReceipt(
                 userId,
+                tripId,
                 receiptId
         );
 
-        receiptMapper
-                .softDeleteItemsByReceiptIdAndUserId(
-                        receiptId,
-                        userId
-                );
-        receiptMapper
-                .softDeleteParticipantsByReceiptIdAndUserId(
-                        receiptId,
-                        userId
-                );
+        receiptMapper.softDeleteItemsByReceiptIdAndUserIdAndTripId(
+                receiptId,
+                userId,
+                tripId
+        );
+
+        receiptMapper.softDeleteParticipantsByReceiptIdAndUserIdAndTripId(
+                receiptId,
+                userId,
+                tripId
+        );
+
 
         int deletedRows =
                 receiptMapper
-                        .softDeleteReceiptByIdAndUserId(
+                        .softDeleteReceiptByIdAndUserIdAndTripId(
                                 receiptId,
-                                userId
+                                userId,
+                                tripId
                         );
 
         if (deletedRows != 1) {
@@ -332,19 +345,22 @@ public class ReceiptServiceImpl
          */
     }
 
-    // 회원 소유권을 확인한 후 영수증 이미지를 읽는다.
+    // 회원과 여행 소유권을 확인한 후 영수증 이미지를 읽는다.
     @Override
     @Transactional(readOnly = true)
     public ReceiptImageData getReceiptImage(
             Long userId,
+            Long tripId,
             Long receiptId
     ) {
         validateUserId(userId);
+        validateTripId(tripId);
         validateReceiptId(receiptId);
 
         ReceiptDetailRow receiptRow =
                 requireReceipt(
                         userId,
+                        tripId,
                         receiptId
                 );
 
@@ -372,13 +388,14 @@ public class ReceiptServiceImpl
     // 영수증 저장 모델을 생성한다.
     private Receipt createReceiptModel(
             Long userId,
+            Long tripId,
             ReceiptSaveRequest request,
             StoredReceiptFile storedFile
     ) {
         Receipt receipt = new Receipt();
 
         receipt.setUserId(userId);
-        receipt.setTripId(request.getTripId());
+        receipt.setTripId(tripId);
         receipt.setCountryId(request.getCountryId());
         receipt.setCurrencyId(request.getCurrencyId());
         receipt.setPaymentDateTime(
@@ -436,6 +453,7 @@ public class ReceiptServiceImpl
     // 영수증 수정 모델을 생성한다.
     private Receipt createUpdatedReceiptModel(
             Long userId,
+            Long tripId,
             Long receiptId,
             ReceiptSaveRequest request
     ) {
@@ -443,7 +461,7 @@ public class ReceiptServiceImpl
 
         receipt.setId(receiptId);
         receipt.setUserId(userId);
-        receipt.setTripId(request.getTripId());
+        receipt.setTripId(tripId);
         receipt.setCountryId(request.getCountryId());
         receipt.setCurrencyId(request.getCurrencyId());
         receipt.setPaymentDateTime(
@@ -557,13 +575,14 @@ public class ReceiptServiceImpl
         }
     }
 
-    // 여행·국가·통화 참조값을 검증한다.
+    // 여행·국가·카테고리·통화 참조값을 검증한다.
     private void validateReferenceData(
             Long userId,
+            Long tripId,
             ReceiptSaveRequest request
     ) {
         if (!receiptMapper.existsTripByIdAndUserId(
-                request.getTripId(),
+                tripId,
                 userId
         )) {
             throw new CustomException(
@@ -574,7 +593,7 @@ public class ReceiptServiceImpl
         }
 
         if (!receiptMapper.existsTripCountryByUserId(
-                request.getTripId(),
+                tripId,
                 request.getCountryId(),
                 userId
         )) {
@@ -629,6 +648,7 @@ public class ReceiptServiceImpl
                         row.getSplitCount()
                 ),
                 createImageUrl(
+                        row.getTripId(),
                         row.getId(),
                         row.getFileUrl()
                 )
@@ -655,6 +675,7 @@ public class ReceiptServiceImpl
                 row.getPaymentDateTime(),
                 row.getFileName(),
                 createImageUrl(
+                        row.getTripId(),
                         row.getId(),
                         row.getFileUrl()
                 ),
@@ -710,15 +731,17 @@ public class ReceiptServiceImpl
         );
     }
 
-    // 영수증 존재 여부와 회원 소유권을 함께 확인한다.
+    // 영수증 존재 여부와 회원·여행 소유권을 함께 확인한다.
     private ReceiptDetailRow requireReceipt(
             Long userId,
+            Long tripId,
             Long receiptId
     ) {
         ReceiptDetailRow receiptRow =
-                receiptMapper.findDetailByIdAndUserId(
-                        receiptId,
-                        userId
+                receiptMapper.findDetailByIdAndUserIdAndTripId(
+                                receiptId,
+                                userId,
+                                tripId
                 );
 
         if (receiptRow == null) {
@@ -793,6 +816,7 @@ public class ReceiptServiceImpl
     }
     // 내부 파일 경로 대신 인증이 적용되는 이미지 조회 API 주소를 반환한다.
     private String createImageUrl(
+            Long tripId,
             Long receiptId,
             String storedFileUrl
     ) {
@@ -801,7 +825,9 @@ public class ReceiptServiceImpl
             return null;
         }
 
-        return "/api/v1/ocr/receipts/"
+        return "/api/v1/trips/"
+                + tripId
+                + "/receipts/"
                 + receiptId
                 + "/image";
     }
