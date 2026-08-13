@@ -50,7 +50,8 @@ watch(searchKeyword, (keyword) => {
 })
 
 function goToSchedule() {
-  // 버튼의 disabled 조건을 이미 통과했으므로 클릭 즉시 단계 전환을 보장한다.
+  showValidation.value = true
+  if (!store.tripName.trim() || !store.selectedPlans.length) return
   step.value = 2
   showValidation.value = false
   store.clearError()
@@ -199,8 +200,7 @@ function finish() {
         type="button"
         class="primary-cta"
         :disabled="!store.tripName.trim() || !store.selectedPlans.length"
-        @pointerup.prevent.stop="goToSchedule"
-        @click.prevent.stop="goToSchedule"
+        @click="goToSchedule"
       >여행 일정 입력하기</button>
     </template>
 
