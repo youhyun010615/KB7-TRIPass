@@ -414,7 +414,9 @@ public class AssetService {
             body.put("organization", card.getOrganizationCode());
             body.put("startDate", startDate.replace("-", ""));
             body.put("endDate", endDate.replace("-", ""));
+            body.put("cardNo", card.getMaskedCardNumber());
             body.put("orderBy", "0");
+            body.put("inquiryType", "0");
 
             Map<String, Object> result = CodefUtil.callApi(accessToken, "/v1/kr/card/p/account/approval-list", body);
             Map<String, Object> resultCode = (Map<String, Object>) result.get("result");
@@ -423,8 +425,19 @@ public class AssetService {
                 throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_TRANSACTION_FETCH_FAIL", "카드 거래내역 조회 실패: " + msg);
             }
 
-            Map<String, Object> data = (Map<String, Object>) result.get("data");
-            Object rawList = data.get("resApprovalList");
+            Object data = result.get("data");
+            Object rawList;
+            if (data instanceof List) {
+                // 개인카드 승인내역 API는 data 자체를 배열로 반환할 수 있다.
+                rawList = data;
+            } else if (data instanceof Map) {
+                rawList = ((Map<String, Object>) data).get("resApprovalList");
+                if (rawList == null && ((Map<?, ?>) data).containsKey("resUsedDate")) {
+                    rawList = data;
+                }
+            } else {
+                rawList = null;
+            }
             List<Map<String, Object>> approvalList;
             if (rawList instanceof List) {
                 approvalList = (List<Map<String, Object>>) rawList;
