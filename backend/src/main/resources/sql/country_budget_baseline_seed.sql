@@ -1,5 +1,9 @@
 -- 국가·통화 시드(trip_goal_reference_seed.sql) 실행 후 적용합니다.
 -- 기준 단가는 성인 1인 일반 여행자 기준이며 2026-08-11 조사값입니다.
+
+INSERT IGNORE INTO countries (country_name, currency_id, time_zone) VALUES
+('독일', (SELECT id FROM currencies WHERE currency_code = 'EUR'), 'Europe/Berlin');
+
 INSERT INTO country_budget_baselines
 (country_id, round_trip_airfare, lodging_per_night, food_per_day, activity_per_day, transport_per_day, misc_per_day, data_source, reference_date)
 VALUES
