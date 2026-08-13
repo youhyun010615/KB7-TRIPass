@@ -8,6 +8,7 @@ import { useTravelStore } from '@/stores/travel'
 const router = useRouter()
 const route = useRoute()
 const store = useTravelStore()
+const isEditMode = computed(() => route.query.mode === 'edit')
 const step = ref(route.name === 'TravelRegisterSchedule' ? 2 : 1)
 const dateTarget = ref(null)
 const showValidation = ref(false)
@@ -36,9 +37,10 @@ const recommendedLocalTotal = (plan) => ['foodAmount', 'activityAmount', 'transp
 const recommendedPrepaidTotal = (plan) => Number(plan.recommendedBudget.airfareAmount || 0) + Number(plan.recommendedBudget.lodgingAmount || 0)
 
 onMounted(async () => {
-  // 수정 단계 이동 중에는 이미 불러온 여행명·국가·일정·예산을 유지한다.
-  // 일정 URL을 직접 새로고침해 메모리 상태가 없을 때만 활성 여행을 조회한다.
-  if (!store.tripId || !store.selectedPlans.length) {
+  if (isEditMode.value) {
+    // 홈에서 수정으로 진입하거나 수정 URL을 새로고침해도 서버 값을 다시 채운다.
+    await store.loadActiveGoal({ force: true })
+  } else if (!store.tripId || !store.selectedPlans.length) {
     await store.loadActiveGoal({ force: store.initialized })
   }
   if (!store.countries.length) await store.loadCountries()
@@ -63,7 +65,7 @@ watch(() => route.name, (routeName) => {
 })
 
 function goToTripInfo() {
-  router.push({ name: 'TravelRegister' })
+  router.push({ name: 'TravelRegister', query: isEditMode.value ? { mode: 'edit' } : {} })
 }
 
 function reorderTo(targetIndex) {
@@ -145,7 +147,7 @@ function finish() {
   <main class="register-page" :aria-busy="store.loading">
     <header class="page-header">
       <button aria-label="뒤로가기" @click="back">‹</button>
-      <h1>{{ stepTitle }}</h1>
+      <h1>{{ isEditMode ? stepTitle.replace('등록', '수정') : stepTitle }}</h1>
       <span />
     </header>
     <div class="steps"><i v-for="index in 4" :key="index" :class="{ active: index <= step }" /></div>
@@ -211,7 +213,7 @@ function finish() {
       <RouterLink
         v-if="store.tripName.trim() && store.selectedPlans.length"
         class="primary-cta"
-        :to="{ name: 'TravelRegisterSchedule' }"
+        :to="{ name: 'TravelRegisterSchedule', query: isEditMode ? { mode: 'edit' } : {} }"
       >여행 일정 입력하기</RouterLink>
       <button
         v-else

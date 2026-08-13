@@ -74,11 +74,19 @@ function decorateCountry(country) {
   }
 }
 
+function normalizeApiDate(value) {
+  if (Array.isArray(value)) {
+    const [year, month, day] = value
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  }
+  return value || ''
+}
+
 function createPlan(country, initial = {}) {
   return {
     ...country,
-    startDate: initial.arrivalDate || initial.startDate || '',
-    endDate: initial.departureDate || initial.endDate || '',
+    startDate: normalizeApiDate(initial.arrivalDate || initial.startDate),
+    endDate: normalizeApiDate(initial.departureDate || initial.endDate),
     tripCountryId: initial.tripCountryId || null,
     targetBudget: Number(initial.targetBudget || 0),
     budget: {
