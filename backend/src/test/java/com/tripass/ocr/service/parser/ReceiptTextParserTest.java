@@ -562,6 +562,28 @@ class ReceiptTextParserTest {
         );
     }
 
+    @Test
+    void parsesTotalBeforeJapaneseCashPaymentAmount() {
+        String rawText =
+                """
+                7-ELEVEN
+                合計
+                ¥375
+                現金
+                ¥1,000
+                お釣
+                ¥625
+                """;
+
+        ParsedReceiptData result =
+                parse(rawText, "ja");
+
+        assertEquals(
+                new BigDecimal("375"),
+                result.getTotalAmount()
+        );
+    }
+
     private ParsedReceiptData parse(
             String rawText,
             String languageCode
@@ -575,4 +597,6 @@ class ReceiptTextParserTest {
 
         return parser.parse(ocrResult);
     }
+
+
 }

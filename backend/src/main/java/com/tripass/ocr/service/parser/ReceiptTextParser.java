@@ -129,7 +129,10 @@ public class ReceiptTextParser {
                             + "|領収証"
                             + "|領取証"
                             + "|お預り"
-                            + "|お釣)"
+                            + "|お釣"
+                            + "|現金"
+                            + "|カード"
+                            + "|クレジット)"
             );
 
     private static final Pattern NON_ITEM_PATTERN =
@@ -149,7 +152,7 @@ public class ReceiptTextParser {
                             + "\\bno\\.?\\s*\\d+|"
                             + "공급가액|부가세|결제금액|"
                             + "subtotal|change|cash|"
-                            + "お預り|お釣|消費税|"
+                            + "お預り|お釣|現金|カード|クレジット|消費税|"
                             + "www\\.|https?://|"
                             + "merci|스탬프|광고|"
                             + "device|printed|allergen)"
@@ -514,6 +517,7 @@ public class ReceiptTextParser {
                     extractLastAmount(currentLine);
 
             if (sameLineAmount != null
+                    && sameLineAmount.signum() > 0
                     && !isLikelyIdentifier(sameLineAmount)) {
                 return sameLineAmount;
             }

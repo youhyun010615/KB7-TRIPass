@@ -83,6 +83,10 @@ public class ReceiptSaveRequest {
     @NotNull(
             message = "공동결제 참여자 목록을 확인해 주세요."
     )
+    @Size(
+            max = 20,
+            message = "공동결제 참여자는 최대 20명까지 입력할 수 있습니다."
+    )
     private List<
             @NotBlank(
                     message = "공동결제 참여자 이름을 입력해 주세요."
