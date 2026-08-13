@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+    <settings>
+        <!-- DB의 snake_case 컬럼명을 Java의 camelCase 필드에 자동 매핑 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- SQL 실행 타임아웃(초) -->
+        <setting name="defaultStatementTimeout" value="30"/>
+        <!-- null 값도 매핑 허용 -->
+        <setting name="callSettersOnNulls" value="true"/>
+    </settings>
+
+    <!-- DTO 패키지 스캔 (TypeAlias) -->
+    <typeAliases>
+        <package name="com.tripass.batch.dto"/>
+    </typeAliases>
+
+</configuration>
