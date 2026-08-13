@@ -9,8 +9,6 @@ import com.tripass.ocr.service.ReceiptService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,11 +22,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 // 해외 영수증 저장·조회·수정·삭제 API
@@ -71,9 +69,12 @@ public class ReceiptController {
 
             @ApiParam(
                     value = "저장할 영수증 원본 이미지",
-                    required = true
+                    required = false
             )
-            @RequestPart("file")
+            @RequestPart(
+                    value = "file",
+                    required = false
+            )
             MultipartFile receiptImage
     ) {
         ReceiptDetailResponse response =
@@ -93,10 +94,10 @@ public class ReceiptController {
                 );
     }
 
-    // 로그인 회원의 영수증 목록을 조회한다.
+    // 로그인 회원의 특정 여행 영수증 목록을 조회한다.
     @ApiOperation(
             value = "해외 영수증 목록 조회",
-            notes = "로그인 회원이 저장한 영수증 목록을 조회합니다."
+            notes = "로그인 회원이 소유한 특정 여행의 영수증 목록을 조회합니다."
     )
     @GetMapping
     public ResponseEntity<
@@ -104,10 +105,20 @@ public class ReceiptController {
             > getReceipts(
             @ApiIgnore
             @AuthenticationPrincipal
-            Long userId
+            Long userId,
+
+            @ApiParam(
+                    value = "조회할 여행 PK",
+                    required = true
+            )
+            @RequestParam("tripId")
+            Long tripId
     ) {
         List<ReceiptSummaryResponse> response =
-                receiptService.getReceipts(userId);
+                receiptService.getReceipts(
+                        userId,
+                        tripId
+                );
 
         return ResponseEntity.ok(
                 ApiResponse.success(response)
@@ -235,31 +246,6 @@ public class ReceiptController {
                 );
     }
 
-    // 저장된 파일명이 없으면 영수증 ID를 이용해 기본 파일명을 생성한다.
-    private String resolveDownloadFileName(
-            ReceiptImageData imageData,
-            Long receiptId
-    ) {
-        String fileName =
-                imageData.getFileName();
-
-        if (fileName != null
-                && !fileName.isBlank()) {
-
-            return fileName;
-        }
-
-        String extension =
-                "PNG".equalsIgnoreCase(
-                        imageData.getFileType()
-                )
-                        ? ".png"
-                        : ".jpg";
-
-        return "receipt-"
-                + receiptId
-                + extension;
-    }
     private MediaType resolveMediaType(
             String fileType
     ) {

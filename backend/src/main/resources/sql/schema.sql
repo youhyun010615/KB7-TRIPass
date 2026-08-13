@@ -3,6 +3,7 @@ USE tripass;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ===== DROP TABLES =====
+DROP TABLE IF EXISTS receipt_participants;
 DROP TABLE IF EXISTS receipt_items;
 DROP TABLE IF EXISTS receipts;
 DROP TABLE IF EXISTS trip_reports;
@@ -643,26 +644,27 @@ CREATE TABLE receipts
 (
     id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '해외 영수증 ID',
     user_id       BIGINT         NOT NULL COMMENT '회원 ID',
-    trip_id       BIGINT         NULL COMMENT '여행 ID',
-    country_id    BIGINT         NULL COMMENT '국가 ID',
-    currency_id   BIGINT         NULL COMMENT '통화 ID',
+    trip_id       BIGINT         NOT NULL COMMENT '여행 ID',
+    country_id    BIGINT         NOT NULL COMMENT '여행 국가 ID',
+    category_id   BIGINT         NOT NULL COMMENT '지출 카테고리 ID',
+    currency_id   BIGINT         NOT NULL COMMENT '통화 ID',
     payment_datetime DATETIME NOT NULL COMMENT '결제일시',
-    file_name     VARCHAR(255)   NOT NULL COMMENT '파일명',
-    file_url      VARCHAR(1000)  NOT NULL COMMENT '파일 URL',
-    file_type     VARCHAR(10)    NOT NULL COMMENT '파일 형식(JPG/JPEG/PNG, 10MB 이하)',
+    file_name     VARCHAR(255)   NULL COMMENT '파일명',
+    file_url      VARCHAR(1000)  NULL COMMENT '파일 URL',
+    file_type     VARCHAR(10)    NULL COMMENT '파일 형식(JPG/JPEG/PNG, 10MB 이하)',
+    memo          VARCHAR(500)   NULL COMMENT '영수증 메모',
     status        VARCHAR(20)    NOT NULL DEFAULT 'UPLOADED' COMMENT '처리 상태(UPLOADED/PROCESSING/COMPLETED/FAILED)',
     merchant_original_name   VARCHAR(255) NULL COMMENT '원문 상호명',
     merchant_translated_name VARCHAR(255) NULL COMMENT '번역 상호명',
-    total_amount  DECIMAL(15, 2) NULL COMMENT '현지 총액',
-    tax_amount    DECIMAL(15, 2) NULL COMMENT '부가세',
+    total_amount  DECIMAL(15, 2) NOT NULL COMMENT '현지 총액',
     ocr_raw_text  TEXT           NULL COMMENT 'OCR 원문 텍스트',
     split_count INT NOT NULL DEFAULT 1 COMMENT '금액 분할 인원수',
     error_message TEXT           NULL COMMENT '오류 메시지',
     is_deleted    TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at    DATETIME       NULL COMMENT '삭제일시',
-    created_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
-    updated_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
-    processed_at  TIMESTAMP      NULL COMMENT 'OCR 처리 완료 일시',
+    created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    processed_at  DATETIME      NULL COMMENT 'OCR 처리 완료 일시',
     PRIMARY KEY (id),
     INDEX idx_receipts_user_datetime
         (user_id, is_deleted, payment_datetime),
@@ -670,11 +672,40 @@ CREATE TABLE receipts
     INDEX idx_receipts_trip_datetime
         (trip_id, is_deleted, payment_datetime),
     CONSTRAINT chk_receipts_split_count CHECK (split_count >= 1),
+    CONSTRAINT chk_receipts_file_info
+        CHECK (
+            (file_name IS NULL AND file_url IS NULL AND file_type IS NULL)
+                OR
+            (file_name IS NOT NULL AND file_url IS NOT NULL AND file_type IS NOT NULL)
+        ),
     CONSTRAINT fk_receipts_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_receipts_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_receipts_country FOREIGN KEY (country_id) REFERENCES countries (id),
-    CONSTRAINT fk_receipts_currency FOREIGN KEY (currency_id) REFERENCES currencies (id)
+    CONSTRAINT fk_receipts_currency FOREIGN KEY (currency_id) REFERENCES currencies (id),
+    CONSTRAINT fk_receipts_category FOREIGN KEY (category_id) REFERENCES spending_categories (id)
 ) COMMENT '해외 영수증';
+-- 공동결제 참여자 테이블 --
+CREATE TABLE receipt_participants
+(
+    id               BIGINT       NOT NULL AUTO_INCREMENT COMMENT '영수증 공동결제 참여자 ID',
+    receipt_id       BIGINT       NOT NULL COMMENT '해외 영수증 ID',
+    participant_name VARCHAR(100) NOT NULL COMMENT '로그인 회원을 제외한 공동결제 참여자 이름',
+    display_order    INT          NOT NULL COMMENT '표시 순서',
+    is_deleted       TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
+    deleted_at       DATETIME     NULL COMMENT '삭제일시',
+    created_at       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+
+    PRIMARY KEY (id),
+
+    INDEX idx_receipt_participants_receipt
+        (receipt_id, is_deleted, display_order),
+
+    CONSTRAINT fk_receipt_participants_receipt
+        FOREIGN KEY (receipt_id)
+            REFERENCES receipts (id)
+) COMMENT '영수증 공동결제 참여자';
 
 
 -- 28. 영수증 품목
@@ -689,9 +720,10 @@ CREATE TABLE receipt_items
     display_order   INT            NOT NULL COMMENT '표시 순서',
     is_deleted      TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at      DATETIME       NULL COMMENT '삭제일시',
-    created_at      TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
-    updated_at      TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
+    INDEX idx_receipt_items_receipt (receipt_id, is_deleted, display_order),
     CONSTRAINT fk_receipt_items_receipt FOREIGN KEY (receipt_id) REFERENCES receipts (id)
 ) COMMENT '영수증 품목';
 

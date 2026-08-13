@@ -8,22 +8,34 @@
     <!-- 영수증 목록 조회 결과 -->
     <resultMap id="receiptSummaryRowMap"
                type="com.tripass.ocr.dto.internal.ReceiptSummaryRow">
+
         <id property="id" column="id"/>
         <result property="tripId" column="trip_id"/>
+
+        <result property="countryId" column="country_id"/>
+        <result property="countryName" column="country_name"/>
+
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+
         <result property="merchantOriginalName"
                 column="merchant_original_name"/>
         <result property="merchantTranslatedName"
                 column="merchant_translated_name"/>
+
         <result property="paymentDateTime"
                 column="payment_datetime"/>
+
         <result property="currencyCode"
                 column="currency_code"/>
         <result property="currencySymbol"
                 column="currency_symbol"/>
+
         <result property="totalAmount"
                 column="total_amount"/>
         <result property="splitCount"
                 column="split_count"/>
+
         <result property="fileUrl"
                 column="file_url"/>
     </resultMap>
@@ -31,11 +43,15 @@
     <!-- 영수증 상세 조회 결과 -->
     <resultMap id="receiptDetailRowMap"
                type="com.tripass.ocr.dto.internal.ReceiptDetailRow">
+
         <id property="id" column="id"/>
         <result property="tripId" column="trip_id"/>
 
         <result property="countryId" column="country_id"/>
         <result property="countryName" column="country_name"/>
+
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
 
         <result property="currencyId" column="currency_id"/>
         <result property="currencyCode" column="currency_code"/>
@@ -48,6 +64,8 @@
         <result property="fileName" column="file_name"/>
         <result property="fileUrl" column="file_url"/>
         <result property="fileType" column="file_type"/>
+
+        <result property="memo" column="memo"/>
         <result property="status" column="status"/>
 
         <result property="merchantOriginalName"
@@ -56,7 +74,6 @@
                 column="merchant_translated_name"/>
 
         <result property="totalAmount" column="total_amount"/>
-        <result property="taxAmount" column="tax_amount"/>
         <result property="splitCount" column="split_count"/>
 
         <result property="ocrRawText" column="ocr_raw_text"/>
@@ -68,6 +85,7 @@
     <!-- 영수증 품목 조회 결과 -->
     <resultMap id="receiptItemMap"
                type="com.tripass.ocr.model.ReceiptItem">
+
         <id property="id" column="id"/>
         <result property="receiptId" column="receipt_id"/>
         <result property="originalName" column="original_name"/>
@@ -81,9 +99,26 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <!-- 선택한 여행이 로그인 회원의 여행인지 확인 -->
+    <!-- 공동결제 참여자 조회 결과 -->
+    <resultMap id="receiptParticipantMap"
+               type="com.tripass.ocr.model.ReceiptParticipant">
+
+        <id property="id" column="id"/>
+        <result property="receiptId" column="receipt_id"/>
+        <result property="participantName"
+                column="participant_name"/>
+        <result property="displayOrder"
+                column="display_order"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 선택한 여행이 로그인 회원 소유인지 확인 -->
     <select id="existsTripByIdAndUserId"
             resultType="boolean">
+
         SELECT COUNT(*) > 0
         FROM trips
         WHERE id = #{tripId}
@@ -91,17 +126,34 @@
           AND is_deleted = 0
     </select>
 
-    <!-- 국가 PK 존재 여부 확인 -->
-    <select id="existsCountryById"
+    <!-- 선택한 국가가 로그인 회원의 해당 여행에 포함되는지 확인 -->
+    <select id="existsTripCountryByUserId"
             resultType="boolean">
+
         SELECT COUNT(*) > 0
-        FROM countries
-        WHERE id = #{countryId}
+        FROM trip_countries trip_country
+                 INNER JOIN trips trip
+                            ON trip.id = trip_country.trip_id
+        WHERE trip_country.trip_id = #{tripId}
+          AND trip_country.country_id = #{countryId}
+          AND trip_country.is_deleted = 0
+          AND trip.user_id = #{userId}
+          AND trip.is_deleted = 0
+    </select>
+
+    <!-- 지출 카테고리 PK 존재 여부 확인 -->
+    <select id="existsCategoryById"
+            resultType="boolean">
+
+        SELECT COUNT(*) > 0
+        FROM spending_categories
+        WHERE id = #{categoryId}
     </select>
 
     <!-- 통화 PK 존재 여부 확인 -->
     <select id="existsCurrencyById"
             resultType="boolean">
+
         SELECT COUNT(*) > 0
         FROM currencies
         WHERE id = #{currencyId}
@@ -112,20 +164,22 @@
             parameterType="com.tripass.ocr.model.Receipt"
             useGeneratedKeys="true"
             keyProperty="id">
+
         INSERT INTO receipts (
             user_id,
             trip_id,
             country_id,
+            category_id,
             currency_id,
             payment_datetime,
             file_name,
             file_url,
             file_type,
+            memo,
             status,
             merchant_original_name,
             merchant_translated_name,
             total_amount,
-            tax_amount,
             ocr_raw_text,
             split_count,
             error_message,
@@ -135,16 +189,17 @@
                    #{userId},
                    #{tripId},
                    #{countryId},
+                   #{categoryId},
                    #{currencyId},
                    #{paymentDateTime},
                    #{fileName},
                    #{fileUrl},
                    #{fileType},
+                   #{memo},
                    #{status},
                    #{merchantOriginalName},
                    #{merchantTranslatedName},
                    #{totalAmount},
-                   #{taxAmount},
                    #{ocrRawText},
                    #{splitCount},
                    #{errorMessage},
@@ -154,6 +209,7 @@
 
     <!-- 해외 영수증 품목 일괄 저장 -->
     <insert id="insertReceiptItems">
+
         INSERT INTO receipt_items (
         receipt_id,
         original_name,
@@ -177,67 +233,115 @@
         </foreach>
     </insert>
 
-    <!-- 로그인 회원의 영수증 목록 조회 -->
-    <select id="findAllByUserId"
+    <!-- 공동결제 참여자 일괄 저장 -->
+    <insert id="insertReceiptParticipants">
+
+        INSERT INTO receipt_participants (
+        receipt_id,
+        participant_name,
+        display_order
+        )
+        VALUES
+        <foreach collection="participants"
+                 item="participant"
+                 separator=",">
+            (
+            #{participant.receiptId},
+            #{participant.participantName},
+            #{participant.displayOrder}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 로그인 회원의 특정 여행 영수증 목록 조회 -->
+    <select id="findAllByUserIdAndTripId"
             resultMap="receiptSummaryRowMap">
+
         SELECT
-            r.id,
-            r.trip_id,
-            r.merchant_original_name,
-            r.merchant_translated_name,
-            r.payment_datetime,
-            c.currency_code,
-            c.symbol AS currency_symbol,
-            r.total_amount,
-            r.split_count,
-            r.file_url
-        FROM receipts r
-                 LEFT JOIN currencies c
-                           ON c.id = r.currency_id
-        WHERE r.user_id = #{userId}
-          AND r.is_deleted = 0
-        ORDER BY r.payment_datetime DESC,
-                 r.id DESC
+            receipt.id,
+            receipt.trip_id,
+
+            receipt.country_id,
+            country.country_name,
+
+            receipt.category_id,
+            category.category_name,
+
+            receipt.merchant_original_name,
+            receipt.merchant_translated_name,
+            receipt.payment_datetime,
+
+            currency.currency_code,
+            currency.symbol AS currency_symbol,
+
+            receipt.total_amount,
+            receipt.split_count,
+            receipt.file_url
+        FROM receipts receipt
+                 INNER JOIN countries country
+                            ON country.id = receipt.country_id
+                 INNER JOIN spending_categories category
+                            ON category.id = receipt.category_id
+                 LEFT JOIN currencies currency
+                           ON currency.id = receipt.currency_id
+        WHERE receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
+          AND receipt.is_deleted = 0
+        ORDER BY receipt.payment_datetime DESC,
+                 receipt.id DESC
     </select>
 
     <!-- 로그인 회원의 영수증 상세 조회 -->
     <select id="findDetailByIdAndUserId"
             resultMap="receiptDetailRowMap">
+
         SELECT
-            r.id,
-            r.trip_id,
-            r.country_id,
+            receipt.id,
+            receipt.trip_id,
+
+            receipt.country_id,
             country.country_name,
-            r.currency_id,
+
+            receipt.category_id,
+            category.category_name,
+
+            receipt.currency_id,
             currency.currency_code,
             currency.currency_name,
             currency.symbol AS currency_symbol,
-            r.payment_datetime,
-            r.file_name,
-            r.file_url,
-            r.file_type,
-            r.status,
-            r.merchant_original_name,
-            r.merchant_translated_name,
-            r.total_amount,
-            r.tax_amount,
-            r.split_count,
-            r.ocr_raw_text,
-            r.created_at,
-            r.updated_at
-        FROM receipts r
-                 LEFT JOIN countries country
-                           ON country.id = r.country_id
+
+            receipt.payment_datetime,
+            receipt.file_name,
+            receipt.file_url,
+            receipt.file_type,
+            receipt.memo,
+            receipt.status,
+
+            receipt.merchant_original_name,
+            receipt.merchant_translated_name,
+
+            receipt.total_amount,
+            receipt.split_count,
+            receipt.ocr_raw_text,
+
+            receipt.created_at,
+            receipt.updated_at
+        FROM receipts receipt
+                 INNER JOIN countries country
+                            ON country.id = receipt.country_id
+                 INNER JOIN spending_categories category
+                            ON category.id = receipt.category_id
                  LEFT JOIN currencies currency
-                           ON currency.id = r.currency_id
-        WHERE r.id = #{receiptId}
-          AND r.user_id = #{userId}
-          AND r.is_deleted = 0
+                           ON currency.id = receipt.currency_id
+        WHERE receipt.id = #{receiptId}
+          AND receipt.user_id = #{userId}
+          AND receipt.is_deleted = 0
     </select>
 
     <!-- 로그인 회원의 영수증 품목 조회 -->
     <select id="findItemsByReceiptIdAndUserId"
             resultMap="receiptItemMap">
+
         SELECT
             item.id,
             item.receipt_id,
@@ -261,20 +365,46 @@
                  item.id ASC
     </select>
 
+    <!-- 로그인 회원의 공동결제 참여자 조회 -->
+    <select id="findParticipantsByReceiptIdAndUserId"
+            resultMap="receiptParticipantMap">
+
+        SELECT
+            participant.id,
+            participant.receipt_id,
+            participant.participant_name,
+            participant.display_order,
+            participant.is_deleted,
+            participant.deleted_at,
+            participant.created_at,
+            participant.updated_at
+        FROM receipt_participants participant
+                 INNER JOIN receipts receipt
+                            ON receipt.id = participant.receipt_id
+        WHERE participant.receipt_id = #{receiptId}
+          AND receipt.user_id = #{userId}
+          AND receipt.is_deleted = 0
+          AND participant.is_deleted = 0
+        ORDER BY participant.display_order ASC,
+                 participant.id ASC
+    </select>
+
     <!-- 로그인 회원의 영수증 수정 -->
     <update id="updateReceipt"
             parameterType="com.tripass.ocr.model.Receipt">
+
         UPDATE receipts
         SET trip_id = #{tripId},
             country_id = #{countryId},
+            category_id = #{categoryId},
             currency_id = #{currencyId},
             payment_datetime = #{paymentDateTime},
+            memo = #{memo},
             merchant_original_name =
                 #{merchantOriginalName},
             merchant_translated_name =
                 #{merchantTranslatedName},
             total_amount = #{totalAmount},
-            tax_amount = #{taxAmount},
             ocr_raw_text = #{ocrRawText},
             split_count = #{splitCount}
         WHERE id = #{id}
@@ -284,6 +414,7 @@
 
     <!-- 기존 영수증 품목 전체 논리 삭제 -->
     <update id="softDeleteItemsByReceiptIdAndUserId">
+
         UPDATE receipt_items item
             INNER JOIN receipts receipt
             ON receipt.id = item.receipt_id
@@ -295,8 +426,23 @@
           AND item.is_deleted = 0
     </update>
 
+    <!-- 기존 공동결제 참여자 전체 논리 삭제 -->
+    <update id="softDeleteParticipantsByReceiptIdAndUserId">
+
+        UPDATE receipt_participants participant
+            INNER JOIN receipts receipt
+            ON receipt.id = participant.receipt_id
+        SET participant.is_deleted = 1,
+            participant.deleted_at = NOW()
+        WHERE participant.receipt_id = #{receiptId}
+          AND receipt.user_id = #{userId}
+          AND receipt.is_deleted = 0
+          AND participant.is_deleted = 0
+    </update>
+
     <!-- 로그인 회원의 영수증 논리 삭제 -->
     <update id="softDeleteReceiptByIdAndUserId">
+
         UPDATE receipts
         SET is_deleted = 1,
             deleted_at = NOW()

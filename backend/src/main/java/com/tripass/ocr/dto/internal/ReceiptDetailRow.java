@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// 영수증 상세 조회용 DB 조회 결과
+// 영수증 상세 조회 DB 조회 결과
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,6 +19,9 @@ public class ReceiptDetailRow {
     private Long countryId;
     private String countryName;
 
+    private Long categoryId;
+    private String categoryName;
+
     private Long currencyId;
     private String currencyCode;
     private String currencyName;
@@ -29,13 +32,14 @@ public class ReceiptDetailRow {
     private String fileName;
     private String fileUrl;
     private String fileType;
+
+    private String memo;
     private String status;
 
     private String merchantOriginalName;
     private String merchantTranslatedName;
 
     private BigDecimal totalAmount;
-    private BigDecimal taxAmount;
     private Integer splitCount;
 
     private String ocrRawText;

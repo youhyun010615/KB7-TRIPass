@@ -18,9 +18,10 @@ public interface ReceiptService {
             MultipartFile receiptImage
     );
 
-    // 로그인 회원의 영수증 목록을 조회한다.
+    // 로그인 회원의 특정 여행 영수증 목록을 조회한다.
     List<ReceiptSummaryResponse> getReceipts(
-            Long userId
+            Long userId,
+            Long tripId
     );
 
     // 로그인 회원의 영수증 상세 정보를 조회한다.

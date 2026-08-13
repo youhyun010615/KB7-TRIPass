@@ -92,7 +92,6 @@ public class ReceiptAnalysisServiceImpl
                 parsedReceipt.getPaymentDateTime(),
                 parsedReceipt.getCurrencyCode(),
                 parsedReceipt.getTotalAmount(),
-                parsedReceipt.getTaxAmount(),
                 1,
                 splitAmount,
                 items,

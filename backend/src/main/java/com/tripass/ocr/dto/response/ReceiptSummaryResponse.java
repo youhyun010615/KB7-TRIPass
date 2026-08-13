@@ -18,6 +18,12 @@ public class ReceiptSummaryResponse {
     // 연결된 여행 PK
     private Long tripId;
 
+    private Long countryId;
+    private String countryName;
+
+    private Long categoryId;
+    private String categoryName;
+
     // 원문 상호명
     private String merchantOriginalName;
 

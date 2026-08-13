@@ -9,6 +9,7 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,18 +21,32 @@ import java.util.List;
 public class ReceiptSaveRequest {
 
     // 영수증을 연결할 여행 PK
+    @NotNull(message = "여행을 선택해 주세요.")
     private Long tripId;
 
     // 결제 국가 PK
+    @NotNull(message = "결제 국가를 선택해 주세요.")
     private Long countryId;
+
+    // 지출 카테고리 PK
+    @NotNull(message = "지출 카테고리를 선택해 주세요.")
+    private Long categoryId;
 
     // 결제 통화 PK
     @NotNull(message = "결제 통화를 선택해 주세요.")
     private Long currencyId;
 
+
     // 결제일시
     @NotNull(message = "결제일시를 입력해 주세요.")
     private LocalDateTime paymentDateTime;
+
+    // 영수증 메모
+    @Size(
+            max = 500,
+            message = "메모는 500자 이내로 입력해 주세요."
+    )
+    private String memo;
 
     // 원문 상호명
     @Size(max = 255, message = "원문 상호명은 255자 이하로 입력해 주세요.")
@@ -54,31 +69,28 @@ public class ReceiptSaveRequest {
     )
     private BigDecimal totalAmount;
 
-    // 현지 통화 기준 세금
-    @DecimalMin(
-            value = "0.00",
-            message = "세금은 0 이상이어야 합니다."
-    )
-    @Digits(
-            integer = 13,
-            fraction = 2,
-            message = "세금은 정수 13자리, 소수 2자리 이하여야 합니다."
-    )
-    private BigDecimal taxAmount;
 
     // OCR 전체 원문
     private String ocrRawText;
 
-    // 금액 분할 인원수
-    @NotNull(message = "분할 인원수를 입력해 주세요.")
-    @Min(
-            value = 1,
-            message = "분할 인원수는 1명 이상이어야 합니다."
-    )
-    private Integer splitCount;
 
     // 영수증 품목
     @Valid
     private List<ReceiptItemSaveRequest> items =
             new ArrayList<>();
+
+    // 로그인 회원을 제외한 공동결제 참여자 이름 목록
+    @NotNull(
+            message = "공동결제 참여자 목록을 확인해 주세요."
+    )
+    private List<
+            @NotBlank(
+                    message = "공동결제 참여자 이름을 입력해 주세요."
+            )
+            @Size(
+                    max = 100,
+                    message = "공동결제 참여자 이름은 100자 이내로 입력해 주세요."
+            )
+                    String
+            > participantNames = new ArrayList<>();
 }
