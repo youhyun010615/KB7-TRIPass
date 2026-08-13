@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS trip_checklist_items;
 DROP TABLE IF EXISTS pre_expenses;
 DROP TABLE IF EXISTS trip_schedules;
 DROP TABLE IF EXISTS trip_budget_recommendations;
+DROP TABLE IF EXISTS country_budget_baselines;
 DROP TABLE IF EXISTS trip_wallets;
 DROP TABLE IF EXISTS trip_countries;
 DROP TABLE IF EXISTS notifications;
