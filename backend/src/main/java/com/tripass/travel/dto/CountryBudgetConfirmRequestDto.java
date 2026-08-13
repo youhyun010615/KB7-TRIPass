@@ -27,6 +27,8 @@ public class CountryBudgetConfirmRequestDto {
     @NotNull @DecimalMin(value = "0", message = "예산 금액은 0 이상이어야 합니다.") @DecimalMax(value = "100000000", message = "예산 금액은 1억 원 이하여야 합니다.")
     private BigDecimal activityAmount;
     @NotNull @DecimalMin(value = "0", message = "예산 금액은 0 이상이어야 합니다.") @DecimalMax(value = "100000000", message = "예산 금액은 1억 원 이하여야 합니다.")
+    private BigDecimal transportAmount;
+    @NotNull @DecimalMin(value = "0", message = "예산 금액은 0 이상이어야 합니다.") @DecimalMax(value = "100000000", message = "예산 금액은 1억 원 이하여야 합니다.")
     private BigDecimal foodAmount;
     @NotNull @DecimalMin(value = "0", message = "예산 금액은 0 이상이어야 합니다.") @DecimalMax(value = "100000000", message = "예산 금액은 1억 원 이하여야 합니다.")
     private BigDecimal otherAmount;

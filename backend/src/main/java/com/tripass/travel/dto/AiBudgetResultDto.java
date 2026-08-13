@@ -15,6 +15,7 @@ public class AiBudgetResultDto {
     private BigDecimal airfareAmount;
     private BigDecimal lodgingAmount;
     private BigDecimal activityAmount;
+    private BigDecimal transportAmount;
     private BigDecimal foodAmount;
     private BigDecimal otherAmount;
     private String reason;

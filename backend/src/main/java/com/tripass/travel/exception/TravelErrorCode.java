@@ -26,7 +26,8 @@ public enum TravelErrorCode {
 
     // 404 Not Found
     TRIP_NOT_FOUND(HttpStatus.NOT_FOUND, "TRIP_NOT_FOUND", "존재하지 않는 여행 ID입니다."),
-    COUNTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "COUNTRY_NOT_FOUND", "존재하지 않는 국가입니다.");
+    COUNTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "COUNTRY_NOT_FOUND", "존재하지 않는 국가입니다."),
+    COUNTRY_BUDGET_BASELINE_NOT_FOUND(HttpStatus.NOT_FOUND, "COUNTRY_BUDGET_BASELINE_NOT_FOUND", "선택한 국가의 여행 예산 기준값이 아직 준비되지 않았습니다.");
 
     private final HttpStatus status;
     private final String code;

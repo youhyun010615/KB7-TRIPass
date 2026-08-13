@@ -20,6 +20,7 @@ public class TripBudgetRecommendation {
     private BigDecimal recommendedAirfareAmount;
     private BigDecimal recommendedLodgingAmount;
     private BigDecimal recommendedActivityAmount;
+    private BigDecimal recommendedTransportAmount;
     private BigDecimal recommendedFoodAmount;
     private BigDecimal recommendedOtherAmount;
     private String aiReason;

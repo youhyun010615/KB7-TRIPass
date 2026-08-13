@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class TripCountryBudgetContextDto {
     private Long tripCountryId;
+    private Long countryId;
     private String countryName;
     private String currencyCode;
     private LocalDate arrivalDate;

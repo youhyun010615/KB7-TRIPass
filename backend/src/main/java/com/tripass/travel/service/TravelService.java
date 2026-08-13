@@ -1,6 +1,5 @@
 package com.tripass.travel.service;
 
-import com.tripass.travel.client.TravelBudgetAiClient;
 import com.tripass.travel.dto.*;
 import com.tripass.travel.exception.TravelErrorCode;
 import com.tripass.travel.exception.TravelException;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 public class TravelService {
 
     private final TravelMapper travelMapper;
-    private final TravelBudgetAiClient travelBudgetAiClient;
 
     /**
      * 여행 대시보드 상태 조회
@@ -133,8 +131,8 @@ public class TravelService {
     }
 
     /**
-     * 국가별 일정으로 OpenAI 예산 추천을 생성합니다.
-     * AI는 추천값만 제공하고, 사용자가 확정하기 전에는 여행 목표 금액에 반영하지 않습니다.
+     * 국가별 조사 기준 단가와 일정으로 예산을 계산합니다.
+     * 계산값은 재현 가능하며, 사용자가 확정하기 전에는 여행 목표 금액에 반영하지 않습니다.
      */
     @Transactional
     public TripBudgetRecommendationResponseDto generateBudgetRecommendations(Long tripId, Long currentUserId) {
@@ -148,7 +146,13 @@ public class TravelService {
 
         for (TripCountryBudgetContextDto context : contexts) {
             long tripDays = ChronoUnit.DAYS.between(context.getArrivalDate(), context.getDepartureDate()) + 1;
-            AiBudgetResultDto aiResult = travelBudgetAiClient.recommend(context, tripDays);
+            long stayNights = ChronoUnit.DAYS.between(context.getArrivalDate(), context.getDepartureDate());
+            CountryBudgetBaselineDto baseline = travelMapper.findCountryBudgetBaseline(context.getCountryId());
+            if (baseline == null) {
+                throw new TravelException(TravelErrorCode.COUNTRY_BUDGET_BASELINE_NOT_FOUND,
+                        context.getCountryName() + "의 여행 예산 기준값이 아직 준비되지 않았습니다.");
+            }
+            AiBudgetResultDto aiResult = CountryBudgetCalculator.calculate(baseline, tripDays, stayNights);
             travelMapper.upsertTripBudgetRecommendation(TripBudgetRecommendationCommandDto.builder()
                     .tripCountryId(context.getTripCountryId())
                     .travelerCount(1)
@@ -156,6 +160,7 @@ public class TravelService {
                     .airfareAmount(aiResult.getAirfareAmount())
                     .lodgingAmount(aiResult.getLodgingAmount())
                     .activityAmount(aiResult.getActivityAmount())
+                    .transportAmount(aiResult.getTransportAmount())
                     .foodAmount(aiResult.getFoodAmount())
                     .otherAmount(aiResult.getOtherAmount())
                     .aiReason(limitReason(aiResult.getReason()))
@@ -203,6 +208,7 @@ public class TravelService {
 
         for (CountryBudgetConfirmRequestDto country : request.getCountries()) {
             BigDecimal localTravelTarget = country.getActivityAmount()
+                    .add(country.getTransportAmount())
                     .add(country.getFoodAmount())
                     .add(country.getOtherAmount());
             TripBudgetConfirmCommandDto command = TripBudgetConfirmCommandDto.builder()
@@ -210,6 +216,7 @@ public class TravelService {
                     .airfareAmount(country.getAirfareAmount())
                     .lodgingAmount(country.getLodgingAmount())
                     .activityAmount(country.getActivityAmount())
+                    .transportAmount(country.getTransportAmount())
                     .foodAmount(country.getFoodAmount())
                     .otherAmount(country.getOtherAmount())
                     .localTravelTarget(localTravelTarget)
@@ -268,10 +275,11 @@ public class TravelService {
             BigDecimal airfare = selectedAmount(country.getConfirmedAirfareAmount(), country.getRecommendedAirfareAmount());
             BigDecimal lodging = selectedAmount(country.getConfirmedLodgingAmount(), country.getRecommendedLodgingAmount());
             BigDecimal activity = selectedAmount(country.getConfirmedActivityAmount(), country.getRecommendedActivityAmount());
+            BigDecimal transport = selectedAmount(country.getConfirmedTransportAmount(), country.getRecommendedTransportAmount());
             BigDecimal food = selectedAmount(country.getConfirmedFoodAmount(), country.getRecommendedFoodAmount());
             BigDecimal other = selectedAmount(country.getConfirmedOtherAmount(), country.getRecommendedOtherAmount());
             prepaidExpenseTotal = prepaidExpenseTotal.add(airfare).add(lodging);
-            localTravelTargetTotal = localTravelTargetTotal.add(activity).add(food).add(other);
+            localTravelTargetTotal = localTravelTargetTotal.add(activity).add(transport).add(food).add(other);
         }
         return TripBudgetRecommendationResponseDto.builder()
                 .tripId(tripId)
