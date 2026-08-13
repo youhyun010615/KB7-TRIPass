@@ -150,13 +150,13 @@
         WHERE id = #{categoryId}
     </select>
 
-    <!-- 통화 PK 존재 여부 확인 -->
-    <select id="existsCurrencyById"
-            resultType="boolean">
+    <!-- 통화 코드로 통화 PK 조회 -->
+    <select id="findCurrencyIdByCode"
+            resultType="java.lang.Long">
 
-        SELECT COUNT(*) > 0
+        SELECT id
         FROM currencies
-        WHERE id = #{currencyId}
+        WHERE currency_code = #{currencyCode}
     </select>
 
     <!-- 해외 영수증 저장 -->

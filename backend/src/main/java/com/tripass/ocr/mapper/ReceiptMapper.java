@@ -32,9 +32,9 @@ public interface ReceiptMapper {
             @Param("categoryId") Long categoryId
     );
 
-    // 통화 PK 존재 여부 확인
-    boolean existsCurrencyById(
-            @Param("currencyId") Long currencyId
+    // 통화 코드 존재 여부 확인
+    Long findCurrencyIdByCode(
+            @Param("currencyCode") String currencyCode
     );
 
     // 해외 영수증 저장

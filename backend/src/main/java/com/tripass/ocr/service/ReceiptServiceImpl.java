@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 // 해외 영수증 저장·조회·수정·삭제 기능 구현체
 @Service
@@ -397,7 +398,9 @@ public class ReceiptServiceImpl
         receipt.setUserId(userId);
         receipt.setTripId(tripId);
         receipt.setCountryId(request.getCountryId());
-        receipt.setCurrencyId(request.getCurrencyId());
+        receipt.setCurrencyId(
+                resolveCurrencyId(request.getCurrencyCode())
+        );
         receipt.setPaymentDateTime(
                 request.getPaymentDateTime()
         );
@@ -463,7 +466,7 @@ public class ReceiptServiceImpl
         receipt.setUserId(userId);
         receipt.setTripId(tripId);
         receipt.setCountryId(request.getCountryId());
-        receipt.setCurrencyId(request.getCurrencyId());
+        receipt.setCurrencyId(resolveCurrencyId(request.getCurrencyCode()));
         receipt.setPaymentDateTime(
                 request.getPaymentDateTime()
         );
@@ -611,16 +614,6 @@ public class ReceiptServiceImpl
                     HttpStatus.BAD_REQUEST,
                     "RECEIPT_CATEGORY_INVALID",
                     "선택한 지출 카테고리를 확인해 주세요."
-            );
-        }
-
-        if (!receiptMapper.existsCurrencyById(
-                request.getCurrencyId()
-        )) {
-            throw new CustomException(
-                    HttpStatus.BAD_REQUEST,
-                    "RECEIPT_CURRENCY_INVALID",
-                    "선택한 통화 정보를 확인해 주세요."
             );
         }
     }
@@ -940,5 +933,31 @@ public class ReceiptServiceImpl
                     "올바른 여행 ID를 입력해 주세요."
             );
         }
+    }
+
+    // 통화 코드를 표준화한 후 해당 통화 PK를 조회한다.
+    private Long resolveCurrencyId(
+            String requestedCurrencyCode
+    ) {
+        String currencyCode =
+                requestedCurrencyCode
+                        .trim()
+                        .toUpperCase(Locale.ROOT);
+
+
+        Long currencyId =
+                receiptMapper.findCurrencyIdByCode(
+                        currencyCode
+                );
+
+        if (currencyId == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_CURRENCY_INVALID",
+                    "결제 통화를 확인해 주세요."
+            );
+        }
+
+        return currencyId;
     }
 }

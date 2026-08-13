@@ -29,9 +29,14 @@ public class ReceiptSaveRequest {
     @NotNull(message = "지출 카테고리를 선택해 주세요.")
     private Long categoryId;
 
-    // 결제 통화 PK
-    @NotNull(message = "결제 통화를 선택해 주세요.")
-    private Long currencyId;
+    // 결제 통화 코드
+    @NotBlank(message = "결제 통화를 선택해 주세요.")
+    @Size(
+            min = 3,
+            max = 3,
+            message = "통화 코드는 3자리여야 합니다."
+    )
+    private String currencyCode;
 
 
     // 결제일시
