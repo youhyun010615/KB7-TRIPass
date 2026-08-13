@@ -1,8 +1,27 @@
 <script setup>
-import {computed, onBeforeUnmount, ref} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {analyzeReceipt} from '@/api/receipt'
-import {useReceiptStore} from '@/stores/receipt'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+} from 'vue'
+
+import {
+  useRoute,
+  useRouter,
+} from 'vue-router'
+
+import {
+  analyzeReceipt,
+} from '@/api/receipt'
+
+import {
+  fetchTripGoal,
+} from '@/api/travel'
+
+import {
+  useReceiptStore,
+} from '@/stores/receipt'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,31 +35,78 @@ const tripId = computed(() => {
       : null
 })
 
-const trip = computed(() =>
-    store.trip(tripId.value),
-)
+const trip = ref(null)
+
+const loadingTrip = ref(false)
+const analyzing = ref(false)
 
 const step = ref('upload')
+
 const selectedFile = ref(null)
 const fileName = ref('')
 const previewUrl = ref('')
+
 const progress = ref(0)
 const errorMessage = ref('')
+
 const fileInput = ref(null)
 const cameraInput = ref(null)
 
 let progressTimer = null
 
+const tripDateRange = computed(() => {
+  const startDate =
+      trip.value?.startDate
+
+  const endDate =
+      trip.value?.endDate
+
+  if (!startDate && !endDate) {
+    return ''
+  }
+
+  if (!startDate) {
+    return endDate
+  }
+
+  if (!endDate) {
+    return startDate
+  }
+
+  return `${startDate} ~ ${endDate}`
+})
+
 function openFilePicker() {
+  if (loadingTrip.value || analyzing.value) {
+    return
+  }
+
   fileInput.value?.click()
 }
 
 function openCamera() {
+  if (loadingTrip.value || analyzing.value) {
+    return
+  }
+
   cameraInput.value?.click()
 }
 
+function revokePreviewUrl() {
+  if (!previewUrl.value) {
+    return
+  }
+
+  URL.revokeObjectURL(
+      previewUrl.value,
+  )
+
+  previewUrl.value = ''
+}
+
 function selectFile(event) {
-  const file = event.target.files?.[0]
+  const file =
+      event.target.files?.[0]
 
   if (!file) {
     return
@@ -56,39 +122,41 @@ function selectFile(event) {
   if (!allowedTypes.includes(file.type)) {
     errorMessage.value =
         'JPG, JPEG, PNG 이미지 파일만 등록할 수 있습니다.'
+
     event.target.value = ''
     return
   }
 
-  const maxFileSize = 10 * 1024 * 1024
+  const maxFileSize =
+      10 * 1024 * 1024
 
   if (file.size > maxFileSize) {
     errorMessage.value =
         '영수증 이미지는 최대 10MB까지 등록할 수 있습니다.'
+
     event.target.value = ''
     return
   }
 
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-  }
+  revokePreviewUrl()
 
   selectedFile.value = file
   fileName.value = file.name
-  previewUrl.value = URL.createObjectURL(file)
+
+  previewUrl.value =
+      URL.createObjectURL(file)
+
   step.value = 'preview'
 }
 
 function resetFile() {
   selectedFile.value = null
   fileName.value = ''
+
   errorMessage.value = ''
   progress.value = 0
 
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-    previewUrl.value = ''
-  }
+  revokePreviewUrl()
 
   if (fileInput.value) {
     fileInput.value.value = ''
@@ -102,44 +170,101 @@ function resetFile() {
 }
 
 function startProgress() {
+  stopProgress()
+
   progress.value = 10
 
-  progressTimer = window.setInterval(() => {
-    if (progress.value < 90) {
-      progress.value += 5
-    }
-  }, 300)
+  progressTimer =
+      window.setInterval(() => {
+        if (progress.value < 90) {
+          progress.value += 5
+        }
+      }, 300)
 }
 
 function stopProgress() {
-  if (progressTimer) {
-    window.clearInterval(progressTimer)
-    progressTimer = null
+  if (!progressTimer) {
+    return
+  }
+
+  window.clearInterval(
+      progressTimer,
+  )
+
+  progressTimer = null
+}
+
+async function loadTrip() {
+  if (!tripId.value) {
+    trip.value = null
+
+    errorMessage.value =
+        '여행 정보를 확인해 주세요.'
+
+    return
+  }
+
+  loadingTrip.value = true
+  errorMessage.value = ''
+
+  try {
+    trip.value =
+        await fetchTripGoal(
+            tripId.value,
+        )
+  } catch (error) {
+    trip.value = null
+
+    errorMessage.value =
+        error.response?.data?.message ||
+        error.message ||
+        '여행 정보를 불러오지 못했습니다.'
+  } finally {
+    loadingTrip.value = false
   }
 }
 
 async function usePhoto() {
+  if (analyzing.value) {
+    return
+  }
+
   if (!tripId.value) {
     errorMessage.value =
         '여행 정보를 확인해 주세요.'
+
+    return
+  }
+
+  if (!trip.value) {
+    errorMessage.value =
+        '저장할 여행 정보를 먼저 확인해 주세요.'
+
     return
   }
 
   if (!selectedFile.value) {
     errorMessage.value =
         '분석할 영수증 이미지를 선택해 주세요.'
+
     return
   }
 
+  analyzing.value = true
   step.value = 'analyzing'
+
   errorMessage.value = ''
+
   startProgress()
 
   try {
     const response =
-        await analyzeReceipt(selectedFile.value)
+        await analyzeReceipt(
+            selectedFile.value,
+        )
 
-    const analysisData = response.data?.data
+    const analysisData =
+        response.data?.data
 
     if (!analysisData) {
       throw new Error(
@@ -149,18 +274,31 @@ async function usePhoto() {
 
     progress.value = 100
 
+    /*
+     * OCR 분석 데이터와 원본 File 객체를
+     * 결과 화면에서 사용할 수 있도록 Pinia에 보관합니다.
+     *
+     * 이 단계에서는 이미지가 서버 저장소에
+     * 영구 저장되지 않습니다.
+     */
     store.$patch({
       draft: {
         ...analysisData,
-        tripId: tripId.value,
-        sourceFile: selectedFile.value,
+
+        tripId:
+        tripId.value,
+
+        sourceFile:
+        selectedFile.value,
       },
     })
 
     await router.push({
       name: 'ReceiptOcrResult',
+
       params: {
-        tripId: tripId.value,
+        tripId:
+        tripId.value,
       },
     })
   } catch (error) {
@@ -172,32 +310,120 @@ async function usePhoto() {
     step.value = 'preview'
   } finally {
     stopProgress()
+    analyzing.value = false
   }
 }
 
+function handleBack() {
+  if (step.value === 'analyzing') {
+    return
+  }
+
+  if (step.value === 'preview') {
+    resetFile()
+    return
+  }
+
+  router.back()
+}
+
+onMounted(loadTrip)
+
 onBeforeUnmount(() => {
   stopProgress()
-
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-  }
+  revokePreviewUrl()
 })
 </script>
 
 <template>
-  <main :class="['capture-page', { camera:step==='camera' || step==='preview' }]">
+  <main
+      :class="[
+        'capture-page',
+        {
+          camera:
+              step === 'preview' ||
+              step === 'analyzing',
+        },
+      ]"
+  >
     <header>
-      <button type="button" @click="step==='upload' ? router.back() : step='upload'">×</button>
-      <h1>{{
-          step === 'camera' ? '영수증 촬영' : step === 'preview' ? '촬영 결과 확인' : step === 'analyzing' ? '영수증 분석' : '해외 영수증 등록'
-        }}</h1><span>{{ step === 'camera' ? '⚡ 자동' : '' }}</span></header>
+      <button
+          type="button"
+          aria-label="뒤로 가기"
+          :disabled="analyzing"
+          @click="handleBack"
+      >
+        ‹
+      </button>
 
-    <template v-if="step==='upload'">
-      <section class="trip-card"><small>저장할 여행</small><b>{{ trip?.title || '여행 정보 확인 중' }}</b><span>{{ trip?.dateRange || '' }}</span></section>
+      <h1>
+        {{
+          step === 'preview'
+              ? '촬영 결과 확인'
+              : step === 'analyzing'
+                  ? '영수증 분석'
+                  : '해외 영수증 등록'
+        }}
+      </h1>
+
+      <span />
+    </header>
+
+    <template v-if="step === 'upload'">
+      <section class="trip-card">
+        <small>저장할 여행</small>
+
+        <b>
+          {{
+            trip?.tripName ||
+            (
+                loadingTrip
+                    ? '여행 정보 불러오는 중'
+                    : '여행 정보를 확인해 주세요'
+            )
+          }}
+        </b>
+
+        <span v-if="tripDateRange">
+          {{ tripDateRange }}
+        </span>
+      </section>
+
       <section class="upload-card">
-        <div class="receipt-icon">▤</div>
-        <h2>영수증을 촬영하거나 업로드해 주세요</h2>
-        <p>해외 결제 영수증의 항목과 금액을<br>자동으로 인식하고 번역해 드려요.</p><label>
+        <div class="receipt-icon">
+          🧾
+        </div>
+
+        <h2>
+          영수증을 촬영하거나 업로드해 주세요
+        </h2>
+
+        <p>
+          해외 결제 영수증의 품목과 금액을
+          <br>
+          자동으로 인식하고 번역해 드려요.
+        </p>
+
+        <button
+            type="button"
+            class="file-select-button"
+            :disabled="
+              loadingTrip ||
+              !trip
+            "
+            @click="openFilePicker"
+        >
+          파일 선택
+        </button>
+
+        <input
+            ref="fileInput"
+            class="hidden-file-input"
+            type="file"
+            accept="image/jpeg,image/png"
+            @change="selectFile"
+        >
+
         <input
             ref="cameraInput"
             class="hidden-file-input"
@@ -206,58 +432,51 @@ onBeforeUnmount(() => {
             capture="environment"
             @change="selectFile"
         >
-        <input
-            ref="fileInput"
-            type="file"
-            accept="image/jpeg,image/png"
-            @change="selectFile"
-        >
 
-        <span>파일 선택 / 영수증 촬영</span>
-      </label>
-
-        <small>JPG, JPEG, PNG · 최대 10MB</small>
+        <small>
+          JPG, JPEG, PNG · 최대 10MB
+        </small>
 
         <p
             v-if="errorMessage"
             class="error-message"
         >
           {{ errorMessage }}
-        </p></section>
+        </p>
+      </section>
+
       <button
-          class="camera-button"
           type="button"
+          class="camera-button"
+          :disabled="
+            loadingTrip ||
+            !trip
+          "
           @click="openCamera"
       >
         📷 카메라로 촬영하기
       </button>
     </template>
 
-    <template v-else-if="step==='camera'">
-      <section class="camera-frame">
-        <div class="corner tl"/>
-        <div class="corner tr"/>
-        <div class="mock-receipt"><b>RISTORANTE DA RITA</b><i v-for="n in 7" :key="n"/><strong>TOTALE € 17.00</strong>
-        </div>
-        <div class="corner bl"/>
-        <div class="corner br"/>
-      </section>
-      <p class="guide">영수증 전체가 프레임 안에 들어오게 해주세요.</p>
-      <div class="shutter-row">
-        <button>▧</button>
-        <button class="shutter" @click="step='preview'"/>
-        <button>A</button>
-      </div>
-    </template>
-
     <template v-else-if="step === 'preview'">
       <section class="preview">
         <img
+            v-if="previewUrl"
             :src="previewUrl"
-            :alt="fileName"
+            :alt="
+              fileName ||
+              '선택한 영수증 이미지'
+            "
             class="receipt-preview-image"
         >
       </section>
+
+      <p
+          v-if="fileName"
+          class="selected-file-name"
+      >
+        {{ fileName }}
+      </p>
 
       <p
           v-if="errorMessage"
@@ -269,6 +488,7 @@ onBeforeUnmount(() => {
       <div class="preview-actions">
         <button
             type="button"
+            :disabled="analyzing"
             @click="resetFile"
         >
           다시 선택
@@ -276,6 +496,7 @@ onBeforeUnmount(() => {
 
         <button
             type="button"
+            :disabled="analyzing"
             @click="usePhoto"
         >
           이 사진 사용
@@ -283,15 +504,45 @@ onBeforeUnmount(() => {
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="step === 'analyzing'">
       <section class="analysis">
-        <div class="paper"><b>RISTORANTE DA RITA</b><i v-for="n in 9" :key="n"/><span class="scan-line"
-                                                                                      :style="{ top:`${progress}%` }"/>
+        <div class="analysis-preview">
+          <img
+              v-if="previewUrl"
+              :src="previewUrl"
+              :alt="
+                fileName ||
+                '분석 중인 영수증 이미지'
+              "
+          >
+
+          <span
+              class="scan-line"
+              :style="{
+                top: `${progress}%`,
+              }"
+          />
         </div>
-        <h2>영수증을 읽고 있어요</h2>
-        <p>상품명과 결제 금액을 번역하는 중이에요.</p>
-        <div class="progress"><i :style="{ width:`${progress}%` }"/></div>
-        <b>{{ progress }}%</b></section>
+
+        <h2>
+          영수증을 읽고 있어요
+        </h2>
+
+        <p>
+          상호명, 품목과 결제 금액을
+          인식하고 번역하는 중이에요.
+        </p>
+
+        <div class="progress">
+          <i
+              :style="{
+                width: `${progress}%`,
+              }"
+          />
+        </div>
+
+        <b>{{ progress }}%</b>
+      </section>
     </template>
   </main>
 </template>
@@ -631,5 +882,63 @@ onBeforeUnmount(() => {
 
 .preview-error {
   margin: 12px 0 0;
+}
+.hidden-file-input {
+  display: none;
+}
+
+.file-select-button {
+  margin-top: 24px;
+  padding: 12px 24px;
+  border: 1px dashed #2e73df;
+  border-radius: 12px;
+  background: #f4f8ff;
+  color: #2368d5;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.file-select-button:disabled,
+.camera-button:disabled,
+.preview-actions button:disabled,
+.capture-page > header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.selected-file-name {
+  overflow: hidden;
+  margin-top: 10px;
+  color: #b7c5da;
+  font-size: 10px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-preview {
+  position: relative;
+  width: 240px;
+  height: 380px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #0f213c;
+}
+
+.analysis-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.analysis-preview .scan-line {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: #21c8ff;
+  box-shadow: 0 0 16px #21c8ff;
+  transition: top 0.25s;
 }
 </style>

@@ -1,13 +1,27 @@
 <script setup>
-import {computed, onMounted, ref,} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import {
+  useRoute,
+  useRouter,
+} from 'vue-router'
+
 import BottomNav from '@/components/common/BottomNav.vue'
-import {getReceipts} from '@/api/receipt'
-import {useReceiptStore} from '@/stores/receipt'
+
+import {
+  getReceipts,
+} from '@/api/receipt'
+
+import {
+  fetchTripGoal,
+} from '@/api/travel'
 
 const route = useRoute()
 const router = useRouter()
-const store = useReceiptStore()
 
 const tripId = computed(() => {
   const value = Number(route.params.tripId)
@@ -17,13 +31,152 @@ const tripId = computed(() => {
       : null
 })
 
-const trip = computed(() =>
-    store.trip(tripId.value),
-)
-
+const trip = ref(null)
 const receipts = ref([])
+
+const selectedCountryId = ref(null)
+
 const loading = ref(false)
 const errorMessage = ref('')
+
+const tripTitle = computed(() =>
+    trip.value?.tripName ||
+    '여행 정보 확인 중',
+)
+
+const tripDateRange = computed(() => {
+  const startDate =
+      trip.value?.startDate
+
+  const endDate =
+      trip.value?.endDate
+
+  if (!startDate && !endDate) {
+    return ''
+  }
+
+  if (!startDate) {
+    return endDate
+  }
+
+  if (!endDate) {
+    return startDate
+  }
+
+  return `${startDate} ~ ${endDate}`
+})
+
+const countries = computed(() => {
+  const tripCountries =
+      trip.value?.countries ?? []
+
+  return [
+    {
+      countryId: null,
+      countryName: '전체',
+    },
+
+    ...tripCountries.map(country => ({
+      countryId:
+          Number(country.countryId),
+
+      countryName:
+      country.countryName,
+
+      currencyCode:
+      country.currencyCode,
+    })),
+  ]
+})
+
+const filteredReceipts = computed(() => {
+  if (selectedCountryId.value === null) {
+    return receipts.value
+  }
+
+  return receipts.value.filter(
+      receipt =>
+          Number(receipt.countryId) ===
+          Number(selectedCountryId.value),
+  )
+})
+
+const groups = computed(() => {
+  const dateMap = new Map()
+
+  filteredReceipts.value.forEach(receipt => {
+    if (!dateMap.has(receipt.date)) {
+      dateMap.set(receipt.date, [])
+    }
+
+    dateMap.get(receipt.date).push(receipt)
+  })
+
+  return [...dateMap.entries()]
+      .sort(
+          ([firstDate], [secondDate]) =>
+              secondDate.localeCompare(
+                  firstDate,
+              ),
+      )
+      .map(([date, items]) => ({
+        date,
+
+        items: [...items].sort(
+            (first, second) =>
+                second.time.localeCompare(
+                    first.time,
+                ),
+        ),
+      }))
+})
+
+/*
+ * 현재 필터 결과를 통화별로 합산합니다.
+ *
+ * 국가가 전체인 경우 여러 통화가 섞일 수 있으므로
+ * 임의로 서로 다른 통화를 더하지 않습니다.
+ */
+const currencySummaries = computed(() => {
+  const summaryMap = new Map()
+
+  filteredReceipts.value.forEach(receipt => {
+    const currencyCode =
+        receipt.currencyCode ||
+        '통화 미지정'
+
+    const currentAmount =
+        summaryMap.get(currencyCode) ?? 0
+
+    summaryMap.set(
+        currencyCode,
+        currentAmount +
+        Number(receipt.totalAmount || 0),
+    )
+  })
+
+  return [...summaryMap.entries()].map(
+      ([currencyCode, totalAmount]) => ({
+        currencyCode,
+        totalAmount,
+      }),
+  )
+})
+
+const selectedCountryName = computed(() => {
+  if (selectedCountryId.value === null) {
+    return '전체 국가'
+  }
+
+  return (
+      countries.value.find(
+          country =>
+              Number(country.countryId) ===
+              Number(selectedCountryId.value),
+      )?.countryName ||
+      '선택 국가'
+  )
+})
 
 function separatePaymentDateTime(value) {
   if (!value) {
@@ -37,7 +190,10 @@ function separatePaymentDateTime(value) {
       String(value).split('T')
 
   return {
-    date: date || '결제일 미확인',
+    date:
+        date ||
+        '결제일 미확인',
+
     time:
         time.substring(0, 5) ||
         '시간 미확인',
@@ -51,8 +207,25 @@ function mapReceipt(item) {
       )
 
   return {
-    id: item.id,
-    tripId: item.tripId,
+    id:
+    item.id,
+
+    tripId:
+    item.tripId,
+
+    countryId:
+    item.countryId,
+
+    countryName:
+        item.countryName ||
+        '국가 미지정',
+
+    categoryId:
+    item.categoryId,
+
+    categoryName:
+        item.categoryName ||
+        '카테고리 미지정',
 
     merchant:
         item.merchantTranslatedName ||
@@ -63,14 +236,19 @@ function mapReceipt(item) {
         item.merchantOriginalName ||
         '',
 
-    date: paymentDateTime.date,
-    time: paymentDateTime.time,
+    date:
+    paymentDateTime.date,
+
+    time:
+    paymentDateTime.time,
 
     currencyCode:
-        item.currencyCode || '',
+        item.currencyCode ||
+        '',
 
     currencySymbol:
-        item.currencySymbol || '',
+        item.currencySymbol ||
+        '',
 
     totalAmount:
         Number(item.totalAmount) || 0,
@@ -86,49 +264,37 @@ function mapReceipt(item) {
             ? Number(item.splitAmount)
             : (
                 Number(item.splitCount) > 1
-                    ? Number(item.totalAmount || 0) /
+                    ? Number(
+                        item.totalAmount || 0,
+                    ) /
                     Number(item.splitCount)
                     : null
             ),
 
     fileUrl:
-        item.fileUrl || '',
+        item.fileUrl ||
+        '',
   }
 }
 
-const selectedCountry = ref('전체')
-const countries = computed(() => [
-  '전체',
-])
-const groups = computed(() => {
-  // receipts 전체를 날짜별로 그룹화
-  const dateMap = new Map()
-
-  receipts.value.forEach((receipt) => {
-    if (!dateMap.has(receipt.date)) {
-      dateMap.set(receipt.date, [])
-    }
-
-    dateMap.get(receipt.date).push(
-        receipt,
-    )
-  })
-
-  return [...dateMap.entries()]
-      .sort(([firstDate], [secondDate]) =>
-          secondDate.localeCompare(firstDate),
+function formatAmount(value) {
+  return Number(value || 0)
+      .toLocaleString(
+          'ko-KR',
+          {
+            maximumFractionDigits: 2,
+          },
       )
-      .map(([date, items]) => ({
-        date,
-        items,
-      }))
-})
+}
 
-async function loadReceipts() {
+async function loadPage() {
   if (!tripId.value) {
+    trip.value = null
     receipts.value = []
+
     errorMessage.value =
         '여행 정보를 확인해 주세요.'
+
     return
   }
 
@@ -136,21 +302,47 @@ async function loadReceipts() {
   errorMessage.value = ''
 
   try {
-    const response =
-        await getReceipts(tripId.value)
+    const [
+      tripResponse,
+      receiptResponse,
+    ] = await Promise.all([
+      fetchTripGoal(tripId.value),
+      getReceipts(tripId.value),
+    ])
 
-    const responseData = response.data?.data
+    trip.value =
+        tripResponse ?? null
+
+    const receiptData =
+        receiptResponse.data?.data
 
     receipts.value =
-        Array.isArray(responseData)
-            ? responseData.map(mapReceipt)
+        Array.isArray(receiptData)
+            ? receiptData.map(mapReceipt)
             : []
+
+    /*
+     * 현재 선택한 국가가 변경된 여행 정보에 없다면
+     * 전체 필터로 되돌립니다.
+     */
+    if (
+        selectedCountryId.value !== null &&
+        !countries.value.some(
+            country =>
+                Number(country.countryId) ===
+                Number(selectedCountryId.value),
+        )
+    ) {
+      selectedCountryId.value = null
+    }
   } catch (error) {
+    trip.value = null
     receipts.value = []
 
     errorMessage.value =
         error.response?.data?.message ||
-        '영수증 목록을 불러오지 못했습니다.'
+        error.message ||
+        '영수증 보관함을 불러오지 못했습니다.'
   } finally {
     loading.value = false
   }
@@ -163,8 +355,11 @@ function openReceipt(receiptId) {
 
   router.push({
     name: 'ReceiptDetail',
+
     params: {
-      tripId: tripId.value,
+      tripId:
+      tripId.value,
+
       receiptId,
     },
   })
@@ -177,8 +372,10 @@ function openCapture() {
 
   router.push({
     name: 'ReceiptCapture',
+
     params: {
-      tripId: tripId.value,
+      tripId:
+      tripId.value,
     },
   })
 }
@@ -190,40 +387,139 @@ function openManualEntry() {
 
   router.push({
     name: 'ReceiptManualNew',
+
     params: {
-      tripId: tripId.value,
+      tripId:
+      tripId.value,
     },
   })
 }
 
-onMounted(loadReceipts)
+watch(
+    tripId,
+    (currentTripId, previousTripId) => {
+      if (
+          currentTripId &&
+          currentTripId !== previousTripId
+      ) {
+        selectedCountryId.value = null
+        loadPage()
+      }
+    },
+)
+
+onMounted(loadPage)
 </script>
 
 <template>
   <main class="receipt-page">
     <header>
-      <button type="button" @click="router.back()">‹</button>
-      <h1>영수증 보관함</h1><span/></header>
-    <section class="vault-ticket"><small>TRIPASS RECEIPT VAULT</small>
-      <h2>{{ trip?.title || '여행 정보 확인 중' }}</h2>
-      <p>{{ trip?.dateRange || '' }}</p>
-      <div><b>{{ receipts.length }}건</b><span>번역 완료</span></div>
-      <i>||||||||||||||||||||</i></section>
-    <section class="filter-row"><b>국가 선택</b><select v-model="selectedCountry" disabled>
-      <option v-for="country in countries" :key="country">{{ country }}</option>
-    </select></section>
+      <button
+          type="button"
+          aria-label="뒤로 가기"
+          @click="router.back()"
+      >
+        ‹
+      </button>
+
+      <h1>영수증 보관함</h1>
+
+      <span />
+    </header>
+
+    <section class="vault-ticket">
+      <small>TRIPASS RECEIPT VAULT</small>
+
+      <h2>{{ tripTitle }}</h2>
+
+      <p>{{ tripDateRange }}</p>
+
+      <div>
+        <b>{{ receipts.length }}건</b>
+        <span>보관 완료</span>
+      </div>
+
+      <i>||||||||||||||||||||</i>
+    </section>
+
+    <section class="filter-row">
+      <b>국가 선택</b>
+
+      <select
+          v-model="selectedCountryId"
+          :disabled="loading"
+      >
+        <option
+            v-for="country in countries"
+            :key="country.countryId ?? 'all'"
+            :value="country.countryId"
+        >
+          {{ country.countryName }}
+        </option>
+      </select>
+    </section>
+
+    <section
+        v-if="
+          !loading &&
+          !errorMessage &&
+          currencySummaries.length
+        "
+        class="summary-section"
+    >
+      <div class="summary-title">
+        <div>
+          <small>선택 범위</small>
+          <strong>
+            {{ selectedCountryName }}
+          </strong>
+        </div>
+
+        <span>
+          {{ filteredReceipts.length }}건
+        </span>
+      </div>
+
+      <div class="currency-summary-list">
+        <div
+            v-for="summary in currencySummaries"
+            :key="summary.currencyCode"
+            class="currency-summary"
+        >
+          <small>
+            지출 합계
+          </small>
+
+          <strong>
+            {{ summary.currencyCode }}
+            {{
+              formatAmount(
+                  summary.totalAmount,
+              )
+            }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
     <section class="receipt-list">
       <div class="title">
-        <h2>영수증 목록</h2>
-        <span>최근 결제일 순</span>
+        <h2>최근 영수증</h2>
+
+        <span>
+          최신 결제순
+        </span>
       </div>
 
       <div
           v-if="loading"
           class="empty"
       >
-        <span>▤</span>
-        <b>영수증을 불러오고 있어요</b>
+        <span>⌛</span>
+
+        <b>
+          영수증을 불러오고 있어요
+        </b>
       </div>
 
       <div
@@ -231,12 +527,13 @@ onMounted(loadReceipts)
           class="empty"
       >
         <span>!</span>
+
         <b>{{ errorMessage }}</b>
 
         <button
             type="button"
             class="retry-button"
-            @click="loadReceipts"
+            @click="loadPage"
         >
           다시 시도
         </button>
@@ -256,28 +553,32 @@ onMounted(loadReceipts)
               type="button"
               @click="openReceipt(item.id)"
           >
-            <span>▤</span>
+            <span>🧾</span>
 
             <div>
               <b>{{ item.merchant }}</b>
 
               <small>
+                {{ item.countryName }}
+                ·
+                {{ item.categoryName }}
+                ·
                 {{ item.time }}
               </small>
 
               <i
                   v-if="
-    item.splitCount > 1 &&
-    item.splitAmount != null
-  "
+                    item.splitCount > 1 &&
+                    item.splitAmount != null
+                  "
               >
-                {{ item.splitCount }}명 분할 ·
-                1인당
+                {{ item.splitCount }}명 공동결제
+                · 1인당
                 {{ item.currencyCode }}
                 {{
-                  Number(
+                  formatAmount(
                       item.splitAmount,
-                  ).toLocaleString()
+                  )
                 }}
               </i>
             </div>
@@ -288,8 +589,9 @@ onMounted(loadReceipts)
                 item.currencyCode
               }}
               {{
-                item.totalAmount
-                    .toLocaleString()
+                formatAmount(
+                    item.totalAmount,
+                )
               }}
             </strong>
 
@@ -298,21 +600,27 @@ onMounted(loadReceipts)
         </div>
 
         <div
-            v-if="!receipts.length"
+            v-if="!filteredReceipts.length"
             class="empty"
         >
-          <span>▤</span>
-          <b>보관된 영수증이 없어요</b>
+          <span>🧾</span>
+
+          <b>
+            보관된 영수증이 없어요
+          </b>
+
           <small>
-            해외 영수증을 촬영하거나 업로드해 주세요.
+            선택한 국가에 등록된 영수증이 없습니다.
           </small>
         </div>
       </template>
     </section>
+
     <div class="receipt-actions">
       <button
           type="button"
           class="manual-button"
+          :disabled="loading || !tripId"
           @click="openManualEntry"
       >
         + 영수증 수기입력
@@ -321,12 +629,14 @@ onMounted(loadReceipts)
       <button
           type="button"
           class="scan-button"
+          :disabled="loading || !tripId"
           @click="openCapture"
       >
-        + 해외 영수증 OCR 스캔하기
+        + 영수증 촬영
       </button>
     </div>
-    <BottomNav/>
+
+    <BottomNav />
   </main>
 </template>
 
@@ -645,5 +955,82 @@ onMounted(loadReceipts)
   color: #2670dd;
   font-size: 10px;
   font-weight: 800;
+}
+.summary-section {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid #d8e1ec;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.summary-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary-title div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-title small {
+  color: #8a97aa;
+  font-size: 9px;
+}
+
+.summary-title strong {
+  font-size: 14px;
+}
+
+.summary-title > span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #246dd7;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.currency-summary-list {
+  display: grid;
+  grid-template-columns:
+      repeat(
+          auto-fit,
+          minmax(120px, 1fr)
+      );
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.currency-summary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f5f8fd;
+}
+
+.currency-summary small {
+  color: #8a97aa;
+  font-size: 9px;
+}
+
+.currency-summary strong {
+  overflow: hidden;
+  color: #246dd7;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-row select:disabled,
+.receipt-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 </style>
