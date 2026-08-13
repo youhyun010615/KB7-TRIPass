@@ -1,9 +1,6 @@
 package com.tripass.travel.service;
 
-import com.tripass.checklist.dto.ChecklistGroupResponseDto;
-import com.tripass.checklist.dto.ChecklistResponseDto;
-import com.tripass.checklist.dto.ChecklistSummaryResponseDto;
-import com.tripass.travel.domain.Trip;
+import com.tripass.travel.client.TravelBudgetAiClient;
 import com.tripass.travel.dto.*;
 import com.tripass.travel.exception.TravelErrorCode;
 import com.tripass.travel.exception.TravelException;
@@ -14,8 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +28,7 @@ import java.util.stream.Collectors;
 public class TravelService {
 
     private final TravelMapper travelMapper;
+    private final TravelBudgetAiClient travelBudgetAiClient;
 
     /**
      * 여행 대시보드 상태 조회
@@ -76,6 +76,7 @@ public class TravelService {
                 .build();
         travelMapper.insertTripGoal(command);
         insertTripCountries(command.getId(), request.getCountries());
+        travelMapper.insertTripWalletIfAbsent(currentUserId);
 
         return TripGoalCreateResponseDto.builder()
                 .tripId(command.getId())
@@ -133,6 +134,119 @@ public class TravelService {
         return travelMapper.findCountries(keyword == null ? null : keyword.trim());
     }
 
+    /**
+     * 국가별 일정으로 OpenAI 예산 추천을 생성합니다.
+     * AI는 추천값만 제공하고, 사용자가 확정하기 전에는 여행 목표 금액에 반영하지 않습니다.
+     */
+    @Transactional
+    public TripBudgetRecommendationResponseDto generateBudgetRecommendations(Long tripId, Long currentUserId) {
+        validateTripOwner(tripId, currentUserId);
+        validateTripIsPlanning(tripId);
+
+        List<TripCountryBudgetContextDto> contexts = travelMapper.findTripCountryBudgetContexts(tripId);
+        if (contexts.isEmpty()) {
+            throw new TravelException(TravelErrorCode.COUNTRY_NOT_FOUND);
+        }
+
+        for (TripCountryBudgetContextDto context : contexts) {
+            long tripDays = ChronoUnit.DAYS.between(context.getArrivalDate(), context.getDepartureDate()) + 1;
+            AiBudgetResultDto aiResult = travelBudgetAiClient.recommend(context, tripDays);
+            travelMapper.upsertTripBudgetRecommendation(TripBudgetRecommendationCommandDto.builder()
+                    .tripCountryId(context.getTripCountryId())
+                    .travelerCount(1)
+                    .travelStyle("MID_RANGE")
+                    .airfareAmount(aiResult.getAirfareAmount())
+                    .lodgingAmount(aiResult.getLodgingAmount())
+                    .activityAmount(aiResult.getActivityAmount())
+                    .foodAmount(aiResult.getFoodAmount())
+                    .otherAmount(aiResult.getOtherAmount())
+                    .aiReason(limitReason(aiResult.getReason()))
+                    .aiModel(aiResult.getModel())
+                    .build());
+        }
+
+        return toRecommendationResponse(tripId, travelMapper.findBudgetRecommendationsByTripId(tripId));
+    }
+
+    /** 여행 목표 등록 화면에서 저장된 AI 추천 예산을 다시 조회합니다. */
+    public TripBudgetRecommendationResponseDto getBudgetRecommendations(Long tripId, Long currentUserId) {
+        validateTripOwner(tripId, currentUserId);
+        return toRecommendationResponse(tripId, travelMapper.findBudgetRecommendationsByTripId(tripId));
+    }
+
+    /**
+     * 사용자가 AI 추천을 수정·확정하면 현지 사용 금액만 여행 목표와 월 저축 계획에 반영합니다.
+     * 비행기·숙소는 사전지출로 남겨 여행 리포트에는 기록하지만, 여행 저축 목표에는 포함하지 않습니다.
+     */
+    @Transactional
+    public TripGoalCompletionResponseDto confirmBudgetRecommendations(
+            Long tripId,
+            Long currentUserId,
+            TripBudgetConfirmRequestDto request
+    ) {
+        validateTripOwner(tripId, currentUserId);
+        validateTripIsPlanning(tripId);
+
+        List<TripCountryBudgetContextDto> contexts = travelMapper.findTripCountryBudgetContexts(tripId);
+        Set<Long> savedCountryIds = contexts.stream()
+                .map(TripCountryBudgetContextDto::getTripCountryId)
+                .collect(Collectors.toSet());
+        Set<Long> requestCountryIds = request.getCountries().stream()
+                .map(CountryBudgetConfirmRequestDto::getTripCountryId)
+                .collect(Collectors.toSet());
+
+        if (requestCountryIds.size() != request.getCountries().size() || !savedCountryIds.equals(requestCountryIds)) {
+            throw new TravelException(TravelErrorCode.BUDGET_NOT_READY,
+                    "모든 여행 국가의 예산을 한 번씩 확정해 주세요.");
+        }
+
+        BigDecimal prepaidExpenseTotal = BigDecimal.ZERO;
+        BigDecimal localTravelTargetTotal = BigDecimal.ZERO;
+
+        for (CountryBudgetConfirmRequestDto country : request.getCountries()) {
+            BigDecimal localTravelTarget = country.getActivityAmount()
+                    .add(country.getFoodAmount())
+                    .add(country.getOtherAmount());
+            TripBudgetConfirmCommandDto command = TripBudgetConfirmCommandDto.builder()
+                    .tripCountryId(country.getTripCountryId())
+                    .airfareAmount(country.getAirfareAmount())
+                    .lodgingAmount(country.getLodgingAmount())
+                    .activityAmount(country.getActivityAmount())
+                    .foodAmount(country.getFoodAmount())
+                    .otherAmount(country.getOtherAmount())
+                    .localTravelTarget(localTravelTarget)
+                    .build();
+            if (travelMapper.updateConfirmedTripBudget(command) == 0) {
+                throw new TravelException(TravelErrorCode.BUDGET_NOT_READY);
+            }
+            travelMapper.updateTripCountryTargetBudget(command);
+            prepaidExpenseTotal = prepaidExpenseTotal
+                    .add(country.getAirfareAmount())
+                    .add(country.getLodgingAmount());
+            localTravelTargetTotal = localTravelTargetTotal.add(localTravelTarget);
+        }
+
+        travelMapper.updateTripTargetAmount(tripId, localTravelTargetTotal);
+        travelMapper.insertTripWalletIfAbsent(currentUserId);
+        BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
+        TripGoalResponseDto trip = travelMapper.findTripGoalById(tripId);
+        int remainingMonths = calculateRemainingMonths(trip.getStartDate());
+        BigDecimal monthlySavingTarget = calculateMonthlySavingTarget(
+                localTravelTargetTotal, walletBalance, remainingMonths
+        );
+        saveMonthlySavingPlan(tripId, monthlySavingTarget);
+
+        return TripGoalCompletionResponseDto.builder()
+                .tripId(tripId)
+                .prepaidExpenseTotal(prepaidExpenseTotal)
+                .localTravelTargetTotal(localTravelTargetTotal)
+                .currentWalletBalance(walletBalance)
+                .remainingMonths(remainingMonths)
+                .monthlySavingTarget(monthlySavingTarget)
+                .countries(travelMapper.findBudgetRecommendationsByTripId(tripId))
+                .build();
+    }
+
     private void insertTripCountries(Long tripId, List<TripCountryRequestDto> countries) {
         countries.stream()
                 .sorted(Comparator.comparing(TripCountryRequestDto::getDisplayOrder))
@@ -144,6 +258,73 @@ public class TravelService {
                         .targetBudget(BigDecimal.ZERO)
                         .displayOrder(country.getDisplayOrder())
                         .build()));
+    }
+
+    private TripBudgetRecommendationResponseDto toRecommendationResponse(
+            Long tripId,
+            List<CountryBudgetRecommendationResponseDto> countries
+    ) {
+        BigDecimal prepaidExpenseTotal = BigDecimal.ZERO;
+        BigDecimal localTravelTargetTotal = BigDecimal.ZERO;
+        for (CountryBudgetRecommendationResponseDto country : countries) {
+            BigDecimal airfare = selectedAmount(country.getConfirmedAirfareAmount(), country.getRecommendedAirfareAmount());
+            BigDecimal lodging = selectedAmount(country.getConfirmedLodgingAmount(), country.getRecommendedLodgingAmount());
+            BigDecimal activity = selectedAmount(country.getConfirmedActivityAmount(), country.getRecommendedActivityAmount());
+            BigDecimal food = selectedAmount(country.getConfirmedFoodAmount(), country.getRecommendedFoodAmount());
+            BigDecimal other = selectedAmount(country.getConfirmedOtherAmount(), country.getRecommendedOtherAmount());
+            prepaidExpenseTotal = prepaidExpenseTotal.add(airfare).add(lodging);
+            localTravelTargetTotal = localTravelTargetTotal.add(activity).add(food).add(other);
+        }
+        return TripBudgetRecommendationResponseDto.builder()
+                .tripId(tripId)
+                .prepaidExpenseTotal(prepaidExpenseTotal)
+                .localTravelTargetTotal(localTravelTargetTotal)
+                .countries(countries)
+                .build();
+    }
+
+    private void validateTripIsPlanning(Long tripId) {
+        if (!"PLANNING".equals(travelMapper.findTripStatus(tripId))) {
+            throw new TravelException(TravelErrorCode.TRIP_NOT_EDITABLE);
+        }
+    }
+
+    private void saveMonthlySavingPlan(Long tripId, BigDecimal monthlySavingTarget) {
+        Long savingPlanId = travelMapper.findSavingPlanIdByTripId(tripId);
+        if (savingPlanId == null) {
+            travelMapper.insertSavingPlan(tripId, monthlySavingTarget);
+            return;
+        }
+        travelMapper.updateSavingPlanMonthlyAmount(savingPlanId, monthlySavingTarget);
+    }
+
+    private int calculateRemainingMonths(LocalDate tripStartDate) {
+        long months = ChronoUnit.MONTHS.between(YearMonth.now(), YearMonth.from(tripStartDate));
+        return (int) Math.max(1, months);
+    }
+
+    private BigDecimal calculateMonthlySavingTarget(
+            BigDecimal localTravelTargetTotal,
+            BigDecimal walletBalance,
+            int remainingMonths
+    ) {
+        BigDecimal remainingTarget = localTravelTargetTotal.subtract(walletBalance).max(BigDecimal.ZERO);
+        return remainingTarget.divide(BigDecimal.valueOf(remainingMonths), 0, RoundingMode.CEILING);
+    }
+
+    private BigDecimal selectedAmount(BigDecimal confirmedAmount, BigDecimal recommendedAmount) {
+        return confirmedAmount != null ? confirmedAmount : defaultZero(recommendedAmount);
+    }
+
+    private BigDecimal defaultZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private String limitReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return "여행 기간과 국가별 일반적인 소비 수준을 기준으로 추천했습니다.";
+        }
+        return reason.length() <= 1000 ? reason : reason.substring(0, 1000);
     }
 
     /**

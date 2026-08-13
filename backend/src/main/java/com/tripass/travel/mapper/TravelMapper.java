@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 @Mapper
 public interface TravelMapper {
@@ -42,4 +43,26 @@ public interface TravelMapper {
     void updateTripGoal(TripGoalCommandDto command);
 
     void softDeleteTripCountries(@Param("tripId") Long tripId);
+
+    List<TripCountryBudgetContextDto> findTripCountryBudgetContexts(@Param("tripId") Long tripId);
+
+    void upsertTripBudgetRecommendation(TripBudgetRecommendationCommandDto command);
+
+    List<CountryBudgetRecommendationResponseDto> findBudgetRecommendationsByTripId(@Param("tripId") Long tripId);
+
+    int updateConfirmedTripBudget(TripBudgetConfirmCommandDto command);
+
+    void updateTripCountryTargetBudget(TripBudgetConfirmCommandDto command);
+
+    void updateTripTargetAmount(@Param("tripId") Long tripId, @Param("totalTargetAmount") BigDecimal totalTargetAmount);
+
+    void insertTripWalletIfAbsent(@Param("userId") Long userId);
+
+    BigDecimal findTripWalletBalanceByUserId(@Param("userId") Long userId);
+
+    Long findSavingPlanIdByTripId(@Param("tripId") Long tripId);
+
+    void insertSavingPlan(@Param("tripId") Long tripId, @Param("monthlyAmount") BigDecimal monthlyAmount);
+
+    void updateSavingPlanMonthlyAmount(@Param("id") Long id, @Param("monthlyAmount") BigDecimal monthlyAmount);
 }

@@ -107,4 +107,41 @@ public class TravelController {
         TripGoalResponseDto data = travelService.getTripGoal(tripId, userId);
         return ResponseEntity.ok(ApiResponse.success("여행 목표 조회 성공", data));
     }
+
+    /** 국가별 일정에 맞춘 AI 여행 예산을 생성합니다. */
+    @PostMapping("/{id}/budget-recommendations")
+    public ResponseEntity<ApiResponse<TripBudgetRecommendationResponseDto>> generateBudgetRecommendations(
+            @PathVariable("id") Long tripId,
+            Authentication authentication
+    ) {
+        TripBudgetRecommendationResponseDto data = travelService.generateBudgetRecommendations(
+                tripId, getAuthenticatedUserId(authentication)
+        );
+        return ResponseEntity.ok(ApiResponse.success("AI 여행 예산 추천 생성 성공", data));
+    }
+
+    /** 저장된 AI 여행 예산 추천을 조회합니다. */
+    @GetMapping("/{id}/budget-recommendations")
+    public ResponseEntity<ApiResponse<TripBudgetRecommendationResponseDto>> getBudgetRecommendations(
+            @PathVariable("id") Long tripId,
+            Authentication authentication
+    ) {
+        TripBudgetRecommendationResponseDto data = travelService.getBudgetRecommendations(
+                tripId, getAuthenticatedUserId(authentication)
+        );
+        return ResponseEntity.ok(ApiResponse.success("AI 여행 예산 추천 조회 성공", data));
+    }
+
+    /** 사용자가 수정한 국가별 예산을 확정하고 월 저축 목표를 계산합니다. */
+    @PutMapping("/{id}/budget-recommendations")
+    public ResponseEntity<ApiResponse<TripGoalCompletionResponseDto>> confirmBudgetRecommendations(
+            @PathVariable("id") Long tripId,
+            @Valid @RequestBody TripBudgetConfirmRequestDto request,
+            Authentication authentication
+    ) {
+        TripGoalCompletionResponseDto data = travelService.confirmBudgetRecommendations(
+                tripId, getAuthenticatedUserId(authentication), request
+        );
+        return ResponseEntity.ok(ApiResponse.success("여행 목표 금액 확정 성공", data));
+    }
 }
