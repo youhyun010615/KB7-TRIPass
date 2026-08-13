@@ -198,13 +198,17 @@
     </select>
 
     <select id="findCountries" resultType="TripCountryCatalogResponseDto">
-        SELECT c.id AS countryId,
+        SELECT COALESCE(
+                   MAX(CASE WHEN cb.id IS NOT NULL THEN c.id END),
+                   MIN(c.id)
+               ) AS countryId,
                c.country_name,
                cur.currency_code,
                cur.currency_name,
-               c.flag_url
+               MAX(c.flag_url) AS flag_url
         FROM countries c
                  INNER JOIN currencies cur ON cur.id = c.currency_id
+                 LEFT JOIN country_budget_baselines cb ON cb.country_id = c.id
         <where>
             <if test="keyword != null and keyword != ''">
                 (c.country_name LIKE CONCAT('%', #{keyword}, '%')
@@ -212,6 +216,7 @@
                  OR cur.currency_name LIKE CONCAT('%', #{keyword}, '%'))
             </if>
         </where>
+        GROUP BY c.country_name, cur.currency_code, cur.currency_name
         ORDER BY c.country_name ASC
     </select>
 

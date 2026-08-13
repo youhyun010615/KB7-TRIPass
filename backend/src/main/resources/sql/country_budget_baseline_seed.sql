@@ -1,8 +1,11 @@
 -- 국가·통화 시드(trip_goal_reference_seed.sql) 실행 후 적용합니다.
 -- 기준 단가는 성인 1인 일반 여행자 기준이며 2026-08-11 조사값입니다.
 
-INSERT IGNORE INTO countries (country_name, currency_id, time_zone) VALUES
-('독일', (SELECT id FROM currencies WHERE currency_code = 'EUR'), 'Europe/Berlin');
+INSERT INTO countries (country_name, currency_id, time_zone)
+SELECT '독일', (SELECT id FROM currencies WHERE currency_code = 'EUR'), 'Europe/Berlin'
+WHERE NOT EXISTS (
+    SELECT 1 FROM countries WHERE country_name = '독일'
+);
 
 INSERT INTO country_budget_baselines
 (country_id, round_trip_airfare, lodging_per_night, food_per_day, activity_per_day, transport_per_day, misc_per_day, data_source, reference_date)
@@ -13,7 +16,7 @@ VALUES
 ((SELECT id FROM countries WHERE country_name = '스위스'),
  1300000, 200000, 70000, 55000, 40000, 30000,
  'KAYAK 항공권가, 스위스 세이버데이패스·여행 예산 가이드', '2026-08-11'),
-((SELECT id FROM countries WHERE country_name = '독일'),
+((SELECT MIN(id) FROM countries WHERE country_name = '독일'),
  1100000, 110000, 60000, 40000, 25000, 20000,
  'KAYAK 항공권가, 도이칠란트티켓·여행 예산 가이드', '2026-08-11'),
 ((SELECT id FROM countries WHERE country_name = '일본'),
