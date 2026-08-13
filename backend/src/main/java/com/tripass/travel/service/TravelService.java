@@ -11,10 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -230,8 +228,8 @@ public class TravelService {
         travelMapper.insertTripWalletIfAbsent(currentUserId);
         BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
         TripGoalResponseDto trip = travelMapper.findTripGoalById(tripId);
-        int remainingMonths = calculateRemainingMonths(trip.getStartDate());
-        BigDecimal monthlySavingTarget = calculateMonthlySavingTarget(
+        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
+        BigDecimal monthlySavingTarget = TripSavingCalculator.calculateMonthlySavingTarget(
                 localTravelTargetTotal, walletBalance, remainingMonths
         );
         saveMonthlySavingPlan(tripId, monthlySavingTarget);
@@ -296,20 +294,6 @@ public class TravelService {
             return;
         }
         travelMapper.updateSavingPlanMonthlyAmount(savingPlanId, monthlySavingTarget);
-    }
-
-    private int calculateRemainingMonths(LocalDate tripStartDate) {
-        long months = ChronoUnit.MONTHS.between(YearMonth.now(), YearMonth.from(tripStartDate));
-        return (int) Math.max(1, months);
-    }
-
-    private BigDecimal calculateMonthlySavingTarget(
-            BigDecimal localTravelTargetTotal,
-            BigDecimal walletBalance,
-            int remainingMonths
-    ) {
-        BigDecimal remainingTarget = localTravelTargetTotal.subtract(walletBalance).max(BigDecimal.ZERO);
-        return remainingTarget.divide(BigDecimal.valueOf(remainingMonths), 0, RoundingMode.CEILING);
     }
 
     private BigDecimal selectedAmount(BigDecimal confirmedAmount, BigDecimal recommendedAmount) {

@@ -19,6 +19,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 class TravelControllerTest {
 
@@ -50,10 +51,12 @@ class TravelControllerTest {
         responseDto.setCountries(Collections.singletonList(country));
         Long userId = 1L;
 
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(userId);
         when(travelService.getTravelStatus(tripId, userId)).thenReturn(responseDto);
 
         // when
-        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response = travelController.getTravelStatus(tripId, userId);
+        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response = travelController.getTravelStatus(tripId, authentication);
 
         // then
         assertNotNull(response.getBody());
