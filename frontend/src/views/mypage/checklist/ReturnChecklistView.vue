@@ -1,108 +1,210 @@
+<template>
+  <main class="page">
+    <!-- 📌 1. 상단 고정 영역 -->
+    <div class="fixed-header">
+      <header>
+        <button type="button" @click="router.back()">‹</button>
+        <h1>귀국 체크리스트</h1>
+        <span />
+      </header>
+
+      <section class="pass">
+        <small>RETURN CHECK BOARDING PASS</small><i />
+        <div>
+          <h2>귀국 체크리스트</h2>
+          <b>{{ progress.done }} / {{ progress.total }} 완료</b>
+        </div>
+        <div class="bar">
+          <span :style="{ width: `${progress.percent}%` }" />
+        </div>
+        <footer>
+          <strong>{{ progress.percent }}% 완료</strong>
+          <em>{{ progress.total - progress.done }}개 항목 남음</em>
+        </footer>
+      </section>
+    </div>
+
+    <!-- 🎯 2. 하단 스크롤 영역 -->
+    <div class="scroll-content">
+      <h3>귀국 점검 체크리스트</h3>
+
+      <section class="items">
+        <div v-if="store.loading" class="loading">불러오는 중...</div>
+        <template v-else>
+          <div
+            v-for="item in returnItems"
+            :key="item.id"
+            class="item-card"
+            :class="{ done: item.isCompleted }"
+            @click="handleToggle(item)"
+          >
+            <span class="check-icon">{{ item.isCompleted ? '✓' : '' }}</span>
+
+            <div class="content">
+              <b class="item-title">
+                <span
+                  class="type-badge"
+                  :class="item.isCustom ? 'custom' : 'default'"
+                >
+                  {{ item.isCustom ? '사용자' : '기본' }}
+                </span>
+                <span class="name">{{ item.itemName }}</span>
+              </b>
+            </div>
+
+            <!-- 액션 영역: 삭제 버튼 + 완료 상태 -->
+            <div class="actions">
+              <button
+                v-if="item.isCustom"
+                type="button"
+                class="del-btn"
+                @click="(e) => handleDelete(e, item.id)"
+              >
+                삭제
+              </button>
+              <em class="status-tag">{{
+                item.isCompleted ? '완료' : '미완료'
+              }}</em>
+            </div>
+          </div>
+        </template>
+      </section>
+
+      <!-- ➕ 추가 박스 및 버튼 영역 -->
+      <ChecklistAddBox
+        v-if="adding"
+        placeholder="추가할 귀국 점검 항목을 입력하세요"
+        @submit="handleAddSubmit"
+        @cancel="adding = false"
+      />
+      <button v-else class="add-button" @click="adding = true">
+        ＋ 체크리스트 추가
+      </button>
+    </div>
+  </main>
+  <BottomNav />
+</template>
+
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
+import ChecklistAddBox from '@/components/checklist/ChecklistAddBox.vue';
 import { useChecklistStore } from '@/stores/checklist';
 
 const route = useRoute();
 const router = useRouter();
 const store = useChecklistStore();
+
+// tripId 고정 및 query 파라미터 처리
 const tripId = computed(() => Number(route.query.tripId || 1));
-const data = computed(() => store.getTrip(tripId.value));
-const progress = computed(() => store.progress(data.value.returns));
+
 const adding = ref(false);
 const newItem = ref('');
-function submit() {
-  if (store.add(tripId.value, 'return', null, newItem.value)) {
-    newItem.value = '';
+
+// 1. RETURN 타입 귀국 체크리스트 목록 API 조회
+const fetchApiData = async () => {
+  await store.loadChecklists(tripId.value, 'RETURN');
+};
+
+onMounted(() => {
+  fetchApiData();
+});
+
+// 2. 백엔드/스토어 데이터 바인딩
+const returnItems = computed(() => store.currentChecklists);
+
+// 3. 진행률 계산
+const progress = computed(() => {
+  const total = returnItems.value.length;
+  const done = returnItems.value.filter((item) => item.isCompleted).length;
+  const percent = total ? Math.round((done / total) * 100) : 0;
+  return { done, total, percent };
+});
+
+// 4. 완료 상태 토글
+const handleToggle = (item) => {
+  store.toggleItem(tripId.value, item.id, item.isCompleted);
+};
+
+// 5. 새 귀국 항목 추가
+async function handleAddSubmit(text) {
+  if (!text) return;
+
+  const success = await store.addItem(tripId.value, {
+    itemName: text,
+    checklistType: 'RETURN',
+    ddayStage: null, 
+  });
+
+  if (success) {
     adding.value = false;
   }
 }
+
+// 6. 귀국 항목 삭제
+const handleDelete = async (event, itemId) => {
+  event.stopPropagation();
+
+  if (confirm('해당 귀국 점검 항목을 삭제하시겠습니까?')) {
+    await store.removeItem(tripId.value, itemId, 'RETURN');
+  }
+};
 </script>
 
-<template>
-  <main class="page">
-    <header>
-      <button @click="router.back()">‹</button>
-      <h1>귀국 체크리스트</h1>
-      <span />
-    </header>
-    <section class="pass">
-      <small>RETURN CHECK BOARDING PASS</small><i />
-      <div>
-        <h2>귀국 {{ data.trip.returnDate }}</h2>
-        <b>{{ progress.done }} / {{ progress.total }} 완료</b>
-      </div>
-      <div class="bar"><span :style="{ width: `${progress.percent}%` }" /></div>
-      <footer>
-        <strong>{{ progress.percent }}% 완료</strong
-        ><em>{{ data.trip.flightTime }} · {{ data.trip.flight }}</em>
-      </footer>
-    </section>
-    <h3>귀국 점검 체크리스트</h3>
-    <section class="items">
-      <button
-        v-for="item in data.returns"
-        :key="item.id"
-        :class="{ done: item.done }"
-        @click="store.toggle(tripId, 'return', item.id)"
-      >
-        <span>{{ item.done ? '✓' : '' }}</span>
-        <div>
-          <b>{{ item.text }}</b
-          ><small>{{ item.note }}</small>
-        </div>
-        <em>{{ item.done ? '완료' : '미완료' }}</em>
-      </button>
-    </section>
-    <section v-if="adding" class="add-box">
-      <textarea
-        v-model="newItem"
-        maxlength="60"
-        placeholder="추가할 귀국 점검 항목을 입력하세요"
-      />
-      <div>
-        <button @click="submit">추가</button
-        ><button
-          @click="
-            adding = false;
-            newItem = '';
-          "
-        >
-          취소
-        </button>
-      </div>
-    </section>
-    <button v-else class="add-button" @click="adding = true">
-      ＋ 체크리스트 추가
-    </button>
-    <BottomNav />
-  </main>
-</template>
-
 <style scoped>
+/* 📌 Layout & Scroll 구조 설정 */
 .page {
-  min-height: 100vh;
-  padding: 0 18px 95px;
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0 18px;
   background: #f8f6f1;
   color: #111a2d;
+  box-sizing: border-box;
+  overflow: hidden;
 }
-.page > header {
+
+.fixed-header {
+  flex-shrink: 0;
+}
+
+.scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 95px;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Header */
+.page header {
   display: grid;
   height: 92px;
   grid-template-columns: 38px 1fr 38px;
   align-items: end;
   padding-bottom: 17px;
 }
-.page > header button {
+.page header button {
   font-size: 31px;
   text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
-.page > header h1 {
+.page header h1 {
   text-align: center;
   font-size: 17px;
   font-weight: 900;
 }
+
+/* Boarding Pass (보라색 테마) */
 .pass {
   position: relative;
   padding: 19px;
@@ -158,6 +260,7 @@ function submit() {
   height: 100%;
   border-radius: 8px;
   background: #dba8f4;
+  transition: width 0.3s ease;
 }
 .pass footer {
   display: flex;
@@ -169,48 +272,84 @@ function submit() {
   font-size: 9px;
   font-style: normal;
 }
-.page > h3 {
+
+/* Title */
+.scroll-content h3 {
   margin: 20px 2px 10px;
   font-size: 14px;
 }
+
+/* Items & Card Styles */
 .items {
   display: grid;
   gap: 9px;
 }
-.items button {
-  display: grid;
-  grid-template-columns: 34px 1fr auto;
-  gap: 11px;
+
+.item-card {
+  display: flex;
   align-items: center;
-  padding: 13px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 16px;
   border: 1px solid #e2e7ef;
   border-radius: 13px;
   background: #fff;
-  text-align: left;
+  cursor: pointer;
 }
-.items button > span {
+
+.check-icon {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border: 1px solid #dce3ec;
   border-radius: 50%;
   place-items: center;
   color: #fff;
   font-size: 15px;
+  flex-shrink: 0;
 }
-.items button div b,
-.items button div small {
-  display: block;
+
+.content {
+  flex: 1;
+  min-width: 0;
 }
-.items button div b {
+
+.item-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
+  color: #111a2d;
+  word-break: break-all;
 }
-.items button div small {
-  margin-top: 4px;
-  color: #8a96a6;
-  font-size: 8px;
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
-.items button em {
+
+/* 🗑️ 삭제 텍스트 버튼 */
+.del-btn {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.del-btn:hover {
+  color: #e53e3e;
+  background-color: #fff5f5;
+  text-decoration: underline;
+}
+
+.status-tag {
   padding: 5px 8px;
   border-radius: 10px;
   background: #fff0f1;
@@ -218,14 +357,41 @@ function submit() {
   font-size: 7px;
   font-style: normal;
 }
-.items button.done > span {
+
+/* 🏷️ 작고 은은한 구분 미니 뱃지 */
+.type-badge {
+  display: inline-block;
+  padding: 1px 4px;
+  font-size: 8px;
+  font-weight: 500;
+  border-radius: 4px;
+  white-space: nowrap;
+  line-height: 1.2;
+  opacity: 0.85;
+}
+
+.type-badge.default {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.type-badge.custom {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+/* Completed Status Styles */
+.item-card.done .check-icon {
   border-color: #16ae87;
   background: #16ae87;
 }
-.items button.done em {
+
+.item-card.done .status-tag {
   background: #e8f8f3;
   color: #16a37f;
 }
+
+/* Add Box & Button */
 .add-button {
   width: 100%;
   margin-top: 12px;
@@ -236,7 +402,9 @@ function submit() {
   color: #1769d7;
   font-size: 10px;
   font-weight: 900;
+  cursor: pointer;
 }
+
 .add-box {
   margin-top: 12px;
   padding: 12px;
@@ -244,29 +412,44 @@ function submit() {
   border-radius: 13px;
   background: #fff;
 }
+
 .add-box textarea {
   width: 100%;
   height: 70px;
   padding: 10px;
   border: 0;
+  outline: none; /* 검은 테두리 제거 */
   resize: none;
   font-size: 10px;
+  box-sizing: border-box;
 }
+
 .add-box div {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
 .add-box button {
   padding: 11px;
+  border: 0;
   border-radius: 9px;
   background: #0871ff;
   color: #fff;
   font-size: 10px;
   font-weight: 900;
+  cursor: pointer;
 }
+
 .add-box button:last-child {
   background: #eef1f5;
   color: #657288;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #8a96a8;
+  font-size: 12px;
 }
 </style>
