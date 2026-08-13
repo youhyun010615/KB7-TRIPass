@@ -221,7 +221,7 @@
     </select>
 
     <!-- 카드 거래내역 저장 — 동일 external_key 존재 시 merchant_name만 업데이트 (계좌·카드 중복 제거) -->
-    <insert id="upsertTransactionFromCard">
+    <insert id="upsertTransactionFromCard" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO transactions
         (card_id, external_key, transaction_date, transaction_time, transaction_type,
          transaction_region, amount, balance_after, merchant_name)
@@ -229,6 +229,7 @@
         (#{cardId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
          #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName})
         ON DUPLICATE KEY UPDATE
+            id = LAST_INSERT_ID(id),
             merchant_name = VALUES(merchant_name),
             updated_at = NOW()
     </insert>

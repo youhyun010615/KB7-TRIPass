@@ -464,7 +464,12 @@ public class AssetService {
                 dto.setTransactionType("WITHDRAWAL");
                 dto.setTransactionRegion("DOMESTIC");
                 dto.setAmount(amount);
-                dto.setMerchantName((String) approval.get("resMerchantName"));
+                String merchantName = (String) approval.get("resMemberStoreName");
+                if (merchantName == null || merchantName.isBlank()) {
+                    // 이전/기관별 응답 필드명도 함께 지원한다.
+                    merchantName = (String) approval.get("resMerchantName");
+                }
+                dto.setMerchantName(merchantName);
                 assetMapper.upsertTransactionFromCard(dto);
                 saved.add(dto);
             }
