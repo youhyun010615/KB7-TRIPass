@@ -50,12 +50,11 @@ watch(searchKeyword, (keyword) => {
 })
 
 function goToSchedule() {
-  showValidation.value = true
-  store.clearError()
-  if (!store.tripName.trim() || !store.selectedPlans.length) return
+  // 버튼의 disabled 조건을 이미 통과했으므로 클릭 즉시 단계 전환을 보장한다.
   step.value = 2
   showValidation.value = false
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  store.clearError()
+  window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
 }
 
 function reorderTo(targetIndex) {
@@ -196,7 +195,13 @@ function finish() {
           </li>
         </TransitionGroup>
       </section>
-      <button class="primary-cta" :disabled="!store.tripName.trim() || !store.selectedPlans.length" @click="goToSchedule">여행 일정 입력하기</button>
+      <button
+        type="button"
+        class="primary-cta"
+        :disabled="!store.tripName.trim() || !store.selectedPlans.length"
+        @pointerup.prevent.stop="goToSchedule"
+        @click.prevent.stop="goToSchedule"
+      >여행 일정 입력하기</button>
     </template>
 
     <template v-else-if="step === 2">
