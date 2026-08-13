@@ -137,7 +137,7 @@ const ticketSavingCopy = computed(() => {
   }
   return {
     title: '여행 저축 목표',
-    amountLabel: monthlyTarget.value ? `월 목표 ${formatCurrency(monthlyTarget.value)}` : 'SAVED',
+    amountLabel: 'SAVED',
   }
 })
 
@@ -250,48 +250,37 @@ function switchMode(mode) {
             <h2>{{ homeDashboard.tripName }}</h2>
             <p><span>출발</span>{{ formatDate(homeDashboard.startDate) }} <i>·</i> D-{{ daysUntilDeparture }}</p>
           </div>
-        </section>
-
-        <div class="savings-header-row savings-action-row">
-          <!-- 국가 드롭다운 -->
-          <div class="country-picker">
-            <button
-              class="savings-country-button"
-              @click="showCountryDropdown = !showCountryDropdown"
-            >
-              <span>{{ selectedCountry.flag }}</span>
-              <span>{{ selectedCountry.name }}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9L12 15L18 9" stroke="#6B7280" stroke-width="2.5" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <Transition name="country-menu">
-              <div v-if="showCountryDropdown" class="country-dropdown">
-              <button
-                v-for="c in countries" :key="c.id"
-                class="country-dropdown-item"
-                :class="{ 'font-extrabold': selectedCountry.id === c.id }"
-                @click="selectCountry(c.id)"
-              >
-                <span>{{ c.flag }}</span><strong>{{ c.name }}</strong><small>{{ c.currency }}</small>
-              </button>
-              </div>
-            </Transition>
-          </div>
-          <RouterLink class="travel-edit-link" :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">
-            여행 계획 수정하기 <span>›</span>
+          <RouterLink class="trip-edit-button" :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">
+            수정 <span>›</span>
           </RouterLink>
-        </div>
+        </section>
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div :key="selectedCountry.id" class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
+      <div :key="selectedCountry.id" class="country-ticket mx-4 mt-2" :style="`background:${selectedCountry.headerBg}`">
 
         <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
-        <div class="px-5 pt-4 pb-3 flex items-center justify-between"
+        <div class="ticket-header-strip px-5 pt-4 pb-3 flex items-center justify-between"
              :style="`background:${selectedCountry.headerBg}`">
           <span class="text-white/70 text-[10px] font-bold tracking-widest">BOARDING PASS</span>
-          <span class="text-white/50 text-[10px] tracking-widest">TRIPASS AIR</span>
+          <div class="ticket-country-picker">
+            <button class="ticket-country-button" type="button" @click="showCountryDropdown = !showCountryDropdown">
+              <span>{{ selectedCountry.flag }}</span><strong>{{ selectedCountry.name }}</strong>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button>
+            <Transition name="country-menu">
+              <div v-if="showCountryDropdown" class="country-dropdown ticket-country-dropdown">
+                <button
+                  v-for="c in countries" :key="c.id"
+                  class="country-dropdown-item"
+                  :class="{ active: selectedCountry.id === c.id }"
+                  @click="selectCountry(c.id)"
+                >
+                  <span>{{ c.flag }}</span><strong>{{ c.name }}</strong><small>{{ c.currency }}</small>
+                </button>
+              </div>
+            </Transition>
+          </div>
           <span class="text-white/70 text-[10px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.displayOrder }}</span>
         </div>
 
@@ -487,14 +476,15 @@ function switchMode(mode) {
 .active-trip-heading { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 14px; border: 1px solid #dae6fb; border-radius: 17px; background: linear-gradient(135deg,#fff 0%,#eef5ff 100%); box-shadow: 0 8px 22px rgba(24,61,130,.09); }
 .active-trip-icon { display: grid; flex: 0 0 42px; height: 42px; place-items: center; border-radius: 14px; background: linear-gradient(145deg,#173f8d,#3475e6); color: #fff; font-size: 20px; box-shadow: 0 7px 14px rgba(36,105,232,.24); }
 .active-trip-copy { min-width: 0; }
+.active-trip-copy { flex: 1; }
 .active-trip-copy small { color: #6d8dc0; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .active-trip-copy h2 { overflow: hidden; margin-top: 3px; color: #173f8d; font-size: 19px; font-weight: 950; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
 .active-trip-copy p { margin-top: 6px; color: #526b93; font-size: 12px; font-weight: 750; }
 .active-trip-copy p span { margin-right: 6px; padding: 3px 6px; border-radius: 6px; background: #dceaff; color: #2469e8; font-size: 9px; font-weight: 900; }
 .active-trip-copy p i { margin: 0 4px; color: #9cb0cf; font-style: normal; }
-.savings-action-row { position: relative; z-index: 80; margin-top: 13px; }
-.country-picker { position: relative; z-index: 90; }
-.savings-country-button { min-width: 102px; gap: 7px; padding: 10px 12px; border-color: #c9d7eb; border-radius: 12px; font-size: 13px; box-shadow: 0 5px 12px rgba(27,43,75,.08); }
+.trip-edit-button { display: flex; flex: none; align-items: center; gap: 2px; padding: 8px 10px; border: 1px solid #c9dcfa; border-radius: 10px; background: #fff; color: #2469e8; font-size: 11px; font-weight: 900; transition: transform .2s ease,background .2s ease; }
+.trip-edit-button span { font-size: 15px; line-height: 1; }
+.trip-edit-button:active { transform: scale(.95); background: #edf4ff; }
 .country-dropdown { position: absolute; z-index: 200; top: calc(100% + 7px); left: 0; min-width: 154px; overflow: hidden; padding: 6px; border: 1px solid #d9e3f1; border-radius: 14px; background: #fff; box-shadow: 0 18px 36px rgba(17,35,70,.22); }
 .country-dropdown-item { display: grid; width: 100%; grid-template-columns: 22px 1fr auto; align-items: center; gap: 7px; padding: 10px; border-radius: 9px; color: #273449; text-align: left; }
 .country-dropdown-item:hover,.country-dropdown-item:active { background: #edf4ff; }
@@ -502,8 +492,14 @@ function switchMode(mode) {
 .country-dropdown-item small { color: #8190a8; font-size: 9px; }
 .country-menu-enter-active,.country-menu-leave-active { transition: opacity .18s ease,transform .18s ease; transform-origin: top left; }
 .country-menu-enter-from,.country-menu-leave-to { opacity: 0; transform: translateY(-5px) scale(.96); }
-.travel-edit-link { padding: 10px 13px; border: 1px solid #ffd9c5; border-radius: 12px; font-size: 12px; box-shadow: 0 5px 14px rgba(228,95,36,.08); }
 .country-ticket { position: relative; z-index: 1; margin-top: 7px; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
+.ticket-header-strip { position: relative; z-index: 50; border-radius: 21px 21px 0 0; }
+.ticket-country-picker { position: relative; }
+.ticket-country-button { display: flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 9px; background: rgba(255,255,255,.10); color: #fff; font-size: 11px; }
+.ticket-country-button strong { font-size: 11px; font-weight: 900; }
+.ticket-country-dropdown { right: 0; left: auto; min-width: 142px; }
+.country-dropdown-item.active { background: #edf4ff; color: #173f8d; }
+.country-ticket>div:last-child,.country-ticket .ticket-stub { border-radius: 0 0 21px 21px; }
 .ticket-photo-space { height: 112px; }
 .ticket-stub { height: 49px; }
 .month-saving-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; box-shadow: 0 10px 24px rgba(4,151,129,.10); }
