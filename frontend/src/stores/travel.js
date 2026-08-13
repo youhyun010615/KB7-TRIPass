@@ -212,6 +212,15 @@ export const useTravelStore = defineStore('travel', () => {
     plan.targetBudget = localBudgetFields.reduce((sum, key) => sum + Number(plan.budget[key] || 0), 0)
   }
 
+  function resetBudgetToRecommendation(countryId) {
+    const plan = plans[String(countryId)]
+    if (!plan) return
+    for (const field of budgetFields) {
+      plan.budget[field] = Number(plan.recommendedBudget[field] || 0)
+    }
+    plan.targetBudget = localBudgetFields.reduce((sum, key) => sum + Number(plan.budget[key] || 0), 0)
+  }
+
   function setAllocation(accountId, value) {
     const account = accounts.find((item) => item.id === accountId)
     if (!account) return
@@ -436,6 +445,7 @@ export const useTravelStore = defineStore('travel', () => {
     reorderCountries,
     updatePlan,
     updateBudget,
+    resetBudgetToRecommendation,
     setAllocation,
     planError,
     savePlanAndRecommend,
