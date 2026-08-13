@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useExchangeStore } from '@/stores/exchange'
@@ -93,6 +93,8 @@ const countries = computed(() => [...(homeDashboard.value?.countries || [])]
     }
   }))
 const countryCarousel = ref(null)
+const countryAnimationKey = ref(0)
+let countryScrollTimer = null
 const selectedCountryId = computed({
   get: () => travelStore.homeSelectedCountryId,
   set: (countryId) => travelStore.setHomeSelectedCountry(countryId),
@@ -175,8 +177,7 @@ function formatRate(value) {
   })
 }
 
-function handleCountryScroll(event) {
-  const carousel = event.currentTarget
+function settleCountryScroll(carousel) {
   if (!carousel?.clientWidth) return
 
   const countryIndex = Math.max(
@@ -184,6 +185,13 @@ function handleCountryScroll(event) {
     Math.min(countries.value.length - 1, Math.round(carousel.scrollLeft / carousel.clientWidth)),
   )
   selectedCountryId.value = countries.value[countryIndex]?.id ?? null
+  countryAnimationKey.value += 1
+}
+
+function handleCountryScroll(event) {
+  window.clearTimeout(countryScrollTimer)
+  const carousel = event.currentTarget
+  countryScrollTimer = window.setTimeout(() => settleCountryScroll(carousel), 110)
 }
 
 function restoreCountryPosition() {
@@ -207,6 +215,8 @@ function goWallet() {
 function switchMode(mode) {
   if (props.onSwitchMode) props.onSwitchMode(mode)
 }
+
+onBeforeUnmount(() => window.clearTimeout(countryScrollTimer))
 </script>
 
 <template>
@@ -294,7 +304,11 @@ function switchMode(mode) {
           class="country-slide"
           :class="{ active: selectedCountry.id === country.id }"
         >
-          <div class="country-ticket overflow-hidden" :style="`background:${country.headerBg}`">
+          <div
+            :key="`${country.id}-${country.id === selectedCountry.id ? countryAnimationKey : 0}`"
+            class="country-ticket overflow-hidden"
+            :style="`background:${country.headerBg}`"
+          >
 
             <!-- ① 기존 탑승권 헤더 -->
             <div class="px-5 pt-4 pb-3 flex items-center justify-between"
@@ -530,7 +544,7 @@ function switchMode(mode) {
 .country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; opacity: .56; transform: translateY(5px) scale(.965); transition: opacity .34s ease, transform .42s cubic-bezier(.22,1,.36,1); scroll-snap-align: center; scroll-snap-stop: always; }
 .country-slide.active { opacity: 1; transform: translateY(0) scale(1); }
 .country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
-.country-slide.active .country-ticket { animation: ticket-card-enter .52s cubic-bezier(.22,1,.36,1) both; }
+.country-slide.active .country-ticket { animation: ticket-card-enter .62s cubic-bezier(.22,1,.36,1) both; }
 .country-carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 5px 21px 0; color: #71809a; font-size: 9px; font-weight: 700; }
 .country-carousel-dots { display: flex; flex: none; align-items: center; gap: 5px; }
 .country-carousel-dots i { display: block; width: 6px; height: 6px; border-radius: 99px; background: #cbd5e4; transition: width .22s ease, background .22s ease; }
@@ -579,21 +593,21 @@ function switchMode(mode) {
 .exchange-live-card { position: relative; margin-top: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 22px; background: linear-gradient(135deg,var(--exchange-primary),color-mix(in srgb,var(--exchange-primary) 76%,#2f72df)); color: #fff; box-shadow: 0 14px 30px color-mix(in srgb,var(--exchange-primary) 25%,transparent); }
 .exchange-live-card::before { position: absolute; top: -58px; right: -38px; width: 155px; height: 155px; border-radius: 50%; background: var(--exchange-glow); content: ''; }
 .exchange-live-card::after { position: absolute; right: 38px; bottom: -58px; width: 120px; height: 120px; border: 20px solid rgba(255,255,255,.045); border-radius: 50%; content: ''; }
-.exchange-card-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 14px 17px 11px; border-bottom: 1px dashed rgba(255,255,255,.24); }
+.exchange-card-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 15px 17px 12px; border-bottom: 1px dashed rgba(255,255,255,.24); }
 .exchange-card-head>div { display: flex; align-items: center; gap: 6px; }
 .exchange-card-head i { width: 6px; height: 6px; border-radius: 50%; background: var(--exchange-accent); box-shadow: 0 0 0 4px rgba(255,255,255,.1); }
-.exchange-card-head span { color: rgba(255,255,255,.82); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
-.exchange-card-head time { color: rgba(255,255,255,.65); font-size: 9px; }
-.exchange-card-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 17px; }
+.exchange-card-head span { color: rgba(255,255,255,.88); font-size: 11px; font-weight: 900; letter-spacing: .14em; }
+.exchange-card-head time { color: rgba(255,255,255,.72); font-size: 11px; font-weight: 650; }
+.exchange-card-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 19px 17px; }
 .exchange-country-mark { display: flex; min-width: 0; align-items: center; gap: 10px; }
-.exchange-country-mark>span { display: grid; flex: 0 0 38px; height: 38px; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: rgba(255,255,255,.12); font-size: 21px; backdrop-filter: blur(8px); }
-.exchange-country-mark small { display: block; color: rgba(255,255,255,.65); font-size: 8px; font-weight: 700; }
-.exchange-country-mark b { display: block; margin-top: 4px; color: #fff; font-size: 13px; font-weight: 900; white-space: nowrap; }
+.exchange-country-mark>span { display: grid; flex: 0 0 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; background: rgba(255,255,255,.12); font-size: 23px; backdrop-filter: blur(8px); }
+.exchange-country-mark small { display: block; color: rgba(255,255,255,.72); font-size: 10px; font-weight: 750; }
+.exchange-country-mark b { display: block; margin-top: 5px; color: #fff; font-size: 16px; font-weight: 900; white-space: nowrap; }
 .exchange-country-mark b i { margin: 0 3px; color: var(--exchange-accent); font-style: normal; }
 .exchange-rate-value { flex: none; text-align: right; }
-.exchange-rate-value>b { display: block; color: #fff; font-size: 23px; font-weight: 950; letter-spacing: -.04em; }
-.exchange-rate-value>b small { margin-left: 2px; font-size: 12px; }
-.exchange-rate-value>span { display: inline-block; margin-top: 5px; padding: 3px 6px; border-radius: 6px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.72); font-size: 8px; font-weight: 800; }
+.exchange-rate-value>b { display: block; color: #fff; font-size: 27px; font-weight: 950; letter-spacing: -.04em; }
+.exchange-rate-value>b small { margin-left: 2px; font-size: 14px; }
+.exchange-rate-value>span { display: inline-block; margin-top: 6px; padding: 4px 7px; border-radius: 7px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.76); font-size: 10px; font-weight: 850; }
 .exchange-rate-value>span.up { color: #ffd7d0; }
 .exchange-rate-value>span.down { color: #bfe0ff; }
 .exchange-rate-loading { color: rgba(255,255,255,.65); font-size: 9px; }
@@ -604,7 +618,7 @@ function switchMode(mode) {
 @keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes home-card-reveal { from { opacity: 0; transform: translateY(22px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
-@keyframes ticket-card-enter { from { opacity: 0; transform: translateY(22px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes ticket-card-enter { from { opacity: 0; transform: translateY(24px) scale(.97); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 @keyframes progress-shine { 60%,100% { transform: translateX(100%); } }
 @keyframes home-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
