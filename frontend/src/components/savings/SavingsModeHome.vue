@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useExchangeStore } from '@/stores/exchange'
@@ -94,7 +94,6 @@ const countries = computed(() => [...(homeDashboard.value?.countries || [])]
   }))
 const countryCarousel = ref(null)
 const countryAnimationKey = ref(0)
-let countryScrollTimer = null
 const selectedCountryId = computed({
   get: () => travelStore.homeSelectedCountryId,
   set: (countryId) => travelStore.setHomeSelectedCountry(countryId),
@@ -177,21 +176,18 @@ function formatRate(value) {
   })
 }
 
-function settleCountryScroll(carousel) {
+function handleCountryScroll(event) {
+  const carousel = event.currentTarget
   if (!carousel?.clientWidth) return
 
   const countryIndex = Math.max(
     0,
     Math.min(countries.value.length - 1, Math.round(carousel.scrollLeft / carousel.clientWidth)),
   )
-  selectedCountryId.value = countries.value[countryIndex]?.id ?? null
+  const nextCountryId = countries.value[countryIndex]?.id ?? null
+  if (nextCountryId === selectedCountryId.value) return
+  selectedCountryId.value = nextCountryId
   countryAnimationKey.value += 1
-}
-
-function handleCountryScroll(event) {
-  window.clearTimeout(countryScrollTimer)
-  const carousel = event.currentTarget
-  countryScrollTimer = window.setTimeout(() => settleCountryScroll(carousel), 110)
 }
 
 function restoreCountryPosition() {
@@ -215,8 +211,6 @@ function goWallet() {
 function switchMode(mode) {
   if (props.onSwitchMode) props.onSwitchMode(mode)
 }
-
-onBeforeUnmount(() => window.clearTimeout(countryScrollTimer))
 </script>
 
 <template>
