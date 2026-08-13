@@ -20,4 +20,26 @@ public interface TravelMapper {
 
     // 여행 소유자 ID 조회 (권한 검증용)
     Long selectUserIdByTripId(@Param("tripId") Long tripId);
+
+    boolean existsActiveTripByUserId(@Param("userId") Long userId);
+
+    void insertTripGoal(TripGoalCommandDto command);
+
+    void insertTripCountry(TripCountryCommandDto command);
+
+    TripGoalResponseDto findTripGoalById(@Param("tripId") Long tripId);
+
+    List<TripCountryGoalResponseDto> findTripGoalCountries(@Param("tripId") Long tripId);
+
+    TripGoalResponseDto findActiveTripGoalByUserId(@Param("userId") Long userId);
+
+    List<TripCountryCatalogResponseDto> findCountries(@Param("keyword") String keyword);
+
+    boolean existsCountryById(@Param("countryId") Long countryId);
+
+    String findTripStatus(@Param("tripId") Long tripId);
+
+    void updateTripGoal(TripGoalCommandDto command);
+
+    void softDeleteTripCountries(@Param("tripId") Long tripId);
 }

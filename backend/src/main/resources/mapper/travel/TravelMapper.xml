@@ -103,4 +103,145 @@
           AND is_deleted = 0
     </select>
 
+    <select id="existsActiveTripByUserId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM trips
+            WHERE user_id = #{userId}
+              AND status IN ('PLANNING', 'TRAVELING')
+              AND is_deleted = 0
+        )
+    </select>
+
+    <insert id="insertTripGoal"
+            parameterType="TripGoalCommandDto"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO trips (
+            user_id,
+            trip_name,
+            status,
+            start_date,
+            end_date,
+            total_target_amount
+        ) VALUES (
+            #{userId},
+            #{tripName},
+            'PLANNING',
+            #{startDate},
+            #{endDate},
+            0
+        )
+    </insert>
+
+    <insert id="insertTripCountry" parameterType="TripCountryCommandDto">
+        INSERT INTO trip_countries (
+            trip_id,
+            country_id,
+            arrival_date,
+            departure_date,
+            target_budget,
+            display_order
+        ) VALUES (
+            #{tripId},
+            #{countryId},
+            #{arrivalDate},
+            #{departureDate},
+            #{targetBudget},
+            #{displayOrder}
+        )
+    </insert>
+
+    <select id="findTripGoalById" resultType="TripGoalResponseDto">
+        SELECT id AS tripId,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="findTripGoalCountries" resultType="TripCountryGoalResponseDto">
+        SELECT tc.id AS tripCountryId,
+               c.id AS countryId,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               tc.display_order,
+               tc.target_budget
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC, tc.arrival_date ASC
+    </select>
+
+    <select id="findActiveTripGoalByUserId" resultType="TripGoalResponseDto">
+        SELECT id AS tripId,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE user_id = #{userId}
+          AND status IN ('PLANNING', 'TRAVELING')
+          AND is_deleted = 0
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findCountries" resultType="TripCountryCatalogResponseDto">
+        SELECT c.id AS countryId,
+               c.country_name,
+               cur.currency_code,
+               cur.currency_name,
+               c.flag_url
+        FROM countries c
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (c.country_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR cur.currency_code LIKE CONCAT('%', #{keyword}, '%')
+                 OR cur.currency_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY c.country_name ASC
+    </select>
+
+    <select id="existsCountryById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM countries WHERE id = #{countryId})
+    </select>
+
+    <select id="findTripStatus" resultType="string">
+        SELECT status
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <update id="updateTripGoal" parameterType="TripGoalCommandDto">
+        UPDATE trips
+        SET trip_name = #{tripName},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            total_target_amount = 0
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <update id="softDeleteTripCountries">
+        UPDATE trip_countries
+        SET is_deleted = 1,
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
