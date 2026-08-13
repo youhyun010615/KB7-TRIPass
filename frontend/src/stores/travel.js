@@ -126,6 +126,7 @@ export const useTravelStore = defineStore('travel', () => {
   const tripId = ref(null)
   const activeTrip = ref(null)
   const homeDashboard = ref(null)
+  const homeSelectedCountryId = ref(null)
   const homeLoading = ref(false)
   const homeError = ref('')
   const recommendation = ref(null)
@@ -432,6 +433,7 @@ export const useTravelStore = defineStore('travel', () => {
     tripId.value = null
     activeTrip.value = null
     homeDashboard.value = null
+    homeSelectedCountryId.value = null
     homeError.value = ''
     recommendation.value = null
     completion.value = null
@@ -453,6 +455,10 @@ export const useTravelStore = defineStore('travel', () => {
     travelBudget.value = null
   }
 
+  function setHomeSelectedCountry(countryId) {
+    homeSelectedCountryId.value = countryId == null ? null : Number(countryId)
+  }
+
   return {
     isTravelMode,
     selectedCountry,
@@ -462,6 +468,7 @@ export const useTravelStore = defineStore('travel', () => {
     tripId,
     activeTrip,
     homeDashboard,
+    homeSelectedCountryId,
     homeLoading,
     homeError,
     recommendation,
@@ -488,6 +495,7 @@ export const useTravelStore = defineStore('travel', () => {
     loadCountries,
     loadActiveGoal,
     loadHomeDashboard,
+    setHomeSelectedCountry,
     toggleCountry,
     reorderCountries,
     updatePlan,
