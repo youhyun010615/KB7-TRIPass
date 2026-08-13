@@ -263,12 +263,7 @@ function switchMode(mode) {
 
       <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 -->
       <div class="country-carousel" @scroll.passive="handleCountryScroll">
-        <article
-          v-for="country in countries"
-          :key="country.id"
-          class="country-slide"
-          :class="{ active: selectedCountry.id === country.id }"
-        >
+        <article v-for="country in countries" :key="country.id" class="country-slide">
           <div class="country-ticket overflow-hidden" :style="`background:${country.headerBg}`">
 
             <!-- ① 기존 탑승권 헤더 -->
@@ -463,12 +458,13 @@ function switchMode(mode) {
 .trip-summary-row b { overflow: hidden; color: #244f91; font-size: 10px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .savings-home-header { animation: home-fade-down .45s ease both; }
 .savings-greeting-row p { margin-top: 4px; color: #e45f24; font-size: 11px; font-weight: 800; }
-.country-ticket { animation: ticket-swap .48s cubic-bezier(.22,1,.36,1) both; }
-.country-ticket .rounded-xl { animation: home-fade-up .45s .18s ease both; }
-.month-saving-card { animation: home-fade-up .52s .08s ease both; }
-.ai-report-card { cursor: default; animation: home-fade-up .52s .16s ease both; }
+.country-ticket .rounded-xl { animation: home-fade-up .45s .25s ease both; }
+.country-carousel { animation: home-card-reveal .56s .10s cubic-bezier(.22,1,.36,1) both; }
+.country-carousel-meta { animation: home-fade-up .42s .20s ease both; }
+.month-saving-card { animation: home-card-reveal .56s .24s cubic-bezier(.22,1,.36,1) both; }
+.ai-report-card { cursor: default; animation: home-card-reveal .56s .38s cubic-bezier(.22,1,.36,1) both; }
 .ai-report-heading a { color: #286ce0; font-size: 10px; font-weight: 800; }
-.exchange-live-card { animation: home-fade-up .52s .24s ease both; }
+.exchange-live-card { animation: home-card-reveal .56s .52s cubic-bezier(.22,1,.36,1) both; }
 .month-saving-progress i { position: relative; overflow: hidden; transition: width .8s cubic-bezier(.22,1,.36,1); }
 .month-saving-progress i::after { position: absolute; inset: 0; content: ''; background: linear-gradient(90deg,transparent,#ffffff99,transparent); transform: translateX(-100%); animation: progress-shine 1.8s .5s ease-in-out infinite; }
 .travel-edit-link { transition: transform .2s ease, box-shadow .2s ease; }
@@ -490,10 +486,8 @@ function switchMode(mode) {
 .trip-edit-button:active { transform: scale(.95); background: #edf4ff; }
 .country-carousel { display: flex; gap: 0; margin: 7px 16px 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; touch-action: pan-x pan-y; }
 .country-carousel::-webkit-scrollbar { display: none; }
-.country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; opacity: .58; transform: scale(.965) translateY(5px); transition: opacity .36s ease, transform .44s cubic-bezier(.22,1,.36,1); scroll-snap-align: center; scroll-snap-stop: always; }
-.country-slide.active { opacity: 1; transform: scale(1) translateY(0); }
-.country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 12px 24px rgba(17,35,70,.13); transition: box-shadow .44s ease; }
-.country-slide.active .country-ticket { box-shadow: 0 16px 32px rgba(17,35,70,.19); }
+.country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; scroll-snap-align: center; scroll-snap-stop: always; }
+.country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
 .country-carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 5px 21px 0; color: #71809a; font-size: 9px; font-weight: 700; }
 .country-carousel-dots { display: flex; flex: none; align-items: center; gap: 5px; }
 .country-carousel-dots i { display: block; width: 6px; height: 6px; border-radius: 99px; background: #cbd5e4; transition: width .22s ease, background .22s ease; }
@@ -523,12 +517,12 @@ function switchMode(mode) {
 .exchange-live-card { margin-top: 16px; border-radius: 20px; box-shadow: 0 12px 26px rgba(17,35,70,.16); }
 @keyframes home-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes home-card-reveal { from { opacity: 0; transform: translateY(22px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
 @keyframes progress-shine { 60%,100% { transform: translateX(100%); } }
 @keyframes home-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .savings-home-header,.country-ticket,.country-ticket .rounded-xl,.month-saving-card,.ai-report-card,.exchange-live-card,.month-saving-progress i::after { animation: none; }
-  .country-slide,.country-ticket { transition: none; }
+  .savings-home-header,.country-carousel,.country-carousel-meta,.country-ticket .rounded-xl,.month-saving-card,.ai-report-card,.exchange-live-card,.month-saving-progress i::after { animation: none; }
 }
 
 </style>
