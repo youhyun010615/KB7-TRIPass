@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useExchangeStore } from '@/stores/exchange'
@@ -18,10 +18,14 @@ const router = useRouter()
 const userName = computed(() => authStore.user?.name ?? '회원')
 
 onMounted(async () => {
+  await nextTick()
+  restoreCountryPosition()
   await Promise.all([
     travelStore.loadHomeDashboard({ force: true }),
     exchangeStore.updateExchangeRates(),
   ])
+  await nextTick()
+  restoreCountryPosition()
 })
 
 const countryPresentation = {
@@ -88,7 +92,11 @@ const countries = computed(() => [...(homeDashboard.value?.countries || [])]
       desc: presentation.desc || `${country.countryName}에서의 여행을 준비하고 있어요.`,
     }
   }))
-const selectedCountryId = ref(null)
+const countryCarousel = ref(null)
+const selectedCountryId = computed({
+  get: () => travelStore.homeSelectedCountryId,
+  set: (countryId) => travelStore.setHomeSelectedCountry(countryId),
+})
 const selectedCountry = computed(() => (
   countries.value.find((country) => country.id === selectedCountryId.value) || countries.value[0] || defaultPresentation
 ))
@@ -169,6 +177,16 @@ function handleCountryScroll(event) {
     Math.min(countries.value.length - 1, Math.round(carousel.scrollLeft / carousel.clientWidth)),
   )
   selectedCountryId.value = countries.value[countryIndex]?.id ?? null
+}
+
+function restoreCountryPosition() {
+  const carousel = countryCarousel.value
+  if (!carousel?.clientWidth || !countries.value.length) return
+
+  const savedIndex = countries.value.findIndex((country) => country.id === selectedCountryId.value)
+  const countryIndex = savedIndex >= 0 ? savedIndex : 0
+  selectedCountryId.value = countries.value[countryIndex].id
+  carousel.scrollLeft = countryIndex * carousel.clientWidth
 }
 
 function retryHome() {
@@ -262,8 +280,13 @@ function switchMode(mode) {
       </div>
 
       <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 -->
-      <div class="country-carousel" @scroll.passive="handleCountryScroll">
-        <article v-for="country in countries" :key="country.id" class="country-slide">
+      <div ref="countryCarousel" class="country-carousel" @scroll.passive="handleCountryScroll">
+        <article
+          v-for="country in countries"
+          :key="country.id"
+          class="country-slide"
+          :class="{ active: selectedCountry.id === country.id }"
+        >
           <div class="country-ticket overflow-hidden" :style="`background:${country.headerBg}`">
 
             <!-- ① 기존 탑승권 헤더 -->
@@ -372,11 +395,20 @@ function switchMode(mode) {
       </div>
 
       <section class="month-saving-card mx-4 mt-3">
-        <div class="month-saving-heading"><div><h2>이번 달 저축</h2></div><p>{{ currentMonthLabel }}</p></div>
-        <div class="month-saving-values"><div><small>목표 금액</small><b>{{ formatCurrency(monthlyTarget) }}</b></div><div><small>저축한 금액</small><b>{{ formatCurrency(monthlySavedAmount) }}</b></div><div><small>남은 저축</small><b>{{ formatCurrency(monthlyRemainingAmount) }}</b></div></div>
-        <div class="month-saving-progress"><i :style="{ width: `${monthlySavingPercent}%` }"/><strong>{{ monthlySavingPercent }}%</strong></div>
+        <div class="month-card-route" aria-hidden="true"><i /><span>✈</span><i /></div>
+        <div class="month-saving-heading">
+          <div><small>MONTHLY TRAVEL FUND</small><h2>{{ currentMonthLabel }} 여행 저축</h2></div>
+          <p>D-{{ daysUntilDeparture }}</p>
+        </div>
+        <div class="month-saving-values">
+          <div><span>◎</span><small>이번 달 목표</small><b>{{ formatCurrency(monthlyTarget) }}</b></div>
+          <div><span>✓</span><small>저축한 금액</small><b>{{ formatCurrency(monthlySavedAmount) }}</b></div>
+          <div><span>▣</span><small>남은 저축</small><b>{{ formatCurrency(monthlyRemainingAmount) }}</b></div>
+        </div>
+        <div class="month-progress-label"><span>이번 달 저축 여정</span><strong>{{ monthlySavingPercent }}%</strong></div>
+        <div class="month-saving-progress"><i :style="{ width: `${monthlySavingPercent}%` }"/></div>
         <div v-if="monthlySavingPercent >= 100" class="month-saving-success"><span>✓</span><div><b>이번 달 목표 달성!</b><small>{{ formatCurrency(monthlySavedAmount) }}을 저축했어요.</small></div></div>
-        <button class="month-wallet-button" @click="goWallet">월렛으로 송금하기 <span>›</span></button>
+        <button class="month-wallet-button" @click="goWallet"><span><i>＋</i> 여행 월렛에 저축하기</span><b>출발 준비하기 ›</b></button>
       </section>
 
       <section class="ai-report-card mx-4 mt-3">
@@ -486,23 +518,44 @@ function switchMode(mode) {
 .trip-edit-button:active { transform: scale(.95); background: #edf4ff; }
 .country-carousel { display: flex; gap: 0; margin: 7px 16px 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; touch-action: pan-x pan-y; }
 .country-carousel::-webkit-scrollbar { display: none; }
-.country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; scroll-snap-align: center; scroll-snap-stop: always; }
+.country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; opacity: .56; transform: translateY(5px) scale(.965); transition: opacity .34s ease, transform .42s cubic-bezier(.22,1,.36,1); scroll-snap-align: center; scroll-snap-stop: always; }
+.country-slide.active { opacity: 1; transform: translateY(0) scale(1); }
 .country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
+.country-slide.active .country-ticket { animation: ticket-swipe-reveal .46s cubic-bezier(.22,1,.36,1) both; }
 .country-carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 5px 21px 0; color: #71809a; font-size: 9px; font-weight: 700; }
 .country-carousel-dots { display: flex; flex: none; align-items: center; gap: 5px; }
 .country-carousel-dots i { display: block; width: 6px; height: 6px; border-radius: 99px; background: #cbd5e4; transition: width .22s ease, background .22s ease; }
 .country-carousel-dots i.active { width: 17px; background: #2469e8; }
 .ticket-photo-space { height: 112px; }
 .ticket-stub { height: 49px; }
-.month-saving-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; box-shadow: 0 10px 24px rgba(4,151,129,.10); }
-.month-saving-heading h2 { margin-top: 0; font-size: 21px; }
-.month-saving-heading p { padding: 6px 13px; font-size: 12px; }
-.month-saving-values { margin-top: 20px; }
-.month-saving-values small { font-size: 11px; }
-.month-saving-values b { margin-top: 7px; font-size: 15px; }
-.month-saving-progress { height: 10px; margin-top: 24px; }
-.month-saving-progress strong { top: -21px; font-size: 12px; }
-.month-wallet-button { margin-top: 17px; padding: 13px 14px; border-radius: 13px; font-size: 13px; }
+.month-saving-card { position: relative; margin-top: 16px; overflow: hidden; padding: 21px 18px 18px; border: 1px solid #d4e0f5; border-radius: 23px; background: linear-gradient(145deg,#fffaf1 0%,#f8fbff 48%,#edf4ff 100%); box-shadow: 0 13px 30px rgba(23,63,141,.11); }
+.month-saving-card::before { position: absolute; top: -43px; right: -38px; width: 128px; height: 128px; border: 22px solid rgba(240,120,60,.08); border-radius: 50%; content: ''; }
+.month-card-route { position: absolute; top: 23px; right: 88px; display: flex; width: 78px; align-items: center; color: #ef7b3c; opacity: .75; }
+.month-card-route i { flex: 1; border-top: 1px dashed #ef9b6f; }
+.month-card-route span { margin: 0 5px; font-size: 13px; transform: rotate(7deg); }
+.month-saving-heading { position: relative; z-index: 1; }
+.month-saving-heading small { display: block; color: #ef7b3c; font-size: 8px; font-weight: 900; letter-spacing: .15em; }
+.month-saving-heading h2 { margin-top: 5px; color: #173f8d; font-size: 21px; font-weight: 950; letter-spacing: -.045em; }
+.month-saving-heading p { padding: 7px 11px; border: 0; background: #173f8d; color: #fff; font-size: 10px; box-shadow: 0 5px 12px rgba(23,63,141,.18); }
+.month-saving-values { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-top: 18px; }
+.month-saving-values>div { min-width: 0; padding: 11px 7px 10px; border: 1px solid rgba(198,213,238,.8); border-radius: 13px; background: rgba(255,255,255,.82); box-shadow: 0 4px 12px rgba(23,63,141,.05); }
+.month-saving-values>div+div { border-left: 1px solid rgba(198,213,238,.8); }
+.month-saving-values>div>span { display: grid; width: 22px; height: 22px; place-items: center; margin-bottom: 8px; border-radius: 8px; background: #e7effe; color: #2469e8; font-size: 11px; font-weight: 900; }
+.month-saving-values>div:nth-child(2)>span { background: #e3f7f1; color: #0a9a82; }
+.month-saving-values>div:nth-child(3)>span { background: #fff0e7; color: #e86e31; }
+.month-saving-values small { color: #7183a3; font-size: 9px; font-weight: 750; }
+.month-saving-values b { overflow: hidden; margin-top: 5px; color: #183b76; font-size: 13px; font-weight: 950; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.month-progress-label { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; color: #466189; font-size: 10px; font-weight: 800; }
+.month-progress-label strong { color: #2469e8; font-size: 12px; }
+.month-saving-progress { height: 9px; margin-top: 7px; overflow: visible; border: 1px solid #d8e3f5; background: #e7edf7; }
+.month-saving-progress i { position: relative; min-width: 5px; overflow: visible; background: linear-gradient(90deg,#2469e8,#56a3ff); }
+.month-saving-progress i::before { position: absolute; top: 50%; right: -5px; width: 11px; height: 11px; border: 3px solid #fff; border-radius: 50%; background: #ef7b3c; box-shadow: 0 2px 6px rgba(29,71,143,.25); content: ''; transform: translateY(-50%); }
+.month-saving-success { background: #e8f7f2; }
+.month-wallet-button { position: relative; z-index: 1; margin-top: 17px; padding: 13px 14px; border: 0; border-radius: 13px; background: linear-gradient(100deg,#173f8d,#2969d2); color: #fff; box-shadow: 0 8px 18px rgba(23,63,141,.2); }
+.month-wallet-button>span { display: flex; align-items: center; gap: 7px; color: #fff; font-size: 12px; font-weight: 900; }
+.month-wallet-button>span i { display: grid; width: 20px; height: 20px; place-items: center; border-radius: 7px; background: rgba(255,255,255,.16); font-size: 14px; font-style: normal; }
+.month-wallet-button>b { color: #dbe8ff; font-size: 9px; font-weight: 750; }
+.month-wallet-button:active { transform: scale(.985); }
 .ai-report-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; background: linear-gradient(145deg,#eaf3ff,#f5f8ff); box-shadow: 0 10px 25px rgba(36,105,232,.10); }
 .ai-report-heading p { font-size: 21px; }
 .ai-report-heading small { font-size: 11px; }
@@ -519,10 +572,12 @@ function switchMode(mode) {
 @keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes home-card-reveal { from { opacity: 0; transform: translateY(22px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes ticket-swipe-reveal { from { opacity: .55; transform: translateX(18px) scale(.975); } to { opacity: 1; transform: translateX(0) scale(1); } }
 @keyframes progress-shine { 60%,100% { transform: translateX(100%); } }
 @keyframes home-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .savings-home-header,.country-carousel,.country-carousel-meta,.country-ticket .rounded-xl,.month-saving-card,.ai-report-card,.exchange-live-card,.month-saving-progress i::after { animation: none; }
+  .savings-home-header,.country-carousel,.country-carousel-meta,.country-ticket,.country-ticket .rounded-xl,.month-saving-card,.ai-report-card,.exchange-live-card,.month-saving-progress i::after { animation: none; }
+  .country-slide { transition: none; }
 }
 
 </style>
