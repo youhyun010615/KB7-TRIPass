@@ -335,28 +335,62 @@ const router = createRouter({
 
     // ── OCR / EXP (담당: 홍유진) ────────────────────────────
     {
-      path: '/receipt',
+      path: '/trips/:tripId/receipts',
       name: 'Receipt',
-      component: () => import('@/views/receipt/ReceiptView.vue'),
-      meta: { requiresAuth: true },
+      component: () =>
+          import('@/views/receipt/ReceiptView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/capture',
+      path: '/trips/:tripId/receipts/capture',
       name: 'ReceiptCapture',
-      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
-      meta: { requiresAuth: true },
+      component: () =>
+          import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/result',
-      name: 'ReceiptResultNew',
-      component: () => import('@/views/receipt/ReceiptResultView.vue'),
-      meta: { requiresAuth: true },
+      path: '/trips/:tripId/receipts/new',
+      name: 'ReceiptManualNew',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'manual',
+      },
     },
     {
-      path: '/receipt/:receiptId',
-      name: 'ReceiptResult',
-      component: () => import('@/views/receipt/ReceiptResultView.vue'),
-      meta: { requiresAuth: true },
+      path: '/trips/:tripId/receipts/ocr-result',
+      name: 'ReceiptOcrResult',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'ocr',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId/edit',
+      name: 'ReceiptEdit',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'edit',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId',
+      name: 'ReceiptDetail',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'detail',
+      },
     },
 
     // ── MYP (담당: 권유현) ──────────────────────────────────
