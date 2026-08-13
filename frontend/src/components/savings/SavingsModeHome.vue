@@ -92,7 +92,6 @@ const selectedCountryId = ref(null)
 const selectedCountry = computed(() => (
   countries.value.find((country) => country.id === selectedCountryId.value) || countries.value[0] || defaultPresentation
 ))
-const showCountryDropdown = ref(false)
 
 const homeGoalAmount = computed(() => Number(homeDashboard.value?.totalTargetAmount || 0))
 const homeSavedAmount = computed(() => Number(homeDashboard.value?.walletBalance || 0))
@@ -161,9 +160,15 @@ function formatRate(value) {
   })
 }
 
-function selectCountry(countryId) {
-  selectedCountryId.value = countryId
-  showCountryDropdown.value = false
+function handleCountryScroll(event) {
+  const carousel = event.currentTarget
+  if (!carousel?.clientWidth) return
+
+  const countryIndex = Math.max(
+    0,
+    Math.min(countries.value.length - 1, Math.round(carousel.scrollLeft / carousel.clientWidth)),
+  )
+  selectedCountryId.value = countries.value[countryIndex]?.id ?? null
 }
 
 function retryHome() {
@@ -256,120 +261,113 @@ function switchMode(mode) {
         </section>
       </div>
 
-      <!-- BOARDING PASS 카드 -->
-      <div :key="selectedCountry.id" class="country-ticket mx-4 mt-2" :style="`background:${selectedCountry.headerBg}`">
+      <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 -->
+      <div class="country-carousel" @scroll.passive="handleCountryScroll">
+        <article v-for="country in countries" :key="country.id" class="country-slide">
+          <div class="country-ticket overflow-hidden" :style="`background:${country.headerBg}`">
 
-        <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
-        <div class="ticket-header-strip px-5 pt-4 pb-3 flex items-center justify-between"
-             :style="`background:${selectedCountry.headerBg}`">
-          <span class="text-white/70 text-[10px] font-bold tracking-widest">BOARDING PASS</span>
-          <div class="ticket-country-picker">
-            <button class="ticket-country-button" type="button" @click="showCountryDropdown = !showCountryDropdown">
-              <span>{{ selectedCountry.flag }}</span><strong>{{ selectedCountry.name }}</strong>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-            </button>
-            <Transition name="country-menu">
-              <div v-if="showCountryDropdown" class="country-dropdown ticket-country-dropdown">
+            <!-- ① 기존 탑승권 헤더 -->
+            <div class="px-5 pt-4 pb-3 flex items-center justify-between"
+                 :style="`background:${country.headerBg}`">
+              <span class="text-white/70 text-[10px] font-bold tracking-widest">BOARDING PASS</span>
+              <span class="text-white/50 text-[10px] tracking-widest">TRIPASS AIR</span>
+              <span class="text-white/70 text-[10px] font-semibold">NO. {{ country.code }}-{{ country.displayOrder }}</span>
+            </div>
+
+            <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
+            <div class="ticket-cutline ticket-cutline-top">
+              <div class="ticket-notch ticket-notch-left" />
+              <div class="ticket-dashed-line" />
+              <div class="ticket-notch ticket-notch-right" />
+            </div>
+
+            <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
+            <div
+              class="relative"
+              :style="country.image
+                ? `background:url(${country.image}) center/cover no-repeat`
+                : `background:linear-gradient(145deg,${country.headerBg},#3568bd)`"
+            >
+              <!-- 어두운 오버레이 -->
+              <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
+
+              <div class="relative z-10 px-5 pt-6">
+                <!-- DESTINATION / DEPARTURE / 설명 -->
+                <div class="flex items-center gap-2">
+                  <div class="flex-none">
+                    <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Destination</p>
+                    <p class="text-white text-[26px] font-extrabold leading-none">{{ country.flag }} {{ country.name }}</p>
+                  </div>
+                  <div class="flex-1 flex items-center mt-3.5">
+                    <div class="flex-1 border-t border-dashed border-white/40" />
+                    <span class="mx-2 text-yellow-300 text-lg">✈</span>
+                    <div class="flex-1 border-t border-dashed border-white/40" />
+                  </div>
+                  <div class="text-right flex-none">
+                    <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Departure</p>
+                    <p class="text-white text-[26px] font-extrabold leading-none">D-{{ daysUntilDeparture }}</p>
+                  </div>
+                </div>
+                <p class="ticket-description text-white/90 text-[12px] mt-3">{{ country.desc }} ✨</p>
+
+                <!-- 사진이 보이는 여백 -->
+                <div class="ticket-photo-space" />
+
+                <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
+                <div class="rounded-xl px-4 py-4" :style="`background:${country.progressBg}`">
+                  <div class="flex justify-between mb-2">
+                    <span class="font-semibold text-[13px] text-white">{{ ticketSavingCopy.title }}</span>
+                    <span class="text-white font-extrabold text-[14px]">{{ homeSavingsPercent }}%</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/25 overflow-hidden">
+                    <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${country.barColor}`" />
+                  </div>
+                  <div class="flex justify-between mt-2.5">
+                    <div>
+                      <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
+                      <p class="text-white/65 text-[9px] tracking-wider mt-1">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
+                      <p class="text-white/60 text-[9px] tracking-wider mt-1">GOAL</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 사진의 종료 경계와 정확히 맞닿는 하단 절취선 -->
+              <div class="ticket-cutline ticket-cutline-bottom">
+                <div class="ticket-notch ticket-notch-left" />
+                <div class="ticket-dashed-line" />
+                <div class="ticket-notch ticket-notch-right" />
+              </div>
+
+              <!-- ④ 국가 컬러 스텁 -->
+              <div class="relative z-10" :style="`background:${country.headerBg}`">
                 <button
-                  v-for="c in countries" :key="c.id"
-                  class="country-dropdown-item"
-                  :class="{ active: selectedCountry.id === c.id }"
-                  @click="selectCountry(c.id)"
-                >
-                  <span>{{ c.flag }}</span><strong>{{ c.name }}</strong><small>{{ c.currency }}</small>
+                  class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
+                  @click="goWallet">
+                  <span class="text-[13px] font-bold text-white">송금하기</span>
+                  <div class="flex items-center gap-2">
+                    <div class="flex gap-[1.5px] items-end h-5">
+                      <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
+                        class="bg-white/85 rounded-[0.5px]"
+                        :style="`height:${h}px;width:${i%4===0?'2.5px':'1.5px'}`" />
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 18L15 12L9 6" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
                 </button>
               </div>
-            </Transition>
-          </div>
-          <span class="text-white/70 text-[10px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.displayOrder }}</span>
-        </div>
-
-        <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
-        <div class="ticket-cutline ticket-cutline-top">
-          <div class="ticket-notch ticket-notch-left" />
-          <div class="ticket-dashed-line" />
-          <div class="ticket-notch ticket-notch-right" />
-        </div>
-
-        <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
-        <div
-          class="relative"
-          :style="selectedCountry.image
-            ? `background:url(${selectedCountry.image}) center/cover no-repeat`
-            : `background:linear-gradient(145deg,${selectedCountry.headerBg},#3568bd)`"
-        >
-          <!-- 어두운 오버레이 -->
-          <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
-
-          <div class="relative z-10 px-5 pt-6">
-            <!-- DESTINATION / DEPARTURE / 설명 -->
-            <div class="flex items-center gap-2">
-              <div class="flex-none">
-                <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Destination</p>
-                <p class="text-white text-[26px] font-extrabold leading-none">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
-              </div>
-              <div class="flex-1 flex items-center mt-3.5">
-                <div class="flex-1 border-t border-dashed border-white/40" />
-                <span class="mx-2 text-yellow-300 text-lg">✈</span>
-                <div class="flex-1 border-t border-dashed border-white/40" />
-              </div>
-              <div class="text-right flex-none">
-                <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Departure</p>
-                <p class="text-white text-[26px] font-extrabold leading-none">D-{{ daysUntilDeparture }}</p>
-              </div>
-            </div>
-            <p class="ticket-description text-white/90 text-[12px] mt-3">{{ selectedCountry.desc }} ✨</p>
-
-            <!-- 사진이 보이는 여백 -->
-            <div class="ticket-photo-space" />
-
-            <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
-            <div class="rounded-xl px-4 py-4" :style="`background:${selectedCountry.progressBg}`">
-              <div class="flex justify-between mb-2">
-                <span class="font-semibold text-[13px] text-white">{{ ticketSavingCopy.title }}</span>
-                <span class="text-white font-extrabold text-[14px]">{{ homeSavingsPercent }}%</span>
-              </div>
-              <div class="h-2 rounded-full bg-white/25 overflow-hidden">
-                <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${selectedCountry.barColor}`" />
-              </div>
-              <div class="flex justify-between mt-2.5">
-                <div>
-                  <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
-                  <p class="text-white/65 text-[9px] tracking-wider mt-1">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
-                </div>
-                <div class="text-right">
-                  <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
-                  <p class="text-white/60 text-[9px] tracking-wider mt-1">GOAL</p>
-                </div>
-              </div>
             </div>
           </div>
-
-          <!-- 사진의 종료 경계와 정확히 맞닿는 하단 절취선 -->
-          <div class="ticket-cutline ticket-cutline-bottom">
-            <div class="ticket-notch ticket-notch-left" />
-            <div class="ticket-dashed-line" />
-            <div class="ticket-notch ticket-notch-right" />
-          </div>
-
-          <!-- ④ 국가 컬러 스텁 -->
-          <div class="relative z-10" :style="`background:${selectedCountry.headerBg}`">
-            <button
-              class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
-              @click="goWallet">
-              <span class="text-[13px] font-bold text-white">송금하기</span>
-              <div class="flex items-center gap-2">
-                <div class="flex gap-[1.5px] items-end h-5">
-                  <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
-                    class="bg-white/85 rounded-[0.5px]"
-                    :style="`height:${h}px;width:${i%4===0?'2.5px':'1.5px'}`" />
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 18L15 12L9 6" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </button>
-          </div>
+        </article>
+      </div>
+      <div v-if="countries.length > 1" class="country-carousel-meta">
+        <span>옆으로 넘겨 방문 국가를 확인하세요</span>
+        <div class="country-carousel-dots" aria-hidden="true">
+          <i v-for="country in countries" :key="country.id" :class="{ active: selectedCountry.id === country.id }" />
         </div>
       </div>
 
@@ -485,21 +483,14 @@ function switchMode(mode) {
 .trip-edit-button { display: flex; flex: none; align-items: center; gap: 2px; padding: 8px 10px; border: 1px solid #c9dcfa; border-radius: 10px; background: #fff; color: #2469e8; font-size: 11px; font-weight: 900; transition: transform .2s ease,background .2s ease; }
 .trip-edit-button span { font-size: 15px; line-height: 1; }
 .trip-edit-button:active { transform: scale(.95); background: #edf4ff; }
-.country-dropdown { position: absolute; z-index: 200; top: calc(100% + 7px); left: 0; min-width: 154px; overflow: hidden; padding: 6px; border: 1px solid #d9e3f1; border-radius: 14px; background: #fff; box-shadow: 0 18px 36px rgba(17,35,70,.22); }
-.country-dropdown-item { display: grid; width: 100%; grid-template-columns: 22px 1fr auto; align-items: center; gap: 7px; padding: 10px; border-radius: 9px; color: #273449; text-align: left; }
-.country-dropdown-item:hover,.country-dropdown-item:active { background: #edf4ff; }
-.country-dropdown-item strong { font-size: 13px; }
-.country-dropdown-item small { color: #8190a8; font-size: 9px; }
-.country-menu-enter-active,.country-menu-leave-active { transition: opacity .18s ease,transform .18s ease; transform-origin: top left; }
-.country-menu-enter-from,.country-menu-leave-to { opacity: 0; transform: translateY(-5px) scale(.96); }
-.country-ticket { position: relative; z-index: 1; margin-top: 7px; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
-.ticket-header-strip { position: relative; z-index: 50; border-radius: 21px 21px 0 0; }
-.ticket-country-picker { position: relative; }
-.ticket-country-button { display: flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 9px; background: rgba(255,255,255,.10); color: #fff; font-size: 11px; }
-.ticket-country-button strong { font-size: 11px; font-weight: 900; }
-.ticket-country-dropdown { right: 0; left: auto; min-width: 142px; }
-.country-dropdown-item.active { background: #edf4ff; color: #173f8d; }
-.country-ticket>div:last-child,.country-ticket .ticket-stub { border-radius: 0 0 21px 21px; }
+.country-carousel { display: flex; gap: 0; margin: 7px 16px 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; touch-action: pan-x pan-y; }
+.country-carousel::-webkit-scrollbar { display: none; }
+.country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; scroll-snap-align: center; scroll-snap-stop: always; }
+.country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
+.country-carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 5px 21px 0; color: #71809a; font-size: 9px; font-weight: 700; }
+.country-carousel-dots { display: flex; flex: none; align-items: center; gap: 5px; }
+.country-carousel-dots i { display: block; width: 6px; height: 6px; border-radius: 99px; background: #cbd5e4; transition: width .22s ease, background .22s ease; }
+.country-carousel-dots i.active { width: 17px; background: #2469e8; }
 .ticket-photo-space { height: 112px; }
 .ticket-stub { height: 49px; }
 .month-saving-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; box-shadow: 0 10px 24px rgba(4,151,129,.10); }
