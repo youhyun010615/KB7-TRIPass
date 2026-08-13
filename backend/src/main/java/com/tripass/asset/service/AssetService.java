@@ -475,6 +475,16 @@ public class AssetService {
         return assetMapper.findCardsByUserId(userId);
     }
 
+    public List<TransactionDto> getCardTransactions(Long userId, Long cardId, String startDate, String endDate) {
+        CardDto card = assetMapper.findCardByIdAndUserId(cardId, userId);
+        if (card == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "카드를 찾을 수 없습니다.");
+        }
+        LocalDate start = (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
+        LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
+        return assetMapper.findTransactionsByCardId(cardId, start, end);
+    }
+
     public AccountTransactionResponseDto getAccountTransactions(
             Long userId, Long accountId, LocalDate startDate, LocalDate endDate, String type) {
         AccountDto account = assetMapper.findAccountById(accountId, userId);
