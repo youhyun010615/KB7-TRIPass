@@ -418,8 +418,31 @@ CREATE TABLE trip_wallets
 ) COMMENT 'TRIP 월렛';
 
 
--- 15-2. 여행 국가별 AI 예산 추천
--- 항공·숙소는 사전지출, 액티비티·식비·기타는 여행 목표 금액에 포함한다.
+-- 15-2. 국가별 여행 예산 기준값
+-- 조사한 기준 단가를 사용해 여행 예산을 재현 가능하게 계산한다.
+CREATE TABLE country_budget_baselines
+(
+    id                 BIGINT         NOT NULL AUTO_INCREMENT COMMENT '국가별 예산 기준값 ID',
+    country_id         BIGINT         NOT NULL COMMENT '국가 ID',
+    round_trip_airfare DECIMAL(18, 2) NOT NULL COMMENT '왕복 항공권 평균가(원화)',
+    lodging_per_night  DECIMAL(18, 2) NOT NULL COMMENT '숙소 1박 평균가(원화)',
+    food_per_day       DECIMAL(18, 2) NOT NULL COMMENT '1일 식비 평균(원화)',
+    activity_per_day   DECIMAL(18, 2) NOT NULL COMMENT '1일 액티비티 평균(원화)',
+    transport_per_day  DECIMAL(18, 2) NOT NULL COMMENT '1일 현지 교통비 평균(원화)',
+    misc_per_day       DECIMAL(18, 2) NOT NULL COMMENT '1일 기타 평균(원화)',
+    data_source        VARCHAR(500)   NULL COMMENT '조사 출처',
+    reference_date     DATE           NOT NULL COMMENT '기준 조사일',
+    created_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_country_budget_baselines_country (country_id),
+    CONSTRAINT fk_country_budget_baselines_country
+        FOREIGN KEY (country_id) REFERENCES countries (id)
+) COMMENT '국가별 여행 예산 기준값';
+
+
+-- 15-3. 여행 국가별 예산 추천
+-- 항공·숙소는 사전지출, 액티비티·식비·교통·기타는 여행 목표 금액에 포함한다.
 CREATE TABLE trip_budget_recommendations
 (
     id                         BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'AI 예산 추천 ID',
@@ -429,11 +452,13 @@ CREATE TABLE trip_budget_recommendations
     recommended_airfare_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 항공 사전지출',
     recommended_lodging_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 숙소 사전지출',
     recommended_activity_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 액티비티 현지지출',
+    recommended_transport_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 교통비 현지지출',
     recommended_food_amount    DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 식비 현지지출',
     recommended_other_amount   DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 기타 현지지출',
     confirmed_airfare_amount   DECIMAL(18, 2) NULL COMMENT '사용자 확정 항공 사전지출',
     confirmed_lodging_amount   DECIMAL(18, 2) NULL COMMENT '사용자 확정 숙소 사전지출',
     confirmed_activity_amount  DECIMAL(18, 2) NULL COMMENT '사용자 확정 액티비티 현지지출',
+    confirmed_transport_amount DECIMAL(18, 2) NULL COMMENT '사용자 확정 교통비 현지지출',
     confirmed_food_amount      DECIMAL(18, 2) NULL COMMENT '사용자 확정 식비 현지지출',
     confirmed_other_amount     DECIMAL(18, 2) NULL COMMENT '사용자 확정 기타 현지지출',
     ai_reason                  VARCHAR(1000) NULL COMMENT 'AI 추천 근거',
@@ -827,6 +852,7 @@ CREATE INDEX idx_accounts_user_id ON accounts (user_id);
 CREATE INDEX idx_trips_user_id ON trips (user_id);
 CREATE INDEX idx_trip_countries_trip_id ON trip_countries (trip_id);
 CREATE INDEX idx_trip_budget_recommendations_country ON trip_budget_recommendations (trip_country_id);
+CREATE INDEX idx_country_budget_baselines_country ON country_budget_baselines (country_id);
 CREATE INDEX idx_trip_schedules_trip_id ON trip_schedules (trip_id);
 CREATE INDEX idx_trip_schedules_scheduled_at ON trip_schedules (scheduled_at);
 CREATE INDEX idx_trip_schedules_trip_deleted_scheduled ON trip_schedules (trip_id, is_deleted, scheduled_at);
