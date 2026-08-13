@@ -12,6 +12,7 @@ import com.tripass.auth.dto.response.TokenRefreshResponse;
 import com.tripass.auth.dto.request.FindIdRequest;
 import com.tripass.auth.dto.response.FindIdResponse;
 import com.tripass.auth.dto.request.ResetPasswordRequest;
+import com.tripass.auth.dto.request.ChangePasswordRequest;
 import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
@@ -428,6 +429,108 @@ public class AuthServiceImpl implements AuthService {
                 .markVerificationAsUsed(
                         verificationRequestId
                 );
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(
+            Long userId,
+            ChangePasswordRequest request
+    ) {
+        if (userId == null) {
+            throw new CustomException(
+                    HttpStatus.UNAUTHORIZED,
+                    "AUTH_LOGIN_REQUIRED",
+                    "로그인이 필요합니다."
+            );
+        }
+
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_CHANGE_PASSWORD_REQUEST_REQUIRED",
+                    "비밀번호 변경 정보를 입력해 주세요."
+            );
+        }
+
+        String currentPassword = request.getCurrentPassword();
+
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_CURRENT_PASSWORD_REQUIRED",
+                    "현재 비밀번호를 입력해 주세요."
+            );
+        }
+
+        String newPassword =
+                validatePassword(request.getNewPassword());
+
+        String newPasswordConfirm =
+                request.getNewPasswordConfirm();
+
+        if (newPasswordConfirm == null
+                || !newPassword.equals(newPasswordConfirm)) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_NEW_PASSWORD_CONFIRM_MISMATCH",
+                    "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."
+            );
+        }
+
+        User user =
+                userMapper.findActiveLocalUserWithPasswordById(
+                        userId
+                );
+
+        if (user == null || user.getPassword() == null) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "AUTH_LOCAL_USER_NOT_FOUND",
+                    "비밀번호를 변경할 수 있는 회원을 찾을 수 없습니다."
+            );
+        }
+
+        if (!passwordEncoder.matches(
+                currentPassword,
+                user.getPassword()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_CURRENT_PASSWORD_MISMATCH",
+                    "현재 비밀번호가 일치하지 않습니다."
+            );
+        }
+
+        if (passwordEncoder.matches(
+                newPassword,
+                user.getPassword()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "AUTH_PASSWORD_SAME_AS_CURRENT",
+                    "새 비밀번호는 현재 비밀번호와 다르게 설정해 주세요."
+            );
+        }
+
+        String encodedPassword =
+                passwordEncoder.encode(newPassword);
+
+        int updatedRows =
+                userMapper.updatePassword(
+                        userId,
+                        encodedPassword
+                );
+
+        if (updatedRows != 1) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "AUTH_PASSWORD_CHANGE_FAILED",
+                    "비밀번호 변경에 실패했습니다."
+            );
+        }
+
+        refreshTokenService.revokeAllByUserId(userId);
     }
 
     //문자열 길이 검사
