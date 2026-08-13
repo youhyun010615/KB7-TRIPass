@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useExchangeStore } from '@/stores/exchange'
 import { useTravelStore } from '@/stores/travel'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
@@ -11,12 +12,16 @@ const props = defineProps({
 })
 
 const authStore = useAuthStore()
+const exchangeStore = useExchangeStore()
 const travelStore = useTravelStore()
 const router = useRouter()
 const userName = computed(() => authStore.user?.name ?? '회원')
 
-onMounted(() => {
-  travelStore.loadHomeDashboard({ force: true })
+onMounted(async () => {
+  await Promise.all([
+    travelStore.loadHomeDashboard({ force: true }),
+    exchangeStore.updateExchangeRates(),
+  ])
 })
 
 const countryPresentation = {
@@ -96,7 +101,26 @@ const homeSavingsPercent = computed(() => Number(homeDashboard.value?.savingProg
 const monthlyTarget = computed(() => Number(homeDashboard.value?.monthlySavingTarget || 0))
 const prepaidExpenseTotal = computed(() => Number(homeDashboard.value?.prepaidExpenseTotal || 0))
 const daysUntilDeparture = computed(() => Number(homeDashboard.value?.daysUntilDeparture || 0))
-const remainingMonths = computed(() => Number(homeDashboard.value?.remainingMonths || 0))
+const currentMonthLabel = computed(() => `${new Date().getMonth() + 1}월`)
+const monthlySavedAmount = computed(() => Number(homeDashboard.value?.monthlySavedAmount || 0))
+const monthlyRemainingAmount = computed(() => Math.max(0, monthlyTarget.value - monthlySavedAmount.value))
+const monthlySavingPercent = computed(() => (
+  monthlyTarget.value > 0
+    ? Math.min(100, Math.round((monthlySavedAmount.value / monthlyTarget.value) * 100))
+    : 0
+))
+const selectedExchangeRate = computed(() => exchangeStore.getCurrency(selectedCountry.value.currency))
+const exchangeUnitLabel = computed(() => {
+  const rate = selectedExchangeRate.value
+  if (!rate) return selectedCountry.value.currency || '-'
+  return Number(rate.unit || 1) > 1 ? `${rate.unit}${rate.code}` : rate.code
+})
+const exchangeChangePercent = computed(() => {
+  const rate = selectedExchangeRate.value
+  if (!rate?.rate || !rate.change) return 0
+  const previousRate = Number(rate.rate) - Number(rate.change)
+  return previousRate ? (Number(rate.change) / previousRate) * 100 : 0
+})
 
 const ticketSavingCopy = computed(() => {
   if (!homeGoalAmount.value) {
@@ -128,6 +152,13 @@ function formatDate(value) {
   }
   if (typeof value === 'string') return value.replaceAll('-', '.')
   return '-'
+}
+
+function formatRate(value) {
+  return Number(value || 0).toLocaleString('ko-KR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 function selectCountry(countryId) {
@@ -208,7 +239,7 @@ function switchMode(mode) {
         </div>
 
         <div class="savings-header-row savings-greeting-row">
-          <h1>안녕하세요, {{ userName }}님</h1>
+          <div><h1>안녕하세요, {{ userName }}님</h1><p>{{ homeDashboard.tripName }}</p></div>
           <NotificationBell />
         </div>
 
@@ -236,14 +267,14 @@ function switchMode(mode) {
               </button>
             </div>
           </div>
-          <button class="travel-edit-link" type="button" @click="router.push('/travel/register')">
+          <RouterLink class="travel-edit-link" :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">
             여행 계획 수정하기 <span>›</span>
-          </button>
+          </RouterLink>
         </div>
       </div>
 
       <!-- BOARDING PASS 카드 -->
-      <div class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
+      <div :key="selectedCountry.id" class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
 
         <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
         <div class="px-5 pt-4 pb-3 flex items-center justify-between"
@@ -343,37 +374,40 @@ function switchMode(mode) {
       </div>
 
       <section class="month-saving-card mx-4 mt-3">
-        <div class="month-saving-heading"><div><p>D-{{ daysUntilDeparture }}</p><h2>여행 저축 현황</h2></div><span v-if="homeSavingsPercent >= 100">달성</span></div>
-        <div class="month-saving-values"><div><small>목표 금액</small><b>{{ formatCurrency(homeGoalAmount) }}</b></div><div><small>월렛 잔액</small><b>{{ formatCurrency(homeSavedAmount) }}</b></div><div><small>남은 금액</small><b>{{ formatCurrency(homeRemainingAmount) }}</b></div></div>
-        <div class="month-saving-progress"><i :style="{ width: `${homeSavingsPercent}%` }"/><strong>{{ homeSavingsPercent }}%</strong></div>
-        <div class="monthly-target-guide"><span>월 저축 목표</span><b>{{ formatCurrency(monthlyTarget) }}</b><small>남은 {{ remainingMonths }}개월 기준</small></div>
-        <div v-if="homeSavingsPercent >= 100" class="month-saving-success"><span>✓</span><div><b>여행 저축 목표 달성!</b><small>목표 금액을 모두 준비했어요.</small></div></div>
+        <div class="month-saving-heading"><div><h2>이번 달 저축</h2></div><p>{{ currentMonthLabel }}</p></div>
+        <div class="month-saving-values"><div><small>목표 금액</small><b>{{ formatCurrency(monthlyTarget) }}</b></div><div><small>저축한 금액</small><b>{{ formatCurrency(monthlySavedAmount) }}</b></div><div><small>남은 저축</small><b>{{ formatCurrency(monthlyRemainingAmount) }}</b></div></div>
+        <div class="month-saving-progress"><i :style="{ width: `${monthlySavingPercent}%` }"/><strong>{{ monthlySavingPercent }}%</strong></div>
+        <div v-if="monthlySavingPercent >= 100" class="month-saving-success"><span>✓</span><div><b>이번 달 목표 달성!</b><small>{{ formatCurrency(monthlySavedAmount) }}을 저축했어요.</small></div></div>
         <button class="month-wallet-button" @click="goWallet">월렛으로 송금하기 <span>›</span></button>
       </section>
 
       <section class="ai-report-card mx-4 mt-3">
-        <div class="ai-report-heading"><div><p>{{ homeDashboard.tripName }}</p><small>등록한 여행 준비 요약</small></div><button @click="router.push('/travel/register')">수정하기 ›</button></div>
+        <div class="ai-report-heading"><div><p>{{ homeDashboard.tripName }}</p><small>등록한 여행 준비 요약</small></div><RouterLink :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">수정하기 ›</RouterLink></div>
         <div class="ai-goal-status"><span class="status-icon">✦</span><div><strong>출발까지 {{ daysUntilDeparture }}일 남았어요</strong><p>{{ formatDate(homeDashboard.startDate) }} ~ {{ formatDate(homeDashboard.endDate) }}</p></div></div>
         <div class="trip-summary-row"><span>방문 국가</span><b>{{ countries.map((country) => country.countryName).join(' · ') }}</b></div>
         <div class="trip-summary-row"><span>항공·숙소 사전 지출</span><b>{{ formatCurrency(prepaidExpenseTotal) }}</b></div>
         <div class="trip-summary-row"><span>월 저축 목표</span><b>{{ formatCurrency(monthlyTarget) }}</b></div>
       </section>
 
-      <!-- 선택 국가 일정 -->
-      <div class="mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
+      <!-- 오늘의 실시간 환율 -->
+      <div class="exchange-live-card mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
         <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-          <span class="text-white/60 text-[11px] font-semibold">{{ selectedCountry.displayOrder }}번째 방문 국가</span>
-          <span class="text-white/40 text-[10px]">{{ selectedCountry.currency }}</span>
+          <span class="text-white/60 text-[11px] font-semibold">오늘의 환율</span>
+          <span class="text-white/40 text-[10px]">{{ exchangeStore.lastUpdateDate || '최신 고시 기준' }}</span>
         </div>
         <div class="px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-[14px]">{{ selectedCountry.flag }}</span>
-            <span class="text-white font-bold text-[14px]">{{ selectedCountry.countryName }}</span>
+            <span class="text-white font-bold text-[14px]">{{ exchangeUnitLabel }}/KRW</span>
           </div>
-          <div class="text-right">
-            <span class="block text-white text-[12px] font-extrabold">{{ formatDate(selectedCountry.arrivalDate) }} ~ {{ formatDate(selectedCountry.departureDate) }}</span>
-            <span class="block mt-1 text-white/60 text-[9px]">목표 {{ formatCurrency(selectedCountry.targetBudget) }}</span>
+          <div v-if="selectedExchangeRate" class="flex items-center gap-2">
+            <span class="text-white text-[22px] font-extrabold">{{ formatRate(selectedExchangeRate.rate) }}원</span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded" :class="exchangeChangePercent > 0 ? 'text-red-300' : exchangeChangePercent < 0 ? 'text-blue-300' : 'text-white/60'">
+              {{ exchangeChangePercent > 0 ? '+' : '' }}{{ exchangeChangePercent.toFixed(2) }}%
+              {{ exchangeChangePercent > 0 ? '↑' : exchangeChangePercent < 0 ? '↓' : '-' }}
+            </span>
           </div>
+          <span v-else class="text-white/60 text-[10px]">환율 정보를 불러오는 중</span>
         </div>
       </div>
 
@@ -424,6 +458,25 @@ function switchMode(mode) {
 .trip-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 9px; padding: 10px 11px; border-radius: 11px; background: #fff; }
 .trip-summary-row span { flex: none; color: #6e88b2; font-size: 9px; }
 .trip-summary-row b { overflow: hidden; color: #244f91; font-size: 10px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.savings-home-header { animation: home-fade-down .45s ease both; }
+.savings-greeting-row p { margin-top: 4px; color: #e45f24; font-size: 11px; font-weight: 800; }
+.country-ticket { animation: ticket-swap .48s cubic-bezier(.22,1,.36,1) both; }
+.country-ticket .rounded-xl { animation: home-fade-up .45s .18s ease both; }
+.month-saving-card { animation: home-fade-up .52s .08s ease both; }
+.ai-report-card { cursor: default; animation: home-fade-up .52s .16s ease both; }
+.ai-report-heading a { color: #286ce0; font-size: 10px; font-weight: 800; }
+.exchange-live-card { animation: home-fade-up .52s .24s ease both; }
+.month-saving-progress i { position: relative; overflow: hidden; transition: width .8s cubic-bezier(.22,1,.36,1); }
+.month-saving-progress i::after { position: absolute; inset: 0; content: ''; background: linear-gradient(90deg,transparent,#ffffff99,transparent); transform: translateX(-100%); animation: progress-shine 1.8s .5s ease-in-out infinite; }
+.travel-edit-link { transition: transform .2s ease, box-shadow .2s ease; }
+.travel-edit-link:active { transform: scale(.96); }
+@keyframes home-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes progress-shine { 60%,100% { transform: translateX(100%); } }
 @keyframes home-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .savings-home-header,.country-ticket,.country-ticket .rounded-xl,.month-saving-card,.ai-report-card,.exchange-live-card,.month-saving-progress i::after { animation: none; }
+}
 
 </style>
