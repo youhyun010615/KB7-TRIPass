@@ -471,6 +471,10 @@ public class AssetService {
         return assetMapper.findAccountsByUserId(userId);
     }
 
+    public List<CardDto> getCards(Long userId) {
+        return assetMapper.findCardsByUserId(userId);
+    }
+
     public AccountTransactionResponseDto getAccountTransactions(
             Long userId, Long accountId, LocalDate startDate, LocalDate endDate, String type) {
         AccountDto account = assetMapper.findAccountById(accountId, userId);
