@@ -265,7 +265,7 @@ function goWallet() {
               </button>
             </div>
           </div>
-          <button class="travel-edit-link" type="button" @click="router.push('/savings')">
+          <button class="travel-edit-link" type="button" @click="router.push('/travel/register')">
             여행 계획 수정하기 <span>›</span>
           </button>
         </div>
