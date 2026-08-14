@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS exchange_rate_alerts;
 DROP TABLE IF EXISTS exchange_market_data;
 DROP TABLE IF EXISTS exchange_rates;
 DROP TABLE IF EXISTS codef_connected_institutions;
+DROP TABLE IF EXISTS cards;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS codef_connections;
 DROP TABLE IF EXISTS trips;
@@ -333,6 +334,7 @@ CREATE TABLE codef_connected_institutions
     created_at                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    UNIQUE KEY uk_codef_connected_institutions_conn_org_type (codef_connection_id, organization_code, business_type),
     CONSTRAINT fk_codef_connected_institutions_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
 ) COMMENT 'CODEF 연동 기관';
 
@@ -366,7 +368,28 @@ CREATE TABLE accounts
 ) COMMENT '계좌';
 
 
--- 14. 여행
+-- 14. 연동 카드
+CREATE TABLE cards
+(
+    id                  BIGINT       NOT NULL AUTO_INCREMENT COMMENT '카드 ID',
+    user_id             BIGINT       NOT NULL                COMMENT '회원 ID',
+    codef_connection_id BIGINT       NULL                    COMMENT 'CODEF 연동 ID',
+    card_name           VARCHAR(150) NOT NULL                COMMENT '카드명',
+    masked_card_number  VARCHAR(30)  NULL                    COMMENT '마스킹된 카드번호',
+    card_type           VARCHAR(20)  NOT NULL DEFAULT 'CREDIT' COMMENT '카드 유형(CREDIT:신용/CHECK:체크)',
+    organization_code   VARCHAR(20)  NULL                    COMMENT 'CODEF 기관코드',
+    is_deleted          TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '삭제 여부',
+    deleted_at          DATETIME     NULL                    COMMENT '삭제일시',
+    created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cards_user_masked_number (user_id, masked_card_number),
+    CONSTRAINT fk_cards_user             FOREIGN KEY (user_id)             REFERENCES users (id),
+    CONSTRAINT fk_cards_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
+) COMMENT '연동 카드';
+
+
+-- 15. 여행
 CREATE TABLE trips
 (
     id                  BIGINT         NOT NULL AUTO_INCREMENT,
@@ -479,7 +502,8 @@ CREATE TABLE trip_budget_recommendations
 CREATE TABLE transactions
 (
     id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '거래 ID',
-    account_id            BIGINT         NOT NULL COMMENT '계좌 ID',
+    account_id            BIGINT         NULL COMMENT '계좌 ID(카드 전용 거래는 NULL)',
+    card_id               BIGINT         NULL COMMENT '카드 ID(계좌 거래는 NULL)',
     category_id           BIGINT         NULL COMMENT '카테고리 ID',
     trip_id               BIGINT         NULL COMMENT '여행 ID',
     trip_country_id       BIGINT         NULL COMMENT '여행 국가 ID',
@@ -491,6 +515,7 @@ CREATE TABLE transactions
     amount                DECIMAL(18, 2) NOT NULL COMMENT '거래 금액(원화 기준)',
     balance_after         DECIMAL(18, 2) NULL COMMENT '거래 후 잔액',
     merchant_name         VARCHAR(255)   NULL COMMENT '거래처',
+    merchant_type         VARCHAR(100)   NULL COMMENT 'CODEF 가맹점 업종',
     original_amount       DECIMAL(18, 2) NULL COMMENT '현지 통화 금액',
     applied_exchange_rate DECIMAL(15, 4) NULL COMMENT '적용 환율',
     payment_method        VARCHAR(50)    NULL COMMENT '결제수단',
@@ -502,8 +527,9 @@ CREATE TABLE transactions
     created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_transactions_account_key (account_id, external_key),
-    CONSTRAINT fk_transactions_account FOREIGN KEY (account_id) REFERENCES accounts (id),
+    UNIQUE KEY uk_transactions_external_key (external_key),
+    CONSTRAINT fk_transactions_account  FOREIGN KEY (account_id) REFERENCES accounts (id),
+    CONSTRAINT fk_transactions_card     FOREIGN KEY (card_id)    REFERENCES cards (id),
     CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES spending_categories (id),
     CONSTRAINT fk_transactions_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_transactions_trip_country FOREIGN KEY (trip_country_id) REFERENCES trip_countries (id),
@@ -879,6 +905,7 @@ CREATE TABLE exchange_market_data
 
 -- ===== INDEXES =====
 CREATE INDEX idx_transactions_account_id ON transactions (account_id);
+CREATE INDEX idx_transactions_card_id ON transactions (card_id);
 CREATE INDEX idx_transactions_trip_id ON transactions (trip_id);
 CREATE INDEX idx_transactions_transaction_date ON transactions (transaction_date);
 CREATE INDEX idx_accounts_user_id ON accounts (user_id);

@@ -11,8 +11,25 @@ const router = useRouter()
 const asset = useAssetStore()
 const isReal = route.query.isReal === 'true'
 const filter = ref('all')
-const today = new Date().toISOString().slice(0, 10)
-const threeMonthsAgo = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().slice(0, 10) })()
+
+function toLocalDateStr(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function threeMonthsAgoFrom(base) {
+  // setMonth()는 대상 월에 없는 일자(예: 5월 31일 - 3개월)를 만나면 다음 달로 넘어가므로,
+  // 1일로 이동한 뒤 대상 월의 마지막 날짜를 넘지 않게 보정한다.
+  const d = new Date(base.getFullYear(), base.getMonth() - 3, 1)
+  const lastDayOfTargetMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(base.getDate(), lastDayOfTargetMonth))
+  return d
+}
+
+const today = toLocalDateStr(new Date())
+const threeMonthsAgo = toLocalDateStr(threeMonthsAgoFrom(new Date()))
 const startDate = ref(isReal ? threeMonthsAgo : '2026-06-20')
 const endDate = ref(isReal ? today : '2026-07-19')
 const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
@@ -27,7 +44,13 @@ async function fetchRealTransactions() {
     if (filter.value !== 'all') params.type = filter.value.toUpperCase()
     const res = await api.get(`/accounts/${route.params.accountId}/transactions`, { params })
     const data = res.data.data
-    realAccount.value.balance = data.balance
+    realAccount.value = {
+      name: data.accountName ?? '',
+      number: data.accountNumber ?? '',
+      type: data.accountType ?? '',
+      bank: (data.accountName ?? '').split(' ')[0],
+      balance: data.balance,
+    }
     realTransactions.value = data.transactions ?? []
   } catch (e) {
     console.error('거래내역 조회 실패', e)
@@ -61,13 +84,6 @@ async function syncTransactions() {
 
 onMounted(async () => {
   if (!isReal) return
-  realAccount.value = {
-    name: route.query.name ?? '',
-    number: route.query.number ?? '',
-    type: route.query.type ?? '',
-    bank: (route.query.name ?? '').split(' ')[0],
-    balance: 0,
-  }
   loading.value = true
   await fetchRealTransactions()
   if (realTransactions.value.length === 0) await syncTransactions()

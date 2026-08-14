@@ -448,6 +448,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/assets',
+      name: 'AssetLink',
+      component: () => import('@/views/mypage/AssetLinkView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/cards/:cardId/transactions',
+      name: 'CardTransactions',
+      component: () => import('@/views/mypage/CardTransactionsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/reports',
       name: 'MypageReports',
       component: () => import('@/views/mypage/TravelReportListView.vue'),

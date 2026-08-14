@@ -60,16 +60,26 @@ public class CodefUtil {
         HttpPost post = new HttpPost(SANDBOX_URL + path);
 
         post.setHeader("Authorization", "Bearer " + accessToken);
-        post.setHeader("Content-Type", "application/json");
+        post.setHeader("Accept", "application/json");
+        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
 
         ObjectMapper mapper = new ObjectMapper();
-        post.setEntity(new StringEntity(mapper.writeValueAsString(body), StandardCharsets.UTF_8));
+        // CODEF 공식 SDK와 동일하게 JSON 전체를 URL 인코딩해서 전송한다.
+        // RSA 암호문의 '+', '/', '=' 문자가 전송 과정에서 변형되는 것을 방지한다.
+        String encodedBody = URLEncoder.encode(
+                mapper.writeValueAsString(body),
+                StandardCharsets.UTF_8
+        );
+        post.setEntity(new StringEntity(encodedBody, StandardCharsets.UTF_8));
 
         CloseableHttpResponse response = client.execute(post);
         String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
         client.close();
 
-        if (json.startsWith("%")) {
+        // CODEF는 요청을 x-www-form-urlencoded로 보내면 응답도 URL 인코딩된 상태로 반환한다.
+        // JSON은 항상 '{' 또는 '['로 시작하므로, 인코딩된 응답은 '%7B'/'%5B'로 시작한다.
+        // 이미 디코딩된 순수 JSON을 무조건 디코딩하면 '+'가 공백으로 바뀌거나 '%' 리터럴에서 예외가 발생하므로 조건부로만 디코딩한다.
+        if (json.startsWith("%7B") || json.startsWith("%5B")) {
             json = java.net.URLDecoder.decode(json, StandardCharsets.UTF_8);
         }
 

@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -180,6 +181,175 @@ public class AssetService {
         }
     }
 
+    @Transactional
+    public List<CardDto> linkCard(Long userId, CardLinkRequestDto req) {
+        try {
+            String encryptedPw = CodefUtil.encryptRSA(req.getPassword());
+            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+
+            CodefConnectionDto conn = assetMapper.findConnectionByUserId(userId);
+            String connectedId;
+            String addFailMsg = null;
+
+            if (conn == null) {
+                Map<String, Object> account = new HashMap<>();
+                account.put("countryCode", "KR");
+                account.put("businessType", "CD");
+                account.put("clientType", "P");
+                account.put("organization", req.getOrganizationCode());
+                account.put("loginType", req.getLoginType());
+                account.put("id", req.getLoginId());
+                account.put("password", encryptedPw);
+
+                Map<String, Object> createBody = new HashMap<>();
+                createBody.put("accountList", List.of(account));
+
+                Map<String, Object> createResult = CodefUtil.callApi(accessToken, "/v1/account/create", createBody);
+                Map<String, Object> resultCode = (Map<String, Object>) createResult.get("result");
+                if (resultCode == null || !"CF-00000".equals(resultCode.get("code"))) {
+                    String msg = resultCode != null ? (String) resultCode.get("message") : "알 수 없는 오류";
+                    throw new CustomException(HttpStatus.BAD_REQUEST, "CODEF_LINK_FAIL", "카드 등록 실패: " + msg);
+                }
+                Map<String, Object> data = (Map<String, Object>) createResult.get("data");
+                connectedId = (String) data.get("connectedId");
+
+                CodefConnectionDto newConn = new CodefConnectionDto();
+                newConn.setUserId(userId);
+                newConn.setConnectedId(connectedId);
+                assetMapper.insertCodefConnection(newConn);
+                conn = assetMapper.findConnectionByUserId(userId);
+
+                insertCardInstitutionIfAbsent(conn.getId(), req);
+            } else {
+                connectedId = conn.getConnectedId();
+
+                CodefConnectedInstitutionDto existing =
+                        assetMapper.findConnectedInstitution(conn.getId(), req.getOrganizationCode(), "CD");
+
+                if (existing == null) {
+                    Map<String, Object> addAccount = new HashMap<>();
+                    addAccount.put("countryCode", "KR");
+                    addAccount.put("businessType", "CD");
+                    addAccount.put("clientType", "P");
+                    addAccount.put("organization", req.getOrganizationCode());
+                    addAccount.put("loginType", req.getLoginType());
+                    addAccount.put("id", req.getLoginId());
+                    addAccount.put("password", encryptedPw);
+
+                    Map<String, Object> addBody = new HashMap<>();
+                    addBody.put("connectedId", connectedId);
+                    addBody.put("accountList", List.of(addAccount));
+
+                    Map<String, Object> addResult = CodefUtil.callApi(accessToken, "/v1/account/add", addBody);
+                    Map<String, Object> addResultCode = (Map<String, Object>) addResult.get("result");
+                    if (addResultCode == null || !"CF-00000".equals(addResultCode.get("code"))) {
+                        // CODEF 서버에는 이미 등록돼 있지만 DB 기록만 없는 불일치 상태일 수 있으므로
+                        // 즉시 실패시키지 않고 카드 목록 조회 결과로 최종 판단한다.
+                        addFailMsg = addResultCode != null ? (String) addResultCode.get("message") : "알 수 없는 오류";
+                    } else {
+                        insertCardInstitutionIfAbsent(conn.getId(), req);
+                    }
+                }
+            }
+
+            // 카드 목록 조회
+            Map<String, Object> listBody = new HashMap<>();
+            listBody.put("connectedId", connectedId);
+            listBody.put("organization", req.getOrganizationCode());
+            listBody.put("startDate", "19000101");
+            listBody.put("endDate", "99991231");
+
+            Map<String, Object> listResult = CodefUtil.callApi(accessToken, "/v1/kr/card/p/account/card-list", listBody);
+            Map<String, Object> listResultCode = (Map<String, Object>) listResult.get("result");
+            if (listResultCode == null || !"CF-00000".equals(listResultCode.get("code"))) {
+                if (addFailMsg != null) {
+                    throw new CustomException(HttpStatus.BAD_REQUEST, "CODEF_LINK_FAIL", "카드사 추가 실패: " + addFailMsg);
+                }
+                String msg = listResultCode != null ? (String) listResultCode.get("message") : "알 수 없는 오류";
+                throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_FETCH_FAIL", "카드 목록 조회 실패: " + msg);
+            }
+
+            // add는 실패했지만 카드 목록 조회는 성공한 경우 = CODEF에는 이미 등록되어 있었다는 뜻이므로
+            // 누락됐던 DB 기관 기록을 보완한다.
+            if (addFailMsg != null) {
+                insertCardInstitutionIfAbsent(conn.getId(), req);
+            }
+
+            Object listData = listResult.get("data");
+            Object rawList;
+            if (listData instanceof List) {
+                // 개인 보유카드 API는 data 자체를 배열로 반환한다.
+                rawList = listData;
+            } else if (listData instanceof Map) {
+                // 일부 기관/응답 버전은 resCardList 안에 카드 배열을 반환한다.
+                rawList = ((Map<String, Object>) listData).get("resCardList");
+                if (rawList == null && ((Map<?, ?>) listData).containsKey("resCardNo")) {
+                    rawList = listData;
+                }
+            } else {
+                rawList = null;
+            }
+            List<Map<String, Object>> cardList;
+            if (rawList instanceof List) {
+                cardList = (List<Map<String, Object>>) rawList;
+            } else if (rawList instanceof Map) {
+                cardList = List.of((Map<String, Object>) rawList);
+            } else {
+                cardList = Collections.emptyList();
+            }
+
+            if (cardList.isEmpty()) {
+                throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_NOT_FOUND", "연동 가능한 카드가 없습니다.");
+            }
+
+            List<CardDto> saved = new ArrayList<>();
+            for (Map<String, Object> card : cardList) {
+                CardDto dto = new CardDto();
+                dto.setUserId(userId);
+                dto.setCodefConnectionId(conn.getId());
+                dto.setCardName((String) card.getOrDefault("resCardName", req.getOrganizationName() + " 카드"));
+                dto.setMaskedCardNumber((String) card.get("resCardNo"));
+                dto.setOrganizationCode(req.getOrganizationCode());
+                String resCardType = String.valueOf(card.getOrDefault("resCardType", ""));
+                dto.setCardType(
+                        "02".equals(resCardType) || resCardType.contains("체크")
+                                ? "CHECK"
+                                : "CREDIT"
+                );
+
+                CardDto existingCard = assetMapper.findCardByUserIdAndNumber(userId, dto.getMaskedCardNumber());
+                if (existingCard != null) {
+                    dto.setId(existingCard.getId());
+                    assetMapper.updateCardOnReconnect(dto);
+                } else {
+                    assetMapper.insertCard(dto);
+                }
+                saved.add(dto);
+            }
+
+            return saved;
+
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "CODEF_ERROR", "카드 연동 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    // connection_id + organization_code + businessType('CD') 기준으로 없을 때만 기관 기록을 추가한다.
+    private void insertCardInstitutionIfAbsent(Long codefConnectionId, CardLinkRequestDto req) {
+        CodefConnectedInstitutionDto existing =
+                assetMapper.findConnectedInstitution(codefConnectionId, req.getOrganizationCode(), "CD");
+        if (existing == null) {
+            CodefConnectedInstitutionDto inst = new CodefConnectedInstitutionDto();
+            inst.setCodefConnectionId(codefConnectionId);
+            inst.setOrganizationCode(req.getOrganizationCode());
+            inst.setOrganizationName(req.getOrganizationName());
+            inst.setBusinessType("CD");
+            assetMapper.insertConnectedInstitution(inst);
+        }
+    }
+
     /**
      * Codef 수시입출 거래내역 조회
      * 계좌 ID로 connectedId와 계좌번호를 찾아 Codef API를 호출하고 결과를 DB에 저장
@@ -246,7 +416,7 @@ public class AssetService {
                 String desc1 = (String) tran.get("resAccountDesc1");
                 String merchantName = (desc2 != null && !desc2.isEmpty()) ? desc2 : desc1;
                 dto.setAccountId(req.getAccountId());
-                dto.setExternalKey(trDate + trTime + account.getAccountNumber() + amount.toPlainString());
+                dto.setExternalKey("ACC:" + req.getAccountId() + ":" + trDate + ":" + trTime + ":" + amount.toPlainString());
                 dto.setTransactionDate(LocalDate.parse(trDate, DateTimeFormatter.ofPattern("yyyyMMdd")));
                 dto.setTransactionTime(LocalTime.parse(trTime, DateTimeFormatter.ofPattern("HHmmss")));
                 dto.setTransactionType(isDeposit ? "DEPOSIT" : "WITHDRAWAL");
@@ -263,6 +433,107 @@ public class AssetService {
             throw e;
         } catch (Exception e) {
             throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "TRANSACTION_ERROR", "거래내역 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public List<TransactionDto> fetchCardTransactions(Long userId, Long cardId, String startDate, String endDate) {
+        try {
+            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+
+            CardDto card = assetMapper.findCardByIdAndUserId(cardId, userId);
+            if (card == null) {
+                throw new CustomException(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "카드를 찾을 수 없습니다.");
+            }
+
+            CodefConnectionDto conn = assetMapper.findConnectionByUserId(userId);
+            if (conn == null) {
+                throw new CustomException(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연동 정보를 찾을 수 없습니다.");
+            }
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("connectedId", conn.getConnectedId());
+            body.put("organization", card.getOrganizationCode());
+            body.put("startDate", startDate.replace("-", ""));
+            body.put("endDate", endDate.replace("-", ""));
+            body.put("cardNo", card.getMaskedCardNumber());
+            body.put("orderBy", "0");
+            body.put("inquiryType", "0");
+            body.put("memberStoreInfoType", "1");
+
+            Map<String, Object> result = CodefUtil.callApi(accessToken, "/v1/kr/card/p/account/approval-list", body);
+            Map<String, Object> resultCode = (Map<String, Object>) result.get("result");
+            if (resultCode == null || !"CF-00000".equals(resultCode.get("code"))) {
+                String msg = resultCode != null ? (String) resultCode.get("message") : "알 수 없는 오류";
+                throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_TRANSACTION_FETCH_FAIL", "카드 거래내역 조회 실패: " + msg);
+            }
+
+            Object data = result.get("data");
+            Object rawList;
+            if (data instanceof List) {
+                // 개인카드 승인내역 API는 data 자체를 배열로 반환할 수 있다.
+                rawList = data;
+            } else if (data instanceof Map) {
+                rawList = ((Map<String, Object>) data).get("resApprovalList");
+                if (rawList == null && ((Map<?, ?>) data).containsKey("resUsedDate")) {
+                    rawList = data;
+                }
+            } else {
+                rawList = null;
+            }
+            List<Map<String, Object>> approvalList;
+            if (rawList instanceof List) {
+                approvalList = (List<Map<String, Object>>) rawList;
+            } else if (rawList instanceof Map) {
+                approvalList = List.of((Map<String, Object>) rawList);
+            } else {
+                approvalList = Collections.emptyList();
+            }
+
+            List<TransactionDto> saved = new ArrayList<>();
+            for (Map<String, Object> approval : approvalList) {
+                String usedDate = (String) approval.get("resUsedDate");
+                String usedTime = (String) approval.getOrDefault("resUsedTime", "000000");
+                BigDecimal amount = parseBigDecimal(approval.get("resUsedAmount"));
+                String cancelYN = (String) approval.getOrDefault("resCancelYN", "N");
+
+                String approvalNo = (String) approval.get("resApprovalNo");
+                String keySuffix = (approvalNo != null && !approvalNo.isBlank())
+                        ? approvalNo
+                        : usedDate + ":" + usedTime + ":" + amount.toPlainString();
+                String externalKey = "CARD:" + cardId + ":" + keySuffix;
+
+                if ("Y".equals(cancelYN)) {
+                    // 이전에 저장된 동일 승인 건이 있다면 취소 처리로 논리 삭제한다.
+                    assetMapper.deleteTransactionByExternalKey(externalKey);
+                    continue;
+                }
+
+                TransactionDto dto = new TransactionDto();
+                dto.setCardId(cardId);
+                dto.setExternalKey(externalKey);
+                dto.setTransactionDate(LocalDate.parse(usedDate, DateTimeFormatter.ofPattern("yyyyMMdd")));
+                dto.setTransactionTime(LocalTime.parse(usedTime, DateTimeFormatter.ofPattern("HHmmss")));
+                dto.setTransactionType("WITHDRAWAL");
+                dto.setTransactionRegion("DOMESTIC");
+                dto.setAmount(amount);
+                String merchantName = (String) approval.get("resMemberStoreName");
+                if (merchantName == null || merchantName.isBlank()) {
+                    // 이전/기관별 응답 필드명도 함께 지원한다.
+                    merchantName = (String) approval.get("resMerchantName");
+                }
+                dto.setMerchantName(merchantName);
+                dto.setMerchantType((String) approval.get("resMemberStoreType"));
+                assetMapper.upsertTransactionFromCard(dto);
+                saved.add(dto);
+            }
+
+            return saved;
+
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "CARD_TRANSACTION_ERROR", "카드 거래내역 조회 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
@@ -289,6 +560,32 @@ public class AssetService {
         return assetMapper.findAccountsByUserId(userId);
     }
 
+    public List<CardDto> getCards(Long userId) {
+        return assetMapper.findCardsByUserId(userId);
+    }
+
+    public List<TransactionDto> getCardTransactions(Long userId, Long cardId, String startDate, String endDate) {
+        CardDto card = assetMapper.findCardByIdAndUserId(cardId, userId);
+        if (card == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "카드를 찾을 수 없습니다.");
+        }
+        LocalDate start = parseDateOrNull(startDate);
+        LocalDate end = parseDateOrNull(endDate);
+        return assetMapper.findTransactionsByCardId(cardId, start, end);
+    }
+
+    // yyyy-MM-dd 형식이 아닌 값은 CustomException(400)으로 변환한다 (그대로 두면 DateTimeParseException이 500으로 응답됨).
+    private LocalDate parseDateOrNull(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dateStr);
+        } catch (DateTimeParseException e) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "INVALID_DATE_FORMAT", "날짜 형식이 올바르지 않습니다. (yyyy-MM-dd)");
+        }
+    }
+
     public AccountTransactionResponseDto getAccountTransactions(
             Long userId, Long accountId, LocalDate startDate, LocalDate endDate, String type) {
         AccountDto account = assetMapper.findAccountById(accountId, userId);
@@ -298,14 +595,17 @@ public class AssetService {
         List<TransactionDto> transactions = assetMapper.findTransactionsByAccountIdWithFilter(
                 accountId, startDate, endDate, type);
         AccountTransactionResponseDto response = new AccountTransactionResponseDto();
+        response.setAccountName(account.getAccountName());
+        response.setAccountNumber(account.getAccountNumber());
+        response.setAccountType(account.getAccountType());
         response.setBalance(account.getBalance());
         response.setTransactions(transactions);
         return response;
     }
 
     public List<TransactionDto> getAllTransactions(Long userId, String startDate, String endDate) {
-        LocalDate start = (startDate != null && !startDate.isBlank()) ? LocalDate.parse(startDate) : null;
-        LocalDate end = (endDate != null && !endDate.isBlank()) ? LocalDate.parse(endDate) : null;
+        LocalDate start = parseDateOrNull(startDate);
+        LocalDate end = parseDateOrNull(endDate);
         return assetMapper.findTransactionsByUserId(userId, start, end);
     }
 
