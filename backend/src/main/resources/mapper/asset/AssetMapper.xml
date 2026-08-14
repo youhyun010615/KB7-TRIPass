@@ -99,7 +99,7 @@
         SELECT a.id, a.account_number, a.account_type, a.balance,
                i.organization_code
         FROM accounts a
-        JOIN codef_connected_institutions i ON a.codef_connection_id = i.codef_connection_id
+        LEFT JOIN codef_connected_institutions i ON a.codef_connection_id = i.codef_connection_id
         WHERE a.id = #{accountId}
         AND a.user_id = #{userId}
         AND a.is_deleted = 0
