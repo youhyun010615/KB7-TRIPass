@@ -62,6 +62,8 @@ async function handleGoogleCallback() {
   loading.value = true
   errorMessage.value = ''
 
+  let authenticated = false
+
   const oauthError =
       getQueryValue(route.query.error)
 
@@ -133,6 +135,8 @@ async function handleGoogleCallback() {
         loginData.user,
     )
 
+    authenticated = true
+
     try {
       await checkLinkedAccounts()
     } catch (accountError) {
@@ -162,7 +166,9 @@ async function handleGoogleCallback() {
 
     await router.replace('/')
   } catch (error) {
-    await clearFailedLogin()
+    if (authenticated) {
+      await clearFailedLogin()
+    }
 
     errorMessage.value =
         error.response?.data?.message ||
