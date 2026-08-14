@@ -64,21 +64,32 @@ async function login(){
           accountError,
       )
 
-      // 로그인 과정에서 발급된 Refresh Token과 쿠키를 제거한다.
-      try {
-        await logoutApi()
-      } catch (logoutError) {
-        console.error(
-            '로그인 상태 정리 실패',
-            logoutError,
-        )
-      } finally {
-        // 서버 로그아웃 성공 여부와 관계없이 프론트 로그인 상태를 제거한다.
-        authStore.logout()
+      const status = accountError.response?.status
+      const isAuthenticationError =
+          status === 401
+
+      if (isAuthenticationError) {
+        // 인증 세션이 유효하지 않을 때만 서버와 프론트 로그인 상태를 정리한다.
+        try {
+          await logoutApi()
+        } catch (logoutError) {
+          console.error(
+              '로그인 상태 정리 실패',
+              logoutError,
+          )
+        } finally {
+          authStore.logout()
+        }
+
+        errorMsg.value =
+            '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
+
+        return
       }
 
+      // 네트워크 오류나 서버 오류에서는 로그인 상태를 유지한다.
       errorMsg.value =
-          '연동 계좌 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          '연동 계좌 정보를 확인하지 못했습니다. 로그인 버튼을 눌러 다시 시도해 주세요.'
 
       return
     }
