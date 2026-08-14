@@ -43,10 +43,10 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
 
-    // 영문, 숫자, 특수문자를 각각 포함하는 8~64자
+    // 영문, 숫자, 허용된 특수문자를 포함하는 8~64자리
     private static final Pattern PASSWORD_PATTERN =
             Pattern.compile(
-                    "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d\\s])\\S{8,64}$"
+                    "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=?])[A-Za-z\\d!@#$%^&*()_+\\-=?]{8,64}$"
             );
 
     // 010으로 시작하는 숫자 11자리

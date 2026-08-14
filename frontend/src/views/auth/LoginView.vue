@@ -44,12 +44,13 @@ async function login(){
     //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.setToken(loginData.accessToken)
     authStore.setUser(loginData.user)
-    // 이전 로그인 사용자의 금융 프로필 완료 상태를 제거한다.
-    authStore.resetProfileCompletion()
 
     try {
       const accountResponse = await api.get('/accounts')
       const linkedAccounts = accountResponse.data?.data ?? []
+
+      // 계좌 조회가 성공한 경우에만 프로필 상태를 확정한다.
+      authStore.resetProfileCompletion()
 
       if (linkedAccounts.length > 0) {
         authStore.completeProfile()
@@ -59,6 +60,11 @@ async function login(){
           '연동 계좌 확인 실패',
           accountError,
       )
+
+      errorMsg.value =
+          '연동 계좌 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+
+      return
     }
 
     //RefreshToken은 HttpOnly 쿠키로 자동 저장되므로

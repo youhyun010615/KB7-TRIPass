@@ -50,6 +50,9 @@ function resetVerification() {
 }
 
 async function sendCode() {
+  if (loading.value) {
+    return
+  }
   errorMessage.value = ''
 
   if (!loginId.value.trim()) {
@@ -86,6 +89,9 @@ async function sendCode() {
 }
 
 async function verifyCode() {
+  if (loading.value) {
+    return
+  }
   errorMessage.value = ''
 
   if (!verificationRequestId.value) {
@@ -118,6 +124,9 @@ async function verifyCode() {
 }
 
 async function submitNewPassword() {
+  if (loading.value) {
+    return
+  }
   errorMessage.value = ''
 
 
