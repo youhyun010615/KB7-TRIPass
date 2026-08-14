@@ -16,8 +16,18 @@ SET category_code =
         WHEN '쇼핑' THEN 'SHOPPING'
         WHEN '관광' THEN 'SIGHTSEEING'
         WHEN '기타' THEN 'OTHER'
+        WHEN '카페' THEN 'CAFE'
+        WHEN '생활비' THEN 'LIVING'
+        WHEN '취미여가' THEN 'LEISURE'
         ELSE category_code
     END
+WHERE category_code IS NULL;
+
+-- 위 CASE 목록에 없는 미확인 카테고리(팀/환경별 커스텀 데이터)는 category_code가 계속 NULL로 남아
+-- 아래 NOT NULL 적용이 실패할 수 있으므로, id 기반의 임시 코드를 부여해 안전하게 넘어간다.
+-- 이런 행이 실제로 존재한다면 운영팀이 실제 의미에 맞는 코드로 별도 정리해야 한다.
+UPDATE spending_categories
+SET category_code = CONCAT('CATEGORY_', id)
 WHERE category_code IS NULL;
 
 -- AI 저축 미션에 필요한 카페 카테고리 추가

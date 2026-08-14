@@ -91,6 +91,26 @@ class CodefMerchantTypeClassifierTest {
     }
 
     @Test
+    void 짧고_모호한_접두어는_부분_일치를_시도하지_않는다() {
+        // "기타"는 기타음식점(FOOD)/기타잡화(SHOPPING)/기타서비스(OTHER)와 동시에 겹치고,
+        // "택"은 택시(TRANSPORT) 한 글자짜리 접두어라 오분류 위험이 크다.
+        assertTrue(classifier.classify("기타").isEmpty());
+        assertTrue(classifier.classify("택").isEmpty());
+        assertTrue(classifier.classify("일반").isEmpty());
+    }
+
+    @Test
+    void 동일한_입력은_여러_번_호출해도_항상_같은_카테고리로_분류한다() {
+        String merchantType = "기타오락.휴식시";
+
+        ConsumptionCategoryCode first = classifier.classify(merchantType).orElseThrow().categoryCode();
+        for (int i = 0; i < 20; i++) {
+            ConsumptionCategoryCode repeated = classifier.classify(merchantType).orElseThrow().categoryCode();
+            assertEquals(first, repeated);
+        }
+    }
+
+    @Test
     void 실제_CODEF_업종_추가_사례를_분류한다() {
         Map<String, ConsumptionCategoryCode> cases = Map.ofEntries(
                 Map.entry("제과.제빵", ConsumptionCategoryCode.CAFE),

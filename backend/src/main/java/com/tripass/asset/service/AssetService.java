@@ -593,7 +593,11 @@ public class AssetService {
                 assetMapper::findCategoryIdByCode
         );
         if (categoryId == null) {
-            throw new IllegalStateException("소비 카테고리를 찾을 수 없습니다: " + categoryCode);
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "CATEGORY_NOT_FOUND",
+                    "소비 카테고리를 찾을 수 없습니다: " + categoryCode
+            );
         }
 
         transaction.setCategoryId(categoryId);

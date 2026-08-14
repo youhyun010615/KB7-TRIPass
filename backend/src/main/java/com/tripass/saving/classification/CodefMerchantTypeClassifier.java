@@ -2,6 +2,7 @@ package com.tripass.saving.classification;
 
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 
@@ -105,15 +106,27 @@ public class CodefMerchantTypeClassifier {
         );
     }
 
+    // 짧은 접두어(예: "기타", "일반")는 여러 카테고리와 동시에 겹쳐서 모호하므로 부분 일치 대상에서 제외한다.
+    private static final int MIN_PARTIAL_MATCH_LENGTH = 4;
+
     private ConsumptionCategoryCode findByPartialMatch(String merchantType) {
+        if (merchantType.length() < MIN_PARTIAL_MATCH_LENGTH) {
+            return null;
+        }
+
         return TYPE_MAPPING.entrySet()
                 .stream()
+                .filter(entry -> entry.getKey().length() >= MIN_PARTIAL_MATCH_LENGTH)
                 .filter(entry ->
                         merchantType.startsWith(entry.getKey())
                                 || entry.getKey().startsWith(merchantType)
                 )
+                // 후보가 여러 개면 가장 구체적인(가장 긴) 키를 우선하고, 길이가 같으면 사전순으로 정렬해
+                // Map 반복 순서에 좌우되지 않는 결정적인 결과를 보장한다.
+                .max(Comparator
+                        .comparingInt((Map.Entry<String, ConsumptionCategoryCode> entry) -> entry.getKey().length())
+                        .thenComparing(Map.Entry::getKey))
                 .map(Map.Entry::getValue)
-                .findFirst()
                 .orElse(null);
     }
 

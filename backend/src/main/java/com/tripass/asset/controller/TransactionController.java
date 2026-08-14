@@ -53,7 +53,7 @@ public class TransactionController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @PostMapping("/classification/reclassify")
+    @PostMapping("/category-reclassifications")
     public ResponseEntity<ApiResponse<TransactionReclassificationResponseDto>> reclassifyTransactions(
             Authentication authentication
     ) {
