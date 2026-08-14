@@ -152,7 +152,7 @@
 
     <!-- 통화 코드로 통화 PK 조회 -->
     <select id="findCurrencyIdByCode"
-            resultType="java.lang.Long">
+            resultType="long">
 
         SELECT id
         FROM currencies
