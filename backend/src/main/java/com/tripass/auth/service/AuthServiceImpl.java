@@ -24,6 +24,8 @@ import com.tripass.common.exception.CustomException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final KakaoOAuthClient kakaoOAuthClient;
+    private final TransactionTemplate transactionTemplate;
 
     // 영문, 숫자, 허용된 특수문자를 포함하는 8~64자리
     private static final Pattern PASSWORD_PATTERN =
@@ -217,7 +220,7 @@ public class AuthServiceImpl implements AuthService {
 
     // 카카오 인가 코드를 이용한 소셜 로그인 처리
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public LoginResult kakaoLogin(
             KakaoLoginRequest request
     ) {
@@ -245,17 +248,36 @@ public class AuthServiceImpl implements AuthService {
                         tokenResponse.getAccessToken()
                 );
 
+        LoginResult result =
+                transactionTemplate.execute(
+                        status -> processKakaoLogin(kakaoUser)
+                );
+
+        if (result == null) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "KAKAO_LOGIN_PROCESS_FAILED",
+                    "카카오 로그인 처리에 실패했습니다."
+            );
+        }
+
+        return result;
+    }
+
+    // 카카오 회원 조회·등록 및 로그인 토큰 저장을 하나의 트랜잭션으로 처리한다.
+    private LoginResult processKakaoLogin(
+            KakaoUserResponse kakaoUser
+    ) {
         String providerKey =
                 String.valueOf(kakaoUser.getId());
 
         User user =
                 userMapper
-                        .findSocialUserByProviderAndProviderKey(
+                        .findSocialUserIncludingDeletedByProviderAndProviderKey(
                                 "KAKAO",
                                 providerKey
                         );
 
-        // 이미 가입된 카카오 회원
         if (user != null) {
             if (user.isDeleted()) {
                 throw new CustomException(
@@ -268,7 +290,6 @@ public class AuthServiceImpl implements AuthService {
             return issueLoginTokens(user);
         }
 
-        // 신규 회원에게 필요한 카카오 계정 정보를 확인한다.
         KakaoUserResponse.KakaoAccount account =
                 kakaoUser.getKakaoAccount();
 
@@ -280,13 +301,9 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        String email =
-                requireKakaoEmail(account);
+        String email = requireKakaoEmail(account);
+        String nickname = requireKakaoNickname(account);
 
-        String nickname =
-                requireKakaoNickname(account);
-
-        // 최초 카카오 로그인 회원
         User newUser = new User();
 
         newUser.setLoginId(email);
@@ -309,10 +326,9 @@ public class AuthServiceImpl implements AuthService {
             }
 
         } catch (DuplicateKeyException exception) {
-            // 동일 카카오 계정의 최초 로그인 요청이 동시에 들어온 경우 재조회한다.
             User existingUser =
                     userMapper
-                            .findSocialUserByProviderAndProviderKey(
+                            .findSocialUserIncludingDeletedByProviderAndProviderKey(
                                     "KAKAO",
                                     providerKey
                             );

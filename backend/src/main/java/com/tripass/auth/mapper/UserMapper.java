@@ -38,8 +38,8 @@ public interface UserMapper {
             @Param("userId") Long userId
     );
 
-    // 로그인 제공자와 제공자 고유 식별값으로 소셜 회원 조회
-    User findSocialUserByProviderAndProviderKey(
+    // 탈퇴 회원을 포함하여 로그인 제공자와 고유 식별값으로 소셜 회원을 조회한다.
+    User findSocialUserIncludingDeletedByProviderAndProviderKey(
             @Param("loginProvider")
             String loginProvider,
 

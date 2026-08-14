@@ -16,10 +16,14 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import lombok.extern.log4j.Log4j2;
 
 import java.util.Collections;
 
 // 카카오 OAuth 토큰 발급 및 사용자 정보 조회 Client
+@Log4j2
 @Component
 public class KakaoOAuthClient {
 
@@ -31,6 +35,7 @@ public class KakaoOAuthClient {
     private final String userInfoUri;
 
     public KakaoOAuthClient(
+            @Qualifier("kakaoRestTemplate")
             RestTemplate restTemplate,
             @Value("${kakao.oauth.client-id}")
             String clientId,
@@ -116,10 +121,13 @@ public class KakaoOAuthClient {
 
             return tokenResponse;
 
-        } catch (CustomException exception) {
-            throw exception;
-
         } catch (RestClientException exception) {
+            log.warn(
+                    "Kakao access token request failed: type={}, message={}",
+                    exception.getClass().getSimpleName(),
+                    exception.getMessage()
+            );
+
             throw new CustomException(
                     HttpStatus.BAD_GATEWAY,
                     "KAKAO_TOKEN_REQUEST_FAILED",
@@ -178,6 +186,12 @@ public class KakaoOAuthClient {
             throw exception;
 
         } catch (RestClientException exception) {
+            log.warn(
+                    "Kakao user info request failed: type={}, message={}",
+                    exception.getClass().getSimpleName(),
+                    exception.getMessage()
+            );
+
             throw new CustomException(
                     HttpStatus.BAD_GATEWAY,
                     "KAKAO_USER_REQUEST_FAILED",
