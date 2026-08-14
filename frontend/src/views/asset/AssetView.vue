@@ -31,11 +31,8 @@ onMounted(async () => {
 })
 
 const menus = [
-  { icon: '◎', title: '여행 목표 자금 관리', desc: '목표 설정 및 현황', path: '/savings' },
-  { icon: '▤', title: '고정지출 관리', desc: '월 고정비 등록', path: '/asset/fixed-expenses' },
-  { icon: '✈', title: '사전 지출 금액 관리', desc: '여행 전 지출 확인', path: '/asset/prepaid' },
-  { icon: '◎', title: '이달의 자금 체크', desc: '이번 달 자금 현황', path: '/savings/monthly' },
-  { icon: '□', title: '다가오는 금융 일정', desc: '월급과 고정지출 일정 확인', path: '/financial-schedule' },
+  { icon: '◔', title: '소비 현황 분석', desc: '카테고리별 지출 보기', path: '/savings/monthly' },
+  { icon: '▦', title: '전체 거래내역', desc: '연동 계좌 내역 보기', path: '/asset/transactions' },
 ]
 
 function removeAccount(account) {
@@ -87,7 +84,7 @@ async function removeRealAccount(acc) {
         </section>
       </template>
 
-      <h2 class="menu-title">자산관리 메뉴</h2>
+      <h2 class="menu-title">소비 분석</h2>
       <section class="menus">
         <button v-for="menu in menus" :key="menu.title" @click="router.push(menu.path)">
           <span>{{ menu.icon }}</span><div><b>{{ menu.title }}</b><small>{{ menu.desc }}</small></div><i>›</i>

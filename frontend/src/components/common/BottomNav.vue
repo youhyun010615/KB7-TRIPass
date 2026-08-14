@@ -9,8 +9,8 @@ const travelModeStore = useTravelModeStore()
 
 const savingsNavItems = [
   { name: '홈', path: '/', icon: 'home' },
-  { name: '금융상품', path: '/financial', icon: 'financial' },
-  { name: '자산관리', path: '/asset', icon: 'asset' },
+  { name: '저축 미션', path: '/missions', icon: 'mission' },
+  { name: '월렛', path: '/wallet', icon: 'wallet' },
   { name: '환율', path: '/exchange', icon: 'exchange' },
   { name: '마이페이지', path: '/mypage', icon: 'mypage' },
 ]
@@ -47,18 +47,14 @@ function isActive(path) {
         <path d="M3 9L12 3L21 9V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9Z"
           :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <!-- financial (금융상품) -->
-      <svg v-if="item.icon === 'financial'" width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="3" width="7" height="7" rx="1.5" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
-        <rect x="14" y="3" width="7" height="7" rx="1.5" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
-        <rect x="3" y="14" width="7" height="7" rx="1.5" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
-        <rect x="14" y="14" width="7" height="7" rx="1.5" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
+      <svg v-if="item.icon === 'mission'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M7 3H17V21L12 18L7 21V3Z" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M10 9L11.7 10.7L15 7.5" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <!-- asset (자산관리) -->
-      <svg v-if="item.icon === 'asset'" width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="6" width="18" height="13" rx="2" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
-        <path d="M3 10H21" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
-        <path d="M7 15H10" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
+      <svg v-if="item.icon === 'wallet'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 7.5C4 5.57 5.57 4 7.5 4H18C19.1 4 20 4.9 20 6V18C20 19.1 19.1 20 18 20H6C4.9 20 4 19.1 4 18V7.5Z" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
+        <path d="M4 8H17.5C18.33 8 19 8.67 19 9.5V13.5C19 14.33 18.33 15 17.5 15H14C12.9 15 12 14.1 12 13V10C12 8.9 12.9 8 14 8H19" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linejoin="round"/>
+        <circle cx="15" cy="11.5" r="1" :fill="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'"/>
       </svg>
       <!-- exchange (환율) -->
       <svg v-if="item.icon === 'exchange'" width="20" height="20" viewBox="0 0 24 24" fill="none">

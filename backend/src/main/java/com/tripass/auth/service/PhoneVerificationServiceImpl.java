@@ -186,6 +186,18 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         );
     }
 
+    @Override
+    public void validateResetPasswordVerification(
+            String requestId,
+            String phoneNumber
+    ) {
+        validateCompletedVerification(
+                requestId,
+                phoneNumber,
+                VerificationPurpose.RESET_PASSWORD,
+                "비밀번호 재설정용 휴대전화 인증이 아닙니다."
+        );
+    }
 
     //인증 결과 사용 완료 처리
 

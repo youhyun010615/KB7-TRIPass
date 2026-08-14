@@ -1,90 +1,164 @@
-import { computed, reactive, watch } from 'vue'
-import { defineStore } from 'pinia'
-
-const STORAGE_KEY = 'tripass-checklists'
-
-const seed = {
-  1: {
-    trip: { id: 1, title: '유럽 2개국 배낭여행', flags: '🇫🇷 🇨🇭', countries: '프랑스 · 스위스', departureDate: '2026.08.15', returnDate: '2026.08.25', dDay: 10, flightTime: '18:20', flight: 'AZ796' },
-    preparation: {
-      d30: [
-        { id: 'p301', text: '항공권 예약 확인', note: '예약번호와 탑승객 정보 확인', done: true, origin: 'D-30' },
-        { id: 'p302', text: '숙소 예약하기', note: '체크인 날짜와 주소 저장', done: true, origin: 'D-30' },
-        { id: 'p303', text: '여권 유효기간 확인', note: '만료일까지 6개월 이상', done: false, origin: 'D-30' },
-        { id: 'p304', text: '국제운전면허증 발급', note: '렌터카 이용 시 필요', done: false, origin: 'D-30' },
-        { id: 'p305', text: '여행자보험 가입', note: '보장 범위 확인', done: true, origin: 'D-30' },
-      ],
-      d7: [
-        { id: 'p701', text: '환전 완료하기', note: '목표 환율과 필요 현금 확인', done: true, origin: 'D-7' },
-        { id: 'p702', text: '지도·번역 앱 설치', note: '오프라인 지도 저장', done: true, origin: 'D-7' },
-        { id: 'p703', text: '해외 결제 카드 확인', note: '해외사용 잠금 해제', done: true, origin: 'D-7' },
-      ],
-      d1: [
-        { id: 'p101', text: '여권 챙기기', note: '기내 가방에 보관', done: true, origin: 'D-1' },
-        { id: 'p102', text: '항공권·탑승 정보 확인', note: '터미널과 탑승 시간 확인', done: true, origin: 'D-1' },
-        { id: 'p103', text: '수하물 무게 확인', note: '항공사 허용 기준 확인', done: true, origin: 'D-1' },
-      ],
-    },
-    returns: [
-      { id: 'r1', text: '여권·지갑·소지품 확인', note: '숙소 금고와 객실 점검', done: true },
-      { id: 'r2', text: '모바일 탑승권 저장', note: 'AZ796 탑승권 준비', done: true },
-      { id: 'r3', text: '택스 리펀 서류 챙기기', note: '도장과 영수증 원본 확인', done: false },
-      { id: 'r4', text: '보조배터리 기내 소지', note: '위탁 수하물 금지', done: false },
-      { id: 'r5', text: '트래블카드 자동충전 OFF', note: '귀국 후 불필요한 충전 방지', done: false },
-    ],
-  },
-  2: {
-    trip: { id: 2, title: '홍콩 도심 여행', flags: '🇭🇰', countries: '홍콩', departureDate: '2026.09.01', returnDate: '2026.09.08', dDay: 27, flightTime: '20:10', flight: 'KE177' },
-    preparation: { d30: [], d7: [], d1: [] },
-    returns: [],
-  },
-}
-
-function load() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || seed }
-  catch { return seed }
-}
+import { ref } from 'vue';
+import { defineStore } from 'pinia';
+import {
+  fetchChecklistSummary,
+  fetchChecklists,
+  toggleChecklistItem,
+  createChecklistItem,
+  deleteChecklistItem,
+} from '@/api/checklist';
 
 export const useChecklistStore = defineStore('checklist', () => {
-  const trips = reactive(load())
+  // ----------------------------------------------------
+  // 1. State
+  // ----------------------------------------------------
+  // 여행 전체 요약 통계 (대시보드 메인 카드용)
+  const summary = ref({
+    totalCompletedCount: 0,
+    totalItemCount: 0,
+    prepCompletedCount: 0,
+    prepItemCount: 0,
+    returnCompletedCount: 0,
+    returnItemCount: 0,
+  });
 
-  function getTrip(id = 1) { return trips[Number(id)] || trips[1] }
+  // 단계별 상세 목록 (이월 항목 / 현재 탭 항목 분리)
+  const carriedOverChecklists = ref([]);
+  const currentChecklists = ref([]);
 
-  function preparationItems(id) {
-    const prep = getTrip(id).preparation
-    return [...prep.d30, ...prep.d7, ...prep.d1]
+  // 로딩 상태
+  const loading = ref(false);
+
+  // ----------------------------------------------------
+  // 2. Actions
+  // ----------------------------------------------------
+
+  // [GET] 요약 통계 조회
+  async function loadSummary(tripId) {
+    try {
+      const data = await fetchChecklistSummary(tripId);
+      if (data) summary.value = data;
+    } catch (error) {
+      console.error('요약 조회 실패:', error);
+    }
   }
 
-  function rolledItems(id, stage) {
-    const prep = getTrip(id).preparation
-    if (stage === 'd30') return prep.d30
-    if (stage === 'd7') return [...prep.d7, ...prep.d30.filter((item) => !item.done)]
-    return [...prep.d1, ...prep.d7.filter((item) => !item.done), ...prep.d30.filter((item) => !item.done)]
+  // [GET] 상세 목록 조회
+  async function loadChecklists(tripId, type, ddayStage) {
+    loading.value = true;
+    try {
+      const data = await fetchChecklists(tripId, type, ddayStage);
+      if (data) {
+        carriedOverChecklists.value = data.carriedOverChecklists || [];
+        currentChecklists.value = data.currentChecklists || [];
+      }
+    } catch (error) {
+      console.error('목록 조회 실패:', error);
+    } finally {
+      loading.value = false;
+    }
   }
 
-  function progress(items) {
-    const total = items.length
-    const done = items.filter((item) => item.done).length
-    return { done, total, percent: total ? Math.round((done / total) * 100) : 0 }
+  // [PATCH] 완료 상태 토글 (Optimistic UI Update + Fallback)
+  async function toggleItem(tripId, itemId, currentStatus) {
+    const newStatus = !currentStatus;
+
+    // UI 즉시 반영 (낙관적 업데이트)
+    const findAndToggle = (list) => {
+      const item = list.find((target) => target.id === itemId);
+      if (item) {
+        item.isCompleted = newStatus;
+        return true;
+      }
+      return false;
+    };
+
+    const updated =
+      findAndToggle(currentChecklists.value) ||
+      findAndToggle(carriedOverChecklists.value);
+
+    try {
+      await toggleChecklistItem(tripId, itemId, newStatus);
+      await loadSummary(tripId); // 전체 완료 요약 수치 갱신
+    } catch (error) {
+      console.error('토글 실패:', error);
+      // 실패 시 롤백
+      if (updated) {
+        findAndToggle(currentChecklists.value);
+        findAndToggle(carriedOverChecklists.value);
+      }
+      alert('상태 변경에 실패했습니다.');
+    }
   }
 
-  function toggle(id, type, itemId) {
-    const trip = getTrip(id)
-    const items = type === 'return' ? trip.returns : Object.values(trip.preparation).flat()
-    const item = items.find((entry) => entry.id === itemId)
-    if (item) item.done = !item.done
+  // [POST] 커스텀 항목 추가
+  async function addItem(tripId, itemData) {
+    try {
+      const result = await createChecklistItem(tripId, itemData);
+
+      // 정상적으로 생성되어 ID가 반환된 경우
+      if (result && result.id) {
+        // 목록 및 요약 데이터 최신화
+        await loadChecklists(
+          tripId,
+          itemData.checklistType,
+          itemData.ddayStage,
+        );
+        await loadSummary(tripId);
+        return true;
+      }
+
+      // result가 없거나 result.id가 전달되지 않은 경우 (생성 실패)
+      alert('항목 추가에 실패했습니다. 다시 시도해주세요.');
+      return false;
+    } catch (error) {
+      console.error('항목 추가 실패:', error);
+
+      const serverMsg = error.response?.data?.message;
+      const errorMsg = serverMsg || '항목 추가 중 오류가 발생했습니다.';
+
+      alert(errorMsg);
+      return false;
+    }
   }
 
-  function add(id, type, stage, text) {
-    const value = text.trim()
-    if (!value) return false
-    const item = { id: `${type}-${Date.now()}`, text: value, note: '직접 추가한 항목', done: false, origin: stage?.toUpperCase() }
-    if (type === 'return') getTrip(id).returns.push(item)
-    else getTrip(id).preparation[stage].push(item)
-    return true
+  // [DELETE] 항목 삭제 (기본 템플릿 항목인 경우 백엔드 400 에러 처리)
+  async function removeItem(tripId, itemId, type, ddayStage) {
+    try {
+      await deleteChecklistItem(tripId, itemId);
+      await loadChecklists(tripId, type, ddayStage);
+      await loadSummary(tripId);
+      return true;
+    } catch (error) {
+      console.error('항목 삭제 실패:', error);
+
+      const status = error.response?.status;
+      const serverMsg = error.response?.data?.message;
+
+      let errorMsg =
+        '항목 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+
+      // 💡 400 Bad Request 인 경우에만 기본 템플릿 항목 삭제 불가 문구 적용
+      if (status === 400) {
+        errorMsg = serverMsg || '기본 제공 템플릿 항목은 삭제할 수 없습니다.';
+      } else if (serverMsg) {
+        errorMsg = serverMsg;
+      }
+
+      alert(errorMsg);
+      return false;
+    }
   }
 
-  watch(trips, (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)), { deep: true })
-
-  return { trips, getTrip, preparationItems, rolledItems, progress, toggle, add }
-})
+  return {
+    summary,
+    carriedOverChecklists,
+    currentChecklists,
+    loading,
+    loadSummary,
+    loadChecklists,
+    toggleItem,
+    addItem,
+    removeItem,
+  };
+});

@@ -1,4 +1,5 @@
 <script setup>
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
@@ -7,6 +8,10 @@ import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const travelStore = useTravelStore()
+
+onMounted(() => {
+  travelStore.loadActiveGoal({ force: true })
+})
 </script>
 
 <template>
@@ -14,51 +19,37 @@ const travelStore = useTravelStore()
   <main v-else class="goal-page">
     <header class="page-header">
       <button aria-label="뒤로가기" @click="router.back()">‹</button>
-      <h1>여행 목표 자금 관리</h1>
-      <button class="text-action" @click="travelStore.resetGoal()">초기화</button>
+      <h1>여행 목표 저축</h1>
+      <span />
     </header>
 
-    <TravelTicket title="여행지 미설정" meta="D-미정">
-      <div class="goal-overview">
-        <div class="progress-ring"><strong>0%</strong><span>현재 확보율</span></div>
-        <dl>
-          <div><dt>총 목표 금액</dt><dd>0원</dd></div>
-          <div><dt>확보한 여행 자금</dt><dd>0원</dd></div>
-          <div><dt>부족 금액</dt><dd>0원</dd></div>
-        </dl>
-      </div>
-    </TravelTicket>
-
-    <section class="account-summary">
-      <span class="account-icon">▣</span>
-      <div><strong>반영 중인 계좌</strong><small>여행 자금으로 사용하는 계좌예요</small></div>
-      <div class="account-value"><b>0개</b><span>0원</span></div>
-    </section>
-
-    <section class="empty-card">
-      <div class="flight-visual">
-        <span class="dashed-route">··········</span><span class="plane">✈</span><span>🌐</span>
-      </div>
+    <section class="empty-ticket">
+      <div class="ticket-visual"><span>●</span><i>✈</i><b>●</b></div>
+      <small>TRIPASS · START JOURNEY</small>
       <h2>아직 등록된 여행 목표가 없어요</h2>
-      <p>여행지와 목표 금액, 목표 계좌를 등록하면<br>필요한 월 저축액과 예상 달성 시기를 계산해 드려요.</p>
+      <p>여행 국가와 일정을 등록하면 AI가 필요한<br>여행 목표 금액과 월 저축액을 제안해 드려요.</p>
       <ol>
-        <li><b>1</b><span>여행지 선택</span></li>
-        <li><b>2</b><span>목표 금액 설정</span></li>
-        <li><b>3</b><span>계좌 연결</span></li>
+        <li><b>1</b><span>여행지·일정</span></li>
+        <li><b>2</b><span>AI 예산 추천</span></li>
+        <li><b>3</b><span>TRIP 월렛 저축</span></li>
       </ol>
     </section>
 
-    <button class="primary-cta" @click="router.push('/travel/register')">여행 목표 등록하기</button>
+    <button class="primary-cta" @click="router.push('/travel/register')">여행 계획 등록하기</button>
     <BottomNav />
   </main>
 </template>
 
 <style scoped>
-.goal-page { min-height: 100vh; padding: 0 18px 92px; color: #111827; background: #f7f4ee; }
+.goal-page { min-height: 100vh; padding: 0 18px 92px; color: #111827; background: #f4f7ff; }
 .page-header { height: 76px; display: grid; grid-template-columns: 38px 1fr 48px; align-items: end; padding-bottom: 14px; }
-.page-header h1 { font-size: 17px; font-weight: 800; }
+.page-header h1 { font-size: 17px; font-weight: 800; text-align:center; }
 .page-header button { border: 0; background: none; text-align: left; font-size: 24px; }
-.page-header .text-action { color: #0066ff; text-align: right; font-size: 11px; font-weight: 700; }
+.empty-ticket { position:relative; overflow:hidden; margin-top:22px; padding:24px 20px 21px; border-radius:24px; color:#fff; text-align:center; background:linear-gradient(145deg,#173b86,#29499d); box-shadow:0 14px 25px rgba(31,59,130,.2); }
+.empty-ticket::before,.empty-ticket::after { content:''; position:absolute; top:42%; width:22px; height:22px; border-radius:50%; background:#f4f7ff; }.empty-ticket::before { left:-11px; }.empty-ticket::after { right:-11px; }
+.ticket-visual { display:flex; align-items:center; justify-content:space-between; height:74px; padding:0 32px; border-radius:17px; background:#edf3ff; color:#1e469b; font-size:19px; }.ticket-visual i { position:relative; font-size:31px; font-style:normal; transform:rotate(18deg); }.ticket-visual i::before { content:''; position:absolute; top:50%; right:29px; width:80px; border-top:2px dashed #9bb8f6; transform:rotate(-8deg); }.ticket-visual i::after { content:''; position:absolute; top:50%; left:29px; width:80px; border-top:2px dashed #9bb8f6; transform:rotate(8deg); }
+.empty-ticket>small { display:block; margin-top:18px; color:#b9ccff; font-size:9px; letter-spacing:.5px; }.empty-ticket h2 { margin-top:8px; font-size:18px; font-weight:800; }.empty-ticket p { margin-top:8px; color:#d7e4ff; font-size:11px; line-height:1.5; }
+.empty-ticket ol { display:flex; gap:4px; margin-top:18px; padding:13px 5px; border-radius:13px; background:#fff; color:#405373; }.empty-ticket li { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:9px; list-style:none; }.empty-ticket li b { display:grid; place-items:center; width:21px; height:21px; border-radius:50%; color:#fff; background:#2469e8; }
 .goal-overview { display: flex; align-items: center; gap: 24px; padding: 2px 7px 0; }
 .progress-ring { width: 90px; height: 90px; border: 9px solid #d8e4ff; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; }
 .progress-ring strong { font-size: 21px; color: #fff; }.progress-ring span { font-size: 8px; color: #cbd9ff; }

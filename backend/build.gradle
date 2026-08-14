@@ -107,14 +107,38 @@ dependencies {
     testAnnotationProcessor     "org.projectlombok:lombok:${lombokVersion}"
     testImplementation          "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly             "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+
     // SolAPI 문자 인증용 문자발신 API
     implementation("com.solapi:sdk:1.1.0")
+
+    // Google Cloud Vision OCR 및 Translation
+    implementation platform('com.google.cloud:libraries-bom:26.83.0')
+    implementation 'com.google.cloud:google-cloud-vision'
+    implementation 'com.google.cloud:google-cloud-translate'
 }
 
 // Windows 환경에서도 Java 소스를 UTF-8로 컴파일
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+
+    // 삭제되거나 이름이 바뀐 소스의 이전 .class가 WAR에 남지 않게 한다.
+    doFirst {
+        delete destinationDirectory.get().asFile
+    }
 }
+
+tasks.named('processResources') {
+    // Gradle Copy 작업은 삭제된 원본의 이전 출력물을 남길 수 있어 매번 동기화한다.
+    doFirst {
+        delete destinationDir
+    }
+}
+
+tasks.named('war') {
+    // macOS 복제 파일(예: AssetMapper 2.xml)이 빌드 캐시에 남아도 배포물에서 제외한다.
+    exclude '**/* 2.class', '**/* 2.xml', '**/* 2.json', '**/.gitkeep 2'
+}
+
 test {
     useJUnitPlatform()
 }

@@ -7,7 +7,10 @@ import com.tripass.auth.dto.request.LoginRequest;
 import com.tripass.auth.dto.internal.LoginResult;
 import com.tripass.auth.dto.internal.TokenRefreshResult;
 import com.tripass.auth.dto.request.FindIdRequest;
+import com.tripass.auth.dto.request.ResetPasswordRequest;
 import com.tripass.auth.dto.response.FindIdResponse;
+import com.tripass.auth.dto.request.ChangePasswordRequest;
+
 
 // 회원 가입 및 로그인 기능 정의하는 service의 인터페이스
 public interface AuthService {
@@ -26,4 +29,10 @@ public interface AuthService {
 
     // 휴대전화 인증을 기반으로 마스킹된 로그인 아이디 조회
     FindIdResponse findId(FindIdRequest request);
+
+    // 휴대전화 인증을 기반으로 LOCAL 계정 비밀번호 재설정
+    void resetPassword(ResetPasswordRequest request);
+
+    // 로그인한 LOCAL 회원의 비밀번호 변경
+    void changePassword(Long userId, ChangePasswordRequest request);
 }

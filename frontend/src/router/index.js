@@ -50,6 +50,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/missions',
+      name: 'SavingsMissions',
+      component: () => import('@/views/savings/SavingsMissionView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet',
+      name: 'TripWallet',
+      component: () => import('@/views/savings/TripWalletView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/savings/plan',
       name: 'SavingsPlanSetup',
       component: () => import('@/views/savings/SavingsPlanSetupView.vue'),
@@ -255,7 +267,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-       path: '/exchange/alerts/:alertId',
+      path: '/exchange/alerts/:alertId',
       name: 'ExchangeAlertEdit',
       component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
       meta: { requiresAuth: true },
@@ -271,6 +283,12 @@ const router = createRouter({
     {
       path: '/travel/register',
       name: 'TravelRegister',
+      component: () => import('@/views/travel/TravelRegisterView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/travel/register/schedule',
+      name: 'TravelRegisterSchedule',
       component: () => import('@/views/travel/TravelRegisterView.vue'),
       meta: { requiresAuth: true },
     },
@@ -329,28 +347,61 @@ const router = createRouter({
 
     // ── OCR / EXP (담당: 홍유진) ────────────────────────────
     {
-      path: '/receipt',
+      path: '/trips/:tripId/receipts',
       name: 'Receipt',
-      component: () => import('@/views/receipt/ReceiptView.vue'),
-      meta: { requiresAuth: true },
+      component: () =>
+          import('@/views/receipt/ReceiptView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/capture',
+      path: '/trips/:tripId/receipts/capture',
       name: 'ReceiptCapture',
-      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
-      meta: { requiresAuth: true },
+      component: () =>
+          import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/result',
-      name: 'ReceiptResultNew',
-      component: () => import('@/views/receipt/ReceiptResultView.vue'),
-      meta: { requiresAuth: true },
+      path: '/trips/:tripId/receipts/new',
+      name: 'ReceiptManualNew',
+      component: () =>
+          import('@/views/receipt/ReceiptManualView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/:receiptId',
-      name: 'ReceiptResult',
-      component: () => import('@/views/receipt/ReceiptResultView.vue'),
-      meta: { requiresAuth: true },
+      path: '/trips/:tripId/receipts/ocr-result',
+      name: 'ReceiptOcrResult',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'ocr',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId/edit',
+      name: 'ReceiptEdit',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'edit',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId',
+      name: 'ReceiptDetail',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'detail',
+      },
     },
 
     // ── MYP (담당: 권유현) ──────────────────────────────────
@@ -423,19 +474,21 @@ const router = createRouter({
     {
       path: '/mypage/checklists',
       name: 'MypageChecklists',
-      component: () => import('@/views/mypage/ChecklistListView.vue'),
+      component: () => import('@/views/mypage/checklist/ChecklistListView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/mypage/checklists/preparation',
       name: 'MypagePreparationChecklist',
-      component: () => import('@/views/mypage/PreparationChecklistView.vue'),
+      component: () =>
+        import('@/views/mypage/checklist/PreparationChecklistView.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/mypage/checklists/return',
       name: 'MypageReturnChecklist',
-      component: () => import('@/views/mypage/ReturnChecklistView.vue'),
+      component: () =>
+        import('@/views/mypage/checklist/ReturnChecklistView.vue'),
       meta: { requiresAuth: true },
     },
     {
