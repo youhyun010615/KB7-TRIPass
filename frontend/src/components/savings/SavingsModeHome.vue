@@ -142,9 +142,26 @@ const monthlyTarget = computed(() =>
 const prepaidExpenseTotal = computed(() =>
   Number(homeDashboard.value?.prepaidExpenseTotal || 0),
 );
-const daysUntilDeparture = computed(() =>
-  Number(homeDashboard.value?.daysUntilDeparture || 0),
-);
+const daysUntilDeparture = computed(() => {
+  // [ORIGINAL LOGIC]
+  const startDate = homeDashboard.value?.startDate;
+  if (!startDate) return Number(homeDashboard.value?.daysUntilDeparture || 0);
+
+  let targetDate;
+  if (Array.isArray(startDate)) {
+    const [year, month, day] = startDate;
+    targetDate = new Date(year, month - 1, day);
+  } else {
+    targetDate = new Date(startDate);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  targetDate.setHours(0, 0, 0, 0);
+
+  const diffTime = targetDate.getTime() - today.getTime();
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+});
 
 const checklistInfo = computed(() => {
   const days = daysUntilDeparture.value;
