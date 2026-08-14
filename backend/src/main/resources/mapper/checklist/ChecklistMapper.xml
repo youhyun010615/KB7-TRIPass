@@ -159,7 +159,6 @@
                0         AS is_carried_over,
                0         AS is_deleted
         FROM checklist_templates
-        WHERE is_deleted = 0;
     </insert>
 
     <!-- 커스텀 체크리스트 항목 생성 -->

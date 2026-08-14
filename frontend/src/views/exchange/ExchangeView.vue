@@ -19,16 +19,23 @@ const currentTab = computed({
   set: (val) => (exchange.currentTab = val),
 });
 
-onMounted(() => {
-  exchange.updateExchangeRates();
+const isLoading = ref(true);
+
+onMounted(async () => {
+  isLoading.value = true;
+  await Promise.all([
+    exchange.updateExchangeRates(),
+    travel.loadActiveGoal(),
+    exchange.fetchAlerts(),
+  ]);
+  isLoading.value = false;
 });
 
 // 개인화된 통화 목록 계산
 const displayCurrencies = computed(() => {
   const codes = new Set([
-    ...exchange.interestedCurrencyCodes,
     ...exchange.alerts.map((a) => a.currencyCode),
-    ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
+    ...travel.selectedPlans.map((p) => p.currencyCode || countryToCurrency[p.code] || 'USD'),
   ]);
   return exchange.currencies.filter((c) => codes.has(c.code));
 });

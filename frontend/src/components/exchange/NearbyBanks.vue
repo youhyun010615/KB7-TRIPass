@@ -216,7 +216,7 @@ const loadKakaoMap = () => {
 
     const timeout = setTimeout(() => {
       reject(new Error('지도 서비스 로드 시간 초과'));
-    }, 7000);
+    }, 10000);
 
     const cleanup = () => clearTimeout(timeout);
 

@@ -63,7 +63,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   const currentTab = ref(saved?.currentTab || 'rate');
   const krwAmount = ref(saved?.krwAmount || 100_000);
   const interestedCurrencyCodes = ref(
-    saved?.interestedCurrencyCodes || ['EUR', 'JPY'],
+    saved?.interestedCurrencyCodes || ['EUR', 'JPY', 'USD'],
   );
   const alerts = ref([]); // Fetch from API instead of localStorage
   const lastUpdateDate = ref('');
