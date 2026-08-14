@@ -1,29 +1,128 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  findId as findIdApi,
+  sendPhoneCode as sendPhoneCodeApi,
+  verifyPhoneCode as verifyPhoneCodeApi,
+} from '@/api/auth'
+
+import {
+  PHONE_NUMBER_PATTERN,
+  VERIFICATION_CODE_PATTERN,
+} from '@/constants/authValidation'
 
 const router = useRouter()
 
 const name = ref('')
 const phone = ref('')
 const verifyCode = ref('')
-const codeSent = ref(false)
-const result = ref('')
-const loading = ref(false)
+const verificationRequestId = ref(null)
 
-function sendCode() {
-  if (!name.value || !phone.value) return
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-    codeSent.value = true
-  }, 600)
+const codeSent = ref(false)
+const results = ref([])
+
+const loading = ref(false)
+const errorMessage = ref('')
+
+const normalizedPhone = computed(() =>
+    phone.value.replace(/\D/g, ''),
+)
+
+watch(verifyCode, (value) => {
+  verifyCode.value =
+      value.replace(/\D/g, '').slice(0, 6)
+})
+
+function resetVerification() {
+  verifyCode.value = ''
+  verificationRequestId.value = null
+  codeSent.value = false
+  results.value = []
+  errorMessage.value = ''
 }
 
-function confirm() {
-  if (!verifyCode.value) return
-  // 목데이터
-  result.value = 'tri***'
+async function sendCode() {
+  errorMessage.value = ''
+
+  if (!name.value.trim()) {
+    errorMessage.value = '이름을 입력해 주세요.'
+    return
+  }
+
+  if (!PHONE_NUMBER_PATTERN.test(normalizedPhone.value)) {
+    errorMessage.value = '휴대전화번호를 정확히 입력해 주세요.'
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const response = await sendPhoneCodeApi({phoneNumber: normalizedPhone.value, purpose: 'FIND_ID',})
+
+    verificationRequestId.value =
+        response.data?.data?.requestId
+
+    if (!verificationRequestId.value) {
+      throw new Error('인증 요청 ID가 없습니다.')
+    }
+
+    verifyCode.value = ''
+    codeSent.value = true
+    results.value = []
+  } catch (error) {
+    errorMessage.value =
+        error.response?.data?.message
+        ?? '인증번호를 발송하지 못했습니다.'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function confirm() {
+  errorMessage.value = ''
+
+  if (!verificationRequestId.value) {
+    errorMessage.value = '인증번호를 다시 요청해 주세요.'
+    return
+  }
+
+  if (!VERIFICATION_CODE_PATTERN.test(verifyCode.value)) {
+    errorMessage.value = '6자리 인증번호를 입력해 주세요.'
+    return
+  }
+
+  loading.value = true
+
+  try {
+    await verifyPhoneCodeApi({
+      requestId: verificationRequestId.value,
+      phoneNumber: normalizedPhone.value,
+      code: verifyCode.value,
+    })
+
+
+    const response = await findIdApi({
+      name: name.value.trim(),
+      phoneNumber: normalizedPhone.value,
+      phoneVerificationRequestId:
+      verificationRequestId.value,
+    })
+
+    results.value =
+        response.data?.data?.maskedLoginIds ?? []
+
+    if (results.value.length === 0) {
+      errorMessage.value =
+          '가입된 아이디를 찾을 수 없습니다.'
+    }
+  } catch (error) {
+    errorMessage.value =
+        error.response?.data?.message
+        ?? '아이디 찾기에 실패했습니다.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -71,6 +170,7 @@ function confirm() {
             v-model="name"
             type="text"
             placeholder="이름을 입력해 주세요"
+            :disabled="codeSent"
             class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
           />
         </div>
@@ -82,6 +182,7 @@ function confirm() {
             v-model="phone"
             type="tel"
             placeholder="숫자만 입력해 주세요"
+            :disabled="codeSent"
             class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
           />
         </div>
@@ -92,18 +193,47 @@ function confirm() {
           <input
             v-model="verifyCode"
             type="text"
+            inputmode="numeric"
             placeholder="6자리 입력"
             maxlength="6"
             class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
           />
           <p class="text-xs mt-1" style="color: #3B5BDB">인증번호가 발송되었습니다.</p>
+          <button
+              type="button"
+              class="mt-2 text-xs text-gray-500 underline disabled:opacity-50"
+              :disabled="loading"
+              @click="resetVerification"
+          >
+            입력 정보 수정하기
+          </button>
         </div>
 
         <!-- 결과 -->
-        <div v-if="result" class="bg-blue-50 rounded-2xl p-4 text-center">
-          <p class="text-xs text-gray-500 mb-1">가입된 아이디</p>
-          <p class="font-bold text-lg" style="color: #3B5BDB">{{ result }}</p>
+        <div
+            v-if="results.length > 0"
+            class="bg-blue-50 rounded-2xl p-4 text-center"
+        >
+          <p class="text-xs text-gray-500 mb-2">
+            가입된 아이디
+          </p>
+
+          <p
+              v-for="maskedLoginId in results"
+              :key="maskedLoginId"
+              class="font-bold text-lg"
+              style="color: #3B5BDB"
+          >
+            {{ maskedLoginId }}
+          </p>
         </div>
+
+        <p
+            v-if="errorMessage"
+            class="text-xs text-red-500"
+        >
+          {{ errorMessage }}
+        </p>
 
         <!-- 버튼 -->
         <button
@@ -116,12 +246,13 @@ function confirm() {
           {{ loading ? '발송 중...' : '인증번호 받기' }}
         </button>
         <button
-          v-else-if="!result"
-          @click="confirm"
-          class="w-full h-14 rounded-2xl text-white font-bold text-base"
+            v-else-if="results.length === 0"
+            @click="confirm"
+            :disabled="loading"
+            class="w-full h-14 rounded-2xl text-white font-bold text-base disabled:opacity-70"
           style="background: #3B5BDB"
         >
-          확인하기
+          {{ loading ? '확인 중...' : '확인하기' }}
         </button>
         <button
           v-else
