@@ -276,6 +276,35 @@
         LIMIT 1
     </select>
 
+    <!-- 사용자의 기존 미분류 정상 출금 카드 거래 조회 -->
+    <select id="findUnclassifiedCardTransactionsByUserId" resultType="TransactionDto">
+        SELECT t.id, t.card_id, t.merchant_name, t.merchant_type
+        FROM transactions t
+        JOIN cards c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+          AND c.is_deleted = 0
+          AND t.card_id IS NOT NULL
+          AND t.transaction_type = 'WITHDRAWAL'
+          AND t.category_id IS NULL
+          AND (t.category_source IS NULL OR t.category_source != 'USER')
+          AND t.is_deleted = 0
+        ORDER BY t.id
+    </select>
+
+    <!-- 동시 수정 및 사용자 지정 카테고리를 보호하며 자동분류 결과 반영 -->
+    <update id="updateAutoClassification">
+        UPDATE transactions
+        SET category_id = #{categoryId},
+            category_source = #{categorySource},
+            category_confidence = #{categoryConfidence},
+            category_classified_at = #{categoryClassifiedAt},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND category_id IS NULL
+          AND (category_source IS NULL OR category_source != 'USER')
+          AND is_deleted = 0
+    </update>
+
     <!-- 카드 거래내역 저장 — USER 지정 카테고리는 재수집 시 자동분류로 덮어쓰지 않는다. -->
     <insert id="upsertTransactionFromCard" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO transactions

@@ -5,6 +5,7 @@ import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.common.exception.CustomException;
 import com.tripass.common.util.CodefUtil;
 import com.tripass.saving.classification.CategoryClassificationResult;
+import com.tripass.saving.classification.CategorySource;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -498,6 +499,7 @@ public class AssetService {
             }
 
             List<TransactionDto> saved = new ArrayList<>();
+            Map<String, Long> categoryIds = new HashMap<>();
             for (Map<String, Object> approval : approvalList) {
                 String usedDate = (String) approval.get("resUsedDate");
                 String usedTime = (String) approval.getOrDefault("resUsedTime", "000000");
@@ -531,23 +533,7 @@ public class AssetService {
                 }
                 dto.setMerchantName(merchantName);
                 dto.setMerchantType((String) approval.get("resMemberStoreType"));
-                CategoryClassificationResult classification = transactionCategoryClassifier.classify(
-                        dto.getMerchantName(),
-                        dto.getMerchantType()
-                );
-                Long categoryId = assetMapper.findCategoryIdByCode(
-                        classification.categoryCode().name()
-                );
-                if (categoryId == null) {
-                    throw new IllegalStateException(
-                            "소비 카테고리를 찾을 수 없습니다: "
-                                    + classification.categoryCode().name()
-                    );
-                }
-                dto.setCategoryId(categoryId);
-                dto.setCategorySource(classification.source().name());
-                dto.setCategoryConfidence(classification.confidence());
-                dto.setCategoryClassifiedAt(java.time.LocalDateTime.now());
+                applyAutomaticClassification(dto, categoryIds);
                 assetMapper.upsertTransactionFromCard(dto);
                 saved.add(dto);
             }
@@ -559,6 +545,62 @@ public class AssetService {
         } catch (Exception e) {
             throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "CARD_TRANSACTION_ERROR", "카드 거래내역 조회 중 오류가 발생했습니다: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public TransactionReclassificationResponseDto reclassifyCardTransactions(Long userId) {
+        List<TransactionDto> targets = assetMapper.findUnclassifiedCardTransactionsByUserId(userId);
+        Map<String, Long> categoryIds = new HashMap<>();
+        int classifiedCount = 0;
+        int fallbackCount = 0;
+        int updatedCount = 0;
+
+        for (TransactionDto target : targets) {
+            CategoryClassificationResult classification =
+                    applyAutomaticClassification(target, categoryIds);
+            int updated = assetMapper.updateAutoClassification(target);
+            updatedCount += updated;
+            if (updated == 0) {
+                continue;
+            }
+
+            if (classification.source() == CategorySource.FALLBACK) {
+                fallbackCount++;
+            } else {
+                classifiedCount++;
+            }
+        }
+
+        return new TransactionReclassificationResponseDto(
+                targets.size(),
+                classifiedCount,
+                fallbackCount,
+                updatedCount
+        );
+    }
+
+    private CategoryClassificationResult applyAutomaticClassification(
+            TransactionDto transaction,
+            Map<String, Long> categoryIds
+    ) {
+        CategoryClassificationResult classification = transactionCategoryClassifier.classify(
+                transaction.getMerchantName(),
+                transaction.getMerchantType()
+        );
+        String categoryCode = classification.categoryCode().name();
+        Long categoryId = categoryIds.computeIfAbsent(
+                categoryCode,
+                assetMapper::findCategoryIdByCode
+        );
+        if (categoryId == null) {
+            throw new IllegalStateException("소비 카테고리를 찾을 수 없습니다: " + categoryCode);
+        }
+
+        transaction.setCategoryId(categoryId);
+        transaction.setCategorySource(classification.source().name());
+        transaction.setCategoryConfidence(classification.confidence());
+        transaction.setCategoryClassifiedAt(java.time.LocalDateTime.now());
+        return classification;
     }
 
     @Transactional

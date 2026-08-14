@@ -89,6 +89,8 @@ public interface AssetMapper {
     void upsertTransactionFromCard(TransactionDto dto);
     void deleteTransactionByExternalKey(@org.apache.ibatis.annotations.Param("externalKey") String externalKey);
     Long findCategoryIdByCode(@org.apache.ibatis.annotations.Param("categoryCode") String categoryCode);
+    List<TransactionDto> findUnclassifiedCardTransactionsByUserId(Long userId);
+    int updateAutoClassification(TransactionDto dto);
 
     // 카드별 거래내역 조회
     List<TransactionDto> findTransactionsByCardId(
