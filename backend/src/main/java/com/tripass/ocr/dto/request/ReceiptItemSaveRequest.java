@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 
@@ -15,9 +14,16 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class ReceiptItemSaveRequest {
 
+
+    // 기존 품목 PK
+    // 신규 품목이면 null
+    private Long id;
+
     // 원문 품목명
-    @NotBlank(message = "원문 품목명을 입력해 주세요.")
-    @Size(max = 255, message = "품목명은 255자 이하로 입력해 주세요.")
+    @Size(
+            max = 255,
+            message = "원문 품목명은 255자 이하로 입력해 주세요."
+    )
     private String originalName;
 
     // 번역된 품목명
