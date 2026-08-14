@@ -2,7 +2,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { login as loginApi } from '@/api/auth'
+import {
+  login as loginApi,
+  logout as logoutApi,
+} from '@/api/auth'
 import api from '@/api'
 
 const router = useRouter()
@@ -60,6 +63,19 @@ async function login(){
           '연동 계좌 확인 실패',
           accountError,
       )
+
+      // 로그인 과정에서 발급된 Refresh Token과 쿠키를 제거한다.
+      try {
+        await logoutApi()
+      } catch (logoutError) {
+        console.error(
+            '로그인 상태 정리 실패',
+            logoutError,
+        )
+      } finally {
+        // 서버 로그아웃 성공 여부와 관계없이 프론트 로그인 상태를 제거한다.
+        authStore.logout()
+      }
 
       errorMsg.value =
           '연동 계좌 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'
