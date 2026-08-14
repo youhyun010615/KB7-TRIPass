@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import tripassAppIcon from '@/assets/brand/tripass-app-icon.png'
+import tripassWordmark from '@/assets/brand/tripass-wordmark.png'
 
 const router = useRouter()
 
@@ -152,13 +152,13 @@ function onTouchEnd() {
                 <div v-if="slide.key === 'journey'" class="brand-visual">
                   <div class="brand-logo-stage">
                     <span class="brand-logo-halo" aria-hidden="true"></span>
-                    <img class="brand-logo" :src="tripassAppIcon" alt="TRIPASS" />
+                    <span class="brand-logo-shine" aria-hidden="true"></span>
+                    <img class="brand-logo" :src="tripassWordmark" alt="TRIPASS 여행을 준비하는 가장 똑똑한 금융 습관" />
                     <div class="brand-flight-path" aria-hidden="true">
                       <span></span>
                       <b>✈</b>
                     </div>
                   </div>
-                  <div class="brand-subtitle">여행을 준비하는 가장 똑똑한 금융 습관</div>
                 </div>
 
                 <div v-else-if="slide.key === 'saving'" class="saving-visual">
@@ -489,44 +489,61 @@ function onTouchEnd() {
 .brand-logo-stage {
   position: relative;
   display: grid;
-  width: 162px;
-  height: 162px;
+  width: min(100%, 330px);
+  height: 122px;
   place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 24px;
+  background: linear-gradient(145deg, #fffefa 0%, #f8f5ed 100%);
+  box-shadow: 0 22px 42px rgba(3, 21, 61, 0.32);
 }
 
 .brand-logo-halo {
   position: absolute;
-  inset: 7px;
+  inset: -26px;
   border: 1px solid rgba(255, 212, 94, 0.28);
-  border-radius: 38%;
+  border-radius: 50%;
   box-shadow: 0 0 42px rgba(71, 141, 255, 0.32);
+}
+
+.brand-logo-shine {
+  position: absolute;
+  top: -35%;
+  bottom: -35%;
+  left: -32%;
+  z-index: 3;
+  width: 18%;
+  transform: rotate(14deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.86), transparent);
+  pointer-events: none;
 }
 
 .brand-logo {
   position: relative;
   z-index: 2;
   display: block;
-  width: 150px;
-  filter: drop-shadow(0 18px 28px rgba(3, 21, 61, 0.34));
+  width: calc(100% - 30px);
+  filter: drop-shadow(0 8px 12px rgba(12, 47, 112, 0.12));
 }
 
 .brand-flight-path {
   position: absolute;
-  right: -40px;
-  bottom: 19px;
-  left: 84px;
-  z-index: 3;
-  height: 42px;
+  right: 10px;
+  bottom: 3px;
+  left: 58%;
+  z-index: 4;
+  height: 34px;
   overflow: hidden;
 }
 
 .brand-flight-path span {
   position: absolute;
   right: 22px;
-  bottom: 8px;
+  bottom: 5px;
   left: 0;
   height: 34px;
-  border-top: 2px dashed rgba(255, 212, 94, 0.72);
+  border-top: 2px dashed rgba(223, 164, 21, 0.72);
   border-radius: 50% 50% 0 0;
   transform: rotate(-8deg) scaleX(0);
   transform-origin: left bottom;
@@ -535,9 +552,9 @@ function onTouchEnd() {
 .brand-flight-path b {
   position: absolute;
   right: 2px;
-  bottom: 18px;
-  color: var(--yellow);
-  font-size: 20px;
+  bottom: 13px;
+  color: #e1a51a;
+  font-size: 17px;
   font-weight: 400;
   transform: rotate(-8deg);
 }
@@ -552,6 +569,10 @@ function onTouchEnd() {
   animation: brand-halo 2.8s ease-out 520ms infinite;
 }
 
+.slide.is-active .brand-logo-shine {
+  animation: brand-shine-sweep 2.8s ease-in-out 850ms infinite;
+}
+
 .slide.is-active .brand-flight-path span {
   animation: brand-route-draw 780ms cubic-bezier(0.22, 1, 0.36, 1) 420ms both;
 }
@@ -563,11 +584,6 @@ function onTouchEnd() {
 .brand-subtitle,
 .eyebrow {
   color: var(--yellow);
-}
-
-.brand-subtitle {
-  margin-top: 14px;
-  letter-spacing: 0.12em;
 }
 
 .saving-visual {
@@ -1051,9 +1067,9 @@ function onTouchEnd() {
 }
 
 @keyframes brand-logo-board {
-  from { transform: translateY(18px) scale(0.84) rotate(-3deg); filter: blur(3px) drop-shadow(0 18px 28px rgba(3, 21, 61, 0.34)); }
-  70% { transform: translateY(-3px) scale(1.03) rotate(1deg); filter: blur(0) drop-shadow(0 22px 34px rgba(3, 21, 61, 0.4)); }
-  to { transform: translateY(0) scale(1) rotate(0); filter: blur(0) drop-shadow(0 18px 28px rgba(3, 21, 61, 0.34)); }
+  from { transform: translateY(12px) scale(0.92); filter: blur(3px) drop-shadow(0 8px 12px rgba(12, 47, 112, 0.12)); }
+  70% { transform: translateY(-2px) scale(1.015); filter: blur(0) drop-shadow(0 10px 16px rgba(12, 47, 112, 0.16)); }
+  to { transform: translateY(0) scale(1); filter: blur(0) drop-shadow(0 8px 12px rgba(12, 47, 112, 0.12)); }
 }
 
 @keyframes brand-logo-float {
@@ -1065,6 +1081,12 @@ function onTouchEnd() {
   0% { opacity: 0.25; transform: scale(0.88); }
   62% { opacity: 0.72; }
   100% { opacity: 0; transform: scale(1.16); }
+}
+
+@keyframes brand-shine-sweep {
+  0%, 26% { opacity: 0; transform: translateX(0) rotate(14deg); }
+  38% { opacity: 0.8; }
+  62%, 100% { opacity: 0; transform: translateX(760%) rotate(14deg); }
 }
 
 @keyframes brand-route-draw {
@@ -1185,6 +1207,7 @@ function onTouchEnd() {
   .route-plane svg,
   .slide.is-active .brand-logo,
   .slide.is-active .brand-logo-halo,
+  .slide.is-active .brand-logo-shine,
   .slide.is-active .brand-flight-path span,
   .slide.is-active .brand-flight-path b,
   .slide.is-active .visual-content,
