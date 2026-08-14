@@ -72,7 +72,7 @@ export const useTravelModeStore = defineStore('travelMode', () => {
     }
     try {
       const result = await switchTravelMode(tripId.value, targetTravelMode);
-      isTravelMode.value = result.isTravelMode;
+      setMode(result.isTravelMode ? 'travel' : 'savings');
       return true;
     } catch (error) {
       console.error(error);

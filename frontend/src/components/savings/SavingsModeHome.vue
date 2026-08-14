@@ -145,6 +145,15 @@ const prepaidExpenseTotal = computed(() =>
 const daysUntilDeparture = computed(() =>
   Number(homeDashboard.value?.daysUntilDeparture || 0),
 );
+
+const checklistInfo = computed(() => {
+  const days = daysUntilDeparture.value;
+  if (days >= 8 && days <= 30) return { label: 'D-30 체크리스트' };
+  if (days >= 2 && days <= 7) return { label: 'D-7 체크리스트' };
+  if (days >= 0 && days <= 1) return { label: 'D-1 체크리스트' };
+  return null;
+});
+
 const currentMonthLabel = computed(() => `${new Date().getMonth() + 1}월`);
 const monthlySavedAmount = computed(() =>
   Number(homeDashboard.value?.monthlySavedAmount || 0),
@@ -260,6 +269,17 @@ function goWallet() {
   router.push('/wallet');
 }
 
+// [ADDED] Checklist Navigation Function
+function goToPreparationChecklist() {
+  const tripId = travelStore.tripId || travelStore.homeDashboard?.tripId;
+  if (tripId) {
+    router.push(`/mypage/checklists/preparation?tripId=${tripId}`);
+  } else {
+    console.error('tripId를 찾을 수 없습니다.');
+  }
+}
+// [END ADDED]
+
 async function switchMode(mode) {
   const isTravelMode = mode === 'travel' ? true : false;
   const success = travelModeStore.toggleTravelMode(isTravelMode);
@@ -353,12 +373,11 @@ async function switchMode(mode) {
         <div
           v-if="daysUntilDeparture <= 0"
           class="mode-switch-control savings-selected"
+          @click="switchMode('travel')"
         >
           <span class="mode-switch-thumb" />
-          <button type="button" @click="switchMode('savings')">여행</button>
-          <button type="button" class="selected" @click="switchMode('travel')">
-            저축
-          </button>
+          <button type="button">여행</button>
+          <button type="button" class="selected">저축</button>
         </div>
 
         <div class="savings-header-row savings-greeting-row">
@@ -480,8 +499,16 @@ async function switchMode(mode) {
                   {{ country.desc }} ✨
                 </p>
 
-                <!-- 사진이 보이는 여백 -->
-                <div class="ticket-photo-space" />
+                <!-- 사진이 보이는 여백 및 체크리스트 버튼 -->
+                <div class="ticket-photo-space">
+                  <button
+                    v-if="checklistInfo"
+                    class="checklist-btn"
+                    @click="goToPreparationChecklist"
+                  >
+                    {{ checklistInfo.label }} ›
+                  </button>
+                </div>
 
                 <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
                 <div
@@ -1425,6 +1452,21 @@ async function switchMode(mode) {
 }
 .ticket-photo-space {
   height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.checklist-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: #ffb800;
+  color: #173f8d;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(255, 184, 0, 0.3);
+}
+.checklist-btn:active {
+  transform: scale(0.96);
 }
 .ticket-stub {
   height: 49px;

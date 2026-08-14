@@ -1,5 +1,6 @@
 package com.tripass.travel.service;
 
+import com.tripass.checklist.service.ChecklistService;
 import com.tripass.travel.domain.Trip;
 import com.tripass.travel.dto.*;
 import com.tripass.travel.exception.TravelErrorCode;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class TravelService {
 
     private final TravelMapper travelMapper;
+    private final ChecklistService checklistService;
 
     /**
      * 여행 대시보드 상태 조회
@@ -117,6 +119,8 @@ public class TravelService {
         travelMapper.insertTripGoal(command);
         insertTripCountries(command.getId(), request.getCountries());
         travelMapper.insertTripWalletIfAbsent(currentUserId);
+        // 여행 목표 등록시 관련 체크리스트도 같이 생성
+        checklistService.initializeChecklist(command.getId());
 
         return TripGoalCreateResponseDto.builder()
                 .tripId(command.getId())
