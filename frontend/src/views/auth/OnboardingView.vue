@@ -147,8 +147,7 @@ function onTouchEnd() {
           :aria-hidden="current !== index"
         >
           <div class="visual-stage">
-            <Transition name="visual-pop" mode="out-in">
-              <div :key="`${slide.key}-${current}`" class="visual-content">
+              <div class="visual-content">
                 <div v-if="slide.key === 'journey'" class="brand-visual">
                   <div class="brand-word">TRIPASS</div>
                   <div class="brand-rule"></div>
@@ -156,6 +155,11 @@ function onTouchEnd() {
                 </div>
 
                 <div v-else-if="slide.key === 'saving'" class="saving-visual">
+                  <div class="deposit-stream" aria-hidden="true">
+                    <span>₩</span>
+                    <span>₩</span>
+                    <span>₩</span>
+                  </div>
                   <div class="achievement-pill">
                     <span>✓</span>
                     <strong>65%</strong>
@@ -168,6 +172,7 @@ function onTouchEnd() {
                     </div>
                     <strong class="saving-amount">300,000원</strong>
                     <div class="saving-divider"></div>
+                    <div class="saving-fill" aria-hidden="true"><span></span></div>
                     <div class="saving-row">
                       <span>✓ 월 저축 목표</span>
                       <strong>+200,000원</strong>
@@ -191,9 +196,15 @@ function onTouchEnd() {
                   <div class="rollover-pill">
                     여행 후 남은 자금 <strong>240,000원</strong> → 다음 여행
                   </div>
+                  <div class="rollover-flight" aria-hidden="true">
+                    <span></span><b>✈</b><span></span>
+                  </div>
                 </div>
 
                 <div v-else class="ready-visual">
+                  <div class="takeoff-trails" aria-hidden="true">
+                    <span></span><span></span><span></span>
+                  </div>
                   <div class="ready-plane-ring">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                       <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
@@ -201,7 +212,6 @@ function onTouchEnd() {
                   </div>
                 </div>
               </div>
-            </Transition>
           </div>
 
           <div class="copy-block">
@@ -229,12 +239,17 @@ function onTouchEnd() {
         ></button>
       </div>
 
-      <button type="button" class="primary-button" @click="next">
-        {{ isLast ? 'TRIPASS 시작하기' : '다음' }}
+      <button v-if="!isLast" type="button" class="primary-button" @click="next">
+        다음
       </button>
-      <button v-if="isLast" type="button" class="login-button" @click="goToLogin">
-        이미 계정이 있어요 · 로그인
-      </button>
+      <div v-else class="final-actions">
+        <button type="button" class="primary-button" @click="goToSignup">
+          TRIPASS 시작하기
+        </button>
+        <button type="button" class="login-button" @click="goToLogin">
+          이미 계정이 있어요 · 로그인
+        </button>
+      </div>
     </footer>
   </main>
 </template>
@@ -484,11 +499,49 @@ function onTouchEnd() {
 }
 
 .saving-visual {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 18px;
 }
+
+.deposit-stream {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  z-index: 3;
+  width: 36px;
+  height: 126px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.deposit-stream span {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid rgba(255, 226, 127, 0.75);
+  border-radius: 50%;
+  opacity: 0;
+  color: #173d88;
+  background: var(--yellow);
+  box-shadow: 0 5px 14px rgba(255, 212, 94, 0.32);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.slide.is-active .deposit-stream span {
+  animation: deposit-coin 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.slide.is-active .deposit-stream span:nth-child(1) { animation-delay: 330ms; }
+.slide.is-active .deposit-stream span:nth-child(2) { animation-delay: 590ms; }
+.slide.is-active .deposit-stream span:nth-child(3) { animation-delay: 850ms; }
 
 .achievement-pill,
 .rollover-pill {
@@ -563,6 +616,32 @@ function onTouchEnd() {
   background: rgba(255, 255, 255, 0.15);
 }
 
+.saving-fill {
+  height: 4px;
+  margin: -2px 0 8px 39px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.saving-fill span {
+  display: block;
+  width: 65%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffd45e, #fff0a8);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.slide.is-active .saving-fill span {
+  animation: saving-fill-up 850ms cubic-bezier(0.22, 1, 0.36, 1) 820ms both;
+}
+
+.slide.is-active .saving-amount {
+  animation: amount-confirm 480ms ease 980ms both;
+}
+
 .saving-row {
   display: flex;
   justify-content: space-between;
@@ -606,6 +685,7 @@ function onTouchEnd() {
 }
 
 .receipt-line {
+  --receipt-line-width: 74%;
   width: 74%;
   height: 5px;
   margin-bottom: 7px;
@@ -613,8 +693,16 @@ function onTouchEnd() {
   background: #e8e0c9;
 }
 
-.receipt-line.line-long { width: 88%; }
-.receipt-line.line-short { width: 58%; }
+.receipt-line.line-long { --receipt-line-width: 88%; width: 88%; }
+.receipt-line.line-short { --receipt-line-width: 58%; width: 58%; }
+
+.slide.is-active .receipt-line {
+  animation: receipt-write 620ms ease both;
+}
+
+.slide.is-active .receipt-line:nth-of-type(2) { animation-delay: 430ms; }
+.slide.is-active .receipt-line:nth-of-type(3) { animation-delay: 570ms; }
+.slide.is-active .receipt-line:nth-of-type(4) { animation-delay: 710ms; }
 
 .receipt-card strong {
   margin-top: auto;
@@ -648,10 +736,71 @@ function onTouchEnd() {
   font-size: 9px;
 }
 
+.slide.is-active .rollover-pill strong {
+  animation: rollover-highlight 1.8s ease-in-out 1s infinite;
+}
+
+.rollover-flight {
+  display: flex;
+  width: 206px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  color: var(--yellow);
+}
+
+.rollover-flight span {
+  height: 1px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.rollover-flight b {
+  opacity: 0;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.slide.is-active .rollover-flight b {
+  animation: rollover-plane 1.1s cubic-bezier(0.22, 1, 0.36, 1) 900ms both;
+}
+
 .ready-visual {
+  position: relative;
   display: flex;
   justify-content: center;
 }
+
+.takeoff-trails {
+  position: absolute;
+  top: 40px;
+  right: calc(50% + 34px);
+  display: flex;
+  width: 190px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.takeoff-trails span {
+  display: block;
+  height: 2px;
+  border-radius: 99px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 212, 94, 0.85));
+}
+
+.takeoff-trails span:nth-child(1) { width: 100%; }
+.takeoff-trails span:nth-child(2) { width: 72%; }
+.takeoff-trails span:nth-child(3) { width: 44%; }
+
+.slide.is-active .takeoff-trails span {
+  animation: takeoff-trail 700ms ease-out both;
+}
+
+.slide.is-active .takeoff-trails span:nth-child(1) { animation-delay: 130ms; }
+.slide.is-active .takeoff-trails span:nth-child(2) { animation-delay: 210ms; }
+.slide.is-active .takeoff-trails span:nth-child(3) { animation-delay: 290ms; }
 
 .ready-plane-ring {
   display: grid;
@@ -665,13 +814,19 @@ function onTouchEnd() {
 }
 
 .slide.is-active .ready-plane-ring {
-  animation: ready-radar 2.2s ease-out 450ms infinite;
+  animation:
+    takeoff-arrive 720ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
+    ready-radar 2.2s ease-out 850ms infinite;
 }
 
 .ready-plane-ring svg {
   width: 42px;
   height: 42px;
   transform: rotate(45deg);
+}
+
+.slide.is-active .ready-plane-ring svg {
+  animation: plane-settle 720ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
 }
 
 .copy-block {
@@ -748,25 +903,16 @@ function onTouchEnd() {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.final-actions {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: final-actions-arrive 480ms cubic-bezier(0.22, 1, 0.36, 1) 820ms both;
+}
+
 .primary-button:active,
 .login-button:active {
   transform: scale(0.98);
   filter: brightness(0.96);
-}
-
-.visual-pop-enter-active,
-.visual-pop-leave-active {
-  transition: opacity 260ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.visual-pop-enter-from {
-  opacity: 0;
-  transform: translateY(14px) scale(0.96);
-}
-
-.visual-pop-leave-to {
-  opacity: 0;
-  transform: translateY(-8px) scale(0.98);
 }
 
 @keyframes ambient-drift {
@@ -805,6 +951,24 @@ function onTouchEnd() {
   50% { transform: translateY(-5px); }
 }
 
+@keyframes deposit-coin {
+  0% { opacity: 0; transform: translate(-50%, -14px) scale(0.72) rotate(-12deg); }
+  18% { opacity: 1; }
+  72% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 90px) scale(0.92) rotate(18deg); }
+}
+
+@keyframes saving-fill-up {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes amount-confirm {
+  0% { color: white; transform: scale(1); }
+  48% { color: var(--yellow); transform: scale(1.08); }
+  100% { color: white; transform: scale(1); }
+}
+
 @keyframes coin-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 94, 0); }
   50% { box-shadow: 0 0 0 8px rgba(255, 212, 94, 0.1); }
@@ -815,9 +979,42 @@ function onTouchEnd() {
   50% { transform: translateY(-5px) rotate(1.5deg); }
 }
 
+@keyframes receipt-write {
+  from { width: 0; opacity: 0.25; }
+  to { width: var(--receipt-line-width); opacity: 1; }
+}
+
 @keyframes arrow-nudge {
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(4px); }
+}
+
+@keyframes rollover-highlight {
+  0%, 100% { text-shadow: 0 0 0 rgba(255, 212, 94, 0); }
+  50% { text-shadow: 0 0 12px rgba(255, 212, 94, 0.72); }
+}
+
+@keyframes rollover-plane {
+  from { opacity: 0; transform: translateX(-86px) rotate(-12deg); }
+  to { opacity: 1; transform: translateX(0) rotate(0); }
+}
+
+@keyframes takeoff-trail {
+  from { opacity: 0; transform: scaleX(0.25) translateX(-25px); transform-origin: right; }
+  45% { opacity: 1; }
+  to { opacity: 0; transform: scaleX(1) translateX(10px); transform-origin: right; }
+}
+
+@keyframes takeoff-arrive {
+  from { opacity: 0; transform: translateX(-230px) scale(0.52) rotate(-10deg); }
+  70% { opacity: 1; transform: translateX(8px) scale(1.05) rotate(2deg); }
+  to { opacity: 1; transform: translateX(0) scale(1) rotate(0); }
+}
+
+@keyframes plane-settle {
+  from { transform: rotate(45deg) scale(0.7); }
+  70% { transform: rotate(49deg) scale(1.08); }
+  to { transform: rotate(45deg) scale(1); }
 }
 
 @keyframes ready-radar {
@@ -828,6 +1025,11 @@ function onTouchEnd() {
 @keyframes button-glow {
   0%, 100% { box-shadow: 0 12px 24px rgba(4, 22, 59, 0.2); }
   50% { box-shadow: 0 12px 30px rgba(255, 212, 94, 0.2); }
+}
+
+@keyframes final-actions-arrive {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-height: 760px) {
@@ -848,9 +1050,18 @@ function onTouchEnd() {
   .slide.is-active .copy-block > *,
   .slide.is-active .saving-card,
   .slide.is-active .coin-icon,
+  .slide.is-active .deposit-stream span,
+  .slide.is-active .saving-fill span,
+  .slide.is-active .saving-amount,
   .slide.is-active .receipt-card,
+  .slide.is-active .receipt-line,
   .slide.is-active .receipt-arrow,
+  .slide.is-active .rollover-pill strong,
+  .slide.is-active .rollover-flight b,
+  .slide.is-active .takeoff-trails span,
   .slide.is-active .ready-plane-ring,
+  .slide.is-active .ready-plane-ring svg,
+  .final-actions,
   .primary-button {
     animation: none;
   }
@@ -859,9 +1070,13 @@ function onTouchEnd() {
   .slide,
   .route-line-progress,
   .route-plane,
-  .visual-pop-enter-active,
-  .visual-pop-leave-active {
+  .final-actions {
     transition: none;
+  }
+
+  .final-actions {
+    opacity: 1;
+    transform: none;
   }
 }
 </style>
