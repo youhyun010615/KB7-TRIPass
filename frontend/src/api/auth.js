@@ -108,3 +108,24 @@ export function refreshAccessToken() {
 export function logout() {
     return api.post('/auth/logout')
 }
+
+// 백엔드에서 카카오 OAuth state와 인가 URL을 발급받는다.
+export function getKakaoAuthorizationUrl() {
+    return api.get(
+        '/auth/social/kakao/authorization-url',
+    )
+}
+
+// 카카오 콜백으로 전달된 인가 코드와 state를 백엔드에 전달한다.
+export function loginWithKakao({
+                                   code,
+                                   state,
+                               }) {
+    return api.post(
+        '/auth/social/kakao',
+        {
+            code,
+            state,
+        },
+    )
+}
