@@ -152,7 +152,6 @@ function onTouchEnd() {
                 <div v-if="slide.key === 'journey'" class="brand-visual">
                   <div class="brand-logo-stage">
                     <span class="brand-logo-halo" aria-hidden="true"></span>
-                    <span class="brand-logo-shine" aria-hidden="true"></span>
                     <img class="brand-logo" :src="tripassWordmark" alt="TRIPASS 여행을 준비하는 가장 똑똑한 금융 습관" />
                     <div class="brand-flight-path" aria-hidden="true">
                       <span></span>
@@ -492,31 +491,14 @@ function onTouchEnd() {
   width: min(100%, 330px);
   height: 122px;
   place-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: 24px;
-  background: linear-gradient(145deg, #fffefa 0%, #f8f5ed 100%);
-  box-shadow: 0 22px 42px rgba(3, 21, 61, 0.32);
 }
 
 .brand-logo-halo {
   position: absolute;
-  inset: -26px;
-  border: 1px solid rgba(255, 212, 94, 0.28);
+  inset: 8px 18px;
   border-radius: 50%;
-  box-shadow: 0 0 42px rgba(71, 141, 255, 0.32);
-}
-
-.brand-logo-shine {
-  position: absolute;
-  top: -35%;
-  bottom: -35%;
-  left: -32%;
-  z-index: 3;
-  width: 18%;
-  transform: rotate(14deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.86), transparent);
-  pointer-events: none;
+  background: radial-gradient(ellipse, rgba(86, 150, 255, 0.28), transparent 70%);
+  filter: blur(12px);
 }
 
 .brand-logo {
@@ -524,7 +506,11 @@ function onTouchEnd() {
   z-index: 2;
   display: block;
   width: calc(100% - 30px);
-  filter: drop-shadow(0 8px 12px rgba(12, 47, 112, 0.12));
+  filter:
+    brightness(2.35)
+    saturate(0.9)
+    drop-shadow(0 2px 1px rgba(255, 255, 255, 0.15))
+    drop-shadow(0 14px 24px rgba(2, 16, 52, 0.32));
 }
 
 .brand-flight-path {
@@ -567,10 +553,6 @@ function onTouchEnd() {
 
 .slide.is-active .brand-logo-halo {
   animation: brand-halo 2.8s ease-out 520ms infinite;
-}
-
-.slide.is-active .brand-logo-shine {
-  animation: brand-shine-sweep 2.8s ease-in-out 850ms infinite;
 }
 
 .slide.is-active .brand-flight-path span {
@@ -1067,9 +1049,9 @@ function onTouchEnd() {
 }
 
 @keyframes brand-logo-board {
-  from { transform: translateY(12px) scale(0.92); filter: blur(3px) drop-shadow(0 8px 12px rgba(12, 47, 112, 0.12)); }
-  70% { transform: translateY(-2px) scale(1.015); filter: blur(0) drop-shadow(0 10px 16px rgba(12, 47, 112, 0.16)); }
-  to { transform: translateY(0) scale(1); filter: blur(0) drop-shadow(0 8px 12px rgba(12, 47, 112, 0.12)); }
+  from { transform: translateY(12px) scale(0.92); filter: blur(3px) brightness(2.35) saturate(0.9) drop-shadow(0 14px 24px rgba(2, 16, 52, 0.32)); }
+  70% { transform: translateY(-2px) scale(1.015); filter: blur(0) brightness(2.5) saturate(0.94) drop-shadow(0 18px 28px rgba(2, 16, 52, 0.38)); }
+  to { transform: translateY(0) scale(1); filter: blur(0) brightness(2.35) saturate(0.9) drop-shadow(0 14px 24px rgba(2, 16, 52, 0.32)); }
 }
 
 @keyframes brand-logo-float {
@@ -1081,12 +1063,6 @@ function onTouchEnd() {
   0% { opacity: 0.25; transform: scale(0.88); }
   62% { opacity: 0.72; }
   100% { opacity: 0; transform: scale(1.16); }
-}
-
-@keyframes brand-shine-sweep {
-  0%, 26% { opacity: 0; transform: translateX(0) rotate(14deg); }
-  38% { opacity: 0.8; }
-  62%, 100% { opacity: 0; transform: translateX(760%) rotate(14deg); }
 }
 
 @keyframes brand-route-draw {
@@ -1207,7 +1183,6 @@ function onTouchEnd() {
   .route-plane svg,
   .slide.is-active .brand-logo,
   .slide.is-active .brand-logo-halo,
-  .slide.is-active .brand-logo-shine,
   .slide.is-active .brand-flight-path span,
   .slide.is-active .brand-flight-path b,
   .slide.is-active .visual-content,
