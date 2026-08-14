@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS trip_countries;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS notification_settings;
 DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS cards;
 DROP TABLE IF EXISTS saving_plans;
 DROP TABLE IF EXISTS financial_schedules;
 DROP TABLE IF EXISTS fixed_expenses;
@@ -366,6 +367,29 @@ CREATE TABLE accounts
 ) COMMENT '계좌';
 
 
+-- 13-1. 회원 보유 카드
+-- travel_cards는 상품 비교용 기준 데이터이므로, 실제 회원이 연동한 카드는 별도로 관리한다.
+CREATE TABLE cards
+(
+    id                BIGINT       NOT NULL AUTO_INCREMENT COMMENT '카드 ID',
+    user_id           BIGINT       NOT NULL COMMENT '회원 ID',
+    card_name         VARCHAR(150) NOT NULL COMMENT '카드명',
+    card_company      VARCHAR(100) NOT NULL COMMENT '카드사',
+    masked_card_number VARCHAR(30) NULL COMMENT '마스킹된 카드번호',
+    external_card_key VARCHAR(255) NOT NULL COMMENT '외부 카드 식별 키',
+    connection_type   VARCHAR(20)  NOT NULL DEFAULT 'MOCK' COMMENT '연결 유형(MOCK/CODEF)',
+    last_synced_at    TIMESTAMP    NULL COMMENT '최근 동기화 시각',
+    is_active         BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '연동 활성 여부',
+    is_deleted        TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
+    deleted_at        DATETIME     NULL COMMENT '삭제일시',
+    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cards_user_external_key (user_id, external_card_key),
+    CONSTRAINT fk_cards_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT '회원 보유 카드';
+
+
 -- 14. 여행
 CREATE TABLE trips
 (
@@ -479,7 +503,8 @@ CREATE TABLE trip_budget_recommendations
 CREATE TABLE transactions
 (
     id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '거래 ID',
-    account_id            BIGINT         NOT NULL COMMENT '계좌 ID',
+    account_id            BIGINT         NULL COMMENT '계좌 ID(계좌 거래일 때 사용)',
+    card_id               BIGINT         NULL COMMENT '카드 ID(카드 거래일 때 사용)',
     category_id           BIGINT         NULL COMMENT '카테고리 ID',
     trip_id               BIGINT         NULL COMMENT '여행 ID',
     trip_country_id       BIGINT         NULL COMMENT '여행 국가 ID',
@@ -503,7 +528,13 @@ CREATE TABLE transactions
     updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
     UNIQUE KEY uk_transactions_account_key (account_id, external_key),
+    UNIQUE KEY uk_transactions_card_key (card_id, external_key),
+    CONSTRAINT chk_transactions_source CHECK (
+        (account_id IS NOT NULL AND card_id IS NULL)
+        OR (account_id IS NULL AND card_id IS NOT NULL)
+    ),
     CONSTRAINT fk_transactions_account FOREIGN KEY (account_id) REFERENCES accounts (id),
+    CONSTRAINT fk_transactions_card FOREIGN KEY (card_id) REFERENCES cards (id),
     CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES spending_categories (id),
     CONSTRAINT fk_transactions_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_transactions_trip_country FOREIGN KEY (trip_country_id) REFERENCES trip_countries (id),
@@ -879,9 +910,11 @@ CREATE TABLE exchange_market_data
 
 -- ===== INDEXES =====
 CREATE INDEX idx_transactions_account_id ON transactions (account_id);
+CREATE INDEX idx_transactions_card_id ON transactions (card_id);
 CREATE INDEX idx_transactions_trip_id ON transactions (trip_id);
 CREATE INDEX idx_transactions_transaction_date ON transactions (transaction_date);
 CREATE INDEX idx_accounts_user_id ON accounts (user_id);
+CREATE INDEX idx_cards_user_id ON cards (user_id);
 CREATE INDEX idx_trips_user_id ON trips (user_id);
 CREATE INDEX idx_trip_countries_trip_id ON trip_countries (trip_id);
 CREATE INDEX idx_trip_budget_recommendations_country ON trip_budget_recommendations (trip_country_id);
