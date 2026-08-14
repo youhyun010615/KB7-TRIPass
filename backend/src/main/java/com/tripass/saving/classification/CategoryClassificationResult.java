@@ -15,6 +15,16 @@ public record CategoryClassificationResult(
         BigDecimal confidence
 ) {
 
+    public static CategoryClassificationResult fromUser(
+            ConsumptionCategoryCode categoryCode
+    ) {
+        return new CategoryClassificationResult(
+                categoryCode,
+                CategorySource.USER,
+                new BigDecimal("1.0000")
+        );
+    }
+
     public static CategoryClassificationResult fromCodefType(
             ConsumptionCategoryCode categoryCode
     ) {
