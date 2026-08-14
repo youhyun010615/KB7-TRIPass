@@ -858,6 +858,7 @@ CREATE TABLE notifications
     notification_type VARCHAR(30)  NOT NULL COMMENT '알림 유형',
     title             VARCHAR(200) NOT NULL COMMENT '제목',
     message           TEXT         NOT NULL COMMENT '내용',
+    url               VARCHAR(500) NULL COMMENT '알림 클릭 시 이동 URL',
     is_read           BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '읽음 여부',
     is_deleted        TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at        DATETIME     NULL COMMENT '삭제일시',
@@ -874,7 +875,6 @@ CREATE TABLE notification_settings
     id                         BIGINT    NOT NULL AUTO_INCREMENT COMMENT '알림 설정 ID',
     user_id                    BIGINT    NOT NULL COMMENT '회원 ID',
     all_enabled                BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '전체 알림 사용 여부',
-    financial_schedule_enabled BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '금융 일정 알림',
     travel_schedule_enabled    BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '여행 일정 알림',
     exchange_rate_enabled      BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '환율 알림',
     checklist_enabled          BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '체크리스트 알림',
@@ -902,6 +902,21 @@ CREATE TABLE exchange_market_data
     UNIQUE KEY uk_market_data_currency (currency_id)
 ) COMMENT '환전 시장 데이터(환율+수수료)';
 
+-- 33. FCM 디바이스 토큰 관리
+CREATE TABLE user_fcm_tokens
+(
+    id            BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'FCM 토큰 ID',
+    user_id       BIGINT       NOT NULL COMMENT '회원 ID',
+    device_token  VARCHAR(500) NOT NULL COMMENT 'FCM 디바이스 토큰',
+    device_type   VARCHAR(20)  NOT NULL COMMENT '디바이스 유형(WEB/AOS/IOS)',
+    last_used_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '최근 사용 일시',
+    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_fcm_tokens_token (device_token),
+    INDEX idx_user_fcm_tokens_user (user_id),
+    CONSTRAINT fk_user_fcm_tokens_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT 'FCM 디바이스 토큰';
 
 -- ===== INDEXES =====
 CREATE INDEX idx_transactions_account_id ON transactions (account_id);

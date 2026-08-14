@@ -45,8 +45,7 @@ async function login(){
       return
     }
     //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
-    authStore.setToken(loginData.accessToken)
-    authStore.setUser(loginData.user)
+    authStore.handleLoginSuccess(loginData.accessToken, loginData.user)
 
     try {
       // 이전 로그인 사용자의 프로필 완료 상태를 먼저 제거한다.

@@ -115,6 +115,9 @@ dependencies {
     implementation platform('com.google.cloud:libraries-bom:26.83.0')
     implementation 'com.google.cloud:google-cloud-vision'
     implementation 'com.google.cloud:google-cloud-translate'
+
+    // Firebase Admin SDK
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
 }
 
 // Windows 환경에서도 Java 소스를 UTF-8로 컴파일

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.mypage.mapper.NotificationTargetMapper">
+
+    <select id="findTripsByStartDateOffset" resultType="com.tripass.travel.domain.Trip">
+        SELECT * FROM trips
+        WHERE status IN ('PLANNING', 'TRAVELING')
+        AND DATEDIFF(start_date, CURRENT_DATE) = #{offsetDays}
+    </select>
+
+    <select id="findTripsByEndDateOffset" resultType="com.tripass.travel.domain.Trip">
+        SELECT * FROM trips
+        WHERE status = 'TRAVELING'
+        AND DATEDIFF(end_date, CURRENT_DATE) = #{offsetDays}
+    </select>
+
+</mapper>
