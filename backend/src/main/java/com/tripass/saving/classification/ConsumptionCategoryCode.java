@@ -24,4 +24,16 @@ public enum ConsumptionCategoryCode {
     public String getDisplayName() {
         return displayName;
     }
+
+    public static ConsumptionCategoryCode fromDisplayName(String displayName) {
+        for (ConsumptionCategoryCode category : values()) {
+            if (category.displayName.equals(displayName)) {
+                return category;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "지원하지 않는 소비 카테고리입니다: " + displayName
+        );
+    }
 }

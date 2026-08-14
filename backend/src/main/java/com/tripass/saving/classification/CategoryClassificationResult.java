@@ -24,4 +24,25 @@ public record CategoryClassificationResult(
                 new BigDecimal("0.9800")
         );
     }
+
+    public static CategoryClassificationResult fromAiModel(
+            ConsumptionCategoryCode categoryCode,
+            BigDecimal confidence
+    ) {
+        return new CategoryClassificationResult(
+                categoryCode,
+                CategorySource.AI_MODEL,
+                confidence
+        );
+    }
+
+    public static CategoryClassificationResult fallback(
+            BigDecimal confidence
+    ) {
+        return new CategoryClassificationResult(
+                ConsumptionCategoryCode.OTHER,
+                CategorySource.FALLBACK,
+                confidence
+        );
+    }
 }
