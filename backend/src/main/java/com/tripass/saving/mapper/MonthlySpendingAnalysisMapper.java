@@ -40,6 +40,9 @@ public interface MonthlySpendingAnalysisMapper {
             @Param("endDate") LocalDate endDate
     );
 
+    /** 카테고리 코드(예: "OTHER")로 spending_categories.id를 조회한다. */
+    Long findCategoryIdByCode(@Param("categoryCode") String categoryCode);
+
     // ===== 수집 기간 =====
 
     /** 사용자의 최초 계좌 또는 카드 연결일. 둘 다 없으면 null(수집 기간 0일로 판단). */

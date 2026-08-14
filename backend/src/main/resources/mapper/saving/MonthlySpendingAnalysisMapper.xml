@@ -53,6 +53,13 @@
         ORDER BY t.transaction_date, t.transaction_time, t.id
     </select>
 
+    <select id="findCategoryIdByCode" resultType="long">
+        SELECT id
+        FROM spending_categories
+        WHERE category_code = #{categoryCode}
+        LIMIT 1
+    </select>
+
     <!-- ===== 수집 기간 ===== -->
 
     <select id="findEarliestConnectionDate" resultType="java.time.LocalDateTime">
