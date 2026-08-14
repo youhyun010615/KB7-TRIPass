@@ -33,7 +33,7 @@ async function login() {
     return
   }
   // 로그인 버튼을 연속으로 누르는 것을 막는다.
-  if (loading.value||
+  if (loading.value ||
       kakaoLoading.value) {
     return
   }
@@ -127,18 +127,26 @@ async function startKakaoLogin() {
   try {
     const response =
         await getKakaoAuthorizationUrl()
-
     const authorizationUrl =
         response.data?.data?.authorizationUrl
-
     if (!authorizationUrl) {
       throw new Error(
           '카카오 로그인 주소를 확인할 수 없습니다.',
       )
     }
+    const parsedAuthorizationUrl =
+        new URL(authorizationUrl)
+    if (
+        parsedAuthorizationUrl.protocol !== 'https:' ||
+        parsedAuthorizationUrl.hostname !== 'kauth.kakao.com'
+    ) {
+      throw new Error(
+          '유효하지 않은 카카오 로그인 주소입니다.',
+      )
+    }
 
     window.location.assign(
-        authorizationUrl,
+        parsedAuthorizationUrl.toString(),
     )
   } catch (error) {
     errorMsg.value =
@@ -213,7 +221,12 @@ async function startKakaoLogin() {
               @keyup.enter="login"
               class="w-full h-12 px-4 pr-12 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
           />
-          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" @click="showPassword = !showPassword">
+          <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300"
+              :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 보기'"
+              @click="showPassword = !showPassword"
+          >
             <svg v-if="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                   d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"

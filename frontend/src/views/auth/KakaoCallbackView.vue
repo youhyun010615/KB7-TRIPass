@@ -71,9 +71,16 @@ async function handleKakaoCallback() {
       )
 
   if (oauthError) {
+    console.warn(
+        '카카오 OAuth 인증 실패',
+        {
+          error: oauthError,
+          description: oauthErrorDescription,
+        },
+    )
+
     errorMessage.value =
-        oauthErrorDescription ||
-        '카카오 로그인이 취소되었습니다.'
+        '카카오 로그인이 취소되었거나 인증에 실패했습니다.'
 
     loading.value = false
     return
@@ -94,11 +101,10 @@ async function handleKakaoCallback() {
   }
 
   // 주소창에 카카오 인가 코드와 state가 계속 노출되지 않도록 제거한다.
-  window.history.replaceState(
-      {},
-      document.title,
-      route.path,
-  )
+  await router.replace({
+    path: route.path,
+    query: {},
+  })
 
   try {
     const response =
@@ -156,7 +162,7 @@ async function handleKakaoCallback() {
 
     await router.replace('/')
   } catch (error) {
-    authStore.logout()
+    await clearFailedLogin()
 
     errorMessage.value =
         error.response?.data?.message ||
