@@ -37,4 +37,16 @@ public interface UserMapper {
     User findActiveLocalUserWithPasswordById(
             @Param("userId") Long userId
     );
+
+    // 탈퇴 회원을 포함하여 로그인 제공자와 고유 식별값으로 소셜 회원을 조회한다.
+    User findSocialUserIncludingDeletedByProviderAndProviderKey(
+            @Param("loginProvider")
+            String loginProvider,
+
+            @Param("providerKey")
+            String providerKey
+    );
+
+    // 소셜 회원 저장
+    int insertSocialUser(User user);
 }
