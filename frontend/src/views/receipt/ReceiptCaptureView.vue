@@ -389,6 +389,24 @@ onBeforeUnmount(() => {
         </span>
       </section>
 
+      <section
+          v-if="
+      !loadingTrip &&
+      !trip &&
+      errorMessage
+    "
+          class="trip-load-error"
+      >
+        <p>{{ errorMessage }}</p>
+
+        <button
+            type="button"
+            @click="loadTrip"
+        >
+          다시 시도
+        </button>
+      </section>
+
       <section class="upload-card">
         <div class="receipt-icon">
           🧾
@@ -940,5 +958,32 @@ onBeforeUnmount(() => {
   background: #21c8ff;
   box-shadow: 0 0 16px #21c8ff;
   transition: top 0.25s;
+}
+
+.trip-load-error {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #f3b8ba;
+  border-radius: 12px;
+  background: #fff7f7;
+  text-align: center;
+}
+
+.trip-load-error p {
+  margin: 0;
+  color: #e5484d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.trip-load-error button {
+  margin-top: 12px;
+  padding: 8px 18px;
+  border: 1px solid #2458d3;
+  border-radius: 8px;
+  background: #fff;
+  color: #2458d3;
+  font-weight: 700;
+  cursor: pointer;
 }
 </style>

@@ -16,7 +16,9 @@ import {
   getReceiptImage,
   updateReceipt,
 } from '@/api/receipt'
-
+import {
+  receiptCategories as categories,
+} from '@/constants/receiptCategories'
 const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
@@ -51,20 +53,20 @@ const saving = ref(false)
 const deleting = ref(false)
 const loadErrorMessage = ref('')
 
-/*
- * 카테고리 API와 초기 데이터가 준비되기 전까지
- * 프론트에서 식비만 임시로 사용합니다.
- */
-const categories = [
-  {
-    id: 1,
-    name: '식비',
-  },
-]
+
 
 const draft = store.draft
 const sourceFile =
     draft?.sourceFile ?? null
+
+const missingOcrDraft = computed(
+    () =>
+        isOcrResult.value &&
+        (
+            !draft ||
+            !sourceFile
+        ),
+)
 
 const originalImageUrl = ref(
     sourceFile
@@ -152,7 +154,7 @@ const form = reactive({
           1,
       ),
 
-  participantNames: [],
+  participants: [],
 
   memo:
       draft?.memo ?? '',
@@ -308,17 +310,20 @@ function updateParticipantCount() {
           : 0
 
   while (
-      form.participantNames.length <
+      form.participants.length <
       participantCount
       ) {
-    form.participantNames.push('')
+    form.participants.push({
+      id: null,
+      participantName: '',
+    })
   }
 
   if (
-      form.participantNames.length >
+      form.participants.length >
       participantCount
   ) {
-    form.participantNames.splice(
+    form.participants.splice(
         participantCount,
     )
   }
@@ -333,11 +338,10 @@ function toggleSharedPayment() {
 
 function increaseSplitCount() {
   /*
-   * 백엔드는 로그인 사용자를 제외한
-   * 참여자를 최대 20명까지 받으므로
-   * 전체 인원은 최대 21명입니다.
-   */
-  if (form.splitCount >= 21) {
+ * 로그인 사용자를 제외한 참여자는 최대 19명이며,
+ * 로그인 사용자를 포함한 전체 인원은 최대 20명이다.
+ */
+  if (form.splitCount >= 20) {
     return
   }
 
@@ -420,18 +424,21 @@ function applyReceiptData(data) {
     )
   }
 
-  form.participantNames =
+  form.participants =
       (data.participants ?? []).map(
-          participant =>
-              participant.participantName ?? '',
+          participant => ({
+            id: participant.id ?? null,
+            participantName:
+                participant.participantName ?? '',
+          }),
       )
 
   form.sharedPayment =
-      form.participantNames.length > 0
+      form.participants.length > 0
 
   form.splitCount =
       form.sharedPayment
-          ? form.participantNames.length + 1
+          ? form.participants.length + 1
           : 1
 }
 
@@ -587,8 +594,9 @@ function validateForm() {
 
   if (
       form.sharedPayment &&
-      form.participantNames.some(
-          name => !name.trim(),
+      form.participants.some(
+          participant =>
+              !participant.participantName.trim(),
       )
   ) {
     return (
@@ -664,10 +672,14 @@ function createReceiptRequestData() {
      * 로그인 사용자는 포함하지 않고
      * 추가 참여자의 이름만 전송합니다.
      */
-    participantNames:
+    participants:
         form.sharedPayment
-            ? form.participantNames.map(
-                name => name.trim(),
+            ? form.participants.map(
+                participant => ({
+                  id: participant.id,
+                  participantName:
+                      participant.participantName.trim(),
+                }),
             )
             : [],
   }
@@ -869,10 +881,29 @@ async function loadReceiptDetail() {
   }
 }
 
+function handleLoadErrorAction() {
+  if (missingOcrDraft.value) {
+    return router.replace({
+      name: 'ReceiptCapture',
+      params: {
+        tripId: tripId.value,
+      },
+    })
+  }
+
+  return initialize()
+}
+
 async function initialize() {
   if (!tripId.value) {
     loadErrorMessage.value =
         '여행 정보를 확인해 주세요.'
+    return
+  }
+
+  if (missingOcrDraft.value) {
+    loadErrorMessage.value =
+        'OCR 분석 결과가 없습니다. 영수증을 다시 촬영해 주세요.'
     return
   }
 
@@ -985,9 +1016,13 @@ onBeforeUnmount(() => {
 
       <button
           type="button"
-          @click="initialize"
+          @click="handleLoadErrorAction"
       >
-        다시 시도
+        {{
+          missingOcrDraft
+              ? '영수증 다시 촬영'
+              : '다시 시도'
+        }}
       </button>
     </section>
 
@@ -1094,11 +1129,9 @@ onBeforeUnmount(() => {
         <!-- 품목 목록 -->
         <article
             v-for="(item, index) in form.items"
-            :key="
-            item.id ||
-            item.displayOrder ||
-            index
-          "
+            :key=" item.id != null
+            ? `saved-item-${item.id}`
+            : `new-item-${index}`"
             class="receipt-item"
         >
           <template v-if="editing">
@@ -1373,18 +1406,14 @@ onBeforeUnmount(() => {
             </small>
 
             <input
-                v-for="(_, index) in
-                form.participantNames"
-                :key="index"
-                v-model.trim="
-                form.participantNames[index]
-              "
+                v-for="(participant, index) in
+                form.participants"
+                :key="participant.id ?? `new-participant-${index}`"
+                v-model.trim="participant.participantName"
                 type="text"
                 maxlength="100"
-                :placeholder="
-                `참여자 ${index + 1} 이름`
-              "
-            >
+                :placeholder="`참여자 ${index + 1}`"
+            />
           </div>
         </template>
       </section>

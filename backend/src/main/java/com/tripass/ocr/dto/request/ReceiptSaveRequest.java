@@ -78,25 +78,19 @@ public class ReceiptSaveRequest {
 
     // 영수증 품목
     @Valid
-    private List<ReceiptItemSaveRequest> items =
-            new ArrayList<>();
+    private List<ReceiptItemSaveRequest> items = new ArrayList<>();
 
-    // 로그인 회원을 제외한 공동결제 참여자 이름 목록
+
+    // 로그인 회원을 제외한 공동결제 참여자 목록
+    @Valid
     @NotNull(
             message = "공동결제 참여자 목록을 확인해 주세요."
     )
     @Size(
-            max = 20,
-            message = "공동결제 참여자는 최대 20명까지 입력할 수 있습니다."
+            max = 19,
+            message = "공동결제 참여자는 최대 19명까지 입력할 수 있습니다."
     )
-    private List<
-            @NotBlank(
-                    message = "공동결제 참여자 이름을 입력해 주세요."
-            )
-            @Size(
-                    max = 100,
-                    message = "공동결제 참여자 이름은 100자 이내로 입력해 주세요."
-            )
-                    String
-            > participantNames = new ArrayList<>();
+    private List<ReceiptParticipantSaveRequest> participants =
+            new ArrayList<>();
+
 }

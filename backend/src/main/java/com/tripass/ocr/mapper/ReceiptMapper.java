@@ -125,6 +125,21 @@ public interface ReceiptMapper {
             @Param("keptItemIds") List<Long> keptItemIds
     );
 
+    // 특정 참여자가 해당 회원·여행·영수증의 활성 참여자인지 확인
+    boolean existsActiveParticipantByIdAndReceiptIdAndUserIdAndTripId(
+            @Param("participantId")
+            Long participantId,
+
+            @Param("receiptId")
+            Long receiptId,
+
+            @Param("userId")
+            Long userId,
+
+            @Param("tripId")
+            Long tripId
+    );
+
     // 기존 공동결제 참여자 수정
     int updateReceiptParticipant(
             @Param("participant")

@@ -11,6 +11,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { createReceipt } from '@/api/receipt'
 import { fetchTripGoal } from '@/api/travel'
 
+import {
+  receiptCategories as categories,
+} from '@/constants/receiptCategories'
+
 const route = useRoute()
 const router = useRouter()
 
@@ -27,22 +31,6 @@ const loadingTrip = ref(false)
 const saving = ref(false)
 const loadError = ref('')
 
-/*
- * 소비 카테고리 조회 API와 초기 데이터가 아직 없으므로
- * 프론트에서 임시로 고정합니다.
- *
- * 주의:
- * 아래 ID는 실제 spending_categories 테이블에 저장될
- * 카테고리 ID와 반드시 맞춰야 합니다.
- */
-const categories = [
-  { id: 1, name: '식비' },
-  { id: 2, name: '숙박' },
-  { id: 3, name: '교통' },
-  { id: 4, name: '관광' },
-  { id: 5, name: '쇼핑' },
-  { id: 6, name: '기타' },
-]
 
 function getToday() {
   const current = new Date()
@@ -537,10 +525,13 @@ function createRequestData() {
      * 로그인 사용자는 포함하지 않고
      * 나머지 참여자만 전송합니다.
      */
-    participantNames:
+    participants:
         form.sharedPayment
             ? form.participantNames.map(
-                name => name.trim(),
+                name => ({
+                  id: null,
+                  participantName: name.trim(),
+                }),
             )
             : [],
   }

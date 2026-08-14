@@ -524,6 +524,22 @@
           AND is_deleted = 0
     </update>
 
+    <!-- 특정 참여자가 해당 회원·여행·영수증의 활성 참여자인지 확인 -->
+    <select id="existsActiveParticipantByIdAndReceiptIdAndUserIdAndTripId"
+            resultType="boolean">
+
+        SELECT COUNT(*) > 0
+        FROM receipt_participants participant
+                 INNER JOIN receipts receipt
+                            ON receipt.id = participant.receipt_id
+        WHERE participant.id = #{participantId}
+          AND participant.receipt_id = #{receiptId}
+          AND participant.is_deleted = 0
+          AND receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
+          AND receipt.is_deleted = 0
+    </select>
+
     <!-- 기존 공동결제 참여자 수정 -->
     <update id="updateReceiptParticipant">
 

@@ -10,6 +10,7 @@ import com.tripass.ocr.dto.request.ReceiptItemSaveRequest;
 import com.tripass.ocr.dto.request.ReceiptSaveRequest;
 import com.tripass.ocr.dto.response.ReceiptDetailResponse;
 import com.tripass.ocr.dto.response.ReceiptItemResponse;
+import com.tripass.ocr.dto.request.ReceiptParticipantSaveRequest;
 import com.tripass.ocr.dto.response.ReceiptSummaryResponse;
 import com.tripass.ocr.dto.response.ReceiptParticipantResponse;
 import com.tripass.ocr.mapper.ReceiptMapper;
@@ -103,7 +104,7 @@ public class ReceiptServiceImpl
             List<ReceiptParticipant> participants =
                     createReceiptParticipants(
                             receipt.getId(),
-                            request.getParticipantNames()
+                            request.getParticipants()
                     );
 
             insertReceiptParticipants(participants);
@@ -284,7 +285,7 @@ public class ReceiptServiceImpl
                 userId,
                 tripId,
                 receiptId,
-                request.getParticipantNames()
+                request.getParticipants()
         );
 
         // 7. 수정 완료된 영수증 상세 정보를 다시 조회하여 반환
@@ -501,6 +502,45 @@ public class ReceiptServiceImpl
         return receipt;
     }
 
+    // 신규 영수증 품목 요청 목록을 DB 저장 모델 목록으로 변환한다.
+    private List<ReceiptItem> createReceiptItems(
+            Long receiptId,
+            List<ReceiptItemSaveRequest> itemRequests
+    ) {
+        if (itemRequests == null
+                || itemRequests.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ReceiptItem> receiptItems =
+                new ArrayList<>();
+
+        for (int index = 0;
+             index < itemRequests.size();
+             index++) {
+
+            ReceiptItemSaveRequest request =
+                    itemRequests.get(index);
+
+            if (request == null) {
+                throw new CustomException(
+                        HttpStatus.BAD_REQUEST,
+                        "RECEIPT_ITEM_INVALID",
+                        "영수증 품목 정보를 올바르게 입력해 주세요."
+                );
+            }
+
+            receiptItems.add(
+                    createReceiptItem(
+                            receiptId,
+                            request,
+                            index + 1
+                    )
+            );
+        }
+        return receiptItems;
+    }
+
     // 수정 요청의 품목과 현재 활성 품목을 ID 기준으로 동기화한다.
     private void syncReceiptItems(
             Long userId,
@@ -658,30 +698,18 @@ public class ReceiptServiceImpl
         return item;
     }
 
-    // 공동결제 참여자를 기존 표시 순서 기준으로 동기화한다.
+    // 참여자 PK를 기준으로 등록·수정·삭제 상태를 동기화한다.
     private void syncReceiptParticipants(
             Long userId,
             Long tripId,
             Long receiptId,
-            List<String> participantNames
+            List<ReceiptParticipantSaveRequest>
+                    participantRequests
     ) {
-        List<String> requestedNames =
-                participantNames == null
+        List<ReceiptParticipantSaveRequest> requests =
+                participantRequests == null
                         ? Collections.emptyList()
-                        : participantNames;
-
-        List<ReceiptParticipant> existingParticipants =
-                receiptMapper
-                        .findParticipantsByReceiptIdAndUserIdAndTripId(
-                                receiptId,
-                                userId,
-                                tripId
-                        );
-
-        if (existingParticipants == null) {
-            existingParticipants =
-                    Collections.emptyList();
-        }
+                        : participantRequests;
 
         List<Long> keptParticipantIds =
                 new ArrayList<>();
@@ -689,12 +717,18 @@ public class ReceiptServiceImpl
         List<ReceiptParticipant> newParticipants =
                 new ArrayList<>();
 
+        Set<Long> requestedParticipantIds =
+                new HashSet<>();
+
         for (int index = 0;
-             index < requestedNames.size();
+             index < requests.size();
              index++) {
 
+            ReceiptParticipantSaveRequest request =
+                    requests.get(index);
+
             String participantName =
-                    trimToNull(requestedNames.get(index));
+                    trimToNull(request.getParticipantName());
 
             if (participantName == null) {
                 throw new CustomException(
@@ -711,55 +745,64 @@ public class ReceiptServiceImpl
             participant.setParticipantName(
                     participantName
             );
-            participant.setDisplayOrder(
-                    index + 1
-            );
+            participant.setDisplayOrder(index + 1);
 
-            /*
-             * 현재 순서에 기존 참여자가 있으면
-             * 기존 PK를 유지하면서 이름과 순서만 수정한다.
-             */
-            if (index < existingParticipants.size()) {
-                ReceiptParticipant existingParticipant =
-                        existingParticipants.get(index);
+            Long participantId = request.getId();
 
-                participant.setId(
-                        existingParticipant.getId()
-                );
-
-                int updatedRows =
-                        receiptMapper.updateReceiptParticipant(
-                                participant,
-                                userId,
-                                tripId
-                        );
-
-                if (updatedRows != 1) {
-                    throw new CustomException(
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            "RECEIPT_PARTICIPANT_UPDATE_FAILED",
-                            "공동결제 참여자 수정에 실패했습니다."
-                    );
-                }
-
-                keptParticipantIds.add(
-                        existingParticipant.getId()
-                );
-
+            // ID가 없으면 새 참여자로 등록한다.
+            if (participantId == null) {
+                newParticipants.add(participant);
                 continue;
             }
 
-            /*
-             * 기존 참여자 수보다 요청 참여자 수가 많으면
-             * 뒤에 추가된 참여자이므로 INSERT한다.
-             */
-            newParticipants.add(participant);
+            // 동일한 참여자 ID의 중복 요청을 차단한다.
+            if (!requestedParticipantIds.add(participantId)) {
+                throw new CustomException(
+                        HttpStatus.BAD_REQUEST,
+                        "RECEIPT_PARTICIPANT_DUPLICATED",
+                        "동일한 공동결제 참여자가 중복되었습니다."
+                );
+            }
+
+            // 해당 영수증에 소속된 활성 참여자인지 확인한다.
+            boolean existsParticipant =
+                    receiptMapper
+                            .existsActiveParticipantByIdAndReceiptIdAndUserIdAndTripId(
+                                    participantId,
+                                    receiptId,
+                                    userId,
+                                    tripId
+                            );
+
+            if (!existsParticipant) {
+                throw new CustomException(
+                        HttpStatus.BAD_REQUEST,
+                        "RECEIPT_PARTICIPANT_INVALID",
+                        "공동결제 참여자 정보를 확인해 주세요."
+                );
+            }
+
+            participant.setId(participantId);
+
+            int updatedRows =
+                    receiptMapper.updateReceiptParticipant(
+                            participant,
+                            userId,
+                            tripId
+                    );
+
+            if (updatedRows != 1) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "RECEIPT_PARTICIPANT_UPDATE_FAILED",
+                        "공동결제 참여자 수정에 실패했습니다."
+                );
+            }
+
+            keptParticipantIds.add(participantId);
         }
 
-        /*
-         * 기존 참여자 중 현재 요청에서 빠진 참여자만
-         * 논리 삭제한다.
-         */
+        // 요청에서 제외된 기존 참여자만 논리 삭제한다.
         receiptMapper.softDeleteMissingParticipants(
                 receiptId,
                 userId,
@@ -767,65 +810,8 @@ public class ReceiptServiceImpl
                 keptParticipantIds
         );
 
-        // 새로 추가된 참여자만 INSERT한다.
+        // ID가 없는 신규 참여자만 저장한다.
         insertReceiptParticipants(newParticipants);
-    }
-
-    // 요청 품목을 DB 저장 모델로 변환한다.
-    private List<ReceiptItem> createReceiptItems(
-            Long receiptId,
-            List<ReceiptItemSaveRequest> itemRequests
-    ) {
-        if (itemRequests == null
-                || itemRequests.isEmpty()) {
-
-            return Collections.emptyList();
-        }
-
-        List<ReceiptItem> receiptItems =
-                new ArrayList<>();
-
-        for (int index = 0;
-             index < itemRequests.size();
-             index++) {
-
-            ReceiptItemSaveRequest itemRequest =
-                    itemRequests.get(index);
-
-            if (itemRequest == null) {
-                throw new CustomException(
-                        HttpStatus.BAD_REQUEST,
-                        "RECEIPT_ITEM_INVALID",
-                        "영수증 품목 정보를 올바르게 입력해 주세요."
-                );
-            }
-
-            ReceiptItem receiptItem =
-                    new ReceiptItem();
-
-            receiptItem.setReceiptId(receiptId);
-            receiptItem.setOriginalName(
-                    itemRequest.getOriginalName().trim()
-            );
-            receiptItem.setTranslatedName(
-                    trimToNull(
-                            itemRequest.getTranslatedName()
-                    )
-            );
-            receiptItem.setQuantity(
-                    itemRequest.getQuantity()
-            );
-            receiptItem.setAmount(
-                    itemRequest.getAmount()
-            );
-            receiptItem.setDisplayOrder(
-                    index + 1
-            );
-
-            receiptItems.add(receiptItem);
-        }
-
-        return receiptItems;
     }
 
     // 품목이 있을 때만 일괄 INSERT를 실행한다.
@@ -1100,11 +1086,11 @@ public class ReceiptServiceImpl
     private int calculateSplitCount(
             ReceiptSaveRequest request
     ) {
-        if (request.getParticipantNames() == null) {
+        if (request.getParticipants() == null) {
             return 1;
         }
 
-        return request.getParticipantNames().size() + 1;
+        return request.getParticipants().size() + 1;
     }
 
     private StoredReceiptFile storeReceiptImageIfPresent(
@@ -1122,13 +1108,15 @@ public class ReceiptServiceImpl
         return receiptFileStorage.store(validatedImage);
     }
 
+    // 공동결제 참여자 요청을 DB 저장 모델로 변환한다.
     private List<ReceiptParticipant>
     createReceiptParticipants(
             Long receiptId,
-            List<String> participantNames
+            List<ReceiptParticipantSaveRequest>
+                    participantRequests
     ) {
-        if (participantNames == null
-                || participantNames.isEmpty()) {
+        if (participantRequests == null
+                || participantRequests.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -1136,11 +1124,14 @@ public class ReceiptServiceImpl
                 new ArrayList<>();
 
         for (int index = 0;
-             index < participantNames.size();
+             index < participantRequests.size();
              index++) {
 
+            ReceiptParticipantSaveRequest request =
+                    participantRequests.get(index);
+
             String participantName =
-                    trimToNull(participantNames.get(index));
+                    trimToNull(request.getParticipantName());
 
             if (participantName == null) {
                 throw new CustomException(

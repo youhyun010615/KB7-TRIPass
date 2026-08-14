@@ -447,6 +447,7 @@ onMounted(loadPage)
 
       <select
           v-model="selectedCountryId"
+          aria-label="영수증 조회 국가 선택"
           :disabled="loading"
       >
         <option
@@ -610,7 +611,11 @@ onMounted(loadPage)
           </b>
 
           <small>
-            선택한 국가에 등록된 영수증이 없습니다.
+            {{
+              selectedCountryId === null
+                  ? '이 여행에 등록된 영수증이 없습니다.'
+                  : '선택한 국가에 등록된 영수증이 없습니다.'
+            }}
           </small>
         </div>
       </template>
