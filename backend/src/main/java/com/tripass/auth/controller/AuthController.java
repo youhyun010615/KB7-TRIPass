@@ -17,6 +17,9 @@ import com.tripass.auth.dto.request.FindIdRequest;
 import com.tripass.auth.dto.response.FindIdResponse;
 import com.tripass.auth.dto.request.ResetPasswordRequest;
 import com.tripass.auth.dto.request.ChangePasswordRequest;
+import com.tripass.auth.dto.request.KakaoLoginRequest;
+import com.tripass.auth.dto.response.KakaoAuthorizationUrlResponse;
+import com.tripass.auth.security.OAuthStateCookieProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
@@ -39,6 +42,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 
 //일반 회원가입 및 로그인 컨트롤러
 @Api(tags = "AUTH - 인증")
@@ -51,6 +55,7 @@ public class AuthController {
     private final AuthService authService;
     private final PhoneVerificationService phoneVerificationService;
     private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+    private final OAuthStateCookieProvider oauthStateCookieProvider;
 
     //아이디 중복 확인
     @ApiOperation(
@@ -163,6 +168,95 @@ public class AuthController {
                 result.getLoginResponse()
         );
     }
+
+    @ApiOperation(
+            value = "카카오 로그인 인가 URL 생성",
+            notes = "카카오 OAuth state를 생성하여 "
+                    + "HttpOnly 쿠키에 저장하고 "
+                    + "카카오 인가 URL을 반환합니다."
+    )
+    @GetMapping("/social/kakao/authorization-url")
+    public ApiResponse<KakaoAuthorizationUrlResponse>
+    createKakaoAuthorizationUrl(
+            HttpServletResponse servletResponse
+    ) {
+        String state =
+                oauthStateCookieProvider.generateState();
+
+        String authorizationUrl =
+                authService.createKakaoAuthorizationUrl(state);
+
+        oauthStateCookieProvider.addStateCookie(
+                servletResponse,
+                state
+        );
+
+        return ApiResponse.success(
+                new KakaoAuthorizationUrlResponse(
+                        authorizationUrl
+                )
+        );
+    }
+
+    // 카카오 소셜 로그인
+    @ApiOperation(
+            value = "카카오 소셜 로그인",
+            notes = "카카오 인가 코드로 사용자 정보를 조회하고 "
+                    + "기존 카카오 회원 로그인 또는 신규 회원가입 후 "
+                    + "TRIPass JWT를 발급합니다."
+    )
+    @PostMapping("/social/kakao")
+    public ApiResponse<LoginResponse> kakaoLogin(
+            @ApiParam(
+                    value = "카카오 로그인 인가 코드",
+                    required = true
+            )
+            @Valid
+            @RequestBody
+            KakaoLoginRequest request,
+
+            HttpServletRequest servletRequest,
+            HttpServletResponse servletResponse
+    ) {
+
+        String expectedState =
+                oauthStateCookieProvider
+                        .getState(servletRequest);
+
+        try {
+            oauthStateCookieProvider
+                    .validateState(
+                            expectedState,
+                            request.getState()
+                    );
+        } finally {
+            oauthStateCookieProvider
+                    .deleteStateCookie(
+                            servletResponse
+                    );
+        }
+
+        /*
+         * state 검증에 성공한 경우에만
+         * 카카오 인가 코드를 교환한다.
+         */
+        LoginResult result =
+                authService.kakaoLogin(request);
+
+        // Refresh Token은 HttpOnly 쿠키로 전달한다.
+        refreshTokenCookieProvider
+                .addRefreshTokenCookie(
+                        servletResponse,
+                        result.getRefreshToken()
+                );
+
+        // Access Token과 회원정보만 응답 본문으로 반환한다.
+        return ApiResponse.success(
+                "카카오 로그인이 완료되었습니다.",
+                result.getLoginResponse()
+        );
+    }
+
     // Access Token 및 Refresh Token 재발급
     @ApiOperation(
             value = "토큰 재발급",

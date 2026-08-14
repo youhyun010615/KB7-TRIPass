@@ -17,6 +17,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
@@ -48,6 +53,7 @@ import javax.sql.DataSource;
         "com.tripass.ocr.client",
         "com.tripass.report.service",
         "com.tripass.auth.security",
+        "com.tripass.auth.client",
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",
@@ -93,8 +99,21 @@ public class RootConfig {
     }
 
     @Bean
+    @Primary
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    // 카카오 OAuth API 호출 전용 RestTemplate
+    @Bean("kakaoRestTemplate")
+    public RestTemplate kakaoRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(3_000);
+        requestFactory.setReadTimeout(5_000);
+
+        return new RestTemplate(requestFactory);
     }
 
 
@@ -121,5 +140,10 @@ public class RootConfig {
     @Bean
     public DataSourceTransactionManager transactionManager(DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean
+    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
     }
 }
