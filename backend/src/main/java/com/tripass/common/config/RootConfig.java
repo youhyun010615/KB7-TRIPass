@@ -116,6 +116,17 @@ public class RootConfig {
         return new RestTemplate(requestFactory);
     }
 
+    // Google OAuth API 호출 전용 RestTemplate
+    @Bean("googleRestTemplate")
+    public RestTemplate googleRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(3_000);
+        requestFactory.setReadTimeout(5_000);
+
+        return new RestTemplate(requestFactory);
+    }
 
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {

@@ -6,6 +6,10 @@ import com.tripass.auth.client.KakaoOAuthClient;
 import com.tripass.auth.dto.external.kakao.KakaoTokenResponse;
 import com.tripass.auth.dto.external.kakao.KakaoUserResponse;
 import com.tripass.auth.dto.request.KakaoLoginRequest;
+import com.tripass.auth.client.GoogleOAuthClient;
+import com.tripass.auth.dto.external.google.GoogleTokenResponse;
+import com.tripass.auth.dto.external.google.GoogleUserResponse;
+import com.tripass.auth.dto.request.GoogleLoginRequest;
 import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
 import com.tripass.auth.dto.request.LoginRequest;
@@ -50,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final KakaoOAuthClient kakaoOAuthClient;
+    private final GoogleOAuthClient googleOAuthClient;
     private final TransactionTemplate transactionTemplate;
 
     // 영문, 숫자, 허용된 특수문자를 포함하는 8~64자리
@@ -225,6 +230,13 @@ public class AuthServiceImpl implements AuthService {
         return kakaoOAuthClient
                 .createAuthorizationUrl(state);
     }
+    @Override
+    public String createGoogleAuthorizationUrl(
+            String state
+    ) {
+        return googleOAuthClient
+                .createAuthorizationUrl(state);
+    }
 
     // 카카오 인가 코드를 이용한 소셜 로그인 처리
     @Override
@@ -266,6 +278,54 @@ public class AuthServiceImpl implements AuthService {
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "KAKAO_LOGIN_PROCESS_FAILED",
                     "카카오 로그인 처리에 실패했습니다."
+            );
+        }
+
+        return result;
+    }
+
+    // Google 인가 코드를 이용한 소셜 로그인 처리
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public LoginResult googleLogin(
+            GoogleLoginRequest request
+    ) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_LOGIN_REQUEST_REQUIRED",
+                    "Google 로그인 정보를 입력해 주세요."
+            );
+        }
+
+        String authorizationCode =
+                requireText(
+                        request.getCode(),
+                        "Google 인가 코드를 입력해 주세요."
+                );
+
+        GoogleTokenResponse tokenResponse =
+                googleOAuthClient.requestAccessToken(
+                        authorizationCode
+                );
+
+        GoogleUserResponse googleUser =
+                googleOAuthClient.requestUserInfo(
+                        tokenResponse.getAccessToken()
+                );
+
+        LoginResult result =
+                transactionTemplate.execute(
+                        status -> processGoogleLogin(
+                                googleUser
+                        )
+                );
+
+        if (result == null) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "GOOGLE_LOGIN_PROCESS_FAILED",
+                    "Google 로그인 처리에 실패했습니다."
             );
         }
 
@@ -350,6 +410,94 @@ public class AuthServiceImpl implements AuthService {
                     HttpStatus.CONFLICT,
                     "KAKAO_USER_DUPLICATED",
                     "이미 등록된 카카오 회원 정보입니다."
+            );
+        }
+
+        return issueLoginTokens(newUser);
+    }
+
+    // Google 회원 조회·등록 및 로그인 토큰 저장을 하나의 트랜잭션으로 처리한다.
+    private LoginResult processGoogleLogin(
+            GoogleUserResponse googleUser
+    ) {
+        String providerKey =
+                requireGoogleProviderKey(
+                        googleUser
+                );
+
+        User user =
+                userMapper
+                        .findSocialUserIncludingDeletedByProviderAndProviderKey(
+                                "GOOGLE",
+                                providerKey
+                        );
+
+        if (user != null) {
+            if (user.isDeleted()) {
+                throw new CustomException(
+                        HttpStatus.FORBIDDEN,
+                        "GOOGLE_WITHDRAWN_ACCOUNT",
+                        "탈퇴한 Google 계정입니다."
+                );
+            }
+
+            return issueLoginTokens(user);
+        }
+
+        String email =
+                requireGoogleEmail(
+                        googleUser
+                );
+
+        String name =
+                requireGoogleName(
+                        googleUser
+                );
+
+        User newUser = new User();
+
+        newUser.setLoginId(email);
+        newUser.setPassword(null);
+        newUser.setName(name);
+        newUser.setPhoneNumber(null);
+        newUser.setLoginProvider("GOOGLE");
+        newUser.setProviderKey(providerKey);
+
+        try {
+            int insertedRows =
+                    userMapper.insertSocialUser(
+                            newUser
+                    );
+
+            if (insertedRows != 1) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "GOOGLE_USER_CREATE_FAILED",
+                        "Google 회원 등록에 실패했습니다."
+                );
+            }
+
+        } catch (DuplicateKeyException exception) {
+            User existingUser =
+                    userMapper
+                            .findSocialUserIncludingDeletedByProviderAndProviderKey(
+                                    "GOOGLE",
+                                    providerKey
+                            );
+
+            if (
+                    existingUser != null &&
+                            !existingUser.isDeleted()
+            ) {
+                return issueLoginTokens(
+                        existingUser
+                );
+            }
+
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "GOOGLE_USER_DUPLICATED",
+                    "이미 등록된 Google 회원 정보입니다."
             );
         }
 
@@ -872,6 +1020,110 @@ public class AuthServiceImpl implements AuthService {
         return nickname;
     }
 
+    // Google 계정 고유 식별값을 검증하고 반환한다.
+    private String requireGoogleProviderKey(
+            GoogleUserResponse googleUser
+    ) {
+        if (
+                googleUser == null ||
+                        googleUser.getSub() == null ||
+                        googleUser.getSub().trim().isEmpty()
+        ) {
+            throw new CustomException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GOOGLE_PROVIDER_KEY_REQUIRED",
+                    "Google 계정 식별값을 확인할 수 없습니다."
+            );
+        }
+
+        String providerKey =
+                googleUser.getSub().trim();
+
+        if (providerKey.length() > 255) {
+            throw new CustomException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GOOGLE_PROVIDER_KEY_TOO_LONG",
+                    "Google 계정 식별값이 너무 깁니다."
+            );
+        }
+
+        return providerKey;
+    }
+
+    // Google 계정 이메일을 검증하고 반환한다.
+    private String requireGoogleEmail(
+            GoogleUserResponse googleUser
+    ) {
+        String email =
+                googleUser.getEmail();
+
+        if (
+                email == null ||
+                        email.trim().isEmpty()
+        ) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_EMAIL_REQUIRED",
+                    "Google 계정 이메일 제공 동의가 필요합니다."
+            );
+        }
+
+        if (!Boolean.TRUE.equals(
+                googleUser.getEmailVerified()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_EMAIL_INVALID",
+                    "검증된 Google 계정 이메일이 필요합니다."
+            );
+        }
+
+        String normalizedEmail =
+                email.trim()
+                        .toLowerCase(Locale.ROOT);
+
+        if (normalizedEmail.length() > 255) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_EMAIL_TOO_LONG",
+                    "Google 계정 이메일이 너무 깁니다."
+            );
+        }
+
+        return normalizedEmail;
+    }
+
+    // Google 프로필 이름을 검증하고 반환한다.
+    private String requireGoogleName(
+            GoogleUserResponse googleUser
+    ) {
+        String name =
+                googleUser.getName();
+
+        if (
+                name == null ||
+                        name.trim().isEmpty()
+        ) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_NAME_REQUIRED",
+                    "Google 프로필 이름을 확인할 수 없습니다."
+            );
+        }
+
+        String normalizedName =
+                name.trim();
+
+        if (normalizedName.length() > 100) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_NAME_TOO_LONG",
+                    "Google 프로필 이름은 100자 이하여야 합니다."
+            );
+        }
+
+        return normalizedName;
+    }
 
 
 }

@@ -19,7 +19,10 @@ import com.tripass.auth.dto.request.ResetPasswordRequest;
 import com.tripass.auth.dto.request.ChangePasswordRequest;
 import com.tripass.auth.dto.request.KakaoLoginRequest;
 import com.tripass.auth.dto.response.KakaoAuthorizationUrlResponse;
+import com.tripass.auth.dto.request.GoogleLoginRequest;
+import com.tripass.auth.dto.response.GoogleAuthorizationUrlResponse;
 import com.tripass.auth.security.OAuthStateCookieProvider;
+import com.tripass.auth.security.OAuthProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
@@ -188,11 +191,47 @@ public class AuthController {
 
         oauthStateCookieProvider.addStateCookie(
                 servletResponse,
+                OAuthProvider.KAKAO,
                 state
         );
 
         return ApiResponse.success(
                 new KakaoAuthorizationUrlResponse(
+                        authorizationUrl
+                )
+        );
+    }
+
+    @ApiOperation(
+            value = "Google 로그인 인가 URL 생성",
+            notes = "Google OAuth state를 생성하여 "
+                    + "HttpOnly 쿠키에 저장하고 "
+                    + "Google 인가 URL을 반환합니다."
+    )
+    @GetMapping("/social/google/authorization-url")
+    public ApiResponse<GoogleAuthorizationUrlResponse>
+    createGoogleAuthorizationUrl(
+            HttpServletResponse servletResponse
+    ) {
+        String state =
+                oauthStateCookieProvider
+                        .generateState();
+
+        String authorizationUrl =
+                authService
+                        .createGoogleAuthorizationUrl(
+                                state
+                        );
+
+        oauthStateCookieProvider
+                .addStateCookie(
+                        servletResponse,
+                        OAuthProvider.GOOGLE,
+                        state
+                );
+
+        return ApiResponse.success(
+                new GoogleAuthorizationUrlResponse(
                         authorizationUrl
                 )
         );
@@ -221,18 +260,23 @@ public class AuthController {
 
         String expectedState =
                 oauthStateCookieProvider
-                        .getState(servletRequest);
+                        .getState(
+                                servletRequest,
+                                OAuthProvider.KAKAO
+                        );
 
         try {
             oauthStateCookieProvider
                     .validateState(
                             expectedState,
-                            request.getState()
+                            request.getState(),
+                            OAuthProvider.KAKAO
                     );
         } finally {
             oauthStateCookieProvider
                     .deleteStateCookie(
-                            servletResponse
+                            servletResponse,
+                            OAuthProvider.KAKAO
                     );
         }
 
@@ -253,6 +297,71 @@ public class AuthController {
         // Access Token과 회원정보만 응답 본문으로 반환한다.
         return ApiResponse.success(
                 "카카오 로그인이 완료되었습니다.",
+                result.getLoginResponse()
+        );
+    }
+
+    // Google 소셜 로그인
+    @ApiOperation(
+            value = "Google 소셜 로그인",
+            notes = "Google 인가 코드로 사용자 정보를 조회하고 "
+                    + "기존 Google 회원 로그인 또는 신규 회원가입 후 "
+                    + "TRIPass JWT를 발급합니다."
+    )
+    @PostMapping("/social/google")
+    public ApiResponse<LoginResponse> googleLogin(
+            @ApiParam(
+                    value = "Google 로그인 인가 코드와 OAuth state",
+                    required = true
+            )
+            @Valid
+            @RequestBody
+            GoogleLoginRequest request,
+
+            HttpServletRequest servletRequest,
+            HttpServletResponse servletResponse
+    ) {
+        String expectedState =
+                oauthStateCookieProvider
+                        .getState(
+                                servletRequest,
+                                OAuthProvider.GOOGLE
+                        );
+
+        try {
+            oauthStateCookieProvider
+                    .validateState(
+                            expectedState,
+                            request.getState(),
+                            OAuthProvider.GOOGLE
+                    );
+        } finally {
+            oauthStateCookieProvider
+                    .deleteStateCookie(
+                            servletResponse,
+                            OAuthProvider.GOOGLE
+                    );
+        }
+
+        /*
+         * state 검증에 성공한 경우에만
+         * Google 인가 코드를 교환한다.
+         */
+        LoginResult result =
+                authService.googleLogin(
+                        request
+                );
+
+        // TRIPass Refresh Token은 HttpOnly 쿠키로 전달한다.
+        refreshTokenCookieProvider
+                .addRefreshTokenCookie(
+                        servletResponse,
+                        result.getRefreshToken()
+                );
+
+        // Access Token과 회원정보만 응답 본문으로 반환한다.
+        return ApiResponse.success(
+                "Google 로그인이 완료되었습니다.",
                 result.getLoginResponse()
         );
     }
