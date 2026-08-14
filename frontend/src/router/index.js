@@ -38,6 +38,14 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
 
+    {
+      path: '/oauth/google/callback',
+      name: 'GoogleCallback',
+      component: () =>
+          import('@/views/auth/GoogleCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
     // ── HOME / SAV (담당: 권유현) ───────────────────────────
     {
       path: '/',

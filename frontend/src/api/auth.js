@@ -129,3 +129,24 @@ export function loginWithKakao({
         },
     )
 }
+
+// 백엔드에서 Google OAuth state와 인가 URL을 발급받는다.
+export function getGoogleAuthorizationUrl() {
+    return api.get(
+        '/auth/social/google/authorization-url',
+    )
+}
+
+// Google 콜백으로 전달된 인가 코드와 state를 백엔드에 전달한다.
+export function loginWithGoogle({
+                                    code,
+                                    state,
+                                }) {
+    return api.post(
+        '/auth/social/google',
+        {
+            code,
+            state,
+        },
+    )
+}
