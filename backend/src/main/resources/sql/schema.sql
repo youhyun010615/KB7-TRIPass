@@ -153,11 +153,13 @@ CREATE TABLE countries
 CREATE TABLE spending_categories
 (
     id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '카테고리 ID',
+    category_code VARCHAR(30) NOT NULL COMMENT '카테고리 식별 코드',
     category_name VARCHAR(50) NOT NULL COMMENT '카테고리명',
     display_order INT         NOT NULL DEFAULT 0 COMMENT '표시 순서',
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_spending_categories_code (category_code)
 ) COMMENT '지출 카테고리';
 
 
@@ -505,6 +507,9 @@ CREATE TABLE transactions
     account_id            BIGINT         NULL COMMENT '계좌 ID(카드 전용 거래는 NULL)',
     card_id               BIGINT         NULL COMMENT '카드 ID(계좌 거래는 NULL)',
     category_id           BIGINT         NULL COMMENT '카테고리 ID',
+    category_source        VARCHAR(20)    NULL COMMENT '카테고리 분류 출처(USER/CODEF_TYPE/AI_MODEL/FALLBACK)',
+    category_confidence    DECIMAL(5, 4)  NULL COMMENT '자동분류 신뢰도(0~1)',
+    category_classified_at DATETIME       NULL COMMENT '카테고리 자동분류 시각',
     trip_id               BIGINT         NULL COMMENT '여행 ID',
     trip_country_id       BIGINT         NULL COMMENT '여행 국가 ID',
     currency_id           BIGINT         NULL COMMENT '현지 통화 ID',
