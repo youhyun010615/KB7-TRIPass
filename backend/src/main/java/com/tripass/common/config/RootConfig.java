@@ -32,6 +32,7 @@ import javax.sql.DataSource;
         "com.tripass.financial.service",
         "com.tripass.asset.service",
         "com.tripass.saving.service",
+        "com.tripass.saving.classification",
         "com.tripass.checklist.service",
         "com.tripass.travel.service",
         "com.tripass.travel.client",

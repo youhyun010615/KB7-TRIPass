@@ -2,6 +2,7 @@ package com.tripass.asset.controller;
 
 import com.tripass.asset.dto.CalendarDayDto;
 import com.tripass.asset.dto.TransactionDto;
+import com.tripass.asset.dto.TransactionReclassificationResponseDto;
 import com.tripass.asset.dto.TransactionUpdateRequestDto;
 import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
@@ -50,6 +51,16 @@ public class TransactionController {
         Long userId = getAuthenticatedUserId(authentication);
         assetService.updateTransaction(userId, transactionId, req);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PostMapping("/category-reclassifications")
+    public ResponseEntity<ApiResponse<TransactionReclassificationResponseDto>> reclassifyTransactions(
+            Authentication authentication
+    ) {
+        Long userId = getAuthenticatedUserId(authentication);
+        TransactionReclassificationResponseDto result =
+                assetService.reclassifyCardTransactions(userId);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     private Long getAuthenticatedUserId(Authentication authentication) {
