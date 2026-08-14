@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.asset.mapper.CardTransactionMapper">
+
+    <!-- JWT에서 식별한 회원의 활성 카드만 반환한다. -->
+    <select id="findCardsByUserId" resultType="CardDto">
+        SELECT id, card_name, card_company, masked_card_number,
+               connection_type, last_synced_at
+        FROM cards
+        WHERE user_id = #{userId}
+          AND is_active = TRUE
+          AND is_deleted = 0
+        ORDER BY id
+    </select>
+
+    <!-- 카드 소유권 검증을 위해 cardId와 userId를 함께 조회한다. -->
+    <select id="findCardByIdAndUserId" resultType="CardDto">
+        SELECT id, card_name, card_company, masked_card_number,
+               connection_type, last_synced_at
+        FROM cards
+        WHERE id = #{cardId}
+          AND user_id = #{userId}
+          AND is_active = TRUE
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <!--
+        Mock과 CODEF 구현체가 공통으로 사용할 정규화된 거래 형식이다.
+        날짜 경계를 모두 포함해 월 마지막 날의 거래가 누락되지 않도록 한다.
+    -->
+    <select id="findCardTransactions" resultType="TransactionDto">
+        SELECT id, account_id, card_id, external_key, transaction_date,
+               transaction_time, transaction_type, transaction_region,
+               amount, balance_after, merchant_name, memo, category_id
+        FROM transactions
+        WHERE card_id = #{cardId}
+          AND transaction_date &gt;= #{startDate}
+          AND transaction_date &lt;= #{endDate}
+          AND is_deleted = 0
+        ORDER BY transaction_date DESC, transaction_time DESC, id DESC
+    </select>
+
+</mapper>
