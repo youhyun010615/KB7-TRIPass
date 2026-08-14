@@ -37,4 +37,16 @@ public interface UserMapper {
     User findActiveLocalUserWithPasswordById(
             @Param("userId") Long userId
     );
+
+    // 로그인 제공자와 제공자 고유 식별값으로 소셜 회원 조회
+    User findSocialUserByProviderAndProviderKey(
+            @Param("loginProvider")
+            String loginProvider,
+
+            @Param("providerKey")
+            String providerKey
+    );
+
+    // 소셜 회원 저장
+    int insertSocialUser(User user);
 }

@@ -47,6 +47,7 @@ import javax.sql.DataSource;
         "com.tripass.ocr.client",
         "com.tripass.report.service",
         "com.tripass.auth.security",
+        "com.tripass.auth.client",
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",

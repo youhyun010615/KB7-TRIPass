@@ -2,6 +2,10 @@ package com.tripass.auth.service;
 
 import com.tripass.auth.dto.response.CheckLoginIdResponse;
 import com.tripass.auth.mapper.UserMapper;
+import com.tripass.auth.client.KakaoOAuthClient;
+import com.tripass.auth.dto.external.kakao.KakaoTokenResponse;
+import com.tripass.auth.dto.external.kakao.KakaoUserResponse;
+import com.tripass.auth.dto.request.KakaoLoginRequest;
 import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
 import com.tripass.auth.dto.request.LoginRequest;
@@ -25,6 +29,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import java.util.regex.Pattern;
+import java.util.Locale;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final KakaoOAuthClient kakaoOAuthClient;
 
     // 영문, 숫자, 허용된 특수문자를 포함하는 8~64자리
     private static final Pattern PASSWORD_PATTERN =
@@ -206,39 +212,124 @@ public class AuthServiceImpl implements AuthService {
                     "아이디 또는 비밀번호가 올바르지 않습니다."
             );
         }
-        String accessToken =
-                jwtTokenProvider.createAccessToken(user);
+        return issueLoginTokens(user);
+    }
 
-        String refreshToken =
-                jwtTokenProvider.createRefreshToken(user);
+    // 카카오 인가 코드를 이용한 소셜 로그인 처리
+    @Override
+    @Transactional
+    public LoginResult kakaoLogin(
+            KakaoLoginRequest request
+    ) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_LOGIN_REQUEST_REQUIRED",
+                    "카카오 로그인 정보를 입력해 주세요."
+            );
+        }
 
-// Refresh Token 원문은 저장하지 않고 해시하여 DB에 저장한다.
-        refreshTokenService.saveRefreshToken(
-                user.getId(),
-                refreshToken
-        );
-
-        LoginResponse.UserInfo userInfo =
-                new LoginResponse.UserInfo(
-                        user.getId(),
-                        user.getLoginId(),
-                        user.getName(),
-                        user.getLoginProvider()
+        String authorizationCode =
+                requireText(
+                        request.getCode(),
+                        "카카오 인가 코드를 입력해 주세요."
                 );
 
-        LoginResponse loginResponse =
-                new LoginResponse(
-                        accessToken,
-                        "Bearer",
-                        jwtTokenProvider
-                                .getAccessExpirationSeconds(),
-                        userInfo
+        KakaoTokenResponse tokenResponse =
+                kakaoOAuthClient.requestAccessToken(
+                        authorizationCode
                 );
 
-        return new LoginResult(
-                loginResponse,
-                refreshToken
-        );
+        KakaoUserResponse kakaoUser =
+                kakaoOAuthClient.requestUserInfo(
+                        tokenResponse.getAccessToken()
+                );
+
+        String providerKey =
+                String.valueOf(kakaoUser.getId());
+
+        User user =
+                userMapper
+                        .findSocialUserByProviderAndProviderKey(
+                                "KAKAO",
+                                providerKey
+                        );
+
+        // 이미 가입된 카카오 회원
+        if (user != null) {
+            if (user.isDeleted()) {
+                throw new CustomException(
+                        HttpStatus.FORBIDDEN,
+                        "KAKAO_WITHDRAWN_ACCOUNT",
+                        "탈퇴한 카카오 계정입니다."
+                );
+            }
+
+            return issueLoginTokens(user);
+        }
+
+        // 신규 회원에게 필요한 카카오 계정 정보를 확인한다.
+        KakaoUserResponse.KakaoAccount account =
+                kakaoUser.getKakaoAccount();
+
+        if (account == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_ACCOUNT_REQUIRED",
+                    "카카오 계정 정보를 확인할 수 없습니다."
+            );
+        }
+
+        String email =
+                requireKakaoEmail(account);
+
+        String nickname =
+                requireKakaoNickname(account);
+
+        // 최초 카카오 로그인 회원
+        User newUser = new User();
+
+        newUser.setLoginId(email);
+        newUser.setPassword(null);
+        newUser.setName(nickname);
+        newUser.setPhoneNumber(null);
+        newUser.setLoginProvider("KAKAO");
+        newUser.setProviderKey(providerKey);
+
+        try {
+            int insertedRows =
+                    userMapper.insertSocialUser(newUser);
+
+            if (insertedRows != 1) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "KAKAO_USER_CREATE_FAILED",
+                        "카카오 회원 등록에 실패했습니다."
+                );
+            }
+
+        } catch (DuplicateKeyException exception) {
+            // 동일 카카오 계정의 최초 로그인 요청이 동시에 들어온 경우 재조회한다.
+            User existingUser =
+                    userMapper
+                            .findSocialUserByProviderAndProviderKey(
+                                    "KAKAO",
+                                    providerKey
+                            );
+
+            if (existingUser != null
+                    && !existingUser.isDeleted()) {
+                return issueLoginTokens(existingUser);
+            }
+
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "KAKAO_USER_DUPLICATED",
+                    "이미 등록된 카카오 회원 정보입니다."
+            );
+        }
+
+        return issueLoginTokens(newUser);
     }
 
     //Refresh Token을 이용해 AccessToken과 RefreshToken을 재발급한다.
@@ -641,4 +732,122 @@ public class AuthServiceImpl implements AuthService {
         return loginId.substring(0, visibleLength)
                 + "*".repeat(maskedLength);
     }
+
+    // 인증된 회원에게 TRIPass Access Token과 Refresh Token을 발급한다.
+    private LoginResult issueLoginTokens(User user) {
+        String accessToken =
+                jwtTokenProvider.createAccessToken(user);
+
+        String refreshToken =
+                jwtTokenProvider.createRefreshToken(user);
+
+        // Refresh Token 원문은 저장하지 않고 해시하여 DB에 저장한다.
+        refreshTokenService.saveRefreshToken(
+                user.getId(),
+                refreshToken
+        );
+
+        LoginResponse.UserInfo userInfo =
+                new LoginResponse.UserInfo(
+                        user.getId(),
+                        user.getLoginId(),
+                        user.getName(),
+                        user.getLoginProvider()
+                );
+
+        LoginResponse loginResponse =
+                new LoginResponse(
+                        accessToken,
+                        "Bearer",
+                        jwtTokenProvider
+                                .getAccessExpirationSeconds(),
+                        userInfo
+                );
+
+        return new LoginResult(
+                loginResponse,
+                refreshToken
+        );
+    }
+
+    // 카카오 계정 이메일을 검증하고 반환한다.
+    private String requireKakaoEmail(
+            KakaoUserResponse.KakaoAccount account
+    ) {
+        String email = account.getEmail();
+
+        if (Boolean.FALSE.equals(account.getHasEmail())
+                || Boolean.TRUE.equals(
+                account.getEmailNeedsAgreement()
+        )
+                || email == null
+                || email.trim().isEmpty()) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_EMAIL_REQUIRED",
+                    "카카오 계정 이메일 제공 동의가 필요합니다."
+            );
+        }
+
+        if (Boolean.FALSE.equals(account.getEmailValid())
+                || Boolean.FALSE.equals(
+                account.getEmailVerified()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_EMAIL_INVALID",
+                    "유효한 카카오 계정 이메일이 필요합니다."
+            );
+        }
+
+        String normalizedEmail =
+                email.trim().toLowerCase(Locale.ROOT);
+
+        if (normalizedEmail.length() > 255) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_EMAIL_TOO_LONG",
+                    "카카오 계정 이메일이 너무 깁니다."
+            );
+        }
+
+        return normalizedEmail;
+    }
+
+    // 카카오 프로필 닉네임을 검증하고 반환한다.
+    private String requireKakaoNickname(
+            KakaoUserResponse.KakaoAccount account
+    ) {
+        KakaoUserResponse.Profile profile =
+                account.getProfile();
+
+        if (Boolean.TRUE.equals(
+                account.getProfileNicknameNeedsAgreement()
+        )
+                || profile == null
+                || profile.getNickname() == null
+                || profile.getNickname().trim().isEmpty()) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_NICKNAME_REQUIRED",
+                    "카카오 프로필 닉네임 제공 동의가 필요합니다."
+            );
+        }
+
+        String nickname =
+                profile.getNickname().trim();
+
+        if (nickname.length() > 100) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_NICKNAME_TOO_LONG",
+                    "카카오 프로필 닉네임은 100자 이하여야 합니다."
+            );
+        }
+
+        return nickname;
+    }
+
+
+
 }

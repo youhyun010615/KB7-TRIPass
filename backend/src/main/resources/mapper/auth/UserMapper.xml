@@ -147,4 +147,52 @@
           AND login_provider = 'LOCAL'
           AND is_deleted = 0
     </select>
+
+    <!-- 로그인 제공자와 제공자 고유 식별값으로 소셜 회원 조회 -->
+    <select id="findSocialUserByProviderAndProviderKey"
+            resultMap="userResultMap">
+
+        SELECT
+            id,
+            login_id,
+            password,
+            name,
+            phone_number,
+            login_provider,
+            provider_key,
+            current_view_mode,
+            is_deleted,
+            deleted_at,
+            created_at,
+            updated_at
+        FROM users
+        WHERE login_provider = #{loginProvider}
+          AND provider_key = #{providerKey}
+    </select>
+
+    <!-- 소셜 회원 저장 -->
+    <insert id="insertSocialUser"
+            parameterType="com.tripass.auth.model.User"
+            useGeneratedKeys="true"
+            keyProperty="id">
+
+        INSERT INTO users (
+            login_id,
+            password,
+            name,
+            phone_number,
+            login_provider,
+            provider_key
+        )
+        VALUES (
+                   #{loginId},
+                   NULL,
+                   #{name},
+                   NULL,
+                   #{loginProvider},
+                   #{providerKey}
+               )
+    </insert>
+
 </mapper>
+
