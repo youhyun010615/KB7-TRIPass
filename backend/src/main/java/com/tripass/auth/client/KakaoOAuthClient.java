@@ -16,6 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import lombok.extern.log4j.Log4j2;
@@ -33,6 +34,7 @@ public class KakaoOAuthClient {
     private final String redirectUri;
     private final String tokenUri;
     private final String userInfoUri;
+    private final String authorizationUri;
 
     public KakaoOAuthClient(
             @Qualifier("kakaoRestTemplate")
@@ -46,7 +48,9 @@ public class KakaoOAuthClient {
             @Value("${kakao.oauth.token-uri}")
             String tokenUri,
             @Value("${kakao.oauth.user-info-uri}")
-            String userInfoUri
+            String userInfoUri,
+            @Value("${kakao.oauth.authorization-uri}")
+            String authorizationUri
     ) {
         this.restTemplate = restTemplate;
         this.clientId = clientId;
@@ -54,6 +58,32 @@ public class KakaoOAuthClient {
         this.redirectUri = redirectUri;
         this.tokenUri = tokenUri;
         this.userInfoUri = userInfoUri;
+        this.authorizationUri = authorizationUri;
+    }
+
+    public String createAuthorizationUrl(
+            String state
+    ) {
+        if (!StringUtils.hasText(state)) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "KAKAO_OAUTH_STATE_CREATE_FAILED",
+                    "카카오 로그인 요청 생성에 실패했습니다."
+            );
+        }
+
+        return UriComponentsBuilder
+                .fromHttpUrl(authorizationUri)
+                .queryParam("client_id", clientId)
+                .queryParam("redirect_uri", redirectUri)
+                .queryParam(
+                        "response_type",
+                        "code"
+                )
+                .queryParam("state", state)
+                .build()
+                .encode()
+                .toUriString();
     }
 
     // 카카오 인가 코드를 Access Token으로 교환한다.

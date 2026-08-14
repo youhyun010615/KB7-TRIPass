@@ -25,6 +25,8 @@ public interface AuthService {
     //일반 로그인 처리
     LoginResult login(LoginRequest request);
 
+    String createKakaoAuthorizationUrl(String state);
+
     // 카카오 인가 코드를 이용한 소셜 로그인
     LoginResult kakaoLogin(KakaoLoginRequest request);
 

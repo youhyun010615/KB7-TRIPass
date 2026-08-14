@@ -12,4 +12,7 @@ public class KakaoLoginRequest {
 
     @NotBlank(message = "카카오 인가 코드를 입력해 주세요.")
     private String code;
+
+    @NotBlank(message = "카카오 OAuth state를 입력해 주세요.")
+    private String state;
 }

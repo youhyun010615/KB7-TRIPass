@@ -18,6 +18,8 @@ import com.tripass.auth.dto.response.FindIdResponse;
 import com.tripass.auth.dto.request.ResetPasswordRequest;
 import com.tripass.auth.dto.request.ChangePasswordRequest;
 import com.tripass.auth.dto.request.KakaoLoginRequest;
+import com.tripass.auth.dto.response.KakaoAuthorizationUrlResponse;
+import com.tripass.auth.security.OAuthStateCookieProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.tripass.auth.security.RefreshTokenCookieProvider;
@@ -53,6 +55,7 @@ public class AuthController {
     private final AuthService authService;
     private final PhoneVerificationService phoneVerificationService;
     private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+    private final OAuthStateCookieProvider oauthStateCookieProvider;
 
     //아이디 중복 확인
     @ApiOperation(
@@ -166,6 +169,35 @@ public class AuthController {
         );
     }
 
+    @ApiOperation(
+            value = "카카오 로그인 인가 URL 생성",
+            notes = "카카오 OAuth state를 생성하여 "
+                    + "HttpOnly 쿠키에 저장하고 "
+                    + "카카오 인가 URL을 반환합니다."
+    )
+    @GetMapping("/social/kakao/authorization-url")
+    public ApiResponse<KakaoAuthorizationUrlResponse>
+    createKakaoAuthorizationUrl(
+            HttpServletResponse servletResponse
+    ) {
+        String state =
+                oauthStateCookieProvider.generateState();
+
+        String authorizationUrl =
+                authService.createKakaoAuthorizationUrl(state);
+
+        oauthStateCookieProvider.addStateCookie(
+                servletResponse,
+                state
+        );
+
+        return ApiResponse.success(
+                new KakaoAuthorizationUrlResponse(
+                        authorizationUrl
+                )
+        );
+    }
+
     // 카카오 소셜 로그인
     @ApiOperation(
             value = "카카오 소셜 로그인",
@@ -183,8 +215,31 @@ public class AuthController {
             @RequestBody
             KakaoLoginRequest request,
 
+            HttpServletRequest servletRequest,
             HttpServletResponse servletResponse
     ) {
+
+        String expectedState =
+                oauthStateCookieProvider
+                        .getState(servletRequest);
+
+        try {
+            oauthStateCookieProvider
+                    .validateState(
+                            expectedState,
+                            request.getState()
+                    );
+        } finally {
+            oauthStateCookieProvider
+                    .deleteStateCookie(
+                            servletResponse
+                    );
+        }
+
+        /*
+         * state 검증에 성공한 경우에만
+         * 카카오 인가 코드를 교환한다.
+         */
         LoginResult result =
                 authService.kakaoLogin(request);
 

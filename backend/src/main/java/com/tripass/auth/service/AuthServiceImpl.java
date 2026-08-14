@@ -218,6 +218,14 @@ public class AuthServiceImpl implements AuthService {
         return issueLoginTokens(user);
     }
 
+    @Override
+    public String createKakaoAuthorizationUrl(
+            String state
+    ) {
+        return kakaoOAuthClient
+                .createAuthorizationUrl(state);
+    }
+
     // 카카오 인가 코드를 이용한 소셜 로그인 처리
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
