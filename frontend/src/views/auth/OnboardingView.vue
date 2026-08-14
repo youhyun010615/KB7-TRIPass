@@ -38,8 +38,13 @@ const slides = [
 const current = ref(0)
 const touchStartX = ref(0)
 const touchDeltaX = ref(0)
+const isDragging = ref(false)
 const isLast = computed(() => current.value === slides.length - 1)
 const routeProgress = computed(() => `${(current.value / (slides.length - 1)) * 100}%`)
+const trackTransform = computed(() => {
+  const dragOffset = isDragging.value ? touchDeltaX.value : 0
+  return `translateX(calc(-${current.value * 100}% + ${dragOffset}px))`
+})
 
 function rememberOnboarding() {
   localStorage.setItem('tripass-onboarding-complete', 'true')
@@ -70,10 +75,18 @@ function goTo(index) {
 function onTouchStart(event) {
   touchStartX.value = event.touches[0].clientX
   touchDeltaX.value = 0
+  isDragging.value = true
 }
 
 function onTouchMove(event) {
-  touchDeltaX.value = event.touches[0].clientX - touchStartX.value
+  const rawDelta = event.touches[0].clientX - touchStartX.value
+  const isPullingPastStart = current.value === 0 && rawDelta > 0
+  const isPullingPastEnd = isLast.value && rawDelta < 0
+
+  // 처음과 마지막에서는 살짝 저항을 주고, 나머지는 손가락을 그대로 따라간다.
+  touchDeltaX.value = isPullingPastStart || isPullingPastEnd
+    ? rawDelta * 0.22
+    : rawDelta
 }
 
 function onTouchEnd() {
@@ -85,6 +98,7 @@ function onTouchEnd() {
     current.value -= 1
   }
 
+  isDragging.value = false
   touchDeltaX.value = 0
 }
 </script>
@@ -122,12 +136,14 @@ function onTouchEnd() {
     <section class="slides-window">
       <div
         class="slides-track"
-        :style="{ transform: `translateX(-${current * 100}%)` }"
+        :class="{ dragging: isDragging }"
+        :style="{ transform: trackTransform }"
       >
         <article
           v-for="(slide, index) in slides"
           :key="slide.key"
           class="slide"
+          :class="{ 'is-active': current === index }"
           :aria-hidden="current !== index"
         >
           <div class="visual-stage">
@@ -241,6 +257,19 @@ function onTouchEnd() {
   touch-action: pan-y;
 }
 
+.onboarding::after {
+  position: absolute;
+  top: 19%;
+  left: -35%;
+  z-index: -1;
+  width: 34%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  content: '';
+  animation: sky-streak 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .ambient {
   position: absolute;
   z-index: -1;
@@ -254,6 +283,7 @@ function onTouchEnd() {
   width: 210px;
   height: 210px;
   background: rgba(255, 255, 255, 0.06);
+  animation: ambient-drift 8s ease-in-out infinite alternate;
 }
 
 .ambient-bottom {
@@ -262,6 +292,7 @@ function onTouchEnd() {
   width: 250px;
   height: 250px;
   background: rgba(42, 91, 181, 0.34);
+  animation: ambient-drift 10s ease-in-out 1s infinite alternate-reverse;
 }
 
 .onboarding-header {
@@ -312,6 +343,7 @@ function onTouchEnd() {
   display: block;
   height: 100%;
   background: var(--yellow);
+  box-shadow: 0 0 10px rgba(255, 212, 94, 0.7);
   transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -348,6 +380,10 @@ function onTouchEnd() {
   filter: drop-shadow(0 4px 8px rgba(3, 21, 61, 0.28));
 }
 
+.route-plane svg {
+  animation: plane-cruise 1.8s ease-in-out infinite;
+}
+
 .route-caption {
   position: absolute;
   top: 28px;
@@ -372,6 +408,10 @@ function onTouchEnd() {
   will-change: transform;
 }
 
+.slides-track.dragging {
+  transition: none;
+}
+
 .slide {
   display: flex;
   width: 100%;
@@ -379,7 +419,27 @@ function onTouchEnd() {
   flex-direction: column;
   align-items: center;
   padding: 5px 26px 0;
+  opacity: 0.46;
+  transform: scale(0.965);
+  transition: opacity 260ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+.slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.slide.is-active .visual-content {
+  animation: visual-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.slide.is-active .copy-block > * {
+  animation: copy-arrive 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.slide.is-active .copy-block > :nth-child(1) { animation-delay: 100ms; }
+.slide.is-active .copy-block > :nth-child(2) { animation-delay: 170ms; }
+.slide.is-active .copy-block > :nth-child(3) { animation-delay: 240ms; }
 
 .visual-stage {
   display: flex;
@@ -404,6 +464,11 @@ function onTouchEnd() {
   font-size: 30px;
   font-weight: 900;
   letter-spacing: 0.05em;
+  background: linear-gradient(110deg, #ffffff 20%, #ffffff 42%, #ffe27f 50%, #ffffff 58%, #ffffff 80%);
+  background-size: 220% auto;
+  background-clip: text;
+  color: transparent;
+  animation: brand-shine 4.2s ease-in-out infinite;
 }
 
 .brand-rule {
@@ -459,6 +524,10 @@ function onTouchEnd() {
   backdrop-filter: blur(10px);
 }
 
+.slide.is-active .saving-card {
+  animation: card-float 3.4s ease-in-out 600ms infinite;
+}
+
 .saving-card-head {
   display: flex;
   align-items: center;
@@ -476,6 +545,10 @@ function onTouchEnd() {
   border-radius: 50%;
   color: var(--yellow);
   background: rgba(255, 212, 94, 0.14);
+}
+
+.slide.is-active .coin-icon {
+  animation: coin-pulse 2.2s ease-in-out 850ms infinite;
 }
 
 .saving-amount {
@@ -522,6 +595,10 @@ function onTouchEnd() {
   box-shadow: 0 20px 35px rgba(3, 21, 61, 0.28);
 }
 
+.slide.is-active .receipt-card {
+  animation: receipt-float 3.2s ease-in-out 550ms infinite;
+}
+
 .receipt-title {
   margin-bottom: 14px;
   font-size: 10px;
@@ -561,6 +638,10 @@ function onTouchEnd() {
   font-size: 24px;
 }
 
+.slide.is-active .receipt-arrow {
+  animation: arrow-nudge 1.6s ease-in-out 850ms infinite;
+}
+
 .rollover-pill {
   margin-top: 19px;
   padding: 9px 14px;
@@ -581,6 +662,10 @@ function onTouchEnd() {
   border-radius: 50%;
   color: var(--yellow);
   box-shadow: 0 0 0 12px rgba(255, 212, 94, 0.04);
+}
+
+.slide.is-active .ready-plane-ring {
+  animation: ready-radar 2.2s ease-out 450ms infinite;
 }
 
 .ready-plane-ring svg {
@@ -653,6 +738,7 @@ function onTouchEnd() {
   color: #102e6c;
   background: var(--yellow);
   box-shadow: 0 12px 24px rgba(4, 22, 59, 0.2);
+  animation: button-glow 3s ease-in-out infinite;
 }
 
 .login-button {
@@ -683,6 +769,67 @@ function onTouchEnd() {
   transform: translateY(-8px) scale(0.98);
 }
 
+@keyframes ambient-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(12px, 18px, 0) scale(1.08); }
+}
+
+@keyframes sky-streak {
+  0%, 16% { opacity: 0; transform: translateX(0); }
+  28% { opacity: 0.75; }
+  52%, 100% { opacity: 0; transform: translateX(510%); }
+}
+
+@keyframes plane-cruise {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-3px) rotate(2deg); }
+}
+
+@keyframes visual-arrive {
+  from { opacity: 0; transform: translateY(16px) scale(0.94); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes copy-arrive {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes brand-shine {
+  0%, 26% { background-position: 100% center; }
+  62%, 100% { background-position: -100% center; }
+}
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes coin-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 94, 0); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 212, 94, 0.1); }
+}
+
+@keyframes receipt-float {
+  0%, 100% { transform: translateY(0) rotate(3deg); }
+  50% { transform: translateY(-5px) rotate(1.5deg); }
+}
+
+@keyframes arrow-nudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+@keyframes ready-radar {
+  0% { box-shadow: 0 0 0 0 rgba(255, 212, 94, 0.2); }
+  70%, 100% { box-shadow: 0 0 0 22px rgba(255, 212, 94, 0); }
+}
+
+@keyframes button-glow {
+  0%, 100% { box-shadow: 0 12px 24px rgba(4, 22, 59, 0.2); }
+  50% { box-shadow: 0 12px 30px rgba(255, 212, 94, 0.2); }
+}
+
 @media (max-height: 760px) {
   .onboarding-header { padding-top: 28px; }
   .flight-route { margin-top: 18px; }
@@ -693,7 +840,23 @@ function onTouchEnd() {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .onboarding::after,
+  .ambient,
+  .route-plane svg,
+  .brand-word,
+  .slide.is-active .visual-content,
+  .slide.is-active .copy-block > *,
+  .slide.is-active .saving-card,
+  .slide.is-active .coin-icon,
+  .slide.is-active .receipt-card,
+  .slide.is-active .receipt-arrow,
+  .slide.is-active .ready-plane-ring,
+  .primary-button {
+    animation: none;
+  }
+
   .slides-track,
+  .slide,
   .route-line-progress,
   .route-plane,
   .visual-pop-enter-active,
