@@ -416,6 +416,27 @@
         WHERE user_id = #{userId}
     </select>
 
+    <select id="findPrepaidExpenseTotalByTripId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+                   COALESCE(br.confirmed_airfare_amount, br.recommended_airfare_amount, 0)
+                   + COALESCE(br.confirmed_lodging_amount, br.recommended_lodging_amount, 0)
+               ), 0)
+        FROM trip_countries tc
+                 LEFT JOIN trip_budget_recommendations br ON br.trip_country_id = tc.id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+    </select>
+
+    <select id="findMonthlySavingAmountByTripId" resultType="java.math.BigDecimal">
+        SELECT monthly_amount
+        FROM saving_plans
+        WHERE trip_id = #{tripId}
+          AND goal_status = 'ACTIVE'
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
     <select id="findSavingPlanIdByTripId" resultType="java.lang.Long">
         SELECT id
         FROM saving_plans

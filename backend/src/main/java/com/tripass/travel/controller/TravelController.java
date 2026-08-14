@@ -98,6 +98,16 @@ public class TravelController {
         return ResponseEntity.ok(ApiResponse.success("진행 중인 여행 목표 조회 성공", data));
     }
 
+    /** 로그인 사용자의 활성 여행과 홈 저축 현황을 조회합니다. */
+    @GetMapping("/active/home")
+    public ResponseEntity<ApiResponse<TripHomeDashboardResponseDto>> getActiveTripHome(
+            Authentication authentication
+    ) {
+        Long userId = getAuthenticatedUserId(authentication);
+        TripHomeDashboardResponseDto data = travelService.getActiveTripHome(userId);
+        return ResponseEntity.ok(ApiResponse.success("여행 저축 홈 조회 성공", data));
+    }
+
     /** 국가·통화 선택 모달용 국가 목록을 검색합니다. */
     @GetMapping("/countries")
     public ResponseEntity<ApiResponse<List<TripCountryCatalogResponseDto>>> getCountries(

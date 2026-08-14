@@ -1,10 +1,9 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useExchangeStore } from '@/stores/exchange'
 import { useTravelStore } from '@/stores/travel'
-import { useSavingsPlanStore } from '@/stores/savingsPlan'
-import { useTripWalletStore } from '@/stores/tripWallet'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
 
@@ -13,105 +12,196 @@ const props = defineProps({
 })
 
 const authStore = useAuthStore()
+const exchangeStore = useExchangeStore()
 const travelStore = useTravelStore()
-const plan = useSavingsPlanStore()
-const wallet = useTripWalletStore()
 const router = useRouter()
-const userName = computed(() => authStore.user?.name ?? '권유현')
+const userName = computed(() => authStore.user?.name ?? '회원')
 
-onMounted(() => {
-  travelStore.loadActiveGoal({ force: true })
+onMounted(async () => {
+  await nextTick()
+  restoreCountryPosition()
+  await Promise.all([
+    travelStore.loadHomeDashboard({ force: true }),
+    exchangeStore.updateExchangeRates(),
+  ])
+  await nextTick()
+  restoreCountryPosition()
 })
 
-// ── 여행 저축 모드 데이터 ──────────────────────────────────
-const countries = [
-  {
-    id: 1, name: '파리', flag: '🇫🇷', code: 'PAR',
+const countryPresentation = {
+  프랑스: {
+    flag: '🇫🇷', code: 'FR',
     image: '/images/france.png',
     headerBg: '#1a2d6e',
     progressBg: 'rgba(0,35,149,0.80)',
     barColor: 'linear-gradient(90deg,#002395 0%,#EDEDED 50%,#ED2939 100%)',
-    dday: 230, currency: 'EUR', rate: 1548,
-    desc: '로맨틱한 파리의 밤 · 파리에서의 하루를 기대하며',
+    desc: '프랑스에서의 여행을 준비하고 있어요.',
   },
-  {
-    id: 2, name: '인터라켄', flag: '🇨🇭', code: 'INT',
+  스위스: {
+    flag: '🇨🇭', code: 'CH',
     image: '/images/switzerland.webp',
     headerBg: '#7a0d1e',
     progressBg: 'rgba(122,13,30,0.82)',
     barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 60%,#FF0000 100%)',
-    dday: 230, currency: 'CHF', rate: 1620,
-    desc: '알프스의 맑은 공기 · 인터라켄에서 시작되는 설레는 하루',
+    desc: '스위스에서의 여행을 준비하고 있어요.',
   },
-  {
-    id: 3, name: '베를린', flag: '🇩🇪', code: 'BER',
+  독일: {
+    flag: '🇩🇪', code: 'DE',
     image: '/images/germany.png',
     headerBg: '#111111',
     progressBg: 'rgba(17,17,17,0.85)',
     barColor: 'linear-gradient(90deg,#000000 0%,#DD0000 50%,#FFCE00 100%)',
-    dday: 230, currency: 'EUR', rate: 1548,
-    desc: '클래식과 트렌드가 만나는 도시 · 베를린의 하루를 기대하며',
+    desc: '독일에서의 여행을 준비하고 있어요.',
   },
-  {
-    id: 4, name: '도쿄', flag: '🇯🇵', code: 'TYO',
+  일본: {
+    flag: '🇯🇵', code: 'JP',
     image: '/images/japan.webp',
     headerBg: '#c2185b',
     progressBg: 'rgba(194,24,91,0.82)',
     barColor: 'linear-gradient(90deg,#FFFFFF 0%,#BC002D 35%,#BC002D 65%,#FFFFFF 100%)',
-    dday: 230, currency: 'JPY', rate: 9,
-    desc: '익숙함 속 새로운 발견 · 도쿄에서의 하루를 기대하며',
+    desc: '일본에서의 여행을 준비하고 있어요.',
   },
-  {
-    id: 5, name: '홍콩', flag: '🇭🇰', code: 'HKG',
+  홍콩: {
+    flag: '🇭🇰', code: 'HK',
     image: '/images/Hong%20Kong.png',
     headerBg: '#b8202e',
     progressBg: 'rgba(184,32,46,0.84)',
     barColor: 'linear-gradient(90deg,#DE2910 0%,#FFDE00 100%)',
-    dday: 230, currency: 'HKD', rate: 184.2,
-    desc: '빛나는 야경과 활기찬 거리 · 홍콩에서 시작되는 특별한 하루',
+    desc: '홍콩에서의 여행을 준비하고 있어요.',
   },
-]
-const selectedCountry = ref(countries[0])
-const showCountryDropdown = ref(false)
+}
 
-// 탑승권 저축 상태: unset(미설정) / low(부족) / ok(정상)
-const savingsCardState = computed(() => {
-  if (!plan.savingMethod || !plan.monthlySavings) return 'unset'
-  if (plan.status === 'warning' || plan.status === 'error') return 'low'
-  return 'ok'
-})
+const defaultPresentation = {
+  flag: '✈️', code: 'TRIP', image: '', headerBg: '#173f8d',
+  progressBg: 'rgba(23,63,141,0.84)',
+  barColor: 'linear-gradient(90deg,#64d8cb,#fff0b3)',
+  displayOrder: '-', countryName: '여행지', name: '여행지', currency: '-',
+}
 
-const homeGoalAmount = computed(() => plan.totalTargetAmount)
-const homeSavedAmount = computed(() => plan.securedAmount)
-const homeSavingsPercent = computed(() => plan.securedPercent)
-const monthlyTarget = computed(() => Math.max(0, Math.ceil((homeGoalAmount.value - wallet.balance.value) / 5 / 10_000) * 10_000))
-const monthlySaved = computed(() => wallet.monthDeposit)
-const monthlyRemaining = computed(() => Math.max(0, monthlyTarget.value - monthlySaved.value))
-const monthlyProgress = computed(() => monthlyTarget.value ? Math.min(100, Math.round(monthlySaved.value / monthlyTarget.value * 100)) : 100)
-const ticketSavingCopy = computed(() => {
-  if (savingsCardState.value === 'unset') {
+const homeDashboard = computed(() => travelStore.homeDashboard)
+const countries = computed(() => [...(homeDashboard.value?.countries || [])]
+  .sort((a, b) => a.displayOrder - b.displayOrder)
+  .map((country) => {
+    const presentation = countryPresentation[country.countryName] || defaultPresentation
     return {
-      title: '월 저축 계획이 필요해요',
-      action: '월 저축 계획 설정',
-      amountLabel: `추천 월 ${formatCurrency(plan.recommendedMonthlySavings)}`,
+      ...country,
+      ...presentation,
+      id: country.tripCountryId,
+      name: country.countryName,
+      currency: country.currencyCode,
+      desc: presentation.desc || `${country.countryName}에서의 여행을 준비하고 있어요.`,
+    }
+  }))
+const countryCarousel = ref(null)
+const countryAnimationKey = ref(0)
+const selectedCountryId = computed({
+  get: () => travelStore.homeSelectedCountryId,
+  set: (countryId) => travelStore.setHomeSelectedCountry(countryId),
+})
+const selectedCountry = computed(() => (
+  countries.value.find((country) => country.id === selectedCountryId.value) || countries.value[0] || defaultPresentation
+))
+
+const homeGoalAmount = computed(() => Number(homeDashboard.value?.totalTargetAmount || 0))
+const homeSavedAmount = computed(() => Number(homeDashboard.value?.walletBalance || 0))
+const homeRemainingAmount = computed(() => Number(homeDashboard.value?.remainingTargetAmount || 0))
+const homeSavingsPercent = computed(() => Number(homeDashboard.value?.savingProgressPercent || 0))
+const monthlyTarget = computed(() => Number(homeDashboard.value?.monthlySavingTarget || 0))
+const prepaidExpenseTotal = computed(() => Number(homeDashboard.value?.prepaidExpenseTotal || 0))
+const daysUntilDeparture = computed(() => Number(homeDashboard.value?.daysUntilDeparture || 0))
+const currentMonthLabel = computed(() => `${new Date().getMonth() + 1}월`)
+const monthlySavedAmount = computed(() => Number(homeDashboard.value?.monthlySavedAmount || 0))
+const monthlyRemainingAmount = computed(() => Math.max(0, monthlyTarget.value - monthlySavedAmount.value))
+const monthlySavingPercent = computed(() => (
+  monthlyTarget.value > 0
+    ? Math.min(100, Math.round((monthlySavedAmount.value / monthlyTarget.value) * 100))
+    : 0
+))
+const selectedExchangeRate = computed(() => exchangeStore.getCurrency(selectedCountry.value.currency))
+const exchangeUnitLabel = computed(() => {
+  const rate = selectedExchangeRate.value
+  if (!rate) return selectedCountry.value.currency || '-'
+  return Number(rate.unit || 1) > 1 ? `${rate.unit}${rate.code}` : rate.code
+})
+const exchangeChangePercent = computed(() => {
+  const rate = selectedExchangeRate.value
+  if (!rate?.rate || !rate.change) return 0
+  const previousRate = Number(rate.rate) - Number(rate.change)
+  return previousRate ? (Number(rate.change) / previousRate) * 100 : 0
+})
+const exchangeCardStyle = computed(() => ({
+  '--exchange-primary': selectedCountry.value.headerBg || '#173f8d',
+  '--exchange-accent': selectedCountry.value.code === 'DE' ? '#ffce00' : '#ffffff',
+  '--exchange-glow': selectedCountry.value.code === 'CH'
+    ? 'rgba(255,255,255,.16)'
+    : 'rgba(94,160,255,.22)',
+}))
+
+const ticketSavingCopy = computed(() => {
+  if (!homeGoalAmount.value) {
+    return {
+      title: '여행 예산을 확정해 주세요',
+      amountLabel: '목표 예산 미설정',
     }
   }
-  if (savingsCardState.value === 'low') {
+  if (!homeRemainingAmount.value) {
     return {
-      title: '목표 일정까지 저축액이 부족해요',
-      action: '월 저축 계획 조정',
-      amountLabel: `추가 월 ${formatCurrency(plan.additionalRecommendedAmount)}`,
+      title: '여행 저축 목표를 달성했어요',
+      amountLabel: 'GOAL COMPLETE',
     }
   }
   return {
     title: '여행 저축 목표',
-    action: '여행 목표 자금 관리',
-    amountLabel: '',
+    amountLabel: 'SAVED',
   }
 })
 
 function formatCurrency(value) {
-  return Math.abs(value).toLocaleString('ko-KR') + '원'
+  return Math.max(0, Number(value) || 0).toLocaleString('ko-KR') + '원'
+}
+
+function formatDate(value) {
+  if (Array.isArray(value)) {
+    const [year, month, day] = value
+    return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}`
+  }
+  if (typeof value === 'string') return value.replaceAll('-', '.')
+  return '-'
+}
+
+function formatRate(value) {
+  return Number(value || 0).toLocaleString('ko-KR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function handleCountryScroll(event) {
+  const carousel = event.currentTarget
+  if (!carousel?.clientWidth) return
+
+  const countryIndex = Math.max(
+    0,
+    Math.min(countries.value.length - 1, Math.round(carousel.scrollLeft / carousel.clientWidth)),
+  )
+  const nextCountryId = countries.value[countryIndex]?.id ?? null
+  if (nextCountryId === selectedCountryId.value) return
+  selectedCountryId.value = nextCountryId
+  countryAnimationKey.value += 1
+}
+
+function restoreCountryPosition() {
+  const carousel = countryCarousel.value
+  if (!carousel?.clientWidth || !countries.value.length) return
+
+  const savedIndex = countries.value.findIndex((country) => country.id === selectedCountryId.value)
+  const countryIndex = savedIndex >= 0 ? savedIndex : 0
+  selectedCountryId.value = countries.value[countryIndex].id
+  carousel.scrollLeft = countryIndex * carousel.clientWidth
+}
+
+function retryHome() {
+  travelStore.loadHomeDashboard({ force: true })
 }
 
 function goWallet() {
@@ -125,8 +215,25 @@ function switchMode(mode) {
 
 <template>
   <section class="savings-mode-home">
+    <template v-if="travelStore.homeLoading && !homeDashboard">
+      <div class="home-state" role="status" aria-live="polite">
+        <span class="home-spinner" />
+        <b>여행 저축 현황을 불러오고 있어요</b>
+        <small>등록한 여행과 월렛 정보를 확인하고 있습니다.</small>
+      </div>
+    </template>
+
+    <template v-else-if="travelStore.homeError">
+      <div class="home-state home-error">
+        <span>!</span>
+        <b>홈 정보를 불러오지 못했어요</b>
+        <small>{{ travelStore.homeError }}</small>
+        <button type="button" @click="retryHome">다시 시도</button>
+      </div>
+    </template>
+
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
-    <template v-if="!travelStore.hasTravelGoal">
+    <template v-else-if="!travelStore.hasTravelGoal">
       <div class="px-5 pt-12 pb-3 bg-white/80">
         <div class="flex items-center justify-between">
           <button class="px-3 py-1.5 rounded-full text-xs font-bold" style="background:#eef2ff;color:#263f8c">여행 저축</button>
@@ -170,163 +277,184 @@ function switchMode(mode) {
           <NotificationBell />
         </div>
 
-        <div class="savings-header-row savings-action-row">
-          <!-- 국가 드롭다운 -->
-          <div class="relative">
-            <button
-              class="savings-country-button"
-              @click="showCountryDropdown = !showCountryDropdown"
-            >
-              <span>{{ selectedCountry.flag }}</span>
-              <span>{{ selectedCountry.name }}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9L12 15L18 9" stroke="#6B7280" stroke-width="2.5" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <div v-if="showCountryDropdown" class="absolute left-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 min-w-[120px]">
-              <button
-                v-for="c in countries" :key="c.id"
-                class="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-gray-700 hover:bg-gray-50 active:bg-gray-100"
-                :class="{ 'font-extrabold': selectedCountry.id === c.id }"
-                @click="selectedCountry = c; showCountryDropdown = false"
-              >
-                <span>{{ c.flag }}</span><span>{{ c.name }}</span>
-              </button>
-            </div>
+        <section class="active-trip-heading">
+          <div class="active-trip-icon">✈</div>
+          <div class="active-trip-copy">
+            <small>MY NEXT TRIP</small>
+            <h2>{{ homeDashboard.tripName }}</h2>
+            <p><span>출발</span>{{ formatDate(homeDashboard.startDate) }} <i>·</i> D-{{ daysUntilDeparture }}</p>
           </div>
-          <button class="travel-edit-link" type="button" @click="router.push('/travel/register')">
-            여행 계획 수정하기 <span>›</span>
-          </button>
-        </div>
+          <RouterLink class="trip-edit-button" :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">
+            수정 <span>›</span>
+          </RouterLink>
+        </section>
       </div>
 
-      <!-- BOARDING PASS 카드 -->
-      <div class="country-ticket mx-4 mt-2 overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
+      <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 -->
+      <div ref="countryCarousel" class="country-carousel" @scroll.passive="handleCountryScroll">
+        <article
+          v-for="country in countries"
+          :key="country.id"
+          class="country-slide"
+          :class="{ active: selectedCountry.id === country.id }"
+        >
+          <div
+            :key="`${country.id}-${country.id === selectedCountry.id ? countryAnimationKey : 0}`"
+            class="country-ticket overflow-hidden"
+            :style="`background:${country.headerBg}`"
+          >
 
-        <!-- ① 헤더 스트립 (나라 컬러, 짧게) -->
-        <div class="px-5 pt-4 pb-3 flex items-center justify-between"
-             :style="`background:${selectedCountry.headerBg}`">
-          <span class="text-white/65 text-[9px] font-bold tracking-widest">BOARDING PASS</span>
-          <span class="text-white/40 text-[9px] tracking-widest">TRIPASS AIR</span>
-          <span class="text-white/65 text-[9px] font-semibold">NO. {{ selectedCountry.code }}-{{ selectedCountry.dday }}</span>
-        </div>
+            <!-- ① 기존 탑승권 헤더 -->
+            <div class="px-5 pt-4 pb-3 flex items-center justify-between"
+                 :style="`background:${country.headerBg}`">
+              <span class="text-white/70 text-[10px] font-bold tracking-widest">BOARDING PASS</span>
+              <span class="text-white/50 text-[10px] tracking-widest">TRIPASS AIR</span>
+              <span class="text-white/70 text-[10px] font-semibold">NO. {{ country.code }}-{{ country.displayOrder }}</span>
+            </div>
 
-        <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
-        <div class="ticket-cutline ticket-cutline-top">
-          <div class="ticket-notch ticket-notch-left" />
-          <div class="ticket-dashed-line" />
-          <div class="ticket-notch ticket-notch-right" />
-        </div>
+            <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
+            <div class="ticket-cutline ticket-cutline-top">
+              <div class="ticket-notch ticket-notch-left" />
+              <div class="ticket-dashed-line" />
+              <div class="ticket-notch ticket-notch-right" />
+            </div>
 
-        <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
-        <div class="relative" :style="`background:url(${selectedCountry.image}) center/cover no-repeat`">
-          <!-- 어두운 오버레이 -->
-          <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
+            <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
+            <div
+              class="relative"
+              :style="country.image
+                ? `background:url(${country.image}) center/cover no-repeat`
+                : `background:linear-gradient(145deg,${country.headerBg},#3568bd)`"
+            >
+              <!-- 어두운 오버레이 -->
+              <div class="absolute inset-0 bg-black/30 pointer-events-none z-0" />
 
-          <div class="relative z-10 px-5 pt-6">
-            <!-- DESTINATION / DEPARTURE / 설명 -->
-            <div class="flex items-center gap-2">
-              <div class="flex-none">
-                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Destination</p>
-                <p class="text-white text-[22px] font-extrabold leading-none">{{ selectedCountry.flag }} {{ selectedCountry.name }}</p>
+              <div class="relative z-10 px-5 pt-6">
+                <!-- DESTINATION / DEPARTURE / 설명 -->
+                <div class="flex items-center gap-2">
+                  <div class="flex-none">
+                    <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Destination</p>
+                    <p class="text-white text-[26px] font-extrabold leading-none">{{ country.flag }} {{ country.name }}</p>
+                  </div>
+                  <div class="flex-1 flex items-center mt-3.5">
+                    <div class="flex-1 border-t border-dashed border-white/40" />
+                    <span class="mx-2 text-yellow-300 text-lg">✈</span>
+                    <div class="flex-1 border-t border-dashed border-white/40" />
+                  </div>
+                  <div class="text-right flex-none">
+                    <p class="text-white/65 text-[10px] uppercase tracking-widest mb-1">Departure</p>
+                    <p class="text-white text-[26px] font-extrabold leading-none">D-{{ daysUntilDeparture }}</p>
+                  </div>
+                </div>
+                <p class="ticket-description text-white/90 text-[12px] mt-3">{{ country.desc }} ✨</p>
+
+                <!-- 사진이 보이는 여백 -->
+                <div class="ticket-photo-space" />
+
+                <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
+                <div class="rounded-xl px-4 py-4" :style="`background:${country.progressBg}`">
+                  <div class="flex justify-between mb-2">
+                    <span class="font-semibold text-[13px] text-white">{{ ticketSavingCopy.title }}</span>
+                    <span class="text-white font-extrabold text-[14px]">{{ homeSavingsPercent }}%</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/25 overflow-hidden">
+                    <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${country.barColor}`" />
+                  </div>
+                  <div class="flex justify-between mt-2.5">
+                    <div>
+                      <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
+                      <p class="text-white/65 text-[9px] tracking-wider mt-1">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-white text-[14px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
+                      <p class="text-white/60 text-[9px] tracking-wider mt-1">GOAL</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="flex-1 flex items-center mt-3.5">
-                <div class="flex-1 border-t border-dashed border-white/40" />
-                <span class="mx-2 text-yellow-300 text-lg">✈</span>
-                <div class="flex-1 border-t border-dashed border-white/40" />
+
+              <!-- 사진의 종료 경계와 정확히 맞닿는 하단 절취선 -->
+              <div class="ticket-cutline ticket-cutline-bottom">
+                <div class="ticket-notch ticket-notch-left" />
+                <div class="ticket-dashed-line" />
+                <div class="ticket-notch ticket-notch-right" />
               </div>
-              <div class="text-right flex-none">
-                <p class="text-white/50 text-[8px] uppercase tracking-widest mb-0.5">Departure</p>
-                <p class="text-white text-[22px] font-extrabold leading-none">D-{{ selectedCountry.dday }}</p>
+
+              <!-- ④ 국가 컬러 스텁 -->
+              <div class="relative z-10" :style="`background:${country.headerBg}`">
+                <button
+                  class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
+                  @click="goWallet">
+                  <span class="text-[13px] font-bold text-white">송금하기</span>
+                  <div class="flex items-center gap-2">
+                    <div class="flex gap-[1.5px] items-end h-5">
+                      <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
+                        class="bg-white/85 rounded-[0.5px]"
+                        :style="`height:${h}px;width:${i%4===0?'2.5px':'1.5px'}`" />
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 18L15 12L9 6" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </button>
               </div>
             </div>
-            <p class="ticket-description text-white/80 text-[10px] mt-2">{{ selectedCountry.desc }} ✨</p>
-
-            <!-- 사진이 보이는 여백 -->
-            <div class="ticket-photo-space" />
-
-            <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
-            <div class="rounded-xl px-4 py-4" :style="`background:${selectedCountry.progressBg}`">
-              <div class="flex justify-between mb-2">
-                <span class="font-semibold text-[11px]" :class="savingsCardState === 'unset' ? 'text-red-300' : 'text-white'">{{ ticketSavingCopy.title }}</span>
-                <span class="text-white font-extrabold text-[12px]">{{ homeSavingsPercent }}%</span>
-              </div>
-              <div class="h-2 rounded-full bg-white/25 overflow-hidden">
-                <div class="h-full rounded-full transition-all" :style="`width:${homeSavingsPercent}%;background:${selectedCountry.barColor}`" />
-              </div>
-              <div class="flex justify-between mt-2.5">
-                <div>
-                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeSavedAmount) }}</p>
-                  <p class="text-white/55 text-[7px] tracking-wider mt-0.5">{{ ticketSavingCopy.amountLabel || 'SAVED' }}</p>
-                </div>
-                <div class="text-right">
-                  <p class="text-white text-[11px] font-bold">{{ formatCurrency(homeGoalAmount) }}</p>
-                  <p class="text-white/50 text-[7px] tracking-wider mt-0.5">GOAL</p>
-                </div>
-              </div>
-            </div>
           </div>
-
-          <!-- 사진의 종료 경계와 정확히 맞닿는 하단 절취선 -->
-          <div class="ticket-cutline ticket-cutline-bottom">
-            <div class="ticket-notch ticket-notch-left" />
-            <div class="ticket-dashed-line" />
-            <div class="ticket-notch ticket-notch-right" />
-          </div>
-
-          <!-- ④ 국가 컬러 스텁 -->
-          <div class="relative z-10" :style="`background:${selectedCountry.headerBg}`">
-            <button
-              class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
-              @click="goWallet">
-              <span class="text-[10px] font-bold text-white">송금하기</span>
-              <div class="flex items-center gap-2">
-                <div class="flex gap-[1.5px] items-end h-5">
-                  <div v-for="(h,i) in [14,7,20,5,14,9,20,5,16,5,12,8,18,5,14]" :key="i"
-                    class="bg-white/85 rounded-[0.5px]"
-                    :style="`height:${h}px;width:${i%4===0?'2.5px':'1.5px'}`" />
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 18L15 12L9 6" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </button>
-          </div>
+        </article>
+      </div>
+      <div v-if="countries.length > 1" class="country-carousel-meta">
+        <span>옆으로 넘겨 방문 국가를 확인하세요</span>
+        <div class="country-carousel-dots" aria-hidden="true">
+          <i v-for="country in countries" :key="country.id" :class="{ active: selectedCountry.id === country.id }" />
         </div>
       </div>
 
       <section class="month-saving-card mx-4 mt-3">
-        <div class="month-saving-heading"><div><p>8월</p><h2>이번 달 저축</h2></div><span v-if="monthlyProgress >= 100">달성</span></div>
-        <div class="month-saving-values"><div><small>목표 금액</small><b>{{ formatCurrency(monthlyTarget) }}</b></div><div><small>저축한 금액</small><b>{{ formatCurrency(monthlySaved) }}</b></div><div><small>남은 저축</small><b>{{ formatCurrency(monthlyRemaining) }}</b></div></div>
-        <div class="month-saving-progress"><i :style="{ width: `${monthlyProgress}%` }"/><strong>{{ monthlyProgress }}%</strong></div>
-        <div v-if="monthlyProgress >= 100" class="month-saving-success"><span>✓</span><div><b>이번 달 목표 달성!</b><small>{{ formatCurrency(monthlySaved) }} 송금을 완료했어요.</small></div></div>
-        <button class="month-wallet-button" @click="goWallet">월렛으로 송금하기 <span>›</span></button>
+        <div class="month-card-route" aria-hidden="true"><i /><span>✈</span><i /></div>
+        <div class="month-saving-heading">
+          <div><small>MONTHLY TRAVEL FUND</small><h2>{{ currentMonthLabel }} 여행 저축</h2></div>
+          <p>D-{{ daysUntilDeparture }}</p>
+        </div>
+        <div class="month-saving-values">
+          <div><span>◎</span><small>이번 달 목표</small><b>{{ formatCurrency(monthlyTarget) }}</b></div>
+          <div><span>✓</span><small>저축한 금액</small><b>{{ formatCurrency(monthlySavedAmount) }}</b></div>
+          <div><span>▣</span><small>남은 저축</small><b>{{ formatCurrency(monthlyRemainingAmount) }}</b></div>
+        </div>
+        <div class="month-progress-label"><span>이번 달 저축 여정</span><strong>{{ monthlySavingPercent }}%</strong></div>
+        <div class="month-saving-progress"><i :style="{ width: `${monthlySavingPercent}%` }"/></div>
+        <div v-if="monthlySavingPercent >= 100" class="month-saving-success"><span>✓</span><div><b>이번 달 목표 달성!</b><small>{{ formatCurrency(monthlySavedAmount) }}을 저축했어요.</small></div></div>
+        <button class="month-wallet-button" @click="goWallet"><span><i>＋</i> 여행 월렛에 저축하기</span><b>출발 준비하기 ›</b></button>
       </section>
 
-      <section class="ai-report-card mx-4 mt-3" @click="router.push('/missions')">
-        <div class="ai-report-heading"><div><p>7월 AI 분석 리포트</p><small>지난달 여행 저축 목표</small></div><button @click.stop="router.push('/missions')">상세 보기 ›</button></div>
-        <div class="ai-goal-status"><span class="status-icon">✦</span><div><strong>{{ monthlySaved >= monthlyTarget ? '목표 달성' : '목표 미도달' }}</strong><p v-if="monthlySaved >= monthlyTarget">목표보다 {{ formatCurrency(monthlySaved - monthlyTarget) }} 더 모았어요.</p><p v-else>목표까지 {{ formatCurrency(monthlyTarget - monthlySaved) }}이 부족했어요.</p></div></div>
-        <div class="ai-top-title"><span>AI 소비 분석</span><small>최근 거래내역 기준</small></div>
-        <div v-for="(item, index) in [{ name:'식비', amount:'120,000원' },{ name:'카페', amount:'60,000원' },{ name:'쇼핑', amount:'40,000원' }]" :key="item.name" class="ai-coaching-row"><b>{{ index + 1 }}</b><span>{{ item.name }}</span><small>{{ index === 0 ? '342,000원 · 38%' : index === 1 ? '171,000원 · 19%' : '126,000원 · 14%' }}</small><strong>{{ item.amount }} 줄이기</strong></div>
-        <div class="ai-saving-total"><small>이달의 절약 가능 금액</small><b>월 220,000원 확보 가능</b></div>
+      <section class="ai-report-card mx-4 mt-3">
+        <div class="ai-report-heading"><div><p>{{ homeDashboard.tripName }}</p><small>등록한 여행 준비 요약</small></div><RouterLink :to="{ name: 'TravelRegister', query: { mode: 'edit' } }">수정하기 ›</RouterLink></div>
+        <div class="ai-goal-status"><span class="status-icon">✦</span><div><strong>출발까지 {{ daysUntilDeparture }}일 남았어요</strong><p>{{ formatDate(homeDashboard.startDate) }} ~ {{ formatDate(homeDashboard.endDate) }}</p></div></div>
+        <div class="trip-summary-row"><span>방문 국가</span><b>{{ countries.map((country) => country.countryName).join(' · ') }}</b></div>
+        <div class="trip-summary-row"><span>항공·숙소 사전 지출</span><b>{{ formatCurrency(prepaidExpenseTotal) }}</b></div>
+        <div class="trip-summary-row"><span>월 저축 목표</span><b>{{ formatCurrency(monthlyTarget) }}</b></div>
       </section>
 
-      <!-- 오늘의 환율 -->
-      <div class="mx-4 mt-3 mb-4 rounded-2xl overflow-hidden" :style="`background:${selectedCountry.headerBg}`">
-        <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-          <span class="text-white/60 text-[11px] font-semibold">오늘의 환율</span>
-          <span class="text-white/40 text-[10px]">{{ new Date().toLocaleDateString('ko-KR') }} 기준</span>
+      <!-- 오늘의 실시간 환율 -->
+      <div class="exchange-live-card mx-4 mt-3 mb-4" :style="exchangeCardStyle">
+        <div class="exchange-card-head">
+          <div><i /><span>LIVE EXCHANGE</span></div>
+          <time>{{ exchangeStore.lastUpdateDate || '최신 고시 기준' }}</time>
         </div>
-        <div class="px-4 py-3 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-[14px]">{{ selectedCountry.flag }}</span>
-            <span class="text-white font-bold text-[14px]">{{ selectedCountry.currency }}/KRW</span>
+        <div class="exchange-card-body">
+          <div class="exchange-country-mark">
+            <span>{{ selectedCountry.flag }}</span>
+            <div><small>{{ selectedCountry.name }} 여행 환율</small><b>{{ exchangeUnitLabel }} <i>→</i> KRW</b></div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-white text-[22px] font-extrabold">{{ selectedCountry.rate.toLocaleString('ko-KR') }}원</span>
-            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded text-blue-300">-0.3% ↓</span>
+          <div v-if="selectedExchangeRate" class="exchange-rate-value">
+            <b>{{ formatRate(selectedExchangeRate.rate) }}<small>원</small></b>
+            <span :class="exchangeChangePercent > 0 ? 'up' : exchangeChangePercent < 0 ? 'down' : ''">
+              전일 대비 {{ exchangeChangePercent > 0 ? '+' : '' }}{{ exchangeChangePercent.toFixed(2) }}%
+              {{ exchangeChangePercent > 0 ? '↑' : exchangeChangePercent < 0 ? '↓' : '-' }}
+            </span>
           </div>
+          <span v-else class="exchange-rate-loading">환율 정보를 불러오는 중</span>
         </div>
+        <div class="exchange-route" aria-hidden="true"><i /><span>✈</span><i /></div>
       </div>
 
     </template>
@@ -335,6 +463,13 @@ function switchMode(mode) {
 </template>
 
 <style scoped>
+.savings-mode-home { min-height: 100vh; background: #f3f6ff; }
+.home-state { display: flex; min-height: 72vh; flex-direction: column; align-items: center; justify-content: center; padding: 28px; color: #173f8d; text-align: center; }
+.home-state>b { margin-top: 14px; font-size: 15px; }
+.home-state>small { margin-top: 6px; color: #8190a8; font-size: 10px; }
+.home-state>button { margin-top: 16px; padding: 10px 18px; border-radius: 11px; background: #173f8d; color: #fff; font-size: 11px; font-weight: 900; }
+.home-state.home-error>span { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #fff0f0; color: #e5484d; font-size: 20px; font-weight: 900; }
+.home-spinner { width: 30px; height: 30px; border: 3px solid #dce8fb; border-top-color: #2469e8; border-radius: 50%; animation: home-spin .7s linear infinite; }
 .country-ticket {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(22, 39, 78, .15);
@@ -354,7 +489,7 @@ function switchMode(mode) {
 .mode-switch-control button.selected { color: #fff; }
 .mode-switch-thumb { position: absolute; top: 2px; left: 2px; width: calc(50% - 2px); height: 25px; border-radius: 999px; background: #173f8d; transition: transform .3s cubic-bezier(.22,1,.36,1); }
 .mode-switch-control.savings-selected .mode-switch-thumb { transform: translateX(100%); }
-.savings-home-header { padding: 42px 20px 14px; background: #f7f4ee; }
+.savings-home-header { padding: 42px 20px 14px; background: #f3f6ff; }
 .savings-header-row { display: flex; align-items: center; justify-content: space-between; }
 .savings-greeting-row { margin-top: 10px; }
 .savings-greeting-row h1 { color: #111827; font-size: 20px; font-weight: 900; letter-spacing: -.04em; }
@@ -363,6 +498,126 @@ function switchMode(mode) {
 .travel-edit-link { display: flex; align-items: center; gap: 4px; padding: 8px 11px; border-radius: 10px; background: #fff0e8; color: #e45f24; font-size: 11px; font-weight: 900; }
 .travel-edit-link span { font-size: 16px; line-height: 10px; }
 .month-saving-card{padding:16px;border:1.5px solid #2bb69f;border-radius:19px;background:#fff;box-shadow:0 7px 16px rgba(19,59,123,.06)}.month-saving-heading{display:flex;align-items:center;justify-content:space-between}.month-saving-heading p{display:inline-block;padding:5px 11px;border:1px solid #20aa94;border-radius:99px;color:#089b83;font-size:10px;font-weight:900}.month-saving-heading h2{margin-top:6px;color:#079982;font-size:19px;font-weight:900}.month-saving-heading>span{padding:5px 9px;border-radius:99px;background:#e2f8f1;color:#08a084;font-size:10px;font-weight:900}.month-saving-values{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px}.month-saving-values>div{padding:0 8px}.month-saving-values>div:first-child{padding-left:0}.month-saving-values>div+div{border-left:1px solid #5bcab9}.month-saving-values small{display:block;color:#079982;font-size:9px;font-weight:700}.month-saving-values b{display:block;margin-top:5px;color:#079982;font-size:13px;font-weight:900;letter-spacing:-.04em}.month-saving-progress{position:relative;height:8px;margin-top:19px;border-radius:99px;background:#dff3ef}.month-saving-progress i{display:block;height:100%;border-radius:inherit;background:#25b59d}.month-saving-progress strong{position:absolute;right:0;top:-18px;color:#08a084;font-size:10px}.month-saving-success{display:flex;align-items:center;gap:9px;margin-top:15px;padding:10px;border-radius:13px;background:#e2f8f1}.month-saving-success>span{display:grid;width:28px;height:28px;place-items:center;border-radius:10px;background:#c8f0e6;color:#00a489;font-size:17px;font-weight:900}.month-saving-success b,.month-saving-success small{display:block}.month-saving-success b{color:#048c77;font-size:11px}.month-saving-success small{margin-top:2px;color:#229d89;font-size:9px}.month-wallet-button{display:flex;width:100%;align-items:center;justify-content:space-between;margin-top:13px;padding:11px 13px;border:1px solid #9adfd1;border-radius:12px;color:#049781;font-size:11px;font-weight:900}.month-wallet-button span{font-size:17px}.ai-report-card{padding:17px;border:1px solid #bfd7ff;border-radius:20px;background:#eaf3ff;box-shadow:0 8px 18px rgba(27,64,129,.05);cursor:pointer}.ai-report-heading{display:flex;justify-content:space-between;align-items:start}.ai-report-heading p{color:#286ce0;font-size:18px;font-weight:900;letter-spacing:-.05em}.ai-report-heading small{display:block;margin-top:5px;color:#6e88b2;font-size:10px}.ai-report-heading button{color:#286ce0;font-size:10px;font-weight:800}.ai-goal-status{display:flex;align-items:center;gap:9px;margin-top:13px;padding:11px;border-radius:13px;background:#fff}.status-icon{display:grid;width:31px;height:31px;place-items:center;border-radius:11px;background:#e1f8f2;color:#03a084;font-size:18px}.ai-goal-status strong{color:#109482;font-size:12px}.ai-goal-status p{margin-top:3px;color:#6681a6;font-size:9px}.ai-top-title{display:flex;align-items:center;justify-content:space-between;margin-top:16px}.ai-top-title span{color:#3b68aa;font-size:10px;font-weight:900}.ai-top-title small{color:#8aa0bf;font-size:8px}.ai-coaching-row{display:grid;grid-template-columns:22px 34px 1fr auto;align-items:center;gap:5px;margin-top:8px;padding:9px;border-radius:11px;background:#fff}.ai-coaching-row>b{display:grid;width:19px;height:19px;place-items:center;border-radius:50%;background:#dce9ff;color:#2c68d7;font-size:9px}.ai-coaching-row span{font-size:11px;font-weight:900}.ai-coaching-row small{color:#7186a8;font-size:8px}.ai-coaching-row strong{padding:5px 7px;border:1px solid #ffc6c6;border-radius:99px;color:#ef5050;font-size:8px}.ai-saving-total{margin-top:12px;padding:13px;border-radius:13px;background:#e2f8f1}.ai-saving-total small{display:block;color:#179980;font-size:9px;font-weight:800}.ai-saving-total b{display:block;margin-top:5px;color:#173b75;font-size:18px;font-weight:900;letter-spacing:-.05em}
+.monthly-target-guide { display: flex; align-items: center; gap: 7px; margin-top: 14px; padding: 10px 11px; border-radius: 12px; background: #eefaf7; color: #078b76; }
+.monthly-target-guide span { font-size: 9px; font-weight: 800; }
+.monthly-target-guide b { margin-left: auto; font-size: 13px; }
+.monthly-target-guide small { color: #5a9f93; font-size: 8px; }
+.trip-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 9px; padding: 10px 11px; border-radius: 11px; background: #fff; }
+.trip-summary-row span { flex: none; color: #6e88b2; font-size: 9px; }
+.trip-summary-row b { overflow: hidden; color: #244f91; font-size: 10px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.savings-home-header { animation: home-fade-down .45s ease both; }
+.savings-greeting-row p { margin-top: 4px; color: #e45f24; font-size: 11px; font-weight: 800; }
+.country-ticket .rounded-xl { animation: home-fade-up .45s .25s ease both; }
+.country-carousel { animation: home-card-reveal .56s .10s cubic-bezier(.22,1,.36,1) both; }
+.country-carousel-meta { animation: home-fade-up .42s .20s ease both; }
+.month-saving-card { animation: home-card-reveal .56s .24s cubic-bezier(.22,1,.36,1) both; }
+.ai-report-card { cursor: default; animation: home-card-reveal .56s .38s cubic-bezier(.22,1,.36,1) both; }
+.ai-report-heading a { color: #286ce0; font-size: 10px; font-weight: 800; }
+.exchange-live-card { animation: home-card-reveal .56s .52s cubic-bezier(.22,1,.36,1) both; }
+.month-saving-progress i { position: relative; overflow: hidden; transition: width .8s cubic-bezier(.22,1,.36,1); }
+.month-saving-progress i::after { position: absolute; inset: 0; content: ''; background: linear-gradient(90deg,transparent,#ffffff99,transparent); transform: translateX(-100%); animation: progress-shine 1.8s .5s ease-in-out infinite; }
+.travel-edit-link { transition: transform .2s ease, box-shadow .2s ease; }
+.travel-edit-link:active { transform: scale(.96); }
+.savings-home-header { position: relative; z-index: 60; padding: 42px 20px 18px; background: radial-gradient(circle at 100% 0,#e7efff 0,transparent 42%),#f3f6ff; }
+.savings-greeting-row { margin-top: 13px; }
+.savings-greeting-row h1 { font-size: 21px; line-height: 1.25; }
+.active-trip-heading { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 14px; border: 1px solid #dae6fb; border-radius: 17px; background: linear-gradient(135deg,#fff 0%,#eef5ff 100%); box-shadow: 0 8px 22px rgba(24,61,130,.09); }
+.active-trip-icon { display: grid; flex: 0 0 42px; height: 42px; place-items: center; border-radius: 14px; background: linear-gradient(145deg,#173f8d,#3475e6); color: #fff; font-size: 20px; box-shadow: 0 7px 14px rgba(36,105,232,.24); }
+.active-trip-copy { min-width: 0; }
+.active-trip-copy { flex: 1; }
+.active-trip-copy small { color: #6d8dc0; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
+.active-trip-copy h2 { overflow: hidden; margin-top: 3px; color: #173f8d; font-size: 19px; font-weight: 950; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.active-trip-copy p { margin-top: 6px; color: #526b93; font-size: 12px; font-weight: 750; }
+.active-trip-copy p span { margin-right: 6px; padding: 3px 6px; border-radius: 6px; background: #dceaff; color: #2469e8; font-size: 9px; font-weight: 900; }
+.active-trip-copy p i { margin: 0 4px; color: #9cb0cf; font-style: normal; }
+.trip-edit-button { display: flex; flex: none; align-items: center; gap: 2px; padding: 8px 10px; border: 1px solid #c9dcfa; border-radius: 10px; background: #fff; color: #2469e8; font-size: 11px; font-weight: 900; transition: transform .2s ease,background .2s ease; }
+.trip-edit-button span { font-size: 15px; line-height: 1; }
+.trip-edit-button:active { transform: scale(.95); background: #edf4ff; }
+.country-carousel { display: flex; gap: 0; margin: 7px 16px 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; touch-action: pan-x pan-y; }
+.country-carousel::-webkit-scrollbar { display: none; }
+.country-slide { flex: 0 0 100%; min-width: 0; padding: 0 1px 4px; opacity: .56; transform: translateY(5px) scale(.965); transition: opacity .34s ease, transform .42s cubic-bezier(.22,1,.36,1); scroll-snap-align: center; scroll-snap-stop: always; }
+.country-slide.active { opacity: 1; transform: translateY(0) scale(1); }
+.country-ticket { position: relative; z-index: 1; margin: 0; border-radius: 21px; box-shadow: 0 16px 32px rgba(17,35,70,.19); }
+.country-slide.active .country-ticket { animation: ticket-card-enter .62s cubic-bezier(.22,1,.36,1) both; }
+.country-carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 5px 21px 0; color: #71809a; font-size: 9px; font-weight: 700; }
+.country-carousel-dots { display: flex; flex: none; align-items: center; gap: 5px; }
+.country-carousel-dots i { display: block; width: 6px; height: 6px; border-radius: 99px; background: #cbd5e4; transition: width .22s ease, background .22s ease; }
+.country-carousel-dots i.active { width: 17px; background: #2469e8; }
+.ticket-photo-space { height: 112px; }
+.ticket-stub { height: 49px; }
+.month-saving-card { position: relative; margin-top: 16px; overflow: hidden; padding: 21px 18px 18px; border: 1px solid #d4e0f5; border-radius: 23px; background: linear-gradient(145deg,#fffaf1 0%,#f8fbff 48%,#edf4ff 100%); box-shadow: 0 13px 30px rgba(23,63,141,.11); }
+.month-saving-card::before { position: absolute; top: -43px; right: -38px; width: 128px; height: 128px; border: 22px solid rgba(240,120,60,.08); border-radius: 50%; content: ''; }
+.month-card-route { position: absolute; top: 23px; right: 88px; display: flex; width: 78px; align-items: center; color: #ef7b3c; opacity: .75; }
+.month-card-route i { flex: 1; border-top: 1px dashed #ef9b6f; }
+.month-card-route span { margin: 0 5px; font-size: 13px; transform: rotate(7deg); }
+.month-saving-heading { position: relative; z-index: 1; }
+.month-saving-heading small { display: block; color: #ef7b3c; font-size: 8px; font-weight: 900; letter-spacing: .15em; }
+.month-saving-heading h2 { margin-top: 5px; color: #173f8d; font-size: 21px; font-weight: 950; letter-spacing: -.045em; }
+.month-saving-heading p { padding: 7px 11px; border: 0; background: #173f8d; color: #fff; font-size: 10px; box-shadow: 0 5px 12px rgba(23,63,141,.18); }
+.month-saving-values { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-top: 18px; }
+.month-saving-values>div { display: flex; min-width: 0; align-items: center; flex-direction: column; padding: 11px 7px 10px; border: 1px solid rgba(198,213,238,.8); border-radius: 13px; background: rgba(255,255,255,.82); text-align: center; box-shadow: 0 4px 12px rgba(23,63,141,.05); }
+.month-saving-values>div+div { border-left: 1px solid rgba(198,213,238,.8); }
+.month-saving-values>div>span { display: grid; width: 22px; height: 22px; place-items: center; margin-bottom: 8px; border-radius: 8px; background: #e7effe; color: #2469e8; font-size: 11px; font-weight: 900; }
+.month-saving-values>div:nth-child(2)>span { background: #e3f7f1; color: #0a9a82; }
+.month-saving-values>div:nth-child(3)>span { background: #fff0e7; color: #e86e31; }
+.month-saving-values small { color: #7183a3; font-size: 9px; font-weight: 750; }
+.month-saving-values b { overflow: hidden; margin-top: 5px; color: #183b76; font-size: 13px; font-weight: 950; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.month-progress-label { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; color: #466189; font-size: 10px; font-weight: 800; }
+.month-progress-label strong { color: #2469e8; font-size: 12px; }
+.month-saving-progress { height: 9px; margin-top: 7px; overflow: visible; border: 1px solid #d8e3f5; background: #e7edf7; }
+.month-saving-progress i { position: relative; min-width: 5px; overflow: visible; background: linear-gradient(90deg,#2469e8,#56a3ff); }
+.month-saving-progress i::before { position: absolute; top: 50%; right: -5px; width: 11px; height: 11px; border: 3px solid #fff; border-radius: 50%; background: #ef7b3c; box-shadow: 0 2px 6px rgba(29,71,143,.25); content: ''; transform: translateY(-50%); }
+.month-saving-success { background: #e8f7f2; }
+.month-wallet-button { position: relative; z-index: 1; margin-top: 17px; padding: 13px 14px; border: 0; border-radius: 13px; background: linear-gradient(100deg,#173f8d,#2969d2); color: #fff; box-shadow: 0 8px 18px rgba(23,63,141,.2); }
+.month-wallet-button>span { display: flex; align-items: center; gap: 7px; color: #fff; font-size: 12px; font-weight: 900; }
+.month-wallet-button>span i { display: grid; width: 20px; height: 20px; place-items: center; border-radius: 7px; background: rgba(255,255,255,.16); font-size: 14px; font-style: normal; }
+.month-wallet-button>b { color: #dbe8ff; font-size: 9px; font-weight: 750; }
+.month-wallet-button:active { transform: scale(.985); }
+.ai-report-card { margin-top: 16px; padding: 20px 18px; border-radius: 22px; background: linear-gradient(145deg,#eaf3ff,#f5f8ff); box-shadow: 0 10px 25px rgba(36,105,232,.10); }
+.ai-report-heading p { font-size: 21px; }
+.ai-report-heading small { font-size: 11px; }
+.ai-report-heading a { font-size: 12px; }
+.ai-goal-status { gap: 12px; margin-top: 16px; padding: 14px; }
+.status-icon { width: 38px; height: 38px; font-size: 20px; }
+.ai-goal-status strong { font-size: 14px; }
+.ai-goal-status p { margin-top: 5px; color: #526b93; font-size: 11px; font-weight: 650; }
+.trip-summary-row { margin-top: 10px; padding: 13px; }
+.trip-summary-row span { font-size: 11px; font-weight: 700; }
+.trip-summary-row b { font-size: 12px; }
+.exchange-live-card { position: relative; margin-top: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 22px; background: linear-gradient(135deg,var(--exchange-primary),color-mix(in srgb,var(--exchange-primary) 76%,#2f72df)); color: #fff; box-shadow: 0 14px 30px color-mix(in srgb,var(--exchange-primary) 25%,transparent); }
+.exchange-live-card::before { position: absolute; top: -58px; right: -38px; width: 155px; height: 155px; border-radius: 50%; background: var(--exchange-glow); content: ''; }
+.exchange-live-card::after { position: absolute; right: 38px; bottom: -58px; width: 120px; height: 120px; border: 20px solid rgba(255,255,255,.045); border-radius: 50%; content: ''; }
+.exchange-card-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 15px 17px 12px; border-bottom: 1px dashed rgba(255,255,255,.24); }
+.exchange-card-head>div { display: flex; align-items: center; gap: 6px; }
+.exchange-card-head i { width: 6px; height: 6px; border-radius: 50%; background: var(--exchange-accent); box-shadow: 0 0 0 4px rgba(255,255,255,.1); }
+.exchange-card-head span { color: rgba(255,255,255,.88); font-size: 11px; font-weight: 900; letter-spacing: .14em; }
+.exchange-card-head time { color: rgba(255,255,255,.72); font-size: 11px; font-weight: 650; }
+.exchange-card-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 19px 17px; }
+.exchange-country-mark { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.exchange-country-mark>span { display: grid; flex: 0 0 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; background: rgba(255,255,255,.12); font-size: 23px; backdrop-filter: blur(8px); }
+.exchange-country-mark small { display: block; color: rgba(255,255,255,.72); font-size: 10px; font-weight: 750; }
+.exchange-country-mark b { display: block; margin-top: 5px; color: #fff; font-size: 16px; font-weight: 900; white-space: nowrap; }
+.exchange-country-mark b i { margin: 0 3px; color: var(--exchange-accent); font-style: normal; }
+.exchange-rate-value { flex: none; text-align: right; }
+.exchange-rate-value>b { display: block; color: #fff; font-size: 27px; font-weight: 950; letter-spacing: -.04em; }
+.exchange-rate-value>b small { margin-left: 2px; font-size: 14px; }
+.exchange-rate-value>span { display: inline-block; margin-top: 6px; padding: 4px 7px; border-radius: 7px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.76); font-size: 10px; font-weight: 850; }
+.exchange-rate-value>span.up { color: #ffd7d0; }
+.exchange-rate-value>span.down { color: #bfe0ff; }
+.exchange-rate-loading { color: rgba(255,255,255,.65); font-size: 9px; }
+.exchange-route { position: relative; z-index: 1; display: flex; align-items: center; padding: 0 17px 14px; color: var(--exchange-accent); opacity: .7; }
+.exchange-route i { flex: 1; border-top: 1px dashed rgba(255,255,255,.24); }
+.exchange-route span { margin: 0 8px; font-size: 12px; }
+@keyframes home-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes home-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes home-card-reveal { from { opacity: 0; transform: translateY(22px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes ticket-swap { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes ticket-card-enter { from { opacity: 0; transform: translateY(24px) scale(.97); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+@keyframes progress-shine { 60%,100% { transform: translateX(100%); } }
+@keyframes home-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .savings-home-header,.country-carousel,.country-carousel-meta,.country-ticket,.country-ticket .rounded-xl,.month-saving-card,.ai-report-card,.exchange-live-card,.month-saving-progress i::after { animation: none; }
+  .country-slide { transition: none; }
+}
 
 </style>
-

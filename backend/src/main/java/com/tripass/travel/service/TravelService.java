@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -155,6 +156,52 @@ public class TravelService {
         }
         response.setCountries(travelMapper.findTripGoalCountries(response.getTripId()));
         return response;
+    }
+
+    /** 여행 등록 후 저축 홈에서 사용하는 활성 여행 요약 정보를 조회합니다. */
+    public TripHomeDashboardResponseDto getActiveTripHome(Long currentUserId) {
+        TripGoalResponseDto trip = getActiveTripGoal(currentUserId);
+        BigDecimal totalTarget = defaultZero(trip.getTotalTargetAmount());
+        BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
+        BigDecimal remainingTarget = totalTarget.subtract(walletBalance).max(BigDecimal.ZERO);
+        BigDecimal progressPercent = totalTarget.signum() == 0
+                ? BigDecimal.ZERO
+                : walletBalance.multiply(BigDecimal.valueOf(100))
+                        .divide(totalTarget, 2, RoundingMode.HALF_UP)
+                        .min(BigDecimal.valueOf(100));
+        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
+        BigDecimal monthlySavingTarget = defaultZero(travelMapper.findMonthlySavingAmountByTripId(trip.getTripId()));
+
+        List<TripHomeCountryResponseDto> countries = trip.getCountries().stream()
+                .map(country -> TripHomeCountryResponseDto.builder()
+                        .tripCountryId(country.getTripCountryId())
+                        .countryId(country.getCountryId())
+                        .countryName(country.getCountryName())
+                        .currencyCode(country.getCurrencyCode())
+                        .arrivalDate(country.getArrivalDate())
+                        .departureDate(country.getDepartureDate())
+                        .displayOrder(country.getDisplayOrder())
+                        .targetBudget(defaultZero(country.getTargetBudget()))
+                        .targetSharePercent(calculateTargetShare(country.getTargetBudget(), totalTarget))
+                        .build())
+                .collect(Collectors.toList());
+
+        return TripHomeDashboardResponseDto.builder()
+                .tripId(trip.getTripId())
+                .tripName(trip.getTripName())
+                .status(trip.getStatus())
+                .startDate(trip.getStartDate())
+                .endDate(trip.getEndDate())
+                .daysUntilDeparture(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate())))
+                .totalTargetAmount(totalTarget)
+                .prepaidExpenseTotal(defaultZero(travelMapper.findPrepaidExpenseTotalByTripId(trip.getTripId())))
+                .walletBalance(walletBalance)
+                .remainingTargetAmount(remainingTarget)
+                .savingProgressPercent(progressPercent)
+                .remainingMonths(remainingMonths)
+                .monthlySavingTarget(monthlySavingTarget)
+                .countries(countries)
+                .build();
     }
 
     /** 특정 여행 목표와 선택 국가 목록을 조회합니다. */
@@ -353,6 +400,14 @@ public class TravelService {
 
     private BigDecimal defaultZero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal calculateTargetShare(BigDecimal countryTarget, BigDecimal totalTarget) {
+        if (totalTarget.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return defaultZero(countryTarget).multiply(BigDecimal.valueOf(100))
+                .divide(totalTarget, 2, RoundingMode.HALF_UP);
     }
 
     private String limitReason(String reason) {
