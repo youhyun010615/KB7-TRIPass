@@ -54,6 +54,28 @@ public class TravelController {
         return ResponseEntity.ok(ApiResponse.success("여행 자금 체크 조회 성공", data));
     }
 
+
+    /**
+     * 여행/저축 모드 전환 (토글)
+     */
+    @PatchMapping("/{id}/start")
+    public ResponseEntity<ApiResponse<TravelModeResponseDto>> toggleTravelMode(
+            @PathVariable Long id,
+            @RequestBody TravelModeRequestDto request,
+            Authentication authentication) {
+        Long userId = getAuthenticatedUserId(authentication);
+
+        TravelModeResponseDto data = travelService.toggleTravelMode(id, request, userId);
+
+        String responseMessage = Boolean.TRUE.equals(data.getIsTravelMode())
+                ? "여행 모드로 전환되었습니다."
+                : "저축 모드로 전환되었습니다.";
+
+        return ResponseEntity.ok(ApiResponse.success(responseMessage, data));
+    }
+
+
+
     /** 여행 목표 등록: 여행명, 방문 국가 순서, 국가별 일정을 먼저 저장합니다. */
     @PostMapping
     public ResponseEntity<ApiResponse<TripGoalCreateResponseDto>> createTripGoal(

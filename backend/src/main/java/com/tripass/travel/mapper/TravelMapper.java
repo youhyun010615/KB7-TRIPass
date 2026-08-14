@@ -22,6 +22,14 @@ public interface TravelMapper {
     // 여행 소유자 ID 조회 (권한 검증용)
     Long selectUserIdByTripId(@Param("tripId") Long tripId);
 
+    Trip selectTripById(@Param("tripId") Long tripId);
+
+    // 유저의 current_view_mode 상태 변경
+    int updateUserCurrentViewMode(@Param("userId") Long userId, @Param("currentViewMode") String currentViewMode);
+
+    String selectUserCurrentViewMode(@Param("userId") Long currentUserId);
+
+
     boolean existsActiveTripByUserId(@Param("userId") Long userId);
 
     void insertTripGoal(TripGoalCommandDto command);

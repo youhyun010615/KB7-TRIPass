@@ -8,6 +8,8 @@ import {
   deleteChecklistItem,
 } from '@/api/checklist';
 
+import { fetchTripGoal } from '@/api/travel';
+
 export const useChecklistStore = defineStore('checklist', () => {
   // ----------------------------------------------------
   // 1. State
@@ -21,6 +23,8 @@ export const useChecklistStore = defineStore('checklist', () => {
     returnCompletedCount: 0,
     returnItemCount: 0,
   });
+
+  const tripDday = ref(null);
 
   // 단계별 상세 목록 (이월 항목 / 현재 탭 항목 분리)
   const carriedOverChecklists = ref([]);
@@ -150,8 +154,31 @@ export const useChecklistStore = defineStore('checklist', () => {
     }
   }
 
+  async function fetchTripDday(tripId) {
+    try {
+      const data = await fetchTripGoal(tripId);
+
+      const [year, month, day] = data.startDate;
+      const targetDate = new Date(year, month - 1, day);
+
+      // 2. 현재 날짜의 시간(시/분/초)을 0으로 맞추기
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // 3. 밀리초(ms) 단위 차이를 일(day) 단위로 변환
+      const diffTime = targetDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      // 4. 값 할당
+      tripDday.value = diffDays;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   return {
     summary,
+    tripDday,
     carriedOverChecklists,
     currentChecklists,
     loading,
@@ -160,5 +187,6 @@ export const useChecklistStore = defineStore('checklist', () => {
     toggleItem,
     addItem,
     removeItem,
+    fetchTripDday,
   };
 });

@@ -1,50 +1,60 @@
-import api from '@/api'
+import api from '@/api';
 
-const unwrap = (response) => response.data.data
+const unwrap = (response) => response.data.data;
 
 export async function fetchTripCountries(keyword = '') {
   const response = await api.get('/trips/countries', {
     params: keyword ? { keyword } : undefined,
-  })
-  return unwrap(response)
+  });
+  return unwrap(response);
 }
 
 export async function createTripGoal(payload) {
-  const response = await api.post('/trips', payload)
-  return unwrap(response)
+  const response = await api.post('/trips', payload);
+  return unwrap(response);
 }
 
 export async function updateTripGoal(tripId, payload) {
-  const response = await api.patch(`/trips/${tripId}`, payload)
-  return unwrap(response)
+  const response = await api.patch(`/trips/${tripId}`, payload);
+  return unwrap(response);
 }
 
 export async function fetchActiveTripGoal() {
-  const response = await api.get('/trips/active')
-  return unwrap(response)
+  const response = await api.get('/trips/active');
+  return unwrap(response);
 }
 
 export async function fetchActiveTripHome() {
-  const response = await api.get('/trips/active/home')
-  return unwrap(response)
+  const response = await api.get('/trips/active/home');
+  return unwrap(response);
 }
 
 export async function fetchTripGoal(tripId) {
-  const response = await api.get(`/trips/${tripId}`)
-  return unwrap(response)
+  const response = await api.get(`/trips/${tripId}`);
+  return unwrap(response);
 }
 
 export async function generateTripBudget(tripId) {
-  const response = await api.post(`/trips/${tripId}/budget-recommendations`)
-  return unwrap(response)
+  const response = await api.post(`/trips/${tripId}/budget-recommendations`);
+  return unwrap(response);
 }
 
 export async function fetchTripBudget(tripId) {
-  const response = await api.get(`/trips/${tripId}/budget-recommendations`)
-  return unwrap(response)
+  const response = await api.get(`/trips/${tripId}/budget-recommendations`);
+  return unwrap(response);
 }
 
 export async function confirmTripBudget(tripId, payload) {
-  const response = await api.put(`/trips/${tripId}/budget-recommendations`, payload)
-  return unwrap(response)
+  const response = await api.put(
+    `/trips/${tripId}/budget-recommendations`,
+    payload,
+  );
+  return unwrap(response);
+}
+
+export async function switchTravelMode(tripId, request) {
+  const response = await api.patch(`/trips/${tripId}/start`, {
+    isTravelMode: request,
+  });
+  return unwrap(response);
 }
