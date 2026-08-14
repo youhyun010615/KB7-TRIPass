@@ -6,6 +6,7 @@ import {
   login as loginApi,
   logout as logoutApi,
   getKakaoAuthorizationUrl,
+  getGoogleAuthorizationUrl,
 } from '@/api/auth'
 
 import kakaoLoginButton
@@ -22,6 +23,7 @@ const showPassword = ref(false)
 const errorMsg = ref('')
 const loading = ref(false)
 const kakaoLoading = ref(false)
+const googleLoading = ref(false)
 
 // 일반 로그인 API를 호출한다.
 async function login() {
@@ -33,8 +35,11 @@ async function login() {
     return
   }
   // 로그인 버튼을 연속으로 누르는 것을 막는다.
-  if (loading.value ||
-      kakaoLoading.value) {
+  if (
+      loading.value ||
+      kakaoLoading.value ||
+      googleLoading.value
+  ) {
     return
   }
 
@@ -116,7 +121,8 @@ async function login() {
 async function startKakaoLogin() {
   if (
       loading.value ||
-      kakaoLoading.value
+      kakaoLoading.value ||
+      googleLoading.value
   ) {
     return
   }
@@ -155,6 +161,56 @@ async function startKakaoLogin() {
         '카카오 로그인을 시작할 수 없습니다.'
 
     kakaoLoading.value = false
+  }
+}
+
+async function startGoogleLogin() {
+  if (
+      loading.value ||
+      kakaoLoading.value ||
+      googleLoading.value
+  ) {
+    return
+  }
+
+  errorMsg.value = ''
+  googleLoading.value = true
+
+  try {
+    const response =
+        await getGoogleAuthorizationUrl()
+
+    const authorizationUrl =
+        response.data?.data?.authorizationUrl
+
+    if (!authorizationUrl) {
+      throw new Error(
+          'Google 로그인 주소를 확인할 수 없습니다.',
+      )
+    }
+
+    const parsedAuthorizationUrl =
+        new URL(authorizationUrl)
+
+    if (
+        parsedAuthorizationUrl.protocol !== 'https:' ||
+        parsedAuthorizationUrl.hostname !== 'accounts.google.com'
+    ) {
+      throw new Error(
+          '유효하지 않은 Google 로그인 주소입니다.',
+      )
+    }
+
+    window.location.assign(
+        parsedAuthorizationUrl.toString(),
+    )
+  } catch (error) {
+    errorMsg.value =
+        error.response?.data?.message ||
+        error.message ||
+        'Google 로그인을 시작할 수 없습니다.'
+
+    googleLoading.value = false
   }
 }
 
@@ -252,7 +308,7 @@ async function startKakaoLogin() {
       <button
           type="button"
           @click="login"
-          :disabled="loading || kakaoLoading"
+          :disabled="loading || kakaoLoading || googleLoading"
           class="w-full h-14 rounded-2xl text-white font-bold text-base mt-5 disabled:opacity-70 transition-opacity"
           style="background: #3B5BDB"
       >
@@ -274,7 +330,7 @@ async function startKakaoLogin() {
         <button
             type="button"
             class="h-14 w-full overflow-hidden rounded-2xl border-0 bg-[#FEE500] p-0 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="loading || kakaoLoading"
+            :disabled="loading || kakaoLoading || googleLoading"
             aria-label="카카오 로그인"
             @click="startKakaoLogin"
         >
@@ -287,24 +343,54 @@ async function startKakaoLogin() {
 
         <button
             type="button"
-            class="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 disabled:opacity-50"
-            disabled
+            class="relative flex h-14 w-full items-center rounded-2xl border border-[#747775] bg-white px-4 text-sm font-medium text-[#1F1F1F] transition-shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="loading || kakaoLoading || googleLoading"
+            aria-label="Google 계정으로 로그인"
+            @click="startGoogleLogin"
         >
-          <span class="font-bold text-[#4285F4]">
-            G
-          </span>
+  <span
+      class="flex h-5 w-5 shrink-0 items-center justify-center"
+      aria-hidden="true"
+  >
+    <svg
+        viewBox="0 0 48 48"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+    >
+      <path
+          fill="#EA4335"
+          d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+          fill="#4285F4"
+          d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+          fill="#FBBC05"
+          d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+          fill="#34A853"
+          d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
+  </span>
 
-          <span>
-            Google 로그인
-          </span>
+          <span class="absolute inset-0 flex items-center justify-center">
+    {{ googleLoading ? 'Google 로그인 중...' : 'Google 계정으로 로그인' }}
+  </span>
         </button>
       </div>
 
       <p
-          v-if="kakaoLoading"
+          v-if="kakaoLoading || googleLoading"
           class="mt-3 text-center text-xs text-gray-400"
       >
-        카카오 로그인 화면으로 이동하고 있어요.
+        {{
+          kakaoLoading
+              ? '카카오 로그인 화면으로 이동하고 있어요.'
+              : 'Google 로그인 화면으로 이동하고 있어요.'
+        }}
       </p>
     </div>
 
