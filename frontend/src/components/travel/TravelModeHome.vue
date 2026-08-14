@@ -14,6 +14,8 @@ const router = useRouter()
 const travelMode = useTravelModeStore()
 const countryMenuOpen = ref(false)
 const calculatorCountryCode = ref('FR')
+const travelModeStore = useTravelModeStore();
+
 
 const destinations = [
   {
@@ -148,9 +150,15 @@ function selectCalculatorDestination(item) {
   calculatorCountryCode.value = item.code
   travelMode.setCalculatorCurrency(item.currency)
 }
-function switchMode(mode) {
-  if (props.onSwitchMode) props.onSwitchMode(mode)
-  else travelMode.setMode(mode)
+async function switchMode(mode) {
+  const isTravelMode = mode === 'travel' ? true : false;
+  const success = travelModeStore.toggleTravelMode(isTravelMode);
+
+  if (success) {
+    if (props.onSwitchMode) props.onSwitchMode(mode);
+  } else {
+    console.error('모드 전환 실패');
+  }
 }
 </script>
 
@@ -160,8 +168,8 @@ function switchMode(mode) {
       <div class="header-controls">
         <div class="mode-toggle travel-selected" aria-label="서비스 모드 전환">
           <span class="mode-thumb" />
-          <button class="active" type="button" @click="switchMode('travel')">여행</button>
-          <button type="button" @click="switchMode('savings')">저축</button>
+          <button class="active" type="button" @click="switchMode('savings')">여행</button>
+          <button type="button" @click="switchMode('travel')">저축</button>
         </div>
         <div class="country-select">
           <button type="button" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen"><span>{{ selected.flag }}</span>{{ selected.name }}<i>⌄</i></button>

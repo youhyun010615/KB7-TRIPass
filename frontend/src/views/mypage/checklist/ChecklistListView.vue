@@ -8,12 +8,17 @@ const route = useRoute();
 const router = useRouter();
 const store = useChecklistStore();
 
-// 1. URL Query에서 tripId 추출 (기본값 1)
-const tripId = computed(() => Number(route.query.tripId || 1));
+// 1. URL Query에서 tripId 추출 (기본값 없음)
+const tripId = computed(() => route.query.tripId ? Number(route.query.tripId) : null);
 
 // 2. 컴포넌트 마운트 시 체크리스트 요약 API 호출
 onMounted(() => {
-  store.loadSummary(tripId.value);
+  if (tripId.value) {
+    store.loadSummary(tripId.value);
+  } else {
+    console.error("tripId가 없습니다.");
+    router.back();
+  }
 });
 
 // tripId가 변경될 때마다 요약 정보 재조회

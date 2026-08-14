@@ -25,8 +25,8 @@ export async function fetchActiveTripGoal() {
 }
 
 export async function fetchActiveTripHome() {
-  const response = await api.get('/trips/active/home')
-  return unwrap(response)
+  const response = await api.get('/trips/active/home');
+  return unwrap(response);
 }
 
 export async function fetchTripGoal(tripId) {
@@ -52,10 +52,9 @@ export async function confirmTripBudget(tripId, payload) {
   return unwrap(response);
 }
 
-export async function switchTravelMode(tripId, isTravelMode) {
-  const response = await api.patch(`/api/v1/trips/${tripId}/start`, {
-    isTravelMode,
+export async function switchTravelMode(tripId, request) {
+  const response = await api.patch(`/trips/${tripId}/start`, {
+    isTravelMode: request,
   });
-  console.log(unwrap(response));
   return unwrap(response);
 }
