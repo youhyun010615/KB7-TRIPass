@@ -18,7 +18,8 @@ public class TransactionDto {
 
     private Long id;
     private Long accountId;
-    private String externalKey;       // 중복 수집 방지 키 (날짜+시간+계좌+금액 조합)
+    private Long cardId;
+    private String externalKey;       // 중복 수집 방지 키(원천+날짜+시간+금액 조합)
     private LocalDate transactionDate;
     private LocalTime transactionTime;
     private String transactionType;   // DEPOSIT / WITHDRAWAL

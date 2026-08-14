@@ -121,6 +121,10 @@ dependencies {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 
+    // 이전 .class를 지우는 아래 정책과 Gradle 증분 컴파일을 함께 사용하면,
+    // 변경된 소스만 다시 컴파일되어 변경되지 않은 클래스가 누락될 수 있다.
+    options.incremental = false
+
     // 삭제되거나 이름이 바뀐 소스의 이전 .class가 WAR에 남지 않게 한다.
     doFirst {
         delete destinationDirectory.get().asFile
