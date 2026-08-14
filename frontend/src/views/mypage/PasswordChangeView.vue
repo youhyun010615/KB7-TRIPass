@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { changePassword as changePasswordApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { PASSWORD_PATTERN } from '@/constants/authValidation'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -15,15 +16,13 @@ const confirmPassword = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 
-const passwordPattern =
-    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,64}$/
 
 const isDirty = computed(() =>
     confirmPassword.value.length > 0,
 )
 
 const isPasswordValid = computed(() =>
-    passwordPattern.test(newPassword.value),
+    PASSWORD_PATTERN.test(newPassword.value),
 )
 
 const isMatch = computed(() =>

@@ -44,6 +44,8 @@ async function login(){
     //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.setToken(loginData.accessToken)
     authStore.setUser(loginData.user)
+    // 이전 로그인 사용자의 금융 프로필 완료 상태를 제거한다.
+    authStore.resetProfileCompletion()
 
     try {
       const accountResponse = await api.get('/accounts')

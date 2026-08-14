@@ -37,6 +37,11 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('isProfileComplete', 'true')
   }
 
+  function resetProfileCompletion() {
+    isProfileComplete.value = false
+    localStorage.removeItem('isProfileComplete')
+  }
+
   // 프론트에 저장된 로그인 정보를 제거한다.
   function logout() {
     accessToken.value = null
@@ -47,5 +52,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('isProfileComplete')
   }
 
-  return { accessToken, user, isLoggedIn, isProfileComplete, setToken, setUser, updateUser, completeProfile, logout }
+  return { accessToken, user, isLoggedIn, isProfileComplete, setToken, setUser, updateUser, completeProfile, resetProfileCompletion, logout }
 })

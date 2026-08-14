@@ -1,11 +1,17 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   resetPassword as resetPasswordApi,
   sendPhoneCode as sendPhoneCodeApi,
   verifyPhoneCode as verifyPhoneCodeApi,
 } from '@/api/auth'
+
+import {
+  PASSWORD_PATTERN,
+  PHONE_NUMBER_PATTERN,
+  VERIFICATION_CODE_PATTERN,
+} from '@/constants/authValidation'
 
 const router = useRouter()
 
@@ -23,6 +29,11 @@ const errorMessage = ref('')
 const normalizedPhone = computed(() =>
     phone.value.replace(/\D/g, ''),
 )
+
+watch(verificationCode, (value) => {
+  verificationCode.value =
+      value.replace(/\D/g, '').slice(0, 6)
+})
 
 const passwordsMatch = computed(() =>
     newPassword.value.length > 0
@@ -46,7 +57,7 @@ async function sendCode() {
     return
   }
 
-  if (!/^01[016789]\d{7,8}$/.test(normalizedPhone.value)) {
+  if (!PHONE_NUMBER_PATTERN.test(normalizedPhone.value)) {
     errorMessage.value = '휴대전화번호를 정확히 입력해 주세요.'
     return
   }
@@ -54,10 +65,7 @@ async function sendCode() {
   loading.value = true
 
   try {
-    const response = await sendPhoneCodeApi(
-        normalizedPhone.value,
-        'RESET_PASSWORD',
-    )
+    const response = await sendPhoneCodeApi({phoneNumber: normalizedPhone.value, purpose: 'RESET_PASSWORD',})
 
     verificationRequestId.value =
         response.data?.data?.requestId
@@ -85,7 +93,7 @@ async function verifyCode() {
     return
   }
 
-  if (!/^\d{6}$/.test(verificationCode.value)) {
+  if (!VERIFICATION_CODE_PATTERN.test(verificationCode.value)) {
     errorMessage.value = '6자리 인증번호를 입력해 주세요.'
     return
   }
@@ -112,10 +120,8 @@ async function verifyCode() {
 async function submitNewPassword() {
   errorMessage.value = ''
 
-  const passwordPattern =
-      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,64}$/
 
-  if (!passwordPattern.test(newPassword.value)) {
+  if (!PASSWORD_PATTERN.test(newPassword.value)) {
     errorMessage.value =
         '비밀번호는 영문, 숫자, 특수문자를 포함해 8~64자로 입력해 주세요.'
     return
@@ -369,4 +375,3 @@ async function submitNewPassword() {
     </div>
   </div>
 </template>
-npm

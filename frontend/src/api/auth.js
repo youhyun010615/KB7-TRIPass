@@ -10,7 +10,7 @@ export function checkLoginId(loginId) {
 }
 
 // 목적에 따른 휴대전화 인증번호 발송
-export function sendPhoneCode(phoneNumber, purpose) {
+export function sendPhoneCode({phoneNumber, purpose,}) {
     return api.post('/auth/phone/send', {
         phoneNumber,
         purpose,

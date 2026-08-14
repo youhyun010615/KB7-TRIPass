@@ -1,11 +1,16 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   findId as findIdApi,
   sendPhoneCode as sendPhoneCodeApi,
   verifyPhoneCode as verifyPhoneCodeApi,
 } from '@/api/auth'
+
+import {
+  PHONE_NUMBER_PATTERN,
+  VERIFICATION_CODE_PATTERN,
+} from '@/constants/authValidation'
 
 const router = useRouter()
 
@@ -24,6 +29,11 @@ const normalizedPhone = computed(() =>
     phone.value.replace(/\D/g, ''),
 )
 
+watch(verifyCode, (value) => {
+  verifyCode.value =
+      value.replace(/\D/g, '').slice(0, 6)
+})
+
 function resetVerification() {
   verifyCode.value = ''
   verificationRequestId.value = null
@@ -40,7 +50,7 @@ async function sendCode() {
     return
   }
 
-  if (!/^01[016789]\d{7,8}$/.test(normalizedPhone.value)) {
+  if (!PHONE_NUMBER_PATTERN.test(normalizedPhone.value)) {
     errorMessage.value = '휴대전화번호를 정확히 입력해 주세요.'
     return
   }
@@ -48,10 +58,7 @@ async function sendCode() {
   loading.value = true
 
   try {
-    const response = await sendPhoneCodeApi(
-        normalizedPhone.value,
-        'FIND_ID',
-    )
+    const response = await sendPhoneCodeApi({phoneNumber: normalizedPhone.value, purpose: 'FIND_ID',})
 
     verificationRequestId.value =
         response.data?.data?.requestId
@@ -80,7 +87,7 @@ async function confirm() {
     return
   }
 
-  if (!/^\d{6}$/.test(verifyCode.value)) {
+  if (!VERIFICATION_CODE_PATTERN.test(verifyCode.value)) {
     errorMessage.value = '6자리 인증번호를 입력해 주세요.'
     return
   }
@@ -186,6 +193,7 @@ async function confirm() {
           <input
             v-model="verifyCode"
             type="text"
+            inputmode="numeric"
             placeholder="6자리 입력"
             maxlength="6"
             class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
