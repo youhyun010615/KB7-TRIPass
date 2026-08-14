@@ -510,7 +510,16 @@ router.beforeEach((to) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
-    return { name: 'Login' };
+    // 첫 방문자에게는 로그인보다 서비스의 여행 자금 관리 흐름을 먼저 소개한다.
+    const hasCompletedOnboarding =
+      localStorage.getItem('tripass-onboarding-complete') === 'true';
+
+    return { name: hasCompletedOnboarding ? 'Login' : 'Onboarding' };
+  }
+
+  // 로그인 상태에서 온보딩 URL에 접근하면 홈으로 복귀한다.
+  if (to.name === 'Onboarding' && authStore.isLoggedIn) {
+    return { name: 'Home' };
   }
 
   // 로그인 후 금융 프로필 미완료 시 등록 페이지로 강제 이동
