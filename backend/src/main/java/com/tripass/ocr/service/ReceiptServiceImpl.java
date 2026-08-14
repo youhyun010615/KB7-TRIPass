@@ -662,38 +662,38 @@ public class ReceiptServiceImpl
         insertReceiptItems(newItems);
     }
 
-    // 품목 수정 요청을 ReceiptItem 모델로 변환한다.
+    // 품목 요청을 ReceiptItem 모델로 변환한다.
     private ReceiptItem createReceiptItem(
             Long receiptId,
             ReceiptItemSaveRequest request,
             int displayOrder
     ) {
+        String originalName =
+                trimToNull(request.getOriginalName());
+
+        String translatedName =
+                trimToNull(request.getTranslatedName());
+
+        // 이름과 금액이 모두 없는 완전히 빈 품목은 저장하지 않는다.
+        if (originalName == null
+                && translatedName == null
+                && request.getAmount() == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "RECEIPT_ITEM_EMPTY",
+                    "품목명 또는 품목 금액을 입력해 주세요."
+            );
+        }
+
         ReceiptItem item =
                 new ReceiptItem();
 
         item.setReceiptId(receiptId);
-
-        item.setOriginalName(
-                request.getOriginalName().trim()
-        );
-
-        item.setTranslatedName(
-                trimToNull(
-                        request.getTranslatedName()
-                )
-        );
-
-        item.setQuantity(
-                request.getQuantity()
-        );
-
-        item.setAmount(
-                request.getAmount()
-        );
-
-        item.setDisplayOrder(
-                displayOrder
-        );
+        item.setOriginalName(originalName);
+        item.setTranslatedName(translatedName);
+        item.setQuantity(request.getQuantity());
+        item.setAmount(request.getAmount());
+        item.setDisplayOrder(displayOrder);
 
         return item;
     }

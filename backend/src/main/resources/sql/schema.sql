@@ -786,7 +786,7 @@ CREATE TABLE receipt_items
 (
     id              BIGINT         NOT NULL AUTO_INCREMENT COMMENT '영수증 품목 ID',
     receipt_id      BIGINT         NOT NULL COMMENT '해외 영수증 ID',
-    original_name   VARCHAR(255)   NOT NULL COMMENT '원문 품목명',
+    original_name   VARCHAR(255)   NULL COMMENT '원문 품목명',
     translated_name VARCHAR(255)   NULL COMMENT '번역 품목명',
     quantity        INT            NULL COMMENT '수량',
     amount          DECIMAL(15, 2) NULL COMMENT '현지 금액',

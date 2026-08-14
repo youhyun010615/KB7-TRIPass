@@ -550,15 +550,15 @@ function validateForm() {
   if (
       form.items.some(
           item =>
-              !String(
-                  item.originalName || '',
-              ).trim(),
+              !item.originalName.trim() &&
+              !item.translatedName.trim() &&
+              (
+                  item.amount === '' ||
+                  item.amount === null
+              ),
       )
   ) {
-    return (
-        '모든 품목의 원문 품목명을 ' +
-        '입력해 주세요.'
-    )
+    return '품목명 또는 품목 금액을 입력해 주세요.'
   }
 
   if (
@@ -652,7 +652,7 @@ function createReceiptRequestData() {
       id: item.id ?? null,
 
       originalName:
-          item.originalName.trim(),
+          item.originalName.trim() || null,
 
       translatedName:
           item.translatedName.trim() ||
