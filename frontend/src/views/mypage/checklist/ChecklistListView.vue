@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useChecklistStore } from '@/stores/checklist';
@@ -9,14 +9,30 @@ const router = useRouter();
 const store = useChecklistStore();
 
 // 1. URL Query에서 tripId 추출 (기본값 없음)
-const tripId = computed(() => route.query.tripId ? Number(route.query.tripId) : null);
+const tripId = computed(() =>
+  route.query.tripId ? Number(route.query.tripId) : null,
+);
+
+// [MODIFIED] ChecklistStore에서 tripDday를 직접 가져오기
+const dDayLabel = computed(() => {
+  const days = store.tripDday; // 스토어의 반응형 변수 참조
+
+  if (days === undefined || days === null) return '...'; // 로딩 중일 때 표시
+  if (days === 0) return 'D-DAY';
+  if (days > 0) return `D-${days}`;
+  return `D+${Math.abs(days)}`;
+});
 
 // 2. 컴포넌트 마운트 시 체크리스트 요약 API 호출
-onMounted(() => {
+onMounted(async () => {
   if (tripId.value) {
-    store.loadSummary(tripId.value);
+    // 순서대로 호출
+    await Promise.all([
+      store.loadSummary(tripId.value),
+      store.fetchTripDday(tripId.value)
+    ]);
   } else {
-    console.error("tripId가 없습니다.");
+    console.error('tripId가 없습니다.');
     router.back();
   }
 });
@@ -65,7 +81,7 @@ const returnProgress = computed(() => ({
       <small>TRIP CHECKLIST PASS</small>
       <div>
         <h2>내 여행 체크리스트</h2>
-        <b>D-DAY</b>
+        <b>{{ dDayLabel }}</b>
       </div>
       <i />
       <p>전체 완료율</p>
