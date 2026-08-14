@@ -29,6 +29,15 @@ const passwordsMatch = computed(() =>
     && newPassword.value === newPasswordConfirm.value,
 )
 
+function resetVerification() {
+  verificationCode.value = ''
+  verificationRequestId.value = null
+  newPassword.value = ''
+  newPasswordConfirm.value = ''
+  step.value = 'request'
+  errorMessage.value = ''
+}
+
 async function sendCode() {
   errorMessage.value = ''
 
@@ -231,6 +240,14 @@ async function submitNewPassword() {
           <p class="text-xs mt-1" style="color: #3B5BDB">
             인증번호가 발송되었습니다.
           </p>
+          <button
+              type="button"
+              class="mt-2 text-xs text-gray-500 underline disabled:opacity-50"
+              :disabled="loading"
+              @click="resetVerification"
+          >
+            입력 정보 수정하기
+          </button>
         </div>
 
         <button

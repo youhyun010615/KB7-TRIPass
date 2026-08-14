@@ -24,6 +24,14 @@ const normalizedPhone = computed(() =>
     phone.value.replace(/\D/g, ''),
 )
 
+function resetVerification() {
+  verifyCode.value = ''
+  verificationRequestId.value = null
+  codeSent.value = false
+  results.value = []
+  errorMessage.value = ''
+}
+
 async function sendCode() {
   errorMessage.value = ''
 
@@ -183,6 +191,14 @@ async function confirm() {
             class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
           />
           <p class="text-xs mt-1" style="color: #3B5BDB">인증번호가 발송되었습니다.</p>
+          <button
+              type="button"
+              class="mt-2 text-xs text-gray-500 underline disabled:opacity-50"
+              :disabled="loading"
+              @click="resetVerification"
+          >
+            입력 정보 수정하기
+          </button>
         </div>
 
         <!-- 결과 -->
