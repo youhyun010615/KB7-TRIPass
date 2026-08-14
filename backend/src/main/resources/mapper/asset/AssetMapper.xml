@@ -86,7 +86,7 @@
 
     <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
     <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
-        SELECT id, account_id, card_id, external_key, transaction_date, transaction_time,
+        SELECT id, account_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after, merchant_name, memo, category_id
         FROM transactions
         WHERE account_id = #{accountId}
@@ -107,7 +107,7 @@
 
     <!-- 개별 계좌 거래내역 조회 (날짜/타입 필터) -->
     <select id = "findTransactionsByAccountIdWithFilter" resultType="TransactionDto">
-        SELECT id, account_id, card_id, external_key, transaction_date, transaction_time,
+        SELECT id, account_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after,
                merchant_name, memo, category_id
         FROM transactions
@@ -127,7 +127,7 @@
 
     <!-- 거래 단건 상세 조회(userId로 소유권 검증) -->
     <select id = "findTransactionById" resultType="TransactionDto">
-        SELECT t.id, t.account_id, t.card_id, t.external_key, t.transaction_date, t.transaction_time,
+        SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
                t.transaction_type, t.transaction_region, t.amount, t.balance_after,
                t.merchant_name, t.memo, t.category_id
         FROM transactions t
@@ -140,7 +140,7 @@
 
     <!-- 전체 계좌 거래내역 조회(userId 기준) -->
     <select id = "findTransactionsByUserId" resultType="TransactionDto">
-        SELECT t.id, t.account_id, t.card_id, t.external_key, t.transaction_date, t.transaction_time,
+        SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
                t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.memo, t.category_id
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
