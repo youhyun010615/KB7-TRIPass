@@ -334,6 +334,7 @@ CREATE TABLE codef_connected_institutions
     created_at                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    UNIQUE KEY uk_codef_connected_institutions_conn_org_type (codef_connection_id, organization_code, business_type),
     CONSTRAINT fk_codef_connected_institutions_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
 ) COMMENT 'CODEF 연동 기관';
 
@@ -382,6 +383,7 @@ CREATE TABLE cards
     created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
+    UNIQUE KEY uk_cards_user_masked_number (user_id, masked_card_number),
     CONSTRAINT fk_cards_user             FOREIGN KEY (user_id)             REFERENCES users (id),
     CONSTRAINT fk_cards_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
 ) COMMENT '연동 카드';
@@ -513,6 +515,7 @@ CREATE TABLE transactions
     amount                DECIMAL(18, 2) NOT NULL COMMENT '거래 금액(원화 기준)',
     balance_after         DECIMAL(18, 2) NULL COMMENT '거래 후 잔액',
     merchant_name         VARCHAR(255)   NULL COMMENT '거래처',
+    merchant_type         VARCHAR(100)   NULL COMMENT 'CODEF 가맹점 업종',
     original_amount       DECIMAL(18, 2) NULL COMMENT '현지 통화 금액',
     applied_exchange_rate DECIMAL(15, 4) NULL COMMENT '적용 환율',
     payment_method        VARCHAR(50)    NULL COMMENT '결제수단',

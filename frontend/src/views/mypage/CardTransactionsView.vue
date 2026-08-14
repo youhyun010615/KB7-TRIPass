@@ -10,9 +10,16 @@ const cardStore = useCardStore()
 const cardId = Number(route.params.cardId)
 const card = computed(() => cardStore.cards.find((c) => c.id === cardId))
 
+function toLocalDateStr(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 const today = new Date()
-const endDate = today.toISOString().slice(0, 10)
-const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
+const endDate = toLocalDateStr(today)
+const startDate = toLocalDateStr(new Date(today.getFullYear(), today.getMonth(), 1))
 
 const isFetching = ref(false)
 const fetchMessage = ref('')

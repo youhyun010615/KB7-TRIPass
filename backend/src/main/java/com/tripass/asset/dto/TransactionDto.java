@@ -19,7 +19,7 @@ public class TransactionDto {
     private Long id;
     private Long accountId;
     private Long cardId;
-    private String externalKey;       // 중복 수집 방지 키 (날짜+시간+계좌+금액 조합)
+    private String externalKey;       // 중복 수집 방지 키 (계좌: ACC:계좌ID:날짜:시각:금액, 카드: CARD:카드ID:승인번호 또는 날짜:시각:금액)
     private LocalDate transactionDate;
     private LocalTime transactionTime;
     private String transactionType;   // DEPOSIT / WITHDRAWAL
@@ -27,6 +27,7 @@ public class TransactionDto {
     private BigDecimal amount;
     private BigDecimal balanceAfter;
     private String merchantName;      // 거래처
+    private String merchantType;      // CODEF 가맹점 업종
     private String memo;
     private Long categoryId;
 }

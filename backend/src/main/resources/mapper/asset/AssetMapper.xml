@@ -26,6 +26,16 @@
              'CONNECTED', NOW(), NOW())
     </insert>
 
+    <!-- connection_id + organization_code + business_type로 이미 등록된 기관인지 조회 (카드사 중복 등록 방지) -->
+    <select id = "findConnectedInstitution" resultType="CodefConnectedInstitutionDto">
+        SELECT id, codef_connection_id, organization_code, organization_name, business_type, connection_status
+        FROM codef_connected_institutions
+        WHERE codef_connection_id = #{codefConnectionId}
+          AND organization_code = #{organizationCode}
+          AND business_type = #{businessType}
+        LIMIT 1
+    </select>
+
     <insert id = "insertAccount" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO accounts
         (user_id, codef_connection_id, account_name, account_number, account_type,
@@ -87,7 +97,7 @@
     <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
     <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
         SELECT id, account_id, transaction_date, transaction_time,
-               transaction_type, transaction_region, amount, balance_after, merchant_name, memo, category_id
+               transaction_type, transaction_region, amount, balance_after, merchant_name, merchant_type, memo, category_id
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
@@ -96,7 +106,7 @@
 
     <!-- 계좌 ID로 단건 조회 — 거래내역 조회 시 계좌번호, 기관코드 확인용 (userId로 소유권 검증) -->
     <select id = "findAccountById" resultType="AccountDto">
-        SELECT a.id, a.account_number, a.account_type, a.balance,
+        SELECT a.id, a.account_name, a.account_number, a.account_type, a.balance,
                i.organization_code
         FROM accounts a
         LEFT JOIN codef_connected_institutions i ON a.codef_connection_id = i.codef_connection_id
@@ -109,7 +119,7 @@
     <select id = "findTransactionsByAccountIdWithFilter" resultType="TransactionDto">
         SELECT id, account_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after,
-               merchant_name, memo, category_id
+               merchant_name, merchant_type, memo, category_id
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
@@ -129,7 +139,7 @@
     <select id = "findTransactionById" resultType="TransactionDto">
         SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
                t.transaction_type, t.transaction_region, t.amount, t.balance_after,
-               t.merchant_name, t.memo, t.category_id
+               t.merchant_name, t.merchant_type, t.memo, t.category_id
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
         WHERE t.id = #{transactionId}
@@ -141,7 +151,7 @@
     <!-- 전체 계좌 거래내역 조회(userId 기준) -->
     <select id = "findTransactionsByUserId" resultType="TransactionDto">
         SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
-               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.memo, t.category_id
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.merchant_type, t.memo, t.category_id
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
         WHERE a.user_id = #{userId}
@@ -202,6 +212,27 @@
         VALUES (#{userId}, #{codefConnectionId}, #{cardName}, #{maskedCardNumber}, #{cardType}, #{organizationCode}, NOW(), NOW())
     </insert>
 
+    <!-- user_id + masked_card_number로 기존 연동 카드 조회 (재연동 시 중복 저장 방지) -->
+    <select id="findCardByUserIdAndNumber" resultType="CardDto">
+        SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code
+        FROM cards
+        WHERE user_id = #{userId}
+          AND masked_card_number = #{maskedCardNumber}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 재연동 시 기존 카드 정보 갱신 -->
+    <update id="updateCardOnReconnect">
+        UPDATE cards
+        SET codef_connection_id = #{codefConnectionId},
+            card_name           = #{cardName},
+            card_type           = #{cardType},
+            organization_code   = #{organizationCode},
+            updated_at          = NOW()
+        WHERE id = #{id}
+    </update>
+
     <!-- 사용자의 연동 카드 목록 조회 -->
     <select id="findCardsByUserId" resultType="CardDto">
         SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code
@@ -220,17 +251,27 @@
           AND is_deleted = 0
     </select>
 
-    <!-- 카드 거래내역 저장 — 동일 external_key 존재 시 merchant_name만 업데이트 (계좌·카드 중복 제거) -->
+    <!-- CODEF 승인 취소 통보 시 기존 저장된 거래를 external_key로 찾아 논리 삭제 -->
+    <update id="deleteTransactionByExternalKey">
+        UPDATE transactions
+        SET is_deleted = 1, deleted_at = NOW(), updated_at = NOW()
+        WHERE external_key = #{externalKey}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 카드 거래내역 저장 — 동일 external_key 존재 시 merchant_name/merchant_type만 업데이트 (계좌·카드 중복 제거) -->
     <insert id="upsertTransactionFromCard" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO transactions
         (card_id, external_key, transaction_date, transaction_time, transaction_type,
-         transaction_region, amount, balance_after, merchant_name)
+         transaction_region, amount, balance_after, merchant_name, merchant_type)
         VALUES
         (#{cardId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
-         #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName})
+         #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName}, #{merchantType})
         ON DUPLICATE KEY UPDATE
             id = LAST_INSERT_ID(id),
+            card_id = VALUES(card_id),
             merchant_name = VALUES(merchant_name),
+            merchant_type = VALUES(merchant_type),
             updated_at = NOW()
     </insert>
 
@@ -238,7 +279,7 @@
     <select id="findTransactionsByCardId" resultType="TransactionDto">
         SELECT id, card_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after,
-               merchant_name, memo, category_id
+               merchant_name, merchant_type, memo, category_id
         FROM transactions
         WHERE card_id = #{cardId}
           AND is_deleted = 0

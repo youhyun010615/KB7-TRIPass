@@ -44,6 +44,7 @@ export const useCardStore = defineStore('card', () => {
       cardTransactions.value = res.data?.data ?? []
     } catch (e) {
       error.value = e
+      throw e
     } finally {
       loading.value = false
     }

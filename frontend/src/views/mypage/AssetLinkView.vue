@@ -59,7 +59,7 @@ function cardTypeLabel(type) {
             :key="account.id"
             class="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-50"
             :class="i < accounts.length - 1 ? 'border-b border-gray-100' : ''"
-            @click="router.push(`/asset/accounts/${account.id}?isReal=true&name=${encodeURIComponent(account.accountName)}&number=${encodeURIComponent(account.accountNumber)}&type=${encodeURIComponent(account.accountType)}`)"
+            @click="router.push(`/asset/accounts/${account.id}?isReal=true`)"
           >
             <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-sm font-bold" style="background: #2A4DB0">
               통

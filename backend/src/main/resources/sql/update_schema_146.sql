@@ -24,6 +24,19 @@ CREATE TABLE cards
 -- 2) transactions 테이블 카드 연동 구조 변경
 --    account_id를 카드 전용 거래를 위해 NULL 허용으로 변경하고, card_id 컬럼/FK/인덱스를 추가한다.
 --    기존 (account_id, external_key) 복합 UNIQUE를 external_key 단일 UNIQUE로 교체한다.
+--    주의: 기존 복합 UNIQUE에서는 서로 다른 account_id가 같은 external_key를 가질 수 있었으므로,
+--    아래 UNIQUE KEY 추가 전 반드시 중복 여부를 먼저 확인하고, 중복이 있으면 정리한 뒤 진행한다.
+--
+--    SELECT external_key, COUNT(*) AS duplicate_count
+--    FROM transactions
+--    GROUP BY external_key
+--    HAVING COUNT(*) > 1;
+--
+--    중복이 있다면 낮은 id를 남기고 나머지를 정리한다 (필요 시 정책에 맞게 조정):
+--
+--    DELETE t1 FROM transactions t1
+--    INNER JOIN transactions t2
+--      ON t1.external_key = t2.external_key AND t1.id > t2.id;
 ALTER TABLE transactions
     MODIFY COLUMN account_id BIGINT NULL COMMENT '계좌 ID(카드 전용 거래는 NULL)',
     ADD COLUMN card_id BIGINT NULL COMMENT '카드 ID(계좌 거래는 NULL)' AFTER account_id;

@@ -76,7 +76,12 @@ public class CodefUtil {
         String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
         client.close();
 
-        json = java.net.URLDecoder.decode(json, StandardCharsets.UTF_8);
+        // CODEF는 요청을 x-www-form-urlencoded로 보내면 응답도 URL 인코딩된 상태로 반환한다.
+        // JSON은 항상 '{' 또는 '['로 시작하므로, 인코딩된 응답은 '%7B'/'%5B'로 시작한다.
+        // 이미 디코딩된 순수 JSON을 무조건 디코딩하면 '+'가 공백으로 바뀌거나 '%' 리터럴에서 예외가 발생하므로 조건부로만 디코딩한다.
+        if (json.startsWith("%7B") || json.startsWith("%5B")) {
+            json = java.net.URLDecoder.decode(json, StandardCharsets.UTF_8);
+        }
 
         return mapper.readValue(json, Map.class);
     }
