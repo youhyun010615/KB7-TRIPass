@@ -24,6 +24,11 @@ export async function fetchActiveTripGoal() {
   return unwrap(response)
 }
 
+export async function fetchActiveTripHome() {
+  const response = await api.get('/trips/active/home')
+  return unwrap(response)
+}
+
 export async function fetchTripGoal(tripId) {
   const response = await api.get(`/trips/${tripId}`)
   return unwrap(response)
