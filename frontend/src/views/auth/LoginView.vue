@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { login as loginApi } from '@/api/auth'
+import AuthBoardingPass from '@/components/auth/AuthBoardingPass.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -59,112 +60,211 @@ async function login(){
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex flex-col relative overflow-hidden"
-    style="background: linear-gradient(to bottom, #263F8C 0%, #172F6B 100%)"
+  <AuthBoardingPass
+    title="다시 만나서 반가워요"
+    description="로그인하고 여행 준비를 이어가세요."
+    ticket-code="LOGIN"
   >
-    <!-- 데코 원형 배경 -->
-    <div
-      class="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
-      style="background: rgba(255,255,255,0.06); transform: translate(35%, -20%)"
-    ></div>
-    <div
-      class="absolute top-20 right-6 w-56 h-56 rounded-full pointer-events-none"
-      style="background: rgba(255,255,255,0.04)"
-    ></div>
+    <form class="login-form" @submit.prevent="login">
+      <p v-if="errorMsg" class="form-message error" role="alert">{{ errorMsg }}</p>
 
-    <!-- 로고 바 -->
-    <div class="relative z-10 flex items-center justify-between px-5 pt-12">
-      <span class="text-white font-bold text-xs tracking-[0.2em]">TRIPASS</span>
-      <span class="text-lg">✈️</span>
-    </div>
-
-    <!-- 히어로 텍스트 -->
-    <div class="relative z-10 px-5 pt-5 pb-8">
-      <h1 class="text-white text-[26px] font-bold leading-snug">
-        여행을 준비하는 가장<br>똑똑한 금융 습관
-      </h1>
-      <p class="text-blue-200 text-sm mt-3 leading-relaxed">
-        목표 설정부터 여행 지출까지, TRIPass와 함께하세요.
-      </p>
-    </div>
-
-    <!-- 흰색 카드 -->
-    <div class="relative z-10 mx-4 bg-white rounded-3xl px-6 pt-7 pb-7">
-      <h2 class="text-[22px] font-bold text-gray-900">로그인</h2>
-      <p class="text-sm text-gray-400 mt-1">다시 만나서 반가워요</p>
-
-      <p v-if="errorMsg" class="mt-3 text-xs text-red-500">{{ errorMsg }}</p>
-
-      <!-- 아이디 -->
-      <div class="mt-5">
-        <label class="text-sm font-medium text-gray-700 block mb-1.5">아이디</label>
+      <div class="field-group">
+        <label for="login-id">아이디</label>
         <input
+          id="login-id"
           v-model="userId"
           type="text"
+          autocomplete="username"
           placeholder="아이디를 입력해 주세요"
-          @keyup.enter="login"
-          class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
         />
       </div>
 
-      <!-- 비밀번호 -->
-      <div class="mt-4">
-        <label class="text-sm font-medium text-gray-700 block mb-1.5">비밀번호</label>
-        <div class="relative">
+      <div class="field-group">
+        <label for="login-password">비밀번호</label>
+        <div class="password-field">
           <input
+            id="login-password"
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
             placeholder="비밀번호를 입력해 주세요"
-            @keyup.enter="login"
-            class="w-full h-12 px-4 pr-12 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
           />
-          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" @click="showPassword = !showPassword">
-            <svg v-if="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <button
+            type="button"
+            class="visibility-button"
+            :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
+            @click="showPassword = !showPassword"
+          >
+            <svg v-if="showPassword" viewBox="0 0 24 24" fill="none">
+              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+            <svg v-else viewBox="0 0 24 24" fill="none">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" />
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
             </svg>
           </button>
         </div>
       </div>
 
-      <!-- 찾기 링크 (오른쪽 정렬) -->
-      <div class="flex justify-end items-center gap-2 mt-3">
-        <button class="text-xs text-gray-400" @click="router.push('/find-id')">아이디 찾기</button>
-        <span class="text-gray-300 text-xs">·</span>
-        <button class="text-xs text-gray-400" @click="router.push('/find-password')">비밀번호 찾기</button>
+      <div class="account-links">
+        <button type="button" @click="router.push('/find-id')">아이디 찾기</button>
+        <span>·</span>
+        <button type="button" @click="router.push('/find-password')">비밀번호 찾기</button>
       </div>
 
-      <!-- 로그인 버튼 -->
-      <button
-          type="button"
-        @click="login"
-        :disabled="loading"
-        class="w-full h-14 rounded-2xl text-white font-bold text-base mt-5 disabled:opacity-70 transition-opacity"
-        style="background: #3B5BDB"
-      >
+      <button type="submit" class="primary-button" :disabled="loading">
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
+      <button type="button" class="secondary-button" @click="router.push('/signup')">
+        회원가입
+      </button>
 
-      <!-- 소셜 로그인 -->
-      <div class="flex items-center gap-3 mt-6">
-        <div class="flex-1 h-px bg-gray-200"></div>
-        <span class="text-xs text-gray-400">간편 로그인</span>
-        <div class="flex-1 h-px bg-gray-200"></div>
+      <div class="social-divider"><span>간편 로그인</span></div>
+      <div class="social-buttons">
+        <button type="button" class="kakao" aria-label="카카오 로그인">K</button>
+        <button type="button" class="google" aria-label="구글 로그인">G</button>
       </div>
-      <div class="flex justify-center gap-4 mt-4">
-        <button class="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center font-bold text-[#3C1E1E] text-lg">K</button>
-        <button class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-[#3B5BDB] text-lg">G</button>
-      </div>
-    </div>
-
-    <!-- 회원가입 링크 -->
-    <div class="relative z-10 py-5 text-center">
-      <span class="text-white/60 text-sm">아직 계정이 없나요? </span>
-      <button class="text-white font-semibold text-sm" @click="router.push('/signup')">회원가입</button>
-    </div>
-  </div>
+    </form>
+  </AuthBoardingPass>
 </template>
+
+<style scoped>
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.field-group label {
+  display: block;
+  margin-bottom: 7px;
+  color: #3d4860;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.field-group input {
+  width: 100%;
+  height: 50px;
+  padding: 0 15px;
+  border: 1px solid #dbe3f0;
+  border-radius: 11px;
+  outline: none;
+  color: #15213a;
+  background: #f7f9fc;
+  font-size: 13px;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.field-group input:focus {
+  border-color: #2a63c9;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(42, 99, 201, 0.1);
+}
+
+.field-group input::placeholder { color: #b3bdcd; }
+
+.password-field { position: relative; }
+.password-field input { padding-right: 47px; }
+
+.visibility-button {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  border: 0;
+  color: #aab4c5;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.visibility-button svg { width: 20px; height: 20px; }
+
+.account-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: -5px;
+  color: #8d98aa;
+  font-size: 11px;
+}
+
+.account-links button {
+  border: 0;
+  color: inherit;
+  background: transparent;
+}
+
+.primary-button,
+.secondary-button {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.primary-button {
+  margin-top: 3px;
+  border: 0;
+  color: white;
+  background: #0d327e;
+  box-shadow: 0 9px 18px rgba(13, 50, 126, 0.16);
+}
+
+.primary-button:disabled { opacity: 0.65; }
+
+.secondary-button {
+  margin-top: -8px;
+  border: 1px solid #cad6e8;
+  color: #173c84;
+  background: white;
+}
+
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a3acba;
+  font-size: 10px;
+}
+
+.social-divider::before,
+.social-divider::after {
+  height: 1px;
+  flex: 1;
+  background: #e5e9f0;
+  content: '';
+}
+
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+  margin-top: -6px;
+}
+
+.social-buttons button {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.kakao { border: 0; color: #3c1e1e; background: #fee500; }
+.google { border: 1px solid #dbe2ec; color: #3164ca; background: white; }
+
+.form-message {
+  margin: -3px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+.form-message.error { color: #b42318; background: #fff1f0; }
+</style>
