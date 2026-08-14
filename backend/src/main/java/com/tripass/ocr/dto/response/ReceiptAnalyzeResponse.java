@@ -37,8 +37,6 @@ public class ReceiptAnalyzeResponse {
     //현지 통화 기준 총 결제 금액
     private BigDecimal totalAmount;
 
-    //현지 통화 기준 세금
-    private BigDecimal taxAmount;
 
     //금액 분할 인원수 - 분석 직후 기본값 1
     private int splitCount;

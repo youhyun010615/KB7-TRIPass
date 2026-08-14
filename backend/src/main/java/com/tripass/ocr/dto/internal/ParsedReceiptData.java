@@ -24,9 +24,6 @@ public class ParsedReceiptData {
     //현지 통화 기준 총 결제 금액
     private BigDecimal totalAmount;
 
-    //현지 통화 기준 세금
-    private BigDecimal taxAmount;
-
     //원문 품목 목록
     private List<ParsedReceiptItem> items;
 }

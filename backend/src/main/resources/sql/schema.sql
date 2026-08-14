@@ -3,12 +3,16 @@ USE tripass;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ===== DROP TABLES =====
+DROP TABLE IF EXISTS receipt_participants;
 DROP TABLE IF EXISTS receipt_items;
 DROP TABLE IF EXISTS receipts;
 DROP TABLE IF EXISTS trip_reports;
 DROP TABLE IF EXISTS trip_checklist_items;
 DROP TABLE IF EXISTS pre_expenses;
 DROP TABLE IF EXISTS trip_schedules;
+DROP TABLE IF EXISTS trip_budget_recommendations;
+DROP TABLE IF EXISTS country_budget_baselines;
+DROP TABLE IF EXISTS trip_wallets;
 DROP TABLE IF EXISTS trip_countries;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS notification_settings;
@@ -422,7 +426,77 @@ CREATE TABLE trip_countries
 ) COMMENT '여행 국가';
 
 
--- 17. 거래 내역
+-- 15-1. TRIP 월렛
+-- 서비스 내부의 가상 여행 저축 잔액을 관리한다.
+CREATE TABLE trip_wallets
+(
+    id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'TRIP 월렛 ID',
+    user_id       BIGINT         NOT NULL COMMENT '회원 ID',
+    balance       DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT '현재 월렛 잔액',
+    created_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_trip_wallets_user (user_id),
+    CONSTRAINT fk_trip_wallets_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT 'TRIP 월렛';
+
+
+-- 15-2. 국가별 여행 예산 기준값
+-- 조사한 기준 단가를 사용해 여행 예산을 재현 가능하게 계산한다.
+CREATE TABLE country_budget_baselines
+(
+    id                 BIGINT         NOT NULL AUTO_INCREMENT COMMENT '국가별 예산 기준값 ID',
+    country_id         BIGINT         NOT NULL COMMENT '국가 ID',
+    round_trip_airfare DECIMAL(18, 2) NOT NULL COMMENT '왕복 항공권 평균가(원화)',
+    lodging_per_night  DECIMAL(18, 2) NOT NULL COMMENT '숙소 1박 평균가(원화)',
+    food_per_day       DECIMAL(18, 2) NOT NULL COMMENT '1일 식비 평균(원화)',
+    activity_per_day   DECIMAL(18, 2) NOT NULL COMMENT '1일 액티비티 평균(원화)',
+    transport_per_day  DECIMAL(18, 2) NOT NULL COMMENT '1일 현지 교통비 평균(원화)',
+    misc_per_day       DECIMAL(18, 2) NOT NULL COMMENT '1일 기타 평균(원화)',
+    data_source        VARCHAR(500)   NULL COMMENT '조사 출처',
+    reference_date     DATE           NOT NULL COMMENT '기준 조사일',
+    created_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_country_budget_baselines_country (country_id),
+    CONSTRAINT fk_country_budget_baselines_country
+        FOREIGN KEY (country_id) REFERENCES countries (id)
+) COMMENT '국가별 여행 예산 기준값';
+
+
+-- 15-3. 여행 국가별 예산 추천
+-- 항공·숙소는 사전지출, 액티비티·식비·교통·기타는 여행 목표 금액에 포함한다.
+CREATE TABLE trip_budget_recommendations
+(
+    id                         BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'AI 예산 추천 ID',
+    trip_country_id            BIGINT         NOT NULL COMMENT '여행 국가 ID',
+    traveler_count             INT            NOT NULL DEFAULT 1 COMMENT '여행 인원(현재 성인 1인 고정)',
+    travel_style               VARCHAR(20)    NOT NULL DEFAULT 'MID_RANGE' COMMENT '여행 스타일',
+    recommended_airfare_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 항공 사전지출',
+    recommended_lodging_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 숙소 사전지출',
+    recommended_activity_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 액티비티 현지지출',
+    recommended_transport_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 교통비 현지지출',
+    recommended_food_amount    DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 식비 현지지출',
+    recommended_other_amount   DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT 'AI 추천 기타 현지지출',
+    confirmed_airfare_amount   DECIMAL(18, 2) NULL COMMENT '사용자 확정 항공 사전지출',
+    confirmed_lodging_amount   DECIMAL(18, 2) NULL COMMENT '사용자 확정 숙소 사전지출',
+    confirmed_activity_amount  DECIMAL(18, 2) NULL COMMENT '사용자 확정 액티비티 현지지출',
+    confirmed_transport_amount DECIMAL(18, 2) NULL COMMENT '사용자 확정 교통비 현지지출',
+    confirmed_food_amount      DECIMAL(18, 2) NULL COMMENT '사용자 확정 식비 현지지출',
+    confirmed_other_amount     DECIMAL(18, 2) NULL COMMENT '사용자 확정 기타 현지지출',
+    ai_reason                  VARCHAR(1000) NULL COMMENT 'AI 추천 근거',
+    ai_model                   VARCHAR(100)  NULL COMMENT '추천 생성 모델',
+    is_confirmed               TINYINT(1)    NOT NULL DEFAULT 0 COMMENT '사용자 확정 여부',
+    created_at                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_trip_budget_recommendations_country (trip_country_id),
+    CONSTRAINT fk_trip_budget_recommendations_country
+        FOREIGN KEY (trip_country_id) REFERENCES trip_countries (id)
+) COMMENT '여행 국가별 AI 예산 추천';
+
+
+-- 16. 거래 내역
 CREATE TABLE transactions
 (
     id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '거래 ID',
@@ -666,26 +740,27 @@ CREATE TABLE receipts
 (
     id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '해외 영수증 ID',
     user_id       BIGINT         NOT NULL COMMENT '회원 ID',
-    trip_id       BIGINT         NULL COMMENT '여행 ID',
-    country_id    BIGINT         NULL COMMENT '국가 ID',
-    currency_id   BIGINT         NULL COMMENT '통화 ID',
+    trip_id       BIGINT         NOT NULL COMMENT '여행 ID',
+    country_id    BIGINT         NOT NULL COMMENT '여행 국가 ID',
+    category_id   BIGINT         NOT NULL COMMENT '지출 카테고리 ID',
+    currency_id   BIGINT         NOT NULL COMMENT '통화 ID',
     payment_datetime DATETIME NOT NULL COMMENT '결제일시',
-    file_name     VARCHAR(255)   NOT NULL COMMENT '파일명',
-    file_url      VARCHAR(1000)  NOT NULL COMMENT '파일 URL',
-    file_type     VARCHAR(10)    NOT NULL COMMENT '파일 형식(JPG/JPEG/PNG, 10MB 이하)',
+    file_name     VARCHAR(255)   NULL COMMENT '파일명',
+    file_url      VARCHAR(1000)  NULL COMMENT '파일 URL',
+    file_type     VARCHAR(10)    NULL COMMENT '파일 형식(JPG/JPEG/PNG, 10MB 이하)',
+    memo          VARCHAR(500)   NULL COMMENT '영수증 메모',
     status        VARCHAR(20)    NOT NULL DEFAULT 'UPLOADED' COMMENT '처리 상태(UPLOADED/PROCESSING/COMPLETED/FAILED)',
     merchant_original_name   VARCHAR(255) NULL COMMENT '원문 상호명',
     merchant_translated_name VARCHAR(255) NULL COMMENT '번역 상호명',
-    total_amount  DECIMAL(15, 2) NULL COMMENT '현지 총액',
-    tax_amount    DECIMAL(15, 2) NULL COMMENT '부가세',
+    total_amount  DECIMAL(15, 2) NOT NULL COMMENT '현지 총액',
     ocr_raw_text  TEXT           NULL COMMENT 'OCR 원문 텍스트',
     split_count INT NOT NULL DEFAULT 1 COMMENT '금액 분할 인원수',
     error_message TEXT           NULL COMMENT '오류 메시지',
     is_deleted    TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at    DATETIME       NULL COMMENT '삭제일시',
-    created_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
-    updated_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
-    processed_at  TIMESTAMP      NULL COMMENT 'OCR 처리 완료 일시',
+    created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    processed_at  DATETIME      NULL COMMENT 'OCR 처리 완료 일시',
     PRIMARY KEY (id),
     INDEX idx_receipts_user_datetime
         (user_id, is_deleted, payment_datetime),
@@ -693,11 +768,40 @@ CREATE TABLE receipts
     INDEX idx_receipts_trip_datetime
         (trip_id, is_deleted, payment_datetime),
     CONSTRAINT chk_receipts_split_count CHECK (split_count >= 1),
+    CONSTRAINT chk_receipts_file_info
+        CHECK (
+            (file_name IS NULL AND file_url IS NULL AND file_type IS NULL)
+                OR
+            (file_name IS NOT NULL AND file_url IS NOT NULL AND file_type IS NOT NULL)
+        ),
     CONSTRAINT fk_receipts_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_receipts_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_receipts_country FOREIGN KEY (country_id) REFERENCES countries (id),
-    CONSTRAINT fk_receipts_currency FOREIGN KEY (currency_id) REFERENCES currencies (id)
+    CONSTRAINT fk_receipts_currency FOREIGN KEY (currency_id) REFERENCES currencies (id),
+    CONSTRAINT fk_receipts_category FOREIGN KEY (category_id) REFERENCES spending_categories (id)
 ) COMMENT '해외 영수증';
+-- 공동결제 참여자 테이블 --
+CREATE TABLE receipt_participants
+(
+    id               BIGINT       NOT NULL AUTO_INCREMENT COMMENT '영수증 공동결제 참여자 ID',
+    receipt_id       BIGINT       NOT NULL COMMENT '해외 영수증 ID',
+    participant_name VARCHAR(100) NOT NULL COMMENT '로그인 회원을 제외한 공동결제 참여자 이름',
+    display_order    INT          NOT NULL COMMENT '표시 순서',
+    is_deleted       TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
+    deleted_at       DATETIME     NULL COMMENT '삭제일시',
+    created_at       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+
+    PRIMARY KEY (id),
+
+    INDEX idx_receipt_participants_receipt
+        (receipt_id, is_deleted, display_order),
+
+    CONSTRAINT fk_receipt_participants_receipt
+        FOREIGN KEY (receipt_id)
+            REFERENCES receipts (id)
+) COMMENT '영수증 공동결제 참여자';
 
 
 -- 28. 영수증 품목
@@ -712,9 +816,10 @@ CREATE TABLE receipt_items
     display_order   INT            NOT NULL COMMENT '표시 순서',
     is_deleted      TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at      DATETIME       NULL COMMENT '삭제일시',
-    created_at      TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
-    updated_at      TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
+    INDEX idx_receipt_items_receipt (receipt_id, is_deleted, display_order),
     CONSTRAINT fk_receipt_items_receipt FOREIGN KEY (receipt_id) REFERENCES receipts (id)
 ) COMMENT '영수증 품목';
 
@@ -803,6 +908,8 @@ CREATE INDEX idx_transactions_transaction_date ON transactions (transaction_date
 CREATE INDEX idx_accounts_user_id ON accounts (user_id);
 CREATE INDEX idx_trips_user_id ON trips (user_id);
 CREATE INDEX idx_trip_countries_trip_id ON trip_countries (trip_id);
+CREATE INDEX idx_trip_budget_recommendations_country ON trip_budget_recommendations (trip_country_id);
+CREATE INDEX idx_country_budget_baselines_country ON country_budget_baselines (country_id);
 CREATE INDEX idx_trip_schedules_trip_id ON trip_schedules (trip_id);
 CREATE INDEX idx_trip_schedules_scheduled_at ON trip_schedules (scheduled_at);
 CREATE INDEX idx_trip_schedules_trip_deleted_scheduled ON trip_schedules (trip_id, is_deleted, scheduled_at);

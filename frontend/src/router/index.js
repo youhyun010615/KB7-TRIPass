@@ -281,6 +281,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/travel/register/schedule',
+      name: 'TravelRegisterSchedule',
+      component: () => import('@/views/travel/TravelRegisterView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/travel/funds',
       name: 'TravelFundCheck',
       component: () => import('@/views/travel/TravelFundCheckView.vue'),

@@ -103,4 +103,321 @@
           AND is_deleted = 0
     </select>
 
+    <select id="existsActiveTripByUserId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM trips
+            WHERE user_id = #{userId}
+              AND status IN ('PLANNING', 'TRAVELING')
+              AND is_deleted = 0
+        )
+    </select>
+
+    <insert id="insertTripGoal"
+            parameterType="TripGoalCommandDto"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO trips (
+            user_id,
+            trip_name,
+            status,
+            start_date,
+            end_date,
+            total_target_amount
+        ) VALUES (
+            #{userId},
+            #{tripName},
+            'PLANNING',
+            #{startDate},
+            #{endDate},
+            0
+        )
+    </insert>
+
+    <insert id="insertTripCountry" parameterType="TripCountryCommandDto">
+        INSERT INTO trip_countries (
+            trip_id,
+            country_id,
+            arrival_date,
+            departure_date,
+            target_budget,
+            display_order
+        ) VALUES (
+            #{tripId},
+            #{countryId},
+            #{arrivalDate},
+            #{departureDate},
+            #{targetBudget},
+            #{displayOrder}
+        )
+    </insert>
+
+    <select id="findTripGoalById" resultType="TripGoalResponseDto">
+        SELECT id AS tripId,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="findTripGoalCountries" resultType="TripCountryGoalResponseDto">
+        SELECT tc.id AS tripCountryId,
+               c.id AS countryId,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               tc.display_order,
+               tc.target_budget
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC, tc.arrival_date ASC
+    </select>
+
+    <select id="findActiveTripGoalByUserId" resultType="TripGoalResponseDto">
+        SELECT id AS tripId,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE user_id = #{userId}
+          AND status IN ('PLANNING', 'TRAVELING')
+          AND is_deleted = 0
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findCountries" resultType="TripCountryCatalogResponseDto">
+        SELECT COALESCE(
+                   MAX(CASE WHEN cb.id IS NOT NULL THEN c.id END),
+                   MIN(c.id)
+               ) AS countryId,
+               c.country_name,
+               cur.currency_code,
+               cur.currency_name,
+               MAX(c.flag_url) AS flag_url
+        FROM countries c
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+                 LEFT JOIN country_budget_baselines cb ON cb.country_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (c.country_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR cur.currency_code LIKE CONCAT('%', #{keyword}, '%')
+                 OR cur.currency_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        GROUP BY c.country_name, cur.currency_code, cur.currency_name
+        ORDER BY c.country_name ASC
+    </select>
+
+    <select id="existsCountryById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM countries WHERE id = #{countryId})
+    </select>
+
+    <select id="findTripStatus" resultType="string">
+        SELECT status
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <update id="updateTripGoal" parameterType="TripGoalCommandDto">
+        UPDATE trips
+        SET trip_name = #{tripName},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            total_target_amount = 0
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <update id="softDeleteTripCountries">
+        UPDATE trip_countries
+        SET is_deleted = 1,
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="findTripCountryBudgetContexts" resultType="TripCountryBudgetContextDto">
+        SELECT tc.id AS tripCountryId,
+               tc.country_id,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               tc.display_order
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC
+    </select>
+
+    <select id="findCountryBudgetBaseline" resultType="CountryBudgetBaselineDto">
+        SELECT country_id,
+               round_trip_airfare,
+               lodging_per_night,
+               food_per_day,
+               activity_per_day,
+               transport_per_day,
+               misc_per_day,
+               data_source,
+               reference_date
+        FROM country_budget_baselines
+        WHERE country_id = #{countryId}
+    </select>
+
+    <insert id="upsertTripBudgetRecommendation" parameterType="TripBudgetRecommendationCommandDto">
+        INSERT INTO trip_budget_recommendations (
+            trip_country_id, traveler_count, travel_style,
+            recommended_airfare_amount, recommended_lodging_amount,
+            recommended_activity_amount, recommended_transport_amount, recommended_food_amount, recommended_other_amount,
+            ai_reason, ai_model
+        ) VALUES (
+            #{tripCountryId}, #{travelerCount}, #{travelStyle},
+            #{airfareAmount}, #{lodgingAmount},
+            #{activityAmount}, #{transportAmount}, #{foodAmount}, #{otherAmount},
+            #{aiReason}, #{aiModel}
+        )
+        ON DUPLICATE KEY UPDATE
+            traveler_count = VALUES(traveler_count),
+            travel_style = VALUES(travel_style),
+            recommended_airfare_amount = VALUES(recommended_airfare_amount),
+            recommended_lodging_amount = VALUES(recommended_lodging_amount),
+            recommended_activity_amount = VALUES(recommended_activity_amount),
+            recommended_transport_amount = VALUES(recommended_transport_amount),
+            recommended_food_amount = VALUES(recommended_food_amount),
+            recommended_other_amount = VALUES(recommended_other_amount),
+            ai_reason = VALUES(ai_reason),
+            ai_model = VALUES(ai_model),
+            confirmed_airfare_amount = NULL,
+            confirmed_lodging_amount = NULL,
+            confirmed_activity_amount = NULL,
+            confirmed_transport_amount = NULL,
+            confirmed_food_amount = NULL,
+            confirmed_other_amount = NULL,
+            is_confirmed = 0
+    </insert>
+
+    <select id="findBudgetRecommendationsByTripId" resultType="CountryBudgetRecommendationResponseDto">
+        SELECT tc.id AS tripCountryId,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               br.recommended_airfare_amount,
+               br.recommended_lodging_amount,
+               br.recommended_activity_amount,
+               br.recommended_transport_amount,
+               br.recommended_food_amount,
+               br.recommended_other_amount,
+               br.confirmed_airfare_amount,
+               br.confirmed_lodging_amount,
+               br.confirmed_activity_amount,
+               br.confirmed_transport_amount,
+               br.confirmed_food_amount,
+               br.confirmed_other_amount,
+               br.ai_reason,
+               br.is_confirmed
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+                 LEFT JOIN trip_budget_recommendations br ON br.trip_country_id = tc.id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC
+    </select>
+
+    <update id="updateConfirmedTripBudget" parameterType="TripBudgetConfirmCommandDto">
+        UPDATE trip_budget_recommendations
+        SET confirmed_airfare_amount = #{airfareAmount},
+            confirmed_lodging_amount = #{lodgingAmount},
+            confirmed_activity_amount = #{activityAmount},
+            confirmed_transport_amount = #{transportAmount},
+            confirmed_food_amount = #{foodAmount},
+            confirmed_other_amount = #{otherAmount},
+            is_confirmed = 1
+        WHERE trip_country_id = #{tripCountryId}
+    </update>
+
+    <update id="updateTripCountryTargetBudget" parameterType="TripBudgetConfirmCommandDto">
+        UPDATE trip_countries
+        SET target_budget = #{localTravelTarget}
+        WHERE id = #{tripCountryId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateTripTargetAmount">
+        UPDATE trips
+        SET total_target_amount = #{totalTargetAmount}
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
+    <insert id="insertTripWalletIfAbsent">
+        INSERT INTO trip_wallets (user_id)
+        VALUES (#{userId})
+        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+    </insert>
+
+    <select id="findTripWalletBalanceByUserId" resultType="java.math.BigDecimal">
+        SELECT balance
+        FROM trip_wallets
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPrepaidExpenseTotalByTripId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+                   COALESCE(br.confirmed_airfare_amount, br.recommended_airfare_amount, 0)
+                   + COALESCE(br.confirmed_lodging_amount, br.recommended_lodging_amount, 0)
+               ), 0)
+        FROM trip_countries tc
+                 LEFT JOIN trip_budget_recommendations br ON br.trip_country_id = tc.id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+    </select>
+
+    <select id="findMonthlySavingAmountByTripId" resultType="java.math.BigDecimal">
+        SELECT monthly_amount
+        FROM saving_plans
+        WHERE trip_id = #{tripId}
+          AND goal_status = 'ACTIVE'
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findSavingPlanIdByTripId" resultType="java.lang.Long">
+        SELECT id
+        FROM saving_plans
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertSavingPlan">
+        INSERT INTO saving_plans (trip_id, account_id, monthly_amount, goal_status)
+        VALUES (#{tripId}, NULL, #{monthlyAmount}, 'ACTIVE')
+    </insert>
+
+    <update id="updateSavingPlanMonthlyAmount">
+        UPDATE saving_plans
+        SET monthly_amount = #{monthlyAmount}
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
 </mapper>

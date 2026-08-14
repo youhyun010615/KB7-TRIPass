@@ -15,18 +15,18 @@ INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
 INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
 ('PRE_TRAVEL', 'D7', '환전 완료하기'),
 ('PRE_TRAVEL', 'D7', '여행 필수템 구매하기'),
-('PRE_TRAVEL', 'D7', '여행에 유용한 앱 설치하기 (지도·번역·교통)'),
+('PRE_TRAVEL', 'D7', '여행에 유용한 앱 설치하기'),
 ('PRE_TRAVEL', 'D7', '해외 결제 카드 확인'),
 ('PRE_TRAVEL', 'D7', '포켓 와이파이 / 유심·eSIM 신청'),
 ('PRE_TRAVEL', 'D7', '여행 의류 및 착장 정하기'),
-('PRE_TRAVEL', 'D7', '상비약 챙기기 (소화제·진통제·밴드)');
+('PRE_TRAVEL', 'D7', '상비약 챙기기');
 
 -- 3. 여행 준비 (PRE_TRAVEL) - D1 단계
 INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
 ('PRE_TRAVEL', 'D1', '여권 챙기기'),
 ('PRE_TRAVEL', 'D1', '항공권·탑승 정보 확인'),
 ('PRE_TRAVEL', 'D1', '수하물 규정 무게 확인'),
-('PRE_TRAVEL', 'D1', '전자기기 충전기 및 어댑터(돼지코) 챙기기'),
+('PRE_TRAVEL', 'D1', '전자기기 충전기 및 어댑터 챙기기'),
 ('PRE_TRAVEL', 'D1', '보조배터리 챙기기');
 
 -- 4. 귀국 (RETURN) 단계
