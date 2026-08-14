@@ -202,7 +202,7 @@ async function sendCode() {
   phoneSending.value = true
 
   try {
-    const response = await sendPhoneCodeApi(normalizedPhone.value)
+    const response = await sendPhoneCodeApi(normalizedPhone.value, 'SIGNUP',)
     const sendResult = response.data?.data
 
     if (!sendResult?.requestId) {

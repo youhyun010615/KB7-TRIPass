@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { login as loginApi } from '@/api/auth'
+import api from '@/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -43,6 +44,20 @@ async function login(){
     //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.setToken(loginData.accessToken)
     authStore.setUser(loginData.user)
+
+    try {
+      const accountResponse = await api.get('/accounts')
+      const linkedAccounts = accountResponse.data?.data ?? []
+
+      if (linkedAccounts.length > 0) {
+        authStore.completeProfile()
+      }
+    } catch (accountError) {
+      console.error(
+          '연동 계좌 확인 실패',
+          accountError,
+      )
+    }
 
     //RefreshToken은 HttpOnly 쿠키로 자동 저장되므로
     //프론트 JavaScript에서 직접 처리하지 않는다.

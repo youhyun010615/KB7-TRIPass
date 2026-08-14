@@ -26,6 +26,8 @@ const publicAuthUrls = [
     '/auth/signup',
     '/auth/phone/send',
     '/auth/phone/verify',
+    '/auth/find-id',
+    '/auth/reset-password',
     '/auth/refresh',
     '/auth/logout',
 ]
