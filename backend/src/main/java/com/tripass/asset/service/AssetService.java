@@ -4,6 +4,8 @@ import com.tripass.asset.dto.*;
 import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.common.exception.CustomException;
 import com.tripass.common.util.CodefUtil;
+import com.tripass.saving.classification.CategoryClassificationResult;
+import com.tripass.saving.classification.TransactionCategoryClassifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.util.*;
 public class AssetService {
 
     private final AssetMapper assetMapper;
+    private final TransactionCategoryClassifier transactionCategoryClassifier;
 
     @Value("${codef.client-id}")
     private String clientId;
@@ -28,8 +31,12 @@ public class AssetService {
     @Value("${codef.client-secret}")
     private String clientSecret;
 
-    public AssetService(AssetMapper assetMapper) {
+    public AssetService(
+            AssetMapper assetMapper,
+            TransactionCategoryClassifier transactionCategoryClassifier
+    ) {
         this.assetMapper = assetMapper;
+        this.transactionCategoryClassifier = transactionCategoryClassifier;
     }
 
     @Transactional
@@ -524,6 +531,23 @@ public class AssetService {
                 }
                 dto.setMerchantName(merchantName);
                 dto.setMerchantType((String) approval.get("resMemberStoreType"));
+                CategoryClassificationResult classification = transactionCategoryClassifier.classify(
+                        dto.getMerchantName(),
+                        dto.getMerchantType()
+                );
+                Long categoryId = assetMapper.findCategoryIdByCode(
+                        classification.categoryCode().name()
+                );
+                if (categoryId == null) {
+                    throw new IllegalStateException(
+                            "소비 카테고리를 찾을 수 없습니다: "
+                                    + classification.categoryCode().name()
+                    );
+                }
+                dto.setCategoryId(categoryId);
+                dto.setCategorySource(classification.source().name());
+                dto.setCategoryConfidence(classification.confidence());
+                dto.setCategoryClassifiedAt(java.time.LocalDateTime.now());
                 assetMapper.upsertTransactionFromCard(dto);
                 saved.add(dto);
             }

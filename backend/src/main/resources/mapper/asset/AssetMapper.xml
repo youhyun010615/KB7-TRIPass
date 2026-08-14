@@ -98,7 +98,8 @@
     <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
     <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
         SELECT id, account_id, transaction_date, transaction_time,
-               transaction_type, transaction_region, amount, balance_after, merchant_name, merchant_type, memo, category_id
+               transaction_type, transaction_region, amount, balance_after, merchant_name, merchant_type, memo,
+               category_id, category_source, category_confidence, category_classified_at
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
@@ -120,7 +121,8 @@
     <select id = "findTransactionsByAccountIdWithFilter" resultType="TransactionDto">
         SELECT id, account_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after,
-               merchant_name, merchant_type, memo, category_id
+               merchant_name, merchant_type, memo, category_id,
+               category_source, category_confidence, category_classified_at
         FROM transactions
         WHERE account_id = #{accountId}
         AND is_deleted = 0
@@ -138,21 +140,23 @@
 
     <!-- 거래 단건 상세 조회(userId로 소유권 검증) -->
     <select id = "findTransactionById" resultType="TransactionDto">
-        SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
+        SELECT t.id, t.account_id, t.card_id, t.transaction_date, t.transaction_time,
                t.transaction_type, t.transaction_region, t.amount, t.balance_after,
-               t.merchant_name, t.merchant_type, t.memo, t.category_id
+               t.merchant_name, t.merchant_type, t.memo, t.category_id,
+               t.category_source, t.category_confidence, t.category_classified_at
         FROM transactions t
-        JOIN accounts a ON t.account_id = a.id
+        LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
+        LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
         WHERE t.id = #{transactionId}
-        AND a.user_id = #{userId}
+        AND (a.user_id = #{userId} OR c.user_id = #{userId})
         AND t.is_deleted = 0
-        AND a.is_deleted = 0
     </select>
 
     <!-- 전체 계좌 거래내역 조회(userId 기준) -->
     <select id = "findTransactionsByUserId" resultType="TransactionDto">
         SELECT t.id, t.account_id, t.transaction_date, t.transaction_time,
-               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.merchant_type, t.memo, t.category_id
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.merchant_type, t.memo,
+               t.category_id, t.category_source, t.category_confidence, t.category_classified_at
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
         WHERE a.user_id = #{userId}
@@ -172,18 +176,23 @@
         AND is_deleted = 0
     </update>
 
-    <!-- 거래내역 수정 (카테고리, 메모) -->
+    <!-- 거래내역 수정 (계좌·카드 소유권 검증, 사용자 카테고리 지정 시 USER 출처 기록) -->
     <update id = "updateTransaction">
         UPDATE transactions t
-        JOIN accounts a ON t.account_id = a.id
+        LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
+        LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
         SET
-            <if test = "categoryId != null">t.category_id = #{categoryId}, </if>
+            <if test = "categoryId != null">
+                t.category_id = #{categoryId},
+                t.category_source = 'USER',
+                t.category_confidence = 1.0000,
+                t.category_classified_at = NOW(),
+            </if>
             <if test = "memo != null">t.memo = #{memo},</if>
             t.updated_at = NOW()
         WHERE t.id = #{transactionId}
-        AND a.user_id = #{userId}
+        AND (a.user_id = #{userId} OR c.user_id = #{userId})
         AND t.is_deleted = 0
-        AND a.is_deleted = 0
     </update>
 
 
@@ -260,19 +269,32 @@
           AND is_deleted = 0
     </update>
 
-    <!-- 카드 거래내역 저장 — 동일 external_key 존재 시 merchant_name/merchant_type만 업데이트 (계좌·카드 중복 제거) -->
+    <select id="findCategoryIdByCode" resultType="long">
+        SELECT id
+        FROM spending_categories
+        WHERE category_code = #{categoryCode}
+        LIMIT 1
+    </select>
+
+    <!-- 카드 거래내역 저장 — USER 지정 카테고리는 재수집 시 자동분류로 덮어쓰지 않는다. -->
     <insert id="upsertTransactionFromCard" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO transactions
         (card_id, external_key, transaction_date, transaction_time, transaction_type,
-         transaction_region, amount, balance_after, merchant_name, merchant_type)
+         transaction_region, amount, balance_after, merchant_name, merchant_type,
+         category_id, category_source, category_confidence, category_classified_at)
         VALUES
         (#{cardId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
-         #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName}, #{merchantType})
+         #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName}, #{merchantType},
+         #{categoryId}, #{categorySource}, #{categoryConfidence}, #{categoryClassifiedAt})
         ON DUPLICATE KEY UPDATE
             id = LAST_INSERT_ID(id),
             card_id = VALUES(card_id),
             merchant_name = VALUES(merchant_name),
-            merchant_type = VALUES(merchant_type),
+            merchant_type = COALESCE(VALUES(merchant_type), merchant_type),
+            category_id = IF(category_source = 'USER', category_id, VALUES(category_id)),
+            category_confidence = IF(category_source = 'USER', category_confidence, VALUES(category_confidence)),
+            category_classified_at = IF(category_source = 'USER', category_classified_at, VALUES(category_classified_at)),
+            category_source = IF(category_source = 'USER', category_source, VALUES(category_source)),
             updated_at = NOW()
     </insert>
 
@@ -280,7 +302,8 @@
     <select id="findTransactionsByCardId" resultType="TransactionDto">
         SELECT id, card_id, transaction_date, transaction_time,
                transaction_type, transaction_region, amount, balance_after,
-               merchant_name, merchant_type, memo, category_id
+               merchant_name, merchant_type, memo, category_id,
+               category_source, category_confidence, category_classified_at
         FROM transactions
         WHERE card_id = #{cardId}
           AND is_deleted = 0

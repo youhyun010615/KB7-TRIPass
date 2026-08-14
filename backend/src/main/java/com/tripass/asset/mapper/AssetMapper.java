@@ -88,6 +88,7 @@ public interface AssetMapper {
     // transactions (카드 — 중복 시 merchant_name 업데이트, 신규 시 INSERT)
     void upsertTransactionFromCard(TransactionDto dto);
     void deleteTransactionByExternalKey(@org.apache.ibatis.annotations.Param("externalKey") String externalKey);
+    Long findCategoryIdByCode(@org.apache.ibatis.annotations.Param("categoryCode") String categoryCode);
 
     // 카드별 거래내역 조회
     List<TransactionDto> findTransactionsByCardId(

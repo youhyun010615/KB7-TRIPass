@@ -1,6 +1,5 @@
 package com.tripass.saving.classification;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,10 +13,7 @@ class MerchantNameClassifierTest {
 
     @BeforeEach
     void setUp() {
-        classifier = new MerchantNameClassifier(
-                new ObjectMapper(),
-                new MerchantNameNormalizer()
-        );
+        classifier = new MerchantNameClassifier(new MerchantNameNormalizer());
     }
 
     @Test

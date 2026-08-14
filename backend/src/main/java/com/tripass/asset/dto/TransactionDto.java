@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
@@ -30,4 +31,7 @@ public class TransactionDto {
     private String merchantType;      // CODEF 가맹점 업종
     private String memo;
     private Long categoryId;
+    private String categorySource;
+    private BigDecimal categoryConfidence;
+    private LocalDateTime categoryClassifiedAt;
 }

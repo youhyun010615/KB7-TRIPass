@@ -20,9 +20,9 @@ public class MerchantNameClassifier {
     private final MerchantNameNormalizer normalizer;
     private final MerchantCategoryModel model;
 
-    public MerchantNameClassifier(ObjectMapper objectMapper, MerchantNameNormalizer normalizer) {
+    public MerchantNameClassifier(MerchantNameNormalizer normalizer) {
         this.normalizer = normalizer;
-        this.model = loadModel(objectMapper);
+        this.model = loadModel(new ObjectMapper());
         validateModel(model);
     }
 
