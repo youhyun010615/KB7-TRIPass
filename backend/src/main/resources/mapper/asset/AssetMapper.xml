@@ -33,6 +33,7 @@
         WHERE codef_connection_id = #{codefConnectionId}
           AND organization_code = #{organizationCode}
           AND business_type = #{businessType}
+          AND is_active = TRUE
         LIMIT 1
     </select>
 

@@ -19,8 +19,17 @@ function toLocalDateStr(d) {
   return `${y}-${m}-${day}`
 }
 
+function threeMonthsAgoFrom(base) {
+  // setMonth()는 대상 월에 없는 일자(예: 5월 31일 - 3개월)를 만나면 다음 달로 넘어가므로,
+  // 1일로 이동한 뒤 대상 월의 마지막 날짜를 넘지 않게 보정한다.
+  const d = new Date(base.getFullYear(), base.getMonth() - 3, 1)
+  const lastDayOfTargetMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(base.getDate(), lastDayOfTargetMonth))
+  return d
+}
+
 const today = toLocalDateStr(new Date())
-const threeMonthsAgo = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return toLocalDateStr(d) })()
+const threeMonthsAgo = toLocalDateStr(threeMonthsAgoFrom(new Date()))
 const startDate = ref(isReal ? threeMonthsAgo : '2026-06-20')
 const endDate = ref(isReal ? today : '2026-07-19')
 const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
