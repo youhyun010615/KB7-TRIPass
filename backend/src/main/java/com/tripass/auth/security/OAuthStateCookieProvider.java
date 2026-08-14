@@ -19,12 +19,6 @@ import java.util.Base64;
 @Component
 public class OAuthStateCookieProvider {
 
-    private static final String COOKIE_NAME =
-            "kakaoOAuthState";
-
-    private static final String COOKIE_PATH =
-            "/api/v1/auth/social/kakao";
-
     private static final SecureRandom SECURE_RANDOM =
             new SecureRandom();
 
@@ -42,6 +36,7 @@ public class OAuthStateCookieProvider {
         this.maxAgeSeconds = maxAgeSeconds;
     }
 
+    // 예측 불가능한 OAuth state를 생성한다.
     public String generateState() {
         byte[] randomBytes = new byte[32];
         SECURE_RANDOM.nextBytes(randomBytes);
@@ -51,17 +46,24 @@ public class OAuthStateCookieProvider {
                 .encodeToString(randomBytes);
     }
 
+    // 로그인 제공자별 HttpOnly state 쿠키를 저장한다.
     public void addStateCookie(
             HttpServletResponse response,
+            OAuthProvider provider,
             String state
     ) {
         ResponseCookie cookie =
                 ResponseCookie
-                        .from(COOKIE_NAME, state)
+                        .from(
+                                provider.getCookieName(),
+                                state
+                        )
                         .httpOnly(true)
                         .secure(secure)
                         .sameSite("Lax")
-                        .path(COOKIE_PATH)
+                        .path(
+                                provider.getCookiePath()
+                        )
                         .maxAge(
                                 Duration.ofSeconds(
                                         maxAgeSeconds
@@ -75,8 +77,10 @@ public class OAuthStateCookieProvider {
         );
     }
 
+    // 요청에서 로그인 제공자별 OAuth state 쿠키를 조회한다.
     public String getState(
-            HttpServletRequest request
+            HttpServletRequest request,
+            OAuthProvider provider
     ) {
         Cookie[] cookies = request.getCookies();
 
@@ -85,7 +89,10 @@ public class OAuthStateCookieProvider {
         }
 
         for (Cookie cookie : cookies) {
-            if (COOKIE_NAME.equals(cookie.getName())) {
+            if (
+                    provider.getCookieName()
+                            .equals(cookie.getName())
+            ) {
                 return cookie.getValue();
             }
         }
@@ -93,9 +100,11 @@ public class OAuthStateCookieProvider {
         return null;
     }
 
+    // 쿠키에 저장된 state와 콜백으로 반환된 state를 비교한다.
     public void validateState(
             String expectedState,
-            String returnedState
+            String returnedState,
+            OAuthProvider provider
     ) {
         if (
                 expectedState == null ||
@@ -103,7 +112,9 @@ public class OAuthStateCookieProvider {
                         expectedState.isBlank() ||
                         returnedState.isBlank()
         ) {
-            throw invalidStateException();
+            throw invalidStateException(
+                    provider
+            );
         }
 
         boolean matched =
@@ -117,20 +128,29 @@ public class OAuthStateCookieProvider {
                 );
 
         if (!matched) {
-            throw invalidStateException();
+            throw invalidStateException(
+                    provider
+            );
         }
     }
 
+    // 로그인 제공자별 OAuth state 쿠키를 삭제한다.
     public void deleteStateCookie(
-            HttpServletResponse response
+            HttpServletResponse response,
+            OAuthProvider provider
     ) {
         ResponseCookie cookie =
                 ResponseCookie
-                        .from(COOKIE_NAME, "")
+                        .from(
+                                provider.getCookieName(),
+                                ""
+                        )
                         .httpOnly(true)
                         .secure(secure)
                         .sameSite("Lax")
-                        .path(COOKIE_PATH)
+                        .path(
+                                provider.getCookiePath()
+                        )
                         .maxAge(Duration.ZERO)
                         .build();
 
@@ -140,11 +160,13 @@ public class OAuthStateCookieProvider {
         );
     }
 
-    private CustomException invalidStateException() {
+    private CustomException invalidStateException(
+            OAuthProvider provider
+    ) {
         return new CustomException(
                 HttpStatus.BAD_REQUEST,
-                "KAKAO_OAUTH_STATE_INVALID",
-                "카카오 로그인 요청이 만료되었거나 유효하지 않습니다."
+                provider.getInvalidStateErrorCode(),
+                provider.getInvalidStateMessage()
         );
     }
 }
