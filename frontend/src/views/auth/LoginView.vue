@@ -49,11 +49,11 @@ async function login(){
     authStore.setUser(loginData.user)
 
     try {
+      // 이전 로그인 사용자의 프로필 완료 상태를 먼저 제거한다.
+      authStore.resetProfileCompletion()
+
       const accountResponse = await api.get('/accounts')
       const linkedAccounts = accountResponse.data?.data ?? []
-
-      // 계좌 조회가 성공한 경우에만 프로필 상태를 확정한다.
-      authStore.resetProfileCompletion()
 
       if (linkedAccounts.length > 0) {
         authStore.completeProfile()
