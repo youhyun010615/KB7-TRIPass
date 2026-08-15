@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useTripWalletStore } from '@/stores/tripWallet';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to) {
+    // 월렛 메인 화면은 자체적으로 이전 스크롤 위치를 복원하므로 라우터가 건드리지 않는다.
+    // 그 외 월렛 하위 화면은 이동할 때마다 스크롤을 맨 위로 초기화한다.
+    if (to.path === '/wallet') return
+    if (to.path.startsWith('/wallet')) return { top: 0 }
+  },
   routes: [
     // ── AUTH (담당: 송형진) ─────────────────────────────────
     {
@@ -52,7 +59,49 @@ const router = createRouter({
     {
       path: '/wallet',
       name: 'TripWallet',
-      component: () => import('@/views/savings/TripWalletView.vue'),
+      component: () => import('@/views/wallet/TripWalletView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/ledgers',
+      name: 'WalletLedgers',
+      component: () => import('@/views/wallet/WalletLedgerView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/notifications',
+      name: 'WalletNotifications',
+      component: () => import('@/views/wallet/WalletNotificationsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/foreign-balances',
+      name: 'WalletForeignBalances',
+      component: () => import('@/views/wallet/WalletForeignBalancesView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/auto-charge',
+      name: 'WalletAutoCharge',
+      component: () => import('@/views/wallet/WalletAutoChargeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/accounts',
+      name: 'WalletAccounts',
+      component: () => import('@/views/wallet/WalletAccountsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/travel-card/link',
+      name: 'WalletTravelCardLink',
+      component: () => import('@/views/wallet/WalletTravelCardLinkView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/travel-card/exchange',
+      name: 'WalletTravelCardExchange',
+      component: () => import('@/views/wallet/WalletTravelCardExchangeView.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -476,6 +525,47 @@ router.beforeEach((to) => {
     to.meta.requiresAuth
   ) {
     return { name: 'FinancialProfile' };
+  }
+});
+
+// 계좌 잔액, 환율 등 API 응답이 늦게 도착해 화면에 0이나 빈 값이 잠깐 보이는 문제를 막기 위해,
+// 월렛 화면으로 라우팅이 "완료"되기 전에(= 컴포넌트가 마운트되기 전에) 필요한 데이터를 미리 받아온다.
+// 데이터 요청이 실패해도 라우팅 자체는 막지 않고, 각 화면의 자체 에러 처리에 맡긴다.
+const WALLET_PREFETCH_LOADERS = {
+  TripWallet: wallet => Promise.all([
+    wallet.loadWalletMain(),
+    wallet.loadAccounts(),
+    wallet.loadAutoSaving(),
+    wallet.loadForeignBalances(),
+  ]),
+  WalletAccounts: wallet => Promise.all([
+    wallet.loadAccounts(),
+    wallet.loadAccountOptions(),
+  ]),
+  WalletForeignBalances: wallet => wallet.loadForeignBalances(),
+  WalletTravelCardExchange: wallet => Promise.all([
+    wallet.loadWalletMain(),
+    wallet.loadCurrencies(),
+    wallet.loadForeignBalances(),
+  ]),
+  WalletLedgers: wallet => wallet.loadLedgers(),
+  WalletAutoCharge: wallet => Promise.all([
+    wallet.loadAccounts(),
+    wallet.loadAutoSaving(),
+  ]),
+  WalletTravelCardLink: wallet => wallet.loadTravelCardOptions(),
+  WalletNotifications: wallet => wallet.loadAutoSavingLogs(),
+};
+
+router.beforeResolve(async (to) => {
+  const loader = WALLET_PREFETCH_LOADERS[to.name];
+  if (!loader) return;
+
+  const wallet = useTripWalletStore();
+  try {
+    await loader(wallet);
+  } catch {
+    // 프리페치 실패는 각 화면의 onMounted 에러 처리(재시도/안내 문구)에 맡긴다.
   }
 });
 
