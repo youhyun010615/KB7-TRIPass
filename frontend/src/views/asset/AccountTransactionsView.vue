@@ -68,6 +68,7 @@ async function fetchRealTransactionsWithLoading() {
 }
 
 async function syncTransactions() {
+  if (!isReal) return
   syncing.value = true
   syncMessage.value = ''
   try {
@@ -157,7 +158,7 @@ const groups = computed(() => {
     <section class="travel-recognized"><small>여행 자금 인정 금액</small><b>{{ travelRecognizedAmount.toLocaleString('ko-KR') }}원</b></section>
     <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>~</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label></section>
     <p v-if="syncMessage" class="sync-message" :class="{ error: syncMessage.includes('실패') || syncMessage.includes('오류') }">{{ syncMessage }}</p>
-    <div class="section-header"><span>계좌내역</span><div class="header-actions"><button type="button" class="sync-action" :disabled="syncing" @click="syncTransactions">{{ syncing ? '동기화 중' : '↻ 최신 내역' }}</button><button type="button" aria-label="거래내역 캘린더" class="cal-btn" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div></div>
+    <div class="section-header"><span>계좌내역</span><div class="header-actions"><button v-if="isReal" type="button" class="sync-action" :disabled="syncing" @click="syncTransactions">{{ syncing ? '동기화 중' : '↻ 최신 내역' }}</button><button type="button" aria-label="거래내역 캘린더" class="cal-btn" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div></div>
     <div class="tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" type="button" @click="filter = tab.id">{{ tab.label }}</button></div>
     <TransactionGroups :groups="groups" :show-icons="false" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
   </main>

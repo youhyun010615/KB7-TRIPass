@@ -31,6 +31,7 @@ public class TransactionDto {
     private BigDecimal balanceAfter;
     private String merchantName;      // 거래처
     private String merchantType;      // CODEF 가맹점 업종
+    private String paymentMethodName; // 거래 상세의 계좌명 또는 카드명
     private String memo;
     private Long categoryId;
     private String categoryName;

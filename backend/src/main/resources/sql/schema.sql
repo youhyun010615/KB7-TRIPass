@@ -369,6 +369,7 @@ CREATE TABLE accounts
     created_at              TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    UNIQUE KEY uk_accounts_user_org_number (user_id, organization_code, account_number),
     CONSTRAINT fk_accounts_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_accounts_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
 ) COMMENT '계좌';

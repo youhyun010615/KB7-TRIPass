@@ -10,7 +10,7 @@ const router = useRouter()
 const cardStore = useCardStore()
 const accounts = ref([])
 const loading = ref(true)
-const deletingKey = ref('')
+const deletingKeys = ref(new Set())
 const errorMessage = ref('')
 
 const totalBalance = computed(() => accounts.value.reduce(
@@ -63,9 +63,22 @@ function accountTone(account) {
   return 'navy'
 }
 
+function isDeleting(key) {
+  return deletingKeys.value.has(key)
+}
+
+function setDeleting(key, pending) {
+  const next = new Set(deletingKeys.value)
+  if (pending) next.add(key)
+  else next.delete(key)
+  deletingKeys.value = next
+}
+
 async function removeAccount(account) {
+  const key = `account-${account.id}`
+  if (isDeleting(key)) return
   if (!window.confirm(`${account.accountName} 연동을 해제할까요?\n해당 계좌의 거래내역은 소비 분석에서 제외됩니다.`)) return
-  deletingKey.value = `account-${account.id}`
+  setDeleting(key, true)
   try {
     await deleteAccount(account.id)
     accounts.value = accounts.value.filter((item) => item.id !== account.id)
@@ -73,13 +86,15 @@ async function removeAccount(account) {
     console.error('계좌 연동 해제 실패', error)
     errorMessage.value = error.response?.data?.message ?? '계좌 연동 해제에 실패했습니다.'
   } finally {
-    deletingKey.value = ''
+    setDeleting(key, false)
   }
 }
 
 async function removeCard(card) {
+  const key = `card-${card.id}`
+  if (isDeleting(key)) return
   if (!window.confirm(`${card.cardName} 연동을 해제할까요?\n해당 카드의 거래내역은 소비 분석에서 제외됩니다.`)) return
-  deletingKey.value = `card-${card.id}`
+  setDeleting(key, true)
   try {
     await deleteCard(card.id)
     cardStore.cards = cardStore.cards.filter((item) => item.id !== card.id)
@@ -87,7 +102,7 @@ async function removeCard(card) {
     console.error('카드 연동 해제 실패', error)
     errorMessage.value = error.response?.data?.message ?? '카드 연동 해제에 실패했습니다.'
   } finally {
-    deletingKey.value = ''
+    setDeleting(key, false)
   }
 }
 </script>
@@ -120,8 +135,8 @@ async function removeCard(card) {
             <small>{{ accountCaption(account) }}</small>
           </div>
           <div class="asset-value"><strong>{{ formatWon(account.balance) }}</strong></div>
-          <button type="button" class="delete-button" :disabled="deletingKey === `account-${account.id}`" @click.stop="removeAccount(account)">
-            {{ deletingKey === `account-${account.id}` ? '처리 중' : '삭제' }}
+          <button type="button" class="delete-button" :disabled="isDeleting(`account-${account.id}`)" @click.stop="removeAccount(account)">
+            {{ isDeleting(`account-${account.id}`) ? '처리 중' : '삭제' }}
           </button>
         </article>
         <button type="button" class="add-button" @click="router.push('/profile/financial?step=2&from=asset')">＋ 통장 추가하기</button>
@@ -136,8 +151,8 @@ async function removeCard(card) {
             <strong>{{ card.cardName }}</strong>
             <small>{{ cardTypeLabel(card.cardType) }} · {{ card.maskedCardNumber || '카드번호 비공개' }}</small>
           </div>
-          <button type="button" class="delete-button" :disabled="deletingKey === `card-${card.id}`" @click.stop="removeCard(card)">
-            {{ deletingKey === `card-${card.id}` ? '처리 중' : '삭제' }}
+          <button type="button" class="delete-button" :disabled="isDeleting(`card-${card.id}`)" @click.stop="removeCard(card)">
+            {{ isDeleting(`card-${card.id}`) ? '처리 중' : '삭제' }}
           </button>
         </article>
         <button type="button" class="add-button" @click="router.push('/profile/financial?step=9&from=asset')">＋ 카드 추가하기</button>

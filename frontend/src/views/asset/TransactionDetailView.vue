@@ -30,7 +30,7 @@ onMounted(async()=>{
       balanceAfter:Number(t.balanceAfter??0),
       memo:t.memo??'',
       category:t.categoryName??'기타',
-      method:history.state?.item?.method??'',
+      method:history.state?.item?.method??t.paymentMethodName??'',
       merchantType:t.merchantType??'',
       sourceType:t.cardId?'CARD':'ACCOUNT',
     }

@@ -175,7 +175,8 @@ public class AssetService {
                 dto.setWithdrawableAmount(parseBigDecimal(acc.get("resWithdrawableAmount")));
                 dto.setConnectionType("CODEF");
 
-                AccountDto existing = assetMapper.findAccountByUserIdAndNumber(userId, dto.getAccountNumber());
+                AccountDto existing = assetMapper.findAccountByUserIdAndNumber(
+                        userId, dto.getOrganizationCode(), dto.getAccountNumber());
                 if (existing != null) {
                     assetMapper.updateAccountOnReconnect(dto);
                     dto.setId(existing.getId());

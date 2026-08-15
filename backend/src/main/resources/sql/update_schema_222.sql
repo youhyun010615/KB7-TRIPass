@@ -20,6 +20,10 @@ JOIN (
 SET a.organization_code = i.organization_code
 WHERE a.organization_code IS NULL;
 
+-- 동일 사용자의 계좌는 기관코드와 계좌번호를 함께 사용해 식별한다.
+ALTER TABLE accounts
+    ADD UNIQUE KEY uk_accounts_user_org_number (user_id, organization_code, account_number);
+
 -- CODEF 개인 카드 주요 8개 기관.
 INSERT INTO supported_institutions
     (organization_code, institution_name, business_type, display_order, is_active)
