@@ -245,6 +245,5 @@ FROM travel_cards tc
     SELECT 'USD' AS currency_code
 ) x
 WHERE tc.card_name IN (
-                       'FC EXPRESS 체크',
-                       'Change-Up 체크'
+                       'FC EXPRESS 체크'
     );
