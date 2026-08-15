@@ -227,6 +227,7 @@ CREATE TABLE travel_cards
     instant_use           BOOLEAN        NOT NULL DEFAULT FALSE COMMENT '기존 계좌/서비스 연결로 이용 가능 여부(별도 계좌 신규 개설 불필요)',
     applied_rate_info     VARCHAR(255)   NULL COMMENT '적용 환율 정보',
     settlement_type       VARCHAR(30)    NOT NULL COMMENT '해외 결제 통화 처리 방식(DIRECT/USD_CONVERSION)',
+    foreign_currency_holding_limit VARCHAR(255) NULL COMMENT '연결 외화머니/외화계좌의 외화 보유한도',
     exchange_fee          VARCHAR(200)   NULL COMMENT '환전 수수료',
     re_exchange_fee       VARCHAR(200)   NULL COMMENT '재환전 수수료',
     payment_fee           VARCHAR(200)   NULL COMMENT '결제 수수료',

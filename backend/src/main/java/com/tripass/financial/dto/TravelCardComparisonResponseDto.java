@@ -53,6 +53,12 @@ public class TravelCardComparisonResponseDto {
     private String settlementType;
 
     @ApiModelProperty(
+            value = "연결 외화머니 또는 외화계좌의 외화 보유한도",
+            example = "미화 환산 기준 최대 USD 50,000"
+    )
+    private String foreignCurrencyHoldingLimit;
+
+    @ApiModelProperty(
             value = "환전 수수료 정보",
             example = "56종 통화 환율우대 100%"
     )
