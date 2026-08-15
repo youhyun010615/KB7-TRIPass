@@ -29,6 +29,13 @@ public class MissionReductionCalculator {
 
     /** 절감률 하나에 대한 월/주간 목표 금액을 계산한다. PUT 저장·GET 옵션 조회 양쪽에서 쓰는 핵심 계산이다. */
     public ReductionRateOptionDto calculate(int baselineSpendingAmount, int reductionRate) {
+        if (baselineSpendingAmount < 0) {
+            throw new IllegalArgumentException("기준 지출액은 0원 이상이어야 합니다.");
+        }
+        if (!AVAILABLE_REDUCTION_RATES.contains(reductionRate)) {
+            throw new IllegalArgumentException("절감률은 10, 30, 50 중 하나여야 합니다.");
+        }
+
         // int 오버플로를 피하려고 곱셈만 long으로 계산한다.
         int monthlyReductionTarget = (int) ((long) baselineSpendingAmount * reductionRate / PERCENT_BASE);
         int monthlyUsageTarget = baselineSpendingAmount - monthlyReductionTarget;

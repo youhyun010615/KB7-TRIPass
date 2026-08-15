@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MissionReductionCalculatorTest {
 
@@ -70,5 +71,30 @@ class MissionReductionCalculatorTest {
         assertEquals(10, options.get(0).reductionRate());
         assertEquals(30, options.get(1).reductionRate());
         assertEquals(50, options.get(2).reductionRate());
+    }
+
+    @Test
+    void 기준_지출액이_음수이면_예외를_던진다() {
+        assertThrows(IllegalArgumentException.class, () -> calculator.calculate(-1, 10));
+    }
+
+    @Test
+    void 허용되지_않은_절감률이면_예외를_던진다() {
+        assertThrows(IllegalArgumentException.class, () -> calculator.calculate(100000, 20));
+    }
+
+    @Test
+    void 절감률이_음수이면_예외를_던진다() {
+        assertThrows(IllegalArgumentException.class, () -> calculator.calculate(100000, -10));
+    }
+
+    @Test
+    void 기준_지출액이_0원이면_모든_결과가_0원이다() {
+        ReductionRateOptionDto option = calculator.calculate(0, 30);
+
+        assertEquals(0, option.monthlyReductionTarget());
+        assertEquals(0, option.monthlyUsageTarget());
+        assertEquals(0, option.weeklyUsageLimit());
+        assertEquals(0, option.weeklyExpectedSaving());
     }
 }
