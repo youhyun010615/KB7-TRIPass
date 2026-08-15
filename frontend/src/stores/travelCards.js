@@ -76,7 +76,8 @@ export const useTravelCardsStore = defineStore(
         const detailLoading = ref(false)
         const comparisonLoading = ref(false)
         const errorMessage = ref('')
-        // 가장 최근 상세·비교 요청만 상태에 반영하기 위한 요청 순번
+        // 가장 최근 목록·상세·비교 요청만 상태에 반영하기 위한 요청 순번
+        let listRequestSequence = 0
         let detailRequestSequence = 0
         let comparisonRequestSequence = 0
 
@@ -123,25 +124,54 @@ export const useTravelCardsStore = defineStore(
         }
 
         async function loadCards() {
+            const requestSequence =
+                ++listRequestSequence
+
+            // 요청 시작 시점의 검색·필터 조건을 고정한다.
+            const requestParams = buildListParams()
+
             listLoading.value = true
             errorMessage.value = ''
 
             try {
-                cards.value = await fetchTravelCards(
-                    buildListParams(),
-                )
+                const response =
+                    await fetchTravelCards(requestParams)
+
+                // 더 최신 목록 요청이 시작됐다면
+                // 이전 응답은 화면에 반영하지 않는다.
+                if (
+                    requestSequence !==
+                    listRequestSequence
+                ) {
+                    return null
+                }
+
+                cards.value = response
 
                 return cards.value
             } catch (error) {
-                cards.value = []
-                errorMessage.value = getErrorMessage(
-                    error,
-                    '트래블카드 목록을 불러오지 못했습니다.',
-                )
+                // 가장 최근 목록 요청의 오류만 표시한다.
+                if (
+                    requestSequence ===
+                    listRequestSequence
+                ) {
+                    cards.value = []
+                    errorMessage.value = getErrorMessage(
+                        error,
+                        '트래블카드 목록을 불러오지 못했습니다.',
+                    )
+                }
 
                 throw error
             } finally {
-                listLoading.value = false
+                // 이전 요청 완료가 최신 요청의 로딩 상태를
+                // 종료하지 않도록 한다.
+                if (
+                    requestSequence ===
+                    listRequestSequence
+                ) {
+                    listLoading.value = false
+                }
             }
         }
 
