@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { useTravelStore } from '@/stores/travel'
@@ -19,6 +19,10 @@ const wallet = useTripWalletStore()
 const router = useRouter()
 const isModeSwitching = ref(false)
 const nextMode = ref('travel')
+
+onMounted(() => {
+  travelStore.loadCurrentTrip().catch(() => {})
+})
 
 function switchMode(mode) {
   if (mode === travelModeStore.mode || isModeSwitching.value) return

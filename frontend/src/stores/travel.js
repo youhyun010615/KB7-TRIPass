@@ -1,5 +1,6 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { createTrip, fetchCurrentTrip } from '@/api/travel'
 
 const countrySeed = [
   { code: 'FR', name: '프랑스', city: '파리', flag: '🇫🇷', accent: '#0066ff', securedBudget: 1_900_000 },
@@ -60,6 +61,11 @@ export const useTravelStore = defineStore('travel', () => {
   const selectedCountryCodes = ref(savedGoal?.selectedCountryCodes ?? [])
   const plans = reactive(savedGoal?.plans ?? {})
   const allocations = reactive(savedGoal?.allocations ?? {})
+  // 여행 등록 API(POST /trips) 응답으로 받은 실제 tripId와, 국가 코드별 tripCountryId.
+  // 여행 일정(schedule) API 호출 시 이 값들이 필요하다.
+  const tripId = ref(savedGoal?.tripId ?? null)
+  const tripCountryIdByCode = reactive(savedGoal?.tripCountryIdByCode ?? {})
+  const errorMessage = ref('')
 
   const countries = countrySeed
   const accounts = accountSeed
@@ -126,23 +132,90 @@ export const useTravelStore = defineStore('travel', () => {
       selectedCountryCodes: [...selectedCountryCodes.value],
       plans: { ...plans },
       allocations: { ...allocations },
+      tripId: tripId.value,
+      tripCountryIdByCode: { ...tripCountryIdByCode },
     }),
     (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value)),
     { deep: true },
   )
 
-  function completeGoal() {
+  async function completeGoal() {
     if (!canCompleteGoal.value) return false
-    hasTravelGoal.value = true
-    return true
+
+    errorMessage.value = ''
+
+    try {
+      const response = await createTrip({
+        tripName: tripName.value,
+        countries: selectedPlans.value.map((plan) => ({
+          countryName: plan.name,
+          startDate: plan.startDate,
+          endDate: plan.endDate,
+          targetBudget: plan.targetBudget,
+        })),
+      })
+
+      const tripCountryIdByName = Object.fromEntries(
+        (response.countries || []).map((item) => [item.countryName, item.tripCountryId]),
+      )
+
+      Object.keys(tripCountryIdByCode).forEach((key) => delete tripCountryIdByCode[key])
+      selectedPlans.value.forEach((plan) => {
+        tripCountryIdByCode[plan.code] = tripCountryIdByName[plan.name] ?? null
+      })
+
+      tripId.value = response.tripId
+      hasTravelGoal.value = true
+      return true
+    } catch (error) {
+      errorMessage.value = error.response?.data?.message || '여행 등록에 실패했어요.'
+      return false
+    }
+  }
+
+  // 서버에 이미 등록된 여행을 부팅 시점에 알아내 로컬 상태를 채운다.
+  // localStorage 캐시가 다른 기기·세션에서 만든 여행이나 오래된 tripId를 들고 있을 수 있어,
+  // 항상 서버 응답을 최신 진실로 삼아 덮어쓴다(등록된 여행이 없으면 기존 로컬 상태를 건드리지 않는다).
+  async function loadCurrentTrip() {
+    try {
+      const trip = await fetchCurrentTrip()
+      if (!trip) return false
+
+      tripId.value = trip.tripId
+      tripName.value = trip.tripName
+      selectedCountryCodes.value = []
+      Object.keys(plans).forEach((key) => delete plans[key])
+      Object.keys(tripCountryIdByCode).forEach((key) => delete tripCountryIdByCode[key])
+
+      ;(trip.countries || []).forEach((countryDetail) => {
+        const meta = countries.find((item) => item.name === countryDetail.countryName)
+        if (!meta) return
+
+        selectedCountryCodes.value.push(meta.code)
+        plans[meta.code] = {
+          ...meta,
+          startDate: countryDetail.arrivalDate,
+          endDate: countryDetail.departureDate,
+          targetBudget: Number(countryDetail.targetBudget),
+        }
+        tripCountryIdByCode[meta.code] = countryDetail.tripCountryId
+      })
+
+      hasTravelGoal.value = true
+      return true
+    } catch {
+      return false
+    }
   }
 
   function resetGoal() {
     hasTravelGoal.value = false
     tripName.value = ''
     selectedCountryCodes.value = []
+    tripId.value = null
     Object.keys(plans).forEach((key) => delete plans[key])
     Object.keys(allocations).forEach((key) => delete allocations[key])
+    Object.keys(tripCountryIdByCode).forEach((key) => delete tripCountryIdByCode[key])
     localStorage.removeItem(STORAGE_KEY)
   }
 
@@ -169,6 +242,9 @@ export const useTravelStore = defineStore('travel', () => {
     selectedCountryCodes,
     selectedPlans,
     allocations,
+    tripId,
+    tripCountryIdByCode,
+    errorMessage,
     totalTargetAmount,
     totalAllocatedAmount,
     selectedAccountCount,
@@ -180,6 +256,7 @@ export const useTravelStore = defineStore('travel', () => {
     setAllocation,
     planError,
     completeGoal,
+    loadCurrentTrip,
     resetGoal,
     enterTravelMode,
     exitTravelMode,

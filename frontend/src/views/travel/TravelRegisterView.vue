@@ -10,6 +10,7 @@ const store = useTravelStore()
 const step = ref(1)
 const dateTarget = ref(null)
 const showValidation = ref(false)
+const isSubmitting = ref(false)
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
 const dateLabel = (value) => value ? value.replaceAll('-', '.') : '여행 날짜 선택'
 const stepTitle = computed(() => ['여행 계획 등록', 'AI 여행 예산', '여행 목표 확인'][step.value - 1])
@@ -37,8 +38,14 @@ function back() {
   router.back()
 }
 
-function finish() {
-  if (store.completeGoal()) router.push('/')
+async function finish() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    if (await store.completeGoal()) router.push('/')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -81,7 +88,8 @@ function finish() {
       <section class="country-summary"><h2>여행 국가별 목표</h2><article v-for="plan in store.selectedPlans" :key="plan.code" :style="{ '--accent': plan.accent }"><span>{{ plan.flag }}</span><div><strong>{{ plan.name }}</strong><small>{{ dateLabel(plan.startDate) }} ~ {{ dateLabel(plan.endDate) }}</small></div><b>{{ money(plan.targetBudget) }}</b></article></section>
       <TravelTicket title="총 여행 목표 금액" :meta="`현지 여행 자금 · ${store.selectedPlans.length}개국 합산`"><div class="grand-total">{{ money(store.totalTargetAmount) }}</div><p class="ticket-note">항공권과 숙소 등 사전 지출은 별도로 기록돼요.</p></TravelTicket>
       <section class="monthly-preview"><span>매달 저축하면 돼요</span><b>{{ money(monthlyAmount) }}</b><small>TRIP 월렛 입금액으로 저축 현황을 계산해요.</small></section>
-      <button class="primary-cta" :disabled="!store.canCompleteGoal" @click="finish">여행 목표 저축 시작하기</button>
+      <p v-if="store.errorMessage" class="collision">⚠ {{ store.errorMessage }}</p>
+      <button class="primary-cta" :disabled="!store.canCompleteGoal || isSubmitting" @click="finish">{{ isSubmitting ? '등록 중...' : '여행 목표 저축 시작하기' }}</button>
     </template>
 
     <DatePickerSheet :open="Boolean(dateTarget)" :plan="dateTarget" @close="dateTarget = null" @confirm="store.updatePlan(dateTarget.code, $event); dateTarget = null" />
