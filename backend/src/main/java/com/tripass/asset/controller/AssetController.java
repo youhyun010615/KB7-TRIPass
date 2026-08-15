@@ -51,7 +51,7 @@ public class AssetController {
     //지원 금융기관 목록 (프론트 은행 선택 화면용)
     @GetMapping("/institutions")
     public ResponseEntity<ApiResponse<List<SupportedInstitutionDto>>> getInstitutions() {
-        return ResponseEntity.ok(ApiResponse.success(assetService.getSupportedInstitutions()));
+        return ResponseEntity.ok(ApiResponse.success(assetService.getSupportedBankInstitutions()));
     }
 
     //AST-004: 개별 계좌 거래내역 조회(DB 조회)

@@ -17,6 +17,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
@@ -32,8 +37,12 @@ import javax.sql.DataSource;
         "com.tripass.financial.service",
         "com.tripass.asset.service",
         "com.tripass.saving.service",
+        "com.tripass.saving.classification",
+        "com.tripass.saving.analysis",
+        "com.tripass.asset.duplicate",
         "com.tripass.checklist.service",
         "com.tripass.travel.service",
+        "com.tripass.travel.client",
         "com.tripass.exchange.service",
         "com.tripass.exchange.client",
         "com.tripass.exchange.scheduler",
@@ -51,6 +60,10 @@ import javax.sql.DataSource;
         "com.tripass.wallet.travelcard.service",
         "com.tripass.wallet.travelcard.client",
         "com.tripass.auth.security",
+        "com.tripass.common.util",
+        "com.tripass.common.scheduler",
+        "com.tripass.common.config",
+        "com.tripass.auth.client",
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",
@@ -99,10 +112,34 @@ public class RootConfig {
     }
 
     @Bean
+    @Primary
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
 
+    // 카카오 OAuth API 호출 전용 RestTemplate
+    @Bean("kakaoRestTemplate")
+    public RestTemplate kakaoRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(3_000);
+        requestFactory.setReadTimeout(5_000);
+
+        return new RestTemplate(requestFactory);
+    }
+
+    // Google OAuth API 호출 전용 RestTemplate
+    @Bean("googleRestTemplate")
+    public RestTemplate googleRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(3_000);
+        requestFactory.setReadTimeout(5_000);
+
+        return new RestTemplate(requestFactory);
+    }
 
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
@@ -127,5 +164,10 @@ public class RootConfig {
     @Bean
     public DataSourceTransactionManager transactionManager(DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean
+    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
     }
 }

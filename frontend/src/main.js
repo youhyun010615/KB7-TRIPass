@@ -34,6 +34,21 @@ async function initializeApp() {
       authStore.logout();
     }
   }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/firebase-messaging-sw.js')
+      .then((registration) => {
+        console.log(
+          'Service Worker registered with scope:',
+          registration.scope,
+        );
+      })
+      .catch((error) => {
+        console.error('Service Worker registration failed:', error);
+      });
+  }
+
   // 로그인 복구가 끝난 다음 라우터를 등록하고 화면을 실행한다.
   app.use(router);
   app.mount('#app');

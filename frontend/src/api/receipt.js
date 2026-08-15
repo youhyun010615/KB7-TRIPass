@@ -2,7 +2,7 @@ import api from '@/api'
 
 const OCR_REQUEST_TIMEOUT = 60000
 
-// 해외 영수증 이미지를 OCR로 분석하고 번역한다.
+// 영수증 이미지를 OCR로 분석하고 번역한다.
 export function analyzeReceipt(file) {
   const formData = new FormData()
   formData.append('file', file)
@@ -16,8 +16,8 @@ export function analyzeReceipt(file) {
   )
 }
 
-// 사용자가 확인·수정한 영수증 정보와 원본 이미지를 저장한다.
-export function createReceipt(data, file) {
+// 사용자가 확인·수정한 영수증 정보와 선택적인 원본 이미지를 저장한다.
+export function createReceipt(tripId, data, file = null) {
   const formData = new FormData()
 
   formData.append(
@@ -27,10 +27,13 @@ export function createReceipt(data, file) {
       { type: 'application/json' },
     ),
   )
-  formData.append('file', file)
+
+  if (file) {
+    formData.append('file', file)
+  }
 
   return api.post(
-    '/ocr/receipts',
+    `/trips/${tripId}/receipts`,
     formData,
     {
       timeout: OCR_REQUEST_TIMEOUT,
@@ -38,33 +41,37 @@ export function createReceipt(data, file) {
   )
 }
 
-// 로그인 회원이 저장한 영수증 목록을 조회한다.
-export function getReceipts() {
-  return api.get('/ocr/receipts')
+// 로그인 회원의 특정 여행 영수증 목록을 조회한다.
+export function getReceipts(tripId) {
+  return api.get(`/trips/${tripId}/receipts`)
 }
 
-// 로그인 회원 소유의 영수증 상세 정보를 조회한다.
-export function getReceipt(receiptId) {
-  return api.get(`/ocr/receipts/${receiptId}`)
+// 로그인 회원이 소유한 특정 여행의 영수증 상세 정보를 조회한다.
+export function getReceipt(tripId, receiptId) {
+  return api.get(
+    `/trips/${tripId}/receipts/${receiptId}`,
+  )
 }
 
-// 영수증 기본 정보와 품목 목록을 수정한다.
-export function updateReceipt(receiptId, data) {
+// 영수증 기본 정보, 품목 및 공동결제 참여자를 수정한다.
+export function updateReceipt(tripId, receiptId, data) {
   return api.put(
-    `/ocr/receipts/${receiptId}`,
+    `/trips/${tripId}/receipts/${receiptId}`,
     data,
   )
 }
 
-// 영수증과 품목을 논리 삭제한다.
-export function deleteReceipt(receiptId) {
-  return api.delete(`/ocr/receipts/${receiptId}`)
+// 영수증과 하위 데이터를 논리 삭제한다.
+export function deleteReceipt(tripId, receiptId) {
+  return api.delete(
+    `/trips/${tripId}/receipts/${receiptId}`,
+  )
 }
 
-// 회원 소유권 검증을 거쳐 저장된 원본 이미지를 조회한다.
-export function getReceiptImage(receiptId) {
+// 회원과 여행 소유권을 검증한 후 저장된 원본 이미지를 조회한다.
+export function getReceiptImage(tripId, receiptId) {
   return api.get(
-    `/ocr/receipts/${receiptId}/image`,
+    `/trips/${tripId}/receipts/${receiptId}/image`,
     {
       responseType: 'blob',
     },

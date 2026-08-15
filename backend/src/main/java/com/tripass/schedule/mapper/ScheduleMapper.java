@@ -1,6 +1,7 @@
 package com.tripass.schedule.mapper;
 
 
+import com.tripass.schedule.domain.TripSchedule;
 import com.tripass.schedule.dto.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -47,4 +48,6 @@ public interface ScheduleMapper {
             @Param("tripId") Long tripId,
             @Param("scheduleId") Long scheduleId
     );
+
+    List<TripSchedule> findUpcomingSchedules();
 }

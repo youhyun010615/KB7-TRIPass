@@ -37,6 +37,22 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
 
+    {
+      path: '/oauth/kakao/callback',
+      name: 'KakaoCallback',
+      component: () =>
+          import('@/views/auth/KakaoCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
+    {
+      path: '/oauth/google/callback',
+      name: 'GoogleCallback',
+      component: () =>
+          import('@/views/auth/GoogleCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
     // ── HOME / SAV (담당: 권유현) ───────────────────────────
     {
       path: '/',
@@ -186,7 +202,7 @@ const router = createRouter({
     {
       path: '/financial',
       name: 'Financial',
-      component: () => import('@/views/financial/FinancialView.vue'),
+      redirect: '/financial/cards',
       meta: { requiresAuth: true },
     },
     {
@@ -216,7 +232,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/financial/cards/:productId',
+      path: '/financial/cards/:cardId',
       name: 'FinancialCardDetail',
       component: () => import('@/views/financial/FinancialCardDetailView.vue'),
       meta: { requiresAuth: true },
@@ -330,6 +346,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/travel/register/schedule',
+      name: 'TravelRegisterSchedule',
+      component: () => import('@/views/travel/TravelRegisterView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/travel/funds',
       name: 'TravelFundCheck',
       component: () => import('@/views/travel/TravelFundCheckView.vue'),
@@ -384,28 +406,61 @@ const router = createRouter({
 
     // ── OCR / EXP (담당: 홍유진) ────────────────────────────
     {
-      path: '/receipt',
+      path: '/trips/:tripId/receipts',
       name: 'Receipt',
-      component: () => import('@/views/receipt/ReceiptView.vue'),
-      meta: { requiresAuth: true },
+      component: () =>
+          import('@/views/receipt/ReceiptView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/capture',
+      path: '/trips/:tripId/receipts/capture',
       name: 'ReceiptCapture',
-      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
-      meta: { requiresAuth: true },
+      component: () =>
+          import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/result',
-      name: 'ReceiptResultNew',
-      component: () => import('@/views/receipt/ReceiptResultView.vue'),
-      meta: { requiresAuth: true },
+      path: '/trips/:tripId/receipts/new',
+      name: 'ReceiptManualNew',
+      component: () =>
+          import('@/views/receipt/ReceiptManualView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
-      path: '/receipt/:receiptId',
-      name: 'ReceiptResult',
-      component: () => import('@/views/receipt/ReceiptResultView.vue'),
-      meta: { requiresAuth: true },
+      path: '/trips/:tripId/receipts/ocr-result',
+      name: 'ReceiptOcrResult',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'ocr',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId/edit',
+      name: 'ReceiptEdit',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'edit',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId',
+      name: 'ReceiptDetail',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'detail',
+      },
     },
 
     // ── MYP (담당: 권유현) ──────────────────────────────────
@@ -455,6 +510,18 @@ const router = createRouter({
       path: '/mypage/travel/:id',
       name: 'MypageTravelDetail',
       component: () => import('@/views/mypage/TravelDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/assets',
+      name: 'AssetLink',
+      component: () => import('@/views/mypage/AssetLinkView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/cards/:cardId/transactions',
+      name: 'CardTransactions',
+      component: () => import('@/views/mypage/CardTransactionsView.vue'),
       meta: { requiresAuth: true },
     },
     {

@@ -13,12 +13,18 @@ public interface AssetMapper {
 
     // codef_connected_institutions
     void insertConnectedInstitution(CodefConnectedInstitutionDto dto);
+    CodefConnectedInstitutionDto findConnectedInstitution(
+            @org.apache.ibatis.annotations.Param("codefConnectionId") Long codefConnectionId,
+            @org.apache.ibatis.annotations.Param("organizationCode") String organizationCode,
+            @org.apache.ibatis.annotations.Param("businessType") String businessType
+    );
 
     // accounts
     void insertAccount(AccountDto dto);
     void updateAccountOnReconnect(AccountDto dto);
     AccountDto findAccountByUserIdAndNumber(
             @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("organizationCode") String organizationCode,
             @org.apache.ibatis.annotations.Param("accountNumber") String accountNumber
     );
     List<AccountDto> findAccountsByUserId(Long userId);
@@ -65,7 +71,41 @@ public interface AssetMapper {
     );
 
     // supported_institutions
-    List<SupportedInstitutionDto> findAllSupportedInstitutions();
+    List<SupportedInstitutionDto> findSupportedInstitutionsByBusinessType(
+            @org.apache.ibatis.annotations.Param("businessType") String businessType
+    );
+
+    // cards
+    void insertCard(CardDto dto);
+    void updateCardOnReconnect(CardDto dto);
+    List<CardDto> findCardsByUserId(Long userId);
+    CardDto findCardByIdAndUserId(
+            @org.apache.ibatis.annotations.Param("cardId") Long cardId,
+            @org.apache.ibatis.annotations.Param("userId") Long userId
+    );
+    void deleteCard(
+            @org.apache.ibatis.annotations.Param("cardId") Long cardId,
+            @org.apache.ibatis.annotations.Param("userId") Long userId
+    );
+    CardDto findCardByUserIdAndNumber(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber
+    );
+
+    // transactions (카드 — 중복 시 merchant_name 업데이트, 신규 시 INSERT)
+    void upsertTransactionFromCard(TransactionDto dto);
+    void deleteTransactionByExternalKey(@org.apache.ibatis.annotations.Param("externalKey") String externalKey);
+    Long findCategoryIdByCode(@org.apache.ibatis.annotations.Param("categoryCode") String categoryCode);
+    List<TransactionDto> findUnclassifiedCardTransactionsByUserId(Long userId);
+    int updateAutoClassification(TransactionDto dto);
+
+    // 카드별 거래내역 조회
+    List<TransactionDto> findTransactionsByCardId(
+            @org.apache.ibatis.annotations.Param("cardId") Long cardId,
+            @org.apache.ibatis.annotations.Param("startDate") LocalDate startDate,
+            @org.apache.ibatis.annotations.Param("endDate") LocalDate endDate
+    );
+    void updateCardLastSyncedAt(@org.apache.ibatis.annotations.Param("cardId") Long cardId);
 
     //거래내역 캘린더 조회
     List<CalendarDayDto> findCalendarByMonth(

@@ -1,18 +1,44 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import {logout as logoutApi} from "@/api/auth"
+import { logout as logoutApi } from '@/api/auth'
+import { getAccounts } from '@/api/asset'
 import { useAuthStore } from '@/stores/auth'
+import { useCardStore } from '@/stores/cardStore'
 import BottomNav from '@/components/common/BottomNav.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cardStore = useCardStore()
 
 const isLoggingOut = ref(false)
+const accounts = ref([])
+
 const memberIdentity = computed(() => {
   const provider = authStore.user?.loginProvider ?? 'LOCAL'
   if (provider !== 'LOCAL') return authStore.user?.email ?? '이메일 미등록'
   return authStore.user?.loginId ?? authStore.user?.id ?? 'tripass'
+})
+
+const totalAssets = computed(() =>
+  accounts.value.reduce((sum, a) => sum + (Number(a.balance) || 0), 0),
+)
+
+const accountCount = computed(() => accounts.value.length)
+const cardCount = computed(() => cardStore.cards.length)
+
+function formatWon(amount) {
+  return amount.toLocaleString('ko-KR') + '원'
+}
+
+onMounted(async () => {
+  try {
+    const res = await getAccounts()
+    accounts.value = res.data?.data ?? []
+  } catch {
+    accounts.value = []
+  }
+  await cardStore.loadCards()
 })
 
 async function logout() {
@@ -39,7 +65,7 @@ async function logout() {
   }
 }
 
-const myManageItems = [
+const myManageItems = computed(() => [
   {
     label: '회원정보',
     sub: '연락처와 비밀번호 관리',
@@ -58,7 +84,13 @@ const myManageItems = [
     path: '/mypage/travel',
     icon: 'travel',
   },
-]
+  {
+    label: '계좌·카드 연동',
+    sub: `통장 ${accountCount.value}개 · 카드 ${cardCount.value}장 연동 중`,
+    path: '/mypage/assets',
+    icon: 'card',
+  },
+])
 
 const serviceItems = [
   {
@@ -90,7 +122,7 @@ const serviceItems = [
         <span class="text-white/60 text-[10px] font-semibold tracking-widest">TRIPASS MEMBER PASS</span>
         <span class="text-white/60 text-[10px]">NO. TP-260715</span>
       </div>
-      <div class="flex items-center gap-4 px-4 pb-5">
+      <div class="flex items-center gap-4 px-4 pb-4">
         <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center text-xl font-bold flex-shrink-0" style="color: #1A337A">
           {{ authStore.user?.name?.[0] ?? '유' }}
         </div>
@@ -98,6 +130,34 @@ const serviceItems = [
           <p class="text-white font-bold text-xl leading-tight">{{ authStore.user?.name ?? '권유현' }}</p>
           <p class="text-white/60 text-sm mt-0.5">{{ memberIdentity }}</p>
         </div>
+      </div>
+
+      <!-- 총 보유금액 -->
+      <div class="px-4 pb-2">
+        <p class="text-white/60 text-xs mb-1">전체 보유금액</p>
+        <p class="text-white text-2xl font-bold">{{ formatWon(totalAssets) }}</p>
+      </div>
+
+      <!-- 연동 현황 + 거래내역 이동 -->
+      <div
+        class="w-full flex items-center justify-between px-4 py-3 mt-1"
+        style="border-top: 1px solid rgba(255,255,255,0.15)"
+      >
+        <button type="button" class="flex items-center gap-2 active:opacity-70" @click="router.push('/mypage/assets')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="5" width="20" height="14" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+            <path d="M2 10H22" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+          </svg>
+          <span class="text-white/70 text-xs">
+            통장 {{ accountCount }}개 · 카드 {{ cardCount }}장 연동 중
+          </span>
+        </button>
+        <button type="button" class="flex items-center gap-1 active:opacity-70" @click="router.push('/asset/transactions')">
+          <span class="text-white/70 text-xs">거래내역</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -128,6 +188,11 @@ const serviceItems = [
             <!-- travel -->
             <svg v-if="item.icon === 'travel'" width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M21 3L3 10.5L10 13.5M21 3L13.5 21L10 13.5M21 3L10 13.5" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <!-- card -->
+            <svg v-if="item.icon === 'card'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="5" width="20" height="14" rx="2" stroke="#3B5BDB" stroke-width="2"/>
+              <path d="M2 10H22" stroke="#3B5BDB" stroke-width="2"/>
             </svg>
           </div>
           <!-- 텍스트 -->

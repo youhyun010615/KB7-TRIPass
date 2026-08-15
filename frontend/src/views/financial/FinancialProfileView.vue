@@ -3,13 +3,19 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api'
+import { getCardInstitutions, linkCard } from '@/api/card'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
+const CARD_COMPANY_STEP = 9
+const CARD_LOGIN_STEP = 10
+const CARD_CONNECTING_STEP = 11
+const CARD_COMPLETE_STEP = 12
+
 const requestedStep = Number(route.query.step)
-const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= 5 ? requestedStep : 0)
+const step = ref(Number.isInteger(requestedStep) && requestedStep >= 0 && requestedStep <= CARD_COMPLETE_STEP ? requestedStep : 0)
 
 const banks = ref([])
 const banksError = ref(false)
@@ -19,6 +25,15 @@ const password = ref('')
 const linkedAccounts = ref([])
 const connectionProgress = ref(0)
 const connectionError = ref('')
+const cardInstitutions = ref([])
+const selectedCardInstitution = ref(null)
+const cardLoginId = ref('')
+const cardPassword = ref('')
+const linkedCards = ref([])
+const cardConnectionProgress = ref(0)
+const cardConnectionError = ref('')
+const isCardInstitutionLoading = ref(false)
+const isCardConnecting = ref(false)
 
 const salaryItems = ref([
   {
@@ -56,6 +71,14 @@ function toNumber(value) {
 
 function formatNumber(value) {
   return toNumber(value).toLocaleString('ko-KR')
+}
+
+function backFromInstitutionSelect(defaultStep) {
+  if (route.query.from === 'asset') {
+    router.push('/mypage/assets')
+    return
+  }
+  step.value = defaultStep
 }
 
 function updateAmount(item, event) {
@@ -101,6 +124,76 @@ async function startConnection() {
   }
 }
 
+async function goToCardSelect() {
+  step.value = CARD_COMPANY_STEP
+  cardConnectionError.value = ''
+  if (cardInstitutions.value.length > 0) return
+
+  isCardInstitutionLoading.value = true
+  try {
+    const res = await getCardInstitutions()
+    cardInstitutions.value = res.data?.data ?? []
+  } catch (e) {
+    console.error('카드사 목록 로딩 실패', e)
+    cardConnectionError.value = e.response?.data?.message ?? '카드사 목록을 불러오지 못했어요.'
+  } finally {
+    isCardInstitutionLoading.value = false
+  }
+}
+
+function goToCardLogin() {
+  if (!selectedCardInstitution.value) return
+  cardLoginId.value = ''
+  cardPassword.value = ''
+  cardConnectionError.value = ''
+  step.value = CARD_LOGIN_STEP
+}
+
+async function startCardConnection() {
+  if (!selectedCardInstitution.value || !cardLoginId.value.trim() || !cardPassword.value) return
+
+  isCardConnecting.value = true
+  cardConnectionError.value = ''
+  cardConnectionProgress.value = 20
+  step.value = CARD_CONNECTING_STEP
+
+  try {
+    cardConnectionProgress.value = 50
+    const res = await linkCard({
+      organizationCode: selectedCardInstitution.value.organizationCode,
+      organizationName: selectedCardInstitution.value.institutionName,
+      cardType: 'CF',
+      loginType: '1',
+      loginId: cardLoginId.value.trim(),
+      password: cardPassword.value,
+    })
+    linkedCards.value = res.data?.data ?? []
+    cardConnectionProgress.value = 100
+    setTimeout(() => { step.value = CARD_COMPLETE_STEP }, 350)
+  } catch (e) {
+    console.error('카드 연동 실패', e)
+    cardConnectionError.value = e.response?.data?.message ?? '카드 연동에 실패했어요. 아이디와 비밀번호를 확인해 주세요.'
+    cardConnectionProgress.value = 0
+    step.value = CARD_LOGIN_STEP
+  } finally {
+    isCardConnecting.value = false
+  }
+}
+
+function resetCardConnection() {
+  selectedCardInstitution.value = null
+  cardLoginId.value = ''
+  cardPassword.value = ''
+  linkedCards.value = []
+  cardConnectionError.value = ''
+  cardConnectionProgress.value = 0
+  goToCardSelect()
+}
+
+function cardTypeName(cardType) {
+  return cardType === 'CHECK' ? '체크카드' : '신용카드'
+}
+
 
 function addSalary() {
   salaryItems.value.push({
@@ -133,6 +226,10 @@ function removeItem(items, id) {
 }
 
 function completeProfile() {
+  if (route.query.from === 'asset') {
+    router.replace('/mypage/assets')
+    return
+  }
   authStore.completeProfile()
   router.replace('/')
 }
@@ -144,6 +241,7 @@ function skipProfile() {
 
 onMounted(() => {
   if (step.value === 2) goToBankSelect()
+  if (step.value === CARD_COMPANY_STEP) goToCardSelect()
 })
 
 </script>
@@ -198,18 +296,25 @@ onMounted(() => {
         <div class="page-content account-intro">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
           <p class="subcopy">연동할 금융사를 선택해 주세요</p>
-          <button class="load-bank-card" @click="goToBankSelect">
-            <span class="bank-building">▦</span>
-            <span><strong>은행</strong><small>모든 금융사</small></span>
-            <b>›</b>
-          </button>
+          <div class="asset-link-options">
+            <button class="load-bank-card" @click="goToBankSelect">
+              <span class="bank-building">▦</span>
+              <span><strong>은행 계좌 연동</strong><small>잔액과 입출금 내역을 불러와요</small></span>
+              <b>›</b>
+            </button>
+            <button class="load-bank-card" @click="goToCardSelect">
+              <span class="card-building">▰</span>
+              <span><strong>카드 연동</strong><small>가맹점명과 카드 결제내역을 불러와요</small></span>
+              <b>›</b>
+            </button>
+          </div>
           <div class="security-note"><span>▣</span><div><strong>안전하게 연결해요</strong><p>인증 정보는 연결 과정에서만 사용됩니다</p></div></div>
         </div>
-        <div class="sticky-action"><button class="primary-button" @click="goToBankSelect">다음</button></div>
+        <div class="sticky-action"><p class="asset-selection-guide">연동할 자산을 선택해 주세요</p></div>
       </template>
 
       <template v-else-if="step === 2">
-        <header class="simple-header"><button @click="route.query.from === 'asset' ? router.back() : step = 1">‹</button><strong>은행 선택</strong></header>
+        <header class="simple-header"><button @click="backFromInstitutionSelect(1)">‹</button><strong>은행 선택</strong></header>
         <div class="page-content">
           <h2>{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
           <div class="selection-caption"><span>연동할 금융사를 선택해 주세요</span></div>
@@ -334,7 +439,7 @@ onMounted(() => {
         <div class="sticky-action"><button class="primary-button" :disabled="!hasValidFixedExpenseNames" @click="step = 8">다음</button></div>
       </template>
 
-      <template v-else>
+      <template v-else-if="step === 8">
         <header class="simple-header"><button @click="step = 7">‹</button><strong>카테고리별 목표 설정</strong></header>
         <div class="step-progress"><i class="filled"></i><i class="filled"></i><i class="filled"></i></div>
         <div class="category-content">
@@ -346,6 +451,91 @@ onMounted(() => {
           <div class="category-total"><span>ⓘ 총 합산 금액</span><strong>{{ formatNumber(categoryTotal) }}원</strong></div>
         </div>
         <div class="sticky-action"><button class="primary-button" :disabled="categoryTotal === 0" @click="completeProfile">설정 완료</button></div>
+      </template>
+
+      <template v-else-if="step === CARD_COMPANY_STEP">
+        <header class="simple-header"><button @click="backFromInstitutionSelect(1)">‹</button><strong>카드사 선택</strong></header>
+        <div class="page-content">
+          <h2>결제내역을 불러올<br>카드사를 선택해 주세요</h2>
+          <p class="subcopy">여러 카드사를 사용한다면 연동 완료 후 추가할 수 있어요.</p>
+          <p v-if="cardConnectionError" class="connection-error">{{ cardConnectionError }}</p>
+          <div v-if="isCardInstitutionLoading" class="connection-empty">카드사 목록을 불러오는 중...</div>
+          <div v-else-if="cardInstitutions.length === 0" class="connection-empty">
+            <p>연동 가능한 카드사를 불러오지 못했어요.</p>
+            <button type="button" class="retry-button" @click="goToCardSelect">다시 시도</button>
+          </div>
+          <div v-else class="bank-grid card-company-grid">
+            <button
+              v-for="institution in cardInstitutions"
+              :key="`${institution.businessType}-${institution.organizationCode}`"
+              type="button"
+              class="bank-option"
+              :class="{ selected: selectedCardInstitution?.organizationCode === institution.organizationCode }"
+              @click="selectedCardInstitution = institution"
+            >
+              <img v-if="institution.logoUrl" :src="institution.logoUrl" :alt="institution.institutionName" class="institution-logo">
+              <span v-else class="bank-mark card-mark">{{ institution.institutionName.charAt(0) }}</span>
+              <strong>{{ institution.institutionName }}</strong>
+              <i v-if="selectedCardInstitution?.organizationCode === institution.organizationCode">✓</i>
+            </button>
+          </div>
+        </div>
+        <div class="sticky-action"><button class="primary-button" :disabled="!selectedCardInstitution" @click="goToCardLogin">다음</button></div>
+      </template>
+
+      <template v-else-if="step === CARD_LOGIN_STEP">
+        <header class="simple-header"><button @click="step = CARD_COMPANY_STEP">‹</button><strong>카드 연동</strong></header>
+        <div class="page-content">
+          <div class="selected-institution">
+            <span class="bank-mark card-mark">{{ selectedCardInstitution?.institutionName?.charAt(0) }}</span>
+            <div><small>선택한 카드사</small><strong>{{ selectedCardInstitution?.institutionName }}</strong></div>
+          </div>
+          <h2>카드사 홈페이지 로그인 정보를<br>입력해 주세요</h2>
+          <p class="subcopy">카드사 앱 간편 비밀번호가 아닌 홈페이지 아이디와 비밀번호를 입력해 주세요.</p>
+          <p v-if="cardConnectionError" class="connection-error">{{ cardConnectionError }}</p>
+          <div class="credential-form">
+            <label class="full-field">카드사 홈페이지 아이디<input v-model.trim="cardLoginId" placeholder="아이디를 입력해 주세요" autocomplete="username"></label>
+            <label class="full-field">카드사 홈페이지 비밀번호<input v-model="cardPassword" type="password" placeholder="비밀번호를 입력해 주세요" autocomplete="current-password" @keyup.enter="startCardConnection"></label>
+          </div>
+          <div class="security-note"><span>▣</span><div><strong>로그인 정보는 안전하게 처리돼요</strong><p>비밀번호는 연동 요청 과정에서 암호화되며 데이터베이스에 저장하지 않습니다.</p></div></div>
+        </div>
+        <div class="sticky-action"><button class="primary-button" :disabled="!cardLoginId.trim() || !cardPassword || isCardConnecting" @click="startCardConnection">{{ isCardConnecting ? '연동 중...' : '카드 연동하기' }}</button></div>
+      </template>
+
+      <template v-else-if="step === CARD_CONNECTING_STEP">
+        <header class="simple-header"><span></span><strong>카드 연결</strong></header>
+        <div class="connection-content">
+          <div class="connection-ticket">
+            <p>CARD CONNECTION · BOARDING</p><h2>카드 정보를 불러오고 있어요</h2><span>카드사 로그인과 보유 카드 목록을 확인하고 있어요.</span>
+            <div class="flight-path"><i>· · · · ·</i><b>✈</b></div>
+            <div class="progress-label"><span>연결 진행</span><strong>{{ cardConnectionProgress }}%</strong></div>
+            <div class="progress-track"><i :style="{ width: `${cardConnectionProgress}%` }"></i></div>
+            <small>창을 닫지 말고 잠시 기다려 주세요.</small>
+          </div>
+          <div class="connection-steps">
+            <p :class="{ done: cardConnectionProgress >= 20 }">✓ 카드사 로그인 정보 확인</p>
+            <p :class="{ done: cardConnectionProgress >= 50 }">✓ CODEF 카드사 연결</p>
+            <p :class="{ done: cardConnectionProgress >= 100, active: cardConnectionProgress < 100 }">{{ cardConnectionProgress >= 100 ? '✓' : '⌁' }} 보유 카드 정보를 불러오고 있어요</p>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="step === CARD_COMPLETE_STEP">
+        <header class="simple-header"><button @click="step = CARD_COMPANY_STEP">‹</button><strong>카드 연결 완료</strong></header>
+        <div class="connection-content">
+          <div class="connection-ticket complete">
+            <p>CARD ARRIVAL PASS</p><div class="completion-check">✓</div><h2>카드 연결이 완료됐어요</h2><span>연결한 카드의 결제내역을 소비 분석에 활용할 수 있어요.</span>
+            <div class="complete-stat"><span>연결 카드사</span><strong>{{ selectedCardInstitution?.institutionName }}</strong></div>
+            <div class="complete-stat"><span>불러온 카드</span><strong>{{ linkedCards.length }}개</strong></div>
+            <div class="barcode">|||| ||| ||||| || ||||</div>
+          </div>
+          <section class="linked-card-list">
+            <article v-for="card in linkedCards" :key="card.id ?? card.maskedCardNumber" class="linked-card-item">
+              <span class="linked-card-icon">▰</span><div><strong>{{ card.cardName }}</strong><small>{{ cardTypeName(card.cardType) }} · {{ card.maskedCardNumber || '카드번호 비공개' }}</small></div>
+            </article>
+          </section>
+        </div>
+        <div class="sticky-action split"><button class="secondary-button" @click="resetCardConnection">카드 추가 연동</button><button class="primary-button" @click="completeProfile">완료</button></div>
       </template>
     </section>
   </main>
@@ -398,5 +588,6 @@ button { border: 0; cursor: pointer; }
 .form-card { margin-bottom: 10px; padding: 15px; border-radius: 17px; background: white; box-shadow: 0 6px 18px rgba(15,23,42,.08); }.form-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }.form-card-title input { min-width: 0; flex: 1; border: 0; outline: none; color: #111827; font-size: 13px; font-weight: 800; }.form-card-title button { padding: 5px; color: #e5484d; background: transparent; font-size: 9px; }.field-grid { display: grid; gap: 10px; }.field-grid.two { grid-template-columns: .75fr 1.25fr; }.field-grid.account-memo { grid-template-columns: 1.8fr .8fr; margin-top: 10px; }.field-grid label, .full-field { position: relative; color: #64748b; font-size: 9px; }.field-grid input, .field-grid select, .full-field input, .full-field select { width: 100%; height: 43px; margin-top: 6px; padding: 0 13px; border: 1px solid #e5eaf2; border-radius: 10px; outline: 0; color: #111827; background: white; font-size: 11px; }.field-grid em { position: absolute; right: 11px; bottom: 13px; color: #94a3b8; font-size: 9px; font-style: normal; }.field-grid input { padding-right: 27px; }.full-field { display: block; margin-top: 10px; }.add-row { width: 100%; height: 48px; border-radius: 14px; color: #0066ff; background: #dde5ff; font-size: 12px; font-weight: 800; }
 .fixed-form { padding-bottom: 90px; }.expense-card .feature-icon { width: 38px; height: 38px; }.expense-card .form-card-title { margin-bottom: 10px; }.expense-card .form-card-title strong { flex: 1; color: #111827; font-size: 13px; }.expense-name { margin: 0 0 10px; }.expense-name > em { color: #e5484d; font-style: normal; }.expense-name input:focus { border-color: #263f8c; }
 .category-content > .subcopy { margin-bottom: 23px; }.category-row { height: 66px; margin-bottom: 15px; padding: 10px 11px; display: flex; align-items: center; gap: 14px; border: 1px solid #e5eaf2; border-radius: 14px; background: white; }.category-row > div { flex: 1; }.category-row strong, .category-row small { display: block; }.category-row strong { font-size: 13px; }.category-row small { margin-top: 5px; color: #64748b; font-size: 9px; }.category-row label { display: flex; align-items: center; gap: 6px; }.category-row input { width: 130px; height: 44px; padding: 0 12px; border: 1.5px solid #d6dce7; border-radius: 11px; outline: none; color: #111827; background: white; text-align: right; font-size: 16px; font-weight: 800; }.category-row em { color: #96a1b5; font-size: 11px; font-style: normal; }.category-total { min-height: 76px; margin-top: 38px; padding: 15px 18px; display: flex; justify-content: space-between; align-items: flex-start; border-radius: 16px; color: #0066ff; background: #eef2ff; font-size: 11px; font-weight: 800; }.category-total strong { color: #263f8c; font-size: 20px; }
+.asset-link-options { display: grid; gap: 12px; }.asset-link-options .load-bank-card + .load-bank-card { margin-top: 0; }.card-building { display: grid; width: 39px; height: 39px; place-items: center; border-radius: 10px; color: #8b5cf6; background: #f0eaff; }.asset-selection-guide { margin: 0; padding: 16px 0; color: #64748b; font-size: 12px; text-align: center; }.card-company-grid { margin-top: 24px; }.card-mark { color: #fff; background: linear-gradient(145deg, #263f8c, #4f6ec4); }.institution-logo { width: 27px; height: 27px; border-radius: 7px; object-fit: contain; }.connection-empty { padding: 48px 0; color: #94a3b8; font-size: 12px; line-height: 1.6; text-align: center; }.retry-button { margin-top: 12px; padding: 9px 18px; border-radius: 9px; color: #286dd8; background: #edf4ff; font-size: 12px; font-weight: 700; }.connection-error { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; color: #c62828; background: #ffebee; font-size: 11px; line-height: 1.5; }.selected-institution { margin-bottom: 30px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid #dce5f5; border-radius: 14px; background: #fff; }.selected-institution small, .selected-institution strong { display: block; }.selected-institution small { margin-bottom: 3px; color: #94a3b8; font-size: 9px; }.selected-institution strong { font-size: 13px; }.credential-form { margin-top: 25px; display: grid; gap: 13px; }.linked-card-list { margin-top: 16px; display: grid; gap: 10px; }.linked-card-item { padding: 15px; display: flex; align-items: center; gap: 12px; border-radius: 14px; background: #fff; box-shadow: 0 6px 16px rgba(15,23,42,.08); }.linked-card-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 11px; color: #8b5cf6; background: #f0eaff; }.linked-card-item div { min-width: 0; }.linked-card-item strong, .linked-card-item small { display: block; }.linked-card-item strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.linked-card-item small { margin-top: 4px; color: #64748b; font-size: 9px; }
 @media (min-width: 500px) { .finance-shell { min-height: 879px; margin: 20px 0; border-radius: 28px; box-shadow: 0 10px 28px rgba(15,23,42,.16); } }
 </style>

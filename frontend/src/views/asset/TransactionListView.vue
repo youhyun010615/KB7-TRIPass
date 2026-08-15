@@ -3,11 +3,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
-import { useAssetStore } from '@/stores/asset'
 import api from '@/api'
 
 const router = useRouter()
-const asset = useAssetStore()
 const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
 const filter = ref('all')
 const today = new Date().toISOString().slice(0, 10)
@@ -17,7 +15,9 @@ const endDate = ref(today)
 const loading = ref(false)
 const realTransactions = ref([])
 const accountMap = ref({})
+const cardMap = ref({})
 const realAccountCount = ref(0)
+const realCardCount = ref(0)
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 async function fetchTransactions() {
@@ -34,10 +34,13 @@ async function fetchTransactions() {
 
 onMounted(async () => {
   try {
-    const accRes = await api.get('/accounts')
+    const [accRes, cardRes] = await Promise.all([api.get('/accounts'), api.get('/cards')])
     const accounts = accRes.data.data ?? []
+    const cards = cardRes.data.data ?? []
     accountMap.value = Object.fromEntries(accounts.map(a => [a.id, a.accountName]))
+    cardMap.value = Object.fromEntries(cards.map(card => [card.id, card.cardName]))
     realAccountCount.value = accounts.length
+    realCardCount.value = cards.length
   } catch (e) {
     console.error('계좌 조회 실패', e)
   }
@@ -48,14 +51,6 @@ watch([startDate, endDate], fetchTransactions)
 
 const groups = computed(() => {
   const allItems = []
-
-  // mock 거래내역
-  asset.transactions.forEach((item) => {
-    if (item.date < startDate.value || item.date > endDate.value) return
-    if (filter.value === 'deposit' && item.amount <= 0) return
-    if (filter.value === 'withdrawal' && item.amount >= 0) return
-    allItems.push({ ...item, _isReal: false })
-  })
 
   // 실제 거래내역
   realTransactions.value.forEach((t) => {
@@ -71,10 +66,13 @@ const groups = computed(() => {
     allItems.push({
       id: t.id, date, dateLabel: label,
       merchant: t.merchantName ?? '(내용없음)',
-      category: '기타', method: accountMap.value[t.accountId] ?? '',
+      category: t.categoryName ?? '기타',
+      method: t.cardId ? (cardMap.value[t.cardId] ?? '연동 카드') : (accountMap.value[t.accountId] ?? '연동 계좌'),
       amount, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
-      balanceAfter: Number(t.balanceAfter ?? 0), memo: t.memo ?? '',
-      _isReal: true,
+      balanceAfter: t.cardId ? null : Number(t.balanceAfter ?? 0), memo: t.memo ?? '',
+      merchantType: t.merchantType ?? '',
+      sourceType: t.cardId ? 'CARD' : 'ACCOUNT',
+      isReal: true,
     })
   })
 
@@ -93,11 +91,11 @@ const totalCount = computed(() => groups.value.reduce((sum, g) => sum + g.items.
 
 <template>
   <main class="list-page">
-    <header><button type="button" @click="router.back()">‹</button><h1>전체 계좌 거래내역</h1><button type="button" aria-label="거래내역 캘린더" class="cal-btn" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
-    <section class="summary"><small>연동 계좌 {{ asset.accounts.length + realAccountCount }}개</small><b>총 {{ totalCount }}건의 거래내역</b></section>
+    <header><button type="button" @click="router.back()">‹</button><h1>전체 거래내역</h1><button type="button" aria-label="거래내역 캘린더" class="cal-btn" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
+    <section class="summary"><small>통장 {{ realAccountCount }}개 · 카드 {{ realCardCount }}장</small><b>총 {{ totalCount }}건의 거래내역</b></section>
     <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>~</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label></section>
     <nav class="filter-tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" @click="filter = tab.id">{{ tab.label }}</button></nav>
-    <TransactionGroups :groups="groups" :show-icons="false" :loading="loading" @select="$event._isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
+    <TransactionGroups :groups="groups" :show-icons="true" :loading="loading" @select="router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } })" />
     <BottomNav />
   </main>
 </template>
