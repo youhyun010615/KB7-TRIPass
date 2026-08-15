@@ -26,4 +26,11 @@
         VALUES (#{userId}, #{type}, #{title}, #{message}, #{url})
     </insert>
 
+    <select id="existsNotification" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM notifications
+        WHERE user_id = #{userId} AND notification_type = #{type} AND url = #{url} AND message = #{message}
+        AND created_at >= CURRENT_DATE
+    </select>
+
 </mapper>

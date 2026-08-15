@@ -5,15 +5,15 @@ importScripts(
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js',
 );
 
-// Firebase 프로젝트 설정 (프론트엔드와 동일하게 설정)
+// Firebase 프로젝트 설정 (빌드 시 vite.config.js에 의해 실제 값으로 대체됨)
 firebase.initializeApp({
-  apiKey: 'AIzaSyAyChrDytnSp7j2eKFGitgw0uYWZm469mM',
-  authDomain: 'kb7-tripass.firebaseapp.com',
-  projectId: 'kb7-tripass',
-  storageBucket: '://appspot.com',
-  messagingSenderId: '233597599125',
-  appId: '1:233597599125:web:4cb5328fb2616a1028ca9c',
-  measurementId: 'G-V80T73Q6RJ',
+  apiKey: '__VITE_FIREBASE_API_KEY__',
+  authDomain: '__VITE_FIREBASE_AUTH_DOMAIN__',
+  projectId: '__VITE_FIREBASE_PROJECT_ID__',
+  storageBucket: '__VITE_FIREBASE_STORAGE_BUCKET__',
+  messagingSenderId: '__VITE_FIREBASE_MESSAGING_SENDER_ID__',
+  appId: '__VITE_FIREBASE_APP_ID__',
+  measurementId: '__VITE_FIREBASE_MEASUREMENT_ID__',
 });
 
 const messaging = firebase.messaging();
@@ -27,7 +27,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/favicon.ico', // 프로젝트 아이콘 경로
+    icon: '/favicon.ico', 
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

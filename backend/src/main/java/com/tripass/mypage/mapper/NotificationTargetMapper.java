@@ -12,4 +12,7 @@ public interface NotificationTargetMapper {
     
     // end_date(귀국일)와 일치하는 여행 목록 조회 (귀국 전날은 end_date - 1)
     List<Trip> findTripsByEndDateOffset(@Param("offsetDays") int offsetDays);
+    
+    List<Trip> findTripsStartingToday();
+    List<Trip> findTripsEndedYesterday();
 }

@@ -41,6 +41,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public boolean existsNotification(Long userId, String type, String url, String message) {
+        return notificationMapper.existsNotification(userId, type, url, message);
+    }
+
+    @Override
     public NotificationSetting getSettings(Long userId) {
         return notificationSettingMapper.getSettingByUserId(userId);
     }

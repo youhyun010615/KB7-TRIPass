@@ -12,5 +12,6 @@ public interface NotificationMapper {
     void updateReadStatus(@Param("userId") Long userId, @Param("id") Long id);
     void updateAllReadStatus(@Param("userId") Long userId);
     void insertNotification(@Param("userId") Long userId, @Param("type") String type, @Param("title") String title, @Param("message") String message, @Param("url") String url);
+    boolean existsNotification(@Param("userId") Long userId, @Param("type") String type, @Param("url") String url, @Param("message") String message);
 }
 

@@ -11,7 +11,7 @@ const rows = [
   { key: 'travelScheduleEnabled', label: '여행 일정 알림', sub: '일정 1시간 전 자동 안내' },
   { key: 'exchangeRateEnabled', label: '환율 및 환전 알림', sub: '목표 환율 도달 및 환전 안내' },
   { key: 'checklistEnabled', label: '체크리스트 알림', sub: '단계별 준비 항목 안내' },
-  { key: 'travelReportEnabled', label: '여행 리포트 알림', sub: '여행 전·후 리포트 생성 안내' },
+  { key: 'travelReportEnabled', label: '여행 리포트 알림', sub: '여행 대비·후 리포트 생성 안내' },
 ];
 
 onMounted(() => {
