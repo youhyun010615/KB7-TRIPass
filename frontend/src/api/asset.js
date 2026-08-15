@@ -15,3 +15,7 @@ export function linkBank(data) {
 export function fetchTransactions(data) {
   return api.post('/accounts/transactions', data)
 }
+
+export function deleteAccount(accountId) {
+  return api.delete(`/accounts/${accountId}`)
+}

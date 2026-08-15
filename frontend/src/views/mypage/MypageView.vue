@@ -139,12 +139,11 @@ const serviceItems = [
       </div>
 
       <!-- 연동 현황 + 거래내역 이동 -->
-      <button
-        class="w-full flex items-center justify-between px-4 py-3 mt-1 active:opacity-70"
+      <div
+        class="w-full flex items-center justify-between px-4 py-3 mt-1"
         style="border-top: 1px solid rgba(255,255,255,0.15)"
-        @click="router.push('/mypage/assets')"
       >
-        <div class="flex items-center gap-2">
+        <button type="button" class="flex items-center gap-2 active:opacity-70" @click="router.push('/mypage/assets')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <rect x="2" y="5" width="20" height="14" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
             <path d="M2 10H22" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
@@ -152,14 +151,14 @@ const serviceItems = [
           <span class="text-white/70 text-xs">
             통장 {{ accountCount }}개 · 카드 {{ cardCount }}장 연동 중
           </span>
-        </div>
-        <div class="flex items-center gap-1">
+        </button>
+        <button type="button" class="flex items-center gap-1 active:opacity-70" @click="router.push('/asset/transactions')">
           <span class="text-white/70 text-xs">거래내역</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path d="M9 18L15 12L9 6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
           </svg>
-        </div>
-      </button>
+        </button>
+      </div>
     </div>
 
     <!-- 나의 관리 -->
