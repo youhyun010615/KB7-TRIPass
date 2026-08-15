@@ -26,7 +26,7 @@ INSERT INTO travel_cards (
 )
 VALUES
     (
-        'KB국민 트래블러스 체크카드',
+        '트래블러스 체크카드',
         'KB국민카드',
         'KB국민은행',
         'KB Pay 외화머니 또는 KB국민은행 외화통장',

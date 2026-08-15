@@ -9,6 +9,7 @@ import com.tripass.schedule.enums.SchedulePaymentStatus;
 import com.tripass.schedule.enums.ScheduleStatus;
 import com.tripass.schedule.exception.ScheduleException;
 import com.tripass.schedule.service.ScheduleService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -29,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.tripass.schedule.exception.ScheduleErrorCode.SCHEDULE_NOT_FOUND;
+import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_ACCESS_DENIED;
 import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -46,6 +51,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ExtendWith(MockitoExtension.class)
 class ScheduleControllerTest {
 
+    private static final Long USER_ID = 1L;
+
     @Mock
     private ScheduleService scheduleService;
 
@@ -54,6 +61,12 @@ class ScheduleControllerTest {
 
     @BeforeEach
     void setUp() {
+        // 로그인 사용자를 흉내내는 인증 정보를 SecurityContext에 채워 둔다.
+        // JwtAuthenticationFilter가 실제로는 principal에 userId(Long)를 바로 담기 때문에 동일하게 맞춘다.
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(USER_ID, null)
+        );
+
         objectMapper = new ObjectMapper();
 
         objectMapper.registerModule(new JavaTimeModule());
@@ -93,7 +106,15 @@ class ScheduleControllerTest {
                 )
                 .setMessageConverters(converter)
                 .setValidator(validator)
+                .setCustomArgumentResolvers(
+                        new AuthenticationPrincipalArgumentResolver()
+                )
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -126,7 +147,7 @@ class ScheduleControllerTest {
                         )
                         .build();
 
-        when(scheduleService.getSchedules(1L))
+        when(scheduleService.getSchedules(1L, USER_ID))
                 .thenReturn(List.of(schedule));
 
         mockMvc.perform(
@@ -175,7 +196,7 @@ class ScheduleControllerTest {
     @Test
     void 일정이_없으면_빈_배열을_반환한다()
             throws Exception {
-        when(scheduleService.getSchedules(1L))
+        when(scheduleService.getSchedules(1L, USER_ID))
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(
@@ -226,7 +247,7 @@ class ScheduleControllerTest {
     @Test
     void 여행이_없으면_404를_반환한다()
             throws Exception {
-        when(scheduleService.getSchedules(99L))
+        when(scheduleService.getSchedules(99L, USER_ID))
                 .thenThrow(
                         new ScheduleException(
                                 TRIP_NOT_FOUND
@@ -248,6 +269,35 @@ class ScheduleControllerTest {
                         jsonPath("$.message")
                                 .value(
                                         "여행 정보를 찾을 수 없습니다."
+                                )
+                );
+    }
+
+    @Test
+    void 다른_사용자의_여행이면_403을_반환한다()
+            throws Exception {
+        when(scheduleService.getSchedules(1L, USER_ID))
+                .thenThrow(
+                        new ScheduleException(
+                                TRIP_ACCESS_DENIED
+                        )
+                );
+
+        mockMvc.perform(
+                        get(
+                                "/api/v1/trips/{tripId}/schedules",
+                                1L
+                        )
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("TRIP_ACCESS_DENIED")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "해당 여행에 접근할 권한이 없습니다."
                                 )
                 );
     }
@@ -289,7 +339,8 @@ class ScheduleControllerTest {
         when(
                 scheduleService.getScheduleDetail(
                         1L,
-                        2L
+                        2L,
+                        USER_ID
                 )
         ).thenReturn(response);
 
@@ -374,7 +425,8 @@ class ScheduleControllerTest {
         when(
                 scheduleService.getScheduleDetail(
                         1L,
-                        999L
+                        999L,
+                        USER_ID
                 )
         ).thenThrow(
                 new ScheduleException(
@@ -435,7 +487,8 @@ class ScheduleControllerTest {
         when(
                 scheduleService.createSchedule(
                         eq(1L),
-                        any(ScheduleCreateRequestDto.class)
+                        any(ScheduleCreateRequestDto.class),
+                        eq(USER_ID)
                 )
         ).thenReturn(response);
 
@@ -570,6 +623,9 @@ class ScheduleControllerTest {
                         .paymentStatus(
                                 SchedulePaymentStatus.PREPAID
                         )
+                        .scheduleStatus(
+                                ScheduleStatus.UPCOMING
+                        )
                         .placeName("루브르 박물관")
                         .placeAddress(
                                 "Rue de Rivoli, Paris"
@@ -586,7 +642,8 @@ class ScheduleControllerTest {
                 scheduleService.updateSchedule(
                         eq(1L),
                         eq(10L),
-                        any(ScheduleUpdateRequestDto.class)
+                        any(ScheduleUpdateRequestDto.class),
+                        eq(USER_ID)
                 )
         ).thenReturn(response);
 
@@ -627,7 +684,8 @@ class ScheduleControllerTest {
                 .when(scheduleService)
                 .deleteSchedule(
                         1L,
-                        10L
+                        10L,
+                        USER_ID
                 );
 
         mockMvc.perform(
@@ -662,7 +720,8 @@ class ScheduleControllerTest {
         ).when(scheduleService)
                 .deleteSchedule(
                         1L,
-                        999L
+                        999L,
+                        USER_ID
                 );
 
         mockMvc.perform(

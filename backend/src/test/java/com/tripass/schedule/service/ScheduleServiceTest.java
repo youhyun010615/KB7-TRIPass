@@ -32,6 +32,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ScheduleServiceTest {
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
+
     @Mock
     private ScheduleMapper scheduleMapper;
 
@@ -40,12 +43,12 @@ class ScheduleServiceTest {
 
     @Test
     void 여행이_존재하지_않으면_목록_조회_예외가_발생한다() {
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(false);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(null);
 
         ScheduleException exception = assertThrows(
                 ScheduleException.class,
-                () -> scheduleService.getSchedules(1L)
+                () -> scheduleService.getSchedules(1L, USER_ID)
         );
 
         assertEquals(
@@ -58,18 +61,37 @@ class ScheduleServiceTest {
     }
 
     @Test
+    void 다른_사용자의_여행이면_목록_조회_예외가_발생한다() {
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(OTHER_USER_ID);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.getSchedules(1L, USER_ID)
+        );
+
+        assertEquals(
+                "TRIP_ACCESS_DENIED",
+                exception.getErrorCode()
+        );
+
+        verify(scheduleMapper, never())
+                .findAllByTripId(1L);
+    }
+
+    @Test
     void 여행_일정_목록을_현지_시간으로_조회한다() {
         ScheduleListRowDto row =
                 createScheduleListRow();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(scheduleMapper.findAllByTripId(1L))
                 .thenReturn(List.of(row));
 
         List<ScheduleListResponseDto> result =
-                scheduleService.getSchedules(1L);
+                scheduleService.getSchedules(1L, USER_ID);
 
         assertEquals(1, result.size());
 
@@ -103,14 +125,14 @@ class ScheduleServiceTest {
 
     @Test
     void 일정이_없으면_빈_목록을_반환한다() {
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(scheduleMapper.findAllByTripId(1L))
                 .thenReturn(Collections.emptyList());
 
         List<ScheduleListResponseDto> result =
-                scheduleService.getSchedules(1L);
+                scheduleService.getSchedules(1L, USER_ID);
 
         assertTrue(result.isEmpty());
 
@@ -120,14 +142,15 @@ class ScheduleServiceTest {
 
     @Test
     void 여행이_존재하지_않으면_상세_조회_예외가_발생한다() {
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(false);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(null);
 
         ScheduleException exception = assertThrows(
                 ScheduleException.class,
                 () -> scheduleService.getScheduleDetail(
                         1L,
-                        2L
+                        2L,
+                        USER_ID
                 )
         );
 
@@ -148,8 +171,8 @@ class ScheduleServiceTest {
         ScheduleDetailRowDto row =
                 createScheduleDetailRow();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper
@@ -162,7 +185,8 @@ class ScheduleServiceTest {
         ScheduleDetailResponseDto result =
                 scheduleService.getScheduleDetail(
                         1L,
-                        2L
+                        2L,
+                        USER_ID
                 );
 
         assertEquals(2L, result.getId());
@@ -189,8 +213,8 @@ class ScheduleServiceTest {
 
     @Test
     void 여행_일정이_존재하지_않으면_예외가_발생한다() {
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper
@@ -204,7 +228,8 @@ class ScheduleServiceTest {
                 ScheduleException.class,
                 () -> scheduleService.getScheduleDetail(
                         1L,
-                        999L
+                        999L,
+                        USER_ID
                 )
         );
 
@@ -222,8 +247,8 @@ class ScheduleServiceTest {
         TripCountryContextRowDto tripCountry =
                 createTripCountryContext();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper.findTripCountryContext(
@@ -248,7 +273,8 @@ class ScheduleServiceTest {
         ScheduleCreateResponseDto result =
                 scheduleService.createSchedule(
                         1L,
-                        request
+                        request,
+                        USER_ID
                 );
 
         ArgumentCaptor<ScheduleCreateCommandDto> captor =
@@ -299,8 +325,8 @@ class ScheduleServiceTest {
         TripCountryContextRowDto tripCountry =
                 createTripCountryContext();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper.findTripCountryContext(
@@ -331,7 +357,8 @@ class ScheduleServiceTest {
         ScheduleCreateResponseDto result =
                 scheduleService.createSchedule(
                         1L,
-                        request
+                        request,
+                        USER_ID
                 );
 
         ArgumentCaptor<ScheduleCreateCommandDto> captor =
@@ -350,12 +377,42 @@ class ScheduleServiceTest {
     }
 
     @Test
+    void 다른_사용자의_여행에는_일정을_등록할_수_없다() {
+        ScheduleCreateRequestDto request =
+                createScheduleRequest(null);
+
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(OTHER_USER_ID);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.createSchedule(
+                        1L,
+                        request,
+                        USER_ID
+                )
+        );
+
+        assertEquals(
+                "TRIP_ACCESS_DENIED",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).insertSchedule(
+                any(ScheduleCreateCommandDto.class)
+        );
+    }
+
+    @Test
     void 선택한_여행_국가가_없으면_예외가_발생한다() {
         ScheduleCreateRequestDto request =
                 createScheduleRequest(null);
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper.findTripCountryContext(
@@ -368,7 +425,8 @@ class ScheduleServiceTest {
                 ScheduleException.class,
                 () -> scheduleService.createSchedule(
                         1L,
-                        request
+                        request,
+                        USER_ID
                 )
         );
 
@@ -393,8 +451,8 @@ class ScheduleServiceTest {
         TripCountryContextRowDto tripCountry =
                 createTripCountryContext();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper.findTripCountryContext(
@@ -413,7 +471,8 @@ class ScheduleServiceTest {
                 ScheduleException.class,
                 () -> scheduleService.createSchedule(
                         1L,
-                        request
+                        request,
+                        USER_ID
                 )
         );
 
@@ -553,6 +612,9 @@ class ScheduleServiceTest {
                         .paymentStatus(
                                 SchedulePaymentStatus.PREPAID
                         )
+                        .scheduleStatus(
+                                ScheduleStatus.UPCOMING
+                        )
                         .placeName("루브르 박물관")
                         .placeAddress(
                                 "Rue de Rivoli, Paris"
@@ -563,8 +625,8 @@ class ScheduleServiceTest {
         TripCountryContextRowDto tripCountry =
                 createTripCountryContext();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper
@@ -591,7 +653,8 @@ class ScheduleServiceTest {
                 scheduleService.updateSchedule(
                         1L,
                         10L,
-                        request
+                        request,
+                        USER_ID
                 );
 
         ArgumentCaptor<ScheduleUpdateCommandDto> captor =
@@ -627,6 +690,51 @@ class ScheduleServiceTest {
     }
 
     @Test
+    void 다른_사용자의_여행_일정은_수정할_수_없다() {
+        ScheduleUpdateRequestDto request =
+                ScheduleUpdateRequestDto.builder()
+                        .tripCountryId(1L)
+                        .scheduleName("루브르 박물관")
+                        .scheduledAt(
+                                LocalDateTime.parse(
+                                        "2026-08-28T11:00:00"
+                                )
+                        )
+                        .paymentStatus(
+                                SchedulePaymentStatus.PREPAID
+                        )
+                        .scheduleStatus(
+                                ScheduleStatus.UPCOMING
+                        )
+                        .build();
+
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(OTHER_USER_ID);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.updateSchedule(
+                        1L,
+                        10L,
+                        request,
+                        USER_ID
+                )
+        );
+
+        assertEquals(
+                "TRIP_ACCESS_DENIED",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).updateSchedule(
+                any(ScheduleUpdateCommandDto.class)
+        );
+    }
+
+    @Test
     void 수정할_여행_일정이_없으면_예외가_발생한다() {
         ScheduleUpdateRequestDto request =
                 ScheduleUpdateRequestDto.builder()
@@ -640,10 +748,13 @@ class ScheduleServiceTest {
                         .paymentStatus(
                                 SchedulePaymentStatus.PREPAID
                         )
+                        .scheduleStatus(
+                                ScheduleStatus.UPCOMING
+                        )
                         .build();
 
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper
@@ -658,7 +769,8 @@ class ScheduleServiceTest {
                 () -> scheduleService.updateSchedule(
                         1L,
                         999L,
-                        request
+                        request,
+                        USER_ID
                 )
         );
 
@@ -677,8 +789,8 @@ class ScheduleServiceTest {
 
     @Test
     void 여행_일정을_삭제한다() {
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper.softDeleteSchedule(
@@ -689,7 +801,8 @@ class ScheduleServiceTest {
 
         scheduleService.deleteSchedule(
                 1L,
-                10L
+                10L,
+                USER_ID
         );
 
         verify(scheduleMapper)
@@ -701,8 +814,8 @@ class ScheduleServiceTest {
 
     @Test
     void 삭제할_여행_일정이_없으면_예외가_발생한다() {
-        when(scheduleMapper.existsTripById(1L))
-                .thenReturn(true);
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(USER_ID);
 
         when(
                 scheduleMapper.softDeleteSchedule(
@@ -715,7 +828,8 @@ class ScheduleServiceTest {
                 ScheduleException.class,
                 () -> scheduleService.deleteSchedule(
                         1L,
-                        999L
+                        999L,
+                        USER_ID
                 )
         );
 
@@ -727,14 +841,15 @@ class ScheduleServiceTest {
 
     @Test
     void 여행이_없으면_일정을_삭제하지_않는다() {
-        when(scheduleMapper.existsTripById(99L))
-                .thenReturn(false);
+        when(scheduleMapper.findTripUserId(99L))
+                .thenReturn(null);
 
         ScheduleException exception = assertThrows(
                 ScheduleException.class,
                 () -> scheduleService.deleteSchedule(
                         99L,
-                        10L
+                        10L,
+                        USER_ID
                 )
         );
 
@@ -748,6 +863,34 @@ class ScheduleServiceTest {
                 never()
         ).softDeleteSchedule(
                 99L,
+                10L
+        );
+    }
+
+    @Test
+    void 다른_사용자의_여행_일정은_삭제할_수_없다() {
+        when(scheduleMapper.findTripUserId(1L))
+                .thenReturn(OTHER_USER_ID);
+
+        ScheduleException exception = assertThrows(
+                ScheduleException.class,
+                () -> scheduleService.deleteSchedule(
+                        1L,
+                        10L,
+                        USER_ID
+                )
+        );
+
+        assertEquals(
+                "TRIP_ACCESS_DENIED",
+                exception.getErrorCode()
+        );
+
+        verify(
+                scheduleMapper,
+                never()
+        ).softDeleteSchedule(
+                1L,
                 10L
         );
     }

@@ -54,6 +54,11 @@ import javax.sql.DataSource;
         "com.tripass.ocr.service",
         "com.tripass.ocr.client",
         "com.tripass.report.service",
+        "com.tripass.wallet.service",
+        "com.tripass.wallet.scheduler",
+        "com.tripass.wallet.fx.service",
+        "com.tripass.wallet.travelcard.service",
+        "com.tripass.wallet.travelcard.client",
         "com.tripass.auth.security",
         "com.tripass.common.util",
         "com.tripass.common.scheduler",
@@ -75,7 +80,10 @@ import javax.sql.DataSource;
         "com.tripass.schedule.mapper",
         "com.tripass.expense.mapper",
         "com.tripass.ocr.mapper",
-        "com.tripass.report.mapper"
+        "com.tripass.report.mapper",
+        "com.tripass.wallet.mapper",
+        "com.tripass.wallet.fx.mapper",
+        "com.tripass.wallet.travelcard.mapper"
 })
 @PropertySource(value = {
         "classpath:application.properties",

@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,10 +35,12 @@ public class ScheduleController {
             @ApiParam(value = "여행 ID", required = true, example = "1")
             @PathVariable
             @Positive(message = "여행 ID는 양수여야 합니다.")
-            Long tripId
+            Long tripId,
+
+            @AuthenticationPrincipal Long userId
     ) {
 
-        List<ScheduleListResponseDto> data = scheduleService.getSchedules(tripId);
+        List<ScheduleListResponseDto> data = scheduleService.getSchedules(tripId, userId);
 
         return ResponseEntity.ok(ApiResponse.success("여행 일정 목록 조회 성공", data));
     }
@@ -56,9 +59,11 @@ public class ScheduleController {
             @ApiParam(value = "여행 일정 ID", required = true, example = "1")
             @PathVariable
             @Positive(message = "여행 일정 ID는 양수여야 합니다.")
-            Long scheduleId
+            Long scheduleId,
+
+            @AuthenticationPrincipal Long userId
     ) {
-        ScheduleDetailResponseDto data = scheduleService.getScheduleDetail(tripId, scheduleId);
+        ScheduleDetailResponseDto data = scheduleService.getScheduleDetail(tripId, scheduleId, userId);
 
         return ResponseEntity.ok(ApiResponse.success("여행 일정 상세 조회 성공", data)
         );
@@ -84,12 +89,15 @@ public class ScheduleController {
 
             @Valid
             @RequestBody
-            ScheduleCreateRequestDto request
+            ScheduleCreateRequestDto request,
+
+            @AuthenticationPrincipal Long userId
     ) {
         ScheduleCreateResponseDto data =
                 scheduleService.createSchedule(
                         tripId,
-                        request
+                        request,
+                        userId
                 );
 
         return ResponseEntity
@@ -133,13 +141,16 @@ public class ScheduleController {
 
             @Valid
             @RequestBody
-            ScheduleUpdateRequestDto request
+            ScheduleUpdateRequestDto request,
+
+            @AuthenticationPrincipal Long userId
     ) {
         ScheduleUpdateResponseDto data =
                 scheduleService.updateSchedule(
                         tripId,
                         scheduleId,
-                        request
+                        request,
+                        userId
                 );
 
         return ResponseEntity.ok(
@@ -177,11 +188,14 @@ public class ScheduleController {
             @Positive(
                     message = "여행 일정 ID는 양수여야 합니다."
             )
-            Long scheduleId
+            Long scheduleId,
+
+            @AuthenticationPrincipal Long userId
     ) {
         scheduleService.deleteSchedule(
                 tripId,
-                scheduleId
+                scheduleId,
+                userId
         );
 
         return ResponseEntity.ok(

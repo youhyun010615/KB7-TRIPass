@@ -235,7 +235,7 @@ FROM travel_cards tc
     UNION ALL SELECT 'OMR'
     UNION ALL SELECT 'KWD'
 ) x
-WHERE tc.card_name = 'KB국민 트래블러스 체크카드';
+WHERE tc.card_name = '트래블러스 체크카드';
 
 -- USD 환산 결제형 - 직접 차감 통화 USD
 INSERT INTO travel_card_currencies (card_id, currency_code)

@@ -1,6 +1,7 @@
 package com.tripass.schedule.dto;
 
 import com.tripass.schedule.enums.SchedulePaymentStatus;
+import com.tripass.schedule.enums.ScheduleStatus;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -88,6 +89,15 @@ public class ScheduleUpdateRequestDto {
             example = "PREPAID"
     )
     private SchedulePaymentStatus paymentStatus;
+
+    @NotNull(message = "일정 진행 상태는 필수입니다.")
+    @ApiModelProperty(
+            value = "일정 진행 상태",
+            required = true,
+            allowableValues = "UPCOMING, DONE",
+            example = "UPCOMING"
+    )
+    private ScheduleStatus scheduleStatus;
 
     @Size(
             max = 200,

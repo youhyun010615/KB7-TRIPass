@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.tripass.schedule.exception.ScheduleErrorCode.CURRENCY_NOT_FOUND;
 import static com.tripass.schedule.exception.ScheduleErrorCode.SCHEDULE_NOT_FOUND;
+import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_ACCESS_DENIED;
 import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_COUNTRY_NOT_FOUND;
 import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_NOT_FOUND;
 
@@ -29,9 +30,10 @@ public class ScheduleService {
 
     /** 여행에 등록된 일정 목록을 조회합니다. */
     public List<ScheduleListResponseDto> getSchedules(
-            Long tripId
+            Long tripId,
+            Long userId
     ) {
-        validateTripExists(tripId);
+        validateTripOwnership(tripId, userId);
 
         return scheduleMapper.findAllByTripId(tripId)
                 .stream()
@@ -42,9 +44,10 @@ public class ScheduleService {
     /** 여행에 등록된 특정 일정의 상세 정보를 조회합니다. */
     public ScheduleDetailResponseDto getScheduleDetail(
             Long tripId,
-            Long scheduleId
+            Long scheduleId,
+            Long userId
     ) {
-        validateTripExists(tripId);
+        validateTripOwnership(tripId, userId);
 
         ScheduleDetailRowDto row =
                 scheduleMapper
@@ -66,9 +69,10 @@ public class ScheduleService {
     @Transactional
     public ScheduleCreateResponseDto createSchedule(
             Long tripId,
-            ScheduleCreateRequestDto request
+            ScheduleCreateRequestDto request,
+            Long userId
     ) {
-        validateTripExists(tripId);
+        validateTripOwnership(tripId, userId);
 
         TripCountryContextRowDto tripCountry =
                 scheduleMapper.findTripCountryContext(
@@ -134,11 +138,19 @@ public class ScheduleService {
                 .build();
     }
 
-    /** 여행 존재 여부를 검증합니다. */
-    private void validateTripExists(Long tripId) {
-        if (!scheduleMapper.existsTripById(tripId)) {
+    /** 여행이 존재하고, 로그인한 사용자가 그 여행의 소유자인지 검증합니다. */
+    private void validateTripOwnership(Long tripId, Long userId) {
+        Long ownerId = scheduleMapper.findTripUserId(tripId);
+
+        if (ownerId == null) {
             throw new ScheduleException(
                     TRIP_NOT_FOUND
+            );
+        }
+
+        if (!ownerId.equals(userId)) {
+            throw new ScheduleException(
+                    TRIP_ACCESS_DENIED
             );
         }
     }
@@ -272,9 +284,10 @@ public class ScheduleService {
     public ScheduleUpdateResponseDto updateSchedule(
             Long tripId,
             Long scheduleId,
-            ScheduleUpdateRequestDto request
+            ScheduleUpdateRequestDto request,
+            Long userId
     ) {
-        validateTripExists(tripId);
+        validateTripOwnership(tripId, userId);
         validateScheduleExists(
                 tripId,
                 scheduleId
@@ -327,6 +340,10 @@ public class ScheduleService {
                                 request.getPaymentStatus()
                                         .name()
                         )
+                        .scheduleStatus(
+                                request.getScheduleStatus()
+                                        .name()
+                        )
                         .placeName(request.getPlaceName())
                         .placeAddress(
                                 request.getPlaceAddress()
@@ -364,9 +381,10 @@ public class ScheduleService {
     @Transactional
     public void deleteSchedule(
             Long tripId,
-            Long scheduleId
+            Long scheduleId,
+            Long userId
     ) {
-        validateTripExists(tripId);
+        validateTripOwnership(tripId, userId);
 
         int deletedCount =
                 scheduleMapper.softDeleteSchedule(
