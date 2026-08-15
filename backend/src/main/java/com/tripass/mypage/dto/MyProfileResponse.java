@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Getter
 @Setter
@@ -43,6 +44,10 @@ public class MyProfileResponse {
     @ApiModelProperty(
             value = "가입일시",
             example = "2026-08-15T10:30:00"
+    )
+    @JsonFormat(
+            shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd'T'HH:mm:ss"
     )
     private LocalDateTime createdAt;
 }
