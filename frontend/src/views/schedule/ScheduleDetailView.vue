@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelScheduleStore } from '@/stores/travelSchedule'
@@ -8,12 +8,17 @@ const route = useRoute()
 const router = useRouter()
 const store = useTravelScheduleStore()
 const schedule = computed(() => store.getSchedule(route.params.scheduleId))
+
+onMounted(() => {
+  store.loadScheduleDetail(route.params.scheduleId).catch(() => {})
+})
 const country = computed(() => store.countries.find(item => item.code === schedule.value?.countryCode))
 const wonRate = { EUR:1486.2, USD:1380, CHF:1704.6, JPY:9.23, HKD:184.2 }
 const won = computed(() => Math.round((schedule.value?.amount || 0) * (wonRate[schedule.value?.currency] || 1)))
 const paymentLabel = computed(() => ({ prepaid:'💳 사전결제 완료', onsite:'💵 현장결제 필요', undecided:'❔ 미정' })[schedule.value?.paymentStatus] || '❔ 미정')
-function remove() {
-  if (window.confirm('이 여행 일정을 삭제할까요?') && store.remove(route.params.scheduleId)) router.push('/schedule')
+async function remove() {
+  if (!window.confirm('이 여행 일정을 삭제할까요?')) return
+  if (await store.remove(route.params.scheduleId)) router.push('/schedule')
 }
 </script>
 
