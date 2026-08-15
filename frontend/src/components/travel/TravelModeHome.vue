@@ -1,8 +1,7 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTravelModeStore } from '@/stores/travelMode'
-import { useTravelScheduleStore } from '@/stores/travelSchedule'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import currencySymbols from '@/assets/currencySymbols.json'
 
@@ -82,33 +81,23 @@ const destinations = [
   },
 ]
 
-const scheduleStore = useTravelScheduleStore()
-
-onMounted(() => {
-  scheduleStore.loadSchedules().catch(() => {})
-})
-
-const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토']
-function formatScheduleDate(dateStr) {
-  if (!dateStr) return ''
-  const date = new Date(`${dateStr}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return dateStr.replaceAll('-', '.')
-  return `${dateStr.replaceAll('-', '.')} (${weekdayLabels[date.getDay()]})`
+const schedules = {
+  all: [
+    { date: '2026.08.15 (수)', flag: '🇫🇷', title: '루브르 박물관 가이드 투어', time: '10:30 · EUR 85.00', status: '사전결제 완료' },
+    { date: '2026.08.21 (금)', flag: '🇨🇭', title: '체르마트 마터호른 샬레 숙소', time: '15:00 체크인 · CHF 220.00', status: '현장결제 필요', warning: true },
+  ],
+  FR: [
+    { date: '2026.08.15 (수)', flag: '🇫🇷', title: '루브르 박물관 가이드 투어', time: '10:30 · EUR 85.00', status: '사전결제 완료' },
+    { date: '', flag: '🚆', title: '파리 → 인터라켄 TGV 열차', time: '14:00 · EUR 65.00', status: '사전결제 완료' },
+  ],
+  CH: [
+    { date: '2026.08.15 (수)', flag: '🇨🇭', title: '융프라우 전망대', time: '09:30 · CHF 72.00', status: '사전결제 완료' },
+    { date: '', flag: '🪂', title: '패러글라이딩 체험', time: '14:30 · CHF 110.00', status: '현장결제 필요', warning: true },
+  ],
+  DE: [{ date: '2026.08.25 (화)', flag: '🇩🇪', title: '브란덴부르크 문 투어', time: '10:00 · EUR 35.00', status: '사전결제 완료' }],
+  JP: [{ date: '2026.08.25 (화)', flag: '🇯🇵', title: '시부야 전망대', time: '18:00 · JPY 2,500', status: '사전결제 완료' }],
+  HK: [{ date: '2026.08.25 (화)', flag: '🇭🇰', title: '빅토리아 피크 야경 투어', time: '18:30 · HKD 320', status: '사전결제 완료' }],
 }
-const paymentStatusLabels = { prepaid: '사전결제 완료', onsite: '현장결제 필요', undecided: '미정' }
-
-// 선택한 국가(또는 전체)의 다가오는 여행 일정 중 최신 3개만 보여준다.
-const selectedSchedules = computed(() => scheduleStore.sortedSchedules
-  .filter(item => selected.value.code === 'all' || item.countryCode === selected.value.code)
-  .slice(0, 3)
-  .map(item => ({
-    date: formatScheduleDate(item.date),
-    flag: scheduleStore.countries.find(country => country.code === item.countryCode)?.flag || '📍',
-    title: item.title,
-    time: `${item.time} · ${item.currency} ${Number(item.amount || 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}`,
-    status: paymentStatusLabels[item.paymentStatus] || '미정',
-    warning: item.paymentStatus === 'onsite',
-  })))
 
 const recent = {
   all: [
@@ -137,6 +126,7 @@ const overallAssets = [
 ]
 
 const selected = computed(() => destinations.find(item => item.code === travelMode.selectedDestination) ?? destinations[0])
+const selectedSchedules = computed(() => schedules[selected.value.code])
 const selectedRecent = computed(() => recent[selected.value.code])
 const calculatorDestination = computed(() => selected.value.code === 'all'
   ? destinations.find(item => item.code === calculatorCountryCode.value) ?? destinations[1]
