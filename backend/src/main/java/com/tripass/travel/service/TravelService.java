@@ -138,14 +138,10 @@ public class TravelService {
     /**
      * 여행 자금 체크 조회
      */
-    public BudgetCheckResponseDto getTripBudget(Long tripId, String scope, Long countryId, Long currentUserId) {
-        if ("COUNTRY".equals(scope) && countryId == null) {
-            throw new TravelException(TravelErrorCode.MISSING_COUNTRY_ID);
-        }
-
+    public List<BudgetCheckResponseDto> getTripBudget(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
 
-        return travelMapper.getTripBudget(tripId, scope, countryId);
+        return travelMapper.getTripBudget(tripId);
     }
 
     /**

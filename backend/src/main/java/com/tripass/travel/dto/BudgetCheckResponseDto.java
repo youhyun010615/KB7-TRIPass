@@ -1,15 +1,16 @@
 package com.tripass.travel.dto;
 
 import lombok.*;
-
 import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class BudgetCheckResponseDto {
-    // 테스트용 주석 추가
+    private Long tripCountryId;
+    private String countryName;
     private Long targetBudget;
     private Long preExpenseTotal;
     private Long travelExpenseTotal;

@@ -43,15 +43,13 @@ public class TravelController {
      * 2. 여행 자금 체크 조회
      */
     @GetMapping("/{id}/budget-check")
-    public ResponseEntity<ApiResponse<BudgetCheckResponseDto>> getTripBudget(
+    public ResponseEntity<ApiResponse<List<BudgetCheckResponseDto>>> getTripBudget(
             @PathVariable Long id,
-            @RequestParam(required = false, defaultValue = "ALL") String scope,
-            @RequestParam(required = false) Long countryId,
             Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
 
 
-        BudgetCheckResponseDto data = travelService.getTripBudget(id, scope, countryId, userId);
+        List<BudgetCheckResponseDto> data = travelService.getTripBudget(id, userId);
         return ResponseEntity.ok(ApiResponse.success("여행 자금 체크 조회 성공", data));
     }
 

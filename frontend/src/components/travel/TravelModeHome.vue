@@ -108,6 +108,7 @@ const categoryIcons = {
   관광: '🎨',
   기타: '💬',
   카페: '☕',
+  생활비: '📦',
 };
 
 function getCategoryIcon(name) {
@@ -178,10 +179,6 @@ onMounted(async () => {
     // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
     const status = await travelStore.loadTripStatus(travelStore.tripId, null);
     persistentCountries.value = status?.countries || [];
-    console.log(
-      '초기 API 데이터 로드 및 국가 목록 캐싱 완료:',
-      persistentCountries.value,
-    );
   }
 });
 
@@ -204,36 +201,6 @@ function showTooltip(e, text) {
     x: e.clientX,
     y: e.clientY,
   };
-}
-
-function hideTooltip() {
-  tooltip.value.show = false;
-
-  let isDown = false;
-  let startX;
-  let scrollLeft;
-
-  slider.addEventListener('mousedown', (e) => {
-    isDown = true;
-    slider.style.scrollBehavior = 'auto'; // 드래그 중에는 스무스 끔 (즉각 반응)
-    startX = e.pageX - slider.offsetLeft;
-    scrollLeft = slider.scrollLeft;
-  });
-  slider.addEventListener('mouseleave', () => {
-    isDown = false;
-    slider.style.scrollBehavior = 'smooth'; // 드래그 끝나면 다시 켬
-  });
-  slider.addEventListener('mouseup', () => {
-    isDown = false;
-    slider.style.scrollBehavior = 'smooth'; // 드래그 끝나면 다시 켬
-  });
-  slider.addEventListener('mousemove', (e) => {
-    if (!isDown) return;
-    e.preventDefault();
-    const x = e.pageX - slider.offsetLeft;
-    const walk = (x - startX) * 2; // 스크롤 속도
-    slider.scrollLeft = scrollLeft - walk;
-  });
 }
 
 function selectDestination(item) {
@@ -641,7 +608,13 @@ async function switchMode(mode) {
         <div class="travel-summary-content">
           <div class="summary-title-wrapper">
             <div class="summary-title">
-              <span>전체 남은 여행 자산 (합산)</span
+              <span
+                >{{
+                  selected.code === 'all'
+                    ? '전체 남은 여행 자산'
+                    : `${selected.name}에서 남은 여행 자산`
+                }}
+                (합산)</span
               ><strong>{{ formatWon(totalRemainingFund) }}</strong>
             </div>
             <button
