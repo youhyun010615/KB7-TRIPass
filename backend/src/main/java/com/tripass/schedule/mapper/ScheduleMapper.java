@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper
 public interface ScheduleMapper {
 
-    boolean existsTripById(@Param("tripId") Long tripId);
+    Long findTripUserId(@Param("tripId") Long tripId);
 
     List<ScheduleListRowDto> findAllByTripId(
             @Param("tripId") Long tripId

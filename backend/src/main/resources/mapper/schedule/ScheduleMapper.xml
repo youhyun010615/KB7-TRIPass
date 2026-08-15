@@ -4,13 +4,11 @@
 
 <mapper namespace="com.tripass.schedule.mapper.ScheduleMapper">
     
-    <select id="existsTripById" resultType="boolean">
-        SELECT EXISTS(
-            SELECT 1
-            FROM trips
-            WHERE id = #{tripId}
-            AND is_deleted = 0
-        )
+    <select id="findTripUserId" resultType="long">
+        SELECT user_id
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
     </select>
 
     <select id="findAllByTripId" resultType="ScheduleListRowDto">
@@ -157,6 +155,7 @@
             scheduled_at = #{scheduledAt, jdbcType=TIMESTAMP},
             amount = #{amount, jdbcType=DECIMAL},
             payment_status = #{paymentStatus},
+            schedule_status = #{scheduleStatus},
             place_name = #{placeName, jdbcType=VARCHAR},
             place_address = #{placeAddress, jdbcType=VARCHAR},
             memo = #{memo, jdbcType=VARCHAR}

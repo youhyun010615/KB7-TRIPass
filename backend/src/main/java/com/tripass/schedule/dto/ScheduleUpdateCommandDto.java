@@ -18,6 +18,7 @@ public class ScheduleUpdateCommandDto {
     private Timestamp scheduledAt;
     private BigDecimal amount;
     private String paymentStatus;
+    private String scheduleStatus;
     private String placeName;
     private String placeAddress;
     private String memo;
