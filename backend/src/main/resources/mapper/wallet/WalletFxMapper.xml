@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.wallet.fx.mapper.WalletFxMapper">
+
+    <select id="findCurrencies"
+            resultType="com.tripass.wallet.fx.dto.response.WalletCurrencyResponseDto">
+        SELECT
+            currency_code,
+            currency_name,
+            symbol,
+            unit
+        FROM currencies
+        WHERE currency_code != 'KRW'
+        ORDER BY currency_code
+    </select>
+
+    <select id="findLatestDealBaseRate"
+            resultType="java.math.BigDecimal">
+        SELECT er.deal_base_rate
+        FROM exchange_rates er
+                 INNER JOIN currencies c
+                            ON c.id = er.target_currency_id
+        WHERE c.currency_code = #{currencyCode}
+        ORDER BY er.rate_date DESC, er.created_at DESC, er.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findWalletTravelCardForUpdate"
+            resultType="com.tripass.wallet.travelcard.domain.WalletTravelCard">
+        SELECT
+            id,
+            wallet_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status,
+            linked_at,
+            unlinked_at
+        FROM wallet_travel_card
+        WHERE wallet_id = #{walletId}
+          AND id = #{walletTravelCardId}
+          AND status = 'LINKED'
+        FOR UPDATE
+    </select>
+
+    <select id="findTravelCardBalanceForUpdate"
+            resultType="com.tripass.wallet.travelcard.domain.TravelCardBalance">
+        SELECT
+            id,
+            wallet_travel_card_id,
+            currency_code,
+            balance_amount,
+            krw_estimated_amount,
+            updated_at
+        FROM travel_card_balance
+        WHERE wallet_travel_card_id = #{walletTravelCardId}
+          AND currency_code = #{currencyCode}
+        FOR UPDATE
+    </select>
+
+    <update id="updateTravelCardBalance">
+        UPDATE travel_card_balance
+        SET balance_amount = #{balanceAmount},
+            krw_estimated_amount = #{krwEstimatedAmount},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{balanceId}
+    </update>
+
+    <insert id="insertTravelCardLedger"
+            parameterType="com.tripass.wallet.travelcard.domain.TravelCardLedger"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO travel_card_ledger (
+            wallet_travel_card_id,
+            currency_code,
+            direction,
+            transaction_type,
+            foreign_amount,
+            balance_before,
+            balance_after,
+            source_type,
+            source_id,
+            target_type,
+            target_id,
+            idempotency_key,
+            memo
+        )
+        VALUES (
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{direction},
+            #{transactionType},
+            #{foreignAmount},
+            #{balanceBefore},
+            #{balanceAfter},
+            #{sourceType},
+            #{sourceId},
+            #{targetType},
+            #{targetId},
+            #{idempotencyKey},
+            #{memo}
+        )
+    </insert>
+
+    <select id="existsTravelCardLedgerIdempotencyKey"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_card_ledger
+            WHERE idempotency_key = #{idempotencyKey}
+        )
+    </select>
+
+    <insert id="insertWalletExchangeTransaction"
+            parameterType="com.tripass.wallet.fx.domain.WalletExchangeTransaction"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_exchange_transaction (
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            exchange_type,
+            krw_amount,
+            foreign_amount,
+            base_exchange_rate,
+            applied_exchange_rate,
+            fee_rate,
+            fee_amount,
+            status,
+            completed_at,
+            wallet_ledger_id,
+            card_ledger_id
+        )
+        VALUES (
+            #{walletId},
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{exchangeType},
+            #{krwAmount},
+            #{foreignAmount},
+            #{baseExchangeRate},
+            #{appliedExchangeRate},
+            #{feeRate},
+            #{feeAmount},
+            #{status},
+            #{completedAt},
+            #{walletLedgerId},
+            #{cardLedgerId}
+        )
+    </insert>
+
+</mapper>
