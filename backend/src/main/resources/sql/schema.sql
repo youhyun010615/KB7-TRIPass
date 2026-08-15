@@ -16,6 +16,11 @@ DROP TABLE IF EXISTS trip_wallets;
 DROP TABLE IF EXISTS trip_countries;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS notification_settings;
+DROP TABLE IF EXISTS weekly_saving_missions;
+DROP TABLE IF EXISTS monthly_saving_missions;
+DROP TABLE IF EXISTS mission_category_selections;
+DROP TABLE IF EXISTS monthly_category_analyses;
+DROP TABLE IF EXISTS monthly_spending_analyses;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS saving_plans;
 DROP TABLE IF EXISTS financial_schedules;
@@ -26,6 +31,7 @@ DROP TABLE IF EXISTS exchange_rate_alerts;
 DROP TABLE IF EXISTS exchange_market_data;
 DROP TABLE IF EXISTS exchange_rates;
 DROP TABLE IF EXISTS codef_connected_institutions;
+DROP TABLE IF EXISTS cards;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS codef_connections;
 DROP TABLE IF EXISTS trips;
@@ -152,11 +158,13 @@ CREATE TABLE countries
 CREATE TABLE spending_categories
 (
     id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '카테고리 ID',
+    category_code VARCHAR(30) NOT NULL COMMENT '카테고리 식별 코드',
     category_name VARCHAR(50) NOT NULL COMMENT '카테고리명',
     display_order INT         NOT NULL DEFAULT 0 COMMENT '표시 순서',
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_spending_categories_code (category_code)
 ) COMMENT '지출 카테고리';
 
 
@@ -221,6 +229,7 @@ CREATE TABLE travel_cards
     instant_use           BOOLEAN        NOT NULL DEFAULT FALSE COMMENT '기존 계좌/서비스 연결로 이용 가능 여부(별도 계좌 신규 개설 불필요)',
     applied_rate_info     VARCHAR(255)   NULL COMMENT '적용 환율 정보',
     settlement_type       VARCHAR(30)    NOT NULL COMMENT '해외 결제 통화 처리 방식(DIRECT/USD_CONVERSION)',
+    foreign_currency_holding_limit VARCHAR(255) NULL COMMENT '연결 외화머니/외화계좌의 외화 보유한도',
     exchange_fee          VARCHAR(200)   NULL COMMENT '환전 수수료',
     re_exchange_fee       VARCHAR(200)   NULL COMMENT '재환전 수수료',
     payment_fee           VARCHAR(200)   NULL COMMENT '결제 수수료',
@@ -333,6 +342,7 @@ CREATE TABLE codef_connected_institutions
     created_at                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    UNIQUE KEY uk_codef_connected_institutions_conn_org_type (codef_connection_id, organization_code, business_type),
     CONSTRAINT fk_codef_connected_institutions_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
 ) COMMENT 'CODEF 연동 기관';
 
@@ -343,6 +353,7 @@ CREATE TABLE accounts
     id                      BIGINT         NOT NULL AUTO_INCREMENT COMMENT '계좌 ID',
     user_id                 BIGINT         NOT NULL COMMENT '회원 ID',
     codef_connection_id     BIGINT         NULL COMMENT 'CODEF 연동 ID',
+    organization_code       VARCHAR(20)    NULL COMMENT 'CODEF 기관코드',
     account_name            VARCHAR(150)   NOT NULL COMMENT '계좌명',
     account_number          VARCHAR(255)   NULL COMMENT '계좌번호(암호화)',
     account_type            VARCHAR(20)    NOT NULL COMMENT '계좌 유형(CHECKING/DEPOSIT/SAVING/FOREIGN)',
@@ -361,12 +372,35 @@ CREATE TABLE accounts
     created_at              TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    UNIQUE KEY uk_accounts_user_org_number (user_id, organization_code, account_number),
     CONSTRAINT fk_accounts_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_accounts_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
 ) COMMENT '계좌';
 
 
--- 14. 여행
+-- 14. 연동 카드
+CREATE TABLE cards
+(
+    id                  BIGINT       NOT NULL AUTO_INCREMENT COMMENT '카드 ID',
+    user_id             BIGINT       NOT NULL                COMMENT '회원 ID',
+    codef_connection_id BIGINT       NULL                    COMMENT 'CODEF 연동 ID',
+    card_name           VARCHAR(150) NOT NULL                COMMENT '카드명',
+    masked_card_number  VARCHAR(30)  NULL                    COMMENT '마스킹된 카드번호',
+    card_type           VARCHAR(20)  NOT NULL DEFAULT 'CREDIT' COMMENT '카드 유형(CREDIT:신용/CHECK:체크)',
+    organization_code   VARCHAR(20)  NULL                    COMMENT 'CODEF 기관코드',
+    last_synced_at      TIMESTAMP    NULL                    COMMENT '마지막 거래내역 동기화 시각',
+    is_deleted          TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '삭제 여부',
+    deleted_at          DATETIME     NULL                    COMMENT '삭제일시',
+    created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cards_user_masked_number (user_id, masked_card_number),
+    CONSTRAINT fk_cards_user             FOREIGN KEY (user_id)             REFERENCES users (id),
+    CONSTRAINT fk_cards_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
+) COMMENT '연동 카드';
+
+
+-- 15. 여행
 CREATE TABLE trips
 (
     id                  BIGINT         NOT NULL AUTO_INCREMENT,
@@ -479,8 +513,12 @@ CREATE TABLE trip_budget_recommendations
 CREATE TABLE transactions
 (
     id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '거래 ID',
-    account_id            BIGINT         NOT NULL COMMENT '계좌 ID',
+    account_id            BIGINT         NULL COMMENT '계좌 ID(카드 전용 거래는 NULL)',
+    card_id               BIGINT         NULL COMMENT '카드 ID(계좌 거래는 NULL)',
     category_id           BIGINT         NULL COMMENT '카테고리 ID',
+    category_source        VARCHAR(20)    NULL COMMENT '카테고리 분류 출처(USER/CODEF_TYPE/AI_MODEL/FALLBACK)',
+    category_confidence    DECIMAL(5, 4)  NULL COMMENT '자동분류 신뢰도(0~1)',
+    category_classified_at DATETIME       NULL COMMENT '카테고리 자동분류 시각',
     trip_id               BIGINT         NULL COMMENT '여행 ID',
     trip_country_id       BIGINT         NULL COMMENT '여행 국가 ID',
     currency_id           BIGINT         NULL COMMENT '현지 통화 ID',
@@ -491,6 +529,7 @@ CREATE TABLE transactions
     amount                DECIMAL(18, 2) NOT NULL COMMENT '거래 금액(원화 기준)',
     balance_after         DECIMAL(18, 2) NULL COMMENT '거래 후 잔액',
     merchant_name         VARCHAR(255)   NULL COMMENT '거래처',
+    merchant_type         VARCHAR(100)   NULL COMMENT 'CODEF 가맹점 업종',
     original_amount       DECIMAL(18, 2) NULL COMMENT '현지 통화 금액',
     applied_exchange_rate DECIMAL(15, 4) NULL COMMENT '적용 환율',
     payment_method        VARCHAR(50)    NULL COMMENT '결제수단',
@@ -502,8 +541,9 @@ CREATE TABLE transactions
     created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
-    UNIQUE KEY uk_transactions_account_key (account_id, external_key),
-    CONSTRAINT fk_transactions_account FOREIGN KEY (account_id) REFERENCES accounts (id),
+    UNIQUE KEY uk_transactions_external_key (external_key),
+    CONSTRAINT fk_transactions_account  FOREIGN KEY (account_id) REFERENCES accounts (id),
+    CONSTRAINT fk_transactions_card     FOREIGN KEY (card_id)    REFERENCES cards (id),
     CONSTRAINT fk_transactions_category FOREIGN KEY (category_id) REFERENCES spending_categories (id),
     CONSTRAINT fk_transactions_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_transactions_trip_country FOREIGN KEY (trip_country_id) REFERENCES trip_countries (id),
@@ -832,6 +872,8 @@ CREATE TABLE notifications
     notification_type VARCHAR(30)  NOT NULL COMMENT '알림 유형',
     title             VARCHAR(200) NOT NULL COMMENT '제목',
     message           TEXT         NOT NULL COMMENT '내용',
+    url               VARCHAR(500) NULL COMMENT '알림 클릭 시 이동 URL',
+    reference_id      BIGINT       NULL COMMENT '참조 ID (여행ID, 일정ID 등)',
     is_read           BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '읽음 여부',
     is_deleted        TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at        DATETIME     NULL COMMENT '삭제일시',
@@ -848,7 +890,6 @@ CREATE TABLE notification_settings
     id                         BIGINT    NOT NULL AUTO_INCREMENT COMMENT '알림 설정 ID',
     user_id                    BIGINT    NOT NULL COMMENT '회원 ID',
     all_enabled                BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '전체 알림 사용 여부',
-    financial_schedule_enabled BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '금융 일정 알림',
     travel_schedule_enabled    BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '여행 일정 알림',
     exchange_rate_enabled      BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '환율 알림',
     checklist_enabled          BOOLEAN   NOT NULL DEFAULT TRUE COMMENT '체크리스트 알림',
@@ -876,9 +917,159 @@ CREATE TABLE exchange_market_data
     UNIQUE KEY uk_market_data_currency (currency_id)
 ) COMMENT '환전 시장 데이터(환율+수수료)';
 
+-- 33. FCM 디바이스 토큰 관리
+CREATE TABLE user_fcm_tokens
+(
+    id            BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'FCM 토큰 ID',
+    user_id       BIGINT       NOT NULL COMMENT '회원 ID',
+    device_token  VARCHAR(500) NOT NULL COMMENT 'FCM 디바이스 토큰',
+    device_type   VARCHAR(20)  NOT NULL COMMENT '디바이스 유형(WEB/AOS/IOS)',
+    last_used_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '최근 사용 일시',
+    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_fcm_tokens_token (device_token),
+    INDEX idx_user_fcm_tokens_user (user_id),
+    CONSTRAINT fk_user_fcm_tokens_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT 'FCM 디바이스 토큰';
+
+-- 33. 월간 AI 소비 분석 리포트
+CREATE TABLE monthly_spending_analyses
+(
+    id                       BIGINT         NOT NULL AUTO_INCREMENT COMMENT '월간 분석 ID',
+    user_id                  BIGINT         NOT NULL COMMENT '회원 ID',
+    analysis_year_month      CHAR(7)        NOT NULL COMMENT '분석 대상 연월(YYYY-MM, 지난달)',
+    target_year_month        CHAR(7)        NOT NULL COMMENT '미션 적용 연월(YYYY-MM, 이번달)',
+    total_spending           INT            NOT NULL DEFAULT 0 COMMENT '지난달 총지출(1일~말일, 원)',
+    saving_target_amount     INT            NULL COMMENT '저축 목표 금액(원)',
+    actual_saving_amount     INT            NULL COMMENT '실제 저축 금액(원)',
+    saving_difference_amount INT            NULL COMMENT '초과·부족 금액(실제-목표, 원)',
+    saving_result_message    VARCHAR(200)   NULL COMMENT '저축 결과 문구',
+    report_status            VARCHAR(20)    NOT NULL DEFAULT 'PENDING' COMMENT '리포트 상태(PENDING/VIEWED/CLOSED)',
+    report_viewed_at         DATETIME       NULL COMMENT '리포트 확인 시각',
+    report_closed_at         DATETIME       NULL COMMENT '리포트 종료 시각',
+    created_at               TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at               TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_monthly_spending_analyses_user_month (user_id, analysis_year_month),
+    CONSTRAINT fk_monthly_spending_analyses_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT '월간 AI 소비 분석 리포트';
+
+
+-- 34. 월간 카테고리별 소비·절감 추천 분석
+CREATE TABLE monthly_category_analyses
+(
+    id                            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '카테고리별 분석 ID',
+    monthly_spending_analysis_id  BIGINT         NOT NULL COMMENT '월간 분석 ID',
+    category_id                   BIGINT         NOT NULL COMMENT '카테고리 ID',
+    spending_amount               INT            NOT NULL DEFAULT 0 COMMENT '지난달 지출액(1일~말일, 소비순위 표시용, 원)',
+    spending_ratio                DECIMAL(5, 2)  NOT NULL DEFAULT 0 COMMENT '전체 지출 대비 비율(%)',
+    transaction_count             INT            NOT NULL DEFAULT 0 COMMENT '거래 횟수(1일~말일)',
+    weekly_average                INT            NULL COMMENT '주간 평균 지출(원)',
+    daily_average                 INT            NULL COMMENT '일 평균 지출(원)',
+    previous_month_change         DECIMAL(6, 2)  NULL COMMENT '전월 대비 증감률(%)',
+    spending_rank                 INT            NULL COMMENT '소비 순위(1일~말일 기준, 기타 포함)',
+    mission_period_spending       INT            NOT NULL DEFAULT 0 COMMENT '미션 기준 지출액(1~28일, 원)',
+    mission_transaction_count     INT            NOT NULL DEFAULT 0 COMMENT '미션 기준 거래 횟수(1~28일)',
+    spending_share_score       DECIMAL(6, 4)  NULL COMMENT '지출 비율 점수(0~1)',
+    increase_score             DECIMAL(6, 4)  NULL COMMENT '최근 3개월 대비 증가 점수(0~1)',
+    amount_rank_score          DECIMAL(6, 4)  NULL COMMENT '지출 순위 점수(0~1)',
+    recommendation_score       DECIMAL(6, 4)  NULL COMMENT '최종 추천 점수(0~1)',
+    recommendation_rank        INT            NULL COMMENT '절감 추천 순위(TOP 3)',
+    recommendation_eligible    TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '추천 후보 필터 통과 여부',
+    exclusion_reason           VARCHAR(50)    NULL COMMENT '추천 제외 사유',
+    recommendation_reason      VARCHAR(500)   NULL COMMENT '추천 선정 근거',
+    coaching_message           VARCHAR(500)   NULL COMMENT 'AI 코칭 문구',
+    created_at                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_monthly_category_analyses_analysis_category (monthly_spending_analysis_id, category_id),
+    CONSTRAINT fk_monthly_category_analyses_analysis FOREIGN KEY (monthly_spending_analysis_id) REFERENCES monthly_spending_analyses (id),
+    CONSTRAINT fk_monthly_category_analyses_category FOREIGN KEY (category_id) REFERENCES spending_categories (id)
+) COMMENT '월간 카테고리별 소비·절감 추천 분석';
+
+
+-- 35. 카테고리별 절감률 선택
+-- monthly_category_analyses와 분리한다. #210 리포트가 재계산될 때 monthly_category_analyses는
+-- delete 후 재삽입되므로, 같은 테이블에 두면 재계산할 때마다 사용자의 선택이 사라진다.
+-- 행이 존재하면 선택된 것으로 간주한다(별도 선택 여부 컬럼을 두지 않는다).
+CREATE TABLE mission_category_selections
+(
+    id                            BIGINT    NOT NULL AUTO_INCREMENT COMMENT '미션 카테고리 선택 ID',
+    monthly_spending_analysis_id  BIGINT    NOT NULL COMMENT '월간 분석 ID',
+    category_id                   BIGINT    NOT NULL COMMENT '소비 카테고리 ID',
+    reduction_rate                TINYINT   NOT NULL COMMENT '절감률(10/30/50, %)',
+    baseline_spending_amount      INT       NOT NULL COMMENT '선택 당시 monthly_category_analyses.mission_period_spending 스냅샷(원)',
+    monthly_reduction_target      INT       NOT NULL COMMENT '월 절감 목표 금액(원)',
+    monthly_usage_target          INT       NOT NULL COMMENT '월 사용 목표 금액(원)',
+    created_at                    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at                    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_mission_category_selections_analysis_category (monthly_spending_analysis_id, category_id),
+    CONSTRAINT fk_mission_category_selections_analysis
+        FOREIGN KEY (monthly_spending_analysis_id) REFERENCES monthly_spending_analyses (id),
+    CONSTRAINT fk_mission_category_selections_category
+        FOREIGN KEY (category_id) REFERENCES spending_categories (id),
+    CONSTRAINT chk_mission_category_selections_reduction_rate CHECK (reduction_rate IN (10, 30, 50))
+) COMMENT '카테고리별 절감률 선택';
+
+
+-- 36. 월간 절감 미션
+CREATE TABLE monthly_saving_missions
+(
+    id                            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '월간 미션 ID',
+    user_id                       BIGINT      NOT NULL COMMENT '회원 ID',
+    monthly_spending_analysis_id  BIGINT      NOT NULL COMMENT '월간 분석 ID',
+    mission_category_selection_id BIGINT      NOT NULL COMMENT '카테고리 절감률 선택 ID',
+    category_id                   BIGINT      NOT NULL COMMENT '소비 카테고리 ID',
+    target_year_month             CHAR(7)     NOT NULL COMMENT '미션 적용 연월(YYYY-MM)',
+    reduction_rate                TINYINT     NOT NULL COMMENT '절감률(10/30/50, %)',
+    baseline_spending_amount      INT         NOT NULL COMMENT '선택 시점 기준 지출액(원)',
+    monthly_reduction_target      INT         NOT NULL COMMENT '월 절감 목표 금액(원)',
+    monthly_usage_target          INT         NOT NULL COMMENT '월 사용 목표 금액(원)',
+    planned_saving_amount         INT         NOT NULL COMMENT '실제 생성된 주차의 예상 절약액 합계(원)',
+    start_week                    TINYINT     NOT NULL COMMENT '미션 시작 주차(1~4)',
+    status                        VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS' COMMENT '상태(IN_PROGRESS/COMPLETED/CANCELLED)',
+    created_at                    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at                    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_monthly_saving_missions_user_month_category (user_id, target_year_month, category_id),
+    UNIQUE KEY uk_monthly_saving_missions_selection (mission_category_selection_id),
+    CONSTRAINT fk_monthly_saving_missions_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_monthly_saving_missions_analysis FOREIGN KEY (monthly_spending_analysis_id) REFERENCES monthly_spending_analyses (id),
+    CONSTRAINT fk_monthly_saving_missions_selection FOREIGN KEY (mission_category_selection_id) REFERENCES mission_category_selections (id),
+    CONSTRAINT fk_monthly_saving_missions_category FOREIGN KEY (category_id) REFERENCES spending_categories (id),
+    CONSTRAINT chk_monthly_saving_missions_reduction_rate CHECK (reduction_rate IN (10, 30, 50)),
+    CONSTRAINT chk_monthly_saving_missions_start_week CHECK (start_week BETWEEN 1 AND 4)
+) COMMENT '월간 카테고리 절감 미션';
+
+
+-- 37. 주간 절감 미션
+CREATE TABLE weekly_saving_missions
+(
+    id                       BIGINT      NOT NULL AUTO_INCREMENT COMMENT '주간 미션 ID',
+    monthly_saving_mission_id BIGINT      NOT NULL COMMENT '월간 미션 ID',
+    week_number               TINYINT     NOT NULL COMMENT '주차(1~4)',
+    period_start_date         DATE        NOT NULL COMMENT '주차 시작일',
+    period_end_date           DATE        NOT NULL COMMENT '주차 종료일',
+    weekly_usage_limit        INT         NOT NULL COMMENT '주간 사용 한도(원)',
+    weekly_expected_saving    INT         NOT NULL COMMENT '주간 예상 절약 금액(원)',
+    actual_spending           INT         NULL COMMENT '주간 실제 지출액(원)',
+    actual_saving             INT         NULL COMMENT '주간 실제 절약액(원)',
+    status                    VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '상태(PENDING/SUCCESS/FAILED)',
+    evaluated_at              DATETIME    NULL COMMENT '판정 시각',
+    created_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_weekly_saving_missions_monthly_week (monthly_saving_mission_id, week_number),
+    CONSTRAINT fk_weekly_saving_missions_monthly FOREIGN KEY (monthly_saving_mission_id) REFERENCES monthly_saving_missions (id),
+    CONSTRAINT chk_weekly_saving_missions_week CHECK (week_number BETWEEN 1 AND 4)
+) COMMENT '주간 카테고리 절감 미션';
+
 
 -- ===== INDEXES =====
 CREATE INDEX idx_transactions_account_id ON transactions (account_id);
+CREATE INDEX idx_transactions_card_id ON transactions (card_id);
 CREATE INDEX idx_transactions_trip_id ON transactions (trip_id);
 CREATE INDEX idx_transactions_transaction_date ON transactions (transaction_date);
 CREATE INDEX idx_accounts_user_id ON accounts (user_id);
@@ -895,3 +1086,7 @@ CREATE INDEX idx_notifications_is_read ON notifications (user_id, is_read);
 CREATE INDEX idx_exchange_rates_rate_date ON exchange_rates (rate_date);
 CREATE INDEX idx_pre_expenses_trip_id ON pre_expenses (trip_id);
 CREATE INDEX idx_saving_plans_trip_id ON saving_plans (trip_id);
+CREATE INDEX idx_monthly_spending_analyses_user_id ON monthly_spending_analyses (user_id);
+CREATE INDEX idx_monthly_category_analyses_monthly_spending_analysis_id ON monthly_category_analyses (monthly_spending_analysis_id);
+CREATE INDEX idx_monthly_saving_missions_user_month ON monthly_saving_missions (user_id, target_year_month);
+CREATE INDEX idx_weekly_saving_missions_period ON weekly_saving_missions (period_start_date, period_end_date);

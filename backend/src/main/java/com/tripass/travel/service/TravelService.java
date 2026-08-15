@@ -1,5 +1,7 @@
 package com.tripass.travel.service;
 
+import com.tripass.checklist.service.ChecklistService;
+import com.tripass.travel.domain.Trip;
 import com.tripass.travel.dto.*;
 import com.tripass.travel.exception.TravelErrorCode;
 import com.tripass.travel.exception.TravelException;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class TravelService {
 
     private final TravelMapper travelMapper;
+    private final ChecklistService checklistService;
 
     /**
      * 여행 대시보드 상태 조회
@@ -53,6 +56,48 @@ public class TravelService {
         return travelMapper.getTripBudget(tripId, scope, countryId);
     }
 
+    /**
+     * 여행/저축 모드 전환
+     */
+    @Transactional
+    public TravelModeResponseDto toggleTravelMode(Long tripId, TravelModeRequestDto request, Long currentUserId) {
+        // 1. Request Body 기본 검증 (400 Bad Request)
+        if (request == null || request.getIsTravelMode() == null) {
+            throw new TravelException(TravelErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 2. 여행 존재 여부 및 소유권 검증 (400, 404, 403)
+        Trip trip = validateTripOwnerAndGetTrip(tripId, currentUserId);
+
+        // 3. 여행 기간 검증 (start_date <= Today <= end_date)
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(trip.getStartDate()) || today.isAfter(trip.getEndDate())) {
+            throw new TravelException(TravelErrorCode.INVALID_TRIP_PERIOD);
+        }
+
+        // 4. [추가] 이미 현재 요청된 모드와 동일한 상태인지 검증
+        String targetViewMode = Boolean.TRUE.equals(request.getIsTravelMode()) ? "TRAVEL" : "SAVING";
+
+        // 유저의 현재 모드 조회 (User 테이블 조회 또는 Auth 토큰/유저 객체 기반)
+        String currentViewMode = travelMapper.selectUserCurrentViewMode(currentUserId);
+
+        if (targetViewMode.equals(currentViewMode)) {
+            throw new TravelException(TravelErrorCode.ALREADY_IN_TARGET_MODE,
+                    "이미 " + (Boolean.TRUE.equals(request.getIsTravelMode()) ? "여행" : "저축") + " 모드 상태입니다.");
+        }
+
+        // 5. 회원(users.current_view_mode) 화면 모드 컬럼 업데이트
+        travelMapper.updateUserCurrentViewMode(currentUserId, targetViewMode);
+
+        // 6. Response 반환
+        return TravelModeResponseDto.builder()
+                .id(tripId)
+                .isTravelMode(request.getIsTravelMode())
+                .currentViewMode(targetViewMode)
+                .build();
+    }
+
+
     /** 여행 목표를 생성하고, 국가별 방문 일정만 먼저 저장합니다. */
     @Transactional
     public TripGoalCreateResponseDto createTripGoal(
@@ -74,6 +119,8 @@ public class TravelService {
         travelMapper.insertTripGoal(command);
         insertTripCountries(command.getId(), request.getCountries());
         travelMapper.insertTripWalletIfAbsent(currentUserId);
+        // 여행 목표 등록시 관련 체크리스트도 같이 생성
+        checklistService.initializeChecklist(command.getId());
 
         return TripGoalCreateResponseDto.builder()
                 .tripId(command.getId())
@@ -430,6 +477,29 @@ public class TravelService {
         if (!ownerId.equals(currentUserId)) {
             throw new TravelException(TravelErrorCode.FORBIDDEN_TRIP_ACCESS);
         }
+    }
+
+    /**
+     * 여행 소유권 검증 후 Trip 엔티티 반환 헬퍼 메서드
+     */
+    private Trip validateTripOwnerAndGetTrip(Long tripId, Long currentUserId) {
+        // 1. Path Variable 기본 유효성 검증 (400 Bad Request)
+        if (tripId == null || tripId <= 0) {
+            throw new TravelException(TravelErrorCode.INVALID_PATH_VARIABLE);
+        }
+
+        // 2. 여행 정보 조회 (404 Not Found)
+        Trip trip = travelMapper.selectTripById(tripId);
+        if (trip == null) {
+            throw new TravelException(TravelErrorCode.TRIP_NOT_FOUND);
+        }
+
+        // 3. 타인의 여행 정보에 접근하려는 경우 검증 (403 Forbidden)
+        if (!trip.getUserId().equals(currentUserId)) {
+            throw new TravelException(TravelErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
+
+        return trip;
     }
 
     private record TripDateRange(LocalDate startDate, LocalDate endDate) {

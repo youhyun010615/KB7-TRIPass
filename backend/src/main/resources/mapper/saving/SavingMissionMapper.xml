@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.saving.mapper.SavingMissionMapper">
+
+    <select id="findAnalysisByTargetMonth" resultType="MonthlySpendingAnalysisDto">
+        SELECT id, user_id, analysis_year_month, target_year_month, total_spending,
+               saving_target_amount, actual_saving_amount, saving_difference_amount, saving_result_message,
+               report_status, report_viewed_at, report_closed_at, created_at, updated_at
+        FROM monthly_spending_analyses
+        WHERE user_id = #{userId}
+          AND target_year_month = #{targetYearMonth}
+        LIMIT 1
+    </select>
+
+    <select id="lockMonthlySpendingAnalysis" resultType="long">
+        SELECT id
+        FROM monthly_spending_analyses
+        WHERE id = #{monthlySpendingAnalysisId}
+        FOR UPDATE
+    </select>
+
+    <select id="findSelections" resultType="MissionCategorySelectionDto">
+        SELECT mcs.id, mcs.monthly_spending_analysis_id, mcs.category_id,
+               sc.category_code, sc.category_name,
+               mcs.reduction_rate, mcs.baseline_spending_amount,
+               mcs.monthly_reduction_target, mcs.monthly_usage_target,
+               mcs.created_at, mcs.updated_at
+        FROM mission_category_selections mcs
+                 JOIN spending_categories sc ON sc.id = mcs.category_id
+        WHERE mcs.monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+        ORDER BY mcs.category_id
+    </select>
+
+    <insert id="insertMonthlyMission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO monthly_saving_missions (
+            user_id, monthly_spending_analysis_id, mission_category_selection_id, category_id,
+            target_year_month, reduction_rate, baseline_spending_amount,
+            monthly_reduction_target, monthly_usage_target, planned_saving_amount, start_week, status
+        ) VALUES (
+            #{userId}, #{monthlySpendingAnalysisId}, #{missionCategorySelectionId}, #{categoryId},
+            #{targetYearMonth}, #{reductionRate}, #{baselineSpendingAmount},
+            #{monthlyReductionTarget}, #{monthlyUsageTarget}, #{plannedSavingAmount}, #{startWeek}, #{status}
+        )
+    </insert>
+
+    <insert id="insertWeeklyMission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO weekly_saving_missions (
+            monthly_saving_mission_id, week_number, period_start_date, period_end_date,
+            weekly_usage_limit, weekly_expected_saving, status
+        ) VALUES (
+            #{monthlySavingMissionId}, #{weekNumber}, #{periodStartDate}, #{periodEndDate},
+            #{weeklyUsageLimit}, #{weeklyExpectedSaving}, #{status}
+        )
+    </insert>
+
+    <select id="findMonthlyMissions" resultType="MonthlySavingMissionDto">
+        SELECT msm.id, msm.user_id, msm.monthly_spending_analysis_id, msm.mission_category_selection_id,
+               msm.category_id, sc.category_code, sc.category_name, msm.target_year_month,
+               msm.reduction_rate, msm.baseline_spending_amount, msm.monthly_reduction_target,
+               msm.monthly_usage_target, msm.planned_saving_amount, msm.start_week, msm.status,
+               msm.created_at, msm.updated_at
+        FROM monthly_saving_missions msm
+                 JOIN spending_categories sc ON sc.id = msm.category_id
+        WHERE msm.user_id = #{userId}
+          AND msm.target_year_month = #{targetYearMonth}
+        ORDER BY msm.id
+    </select>
+
+    <select id="findWeeklyMissions" resultType="WeeklySavingMissionDto">
+        SELECT id, monthly_saving_mission_id, week_number, period_start_date, period_end_date,
+               weekly_usage_limit, weekly_expected_saving, actual_spending, actual_saving,
+               status, evaluated_at, created_at, updated_at
+        FROM weekly_saving_missions
+        WHERE monthly_saving_mission_id = #{monthlySavingMissionId}
+        ORDER BY week_number
+    </select>
+
+    <!-- 사용자 소유권을 JOIN으로 검증하고 행 잠금으로 동시 판정 요청을 직렬화한다. -->
+    <select id="findWeeklyMissionsForEvaluation" resultType="WeeklySavingMissionDto">
+        SELECT wsm.id, wsm.monthly_saving_mission_id,
+               msm.category_id, sc.category_code, sc.category_name,
+               wsm.week_number, wsm.period_start_date, wsm.period_end_date,
+               wsm.weekly_usage_limit, wsm.weekly_expected_saving,
+               wsm.actual_spending, wsm.actual_saving, wsm.status,
+               wsm.evaluated_at, wsm.created_at, wsm.updated_at
+        FROM weekly_saving_missions wsm
+                 JOIN monthly_saving_missions msm ON msm.id = wsm.monthly_saving_mission_id
+                 JOIN spending_categories sc ON sc.id = msm.category_id
+        WHERE msm.user_id = #{userId}
+          AND msm.target_year_month = #{targetYearMonth}
+          AND wsm.week_number = #{weekNumber}
+        ORDER BY msm.id
+        FOR UPDATE
+    </select>
+
+    <update id="updateWeeklyMissionEvaluation">
+        UPDATE weekly_saving_missions
+        SET actual_spending = #{actualSpending},
+            actual_saving = #{actualSaving},
+            status = #{status},
+            evaluated_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+
+    <update id="completeMonthlyMissionIfAllWeeksEvaluated">
+        UPDATE monthly_saving_missions msm
+        SET msm.status = 'COMPLETED',
+            msm.updated_at = NOW()
+        WHERE msm.id = #{monthlySavingMissionId}
+          AND msm.status = 'IN_PROGRESS'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM weekly_saving_missions wsm
+              WHERE wsm.monthly_saving_mission_id = msm.id
+                AND wsm.status = 'PENDING'
+          )
+    </update>
+
+    <update id="markReportClosed">
+        UPDATE monthly_spending_analyses
+        SET report_status = 'CLOSED',
+            report_closed_at = COALESCE(report_closed_at, NOW()),
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND analysis_year_month = #{analysisYearMonth}
+          AND report_status IN ('PENDING', 'VIEWED')
+    </update>
+
+</mapper>

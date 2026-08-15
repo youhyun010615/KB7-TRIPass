@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 public enum TravelErrorCode {
 
     // 400 Bad Request
+    INVALID_TRIP_PERIOD(HttpStatus.BAD_REQUEST, "INVALID_TRIP_PERIOD", "현재 진행 중인 여행 기간(출발일~귀국일)에만 모드를 전환할 수 있습니다."), // 👈 추가
+    ALREADY_IN_TARGET_MODE(HttpStatus.BAD_REQUEST, "ALREADY_IN_TARGET_MODE", "이미 요청하신 화면 모드 상태입니다."),
     INVALID_PATH_VARIABLE(HttpStatus.BAD_REQUEST, "INVALID_PATH_VARIABLE", "유효하지 않은 여행 ID 형식입니다."),
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "INVALID_INPUT_VALUE", "입력값이 유효하지 않습니다."),
     MISSING_COUNTRY_ID(HttpStatus.BAD_REQUEST, "INVALID_INPUT_VALUE", "scope가 COUNTRY인 경우 countryId는 필수입니다."),

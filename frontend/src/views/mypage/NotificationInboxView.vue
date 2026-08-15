@@ -1,7 +1,228 @@
 <script setup>
-import { useRouter } from 'vue-router'; import BottomNav from '@/components/common/BottomNav.vue'; import { useMypageStore } from '@/stores/mypage'
-const router=useRouter(), store=useMypageStore(); const meta={schedule:['▣','#e7f1ff'],finance:['₩','#e8f8f2'],saving:['✈','#fff3e7'],exchange:['↕','#f0eaff'],checklist:['✓','#e8f5ff']}
-function open(item){store.markRead(item.id);router.push(item.path)}
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import BottomNav from '@/components/common/BottomNav.vue';
+import { useMypageStore } from '@/stores/mypage';
+const router = useRouter(),
+  store = useMypageStore();
+const meta = {
+  schedule: ['▣', '#e7f1ff'],
+  finance: ['₩', '#e8f8f2'],
+  saving: ['✈', '#fff3e7'],
+  exchange: ['↕', '#f0eaff'],
+  checklist: ['✓', '#e8f5ff'],
+  test: ['🧪', '#f1f5f9'],
+  report: ['📊', '#fff0f0'],
+};
+onMounted(() => {
+  store.fetchNotifications();
+});
+function open(item) {
+  store.markRead(item.id);
+  if (item.url) {
+    router.push(item.url);
+  }
+}
 </script>
-<template><main class="page"><header><button @click="router.back()">‹</button><h1>알림</h1><button @click="store.markAllRead">전체 읽음</button></header><section class="ticket"><small>TRIPASS NOTIFICATION</small><h2>놓치면 안 되는 소식</h2><div><b>{{ store.unreadCount }}건</b><span>읽지 않은 알림</span></div></section><div class="title"><h2>최근 알림</h2><button @click="router.push('/mypage/notification')">알림 설정 ›</button></div><section class="list"><button v-for="item in store.notifications" :key="item.id" :class="{read:item.read}" @click="open(item)"><i :style="`background:${meta[item.type]?.[1]}`">{{ meta[item.type]?.[0] }}</i><span><small>{{ item.time }}</small><b>{{ item.title }}</b><em>{{ item.message }}</em></span><strong v-if="!item.read"/></button><p v-if="!store.notifications.length">새로운 알림이 없어요.</p></section><BottomNav/></main></template>
-<style scoped>.page{min-height:100vh;padding:0 20px 105px;background:#f8f6f1;color:#10192d}.page>header{display:grid;height:90px;grid-template-columns:50px 1fr 65px;align-items:end;padding-bottom:16px}.page>header button:first-child{font-size:28px;text-align:left}.page>header button:last-child{color:#176ff2;font-size:10px;text-align:right}.page h1{text-align:center;font-size:21px;font-weight:900}.ticket{overflow:hidden;padding:21px;border-radius:21px;background:linear-gradient(135deg,#15367e,#205eba);color:#fff}.ticket small{color:#b9d0f5;font-size:8px;letter-spacing:1px}.ticket h2{margin-top:12px;font-size:20px}.ticket div{display:flex;align-items:end;gap:8px;margin-top:20px}.ticket b{font-size:25px}.ticket span{padding-bottom:3px;color:#c9d8ef;font-size:9px}.title{display:flex;justify-content:space-between;margin:20px 2px 10px}.title h2{font-size:16px;font-weight:900}.title button{color:#176ff2;font-size:9px}.list{overflow:hidden;border:1px solid #e0e5ec;border-radius:20px;background:#fff}.list>button{position:relative;display:grid;width:100%;grid-template-columns:44px 1fr;gap:11px;padding:15px;border-bottom:1px solid #edf0f3;background:#f7faff;text-align:left}.list>button.read{background:#fff}.list i{display:grid;width:42px;height:42px;place-items:center;border-radius:14px;color:#176ff2;font-style:normal;font-weight:900}.list span>*{display:block}.list small{color:#8996a9;font-size:8px}.list b{margin-top:5px;font-size:12px}.list em{margin-top:5px;color:#758399;font-size:9px;font-style:normal;line-height:1.45}.list strong{position:absolute;top:17px;right:15px;width:7px;height:7px;border-radius:50%;background:#ff6b35}.list p{padding:55px;text-align:center;color:#94a3b8;font-size:11px}</style>
+<template>
+  <main class="page">
+    <header>
+      <button @click="router.back()">‹</button>
+      <h1>알림</h1>
+      <button @click="store.markAllRead">전체 읽음</button>
+    </header>
+    <section class="ticket">
+      <small>TRIPASS NOTIFICATION</small>
+      <h2>놓치면 안 되는 소식</h2>
+      <div>
+        <b>{{ store.unreadCount }}건</b><span>읽지 않은 알림</span>
+      </div>
+    </section>
+    <div class="title">
+      <h2>최근 알림</h2>
+      <button @click="router.push('/mypage/notification')">알림 설정 ›</button>
+    </div>
+    <section class="list">
+      <div
+        v-for="item in store.notifications"
+        :key="item.id"
+        class="item"
+        :class="{ read: item.read }"
+        @click="store.markRead(item.id)"
+      >
+        <i :style="`background:${meta[item.type]?.[1]}`">{{
+          meta[item.type]?.[0]
+        }}</i
+        >
+        <span class="content">
+          <small>{{ item.time }}</small>
+          <b>{{ item.title }}</b>
+          <em>{{ item.message }}</em>
+        </span>
+        <div class="actions">
+          <strong v-if="!item.read" class="dot" />
+          <button 
+            v-if="item.url" 
+            class="go-btn" 
+            @click.stop="open(item)"
+          >
+            이동 ›
+          </button>
+        </div>
+      </div>
+      <p v-if="!store.notifications.length">새로운 알림이 없어요.</p>
+    </section>
+    <BottomNav />
+  </main>
+</template>
+<style scoped>
+.page {
+  min-height: 100vh;
+  padding: 0 20px 105px;
+  background: #f8f6f1;
+  color: #10192d;
+}
+.page > header {
+  display: grid;
+  height: 90px;
+  grid-template-columns: 50px 1fr 65px;
+  align-items: end;
+  padding-bottom: 16px;
+}
+.page > header button:first-child {
+  font-size: 28px;
+  text-align: left;
+}
+.page > header button:last-child {
+  color: #176ff2;
+  font-size: 10px;
+  text-align: right;
+}
+.page h1 {
+  text-align: center;
+  font-size: 21px;
+  font-weight: 900;
+}
+.ticket {
+  overflow: hidden;
+  padding: 21px;
+  border-radius: 21px;
+  background: linear-gradient(135deg, #15367e, #205eba);
+  color: #fff;
+}
+.ticket small {
+  color: #b9d0f5;
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.ticket h2 {
+  margin-top: 12px;
+  font-size: 20px;
+}
+.ticket div {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.ticket b {
+  font-size: 25px;
+}
+.ticket span {
+  padding-bottom: 3px;
+  color: #c9d8ef;
+  font-size: 9px;
+}
+.title {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 2px 10px;
+}
+.title h2 {
+  font-size: 16px;
+  font-weight: 900;
+}
+.title button {
+  color: #176ff2;
+  font-size: 9px;
+}
+.list {
+  overflow: hidden;
+  border: 1px solid #e0e5ec;
+  border-radius: 20px;
+  background: #fff;
+}
+.item {
+  position: relative;
+  display: grid;
+  width: 100%;
+  grid-template-columns: 44px 1fr auto;
+  gap: 11px;
+  padding: 15px;
+  border-bottom: 1px solid #edf0f3;
+  background: #f7faff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.item.read {
+  background: #fff;
+}
+.item i {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  color: #176ff2;
+  font-style: normal;
+  font-weight: 900;
+}
+.content > * {
+  display: block;
+}
+.content small {
+  color: #8996a9;
+  font-size: 8px;
+}
+.content b {
+  margin-top: 5px;
+  font-size: 12px;
+}
+.content em {
+  margin-top: 5px;
+  color: #758399;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.45;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff6b35;
+}
+.go-btn {
+  margin-top: auto;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #176ff2;
+  font-size: 10px;
+  font-weight: 700;
+}
+.go-btn:active {
+  background: #e2e8f0;
+}
+.list p {
+  padding: 55px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 11px;
+}
+</style>

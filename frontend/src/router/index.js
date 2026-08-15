@@ -36,6 +36,22 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
 
+    {
+      path: '/oauth/kakao/callback',
+      name: 'KakaoCallback',
+      component: () =>
+          import('@/views/auth/KakaoCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
+    {
+      path: '/oauth/google/callback',
+      name: 'GoogleCallback',
+      component: () =>
+          import('@/views/auth/GoogleCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
     // ── HOME / SAV (담당: 권유현) ───────────────────────────
     {
       path: '/',
@@ -143,7 +159,7 @@ const router = createRouter({
     {
       path: '/financial',
       name: 'Financial',
-      component: () => import('@/views/financial/FinancialView.vue'),
+      redirect: '/financial/cards',
       meta: { requiresAuth: true },
     },
     {
@@ -173,7 +189,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/financial/cards/:productId',
+      path: '/financial/cards/:cardId',
       name: 'FinancialCardDetail',
       component: () => import('@/views/financial/FinancialCardDetailView.vue'),
       meta: { requiresAuth: true },
@@ -451,6 +467,18 @@ const router = createRouter({
       path: '/mypage/travel/:id',
       name: 'MypageTravelDetail',
       component: () => import('@/views/mypage/TravelDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/assets',
+      name: 'AssetLink',
+      component: () => import('@/views/mypage/AssetLinkView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/cards/:cardId/transactions',
+      name: 'CardTransactions',
+      component: () => import('@/views/mypage/CardTransactionsView.vue'),
       meta: { requiresAuth: true },
     },
     {

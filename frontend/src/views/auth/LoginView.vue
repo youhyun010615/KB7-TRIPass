@@ -2,7 +2,13 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { login as loginApi } from '@/api/auth'
+import {
+  getGoogleAuthorizationUrl,
+  getKakaoAuthorizationUrl,
+  login as loginApi,
+  logout as logoutApi,
+} from '@/api/auth'
+import api from '@/api'
 import AuthBoardingPass from '@/components/auth/AuthBoardingPass.vue'
 
 const router = useRouter()
@@ -13,24 +19,26 @@ const password = ref('')
 const showPassword = ref(false)
 const errorMsg = ref('')
 const loading = ref(false)
+const kakaoLoading = ref(false)
+const googleLoading = ref(false)
 
 // 일반 로그인 API를 호출한다.
-async function login(){
+async function login() {
   errorMsg.value = ''
   const loginId = userId.value.trim()
 
-  if(!loginId||!password.value){
+  if (!loginId || !password.value) {
     errorMsg.value = '아이디와 비밀번호를 입력해 주세요.'
     return
   }
   // 로그인 버튼을 연속으로 누르는 것을 막는다.
-  if (loading.value) {
+  if (loading.value || kakaoLoading.value || googleLoading.value) {
     return
   }
 
   loading.value = true
 
-  try{
+  try {
     const response = await loginApi({
       loginId,
       password: password.value,
@@ -41,19 +49,116 @@ async function login(){
           '로그인 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.'
       return
     }
-    //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
-    authStore.setToken(loginData.accessToken)
-    authStore.setUser(loginData.user)
+    // Access Token과 로그인 회원 정보를 Pinia에 저장한다.
+    authStore.handleLoginSuccess(loginData.accessToken, loginData.user)
+
+    try {
+      // 이전 로그인 사용자의 프로필 완료 상태를 먼저 제거한다.
+      authStore.resetProfileCompletion()
+
+      const accountResponse = await api.get('/accounts')
+      const linkedAccounts = accountResponse.data?.data ?? []
+
+      if (linkedAccounts.length > 0) {
+        authStore.completeProfile()
+      }
+    } catch (accountError) {
+      console.error('연동 계좌 확인 실패', accountError)
+
+      if (accountError.response?.status === 401) {
+        try {
+          await logoutApi()
+        } catch (logoutError) {
+          console.error('로그인 상태 정리 실패', logoutError)
+        } finally {
+          authStore.logout()
+        }
+
+        errorMsg.value = '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
+        return
+      }
+
+      // 네트워크 오류나 서버 오류에서는 로그인 상태를 유지한다.
+      errorMsg.value =
+        '연동 계좌 정보를 확인하지 못했습니다. 로그인 버튼을 눌러 다시 시도해 주세요.'
+      return
+    }
 
     //RefreshToken은 HttpOnly 쿠키로 자동 저장되므로
     //프론트 JavaScript에서 직접 처리하지 않는다.
     await router.replace('/')
-  }catch (error){
-    errorMsg.value=
-        error.response?.data?.message
-        || '로그인에 실패했습니다.'
-  }finally {
+  } catch (error) {
+    errorMsg.value = error.response?.data?.message || '로그인에 실패했습니다.'
+  } finally {
     loading.value = false
+  }
+}
+
+async function startKakaoLogin() {
+  if (loading.value || kakaoLoading.value || googleLoading.value) {
+    return
+  }
+
+  errorMsg.value = ''
+  kakaoLoading.value = true
+
+  try {
+    const response = await getKakaoAuthorizationUrl()
+    const authorizationUrl = response.data?.data?.authorizationUrl
+
+    if (!authorizationUrl) {
+      throw new Error('카카오 로그인 주소를 확인할 수 없습니다.')
+    }
+
+    const parsedAuthorizationUrl = new URL(authorizationUrl)
+    if (
+      parsedAuthorizationUrl.protocol !== 'https:' ||
+      parsedAuthorizationUrl.hostname !== 'kauth.kakao.com'
+    ) {
+      throw new Error('유효하지 않은 카카오 로그인 주소입니다.')
+    }
+
+    window.location.assign(parsedAuthorizationUrl.toString())
+  } catch (error) {
+    errorMsg.value =
+      error.response?.data?.message ||
+      error.message ||
+      '카카오 로그인을 시작할 수 없습니다.'
+    kakaoLoading.value = false
+  }
+}
+
+async function startGoogleLogin() {
+  if (loading.value || kakaoLoading.value || googleLoading.value) {
+    return
+  }
+
+  errorMsg.value = ''
+  googleLoading.value = true
+
+  try {
+    const response = await getGoogleAuthorizationUrl()
+    const authorizationUrl = response.data?.data?.authorizationUrl
+
+    if (!authorizationUrl) {
+      throw new Error('Google 로그인 주소를 확인할 수 없습니다.')
+    }
+
+    const parsedAuthorizationUrl = new URL(authorizationUrl)
+    if (
+      parsedAuthorizationUrl.protocol !== 'https:' ||
+      parsedAuthorizationUrl.hostname !== 'accounts.google.com'
+    ) {
+      throw new Error('유효하지 않은 Google 로그인 주소입니다.')
+    }
+
+    window.location.assign(parsedAuthorizationUrl.toString())
+  } catch (error) {
+    errorMsg.value =
+      error.response?.data?.message ||
+      error.message ||
+      'Google 로그인을 시작할 수 없습니다.'
+    googleLoading.value = false
   }
 }
 
@@ -112,7 +217,11 @@ async function login(){
         <button type="button" @click="router.push('/find-password')">비밀번호 찾기</button>
       </div>
 
-      <button type="submit" class="primary-button" :disabled="loading">
+      <button
+        type="submit"
+        class="primary-button"
+        :disabled="loading || kakaoLoading || googleLoading"
+      >
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
       <button type="button" class="secondary-button" @click="router.push('/signup')">
@@ -121,9 +230,34 @@ async function login(){
 
       <div class="social-divider"><span>간편 로그인</span></div>
       <div class="social-buttons">
-        <button type="button" class="kakao" aria-label="카카오 로그인">K</button>
-        <button type="button" class="google" aria-label="구글 로그인">G</button>
+        <button
+          type="button"
+          class="kakao"
+          :disabled="loading || kakaoLoading || googleLoading"
+          :aria-busy="kakaoLoading"
+          aria-label="카카오 로그인"
+          @click="startKakaoLogin"
+        >
+          {{ kakaoLoading ? '…' : 'K' }}
+        </button>
+        <button
+          type="button"
+          class="google"
+          :disabled="loading || kakaoLoading || googleLoading"
+          :aria-busy="googleLoading"
+          aria-label="구글 로그인"
+          @click="startGoogleLogin"
+        >
+          {{ googleLoading ? '…' : 'G' }}
+        </button>
       </div>
+      <p v-if="kakaoLoading || googleLoading" class="social-loading" role="status">
+        {{
+          kakaoLoading
+            ? '카카오 로그인 화면으로 이동하고 있어요.'
+            : 'Google 로그인 화면으로 이동하고 있어요.'
+        }}
+      </p>
     </form>
   </AuthBoardingPass>
 </template>
@@ -254,6 +388,15 @@ async function login(){
   border-radius: 50%;
   font-size: 16px;
   font-weight: 850;
+}
+
+.social-buttons button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.social-loading {
+  margin: -8px 0 0;
+  color: #8d98aa;
+  font-size: 11px;
+  text-align: center;
 }
 
 .kakao { border: 0; color: #3c1e1e; background: #fee500; }

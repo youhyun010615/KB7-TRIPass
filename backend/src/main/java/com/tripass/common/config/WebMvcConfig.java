@@ -1,5 +1,8 @@
 package com.tripass.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -55,9 +58,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         );
 
         // ApiResponse 등의 JSON 응답을 처리한다.
-        converters.add(
-                new MappingJackson2HttpMessageConverter()
-        );
+        // LocalDate/LocalTime 을 ISO-8601 문자열로 직렬화하기 위해 JavaTimeModule 등록
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        converters.add(new MappingJackson2HttpMessageConverter(mapper));
     }
 
     /** 정적 리소스 서빙 허용 */

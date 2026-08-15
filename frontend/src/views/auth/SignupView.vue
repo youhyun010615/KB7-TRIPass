@@ -9,6 +9,12 @@ import {
 } from '@/api/auth'
 import AuthBoardingPass from '@/components/auth/AuthBoardingPass.vue'
 
+import {
+  PASSWORD_PATTERN,
+  PHONE_NUMBER_PATTERN,
+  VERIFICATION_CODE_PATTERN,
+} from '@/constants/authValidation'
+
 const router = useRouter()
 
 // 회원가입 단계
@@ -49,10 +55,7 @@ const errors = ref({})
 
 // 백엔드와 동일한 입력 형식
 const USER_ID_PATTERN = /^[A-Za-z0-9]{6,20}$/
-const PASSWORD_PATTERN =
-    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,64}$/
-const PHONE_PATTERN = /^010\d{8}$/
-const VERIFICATION_CODE_PATTERN = /^\d{6}$/
+
 
 const normalizedPhone = computed(() =>
     phone.value.replace(/[^0-9]/g, ''),
@@ -67,7 +70,7 @@ const isPasswordValid = computed(() =>
 )
 
 const isPhoneValid = computed(() =>
-    PHONE_PATTERN.test(normalizedPhone.value),
+    PHONE_NUMBER_PATTERN.test(normalizedPhone.value)
 )
 
 const isVerificationCodeValid = computed(() =>
@@ -203,7 +206,7 @@ async function sendCode() {
   phoneSending.value = true
 
   try {
-    const response = await sendPhoneCodeApi(normalizedPhone.value)
+    const response = await sendPhoneCodeApi({phoneNumber: normalizedPhone.value, purpose: 'SIGNUP',})
     const sendResult = response.data?.data
 
     if (!sendResult?.requestId) {

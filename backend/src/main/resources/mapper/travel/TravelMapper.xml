@@ -85,6 +85,44 @@
         GROUP BY sc.category_name, b.target_budget, b.pre_expense_total, b.travel_expense_total
     </select>
 
+    <!-- 회원의 현재 화면 모드(current_view_mode) 업데이트 -->
+    <update id="updateUserCurrentViewMode">
+        UPDATE users
+        SET current_view_mode = #{currentViewMode},
+            updated_at = NOW()
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+
+    <!-- 여행 단건 정보 조회 (start_date, end_date, user_id 포함) -->
+    <select id="selectTripById" resultType="com.tripass.travel.domain.Trip">
+        SELECT
+            id,
+            user_id AS userId,
+            trip_name AS tripName,
+            status,
+            start_date AS startDate,
+            end_date AS endDate,
+            total_target_amount AS totalTargetAmount,
+            is_deleted AS isDeleted,
+            deleted_at AS deletedAt,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 유저의 현재 화면 모드(current_view_mode) 조회 -->
+    <select id="selectUserCurrentViewMode" resultType="String">
+        SELECT current_view_mode
+        FROM users
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+
     <!-- 3. 여행 데이터 존재 여부 확인 -->
     <select id="existsByTripId" resultType="boolean">
         SELECT EXISTS (

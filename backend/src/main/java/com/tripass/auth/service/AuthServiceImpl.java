@@ -2,6 +2,14 @@ package com.tripass.auth.service;
 
 import com.tripass.auth.dto.response.CheckLoginIdResponse;
 import com.tripass.auth.mapper.UserMapper;
+import com.tripass.auth.client.KakaoOAuthClient;
+import com.tripass.auth.dto.external.kakao.KakaoTokenResponse;
+import com.tripass.auth.dto.external.kakao.KakaoUserResponse;
+import com.tripass.auth.dto.request.KakaoLoginRequest;
+import com.tripass.auth.client.GoogleOAuthClient;
+import com.tripass.auth.dto.external.google.GoogleTokenResponse;
+import com.tripass.auth.dto.external.google.GoogleUserResponse;
+import com.tripass.auth.dto.request.GoogleLoginRequest;
 import com.tripass.auth.dto.request.SignupRequest;
 import com.tripass.auth.dto.response.SignupResponse;
 import com.tripass.auth.dto.request.LoginRequest;
@@ -17,14 +25,18 @@ import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
 import com.tripass.common.exception.CustomException;
+import com.tripass.mypage.mapper.NotificationSettingMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import java.util.regex.Pattern;
+import java.util.Locale;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,11 +54,15 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final NotificationSettingMapper notificationSettingMapper;
+    private final KakaoOAuthClient kakaoOAuthClient;
+    private final GoogleOAuthClient googleOAuthClient;
+    private final TransactionTemplate transactionTemplate;
 
-    // 영문, 숫자, 특수문자를 각각 포함하는 8~64자
+    // 영문, 숫자, 허용된 특수문자를 포함하는 8~64자리
     private static final Pattern PASSWORD_PATTERN =
             Pattern.compile(
-                    "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d\\s])\\S{8,64}$"
+                    "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=?])[A-Za-z\\d!@#$%^&*()_+\\-=?]{8,64}$"
             );
 
     // 010으로 시작하는 숫자 11자리
@@ -159,6 +175,10 @@ public class AuthServiceImpl implements AuthService {
                         "회원가입 처리에 실패했습니다."
                 );
             }
+            
+            // 기본 알림 설정 생성
+            notificationSettingMapper.insertDefaultSetting(user.getId());
+            
         } catch (DuplicateKeyException exception) {
             // 동시 요청으로 LOCAL 로그인 아이디 유니크 제약조건이 위반된 경우
             throw new CustomException(
@@ -206,39 +226,288 @@ public class AuthServiceImpl implements AuthService {
                     "아이디 또는 비밀번호가 올바르지 않습니다."
             );
         }
-        String accessToken =
-                jwtTokenProvider.createAccessToken(user);
+        return issueLoginTokens(user);
+    }
 
-        String refreshToken =
-                jwtTokenProvider.createRefreshToken(user);
+    @Override
+    public String createKakaoAuthorizationUrl(
+            String state
+    ) {
+        return kakaoOAuthClient
+                .createAuthorizationUrl(state);
+    }
+    @Override
+    public String createGoogleAuthorizationUrl(
+            String state
+    ) {
+        return googleOAuthClient
+                .createAuthorizationUrl(state);
+    }
 
-// Refresh Token 원문은 저장하지 않고 해시하여 DB에 저장한다.
-        refreshTokenService.saveRefreshToken(
-                user.getId(),
-                refreshToken
-        );
+    // 카카오 인가 코드를 이용한 소셜 로그인 처리
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public LoginResult kakaoLogin(
+            KakaoLoginRequest request
+    ) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_LOGIN_REQUEST_REQUIRED",
+                    "카카오 로그인 정보를 입력해 주세요."
+            );
+        }
 
-        LoginResponse.UserInfo userInfo =
-                new LoginResponse.UserInfo(
-                        user.getId(),
-                        user.getLoginId(),
-                        user.getName(),
-                        user.getLoginProvider()
+        String authorizationCode =
+                requireText(
+                        request.getCode(),
+                        "카카오 인가 코드를 입력해 주세요."
                 );
 
-        LoginResponse loginResponse =
-                new LoginResponse(
-                        accessToken,
-                        "Bearer",
-                        jwtTokenProvider
-                                .getAccessExpirationSeconds(),
-                        userInfo
+        KakaoTokenResponse tokenResponse =
+                kakaoOAuthClient.requestAccessToken(
+                        authorizationCode
                 );
 
-        return new LoginResult(
-                loginResponse,
-                refreshToken
-        );
+        KakaoUserResponse kakaoUser =
+                kakaoOAuthClient.requestUserInfo(
+                        tokenResponse.getAccessToken()
+                );
+
+        LoginResult result =
+                transactionTemplate.execute(
+                        status -> processKakaoLogin(kakaoUser)
+                );
+
+        if (result == null) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "KAKAO_LOGIN_PROCESS_FAILED",
+                    "카카오 로그인 처리에 실패했습니다."
+            );
+        }
+
+        return result;
+    }
+
+    // Google 인가 코드를 이용한 소셜 로그인 처리
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public LoginResult googleLogin(
+            GoogleLoginRequest request
+    ) {
+        if (request == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_LOGIN_REQUEST_REQUIRED",
+                    "Google 로그인 정보를 입력해 주세요."
+            );
+        }
+
+        String authorizationCode =
+                requireText(
+                        request.getCode(),
+                        "Google 인가 코드를 입력해 주세요."
+                );
+
+        GoogleTokenResponse tokenResponse =
+                googleOAuthClient.requestAccessToken(
+                        authorizationCode
+                );
+
+        GoogleUserResponse googleUser =
+                googleOAuthClient.requestUserInfo(
+                        tokenResponse.getAccessToken()
+                );
+
+        LoginResult result =
+                transactionTemplate.execute(
+                        status -> processGoogleLogin(
+                                googleUser
+                        )
+                );
+
+        if (result == null) {
+            throw new CustomException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "GOOGLE_LOGIN_PROCESS_FAILED",
+                    "Google 로그인 처리에 실패했습니다."
+            );
+        }
+
+        return result;
+    }
+
+    // 카카오 회원 조회·등록 및 로그인 토큰 저장을 하나의 트랜잭션으로 처리한다.
+    private LoginResult processKakaoLogin(
+            KakaoUserResponse kakaoUser
+    ) {
+        String providerKey =
+                String.valueOf(kakaoUser.getId());
+
+        User user =
+                userMapper
+                        .findSocialUserIncludingDeletedByProviderAndProviderKey(
+                                "KAKAO",
+                                providerKey
+                        );
+
+        if (user != null) {
+            if (user.isDeleted()) {
+                throw new CustomException(
+                        HttpStatus.FORBIDDEN,
+                        "KAKAO_WITHDRAWN_ACCOUNT",
+                        "탈퇴한 카카오 계정입니다."
+                );
+            }
+
+            return issueLoginTokens(user);
+        }
+
+        KakaoUserResponse.KakaoAccount account =
+                kakaoUser.getKakaoAccount();
+
+        if (account == null) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_ACCOUNT_REQUIRED",
+                    "카카오 계정 정보를 확인할 수 없습니다."
+            );
+        }
+
+        String email = requireKakaoEmail(account);
+        String nickname = requireKakaoNickname(account);
+
+        User newUser = new User();
+
+        newUser.setLoginId(email);
+        newUser.setPassword(null);
+        newUser.setName(nickname);
+        newUser.setPhoneNumber(null);
+        newUser.setLoginProvider("KAKAO");
+        newUser.setProviderKey(providerKey);
+
+        try {
+            int insertedRows =
+                    userMapper.insertSocialUser(newUser);
+
+            if (insertedRows != 1) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "KAKAO_USER_CREATE_FAILED",
+                        "카카오 회원 등록에 실패했습니다."
+                );
+            }
+
+        } catch (DuplicateKeyException exception) {
+            User existingUser =
+                    userMapper
+                            .findSocialUserIncludingDeletedByProviderAndProviderKey(
+                                    "KAKAO",
+                                    providerKey
+                            );
+
+            if (existingUser != null
+                    && !existingUser.isDeleted()) {
+                return issueLoginTokens(existingUser);
+            }
+
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "KAKAO_USER_DUPLICATED",
+                    "이미 등록된 카카오 회원 정보입니다."
+            );
+        }
+
+        return issueLoginTokens(newUser);
+    }
+
+    // Google 회원 조회·등록 및 로그인 토큰 저장을 하나의 트랜잭션으로 처리한다.
+    private LoginResult processGoogleLogin(
+            GoogleUserResponse googleUser
+    ) {
+        String providerKey =
+                requireGoogleProviderKey(
+                        googleUser
+                );
+
+        User user =
+                userMapper
+                        .findSocialUserIncludingDeletedByProviderAndProviderKey(
+                                "GOOGLE",
+                                providerKey
+                        );
+
+        if (user != null) {
+            if (user.isDeleted()) {
+                throw new CustomException(
+                        HttpStatus.FORBIDDEN,
+                        "GOOGLE_WITHDRAWN_ACCOUNT",
+                        "탈퇴한 Google 계정입니다."
+                );
+            }
+
+            return issueLoginTokens(user);
+        }
+
+        String email =
+                requireGoogleEmail(
+                        googleUser
+                );
+
+        String name =
+                requireGoogleName(
+                        googleUser
+                );
+
+        User newUser = new User();
+
+        newUser.setLoginId(email);
+        newUser.setPassword(null);
+        newUser.setName(name);
+        newUser.setPhoneNumber(null);
+        newUser.setLoginProvider("GOOGLE");
+        newUser.setProviderKey(providerKey);
+
+        try {
+            int insertedRows =
+                    userMapper.insertSocialUser(
+                            newUser
+                    );
+
+            if (insertedRows != 1) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "GOOGLE_USER_CREATE_FAILED",
+                        "Google 회원 등록에 실패했습니다."
+                );
+            }
+
+        } catch (DuplicateKeyException exception) {
+            User existingUser =
+                    userMapper
+                            .findSocialUserIncludingDeletedByProviderAndProviderKey(
+                                    "GOOGLE",
+                                    providerKey
+                            );
+
+            if (
+                    existingUser != null &&
+                            !existingUser.isDeleted()
+            ) {
+                return issueLoginTokens(
+                        existingUser
+                );
+            }
+
+            throw new CustomException(
+                    HttpStatus.CONFLICT,
+                    "GOOGLE_USER_DUPLICATED",
+                    "이미 등록된 Google 회원 정보입니다."
+            );
+        }
+
+        return issueLoginTokens(newUser);
     }
 
     //Refresh Token을 이용해 AccessToken과 RefreshToken을 재발급한다.
@@ -641,4 +910,226 @@ public class AuthServiceImpl implements AuthService {
         return loginId.substring(0, visibleLength)
                 + "*".repeat(maskedLength);
     }
+
+    // 인증된 회원에게 TRIPass Access Token과 Refresh Token을 발급한다.
+    private LoginResult issueLoginTokens(User user) {
+        String accessToken =
+                jwtTokenProvider.createAccessToken(user);
+
+        String refreshToken =
+                jwtTokenProvider.createRefreshToken(user);
+
+        // Refresh Token 원문은 저장하지 않고 해시하여 DB에 저장한다.
+        refreshTokenService.saveRefreshToken(
+                user.getId(),
+                refreshToken
+        );
+
+        LoginResponse.UserInfo userInfo =
+                new LoginResponse.UserInfo(
+                        user.getId(),
+                        user.getLoginId(),
+                        user.getName(),
+                        user.getLoginProvider()
+                );
+
+        LoginResponse loginResponse =
+                new LoginResponse(
+                        accessToken,
+                        "Bearer",
+                        jwtTokenProvider
+                                .getAccessExpirationSeconds(),
+                        userInfo
+                );
+
+        return new LoginResult(
+                loginResponse,
+                refreshToken
+        );
+    }
+
+    // 카카오 계정 이메일을 검증하고 반환한다.
+    private String requireKakaoEmail(
+            KakaoUserResponse.KakaoAccount account
+    ) {
+        String email = account.getEmail();
+
+        if (Boolean.FALSE.equals(account.getHasEmail())
+                || Boolean.TRUE.equals(
+                account.getEmailNeedsAgreement()
+        )
+                || email == null
+                || email.trim().isEmpty()) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_EMAIL_REQUIRED",
+                    "카카오 계정 이메일 제공 동의가 필요합니다."
+            );
+        }
+
+        if (Boolean.FALSE.equals(account.getEmailValid())
+                || Boolean.FALSE.equals(
+                account.getEmailVerified()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_EMAIL_INVALID",
+                    "유효한 카카오 계정 이메일이 필요합니다."
+            );
+        }
+
+        String normalizedEmail =
+                email.trim().toLowerCase(Locale.ROOT);
+
+        if (normalizedEmail.length() > 255) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_EMAIL_TOO_LONG",
+                    "카카오 계정 이메일이 너무 깁니다."
+            );
+        }
+
+        return normalizedEmail;
+    }
+
+    // 카카오 프로필 닉네임을 검증하고 반환한다.
+    private String requireKakaoNickname(
+            KakaoUserResponse.KakaoAccount account
+    ) {
+        KakaoUserResponse.Profile profile =
+                account.getProfile();
+
+        if (Boolean.TRUE.equals(
+                account.getProfileNicknameNeedsAgreement()
+        )
+                || profile == null
+                || profile.getNickname() == null
+                || profile.getNickname().trim().isEmpty()) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_NICKNAME_REQUIRED",
+                    "카카오 프로필 닉네임 제공 동의가 필요합니다."
+            );
+        }
+
+        String nickname =
+                profile.getNickname().trim();
+
+        if (nickname.length() > 100) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "KAKAO_NICKNAME_TOO_LONG",
+                    "카카오 프로필 닉네임은 100자 이하여야 합니다."
+            );
+        }
+
+        return nickname;
+    }
+
+    // Google 계정 고유 식별값을 검증하고 반환한다.
+    private String requireGoogleProviderKey(
+            GoogleUserResponse googleUser
+    ) {
+        if (
+                googleUser == null ||
+                        googleUser.getSub() == null ||
+                        googleUser.getSub().trim().isEmpty()
+        ) {
+            throw new CustomException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GOOGLE_PROVIDER_KEY_REQUIRED",
+                    "Google 계정 식별값을 확인할 수 없습니다."
+            );
+        }
+
+        String providerKey =
+                googleUser.getSub().trim();
+
+        if (providerKey.length() > 255) {
+            throw new CustomException(
+                    HttpStatus.BAD_GATEWAY,
+                    "GOOGLE_PROVIDER_KEY_TOO_LONG",
+                    "Google 계정 식별값이 너무 깁니다."
+            );
+        }
+
+        return providerKey;
+    }
+
+    // Google 계정 이메일을 검증하고 반환한다.
+    private String requireGoogleEmail(
+            GoogleUserResponse googleUser
+    ) {
+        String email =
+                googleUser.getEmail();
+
+        if (
+                email == null ||
+                        email.trim().isEmpty()
+        ) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_EMAIL_REQUIRED",
+                    "Google 계정 이메일 제공 동의가 필요합니다."
+            );
+        }
+
+        if (!Boolean.TRUE.equals(
+                googleUser.getEmailVerified()
+        )) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_EMAIL_INVALID",
+                    "검증된 Google 계정 이메일이 필요합니다."
+            );
+        }
+
+        String normalizedEmail =
+                email.trim()
+                        .toLowerCase(Locale.ROOT);
+
+        if (normalizedEmail.length() > 255) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_EMAIL_TOO_LONG",
+                    "Google 계정 이메일이 너무 깁니다."
+            );
+        }
+
+        return normalizedEmail;
+    }
+
+    // Google 프로필 이름을 검증하고 반환한다.
+    private String requireGoogleName(
+            GoogleUserResponse googleUser
+    ) {
+        String name =
+                googleUser.getName();
+
+        if (
+                name == null ||
+                        name.trim().isEmpty()
+        ) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_NAME_REQUIRED",
+                    "Google 프로필 이름을 확인할 수 없습니다."
+            );
+        }
+
+        String normalizedName =
+                name.trim();
+
+        if (normalizedName.length() > 100) {
+            throw new CustomException(
+                    HttpStatus.BAD_REQUEST,
+                    "GOOGLE_NAME_TOO_LONG",
+                    "Google 프로필 이름은 100자 이하여야 합니다."
+            );
+        }
+
+        return normalizedName;
+    }
+
+
 }
