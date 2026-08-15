@@ -24,6 +24,12 @@
         ORDER BY mcs.category_id
     </select>
 
+    <select id="countGeneratedMissions" resultType="int">
+        SELECT COUNT(*)
+        FROM monthly_saving_missions
+        WHERE monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+    </select>
+
     <delete id="deleteSelectionsExcept">
         DELETE FROM mission_category_selections
         WHERE monthly_spending_analysis_id = #{monthlySpendingAnalysisId}

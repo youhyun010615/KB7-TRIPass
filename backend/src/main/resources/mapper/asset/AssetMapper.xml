@@ -128,7 +128,7 @@
                t.merchant_name, t.merchant_type, t.memo, t.category_id,
                sc.category_name, t.category_source, t.category_confidence, t.category_classified_at
         FROM transactions t
-        LEFT JOIN spending_categories sc ON sc.id = t.category_id AND sc.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
         WHERE t.account_id = #{accountId}
         AND t.is_deleted = 0
         <if test="startDate != null">
@@ -153,7 +153,7 @@
         FROM transactions t
         LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
         LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
-        LEFT JOIN spending_categories sc ON sc.id = t.category_id AND sc.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
         WHERE t.id = #{transactionId}
         AND (a.user_id = #{userId} OR c.user_id = #{userId})
         AND t.is_deleted = 0
@@ -168,7 +168,7 @@
         FROM transactions t
         LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
         LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
-        LEFT JOIN spending_categories sc ON sc.id = t.category_id AND sc.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
         WHERE (a.user_id = #{userId} OR c.user_id = #{userId})
         AND t.is_deleted = 0
         <if test="startDate != null">AND t.transaction_date &gt;= #{startDate}</if>
@@ -351,7 +351,7 @@
                t.merchant_name, t.merchant_type, t.memo, t.category_id,
                sc.category_name, t.category_source, t.category_confidence, t.category_classified_at
         FROM transactions t
-        LEFT JOIN spending_categories sc ON sc.id = t.category_id AND sc.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
         WHERE t.card_id = #{cardId}
           AND t.is_deleted = 0
         <if test="startDate != null">AND t.transaction_date &gt;= #{startDate}</if>

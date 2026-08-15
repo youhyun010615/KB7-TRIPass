@@ -163,6 +163,20 @@ class MissionCategorySelectionServiceTest {
     }
 
     @Test
+    @DisplayName("이미 미션이 생성된 분석의 절감률은 변경할 수 없다")
+    void saveMissionSelections_afterMissionStarted_throws() {
+        stubAnalysisExists();
+        when(missionCategorySelectionMapper.countGeneratedMissions(ANALYSIS_ID)).thenReturn(1);
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> service.saveMissionSelections(USER_ID, ANALYSIS_MONTH, requestOf(item(FOOD_ID, 30))));
+
+        assertEquals("MISSION_ALREADY_STARTED", exception.getErrorCode());
+        verify(missionCategorySelectionMapper, never()).upsertSelection(any());
+        verify(missionCategorySelectionMapper, never()).deleteSelectionsExcept(any(), anyList());
+    }
+
+    @Test
     @DisplayName("TOP 3에 없는 카테고리를 선택하면 400 예외를 던지고 저장하지 않는다")
     void saveMissionSelections_categoryNotRecommended_throws() {
         stubAnalysisExists();
