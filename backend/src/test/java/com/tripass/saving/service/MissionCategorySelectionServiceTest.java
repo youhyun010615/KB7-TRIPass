@@ -134,6 +134,22 @@ class MissionCategorySelectionServiceTest {
     }
 
     @Test
+    @DisplayName("저장 전에 월간 분석 행을 먼저 잠가 동시 PUT의 잠금 순서를 직렬화한다")
+    void saveMissionSelections_locksAnalysisBeforeUpsertAndDelete() {
+        stubAnalysisExists();
+        when(monthlySpendingAnalysisMapper.findRecommendedCategoryAnalyses(ANALYSIS_ID))
+                .thenReturn(List.of(topCategory(FOOD_ID, "FOOD", "식비", "100000")));
+        when(missionCategorySelectionMapper.findSelections(ANALYSIS_ID)).thenReturn(List.of());
+
+        service.saveMissionSelections(USER_ID, ANALYSIS_MONTH, requestOf(item(FOOD_ID, 10)));
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(missionCategorySelectionMapper);
+        inOrder.verify(missionCategorySelectionMapper).lockMonthlySpendingAnalysis(ANALYSIS_ID);
+        inOrder.verify(missionCategorySelectionMapper).upsertSelection(any());
+        inOrder.verify(missionCategorySelectionMapper).deleteSelectionsExcept(eq(ANALYSIS_ID), anyList());
+    }
+
+    @Test
     @DisplayName("빈 selections를 보내면 전체 선택을 해제한다")
     void saveMissionSelections_emptySelections_deletesAll() {
         stubAnalysisExists();
@@ -230,8 +246,8 @@ class MissionCategorySelectionServiceTest {
         MissionSelectionsResponseDto result = service.getMissionSelections(USER_ID, ANALYSIS_MONTH);
 
         assertEquals(2, result.selectedMissionCount());
-        assertEquals(25000, result.totalMonthlyReductionTarget()); // 10000 + 15000
-        assertEquals(6250, result.totalWeeklyExpectedSaving()); // 2500 + 3750
+        assertEquals(25000L, result.totalMonthlyReductionTarget()); // 10000 + 15000
+        assertEquals(6250L, result.totalWeeklyExpectedSaving()); // 2500 + 3750
 
         MissionSelectionResponseDto food = result.selections().get(0);
         assertEquals(10000, food.monthlyReductionTarget());

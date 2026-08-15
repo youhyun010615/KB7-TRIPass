@@ -23,5 +23,5 @@ public class MissionSelectionRequestDto {
     @NotNull(message = "selections는 필수입니다(선택 해제는 빈 배열로 요청하세요).")
     @Size(max = 3, message = "선택은 추천 TOP 3 이내여야 합니다.")
     @Valid
-    private List<CategorySelectionItemDto> selections;
+    private List<@NotNull(message = "selections 안에는 null 항목을 넣을 수 없습니다.") CategorySelectionItemDto> selections;
 }

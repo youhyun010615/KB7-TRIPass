@@ -8,8 +8,8 @@ import java.util.List;
  */
 public record MissionSelectionsResponseDto(
         Integer selectedMissionCount,
-        Integer totalMonthlyReductionTarget,
-        Integer totalWeeklyExpectedSaving,
+        Long totalMonthlyReductionTarget,
+        Long totalWeeklyExpectedSaving,
         List<MissionSelectionResponseDto> selections
 ) {
 }

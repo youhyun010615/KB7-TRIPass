@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -81,7 +82,7 @@ class MissionCategorySelectionControllerMockMvcTest {
                 org.mockito.ArgumentMatchers.eq(USER_ID),
                 org.mockito.ArgumentMatchers.eq(YearMonth.of(2026, 7)),
                 org.mockito.ArgumentMatchers.any()))
-                .thenReturn(new MissionSelectionsResponseDto(1, 30000, 7500, List.of(new MissionSelectionResponseDto(
+                .thenReturn(new MissionSelectionsResponseDto(1, 30000L, 7500L, List.of(new MissionSelectionResponseDto(
                         1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500))));
 
         String body = "{\"selections\":[{\"categoryId\":1,\"reductionRate\":30}]}";
@@ -114,10 +115,22 @@ class MissionCategorySelectionControllerMockMvcTest {
     }
 
     @Test
+    @DisplayName("selections 배열 안에 null 항목이 있으면 400을 응답하고 서비스는 호출하지 않는다")
+    void put_missionSelections_nullItemInSelections_returnsHttp400() throws Exception {
+        mockMvc.perform(put("/api/v1/saving/analyses/2026-07/mission-selections")
+                        .principal(authentication())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"selections\":[null]}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(missionCategorySelectionService);
+    }
+
+    @Test
     @DisplayName("GET /api/v1/saving/analyses/{yearMonth}/mission-selections는 저장된 선택을 JSON으로 응답한다")
     void get_missionSelections_returnsJson() throws Exception {
         when(missionCategorySelectionService.getMissionSelections(USER_ID, YearMonth.of(2026, 7)))
-                .thenReturn(new MissionSelectionsResponseDto(1, 30000, 7500, List.of(new MissionSelectionResponseDto(
+                .thenReturn(new MissionSelectionsResponseDto(1, 30000L, 7500L, List.of(new MissionSelectionResponseDto(
                         1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500))));
 
         mockMvc.perform(get("/api/v1/saving/analyses/2026-07/mission-selections").principal(authentication()))
@@ -133,5 +146,7 @@ class MissionCategorySelectionControllerMockMvcTest {
         mockMvc.perform(get("/api/v1/saving/analyses/2026%2F07/mission-options").principal(authentication()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_YEAR_MONTH"));
+
+        verifyNoInteractions(missionCategorySelectionService);
     }
 }

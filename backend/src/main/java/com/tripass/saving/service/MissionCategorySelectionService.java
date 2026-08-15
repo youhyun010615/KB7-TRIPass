@@ -81,6 +81,9 @@ public class MissionCategorySelectionService {
             Long userId, YearMonth analysisYearMonth, MissionSelectionRequestDto request
     ) {
         Long monthlySpendingAnalysisId = resolveAnalysisId(userId, analysisYearMonth);
+        // 같은 분석에 대한 동시 PUT이 upsert/delete 순서가 엇갈리며 교착되지 않도록 먼저 직렬화한다.
+        missionCategorySelectionMapper.lockMonthlySpendingAnalysis(monthlySpendingAnalysisId);
+
         List<CategorySelectionItemDto> selections = request.getSelections();
 
         validateNoDuplicateCategories(selections);
@@ -167,10 +170,11 @@ public class MissionCategorySelectionService {
                         .map(this::toSelectionResponse)
                         .toList();
 
-        int totalMonthlyReductionTarget = selections.stream()
-                .mapToInt(MissionSelectionResponseDto::monthlyReductionTarget).sum();
-        int totalWeeklyExpectedSaving = selections.stream()
-                .mapToInt(MissionSelectionResponseDto::weeklyExpectedSaving).sum();
+        // 개별 값은 INT 컬럼이지만 합계는 int 범위를 넘을 수 있으니 long으로 더한다.
+        long totalMonthlyReductionTarget = selections.stream()
+                .mapToLong(MissionSelectionResponseDto::monthlyReductionTarget).sum();
+        long totalWeeklyExpectedSaving = selections.stream()
+                .mapToLong(MissionSelectionResponseDto::weeklyExpectedSaving).sum();
 
         return new MissionSelectionsResponseDto(
                 selections.size(), totalMonthlyReductionTarget, totalWeeklyExpectedSaving, selections);

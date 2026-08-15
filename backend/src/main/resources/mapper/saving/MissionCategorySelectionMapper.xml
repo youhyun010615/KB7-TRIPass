@@ -4,6 +4,14 @@
 
 <mapper namespace="com.tripass.saving.mapper.MissionCategorySelectionMapper">
 
+    <!-- 동시 PUT 요청을 직렬화하기 위한 배타 잠금. 결과값은 쓰지 않는다(잠금 자체가 목적). -->
+    <select id="lockMonthlySpendingAnalysis" resultType="long">
+        SELECT id
+        FROM monthly_spending_analyses
+        WHERE id = #{monthlySpendingAnalysisId}
+        FOR UPDATE
+    </select>
+
     <select id="findSelections" resultType="MissionCategorySelectionDto">
         SELECT mcs.id, mcs.monthly_spending_analysis_id, mcs.category_id,
                sc.category_code, sc.category_name,

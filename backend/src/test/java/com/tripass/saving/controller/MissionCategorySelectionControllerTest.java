@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class MissionCategorySelectionControllerTest {
@@ -71,7 +72,7 @@ class MissionCategorySelectionControllerTest {
         MissionSelectionRequestDto request = MissionSelectionRequestDto.builder()
                 .selections(List.of(CategorySelectionItemDto.builder().categoryId(1L).reductionRate(30).build()))
                 .build();
-        MissionSelectionsResponseDto saved = new MissionSelectionsResponseDto(1, 30000, 7500, List.of(
+        MissionSelectionsResponseDto saved = new MissionSelectionsResponseDto(1, 30000L, 7500L, List.of(
                 new MissionSelectionResponseDto(1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500)));
         when(missionCategorySelectionService.saveMissionSelections(USER_ID, YearMonth.of(2026, 7), request))
                 .thenReturn(saved);
@@ -86,7 +87,7 @@ class MissionCategorySelectionControllerTest {
     @Test
     @DisplayName("절감률 선택 조회는 서비스 결과를 그대로 응답한다")
     void getMissionSelections_returnsServiceResult() {
-        MissionSelectionsResponseDto saved = new MissionSelectionsResponseDto(1, 30000, 7500, List.of(
+        MissionSelectionsResponseDto saved = new MissionSelectionsResponseDto(1, 30000L, 7500L, List.of(
                 new MissionSelectionResponseDto(1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500)));
         when(missionCategorySelectionService.getMissionSelections(USER_ID, YearMonth.of(2026, 7)))
                 .thenReturn(saved);
@@ -105,5 +106,6 @@ class MissionCategorySelectionControllerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
         assertEquals("INVALID_YEAR_MONTH", exception.getErrorCode());
+        verifyNoInteractions(missionCategorySelectionService);
     }
 }
