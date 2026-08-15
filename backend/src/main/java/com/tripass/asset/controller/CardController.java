@@ -3,6 +3,7 @@ package com.tripass.asset.controller;
 import com.tripass.asset.dto.CardDto;
 import com.tripass.asset.dto.CardLinkRequestDto;
 import com.tripass.asset.dto.TransactionDto;
+import com.tripass.asset.dto.SupportedInstitutionDto;
 import com.tripass.asset.service.AssetService;
 import com.tripass.common.response.ApiResponse;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,12 @@ public class CardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(assetService.linkCard(userId, req)));
     }
 
+    // 지원 카드사 목록 (business_type = CD)
+    @GetMapping("/institutions")
+    public ResponseEntity<ApiResponse<List<SupportedInstitutionDto>>> getCardInstitutions() {
+        return ResponseEntity.ok(ApiResponse.success(assetService.getSupportedCardInstitutions()));
+    }
+
     // CODEF 카드 거래내역 조회 및 저장
     @PostMapping("/{cardId}/transactions/fetch")
     public ResponseEntity<ApiResponse<List<TransactionDto>>> fetchCardTransactions(
@@ -48,6 +55,15 @@ public class CardController {
             Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
         return ResponseEntity.ok(ApiResponse.success(assetService.getCards(userId)));
+    }
+
+    @DeleteMapping("/{cardId}")
+    public ResponseEntity<Void> deleteCard(
+            Authentication authentication,
+            @PathVariable Long cardId) {
+        Long userId = getAuthenticatedUserId(authentication);
+        assetService.deleteCard(userId, cardId);
+        return ResponseEntity.noContent().build();
     }
 
     // 카드별 거래내역 조회

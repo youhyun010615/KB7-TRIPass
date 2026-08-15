@@ -1,6 +1,7 @@
 package com.tripass.asset.service;
 
 import com.tripass.asset.dto.*;
+import com.tripass.asset.duplicate.DuplicateTransactionMatcher;
 import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.common.exception.CustomException;
 import com.tripass.common.util.CodefUtil;
@@ -25,6 +26,7 @@ public class AssetService {
 
     private final AssetMapper assetMapper;
     private final TransactionCategoryClassifier transactionCategoryClassifier;
+    private final DuplicateTransactionMatcher duplicateTransactionMatcher;
 
     @Value("${codef.client-id}")
     private String clientId;
@@ -34,10 +36,12 @@ public class AssetService {
 
     public AssetService(
             AssetMapper assetMapper,
-            TransactionCategoryClassifier transactionCategoryClassifier
+            TransactionCategoryClassifier transactionCategoryClassifier,
+            DuplicateTransactionMatcher duplicateTransactionMatcher
     ) {
         this.assetMapper = assetMapper;
         this.transactionCategoryClassifier = transactionCategoryClassifier;
+        this.duplicateTransactionMatcher = duplicateTransactionMatcher;
     }
 
     @Transactional
@@ -163,6 +167,7 @@ public class AssetService {
                 AccountDto dto = new AccountDto();
                 dto.setUserId(userId);
                 dto.setCodefConnectionId(existingConn.getId());
+                dto.setOrganizationCode(req.getOrganizationCode());
                 dto.setAccountNumber((String) acc.get("resAccount"));
                 dto.setAccountName((String) acc.getOrDefault("resAccountName", ""));
                 dto.setAccountType(resolveAccountType((String) acc.get("resAccountKind")));
@@ -538,6 +543,8 @@ public class AssetService {
                 saved.add(dto);
             }
 
+            assetMapper.updateCardLastSyncedAt(cardId);
+
             return saved;
 
         } catch (CustomException e) {
@@ -634,6 +641,15 @@ public class AssetService {
         return assetMapper.findCardsByUserId(userId);
     }
 
+    @Transactional
+    public void deleteCard(Long userId, Long cardId) {
+        CardDto card = assetMapper.findCardByIdAndUserId(cardId, userId);
+        if (card == null) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "카드를 찾을 수 없습니다.");
+        }
+        assetMapper.deleteCard(cardId, userId);
+    }
+
     public List<TransactionDto> getCardTransactions(Long userId, Long cardId, String startDate, String endDate) {
         CardDto card = assetMapper.findCardByIdAndUserId(cardId, userId);
         if (card == null) {
@@ -676,7 +692,22 @@ public class AssetService {
     public List<TransactionDto> getAllTransactions(Long userId, String startDate, String endDate) {
         LocalDate start = parseDateOrNull(startDate);
         LocalDate end = parseDateOrNull(endDate);
-        return assetMapper.findTransactionsByUserId(userId, start, end);
+        List<TransactionDto> transactions = assetMapper.findTransactionsByUserId(userId, start, end);
+        List<TransactionDto> accountWithdrawals = transactions.stream()
+                .filter(transaction -> transaction.getAccountId() != null)
+                .filter(transaction -> "WITHDRAWAL".equals(transaction.getTransactionType()))
+                .toList();
+        List<TransactionDto> checkCardWithdrawals = transactions.stream()
+                .filter(transaction -> transaction.getCardId() != null)
+                .filter(transaction -> "CHECK".equals(transaction.getSourceCardType()))
+                .filter(transaction -> "WITHDRAWAL".equals(transaction.getTransactionType()))
+                .toList();
+        Set<Long> duplicateAccountIds = duplicateTransactionMatcher
+                .findDuplicateAccountTransactionIds(accountWithdrawals, checkCardWithdrawals);
+
+        return transactions.stream()
+                .filter(transaction -> !duplicateAccountIds.contains(transaction.getId()))
+                .toList();
     }
 
     public TransactionDto getTransactionDetail(Long userId, Long transactionId) {
@@ -687,8 +718,12 @@ public class AssetService {
         return transaction;
     }
 
-    public List<SupportedInstitutionDto> getSupportedInstitutions() {
-        return assetMapper.findAllSupportedInstitutions();
+    public List<SupportedInstitutionDto> getSupportedBankInstitutions() {
+        return assetMapper.findSupportedInstitutionsByBusinessType("BK");
+    }
+
+    public List<SupportedInstitutionDto> getSupportedCardInstitutions() {
+        return assetMapper.findSupportedInstitutionsByBusinessType("CD");
     }
 
     public List<CalendarDayDto> getCalendar(Long userId, Integer year, Integer month, String type) {

@@ -23,7 +23,7 @@ public class TransactionController {
         this.assetService = assetService;
     }
 
-    //AST-005: 전체 계좌 거래내역 조회
+    //AST-005: 전체 계좌·카드 거래내역 조회(체크카드 중복 계좌 출금 제외)
     @GetMapping
     public ResponseEntity<ApiResponse<List<TransactionDto>>> getAllTransactions(
             Authentication authentication,
