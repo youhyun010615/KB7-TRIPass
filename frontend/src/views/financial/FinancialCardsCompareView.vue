@@ -5,13 +5,13 @@ import { useRouter } from 'vue-router'
 
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelCardsStore } from '@/stores/travelCards'
+import { getSettlementTypeLabel } from '@/utils/travelCard'
 
 const router = useRouter()
 const travelCardsStore = useTravelCardsStore()
 
 const {
   comparisonCards,
-  comparedCardCount,
   comparisonLoading,
   errorMessage,
 } = storeToRefs(travelCardsStore)
@@ -33,7 +33,7 @@ const comparisonRows = [
   {
     label: '결제 방식',
     value: (card) =>
-        formatSettlementType(card.settlementType),
+        getSettlementTypeLabel(card.settlementType),
   },
   {
     label: '적용 환율',
@@ -97,15 +97,6 @@ function displayValue(value) {
   return value
 }
 
-function formatSettlementType(settlementType) {
-  const labels = {
-    DIRECT: '외화 직접 결제',
-    PREPAID: '선불 충전',
-    DEBIT: '체크카드 결제',
-  }
-
-  return labels[settlementType] || settlementType || '-'
-}
 
 function getCardCode(card) {
   const source =
@@ -202,7 +193,7 @@ onMounted(loadComparison)
           <strong>비교할 카드 선택</strong>
 
           <span class="selection-count">
-            {{ comparedCardCount }}/3 선택
+            {{ comparisonCards.length }}/3 선택
           </span>
         </div>
 
@@ -241,7 +232,7 @@ onMounted(loadComparison)
           </article>
 
           <button
-              v-if="comparedCardCount < 3"
+              v-if="comparisonCards.length < 3"
               type="button"
               class="add-card-button"
               @click="router.push('/financial/cards')"

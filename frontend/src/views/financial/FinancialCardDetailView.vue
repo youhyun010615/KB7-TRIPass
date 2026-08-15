@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import BottomNav from '@/components/common/BottomNav.vue'
 import ProductTicket from '@/components/financial/ProductTicket.vue'
 import { useTravelCardsStore } from '@/stores/travelCards'
+import { getSettlementTypeLabel } from '@/utils/travelCard'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,17 +68,6 @@ function formatValue(value) {
   return value
 }
 
-function getSettlementTypeLabel(settlementType) {
-  if (settlementType === 'DIRECT') {
-    return '지원 외화 직접 보유·차감'
-  }
-
-  if (settlementType === 'USD_CONVERSION') {
-    return '현지통화를 USD로 환산 후 차감'
-  }
-
-  return formatValue(settlementType)
-}
 
 async function loadCard() {
   if (!isValidCardId.value) {
@@ -120,7 +110,13 @@ function openComparison() {
   router.push('/financial/cards/compare')
 }
 
-onMounted(loadCard)
+watch(
+    cardId,
+    () => {
+      loadCard()
+    },
+    { immediate: true },
+)
 </script>
 
 <template>

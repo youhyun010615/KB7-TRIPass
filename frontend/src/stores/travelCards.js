@@ -171,6 +171,12 @@ export const useTravelCardsStore = defineStore(
                         comparedCardIds.value,
                     )
 
+                // 실제 조회된 활성 카드만 비교 선택 상태에 유지한다.
+                comparedCardIds.value =
+                    comparisonCards.value.map(
+                        (card) => Number(card.id),
+                    )
+
                 return comparisonCards.value
             } catch (error) {
                 comparisonCards.value = []
@@ -254,10 +260,17 @@ export const useTravelCardsStore = defineStore(
         watch(
             comparedCardIds,
             (cardIds) => {
-                localStorage.setItem(
-                    STORAGE_KEY,
-                    JSON.stringify(cardIds),
-                )
+                try {
+                    localStorage.setItem(
+                        STORAGE_KEY,
+                        JSON.stringify(cardIds),
+                    )
+                } catch (error) {
+                    console.warn(
+                        '트래블카드 비교 선택 상태를 저장하지 못했습니다.',
+                        error,
+                    )
+                }
             },
             { deep: true },
         )
