@@ -3,6 +3,7 @@ package com.tripass.asset.service;
 import com.tripass.asset.dto.TransactionDto;
 import com.tripass.asset.dto.TransactionReclassificationResponseDto;
 import com.tripass.asset.mapper.AssetMapper;
+import com.tripass.asset.duplicate.DuplicateTransactionMatcher;
 import com.tripass.saving.classification.CategoryClassificationResult;
 import com.tripass.saving.classification.ConsumptionCategoryCode;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
@@ -33,7 +34,7 @@ class AssetServiceReclassificationTest {
 
     @BeforeEach
     void setUp() {
-        assetService = new AssetService(assetMapper, transactionCategoryClassifier);
+        assetService = new AssetService(assetMapper, transactionCategoryClassifier, new DuplicateTransactionMatcher());
     }
 
     @Test

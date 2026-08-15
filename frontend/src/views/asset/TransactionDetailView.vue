@@ -6,7 +6,7 @@ import TransactionEditModal from '@/components/asset/TransactionEditModal.vue'
 import { useAssetStore } from '@/stores/asset'
 import api from '@/api'
 const route=useRoute(), router=useRouter(), asset=useAssetStore()
-const isRealTransaction = history.state?.item?._isReal === true
+const isRealTransaction = history.state?.item?.isReal === true
 const mockItem=computed(()=>isRealTransaction ? null : asset.getTransaction(route.params.transactionId))
 const realItem=ref(null)
 const item=computed(()=>mockItem.value ?? realItem.value ?? null)
@@ -29,8 +29,10 @@ onMounted(async()=>{
       time:`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,
       balanceAfter:Number(t.balanceAfter??0),
       memo:t.memo??'',
-      category:'기타',
-      method:history.state?.item?.method??'',
+      category:t.categoryName??'기타',
+      method:history.state?.item?.method??t.paymentMethodName??'',
+      merchantType:t.merchantType??'',
+      sourceType:t.cardId?'CARD':'ACCOUNT',
     }
   } catch(e){ console.error('거래내역 조회 실패',e) }
 })
@@ -52,7 +54,20 @@ const categories=[
 ]
 const isDeposit=computed(()=>Number(item.value?.amount||0)>0)
 const displayAmount=computed(()=>{if(!item.value)return'';if(item.value.currency&&item.value.localAmount!=null)return`${item.value.localAmount>0?'+':'-'}${item.value.currency} ${Math.abs(item.value.localAmount).toLocaleString('ko-KR',{maximumFractionDigits:2})}`;return`${item.value.amount>0?'+':'-'}${Math.abs(item.value.amount).toLocaleString('ko-KR')}원`})
-const rows=computed(()=>item.value?[{label:'거래일시',value:`${item.value.dateLabel} ${item.value.time}`},{label:'여행지',value:item.value.country?`${item.value.city} · ${item.value.country}`:'국내'},{label:'카테고리',value:item.value.category,accent:true,editable:true},{label:'거래구분',value:isDeposit.value?'입금':'지출'},{label:isDeposit.value?'입금 계좌':'결제수단',value:item.value.method},{label:isDeposit.value?'입금처':'사용처',value:item.value.user||item.value.merchant},{label:'거래 후 여행 잔액',value:`${item.value.balanceAfter.toLocaleString('ko-KR')}원`}]:[])
+const rows=computed(()=>{
+  if(!item.value)return[]
+  const result=[
+    {label:'거래일시',value:`${item.value.dateLabel} ${item.value.time}`},
+    {label:'여행지',value:item.value.country?`${item.value.city} · ${item.value.country}`:'국내'},
+    {label:'카테고리',value:item.value.category,accent:true,editable:true},
+    {label:'거래구분',value:isDeposit.value?'입금':'지출'},
+    {label:isDeposit.value?'입금 계좌':'결제수단',value:item.value.method},
+    {label:isDeposit.value?'입금처':'사용처',value:item.value.user||item.value.merchant},
+  ]
+  if(item.value.merchantType) result.push({label:'가맹점 업종',value:item.value.merchantType})
+  if(item.value.sourceType!=='CARD') result.push({label:'거래 후 잔액',value:`${Number(item.value.balanceAfter??0).toLocaleString('ko-KR')}원`})
+  return result
+})
 </script>
 <template><main class="detail-page"><header><button type="button" @click="router.back()">‹</button><h1>거래내역 상세보기</h1><span/></header><template v-if="item"><section class="hero"><div><small v-if="item.country">{{item.flag}} {{item.country}} 여행</small><b>{{item.merchant}}</b><strong :class="isDeposit?'deposit':'withdrawal'">{{displayAmount}}</strong><em v-if="item.currency">약 {{Math.abs(item.amount).toLocaleString('ko-KR')}}원</em></div></section><section class="info-card"><div v-for="row in rows" :key="row.label"><small>{{row.label}}</small><p><b :class="{accent:row.accent}">{{row.value}}</b><button v-if="row.editable" type="button" @click="editMode='category'">수정</button></p></div></section><div class="section-heading"><h2>메모</h2><button type="button" @click="editMode='memo'">수정</button></div><section class="memo">{{item.memo||'등록된 메모가 없어요.'}}</section><p v-if="item.country" class="trip-note">이 거래는 등록한 {{item.country}} 여행 기간에 포함된 내역이에요.</p></template><p v-else class="empty">거래내역을 찾을 수 없어요.</p><BottomNav/><TransactionEditModal :model-value="Boolean(editMode)" :mode="editMode||'category'" :categories="categories" :selected-category="item?.category" :memo="item?.memo" @update:model-value="value=>{if(!value)editMode=null}" @save-category="value=>asset.updateTransaction(item.id,{category:value})" @save-memo="saveMemo"/></main></template>
 <style scoped>

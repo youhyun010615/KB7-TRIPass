@@ -13,4 +13,5 @@ public class CardDto {
     private String maskedCardNumber;
     private String cardType;         // CREDIT / CHECK
     private String organizationCode;
+    private String lastSyncedAt;
 }
