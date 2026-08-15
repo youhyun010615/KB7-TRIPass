@@ -72,4 +72,14 @@ class SavingResultCalculatorTest {
         assertEquals(SavingResultStatus.UNAVAILABLE, result.status());
         assertNull(result.differenceAmount());
     }
+
+    @Test
+    void 차액이_50전_경계값이면_문구도_HALF_UP으로_반올림한다() {
+        // 150000.50원은 HALF_UP이면 150001원, DecimalFormat 기본값인 HALF_EVEN이면 150000원으로 갈린다.
+        // Service.roundToWon()이 저장하는 DB 값과 문구가 어긋나면 안 되므로 HALF_UP으로 통일돼야 한다.
+        SavingResultResponseDto result = calculator.calculate(
+                new BigDecimal("700000"), new BigDecimal("850000.50"));
+
+        assertTrue(result.resultMessage().contains("150,001"));
+    }
 }

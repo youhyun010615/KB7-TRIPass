@@ -56,7 +56,11 @@ public class CoachingMessageGenerator {
 
     // DecimalFormat은 thread-safe하지 않으므로 싱글톤 빈에 static 필드로 두지 않고 호출마다 생성한다.
     // 로케일을 명시하지 않으면 JVM 기본 로케일에 따라 천단위 구분자가 바뀌어(예: de-DE는 '.') 문구가 깨진다.
+    // DecimalFormat의 기본 반올림 모드는 HALF_EVEN이라, 이 프로젝트에서 일관되게 쓰는 HALF_UP과
+    // .50원 경계에서 다른 값을 표시할 수 있어 명시적으로 맞춘다.
     private String formatAmount(BigDecimal amount) {
-        return new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.KOREA)).format(amount);
+        DecimalFormat format = new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.KOREA));
+        format.setRoundingMode(RoundingMode.HALF_UP);
+        return format.format(amount);
     }
 }

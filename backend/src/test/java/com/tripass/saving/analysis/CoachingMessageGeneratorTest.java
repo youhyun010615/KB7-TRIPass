@@ -68,4 +68,18 @@ class CoachingMessageGeneratorTest {
         assertTrue(reason.contains("150,000원"));
         assertTrue(reason.contains("지출해서"));
     }
+
+    @Test
+    void 금액이_50전_경계값이면_HALF_UP으로_반올림한다() {
+        // 150000.50원은 HALF_UP이면 150001원, DecimalFormat 기본값인 HALF_EVEN이면 150000원으로 갈린다.
+        ScoredCandidate candidate = new ScoredCandidate(
+                1L, new BigDecimal("0.1"), new BigDecimal("0.0"), new BigDecimal("0.6"), new BigDecimal("0.4"),
+                null);
+        RecommendationEvidence evidence = new RecommendationEvidence(
+                new BigDecimal("10"), null, 10, new BigDecimal("150000.50"));
+
+        String reason = generator.generateReason(candidate, evidence);
+
+        assertTrue(reason.contains("150,001원"));
+    }
 }
