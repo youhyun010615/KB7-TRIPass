@@ -73,7 +73,14 @@ public class NotificationScheduler {
 
     private void sendToTrip(Trip trip, String type, String title, String body, String url) {
         NotificationSetting setting = notificationSettingMapper.getSettingByUserId(trip.getUserId());
-        if (setting != null && (setting.isAllEnabled() || setting.isChecklistEnabled())) {
+        if (setting == null || !setting.isAllEnabled()) return;
+
+        boolean enabled = false;
+        if ("CHECKLIST".equals(type) && setting.isChecklistEnabled()) enabled = true;
+        else if ("REPORT".equals(type) && setting.isTravelReportEnabled()) enabled = true;
+        else if ("SCHEDULE".equals(type) && setting.isTravelScheduleEnabled()) enabled = true;
+
+        if (enabled) {
             if (!notificationService.existsNotification(trip.getUserId(), type, url, body)) {
                 fcmService.sendNotification(trip.getUserId(), title, body);
                 notificationService.insertNotification(trip.getUserId(), type, title, body, url);
@@ -90,7 +97,7 @@ public class NotificationScheduler {
 
         for (TripSchedule schedule : schedules) {
             NotificationSetting setting = notificationSettingMapper.getSettingByUserId(schedule.getUserId());
-            if (setting != null && (setting.isAllEnabled() || setting.isTravelScheduleEnabled())) {
+            if (setting != null && setting.isAllEnabled() && setting.isTravelScheduleEnabled()) {
                 String title = schedule.getScheduleName() + " 1시간 전!";
                 String body = "곧 시작되는 일정을 위해 미리 준비하세요.";
                 String url = "/schedule";

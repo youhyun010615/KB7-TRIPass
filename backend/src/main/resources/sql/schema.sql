@@ -859,6 +859,7 @@ CREATE TABLE notifications
     title             VARCHAR(200) NOT NULL COMMENT '제목',
     message           TEXT         NOT NULL COMMENT '내용',
     url               VARCHAR(500) NULL COMMENT '알림 클릭 시 이동 URL',
+    reference_id      BIGINT       NULL COMMENT '참조 ID (여행ID, 일정ID 등)',
     is_read           BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '읽음 여부',
     is_deleted        TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at        DATETIME     NULL COMMENT '삭제일시',

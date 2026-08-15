@@ -49,7 +49,7 @@ import javax.sql.DataSource;
         "com.tripass.auth.security",
         "com.tripass.common.util",
         "com.tripass.common.scheduler",
-        "com.tripass.common.config"
+        "com.tripass.common.config",
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",

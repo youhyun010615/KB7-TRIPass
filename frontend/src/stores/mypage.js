@@ -92,17 +92,24 @@ export const useMypageStore = defineStore('mypage', () => {
     }
   }
 
+  // 알림 설정 변경 순서 보장을 위한 큐
+  let settingsQueue = Promise.resolve();
+
   // 알림 설정 토글
   async function toggleSetting(key) {
     const previousValue = settings.value[key]
     settings.value[key] = !settings.value[key]
     
-    try {
-      await api.updateSettings(settings.value)
-    } catch (error) {
-      settings.value[key] = previousValue // 실패 시 복구
-      console.error('알림 설정 수정 실패', error)
-    }
+    // 큐를 사용하여 요청 순서 보장
+    settingsQueue = settingsQueue.then(async () => {
+      try {
+        await api.updateSettings(settings.value)
+      } catch (error) {
+        settings.value[key] = previousValue // 실패 시 복구
+        console.error('알림 설정 수정 실패', error)
+      }
+    });
+    return settingsQueue;
   }
 
   return { notifications, settings, unreadCount, fetchNotifications, markRead, markAllRead, fetchSettings, toggleSetting }
