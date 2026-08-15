@@ -18,6 +18,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +44,7 @@ public class WeeklyMissionEvaluationService {
             MonthlySpendingAnalysisMapper analysisMapper,
             DuplicateTransactionMatcher duplicateMatcher
     ) {
-        this(missionMapper, analysisMapper, duplicateMatcher, Clock.systemDefaultZone());
+        this(missionMapper, analysisMapper, duplicateMatcher, Clock.system(ZoneId.of("Asia/Seoul")));
     }
 
     WeeklyMissionEvaluationService(
