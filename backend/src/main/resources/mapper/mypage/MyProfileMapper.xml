@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.mypage.mapper.MyProfileMapper">
+
+    <resultMap
+            id="myProfileResultMap"
+            type="com.tripass.mypage.dto.MyProfileResponse">
+
+        <id
+                property="id"
+                column="id"/>
+
+        <result
+                property="loginId"
+                column="login_id"/>
+
+        <result
+                property="name"
+                column="name"/>
+
+        <result
+                property="phoneNumber"
+                column="phone_number"/>
+
+        <result
+                property="loginProvider"
+                column="login_provider"/>
+
+        <result
+                property="createdAt"
+                column="created_at"/>
+    </resultMap>
+
+    <!-- 로그인한 활성 회원의 회원정보 조회 -->
+    <select
+            id="findMyProfileByUserId"
+            resultMap="myProfileResultMap">
+
+        SELECT
+            id,
+            login_id,
+            name,
+            phone_number,
+            login_provider,
+            created_at
+        FROM users
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 로그인한 활성 회원의 TRIPass 내부 이름 변경 -->
+    <update id="updateNameByUserId">
+        UPDATE users
+        SET name = #{name}
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+</mapper>
