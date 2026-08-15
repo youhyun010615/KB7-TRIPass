@@ -153,7 +153,7 @@ const router = createRouter({
     {
       path: '/financial',
       name: 'Financial',
-      component: () => import('@/views/financial/FinancialView.vue'),
+      redirect: '/financial/cards',
       meta: { requiresAuth: true },
     },
     {
@@ -183,7 +183,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/financial/cards/:productId',
+      path: '/financial/cards/:cardId',
       name: 'FinancialCardDetail',
       component: () => import('@/views/financial/FinancialCardDetailView.vue'),
       meta: { requiresAuth: true },
