@@ -3,6 +3,7 @@ USE tripass;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ===== DROP TABLES =====
+DROP TABLE IF EXISTS user_travel_cards;
 DROP TABLE IF EXISTS wallet_exchange_transaction;
 DROP TABLE IF EXISTS wallet_card_topup;
 DROP TABLE IF EXISTS travel_card_ledger;
