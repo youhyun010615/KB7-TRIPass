@@ -103,4 +103,87 @@
           AND is_deleted = 0
     </select>
 
+    <!-- 5. 국가명으로 국가 ID 조회 -->
+    <select id="findCountryIdByName" resultType="Long">
+        SELECT id
+        FROM countries
+        WHERE country_name = #{countryName}
+    </select>
+
+    <!-- 6. 여행 등록 -->
+    <insert id="insertTrip"
+            parameterType="Trip"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO trips (
+            user_id,
+            trip_name,
+            status,
+            start_date,
+            end_date,
+            total_target_amount
+        )
+        VALUES (
+            #{userId},
+            #{tripName},
+            #{status},
+            #{startDate},
+            #{endDate},
+            #{totalTargetAmount}
+        )
+    </insert>
+
+    <!-- 7. 여행 국가 등록 -->
+    <insert id="insertTripCountry"
+            parameterType="TripCountry"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO trip_countries (
+            trip_id,
+            country_id,
+            arrival_date,
+            departure_date,
+            target_budget,
+            display_order
+        )
+        VALUES (
+            #{tripId},
+            #{countryId},
+            #{arrivalDate},
+            #{departureDate},
+            #{targetBudget},
+            #{displayOrder}
+        )
+    </insert>
+
+    <!-- 8. 사용자의 가장 최근 여행 조회 -->
+    <select id="findLatestTripByUserId" resultType="Trip">
+        SELECT id,
+               user_id,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <!-- 9. 여행에 속한 국가별 상세 정보 조회 -->
+    <select id="findTripCountryDetailsByTripId" resultType="TripCountryDetailDto">
+        SELECT tc.id AS trip_country_id,
+               c.country_name,
+               tc.arrival_date,
+               tc.departure_date,
+               tc.target_budget
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order
+    </select>
+
 </mapper>
