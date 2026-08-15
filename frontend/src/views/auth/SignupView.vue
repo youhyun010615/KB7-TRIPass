@@ -7,6 +7,7 @@ import {
   signup as signupApi,
   verifyPhoneCode as verifyPhoneCodeApi,
 } from '@/api/auth'
+import AuthBoardingPass from '@/components/auth/AuthBoardingPass.vue'
 
 import {
   PASSWORD_PATTERN,
@@ -393,42 +394,20 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-      class="min-h-screen flex flex-col relative overflow-hidden"
-      style="background: linear-gradient(to bottom, #263F8C 0%, #172F6B 100%)"
+  <AuthBoardingPass
+      :title="step === 1 ? '여행을 위한 첫 탑승권' : '본인 확인을 완료해 주세요'"
+      :description="step === 1 ? '기본 정보를 입력해 주세요.' : '휴대전화 인증으로 안전하게 시작해요.'"
+      :ticket-code="`SIGN UP · ${step} / 2`"
   >
-    <!-- 데코 원형 배경 -->
-    <div
-        class="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
-        style="background: rgba(255,255,255,0.06); transform: translate(35%, -20%)"
-    ></div>
-    <div
-        class="absolute top-20 right-6 w-56 h-56 rounded-full pointer-events-none"
-        style="background: rgba(255,255,255,0.04)"
-    ></div>
-
-    <!-- 로고 바 -->
-    <div class="relative z-10 flex items-center justify-between px-5 pt-12">
-      <span class="text-white font-bold text-xs tracking-[0.2em]">TRIPASS</span>
-      <span class="text-lg">✈️</span>
-    </div>
-
-    <!-- 히어로 텍스트 -->
-    <div class="relative z-10 px-5 pt-5 pb-8">
-      <h1 class="text-white text-[26px] font-bold leading-snug">
-        여행을 위한 첫 패스,<br>지금 만들어 보세요
-      </h1>
-      <p class="text-blue-200 text-sm mt-3 leading-relaxed">
-        필요한 정보만 간단히 입력하면 준비가 끝나요.
-      </p>
-    </div>
-
-    <!-- 흰색 카드 -->
-    <div class="relative z-10 mx-4 bg-white rounded-3xl px-6 pt-7 pb-7">
-      <h2 class="text-[22px] font-bold text-gray-900">회원가입</h2>
-      <p class="text-sm font-semibold mt-1" style="color: #3B5BDB">
-        {{ step }} / 2 기본 정보
-      </p>
+    <div class="signup-form">
+      <div class="step-heading">
+        <span>STEP {{ step }}</span>
+        <strong>{{ step === 1 ? '기본 정보' : '휴대전화 인증' }}</strong>
+        <div class="step-progress" aria-hidden="true">
+          <i :class="{ active: step >= 1 }"></i>
+          <i :class="{ active: step >= 2 }"></i>
+        </div>
+      </div>
 
       <!-- Step 1: 기본 정보 -->
       <div v-if="step === 1" class="mt-5 flex flex-col gap-4">
@@ -709,10 +688,97 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- 로그인 링크 -->
-    <div class="relative z-10 py-5 text-center">
-      <span class="text-white/60 text-sm">이미 계정이 있나요? </span>
-      <button class="text-white font-semibold text-sm" @click="router.push('/login')">로그인</button>
-    </div>
-  </div>
+    <template #footer>
+      <span class="footer-copy">이미 계정이 있나요?</span>
+      <button class="footer-link" type="button" @click="router.push('/login')">로그인</button>
+    </template>
+  </AuthBoardingPass>
 </template>
+
+<style scoped>
+.signup-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 2px;
+}
+
+.step-heading > span {
+  color: #2b63c8;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.step-heading > strong {
+  color: #17233b;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.step-progress {
+  display: flex;
+  gap: 5px;
+}
+
+.step-progress i {
+  width: 22px;
+  height: 4px;
+  border-radius: 99px;
+  background: #dfe6f1;
+}
+
+.step-progress i.active { background: #ffd45e; }
+
+.signup-form :deep(label) {
+  color: #3d4860;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.signup-form :deep(input) {
+  border-color: #dbe3f0;
+  color: #15213a;
+  background: #f7f9fc;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.signup-form :deep(input:focus) {
+  border-color: #2a63c9;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(42, 99, 201, 0.1);
+}
+
+.signup-form :deep(button[style]) {
+  background: #0d327e !important;
+  box-shadow: 0 9px 18px rgba(13, 50, 126, 0.16);
+}
+
+.footer-copy {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+}
+
+.footer-link {
+  margin-left: 6px;
+  border: 0;
+  color: white;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+@media (max-height: 760px) {
+  .signup-form :deep(.mt-5) { margin-top: 0.85rem; }
+  .signup-form :deep(.gap-4) { gap: 0.75rem; }
+  .signup-form :deep(input),
+  .signup-form :deep(button.h-12) { height: 44px; }
+  .signup-form :deep(button.h-14) { height: 48px; }
+}
+</style>

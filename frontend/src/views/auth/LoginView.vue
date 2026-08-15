@@ -1,18 +1,15 @@
 <script setup>
-import {ref} from 'vue'
-import {useRouter} from 'vue-router'
-import {useAuthStore} from '@/stores/auth'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import {
+  getGoogleAuthorizationUrl,
+  getKakaoAuthorizationUrl,
   login as loginApi,
   logout as logoutApi,
-  getKakaoAuthorizationUrl,
-  getGoogleAuthorizationUrl,
 } from '@/api/auth'
-
-import kakaoLoginButton
-  from '@/assets/images/auth/kakao_login_large_wide.png'
-
 import api from '@/api'
+import AuthBoardingPass from '@/components/auth/AuthBoardingPass.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -35,11 +32,7 @@ async function login() {
     return
   }
   // 로그인 버튼을 연속으로 누르는 것을 막는다.
-  if (
-      loading.value ||
-      kakaoLoading.value ||
-      googleLoading.value
-  ) {
+  if (loading.value || kakaoLoading.value || googleLoading.value) {
     return
   }
 
@@ -56,7 +49,7 @@ async function login() {
           '로그인 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.'
       return
     }
-    //Access Token과 로그인 회원 정보를 Pinia에 저장한다.
+    // Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.handleLoginSuccess(loginData.accessToken, loginData.user)
 
     try {
@@ -70,38 +63,24 @@ async function login() {
         authStore.completeProfile()
       }
     } catch (accountError) {
-      console.error(
-          '연동 계좌 확인 실패',
-          accountError,
-      )
+      console.error('연동 계좌 확인 실패', accountError)
 
-      const status = accountError.response?.status
-      const isAuthenticationError =
-          status === 401
-
-      if (isAuthenticationError) {
-        // 인증 세션이 유효하지 않을 때만 서버와 프론트 로그인 상태를 정리한다.
+      if (accountError.response?.status === 401) {
         try {
           await logoutApi()
         } catch (logoutError) {
-          console.error(
-              '로그인 상태 정리 실패',
-              logoutError,
-          )
+          console.error('로그인 상태 정리 실패', logoutError)
         } finally {
           authStore.logout()
         }
 
-        errorMsg.value =
-            '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
-
+        errorMsg.value = '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
         return
       }
 
       // 네트워크 오류나 서버 오류에서는 로그인 상태를 유지한다.
       errorMsg.value =
-          '연동 계좌 정보를 확인하지 못했습니다. 로그인 버튼을 눌러 다시 시도해 주세요.'
-
+        '연동 계좌 정보를 확인하지 못했습니다. 로그인 버튼을 눌러 다시 시도해 주세요.'
       return
     }
 
@@ -109,20 +88,14 @@ async function login() {
     //프론트 JavaScript에서 직접 처리하지 않는다.
     await router.replace('/')
   } catch (error) {
-    errorMsg.value =
-        error.response?.data?.message
-        || '로그인에 실패했습니다.'
+    errorMsg.value = error.response?.data?.message || '로그인에 실패했습니다.'
   } finally {
     loading.value = false
   }
 }
 
 async function startKakaoLogin() {
-  if (
-      loading.value ||
-      kakaoLoading.value ||
-      googleLoading.value
-  ) {
+  if (loading.value || kakaoLoading.value || googleLoading.value) {
     return
   }
 
@@ -130,45 +103,33 @@ async function startKakaoLogin() {
   kakaoLoading.value = true
 
   try {
-    const response =
-        await getKakaoAuthorizationUrl()
-    const authorizationUrl =
-        response.data?.data?.authorizationUrl
+    const response = await getKakaoAuthorizationUrl()
+    const authorizationUrl = response.data?.data?.authorizationUrl
+
     if (!authorizationUrl) {
-      throw new Error(
-          '카카오 로그인 주소를 확인할 수 없습니다.',
-      )
-    }
-    const parsedAuthorizationUrl =
-        new URL(authorizationUrl)
-    if (
-        parsedAuthorizationUrl.protocol !== 'https:' ||
-        parsedAuthorizationUrl.hostname !== 'kauth.kakao.com'
-    ) {
-      throw new Error(
-          '유효하지 않은 카카오 로그인 주소입니다.',
-      )
+      throw new Error('카카오 로그인 주소를 확인할 수 없습니다.')
     }
 
-    window.location.assign(
-        parsedAuthorizationUrl.toString(),
-    )
+    const parsedAuthorizationUrl = new URL(authorizationUrl)
+    if (
+      parsedAuthorizationUrl.protocol !== 'https:' ||
+      parsedAuthorizationUrl.hostname !== 'kauth.kakao.com'
+    ) {
+      throw new Error('유효하지 않은 카카오 로그인 주소입니다.')
+    }
+
+    window.location.assign(parsedAuthorizationUrl.toString())
   } catch (error) {
     errorMsg.value =
-        error.response?.data?.message ||
-        error.message ||
-        '카카오 로그인을 시작할 수 없습니다.'
-
+      error.response?.data?.message ||
+      error.message ||
+      '카카오 로그인을 시작할 수 없습니다.'
     kakaoLoading.value = false
   }
 }
 
 async function startGoogleLogin() {
-  if (
-      loading.value ||
-      kakaoLoading.value ||
-      googleLoading.value
-  ) {
+  if (loading.value || kakaoLoading.value || googleLoading.value) {
     return
   }
 
@@ -176,39 +137,27 @@ async function startGoogleLogin() {
   googleLoading.value = true
 
   try {
-    const response =
-        await getGoogleAuthorizationUrl()
-
-    const authorizationUrl =
-        response.data?.data?.authorizationUrl
+    const response = await getGoogleAuthorizationUrl()
+    const authorizationUrl = response.data?.data?.authorizationUrl
 
     if (!authorizationUrl) {
-      throw new Error(
-          'Google 로그인 주소를 확인할 수 없습니다.',
-      )
+      throw new Error('Google 로그인 주소를 확인할 수 없습니다.')
     }
 
-    const parsedAuthorizationUrl =
-        new URL(authorizationUrl)
-
+    const parsedAuthorizationUrl = new URL(authorizationUrl)
     if (
-        parsedAuthorizationUrl.protocol !== 'https:' ||
-        parsedAuthorizationUrl.hostname !== 'accounts.google.com'
+      parsedAuthorizationUrl.protocol !== 'https:' ||
+      parsedAuthorizationUrl.hostname !== 'accounts.google.com'
     ) {
-      throw new Error(
-          '유효하지 않은 Google 로그인 주소입니다.',
-      )
+      throw new Error('유효하지 않은 Google 로그인 주소입니다.')
     }
 
-    window.location.assign(
-        parsedAuthorizationUrl.toString(),
-    )
+    window.location.assign(parsedAuthorizationUrl.toString())
   } catch (error) {
     errorMsg.value =
-        error.response?.data?.message ||
-        error.message ||
-        'Google 로그인을 시작할 수 없습니다.'
-
+      error.response?.data?.message ||
+      error.message ||
+      'Google 로그인을 시작할 수 없습니다.'
     googleLoading.value = false
   }
 }
@@ -216,199 +165,249 @@ async function startGoogleLogin() {
 </script>
 
 <template>
-  <div
-      class="min-h-screen flex flex-col relative overflow-hidden"
-      style="background: linear-gradient(to bottom, #263F8C 0%, #172F6B 100%)"
+  <AuthBoardingPass
+    title="다시 만나서 반가워요"
+    description="로그인하고 여행 준비를 이어가세요."
+    ticket-code="LOGIN"
   >
-    <!-- 데코 원형 배경 -->
-    <div
-        class="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
-        style="background: rgba(255,255,255,0.06); transform: translate(35%, -20%)"
-    ></div>
-    <div
-        class="absolute top-20 right-6 w-56 h-56 rounded-full pointer-events-none"
-        style="background: rgba(255,255,255,0.04)"
-    ></div>
+    <form class="login-form" @submit.prevent="login">
+      <p v-if="errorMsg" class="form-message error" role="alert">{{ errorMsg }}</p>
 
-    <!-- 로고 바 -->
-    <div class="relative z-10 flex items-center justify-between px-5 pt-12">
-      <span class="text-white font-bold text-xs tracking-[0.2em]">TRIPASS</span>
-      <span class="text-lg">✈️</span>
-    </div>
-
-    <!-- 히어로 텍스트 -->
-    <div class="relative z-10 px-5 pt-5 pb-8">
-      <h1 class="text-white text-[26px] font-bold leading-snug">
-        여행을 준비하는 가장<br>똑똑한 금융 습관
-      </h1>
-      <p class="text-blue-200 text-sm mt-3 leading-relaxed">
-        목표 설정부터 여행 지출까지, TRIPass와 함께하세요.
-      </p>
-    </div>
-
-    <!-- 흰색 카드 -->
-    <div class="relative z-10 mx-4 bg-white rounded-3xl px-6 pt-7 pb-7">
-      <h2 class="text-[22px] font-bold text-gray-900">로그인</h2>
-      <p class="text-sm text-gray-400 mt-1">다시 만나서 반가워요</p>
-
-      <p v-if="errorMsg" class="mt-3 text-xs text-red-500">{{ errorMsg }}</p>
-
-      <!-- 아이디 -->
-      <div class="mt-5">
-        <label class="text-sm font-medium text-gray-700 block mb-1.5">아이디</label>
+      <div class="field-group">
+        <label for="login-id">아이디</label>
         <input
-            v-model="userId"
-            type="text"
-            placeholder="아이디를 입력해 주세요"
-            @keyup.enter="login"
-            class="w-full h-12 px-4 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
+          id="login-id"
+          v-model="userId"
+          type="text"
+          autocomplete="username"
+          placeholder="아이디를 입력해 주세요"
         />
       </div>
 
-      <!-- 비밀번호 -->
-      <div class="mt-4">
-        <label class="text-sm font-medium text-gray-700 block mb-1.5">비밀번호</label>
-        <div class="relative">
+      <div class="field-group">
+        <label for="login-password">비밀번호</label>
+        <div class="password-field">
           <input
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="비밀번호를 입력해 주세요"
-              @keyup.enter="login"
-              class="w-full h-12 px-4 pr-12 rounded-xl text-sm border border-gray-200 outline-none focus:border-[#3B5BDB] placeholder-gray-300 bg-white"
+            id="login-password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            placeholder="비밀번호를 입력해 주세요"
           />
           <button
-              type="button"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300"
-              :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 보기'"
-              @click="showPassword = !showPassword"
+            type="button"
+            class="visibility-button"
+            :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
+            @click="showPassword = !showPassword"
           >
-            <svg v-if="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                  d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg v-if="showPassword" viewBox="0 0 24 24" fill="none">
+              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+            <svg v-else viewBox="0 0 24 24" fill="none">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" />
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
             </svg>
           </button>
         </div>
       </div>
 
-      <!-- 찾기 링크 (오른쪽 정렬) -->
-      <div class="flex justify-end items-center gap-2 mt-3">
-        <button class="text-xs text-gray-400" @click="router.push('/find-id')">아이디 찾기</button>
-        <span class="text-gray-300 text-xs">·</span>
-        <button class="text-xs text-gray-400" @click="router.push('/find-password')">비밀번호 찾기</button>
+      <div class="account-links">
+        <button type="button" @click="router.push('/find-id')">아이디 찾기</button>
+        <span>·</span>
+        <button type="button" @click="router.push('/find-password')">비밀번호 찾기</button>
       </div>
 
-      <!-- 로그인 버튼 -->
       <button
-          type="button"
-          @click="login"
-          :disabled="loading || kakaoLoading || googleLoading"
-          class="w-full h-14 rounded-2xl text-white font-bold text-base mt-5 disabled:opacity-70 transition-opacity"
-          style="background: #3B5BDB"
+        type="submit"
+        class="primary-button"
+        :disabled="loading || kakaoLoading || googleLoading"
       >
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
-
-      <!-- 소셜 로그인 -->
-      <div class="mt-6 flex items-center gap-3">
-        <div class="h-px flex-1 bg-gray-200"></div>
-
-        <span class="text-xs text-gray-400">
-          간편 로그인
-        </span>
-
-        <div class="h-px flex-1 bg-gray-200"></div>
-      </div>
-
-      <div class="mt-4 flex flex-col gap-3">
-        <button
-            type="button"
-            class="h-14 w-full overflow-hidden rounded-2xl border-0 bg-[#FEE500] p-0 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="loading || kakaoLoading || googleLoading"
-            aria-label="카카오 로그인"
-            @click="startKakaoLogin"
-        >
-          <img
-              :src="kakaoLoginButton"
-              alt="카카오 로그인"
-              class="block h-full w-full object-fill"
-          />
-        </button>
-
-        <button
-            type="button"
-            class="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#747775] bg-white px-4 text-sm font-medium text-[#1F1F1F] transition-shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="loading || kakaoLoading || googleLoading"
-            :aria-busy="googleLoading"
-            @click="startGoogleLogin">
-          <span
-              class="flex h-5 w-5 shrink-0 items-center justify-center"
-              aria-hidden="true"
-          >
-            <svg
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-            >
-              <path
-                  fill="#EA4335"
-                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-              />
-              <path
-                  fill="#4285F4"
-                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-              />
-              <path
-                  fill="#FBBC05"
-                  d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"
-              />
-              <path
-                  fill="#34A853"
-                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-              />
-            </svg>
-          </span>
-
-          <span>
-            {{
-              googleLoading
-                  ? 'Google 로그인 중...'
-                  : 'Google 계정으로 로그인'
-            }}
-          </span>
-        </button>
-      </div>
-
-      <p
-          v-if="kakaoLoading || googleLoading"
-          class="mt-3 text-center text-xs text-gray-400"
-      >
-        {{
-          kakaoLoading
-              ? '카카오 로그인 화면으로 이동하고 있어요.'
-              : 'Google 로그인 화면으로 이동하고 있어요.'
-        }}
-      </p>
-    </div>
-
-    <!-- 회원가입 링크 -->
-    <div class="relative z-10 py-5 text-center">
-      <span class="text-sm text-white/60">
-        아직 계정이 없나요?
-      </span>
-
-      <button
-          type="button"
-          class="ml-1 text-sm font-semibold text-white"
-          @click="router.push('/signup')"
-      >
+      <button type="button" class="secondary-button" @click="router.push('/signup')">
         회원가입
       </button>
-    </div>
-  </div>
+
+      <div class="social-divider"><span>간편 로그인</span></div>
+      <div class="social-buttons">
+        <button
+          type="button"
+          class="kakao"
+          :disabled="loading || kakaoLoading || googleLoading"
+          :aria-busy="kakaoLoading"
+          aria-label="카카오 로그인"
+          @click="startKakaoLogin"
+        >
+          {{ kakaoLoading ? '…' : 'K' }}
+        </button>
+        <button
+          type="button"
+          class="google"
+          :disabled="loading || kakaoLoading || googleLoading"
+          :aria-busy="googleLoading"
+          aria-label="구글 로그인"
+          @click="startGoogleLogin"
+        >
+          {{ googleLoading ? '…' : 'G' }}
+        </button>
+      </div>
+      <p v-if="kakaoLoading || googleLoading" class="social-loading" role="status">
+        {{
+          kakaoLoading
+            ? '카카오 로그인 화면으로 이동하고 있어요.'
+            : 'Google 로그인 화면으로 이동하고 있어요.'
+        }}
+      </p>
+    </form>
+  </AuthBoardingPass>
 </template>
+
+<style scoped>
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.field-group label {
+  display: block;
+  margin-bottom: 7px;
+  color: #3d4860;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.field-group input {
+  width: 100%;
+  height: 50px;
+  padding: 0 15px;
+  border: 1px solid #dbe3f0;
+  border-radius: 11px;
+  outline: none;
+  color: #15213a;
+  background: #f7f9fc;
+  font-size: 13px;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.field-group input:focus {
+  border-color: #2a63c9;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(42, 99, 201, 0.1);
+}
+
+.field-group input::placeholder { color: #b3bdcd; }
+
+.password-field { position: relative; }
+.password-field input { padding-right: 47px; }
+
+.visibility-button {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  border: 0;
+  color: #aab4c5;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.visibility-button svg { width: 20px; height: 20px; }
+
+.account-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: -5px;
+  color: #8d98aa;
+  font-size: 11px;
+}
+
+.account-links button {
+  border: 0;
+  color: inherit;
+  background: transparent;
+}
+
+.primary-button,
+.secondary-button {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.primary-button {
+  margin-top: 3px;
+  border: 0;
+  color: white;
+  background: #0d327e;
+  box-shadow: 0 9px 18px rgba(13, 50, 126, 0.16);
+}
+
+.primary-button:disabled { opacity: 0.65; }
+
+.secondary-button {
+  margin-top: -8px;
+  border: 1px solid #cad6e8;
+  color: #173c84;
+  background: white;
+}
+
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a3acba;
+  font-size: 10px;
+}
+
+.social-divider::before,
+.social-divider::after {
+  height: 1px;
+  flex: 1;
+  background: #e5e9f0;
+  content: '';
+}
+
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+  margin-top: -6px;
+}
+
+.social-buttons button {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.social-buttons button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.social-loading {
+  margin: -8px 0 0;
+  color: #8d98aa;
+  font-size: 11px;
+  text-align: center;
+}
+
+.kakao { border: 0; color: #3c1e1e; background: #fee500; }
+.google { border: 1px solid #dbe2ec; color: #3164ca; background: white; }
+
+.form-message {
+  margin: -3px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+.form-message.error { color: #b42318; background: #fff1f0; }
+</style>
