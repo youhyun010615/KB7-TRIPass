@@ -75,7 +75,7 @@ public class TravelService {
                 .build();
 
         // 2. 다가오는 일정 조회 (ScheduleService 활용)
-        List<ScheduleDto> upcomingSchedules = scheduleService.getSchedules(tripId).stream()
+        List<ScheduleDto> upcomingSchedules = scheduleService.getSchedules(tripId, currentUserId).stream()
                 .filter(s -> countryId == null || s.getTripCountryId().equals(countryId))
                 .map(s -> ScheduleDto.builder()
                         .scheduleId(s.getId())
