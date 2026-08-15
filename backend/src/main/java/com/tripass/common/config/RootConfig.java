@@ -42,7 +42,6 @@ import javax.sql.DataSource;
         "com.tripass.asset.duplicate",
         "com.tripass.checklist.service",
         "com.tripass.travel.service",
-        "com.tripass.travel.client",
         "com.tripass.exchange.service",
         "com.tripass.exchange.client",
         "com.tripass.exchange.scheduler",

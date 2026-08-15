@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public interface TravelMapper {
     TravelStatusResponseDto getTripDashboard(@Param("tripId") Long tripId);
     
-    BudgetCheckResponseDto getTripBudget(@Param("tripId") Long tripId, @Param("scope") String scope, @Param("countryId") Long countryId);
+    List<BudgetCheckResponseDto> getTripBudget(@Param("tripId") Long tripId);
 
     // 여행 존재 여부 확인
     boolean existsByTripId(@Param("tripId") Long tripId);
@@ -53,6 +53,8 @@ public interface TravelMapper {
     void softDeleteTripCountries(@Param("tripId") Long tripId);
 
     List<TripCountryBudgetContextDto> findTripCountryBudgetContexts(@Param("tripId") Long tripId);
+
+    List<TravelTransactionDto> findTravelTransactions(@Param("tripId") Long tripId, @Param("countryId") Long countryId);
 
     CountryBudgetBaselineDto findCountryBudgetBaseline(@Param("countryId") Long countryId);
 

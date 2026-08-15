@@ -1,6 +1,7 @@
 package com.tripass.travel.service;
 
 import com.tripass.checklist.service.ChecklistService;
+import com.tripass.schedule.service.ScheduleService;
 import com.tripass.travel.domain.Trip;
 import com.tripass.travel.dto.*;
 import com.tripass.travel.exception.TravelErrorCode;
@@ -15,10 +16,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,32 +26,122 @@ import java.util.stream.Collectors;
 public class TravelService {
 
     private final TravelMapper travelMapper;
+    private final ScheduleService scheduleService;
     private final ChecklistService checklistService;
+
 
     /**
      * 여행 대시보드 상태 조회
      */
-    public TravelStatusResponseDto getTravelStatus(Long tripId, Long currentUserId) {
+    public TravelStatusResponseDto getTravelStatus(Long tripId, Long currentUserId, Long countryId) {
         validateTripOwner(tripId, currentUserId);
 
-        TravelStatusResponseDto result = travelMapper.getTripDashboard(tripId);
-        if (result == null) {
-            throw new TravelException(TravelErrorCode.TRIP_NOT_FOUND, "해당 여행 정보를 찾을 수 없습니다. (id: " + tripId + ")");
+        // 1. 대시보드 기본 정보 및 전체 국가 목록 조회
+        List<CountryStatusDto> allCountries = travelMapper.getTripDashboard(tripId).getCountries();
+        TripBasicInfoDto tripInfo = travelMapper.getTripDashboard(tripId).getTripInfo();
+
+        List<CountryStatusDto> filteredCountries = allCountries;
+        TripBasicInfoDto finalTripInfo = tripInfo;
+        BigDecimal remainingFund = BigDecimal.ZERO;
+
+        if (countryId != null) {
+            filteredCountries = allCountries.stream()
+                    .filter(c -> c.getTripCountryId().equals(countryId))
+                    .collect(Collectors.toList());
+            
+            // 선택된 국가의 정보로 tripInfo 갱신 (Mapper에 국가별 날짜 조회 쿼리 필요할 수 있음)
+            // 임시로 trip_countries에서 날짜 가져오는 로직 추가
+            var countryContext = travelMapper.findTripCountryBudgetContexts(tripId).stream()
+                    .filter(c -> c.getTripCountryId().equals(countryId))
+                    .findFirst().orElse(null);
+            
+            if (countryContext != null) {
+                finalTripInfo = TripBasicInfoDto.builder()
+                        .tripId(tripInfo.getTripId())
+                        .tripName(tripInfo.getTripName())
+                        .startDate(countryContext.getArrivalDate())
+                        .endDate(countryContext.getDepartureDate())
+                        .build();
+                remainingFund = BigDecimal.valueOf(filteredCountries.get(0).getTargetBudget() - filteredCountries.get(0).getSpentAmount());
+            }
+        } else {
+            remainingFund = BigDecimal.valueOf(allCountries.stream().mapToLong(c -> c.getTargetBudget() - c.getSpentAmount()).sum());
         }
+
+        TravelStatusResponseDto result = TravelStatusResponseDto.builder()
+                .tripInfo(finalTripInfo)
+                .totalRemainingFund(remainingFund.longValue())
+                .countries(filteredCountries)
+                .build();
+
+        // 2. 다가오는 일정 조회 (ScheduleService 활용)
+        List<ScheduleDto> upcomingSchedules = scheduleService.getSchedules(tripId).stream()
+                .filter(s -> countryId == null || s.getTripCountryId().equals(countryId))
+                .map(s -> ScheduleDto.builder()
+                        .scheduleId(s.getId())
+                        .title(s.getScheduleName())
+                        .dateTime(s.getScheduledAt().toLocalDateTime())
+                        .location(s.getPlaceName())
+                        .build())
+                .collect(Collectors.toList());
+        result.setUpcomingSchedules(upcomingSchedules);
+
+        // 3. 여행 거래 내역 조회 (Mapper 활용 - countryId 전달)
+        List<TravelTransactionDto> allTransactions = travelMapper.findTravelTransactions(tripId, countryId);
+
+        // 4. 카테고리/국가별 지출 집계
+        Map<String, Map<String, Long>> categoryAndCountrySpent = allTransactions.stream()
+                .filter(t -> "WITHDRAWAL".equals(t.getTransactionType()))
+                .collect(Collectors.groupingBy(
+                        t -> t.getCategoryName() != null ? t.getCategoryName() : "기타",
+                        Collectors.groupingBy(
+                                t -> t.getCountryName() != null ? t.getCountryName() : "미분류",
+                                Collectors.summingLong(t -> t.getAmount().longValue())
+                        )
+                ));
+
+        List<CategorySummaryDto> categorySummary = categoryAndCountrySpent.entrySet().stream()
+                .map(entry -> {
+                    long total = entry.getValue().values().stream().mapToLong(Long::longValue).sum();
+                    List<CountryAmountDto> countryDetails = entry.getValue().entrySet().stream()
+                            .map(cEntry -> new CountryAmountDto(cEntry.getKey(), cEntry.getValue()))
+                            .collect(Collectors.toList());
+                    return new CategorySummaryDto(entry.getKey(), total, countryDetails);
+                })
+                .collect(Collectors.toList());
+        result.setCategorySummary(categorySummary);
+
+        // 5. 국가별 최근 지출 내역 (국가별 5개)
+        Map<String, List<TravelRecentTransactionDto>> recentTransactionsByCountry = allTransactions.stream()
+                .filter(t -> "WITHDRAWAL".equals(t.getTransactionType()))
+                .sorted(Comparator.comparing(TravelTransactionDto::getTransactionDate).reversed())
+                .collect(Collectors.groupingBy(
+                        t -> t.getCountryName() != null ? t.getCountryName() : "미분류",
+                        Collectors.collectingAndThen(Collectors.toList(), list -> list.stream().limit(5)
+                                .map(t -> TravelRecentTransactionDto.builder()
+                                        .transactionId(t.getTransactionId())
+                                        .description(t.getMerchantName())
+                                        .amount(t.getAmount().longValue())
+                                        .originalAmount(t.getOriginalAmount() != null ? t.getOriginalAmount().longValue() : 0L)
+                                        .appliedExchangeRate(t.getAppliedExchangeRate() != null ? t.getAppliedExchangeRate().doubleValue() : 0.0)
+                                        .currency(t.getCurrencySymbol() != null ? t.getCurrencySymbol() : "KRW")
+                                        .transactionDate(t.getTransactionDate().atStartOfDay())
+                                        .category(t.getCategoryName())
+                                        .build())
+                                .collect(Collectors.toList()))
+                ));
+        result.setRecentTransactionsByCountry(recentTransactionsByCountry);
+
         return result;
     }
 
     /**
      * 여행 자금 체크 조회
      */
-    public BudgetCheckResponseDto getTripBudget(Long tripId, String scope, Long countryId, Long currentUserId) {
-        if ("COUNTRY".equals(scope) && countryId == null) {
-            throw new TravelException(TravelErrorCode.MISSING_COUNTRY_ID);
-        }
-
+    public List<BudgetCheckResponseDto> getTripBudget(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
 
-        return travelMapper.getTripBudget(tripId, scope, countryId);
+        return travelMapper.getTripBudget(tripId);
     }
 
     /**

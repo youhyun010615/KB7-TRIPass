@@ -4,14 +4,11 @@ import lombok.*;
 
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CountryStatusDto {
+public class CountryBudgetDto {
     private Long tripCountryId;
     private String countryName;
     private Long targetBudget;
     private Long spentAmount;
-    private Long totalDays;
-    private Long passedDays;
 }
