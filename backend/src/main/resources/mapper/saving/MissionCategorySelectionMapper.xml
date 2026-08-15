@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.saving.mapper.MissionCategorySelectionMapper">
+
+    <select id="findSelections" resultType="MissionCategorySelectionDto">
+        SELECT mcs.id, mcs.monthly_spending_analysis_id, mcs.category_id,
+               sc.category_code, sc.category_name,
+               mcs.reduction_rate, mcs.baseline_spending_amount,
+               mcs.monthly_reduction_target, mcs.monthly_usage_target,
+               mcs.created_at, mcs.updated_at
+        FROM mission_category_selections mcs
+                 JOIN spending_categories sc ON mcs.category_id = sc.id
+        WHERE mcs.monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+        ORDER BY mcs.category_id
+    </select>
+
+    <delete id="deleteSelectionsExcept">
+        DELETE FROM mission_category_selections
+        WHERE monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+        <if test="categoryIds != null and !categoryIds.isEmpty()">
+            AND category_id NOT IN
+            <foreach collection="categoryIds" item="categoryId" open="(" separator="," close=")">
+                #{categoryId}
+            </foreach>
+        </if>
+    </delete>
+
+    <insert id="upsertSelection">
+        INSERT INTO mission_category_selections (
+            monthly_spending_analysis_id, category_id, reduction_rate,
+            baseline_spending_amount, monthly_reduction_target, monthly_usage_target
+        ) VALUES (
+            #{monthlySpendingAnalysisId}, #{categoryId}, #{reductionRate},
+            #{baselineSpendingAmount}, #{monthlyReductionTarget}, #{monthlyUsageTarget}
+        )
+        ON DUPLICATE KEY UPDATE
+            reduction_rate           = VALUES(reduction_rate),
+            baseline_spending_amount = VALUES(baseline_spending_amount),
+            monthly_reduction_target = VALUES(monthly_reduction_target),
+            monthly_usage_target     = VALUES(monthly_usage_target),
+            updated_at               = NOW()
+    </insert>
+
+</mapper>
