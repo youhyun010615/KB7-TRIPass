@@ -27,5 +27,18 @@ public interface SavingMissionMapper {
 
     List<WeeklySavingMissionDto> findWeeklyMissions(@Param("monthlySavingMissionId") Long monthlySavingMissionId);
 
+    List<WeeklySavingMissionDto> findWeeklyMissionsForEvaluation(
+            @Param("userId") Long userId,
+            @Param("targetYearMonth") String targetYearMonth,
+            @Param("weekNumber") int weekNumber);
+
+    int updateWeeklyMissionEvaluation(
+            @Param("id") Long id,
+            @Param("actualSpending") int actualSpending,
+            @Param("actualSaving") int actualSaving,
+            @Param("status") String status);
+
+    int completeMonthlyMissionIfAllWeeksEvaluated(@Param("monthlySavingMissionId") Long monthlySavingMissionId);
+
     int markReportClosed(@Param("userId") Long userId, @Param("analysisYearMonth") String analysisYearMonth);
 }

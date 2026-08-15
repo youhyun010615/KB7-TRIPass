@@ -77,6 +77,49 @@
         ORDER BY week_number
     </select>
 
+    <!-- 사용자 소유권을 JOIN으로 검증하고 행 잠금으로 동시 판정 요청을 직렬화한다. -->
+    <select id="findWeeklyMissionsForEvaluation" resultType="WeeklySavingMissionDto">
+        SELECT wsm.id, wsm.monthly_saving_mission_id,
+               msm.category_id, sc.category_code, sc.category_name,
+               wsm.week_number, wsm.period_start_date, wsm.period_end_date,
+               wsm.weekly_usage_limit, wsm.weekly_expected_saving,
+               wsm.actual_spending, wsm.actual_saving, wsm.status,
+               wsm.evaluated_at, wsm.created_at, wsm.updated_at
+        FROM weekly_saving_missions wsm
+                 JOIN monthly_saving_missions msm ON msm.id = wsm.monthly_saving_mission_id
+                 JOIN spending_categories sc ON sc.id = msm.category_id
+        WHERE msm.user_id = #{userId}
+          AND msm.target_year_month = #{targetYearMonth}
+          AND wsm.week_number = #{weekNumber}
+        ORDER BY msm.id
+        FOR UPDATE
+    </select>
+
+    <update id="updateWeeklyMissionEvaluation">
+        UPDATE weekly_saving_missions
+        SET actual_spending = #{actualSpending},
+            actual_saving = #{actualSaving},
+            status = #{status},
+            evaluated_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+
+    <update id="completeMonthlyMissionIfAllWeeksEvaluated">
+        UPDATE monthly_saving_missions msm
+        SET msm.status = 'COMPLETED',
+            msm.updated_at = NOW()
+        WHERE msm.id = #{monthlySavingMissionId}
+          AND msm.status = 'IN_PROGRESS'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM weekly_saving_missions wsm
+              WHERE wsm.monthly_saving_mission_id = msm.id
+                AND wsm.status = 'PENDING'
+          )
+    </update>
+
     <update id="markReportClosed">
         UPDATE monthly_spending_analyses
         SET report_status = 'CLOSED',
