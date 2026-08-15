@@ -4,7 +4,7 @@ import com.tripass.common.exception.CustomException;
 import com.tripass.common.response.ApiResponse;
 import com.tripass.saving.dto.MissionOptionResponseDto;
 import com.tripass.saving.dto.MissionSelectionRequestDto;
-import com.tripass.saving.dto.MissionSelectionResponseDto;
+import com.tripass.saving.dto.MissionSelectionsResponseDto;
 import com.tripass.saving.service.MissionCategorySelectionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -56,25 +56,25 @@ public class MissionCategorySelectionController {
 
     /** 카테고리별 절감률 선택을 전체 교체 방식으로 저장한다. 빈 selections는 전체 선택 해제를 의미한다. */
     @PutMapping("/{yearMonth}/mission-selections")
-    public ResponseEntity<ApiResponse<List<MissionSelectionResponseDto>>> saveMissionSelections(
+    public ResponseEntity<ApiResponse<MissionSelectionsResponseDto>> saveMissionSelections(
             @PathVariable String yearMonth,
             @Valid @RequestBody MissionSelectionRequestDto request,
             Authentication authentication
     ) {
         Long userId = getAuthenticatedUserId(authentication);
-        List<MissionSelectionResponseDto> data = missionCategorySelectionService.saveMissionSelections(
+        MissionSelectionsResponseDto data = missionCategorySelectionService.saveMissionSelections(
                 userId, parseYearMonth(yearMonth), request);
         return ResponseEntity.ok(ApiResponse.success("절감률 선택 저장 성공", data));
     }
 
-    /** 저장된 카테고리별 절감률 선택 결과를 조회한다. */
+    /** 저장된 카테고리별 절감률 선택 결과와 합계를 조회한다. */
     @GetMapping("/{yearMonth}/mission-selections")
-    public ResponseEntity<ApiResponse<List<MissionSelectionResponseDto>>> getMissionSelections(
+    public ResponseEntity<ApiResponse<MissionSelectionsResponseDto>> getMissionSelections(
             @PathVariable String yearMonth,
             Authentication authentication
     ) {
         Long userId = getAuthenticatedUserId(authentication);
-        List<MissionSelectionResponseDto> data =
+        MissionSelectionsResponseDto data =
                 missionCategorySelectionService.getMissionSelections(userId, parseYearMonth(yearMonth));
         return ResponseEntity.ok(ApiResponse.success("절감률 선택 조회 성공", data));
     }

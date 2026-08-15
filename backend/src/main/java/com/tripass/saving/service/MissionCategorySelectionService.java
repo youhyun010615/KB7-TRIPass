@@ -7,6 +7,7 @@ import com.tripass.saving.dto.MissionCategorySelectionDto;
 import com.tripass.saving.dto.MissionOptionResponseDto;
 import com.tripass.saving.dto.MissionSelectionRequestDto;
 import com.tripass.saving.dto.MissionSelectionResponseDto;
+import com.tripass.saving.dto.MissionSelectionsResponseDto;
 import com.tripass.saving.dto.MonthlyCategoryAnalysisDto;
 import com.tripass.saving.dto.MonthlySpendingAnalysisDto;
 import com.tripass.saving.dto.ReductionRateOptionDto;
@@ -59,15 +60,16 @@ public class MissionCategorySelectionService {
                     List<ReductionRateOptionDto> options = missionReductionCalculator.calculateOptions(baseline);
                     return new MissionOptionResponseDto(
                             category.getCategoryId(), category.getCategoryCode(), category.getCategoryName(),
+                            category.getRecommendationRank(), category.getRecommendationReason(),
                             baseline, options);
                 })
                 .toList();
     }
 
-    /** 저장된 선택 결과를 조회한다. */
-    public List<MissionSelectionResponseDto> getMissionSelections(Long userId, YearMonth analysisYearMonth) {
+    /** 저장된 선택 결과와 합계를 조회한다. */
+    public MissionSelectionsResponseDto getMissionSelections(Long userId, YearMonth analysisYearMonth) {
         Long monthlySpendingAnalysisId = resolveAnalysisId(userId, analysisYearMonth);
-        return buildSelectionResponses(monthlySpendingAnalysisId);
+        return buildSelectionsResponse(monthlySpendingAnalysisId);
     }
 
     /**
@@ -75,7 +77,7 @@ public class MissionCategorySelectionService {
      * 빈 selections를 보내면 전체 선택 해제가 된다.
      */
     @Transactional
-    public List<MissionSelectionResponseDto> saveMissionSelections(
+    public MissionSelectionsResponseDto saveMissionSelections(
             Long userId, YearMonth analysisYearMonth, MissionSelectionRequestDto request
     ) {
         Long monthlySpendingAnalysisId = resolveAnalysisId(userId, analysisYearMonth);
@@ -91,7 +93,7 @@ public class MissionCategorySelectionService {
         List<Long> requestedCategoryIds = selections.stream().map(CategorySelectionItemDto::getCategoryId).toList();
         missionCategorySelectionMapper.deleteSelectionsExcept(monthlySpendingAnalysisId, requestedCategoryIds);
 
-        return buildSelectionResponses(monthlySpendingAnalysisId);
+        return buildSelectionsResponse(monthlySpendingAnalysisId);
     }
 
     private void saveSelections(Long monthlySpendingAnalysisId, List<CategorySelectionItemDto> selections) {
@@ -159,10 +161,19 @@ public class MissionCategorySelectionService {
         return dto;
     }
 
-    private List<MissionSelectionResponseDto> buildSelectionResponses(Long monthlySpendingAnalysisId) {
-        return missionCategorySelectionMapper.findSelections(monthlySpendingAnalysisId).stream()
-                .map(this::toSelectionResponse)
-                .toList();
+    private MissionSelectionsResponseDto buildSelectionsResponse(Long monthlySpendingAnalysisId) {
+        List<MissionSelectionResponseDto> selections =
+                missionCategorySelectionMapper.findSelections(monthlySpendingAnalysisId).stream()
+                        .map(this::toSelectionResponse)
+                        .toList();
+
+        int totalMonthlyReductionTarget = selections.stream()
+                .mapToInt(MissionSelectionResponseDto::monthlyReductionTarget).sum();
+        int totalWeeklyExpectedSaving = selections.stream()
+                .mapToInt(MissionSelectionResponseDto::weeklyExpectedSaving).sum();
+
+        return new MissionSelectionsResponseDto(
+                selections.size(), totalMonthlyReductionTarget, totalWeeklyExpectedSaving, selections);
     }
 
     private MissionSelectionResponseDto toSelectionResponse(MissionCategorySelectionDto dto) {

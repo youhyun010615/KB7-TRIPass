@@ -7,6 +7,7 @@ import com.tripass.saving.dto.MissionCategorySelectionDto;
 import com.tripass.saving.dto.MissionOptionResponseDto;
 import com.tripass.saving.dto.MissionSelectionRequestDto;
 import com.tripass.saving.dto.MissionSelectionResponseDto;
+import com.tripass.saving.dto.MissionSelectionsResponseDto;
 import com.tripass.saving.dto.MonthlyCategoryAnalysisDto;
 import com.tripass.saving.dto.MonthlySpendingAnalysisDto;
 import com.tripass.saving.mapper.MissionCategorySelectionMapper;
@@ -60,11 +61,12 @@ class MissionCategorySelectionServiceTest {
     // ===== getMissionOptions =====
 
     @Test
-    @DisplayName("TOP 3 카테고리마다 10/30/50% 옵션을 계산해서 반환한다")
+    @DisplayName("TOP 3 카테고리마다 10/30/50% 옵션과 추천 순위·근거를 함께 반환한다")
     void getMissionOptions_returnsOptionsForEachTopCategory() {
         stubAnalysisExists();
         when(monthlySpendingAnalysisMapper.findRecommendedCategoryAnalyses(ANALYSIS_ID))
-                .thenReturn(List.of(topCategory(FOOD_ID, "FOOD", "식비", "100000")));
+                .thenReturn(List.of(topCategory(FOOD_ID, "FOOD", "식비", "100000", 1,
+                        "최근 3개월 평균보다 소비가 35% 증가했어요.")));
 
         List<MissionOptionResponseDto> options = service.getMissionOptions(USER_ID, ANALYSIS_MONTH);
 
@@ -72,6 +74,8 @@ class MissionCategorySelectionServiceTest {
         MissionOptionResponseDto food = options.get(0);
         assertEquals(FOOD_ID, food.categoryId());
         assertEquals(100000, food.baselineSpendingAmount());
+        assertEquals(1, food.recommendationRank());
+        assertEquals("최근 3개월 평균보다 소비가 35% 증가했어요.", food.recommendationReason());
         assertEquals(3, food.options().size());
         assertEquals(10000, food.options().get(0).monthlyReductionTarget()); // 10%
     }
@@ -200,23 +204,36 @@ class MissionCategorySelectionServiceTest {
     // ===== getMissionSelections =====
 
     @Test
-    @DisplayName("저장된 선택 결과에 주간 금액을 다시 계산해서 채워 반환한다")
-    void getMissionSelections_returnsSavedSelectionsWithComputedWeeklyAmounts() {
+    @DisplayName("저장된 선택 결과에 주간 금액을 다시 계산해서 채우고, 전체 합계도 함께 반환한다")
+    void getMissionSelections_returnsSavedSelectionsWithComputedWeeklyAmountsAndTotals() {
         stubAnalysisExists();
-        MissionCategorySelectionDto saved = new MissionCategorySelectionDto();
-        saved.setCategoryId(FOOD_ID);
-        saved.setCategoryCode("FOOD");
-        saved.setCategoryName("식비");
-        saved.setReductionRate(10);
-        saved.setBaselineSpendingAmount(100000);
-        saved.setMonthlyReductionTarget(10000);
-        saved.setMonthlyUsageTarget(90000);
-        when(missionCategorySelectionMapper.findSelections(ANALYSIS_ID)).thenReturn(List.of(saved));
+        MissionCategorySelectionDto foodSaved = new MissionCategorySelectionDto();
+        foodSaved.setCategoryId(FOOD_ID);
+        foodSaved.setCategoryCode("FOOD");
+        foodSaved.setCategoryName("식비");
+        foodSaved.setReductionRate(10);
+        foodSaved.setBaselineSpendingAmount(100000);
+        foodSaved.setMonthlyReductionTarget(10000);
+        foodSaved.setMonthlyUsageTarget(90000);
 
-        List<MissionSelectionResponseDto> result = service.getMissionSelections(USER_ID, ANALYSIS_MONTH);
+        MissionCategorySelectionDto cafeSaved = new MissionCategorySelectionDto();
+        cafeSaved.setCategoryId(CAFE_ID);
+        cafeSaved.setCategoryCode("CAFE");
+        cafeSaved.setCategoryName("카페");
+        cafeSaved.setReductionRate(30);
+        cafeSaved.setBaselineSpendingAmount(50000);
+        cafeSaved.setMonthlyReductionTarget(15000);
+        cafeSaved.setMonthlyUsageTarget(35000);
 
-        assertEquals(1, result.size());
-        MissionSelectionResponseDto food = result.get(0);
+        when(missionCategorySelectionMapper.findSelections(ANALYSIS_ID)).thenReturn(List.of(foodSaved, cafeSaved));
+
+        MissionSelectionsResponseDto result = service.getMissionSelections(USER_ID, ANALYSIS_MONTH);
+
+        assertEquals(2, result.selectedMissionCount());
+        assertEquals(25000, result.totalMonthlyReductionTarget()); // 10000 + 15000
+        assertEquals(6250, result.totalWeeklyExpectedSaving()); // 2500 + 3750
+
+        MissionSelectionResponseDto food = result.selections().get(0);
         assertEquals(10000, food.monthlyReductionTarget());
         assertEquals(90000, food.monthlyUsageTarget());
         assertEquals(22500, food.weeklyUsageLimit());
@@ -232,11 +249,20 @@ class MissionCategorySelectionServiceTest {
     }
 
     private MonthlyCategoryAnalysisDto topCategory(Long categoryId, String code, String name, String missionSpending) {
+        return topCategory(categoryId, code, name, missionSpending, null, null);
+    }
+
+    private MonthlyCategoryAnalysisDto topCategory(
+            Long categoryId, String code, String name, String missionSpending,
+            Integer recommendationRank, String recommendationReason
+    ) {
         MonthlyCategoryAnalysisDto dto = new MonthlyCategoryAnalysisDto();
         dto.setCategoryId(categoryId);
         dto.setCategoryCode(code);
         dto.setCategoryName(name);
         dto.setMissionPeriodSpending(new BigDecimal(missionSpending));
+        dto.setRecommendationRank(recommendationRank);
+        dto.setRecommendationReason(recommendationReason);
         return dto;
     }
 

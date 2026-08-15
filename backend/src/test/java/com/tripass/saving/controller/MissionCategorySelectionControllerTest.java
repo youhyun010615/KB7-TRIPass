@@ -6,6 +6,7 @@ import com.tripass.saving.dto.CategorySelectionItemDto;
 import com.tripass.saving.dto.MissionOptionResponseDto;
 import com.tripass.saving.dto.MissionSelectionRequestDto;
 import com.tripass.saving.dto.MissionSelectionResponseDto;
+import com.tripass.saving.dto.MissionSelectionsResponseDto;
 import com.tripass.saving.dto.ReductionRateOptionDto;
 import com.tripass.saving.service.MissionCategorySelectionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +52,7 @@ class MissionCategorySelectionControllerTest {
     @DisplayName("절감률 옵션 조회는 서비스 결과를 그대로 응답한다")
     void getMissionOptions_returnsServiceResult() {
         List<MissionOptionResponseDto> options = List.of(new MissionOptionResponseDto(
-                1L, "FOOD", "식비", 100000,
+                1L, "FOOD", "식비", 1, "최근 3개월 평균보다 소비가 35% 증가했어요.", 100000,
                 List.of(new ReductionRateOptionDto(10, 10000, 90000, 22500, 2500))));
         when(missionCategorySelectionService.getMissionOptions(USER_ID, YearMonth.of(2026, 7)))
                 .thenReturn(options);
@@ -70,12 +71,12 @@ class MissionCategorySelectionControllerTest {
         MissionSelectionRequestDto request = MissionSelectionRequestDto.builder()
                 .selections(List.of(CategorySelectionItemDto.builder().categoryId(1L).reductionRate(30).build()))
                 .build();
-        List<MissionSelectionResponseDto> saved = List.of(
-                new MissionSelectionResponseDto(1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500));
+        MissionSelectionsResponseDto saved = new MissionSelectionsResponseDto(1, 30000, 7500, List.of(
+                new MissionSelectionResponseDto(1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500)));
         when(missionCategorySelectionService.saveMissionSelections(USER_ID, YearMonth.of(2026, 7), request))
                 .thenReturn(saved);
 
-        ResponseEntity<ApiResponse<List<MissionSelectionResponseDto>>> response =
+        ResponseEntity<ApiResponse<MissionSelectionsResponseDto>> response =
                 controller.saveMissionSelections("2026-07", request, authentication);
 
         assertEquals(saved, response.getBody().getData());
@@ -85,12 +86,12 @@ class MissionCategorySelectionControllerTest {
     @Test
     @DisplayName("절감률 선택 조회는 서비스 결과를 그대로 응답한다")
     void getMissionSelections_returnsServiceResult() {
-        List<MissionSelectionResponseDto> saved = List.of(
-                new MissionSelectionResponseDto(1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500));
+        MissionSelectionsResponseDto saved = new MissionSelectionsResponseDto(1, 30000, 7500, List.of(
+                new MissionSelectionResponseDto(1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500)));
         when(missionCategorySelectionService.getMissionSelections(USER_ID, YearMonth.of(2026, 7)))
                 .thenReturn(saved);
 
-        ResponseEntity<ApiResponse<List<MissionSelectionResponseDto>>> response =
+        ResponseEntity<ApiResponse<MissionSelectionsResponseDto>> response =
                 controller.getMissionSelections("2026-07", authentication);
 
         assertEquals(saved, response.getBody().getData());

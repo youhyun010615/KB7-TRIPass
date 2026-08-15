@@ -9,6 +9,8 @@ public record MissionOptionResponseDto(
         Long categoryId,
         String categoryCode,
         String categoryName,
+        Integer recommendationRank,
+        String recommendationReason,
         Integer baselineSpendingAmount,
         List<ReductionRateOptionDto> options
 ) {

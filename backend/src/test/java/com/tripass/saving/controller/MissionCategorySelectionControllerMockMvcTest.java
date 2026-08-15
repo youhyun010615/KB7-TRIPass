@@ -3,6 +3,7 @@ package com.tripass.saving.controller;
 import com.tripass.common.exception.GlobalExceptionHandler;
 import com.tripass.saving.dto.MissionOptionResponseDto;
 import com.tripass.saving.dto.MissionSelectionResponseDto;
+import com.tripass.saving.dto.MissionSelectionsResponseDto;
 import com.tripass.saving.dto.ReductionRateOptionDto;
 import com.tripass.saving.service.MissionCategorySelectionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,13 +61,15 @@ class MissionCategorySelectionControllerMockMvcTest {
     void get_missionOptions_returnsJson() throws Exception {
         when(missionCategorySelectionService.getMissionOptions(USER_ID, YearMonth.of(2026, 7)))
                 .thenReturn(List.of(new MissionOptionResponseDto(
-                        1L, "FOOD", "식비", 100000,
+                        1L, "FOOD", "식비", 1, "최근 3개월 평균보다 소비가 35% 증가했어요.", 100000,
                         List.of(new ReductionRateOptionDto(10, 10000, 90000, 22500, 2500)))));
 
         mockMvc.perform(get("/api/v1/saving/analyses/2026-07/mission-options").principal(authentication()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
                 .andExpect(jsonPath("$.data[0].categoryCode").value("FOOD"))
+                .andExpect(jsonPath("$.data[0].recommendationRank").value(1))
+                .andExpect(jsonPath("$.data[0].recommendationReason").value("최근 3개월 평균보다 소비가 35% 증가했어요."))
                 .andExpect(jsonPath("$.data[0].options[0].reductionRate").value(10))
                 .andExpect(jsonPath("$.data[0].options[0].monthlyReductionTarget").value(10000));
     }
@@ -78,8 +81,8 @@ class MissionCategorySelectionControllerMockMvcTest {
                 org.mockito.ArgumentMatchers.eq(USER_ID),
                 org.mockito.ArgumentMatchers.eq(YearMonth.of(2026, 7)),
                 org.mockito.ArgumentMatchers.any()))
-                .thenReturn(List.of(new MissionSelectionResponseDto(
-                        1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500)));
+                .thenReturn(new MissionSelectionsResponseDto(1, 30000, 7500, List.of(new MissionSelectionResponseDto(
+                        1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500))));
 
         String body = "{\"selections\":[{\"categoryId\":1,\"reductionRate\":30}]}";
 
@@ -88,8 +91,11 @@ class MissionCategorySelectionControllerMockMvcTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].reductionRate").value(30))
-                .andExpect(jsonPath("$.data[0].monthlyReductionTarget").value(30000));
+                .andExpect(jsonPath("$.data.selectedMissionCount").value(1))
+                .andExpect(jsonPath("$.data.totalMonthlyReductionTarget").value(30000))
+                .andExpect(jsonPath("$.data.totalWeeklyExpectedSaving").value(7500))
+                .andExpect(jsonPath("$.data.selections[0].reductionRate").value(30))
+                .andExpect(jsonPath("$.data.selections[0].monthlyReductionTarget").value(30000));
 
         verify(missionCategorySelectionService).saveMissionSelections(
                 org.mockito.ArgumentMatchers.eq(USER_ID),
@@ -111,13 +117,14 @@ class MissionCategorySelectionControllerMockMvcTest {
     @DisplayName("GET /api/v1/saving/analyses/{yearMonth}/mission-selections는 저장된 선택을 JSON으로 응답한다")
     void get_missionSelections_returnsJson() throws Exception {
         when(missionCategorySelectionService.getMissionSelections(USER_ID, YearMonth.of(2026, 7)))
-                .thenReturn(List.of(new MissionSelectionResponseDto(
-                        1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500)));
+                .thenReturn(new MissionSelectionsResponseDto(1, 30000, 7500, List.of(new MissionSelectionResponseDto(
+                        1L, "FOOD", "식비", 30, 100000, 30000, 70000, 17500, 7500))));
 
         mockMvc.perform(get("/api/v1/saving/analyses/2026-07/mission-selections").principal(authentication()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].categoryCode").value("FOOD"))
-                .andExpect(jsonPath("$.data[0].weeklyUsageLimit").value(17500));
+                .andExpect(jsonPath("$.data.selectedMissionCount").value(1))
+                .andExpect(jsonPath("$.data.selections[0].categoryCode").value("FOOD"))
+                .andExpect(jsonPath("$.data.selections[0].weeklyUsageLimit").value(17500));
     }
 
     @Test
