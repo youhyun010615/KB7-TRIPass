@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.saving.mapper.SavingMissionMapper">
+
+    <select id="findAnalysisByTargetMonth" resultType="MonthlySpendingAnalysisDto">
+        SELECT id, user_id, analysis_year_month, target_year_month, total_spending,
+               saving_target_amount, actual_saving_amount, saving_difference_amount, saving_result_message,
+               report_status, report_viewed_at, report_closed_at, created_at, updated_at
+        FROM monthly_spending_analyses
+        WHERE user_id = #{userId}
+          AND target_year_month = #{targetYearMonth}
+        LIMIT 1
+    </select>
+
+    <select id="lockMonthlySpendingAnalysis" resultType="long">
+        SELECT id
+        FROM monthly_spending_analyses
+        WHERE id = #{monthlySpendingAnalysisId}
+        FOR UPDATE
+    </select>
+
+    <select id="findSelections" resultType="MissionCategorySelectionDto">
+        SELECT mcs.id, mcs.monthly_spending_analysis_id, mcs.category_id,
+               sc.category_code, sc.category_name,
+               mcs.reduction_rate, mcs.baseline_spending_amount,
+               mcs.monthly_reduction_target, mcs.monthly_usage_target,
+               mcs.created_at, mcs.updated_at
+        FROM mission_category_selections mcs
+                 JOIN spending_categories sc ON sc.id = mcs.category_id
+        WHERE mcs.monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+        ORDER BY mcs.category_id
+    </select>
+
+    <insert id="insertMonthlyMission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO monthly_saving_missions (
+            user_id, monthly_spending_analysis_id, mission_category_selection_id, category_id,
+            target_year_month, reduction_rate, baseline_spending_amount,
+            monthly_reduction_target, monthly_usage_target, planned_saving_amount, start_week, status
+        ) VALUES (
+            #{userId}, #{monthlySpendingAnalysisId}, #{missionCategorySelectionId}, #{categoryId},
+            #{targetYearMonth}, #{reductionRate}, #{baselineSpendingAmount},
+            #{monthlyReductionTarget}, #{monthlyUsageTarget}, #{plannedSavingAmount}, #{startWeek}, #{status}
+        )
+    </insert>
+
+    <insert id="insertWeeklyMission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO weekly_saving_missions (
+            monthly_saving_mission_id, week_number, period_start_date, period_end_date,
+            weekly_usage_limit, weekly_expected_saving, status
+        ) VALUES (
+            #{monthlySavingMissionId}, #{weekNumber}, #{periodStartDate}, #{periodEndDate},
+            #{weeklyUsageLimit}, #{weeklyExpectedSaving}, #{status}
+        )
+    </insert>
+
+    <select id="findMonthlyMissions" resultType="MonthlySavingMissionDto">
+        SELECT msm.id, msm.user_id, msm.monthly_spending_analysis_id, msm.mission_category_selection_id,
+               msm.category_id, sc.category_code, sc.category_name, msm.target_year_month,
+               msm.reduction_rate, msm.baseline_spending_amount, msm.monthly_reduction_target,
+               msm.monthly_usage_target, msm.planned_saving_amount, msm.start_week, msm.status,
+               msm.created_at, msm.updated_at
+        FROM monthly_saving_missions msm
+                 JOIN spending_categories sc ON sc.id = msm.category_id
+        WHERE msm.user_id = #{userId}
+          AND msm.target_year_month = #{targetYearMonth}
+        ORDER BY msm.id
+    </select>
+
+    <select id="findWeeklyMissions" resultType="WeeklySavingMissionDto">
+        SELECT id, monthly_saving_mission_id, week_number, period_start_date, period_end_date,
+               weekly_usage_limit, weekly_expected_saving, actual_spending, actual_saving,
+               status, evaluated_at, created_at, updated_at
+        FROM weekly_saving_missions
+        WHERE monthly_saving_mission_id = #{monthlySavingMissionId}
+        ORDER BY week_number
+    </select>
+
+    <update id="markReportClosed">
+        UPDATE monthly_spending_analyses
+        SET report_status = 'CLOSED',
+            report_closed_at = COALESCE(report_closed_at, NOW()),
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND analysis_year_month = #{analysisYearMonth}
+          AND report_status IN ('PENDING', 'VIEWED')
+    </update>
+
+</mapper>

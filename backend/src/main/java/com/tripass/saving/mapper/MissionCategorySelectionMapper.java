@@ -25,6 +25,9 @@ public interface MissionCategorySelectionMapper {
      */
     void lockMonthlySpendingAnalysis(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
 
+    /** 이미 생성된 미션이 있는지 확인한다. 미션 시작 후에는 선택 스냅샷을 변경할 수 없다. */
+    int countGeneratedMissions(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
+
     /**
      * 요청에 포함되지 않은 기존 선택을 삭제한다(선택 해제). categoryIds가 비어 있으면
      * 해당 월간 분석의 선택을 전부 삭제한다("빈 배열 = 전체 선택 해제").

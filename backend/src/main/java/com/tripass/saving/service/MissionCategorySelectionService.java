@@ -83,6 +83,10 @@ public class MissionCategorySelectionService {
         Long monthlySpendingAnalysisId = resolveAnalysisId(userId, analysisYearMonth);
         // 같은 분석에 대한 동시 PUT이 upsert/delete 순서가 엇갈리며 교착되지 않도록 먼저 직렬화한다.
         missionCategorySelectionMapper.lockMonthlySpendingAnalysis(monthlySpendingAnalysisId);
+        if (missionCategorySelectionMapper.countGeneratedMissions(monthlySpendingAnalysisId) > 0) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_ALREADY_STARTED",
+                    "이미 시작한 미션의 카테고리와 절감률은 변경할 수 없습니다.");
+        }
 
         List<CategorySelectionItemDto> selections = request.getSelections();
 
