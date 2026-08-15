@@ -1,5 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { requestFcmToken } from '@/api/firebase'
+import { registerFcmToken } from '@/api/notification'
 
 export const useAuthStore = defineStore('auth', () => {
   // Access Token은 브라우저 메모리에서만 관리한다.
@@ -27,6 +29,23 @@ export const useAuthStore = defineStore('auth', () => {
     )
   }
 
+  // 로그인 성공 후 처리 (FCM 토큰 등록 포함)
+  async function handleLoginSuccess(token, userInfo) {
+    setToken(token)
+    setUser(userInfo)
+    
+    // FCM 토큰 등록
+    try {
+      const fcmToken = await requestFcmToken()
+      if (fcmToken) {
+        await registerFcmToken(fcmToken)
+        console.log('FCM 토큰이 서버에 등록되었습니다.')
+      }
+    } catch (error) {
+      console.error('FCM 토큰 등록 실패:', error)
+    }
+  }
+
   // 기존 회원 정보의 일부를 변경한다.
   function updateUser(userInfo) {
     setUser({...user.value, ...userInfo,})
@@ -52,5 +71,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('isProfileComplete')
   }
 
-  return { accessToken, user, isLoggedIn, isProfileComplete, setToken, setUser, updateUser, completeProfile, resetProfileCompletion, logout }
+  return { accessToken, user, isLoggedIn, isProfileComplete, setToken, setUser, handleLoginSuccess, updateUser, completeProfile, resetProfileCompletion, logout }
 })

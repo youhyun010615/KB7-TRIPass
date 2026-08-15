@@ -25,6 +25,7 @@ import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
 import com.tripass.common.exception.CustomException;
+import com.tripass.mypage.mapper.NotificationSettingMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final NotificationSettingMapper notificationSettingMapper;
     private final KakaoOAuthClient kakaoOAuthClient;
     private final GoogleOAuthClient googleOAuthClient;
     private final TransactionTemplate transactionTemplate;
@@ -173,6 +175,10 @@ public class AuthServiceImpl implements AuthService {
                         "회원가입 처리에 실패했습니다."
                 );
             }
+            
+            // 기본 알림 설정 생성
+            notificationSettingMapper.insertDefaultSetting(user.getId());
+            
         } catch (DuplicateKeyException exception) {
             // 동시 요청으로 LOCAL 로그인 아이디 유니크 제약조건이 위반된 경우
             throw new CustomException(

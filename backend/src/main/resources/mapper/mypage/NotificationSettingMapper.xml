@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.mypage.mapper.NotificationSettingMapper">
+
+    <select id="getSettingByUserId" resultType="com.tripass.mypage.domain.NotificationSetting">
+        SELECT * FROM notification_settings WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insertDefaultSetting">
+        INSERT INTO notification_settings (user_id, all_enabled, travel_schedule_enabled, exchange_rate_enabled, checklist_enabled, travel_report_enabled)
+        VALUES (#{userId}, true, true, true, true, true)
+    </insert>
+
+    <update id="updateSetting">
+        UPDATE notification_settings
+        SET all_enabled = #{allEnabled},
+            travel_schedule_enabled = #{travelScheduleEnabled},
+            exchange_rate_enabled = #{exchangeRateEnabled},
+            checklist_enabled = #{checklistEnabled},
+            travel_report_enabled = #{travelReportEnabled}
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper>

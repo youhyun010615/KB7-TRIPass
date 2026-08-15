@@ -174,4 +174,13 @@
           AND is_deleted = 0
     </update>
 
+    <select id="findUpcomingSchedules" resultType="com.tripass.schedule.domain.TripSchedule">
+        SELECT ts.id, ts.trip_id, t.user_id, ts.schedule_name, ts.scheduled_at
+        FROM trip_schedules ts
+        JOIN trips t ON ts.trip_id = t.id
+        WHERE ts.is_deleted = 0
+          AND ts.schedule_status = 'UPCOMING'
+          AND ts.scheduled_at BETWEEN NOW() + INTERVAL 55 MINUTE AND NOW() + INTERVAL 65 MINUTE
+    </select>
+
 </mapper>
