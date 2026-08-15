@@ -59,6 +59,7 @@ async function fetchRealTransactions() {
 
 const loading = ref(false)
 const syncing = ref(false)
+const syncMessage = ref('')
 
 async function fetchRealTransactionsWithLoading() {
   loading.value = true
@@ -68,6 +69,7 @@ async function fetchRealTransactionsWithLoading() {
 
 async function syncTransactions() {
   syncing.value = true
+  syncMessage.value = ''
   try {
     await api.post('/accounts/transactions', {
       accountId: Number(route.params.accountId),
@@ -75,8 +77,10 @@ async function syncTransactions() {
       endDate: endDate.value,
     })
     await fetchRealTransactions()
+    syncMessage.value = '최신 거래내역을 불러왔습니다.'
   } catch (e) {
     console.error('거래내역 동기화 실패', e)
+    syncMessage.value = e.response?.data?.message ?? '거래내역 동기화에 실패했습니다.'
   } finally {
     syncing.value = false
   }
@@ -114,14 +118,15 @@ const groups = computed(() => {
       const item = {
         id: t.id,
         merchant: t.merchantName ?? '(내용없음)',
-        category: '기타',
-        method: route.query.name ?? '',
+        category: t.categoryName ?? '기타',
+        method: realAccount.value.name || route.query.name || '',
         amount,
         time,
         dateLabel: label,
         balanceAfter: Number(t.balanceAfter ?? 0),
         memo: t.memo ?? '',
         isReal: true,
+        sourceType: 'ACCOUNT',
       }
       const group = result.find((g) => g.date === date)
       if (group) group.items.push(item)
@@ -151,12 +156,13 @@ const groups = computed(() => {
     <AssetTicket :label="account.name" :amount="account.balance" :caption="`${account.number} · ${account.type}`" />
     <section class="travel-recognized"><small>여행 자금 인정 금액</small><b>{{ travelRecognizedAmount.toLocaleString('ko-KR') }}원</b></section>
     <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>~</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label></section>
-    <div class="section-header"><span>계좌내역</span><button type="button" aria-label="거래내역 캘린더" class="cal-btn" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
+    <p v-if="syncMessage" class="sync-message" :class="{ error: syncMessage.includes('실패') || syncMessage.includes('오류') }">{{ syncMessage }}</p>
+    <div class="section-header"><span>계좌내역</span><div class="header-actions"><button type="button" class="sync-action" :disabled="syncing" @click="syncTransactions">{{ syncing ? '동기화 중' : '↻ 최신 내역' }}</button><button type="button" aria-label="거래내역 캘린더" class="cal-btn" @click="router.push('/asset/transactions/calendar')"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V7M16 3V7M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 14H8.01M12 14H12.01M16 14H16.01M8 18H8.01M12 18H12.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div></div>
     <div class="tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" type="button" @click="filter = tab.id">{{ tab.label }}</button></div>
     <TransactionGroups :groups="groups" :show-icons="false" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
   </main>
 </template>
 
 <style scoped>
-.account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 30px;background:#f4f6fc;color:#10192d}header{display:grid;grid-template-columns:30px 1fr;align-items:center;margin-bottom:17px}header button{font-size:26px;text-align:left}h1{font-size:17px;font-weight:900}.section-header{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.section-header span{font-size:13px;font-weight:900;color:#10192d}.cal-btn{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#172f6b;color:#fff;font-size:unset}.travel-recognized{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 16px;border-radius:11px;background:#172f6b;color:#fff}.travel-recognized small{font-size:9px;color:#ffcf28}.travel-recognized b{font-size:13px;font-weight:900}.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;font-size:9px}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}.date-filter>button{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#172f6b;color:#fff}.tabs{display:grid;grid-template-columns:repeat(3,1fr);margin:12px 0 16px;text-align:center}.tabs button{padding:11px 0;border-bottom:2px solid #dce3ee;color:#b0bac9;font-size:11px;font-weight:900}.tabs button.active{border-color:#3475f4;color:#3475f4}.sync-btn{display:block;width:100%;margin-bottom:12px;padding:10px;border-radius:10px;background:#edf4ff;color:#1a56db;font-size:12px;font-weight:700}.sync-btn:disabled{opacity:.6}
+.account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 30px;background:#f4f6fc;color:#10192d}header{display:grid;grid-template-columns:30px 1fr;align-items:center;margin-bottom:17px}header button{font-size:26px;text-align:left}h1{font-size:17px;font-weight:900}.section-header{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.section-header span{font-size:13px;font-weight:900;color:#10192d}.header-actions{display:flex;align-items:center;gap:6px}.sync-action{padding:8px 11px;border-radius:9px;background:#172f6b;color:#fff;font-size:10px;font-weight:800}.sync-action:disabled{opacity:.6}.cal-btn{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#172f6b;color:#fff;font-size:unset}.sync-message{margin:10px 0 0;padding:9px 12px;border-radius:9px;background:#e8f1ff;color:#1a56db;font-size:10px;text-align:center}.sync-message.error{background:#ffebee;color:#c62828}.travel-recognized{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 16px;border-radius:11px;background:#172f6b;color:#fff}.travel-recognized small{font-size:9px;color:#ffcf28}.travel-recognized b{font-size:13px;font-weight:900}.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;font-size:9px}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}.date-filter>button{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#172f6b;color:#fff}.tabs{display:grid;grid-template-columns:repeat(3,1fr);margin:12px 0 16px;text-align:center}.tabs button{padding:11px 0;border-bottom:2px solid #dce3ee;color:#b0bac9;font-size:11px;font-weight:900}.tabs button.active{border-color:#3475f4;color:#3475f4}
 </style>
