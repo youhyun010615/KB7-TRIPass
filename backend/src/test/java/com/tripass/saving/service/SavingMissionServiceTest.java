@@ -5,7 +5,6 @@ import com.tripass.saving.analysis.MissionStartWeekPolicy;
 import com.tripass.saving.dto.MissionCategorySelectionDto;
 import com.tripass.saving.dto.MonthlySavingMissionDto;
 import com.tripass.saving.dto.MonthlySpendingAnalysisDto;
-import com.tripass.saving.dto.SavingMissionsResponseDto;
 import com.tripass.saving.dto.WeeklySavingMissionDto;
 import com.tripass.saving.mapper.SavingMissionMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,7 +62,7 @@ class SavingMissionServiceTest {
             return null;
         }).when(mapper).insertMonthlyMission(any(MonthlySavingMissionDto.class));
 
-        SavingMissionsResponseDto response = service.createMissions(USER_ID, TARGET_MONTH);
+        SavingMissionService.CreationResult result = service.createMissions(USER_ID, TARGET_MONTH);
 
         ArgumentCaptor<MonthlySavingMissionDto> monthlyCaptor =
                 ArgumentCaptor.forClass(MonthlySavingMissionDto.class);
@@ -81,7 +80,8 @@ class SavingMissionServiceTest {
         assertEquals(9_751, weekly.get(1).getWeeklyExpectedSaving());
         assertEquals("2026-08-15", weekly.get(0).getPeriodStartDate().toString());
         assertEquals("2026-08-28", weekly.get(1).getPeriodEndDate().toString());
-        assertEquals(1, response.missionCount());
+        assertEquals(true, result.created());
+        assertEquals(1, result.data().missionCount());
         verify(mapper).markReportClosed(USER_ID, "2026-07");
     }
 
@@ -91,9 +91,10 @@ class SavingMissionServiceTest {
         when(mapper.findMonthlyMissions(USER_ID, "2026-08")).thenReturn(List.of(storedMonthlyMission()));
         when(mapper.findWeeklyMissions(100L)).thenReturn(List.of());
 
-        SavingMissionsResponseDto response = service.createMissions(USER_ID, TARGET_MONTH);
+        SavingMissionService.CreationResult result = service.createMissions(USER_ID, TARGET_MONTH);
 
-        assertEquals(1, response.missionCount());
+        assertEquals(false, result.created());
+        assertEquals(1, result.data().missionCount());
         verify(mapper, never()).insertMonthlyMission(any());
         verify(mapper, never()).insertWeeklyMission(any());
     }

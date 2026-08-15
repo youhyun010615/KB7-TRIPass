@@ -30,9 +30,14 @@ public class SavingMissionController {
             Authentication authentication
     ) {
         Long userId = (Long) authentication.getPrincipal();
-        SavingMissionsResponseDto data =
+        SavingMissionService.CreationResult result =
                 savingMissionService.createMissions(userId, parseYearMonth(targetYearMonth));
-        return ResponseEntity.ok(ApiResponse.success("월간·주간 미션 생성 성공", data));
+        ApiResponse<SavingMissionsResponseDto> response = ApiResponse.success(
+                result.created() ? "월간·주간 미션 생성 성공" : "이미 생성된 월간·주간 미션 조회 성공",
+                result.data());
+        return result.created()
+                ? ResponseEntity.status(HttpStatus.CREATED).body(response)
+                : ResponseEntity.ok(response);
     }
 
     @GetMapping("/{targetYearMonth}")

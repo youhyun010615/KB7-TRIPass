@@ -45,10 +45,11 @@ class SavingMissionControllerMockMvcTest {
 
     @Test
     void postCreatesMonthlyAndWeeklyMissions() throws Exception {
-        when(service.createMissions(USER_ID, YearMonth.of(2026, 8))).thenReturn(response());
+        when(service.createMissions(USER_ID, YearMonth.of(2026, 8)))
+                .thenReturn(new SavingMissionService.CreationResult(true, response()));
 
         mockMvc.perform(post("/api/v1/saving/missions/2026-08").principal(authentication()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.targetYearMonth").value("2026-08"))
                 .andExpect(jsonPath("$.data.missionCount").value(1))
@@ -59,6 +60,17 @@ class SavingMissionControllerMockMvcTest {
                         .value("카페 지출을 9,750원 줄이세요."));
 
         verify(service).createMissions(USER_ID, YearMonth.of(2026, 8));
+    }
+
+    @Test
+    void repeatedPostReturns200WithExistingMissions() throws Exception {
+        when(service.createMissions(USER_ID, YearMonth.of(2026, 8)))
+                .thenReturn(new SavingMissionService.CreationResult(false, response()));
+
+        mockMvc.perform(post("/api/v1/saving/missions/2026-08").principal(authentication()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("이미 생성된 월간·주간 미션 조회 성공"))
+                .andExpect(jsonPath("$.data.missionCount").value(1));
     }
 
     @Test

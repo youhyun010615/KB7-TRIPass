@@ -48,13 +48,13 @@ public class SavingMissionService {
      * 동일 월의 미션이 이미 있으면 재생성하지 않고 기존 결과를 반환한다.
      */
     @Transactional
-    public SavingMissionsResponseDto createMissions(Long userId, YearMonth targetYearMonth) {
+    public CreationResult createMissions(Long userId, YearMonth targetYearMonth) {
         MonthlySpendingAnalysisDto analysis = resolveAnalysis(userId, targetYearMonth);
         mapper.lockMonthlySpendingAnalysis(analysis.getId());
 
         List<MonthlySavingMissionDto> existing = mapper.findMonthlyMissions(userId, targetYearMonth.toString());
         if (!existing.isEmpty()) {
-            return buildResponse(targetYearMonth, existing);
+            return new CreationResult(false, buildResponse(targetYearMonth, existing));
         }
 
         int startWeek = resolveStartWeek(targetYearMonth, LocalDate.now(clock));
@@ -69,7 +69,9 @@ public class SavingMissionService {
         }
         mapper.markReportClosed(userId, analysis.getAnalysisYearMonth());
 
-        return buildResponse(targetYearMonth, mapper.findMonthlyMissions(userId, targetYearMonth.toString()));
+        SavingMissionsResponseDto response =
+                buildResponse(targetYearMonth, mapper.findMonthlyMissions(userId, targetYearMonth.toString()));
+        return new CreationResult(true, response);
     }
 
     public SavingMissionsResponseDto getMissions(Long userId, YearMonth targetYearMonth) {
@@ -177,5 +179,9 @@ public class SavingMissionService {
                 weekly.getId(), weekly.getWeekNumber(), weekly.getPeriodStartDate(), weekly.getPeriodEndDate(),
                 weekly.getWeeklyUsageLimit(), weekly.getWeeklyExpectedSaving(), weekly.getActualSpending(),
                 weekly.getActualSaving(), weekly.getStatus(), categoryName + " 지출을 " + amount + "원 줄이세요.");
+    }
+
+    /** Controller가 최초 생성(201)과 멱등 재호출(200)을 구분할 수 있게 하는 내부 결과. */
+    public record CreationResult(boolean created, SavingMissionsResponseDto data) {
     }
 }
