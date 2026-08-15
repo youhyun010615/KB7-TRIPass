@@ -74,15 +74,15 @@ public interface MonthlySpendingAnalysisMapper {
 
     // ===== 카테고리 분석 저장·조회 =====
 
-    void deleteCategoryAnalyses(@Param("monthlyAnalysisId") Long monthlyAnalysisId);
+    void deleteCategoryAnalyses(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
 
     void insertCategoryAnalysis(MonthlyCategoryAnalysisDto dto);
 
     /** 소비 순위(전체 카테고리, 기타 포함) 순으로 정렬해 반환한다. */
-    List<MonthlyCategoryAnalysisDto> findCategoryAnalyses(@Param("monthlyAnalysisId") Long monthlyAnalysisId);
+    List<MonthlyCategoryAnalysisDto> findCategoryAnalyses(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
 
     /** 절감 추천 순위(TOP 3, 기타 제외)가 매겨진 카테고리만 순위순으로 반환한다. */
-    List<MonthlyCategoryAnalysisDto> findRecommendedCategoryAnalyses(@Param("monthlyAnalysisId") Long monthlyAnalysisId);
+    List<MonthlyCategoryAnalysisDto> findRecommendedCategoryAnalyses(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
 
     // ===== 리포트 상태 전이 =====
     // PENDING -> VIEWED -> CLOSED 방향으로만 전이한다. 조건에 맞지 않으면(이미 전이됐거나 CLOSED)

@@ -23,7 +23,7 @@ class CoachingMessageGeneratorTest {
     void 추천_카테고리가_없으면_안내_문구를_반환한다() {
         String summary = generator.generateSummary(List.of());
 
-        assertEquals("지난달에는 절감이 필요한 소비 카테고리가 발견되지 않았어요.", summary);
+        assertEquals("이번 달에는 특별히 줄여야 할 소비 카테고리가 없어요.", summary);
     }
 
     @Test

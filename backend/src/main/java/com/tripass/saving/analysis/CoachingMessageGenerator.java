@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 실제 생성형 AI 호출 없이, 점수 구성 요소를 기반으로 한 템플릿 코칭 문구를 생성한다.
@@ -13,9 +15,10 @@ import java.util.List;
 @Component
 public class CoachingMessageGenerator {
 
+    // 기준 월 표현을 "이번 달에는"으로 통일한다(하나는 지난달, 하나는 이번달 기준으로 다르게 쓰면 헷갈린다).
     public String generateSummary(List<String> categoryNames) {
         if (categoryNames.isEmpty()) {
-            return "지난달에는 절감이 필요한 소비 카테고리가 발견되지 않았어요.";
+            return "이번 달에는 특별히 줄여야 할 소비 카테고리가 없어요.";
         }
         return "이번 달에는 " + String.join(", ", categoryNames) + " 소비를 줄여보세요.";
     }
@@ -52,7 +55,8 @@ public class CoachingMessageGenerator {
     }
 
     // DecimalFormat은 thread-safe하지 않으므로 싱글톤 빈에 static 필드로 두지 않고 호출마다 생성한다.
+    // 로케일을 명시하지 않으면 JVM 기본 로케일에 따라 천단위 구분자가 바뀌어(예: de-DE는 '.') 문구가 깨진다.
     private String formatAmount(BigDecimal amount) {
-        return new DecimalFormat("#,##0").format(amount);
+        return new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.KOREA)).format(amount);
     }
 }

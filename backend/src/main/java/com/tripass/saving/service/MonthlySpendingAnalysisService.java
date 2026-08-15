@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -173,10 +174,10 @@ public class MonthlySpendingAnalysisService {
         // 실제 저축액을 산출할 TRIP 월렛 거래 원장이 아직 없으므로 항상 null(UNAVAILABLE)로 저장한다(후속 이슈).
         SavingResultResponseDto savingResult = savingResultCalculator.calculate(savingTargetAmount, null);
 
-        Long monthlyAnalysisId = saveMonthlyAnalysis(
+        Long monthlySpendingAnalysisId = saveMonthlyAnalysis(
                 userId, analysisYearMonth, targetYearMonth, totalSpending, savingResult, existing);
 
-        saveCategoryAnalyses(monthlyAnalysisId, categoryStats, otherCategoryId,
+        saveCategoryAnalyses(monthlySpendingAnalysisId, categoryStats, otherCategoryId,
                 eligibilityByCategory, scoredById, topCategoryIds);
 
         return buildResponse(userId, analysisYearMonth);
@@ -287,10 +288,12 @@ public class MonthlySpendingAnalysisService {
         dto.setUserId(userId);
         dto.setAnalysisYearMonth(analysisYearMonth.toString());
         dto.setTargetYearMonth(targetYearMonth.toString());
-        dto.setTotalSpending(totalSpending);
-        dto.setSavingTargetAmount(savingResult.targetAmount());
-        dto.setActualSavingAmount(savingResult.actualAmount());
-        dto.setSavingDifferenceAmount(savingResult.differenceAmount());
+        dto.setTotalSpending(roundToWon(totalSpending));
+        // saving_target_amount는 saving_plans(다른 도메인 테이블)에서 오므로 소수 단위가 섞여 있을 수 있다.
+        // KRW 금액 컬럼은 INT라 저장 전에 반드시 원 단위로 반올림해야 한다.
+        dto.setSavingTargetAmount(roundToWon(savingResult.targetAmount()));
+        dto.setActualSavingAmount(roundToWon(savingResult.actualAmount()));
+        dto.setSavingDifferenceAmount(roundToWon(savingResult.differenceAmount()));
         dto.setSavingResultMessage(savingResult.resultMessage());
 
         if (existing == null) {
@@ -307,14 +310,14 @@ public class MonthlySpendingAnalysisService {
     }
 
     private void saveCategoryAnalyses(
-            Long monthlyAnalysisId, List<CategorySpendingStats> categoryStats, Long otherCategoryId,
+            Long monthlySpendingAnalysisId, List<CategorySpendingStats> categoryStats, Long otherCategoryId,
             Map<Long, EligibilityResult> eligibilityByCategory, Map<Long, ScoredCandidate> scoredById,
             List<Long> topCategoryIds
     ) {
-        mapper.deleteCategoryAnalyses(monthlyAnalysisId);
+        mapper.deleteCategoryAnalyses(monthlySpendingAnalysisId);
 
         for (CategorySpendingStats stats : categoryStats) {
-            MonthlyCategoryAnalysisDto dto = toCategoryAnalysisDto(monthlyAnalysisId, stats);
+            MonthlyCategoryAnalysisDto dto = toCategoryAnalysisDto(monthlySpendingAnalysisId, stats);
 
             if (!stats.categoryId().equals(otherCategoryId)) {
                 EligibilityResult eligibility = eligibilityByCategory.get(stats.categoryId());
@@ -341,21 +344,26 @@ public class MonthlySpendingAnalysisService {
         }
     }
 
-    private MonthlyCategoryAnalysisDto toCategoryAnalysisDto(Long monthlyAnalysisId, CategorySpendingStats stats) {
+    private MonthlyCategoryAnalysisDto toCategoryAnalysisDto(Long monthlySpendingAnalysisId, CategorySpendingStats stats) {
         MonthlyCategoryAnalysisDto dto = new MonthlyCategoryAnalysisDto();
-        dto.setMonthlyAnalysisId(monthlyAnalysisId);
+        dto.setMonthlySpendingAnalysisId(monthlySpendingAnalysisId);
         dto.setCategoryId(stats.categoryId());
-        dto.setSpendingAmount(stats.totalSpending());
+        dto.setSpendingAmount(roundToWon(stats.totalSpending()));
         dto.setSpendingRatio(stats.spendingRatio());
         dto.setTransactionCount(stats.transactionCount());
-        dto.setWeeklyAverage(stats.weeklyAverage());
-        dto.setDailyAverage(stats.dailyAverage());
+        dto.setWeeklyAverage(roundToWon(stats.weeklyAverage()));
+        dto.setDailyAverage(roundToWon(stats.dailyAverage()));
         dto.setPreviousMonthChange(stats.previousMonthChange());
         dto.setSpendingRank(stats.spendingRank());
-        dto.setMissionPeriodSpending(stats.missionPeriodSpending());
+        dto.setMissionPeriodSpending(roundToWon(stats.missionPeriodSpending()));
         dto.setMissionTransactionCount(stats.missionTransactionCount());
         dto.setRecommendationEligible(false);
         return dto;
+    }
+
+    /** KRW 금액 컬럼은 DB에서 INT라 저장 전 원 단위로 반올림해야 한다(소수 값을 그대로 넣으면 안 된다). */
+    private BigDecimal roundToWon(BigDecimal amount) {
+        return amount == null ? null : amount.setScale(0, RoundingMode.HALF_UP);
     }
 
     // ===== 응답 조립 =====

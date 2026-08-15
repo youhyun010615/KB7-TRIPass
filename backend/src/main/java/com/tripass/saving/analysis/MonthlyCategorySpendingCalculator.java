@@ -51,8 +51,9 @@ public class MonthlyCategorySpendingCalculator {
                         calculateRatio(acc.totalSpending(), grandTotal),
                         acc.transactionCount(),
                         rankByCategory.get(acc.categoryId()),
-                        acc.totalSpending().divide(BigDecimal.valueOf(WEEKS_PER_MONTH), 2, RoundingMode.HALF_UP),
-                        acc.totalSpending().divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP),
+                        // KRW는 소수 단위가 없으므로(DB 컬럼도 INT) 원 단위로 반올림해서 계산한다.
+                        acc.totalSpending().divide(BigDecimal.valueOf(WEEKS_PER_MONTH), 0, RoundingMode.HALF_UP),
+                        acc.totalSpending().divide(BigDecimal.valueOf(daysInMonth), 0, RoundingMode.HALF_UP),
                         calculatePreviousMonthChange(
                                 acc.totalSpending(),
                                 previousMonthTotalSpendingByCategory.get(acc.categoryId())),

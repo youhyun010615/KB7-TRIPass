@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 @Component
 public class SavingResultCalculator {
@@ -39,7 +41,8 @@ public class SavingResultCalculator {
     }
 
     // DecimalFormat은 thread-safe하지 않으므로 싱글톤 빈에 static 필드로 두지 않고 호출마다 생성한다.
+    // 로케일을 명시하지 않으면 JVM 기본 로케일에 따라 천단위 구분자가 바뀌어(예: de-DE는 '.') 문구가 깨진다.
     private String formatAmount(BigDecimal amount) {
-        return new DecimalFormat("#,##0").format(amount);
+        return new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.KOREA)).format(amount);
     }
 }

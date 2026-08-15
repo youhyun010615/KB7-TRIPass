@@ -84,8 +84,8 @@ class MonthlyCategorySpendingCalculatorTest {
         CategorySpendingStats food =
                 statsByCategoryId(calculator.aggregate(spendings, JULY_2026, Map.of())).get(FOOD);
 
-        assertEquals(new BigDecimal("12500.00"), food.weeklyAverage()); // 50000/4
-        assertEquals(new BigDecimal("1612.90"), food.dailyAverage());   // 50000/31일
+        assertEquals(new BigDecimal("12500"), food.weeklyAverage()); // 50000/4
+        assertEquals(new BigDecimal("1613"), food.dailyAverage());   // 50000/31일, HALF_UP 반올림(원 단위)
     }
 
     @Test

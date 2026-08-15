@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class MonthlyCategoryAnalysisDto {
 
     private Long id;
-    private Long monthlyAnalysisId;
+    private Long monthlySpendingAnalysisId;
     private Long categoryId;
     private String categoryCode; // JOIN 조회 전용
     private String categoryName; // JOIN 조회 전용

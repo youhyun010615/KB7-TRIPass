@@ -38,7 +38,11 @@ public class MonthlySpendingAnalysisController {
         }
     }
 
-    /** 분석월 리포트를 계산해 저장한다. 기존 리포트가 있으면 집계값만 재계산한다. */
+    /**
+     * 분석월 리포트를 계산해 저장한다. 기존 리포트가 있으면 집계값만 재계산한다.
+     * 최초 생성·재계산을 이 엔드포인트 하나가 함께 처리하는 upsert 성격이라, 리소스가 새로 생성됐는지
+     * 여부와 무관하게 항상 200 OK로 응답한다(순수 생성 전용 엔드포인트가 아니므로 201은 쓰지 않는다).
+     */
     @PostMapping("/{yearMonth}")
     public ResponseEntity<ApiResponse<MonthlyAnalysisResponseDto>> generateMonthlyAnalysis(
             @PathVariable String yearMonth,

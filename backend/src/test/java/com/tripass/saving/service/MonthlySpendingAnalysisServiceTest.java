@@ -400,8 +400,8 @@ class MonthlySpendingAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("추천 후보가 없으면 지난달 기준 빈 상태 문구를 반환한다")
-    void get_noRecommendedCategories_returnsLastMonthEmptyMessage() {
+    @DisplayName("추천 후보가 없으면 빈 상태 문구를 반환한다")
+    void get_noRecommendedCategories_returnsEmptyMessage() {
         MonthlySpendingAnalysisDto analysis = new MonthlySpendingAnalysisDto();
         analysis.setId(1L);
         analysis.setAnalysisYearMonth("2026-07");
@@ -415,7 +415,7 @@ class MonthlySpendingAnalysisServiceTest {
         MonthlyAnalysisResponseDto response = service.getMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
 
         assertTrue(response.recommendedCategories().isEmpty());
-        assertEquals("지난달에는 절감이 필요한 소비 카테고리가 발견되지 않았어요.", response.coachingSummary());
+        assertEquals("이번 달에는 특별히 줄여야 할 소비 카테고리가 없어요.", response.coachingSummary());
     }
 
     @Test
