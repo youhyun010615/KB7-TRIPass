@@ -30,6 +30,8 @@ const publicAuthUrls = [
     '/auth/reset-password',
     '/auth/refresh',
     '/auth/logout',
+    '/auth/social/kakao',
+    '/auth/social/google',
 ]
 
 function isPublicAuthRequest(url) {

@@ -1,7 +1,10 @@
 <script setup>
-import { computed, ref } from 'vue'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
 import { useRouter } from 'vue-router'
-import BottomNav from '@/components/common/BottomNav.vue'
 import { changePassword as changePasswordApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { PASSWORD_PATTERN } from '@/constants/authValidation'
@@ -13,9 +16,12 @@ const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+
 const loading = ref(false)
 const errorMessage = ref('')
-
 
 const isDirty = computed(() =>
     confirmPassword.value.length > 0,
@@ -43,19 +49,29 @@ const canSubmit = computed(() =>
 
 const confirmBorderColor = computed(() => {
   if (!isDirty.value) {
-    return '#E5E7EB'
+    return '#DCE3EF'
   }
 
   return isMatch.value
-      ? '#3B5BDB'
+      ? '#10B981'
       : '#EF4444'
+})
+
+onMounted(() => {
+  // 소셜 회원은 TRIPass 비밀번호가 없으므로 직접 접근을 막는다.
+  const provider = authStore.user?.loginProvider
+
+  if (provider && provider !== 'LOCAL') {
+    router.replace('/mypage/profile')
+  }
 })
 
 async function submitPasswordChange() {
   errorMessage.value = ''
 
   if (!currentPassword.value) {
-    errorMessage.value = '현재 비밀번호를 입력해 주세요.'
+    errorMessage.value =
+        '현재 비밀번호를 입력해 주세요.'
     return
   }
 
@@ -80,8 +96,8 @@ async function submitPasswordChange() {
       newPasswordConfirm: confirmPassword.value,
     })
 
-    // 비밀번호 변경 시 백엔드가 모든 Refresh Token을 폐기하므로
-    // 프론트에 보관된 Access Token과 회원 정보도 제거한다.
+    // 백엔드에서 모든 Refresh Token을 폐기하므로
+    // 프론트에 저장된 로그인 정보도 제거한다.
     authStore.logout()
 
     window.alert(
@@ -100,95 +116,382 @@ async function submitPasswordChange() {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #F7F4EE">
-
+  <div
+      class="flex min-h-screen flex-col"
+      style="background: #F4F6FB"
+  >
     <!-- 헤더 -->
-    <div class="flex items-center justify-between px-5 pt-14 pb-4">
-      <button @click="router.back()" class="p-1">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18L9 12L15 6" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h1 class="text-base font-bold text-gray-900">비밀번호 변경</h1>
-      <div class="w-8" />
-    </div>
-
-    <!-- 입력 필드 -->
-    <div class="px-4 mt-2 flex flex-col gap-3">
-      <!-- 현재 비밀번호 -->
-      <div>
-        <p class="text-xs text-gray-400 mb-1.5">현재 비밀번호</p>
-        <div class="bg-white rounded-2xl px-5 py-4" style="border: 1.5px solid #E5E7EB">
-          <input
-            v-model="currentPassword"
-            type="password"
-            class="w-full text-sm text-gray-900 bg-transparent outline-none"
-            placeholder="현재 비밀번호 입력"
-          />
-        </div>
-      </div>
-
-      <!-- 새 비밀번호 -->
-      <div>
-        <p class="text-xs text-gray-400 mb-1.5">새 비밀번호</p>
-        <div class="bg-white rounded-2xl px-5 py-4" style="border: 1.5px solid #E5E7EB">
-          <input
-            v-model="newPassword"
-            type="password"
-            class="w-full text-sm text-gray-900 bg-transparent outline-none"
-            placeholder="새 비밀번호 입력"
-          />
-        </div>
-        <p class="text-xs text-gray-400 mt-1.5 ml-1">
-          영문, 숫자, 특수문자를 포함해 8~64자로 입력해 주세요.
-        </p>
-      </div>
-
-      <!-- 새 비밀번호 확인 -->
-      <div>
-        <p class="text-xs text-gray-400 mb-1.5">새 비밀번호 확인</p>
-        <div
-          class="bg-white rounded-2xl px-5 py-4"
-          :style="{ border: `1.5px solid ${confirmBorderColor}` }"
-        >
-          <input
-            v-model="confirmPassword"
-            type="password"
-            class="w-full text-sm text-gray-900 bg-transparent outline-none"
-            placeholder="새 비밀번호 재입력"
-          />
-        </div>
-        <!-- 에러 메시지 -->
-        <p v-if="isMismatch" class="text-xs mt-1.5 ml-1" style="color: #EF4444">
-          비밀번호가 일치하지 않습니다.
-        </p>
-        <!-- 일치 메시지 -->
-        <p v-else-if="isMatch" class="text-xs mt-1.5 ml-1" style="color: #3B5BDB">
-          비밀번호가 일치합니다.
-        </p>
-      </div>
-    </div>
-
-    <p
-        v-if="errorMessage"
-        class="px-4 mt-4 text-xs text-red-500"
+    <header
+        class="flex items-center border-b border-[#E2E7F0] bg-white px-5 pb-4 pt-14"
     >
-      {{ errorMessage }}
-    </p>
-    <!-- 하단 버튼 -->
-    <div class="px-4 mt-auto pt-6">
       <button
           type="button"
-          class="w-full h-14 rounded-2xl text-white font-bold text-base transition-opacity"
-          style="background: #1A337A"
-          :class="{ 'opacity-40': !canSubmit }"
+          class="flex h-8 w-8 items-center justify-center"
+          aria-label="뒤로 가기"
+          @click="router.back()"
+      >
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+        >
+          <path
+              d="M15 18L9 12L15 6"
+              stroke="#172033"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <h1
+          class="flex-1 pr-8 text-center text-xl font-bold text-[#172033]"
+      >
+        비밀번호 변경
+      </h1>
+    </header>
+
+    <main class="flex-1 px-4 pb-28 pt-6">
+      <p
+          class="mb-7 text-sm leading-5 text-[#718096]"
+      >
+        안전한 계정 사용을 위해<br>
+        새 비밀번호를 입력해 주세요.
+      </p>
+
+      <div class="flex flex-col gap-5">
+        <!-- 현재 비밀번호 -->
+        <section
+            class="rounded-2xl border border-[#DCE3EF] bg-white px-5 py-4 shadow-sm"
+        >
+          <label
+              for="current-password"
+              class="text-xs font-medium text-[#718096]"
+          >
+            현재 비밀번호
+          </label>
+
+          <div class="mt-3 flex items-center gap-3">
+            <input
+                id="current-password"
+                v-model="currentPassword"
+                :type="showCurrentPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                class="min-w-0 flex-1 bg-transparent text-sm font-semibold text-[#172033] outline-none"
+                placeholder="현재 비밀번호를 입력해 주세요."
+                :disabled="loading"
+            >
+
+            <button
+                type="button"
+                class="flex h-8 w-8 items-center justify-center text-[#718096]"
+                :aria-label="
+                showCurrentPassword
+                  ? '현재 비밀번호 숨기기'
+                  : '현재 비밀번호 표시'
+              "
+                @click="showCurrentPassword = !showCurrentPassword"
+            >
+              <svg
+                  v-if="showCurrentPassword"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+              >
+                <path
+                    d="M3 3L21 21"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+                <path
+                    d="M10.6 10.7A2 2 0 0013.3 13.4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+                <path
+                    d="M9.9 5.2A10.7 10.7 0 0112 5C17 5 20.2 9 21 12a10.6 10.6 0 01-2.1 3.8M6.2 6.2C4.5 7.5 3.4 9.5 3 12c.8 3 4 7 9 7 1.2 0 2.3-.2 3.3-.6"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+              </svg>
+
+              <svg
+                  v-else
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+              >
+                <path
+                    d="M3 12S6 5 12 5s9 7 9 7-3 7-9 7-9-7-9-7Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="2.5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- 새 비밀번호 -->
+        <section
+            class="rounded-2xl border border-[#DCE3EF] bg-white px-5 py-4 shadow-sm"
+        >
+          <label
+              for="new-password"
+              class="text-xs font-medium text-[#718096]"
+          >
+            새 비밀번호
+          </label>
+
+          <div class="mt-3 flex items-center gap-3">
+            <input
+                id="new-password"
+                v-model="newPassword"
+                :type="showNewPassword ? 'text' : 'password'"
+                autocomplete="new-password"
+                class="min-w-0 flex-1 bg-transparent text-sm font-semibold text-[#172033] outline-none"
+                placeholder="새 비밀번호를 입력해 주세요."
+                maxlength="64"
+                :disabled="loading"
+            >
+
+            <button
+                type="button"
+                class="flex h-8 w-8 items-center justify-center text-[#718096]"
+                :aria-label="
+                showNewPassword
+                  ? '새 비밀번호 숨기기'
+                  : '새 비밀번호 표시'
+              "
+                @click="showNewPassword = !showNewPassword"
+            >
+              <svg
+                  v-if="showNewPassword"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+              >
+                <path
+                    d="M3 3L21 21"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+                <path
+                    d="M10.6 10.7A2 2 0 0013.3 13.4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+                <path
+                    d="M9.9 5.2A10.7 10.7 0 0112 5C17 5 20.2 9 21 12a10.6 10.6 0 01-2.1 3.8M6.2 6.2C4.5 7.5 3.4 9.5 3 12c.8 3 4 7 9 7 1.2 0 2.3-.2 3.3-.6"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+              </svg>
+
+              <svg
+                  v-else
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+              >
+                <path
+                    d="M3 12S6 5 12 5s9 7 9 7-3 7-9 7-9-7-9-7Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="2.5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- 새 비밀번호 확인 -->
+        <section
+            class="rounded-2xl bg-white px-5 py-4 shadow-sm"
+            :style="{
+            border: `1.5px solid ${confirmBorderColor}`
+          }"
+        >
+          <label
+              for="confirm-password"
+              class="text-xs font-medium text-[#718096]"
+          >
+            새 비밀번호 확인
+          </label>
+
+          <div class="mt-3 flex items-center gap-3">
+            <input
+                id="confirm-password"
+                v-model="confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                autocomplete="new-password"
+                class="min-w-0 flex-1 bg-transparent text-sm font-semibold text-[#172033] outline-none"
+                placeholder="새 비밀번호를 다시 입력해 주세요."
+                maxlength="64"
+                :disabled="loading"
+            >
+
+            <button
+                type="button"
+                class="flex h-8 w-8 items-center justify-center text-[#718096]"
+                :aria-label="
+                showConfirmPassword
+                  ? '비밀번호 확인값 숨기기'
+                  : '비밀번호 확인값 표시'
+              "
+                @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <svg
+                  v-if="showConfirmPassword"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+              >
+                <path
+                    d="M3 3L21 21"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+                <path
+                    d="M10.6 10.7A2 2 0 0013.3 13.4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+                <path
+                    d="M9.9 5.2A10.7 10.7 0 0112 5C17 5 20.2 9 21 12a10.6 10.6 0 01-2.1 3.8M6.2 6.2C4.5 7.5 3.4 9.5 3 12c.8 3 4 7 9 7 1.2 0 2.3-.2 3.3-.6"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+              </svg>
+
+              <svg
+                  v-else
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+              >
+                <path
+                    d="M3 12S6 5 12 5s9 7 9 7-3 7-9 7-9-7-9-7Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="2.5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- 비밀번호 확인 상태 -->
+        <div
+            v-if="isMismatch"
+            class="rounded-2xl bg-[#FFF0F0] px-5 py-4"
+            role="alert"
+        >
+          <div class="flex items-start gap-3">
+            <span
+                class="mt-0.5 text-lg font-bold text-[#EF4444]"
+                aria-hidden="true"
+            >
+              △
+            </span>
+
+            <div>
+              <p class="text-sm font-bold text-[#EF4444]">
+                비밀번호가 서로 일치하지 않아요.
+              </p>
+
+              <p class="mt-1 text-xs text-[#8A5A5A]">
+                입력한 비밀번호를 다시 확인해 주세요.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+            v-else-if="isMatch"
+            class="rounded-2xl bg-[#E9FAF3] px-5 py-4"
+            role="status"
+        >
+          <div class="flex items-start gap-3">
+            <span
+                class="mt-0.5 text-lg font-bold text-[#10B981]"
+                aria-hidden="true"
+            >
+              ✓
+            </span>
+
+            <div>
+              <p class="text-sm font-bold text-[#059669]">
+                비밀번호가 일치해요.
+              </p>
+
+              <p class="mt-1 text-xs text-[#5D7D70]">
+                새 비밀번호로 변경할 수 있어요.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- API 오류 -->
+        <div
+            v-if="errorMessage"
+            class="rounded-2xl bg-[#FFF0F0] px-5 py-4"
+            role="alert"
+        >
+          <p class="text-sm font-semibold text-[#EF4444]">
+            {{ errorMessage }}
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <!-- 하단 변경 버튼 -->
+    <footer
+        class="fixed bottom-0 left-1/2 z-20 w-full max-w-[390px] -translate-x-1/2 border-t border-[#E2E7F0] bg-white px-4 py-4"
+    >
+      <button
+          type="button"
+          class="h-14 w-full rounded-2xl bg-[#173E8F] text-base font-bold text-white transition-opacity disabled:bg-[#C8CDD7]"
           :disabled="!canSubmit"
           @click="submitPasswordChange"
       >
-        {{ loading ? '변경 중...' : '비밀번호 변경' }}
+        {{ loading ? '변경 중...' : '변경 완료' }}
       </button>
-    </div>
-
-    <BottomNav />
+    </footer>
   </div>
 </template>

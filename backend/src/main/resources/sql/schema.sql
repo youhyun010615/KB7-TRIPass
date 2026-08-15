@@ -16,6 +16,9 @@ DROP TABLE IF EXISTS trip_wallets;
 DROP TABLE IF EXISTS trip_countries;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS notification_settings;
+DROP TABLE IF EXISTS mission_category_selections;
+DROP TABLE IF EXISTS monthly_category_analyses;
+DROP TABLE IF EXISTS monthly_spending_analyses;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS saving_plans;
 DROP TABLE IF EXISTS financial_schedules;
@@ -153,11 +156,13 @@ CREATE TABLE countries
 CREATE TABLE spending_categories
 (
     id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '카테고리 ID',
+    category_code VARCHAR(30) NOT NULL COMMENT '카테고리 식별 코드',
     category_name VARCHAR(50) NOT NULL COMMENT '카테고리명',
     display_order INT         NOT NULL DEFAULT 0 COMMENT '표시 순서',
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_spending_categories_code (category_code)
 ) COMMENT '지출 카테고리';
 
 
@@ -505,6 +510,9 @@ CREATE TABLE transactions
     account_id            BIGINT         NULL COMMENT '계좌 ID(카드 전용 거래는 NULL)',
     card_id               BIGINT         NULL COMMENT '카드 ID(계좌 거래는 NULL)',
     category_id           BIGINT         NULL COMMENT '카테고리 ID',
+    category_source        VARCHAR(20)    NULL COMMENT '카테고리 분류 출처(USER/CODEF_TYPE/AI_MODEL/FALLBACK)',
+    category_confidence    DECIMAL(5, 4)  NULL COMMENT '자동분류 신뢰도(0~1)',
+    category_classified_at DATETIME       NULL COMMENT '카테고리 자동분류 시각',
     trip_id               BIGINT         NULL COMMENT '여행 ID',
     trip_country_id       BIGINT         NULL COMMENT '여행 국가 ID',
     currency_id           BIGINT         NULL COMMENT '현지 통화 ID',
@@ -918,6 +926,87 @@ CREATE TABLE user_fcm_tokens
     CONSTRAINT fk_user_fcm_tokens_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) COMMENT 'FCM 디바이스 토큰';
 
+-- 33. 월간 AI 소비 분석 리포트
+CREATE TABLE monthly_spending_analyses
+(
+    id                       BIGINT         NOT NULL AUTO_INCREMENT COMMENT '월간 분석 ID',
+    user_id                  BIGINT         NOT NULL COMMENT '회원 ID',
+    analysis_year_month      CHAR(7)        NOT NULL COMMENT '분석 대상 연월(YYYY-MM, 지난달)',
+    target_year_month        CHAR(7)        NOT NULL COMMENT '미션 적용 연월(YYYY-MM, 이번달)',
+    total_spending           INT            NOT NULL DEFAULT 0 COMMENT '지난달 총지출(1일~말일, 원)',
+    saving_target_amount     INT            NULL COMMENT '저축 목표 금액(원)',
+    actual_saving_amount     INT            NULL COMMENT '실제 저축 금액(원)',
+    saving_difference_amount INT            NULL COMMENT '초과·부족 금액(실제-목표, 원)',
+    saving_result_message    VARCHAR(200)   NULL COMMENT '저축 결과 문구',
+    report_status            VARCHAR(20)    NOT NULL DEFAULT 'PENDING' COMMENT '리포트 상태(PENDING/VIEWED/CLOSED)',
+    report_viewed_at         DATETIME       NULL COMMENT '리포트 확인 시각',
+    report_closed_at         DATETIME       NULL COMMENT '리포트 종료 시각',
+    created_at               TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at               TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_monthly_spending_analyses_user_month (user_id, analysis_year_month),
+    CONSTRAINT fk_monthly_spending_analyses_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT '월간 AI 소비 분석 리포트';
+
+
+-- 34. 월간 카테고리별 소비·절감 추천 분석
+CREATE TABLE monthly_category_analyses
+(
+    id                            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '카테고리별 분석 ID',
+    monthly_spending_analysis_id  BIGINT         NOT NULL COMMENT '월간 분석 ID',
+    category_id                   BIGINT         NOT NULL COMMENT '카테고리 ID',
+    spending_amount               INT            NOT NULL DEFAULT 0 COMMENT '지난달 지출액(1일~말일, 소비순위 표시용, 원)',
+    spending_ratio                DECIMAL(5, 2)  NOT NULL DEFAULT 0 COMMENT '전체 지출 대비 비율(%)',
+    transaction_count             INT            NOT NULL DEFAULT 0 COMMENT '거래 횟수(1일~말일)',
+    weekly_average                INT            NULL COMMENT '주간 평균 지출(원)',
+    daily_average                 INT            NULL COMMENT '일 평균 지출(원)',
+    previous_month_change         DECIMAL(6, 2)  NULL COMMENT '전월 대비 증감률(%)',
+    spending_rank                 INT            NULL COMMENT '소비 순위(1일~말일 기준, 기타 포함)',
+    mission_period_spending       INT            NOT NULL DEFAULT 0 COMMENT '미션 기준 지출액(1~28일, 원)',
+    mission_transaction_count     INT            NOT NULL DEFAULT 0 COMMENT '미션 기준 거래 횟수(1~28일)',
+    spending_share_score       DECIMAL(6, 4)  NULL COMMENT '지출 비율 점수(0~1)',
+    increase_score             DECIMAL(6, 4)  NULL COMMENT '최근 3개월 대비 증가 점수(0~1)',
+    amount_rank_score          DECIMAL(6, 4)  NULL COMMENT '지출 순위 점수(0~1)',
+    recommendation_score       DECIMAL(6, 4)  NULL COMMENT '최종 추천 점수(0~1)',
+    recommendation_rank        INT            NULL COMMENT '절감 추천 순위(TOP 3)',
+    recommendation_eligible    TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '추천 후보 필터 통과 여부',
+    exclusion_reason           VARCHAR(50)    NULL COMMENT '추천 제외 사유',
+    recommendation_reason      VARCHAR(500)   NULL COMMENT '추천 선정 근거',
+    coaching_message           VARCHAR(500)   NULL COMMENT 'AI 코칭 문구',
+    created_at                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_monthly_category_analyses_analysis_category (monthly_spending_analysis_id, category_id),
+    CONSTRAINT fk_monthly_category_analyses_analysis FOREIGN KEY (monthly_spending_analysis_id) REFERENCES monthly_spending_analyses (id),
+    CONSTRAINT fk_monthly_category_analyses_category FOREIGN KEY (category_id) REFERENCES spending_categories (id)
+) COMMENT '월간 카테고리별 소비·절감 추천 분석';
+
+
+-- 35. 카테고리별 절감률 선택
+-- monthly_category_analyses와 분리한다. #210 리포트가 재계산될 때 monthly_category_analyses는
+-- delete 후 재삽입되므로, 같은 테이블에 두면 재계산할 때마다 사용자의 선택이 사라진다.
+-- 행이 존재하면 선택된 것으로 간주한다(별도 선택 여부 컬럼을 두지 않는다).
+CREATE TABLE mission_category_selections
+(
+    id                            BIGINT    NOT NULL AUTO_INCREMENT COMMENT '미션 카테고리 선택 ID',
+    monthly_spending_analysis_id  BIGINT    NOT NULL COMMENT '월간 분석 ID',
+    category_id                   BIGINT    NOT NULL COMMENT '소비 카테고리 ID',
+    reduction_rate                TINYINT   NOT NULL COMMENT '절감률(10/30/50, %)',
+    baseline_spending_amount      INT       NOT NULL COMMENT '선택 당시 monthly_category_analyses.mission_period_spending 스냅샷(원)',
+    monthly_reduction_target      INT       NOT NULL COMMENT '월 절감 목표 금액(원)',
+    monthly_usage_target          INT       NOT NULL COMMENT '월 사용 목표 금액(원)',
+    created_at                    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at                    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_mission_category_selections_analysis_category (monthly_spending_analysis_id, category_id),
+    CONSTRAINT fk_mission_category_selections_analysis
+        FOREIGN KEY (monthly_spending_analysis_id) REFERENCES monthly_spending_analyses (id),
+    CONSTRAINT fk_mission_category_selections_category
+        FOREIGN KEY (category_id) REFERENCES spending_categories (id),
+    CONSTRAINT chk_mission_category_selections_reduction_rate CHECK (reduction_rate IN (10, 30, 50))
+) COMMENT '카테고리별 절감률 선택';
+
+
 -- ===== INDEXES =====
 CREATE INDEX idx_transactions_account_id ON transactions (account_id);
 CREATE INDEX idx_transactions_card_id ON transactions (card_id);
@@ -937,3 +1026,5 @@ CREATE INDEX idx_notifications_is_read ON notifications (user_id, is_read);
 CREATE INDEX idx_exchange_rates_rate_date ON exchange_rates (rate_date);
 CREATE INDEX idx_pre_expenses_trip_id ON pre_expenses (trip_id);
 CREATE INDEX idx_saving_plans_trip_id ON saving_plans (trip_id);
+CREATE INDEX idx_monthly_spending_analyses_user_id ON monthly_spending_analyses (user_id);
+CREATE INDEX idx_monthly_category_analyses_monthly_spending_analysis_id ON monthly_category_analyses (monthly_spending_analysis_id);
