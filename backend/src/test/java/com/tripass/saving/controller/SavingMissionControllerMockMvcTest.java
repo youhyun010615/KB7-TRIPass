@@ -51,6 +51,7 @@ class SavingMissionControllerMockMvcTest {
         mockMvc.perform(post("/api/v1/saving/missions/2026-08").principal(authentication()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("월간·주간 미션 생성 성공"))
                 .andExpect(jsonPath("$.data.targetYearMonth").value("2026-08"))
                 .andExpect(jsonPath("$.data.missionCount").value(1))
                 .andExpect(jsonPath("$.data.totalPlannedSavingAmount").value(19500))
