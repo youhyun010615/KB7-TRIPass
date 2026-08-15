@@ -1,4 +1,4 @@
-package com.tripass.travel.domain;
+package com.tripass.travel.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,13 +12,14 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripCountry {
-
-    private Long id;
-    private Long tripId;
+public class TripHomeCountryResponseDto {
+    private Long tripCountryId;
     private Long countryId;
+    private String countryName;
+    private String currencyCode;
     private LocalDate arrivalDate;
     private LocalDate departureDate;
-    private BigDecimal targetBudget;
     private Integer displayOrder;
+    private BigDecimal targetBudget;
+    private BigDecimal targetSharePercent;
 }

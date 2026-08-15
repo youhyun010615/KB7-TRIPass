@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useChecklistStore } from '@/stores/checklist';
@@ -7,18 +7,65 @@ import { useChecklistStore } from '@/stores/checklist';
 const route = useRoute();
 const router = useRouter();
 const store = useChecklistStore();
-const tripId = computed(() => Number(route.query.tripId || 1));
-const data = computed(() => store.getTrip(tripId.value));
-const prepProgress = computed(() =>
-  store.progress(store.preparationItems(tripId.value)),
+
+// 1. URL Query에서 tripId 추출 (기본값 없음)
+const tripId = computed(() =>
+  route.query.tripId ? Number(route.query.tripId) : null,
 );
-const returnProgress = computed(() => store.progress(data.value.returns));
-const allProgress = computed(() =>
-  store.progress([
-    ...store.preparationItems(tripId.value),
-    ...data.value.returns,
-  ]),
-);
+
+// [MODIFIED] ChecklistStore에서 tripDday를 직접 가져오기
+const dDayLabel = computed(() => {
+  const days = store.tripDday; // 스토어의 반응형 변수 참조
+
+  if (days === undefined || days === null) return '...'; // 로딩 중일 때 표시
+  if (days === 0) return 'D-DAY';
+  if (days > 0) return `D-${days}`;
+  return `D+${Math.abs(days)}`;
+});
+
+// 2. 컴포넌트 마운트 시 체크리스트 요약 API 호출
+onMounted(async () => {
+  if (tripId.value) {
+    // 순서대로 호출
+    await Promise.all([
+      store.loadSummary(tripId.value),
+      store.fetchTripDday(tripId.value)
+    ]);
+  } else {
+    console.error('tripId가 없습니다.');
+    router.back();
+  }
+});
+
+// tripId가 변경될 때마다 요약 정보 재조회
+watch(tripId, (newTripId) => {
+  if (newTripId) {
+    store.loadSummary(newTripId);
+  }
+});
+
+// 3. 백엔드 Summary 데이터 계산 프로퍼티
+const summary = computed(() => store.summary);
+
+// 전체 진행률 계산
+const totalProgress = computed(() => {
+  const total = summary.value.totalItemCount || 0;
+  const done = summary.value.totalCompletedCount || 0;
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { done, total, percent };
+});
+
+// 여행 준비 진행률
+const prepProgress = computed(() => ({
+  done: summary.value.prepCompletedCount || 0,
+  total: summary.value.prepItemCount || 0,
+}));
+
+// 귀국 진행률
+const returnProgress = computed(() => ({
+  done: summary.value.returnCompletedCount || 0,
+  total: summary.value.returnItemCount || 0,
+}));
 </script>
 
 <template>
@@ -28,55 +75,73 @@ const allProgress = computed(() =>
       <h1>체크리스트</h1>
       <span />
     </header>
+
+    <!-- 티켓 스타일 요약 카드 -->
     <section class="ticket">
       <small>TRIP CHECKLIST PASS</small>
       <div>
-        <h2>{{ data.trip.flags }} {{ data.trip.title }}</h2>
-        <b>D-{{ data.trip.dDay }}</b>
+        <h2>내 여행 체크리스트</h2>
+        <b>{{ dDayLabel }}</b>
       </div>
       <i />
       <p>전체 완료율</p>
       <div class="total">
-        <strong>{{ allProgress.done }} / {{ allProgress.total }}</strong
-        ><em>{{ allProgress.percent }}% 완료</em>
+        <strong>{{ totalProgress.done }} / {{ totalProgress.total }}</strong>
+        <em>{{ totalProgress.percent }}% 완료</em>
       </div>
       <div class="bar">
-        <span :style="{ width: `${allProgress.percent}%` }" />
+        <span :style="{ width: `${totalProgress.percent}%` }" />
       </div>
     </section>
+
     <h3>체크리스트 목록</h3>
+
+    <!-- 1. 여행 준비 체크리스트 버튼 -->
     <button
       class="menu-card"
       @click="router.push(`/mypage/checklists/preparation?tripId=${tripId}`)"
     >
-      <span class="menu-icon preparation">✓</span
-      ><span class="copy"
-        ><b>여행 준비 체크리스트</b
-        ><small>D-30 · D-7 · D-1 준비 항목</small></span
-      ><em>{{ prepProgress.done }}/{{ prepProgress.total }}</em
-      ><strong>›</strong>
+      <span class="menu-icon preparation">✓</span>
+      <span class="copy">
+        <b>여행 준비 체크리스트</b>
+        <small>D-30 · D-7 · D-1 준비 항목</small>
+      </span>
+      <em>{{ prepProgress.done }}/{{ prepProgress.total }}</em>
+      <strong>›</strong>
     </button>
+
+    <!-- 2. 귀국 체크리스트 버튼 -->
     <button
       class="menu-card"
       @click="router.push(`/mypage/checklists/return?tripId=${tripId}`)"
     >
-      <span class="menu-icon returning">↩</span
-      ><span class="copy"
-        ><b>귀국 체크리스트</b><small>귀국일 점검 및 정리 항목</small></span
-      ><em :class="{ scheduled: !returnProgress.done }">{{
-        returnProgress.done
-          ? `${returnProgress.done}/${returnProgress.total}`
-          : '예정'
-      }}</em
-      ><strong>›</strong>
-    </button>
-    <aside>
-      <span>✈️</span
-      ><span
-        ><b>완료하지 못한 준비 항목은 다음 단계로 이월돼요</b
-        ><small>체크리스트는 직접 추가할 수도 있어요.</small></span
+      <span class="menu-icon returning">↩</span>
+      <span class="copy">
+        <b>귀국 체크리스트</b>
+        <small>귀국일 점검 및 정리 항목</small>
+      </span>
+      <em
+        :class="{
+          scheduled: returnProgress.total === 0 || returnProgress.done === 0,
+        }"
       >
+        {{
+          returnProgress.total > 0
+            ? `${returnProgress.done}/${returnProgress.total}`
+            : '예정'
+        }}
+      </em>
+      <strong>›</strong>
+    </button>
+
+    <aside>
+      <span>✈️</span>
+      <span>
+        <b>완료하지 못한 준비 항목은 다음 단계로 이월돼요</b>
+        <small>체크리스트는 직접 추가할 수도 있어요.</small>
+      </span>
     </aside>
+
     <BottomNav />
   </main>
 </template>
@@ -180,6 +245,7 @@ const allProgress = computed(() =>
   height: 100%;
   border-radius: 8px;
   background: linear-gradient(90deg, #45d7ff, #1e8bff);
+  transition: width 0.3s ease;
 }
 .checklist-page > h3 {
   margin: 25px 2px 14px;

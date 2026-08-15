@@ -65,21 +65,14 @@ function searchAddress() {
   window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer')
 }
 
-const isSubmitting = ref(false)
-
-async function submit() {
-  if (!valid.value || isSubmitting.value) return
-  isSubmitting.value = true
+function submit() {
+  if (!valid.value) return
   const payload = {
     ...form, amount: Number(form.amount), title: form.title.trim(),
     placeName: form.placeName.trim(), placeAddress: form.placeAddress.trim(), memo: form.memo.trim(),
   }
-  try {
-    const success = editing.value ? await store.update(route.params.scheduleId, payload) : await store.save(payload)
-    if (success) router.push(editing.value ? `/schedule/${route.params.scheduleId}` : { path: '/schedule', query: route.query })
-  } finally {
-    isSubmitting.value = false
-  }
+  const success = editing.value ? store.update(route.params.scheduleId, payload) : store.save(payload)
+  if (success) router.push(editing.value ? `/schedule/${route.params.scheduleId}` : { path: '/schedule', query: route.query })
 }
 
 onMounted(loadGooglePlaces)
@@ -99,8 +92,7 @@ onBeforeUnmount(() => { autocomplete = null })
       <label><span>🗺 주소</span><div class="address"><input ref="addressInput" v-model="form.placeAddress" placeholder="주소를 입력하거나 검색해 주세요"><button type="button" aria-label="Google 지도에서 주소 검색" @click="searchAddress">⌕</button></div></label>
       <label><span>📝 메모</span><textarea v-model="form.memo" maxlength="100" placeholder="일정에 필요한 내용을 메모해 주세요."/><small>{{ form.memo.length }}/100</small></label>
     </section>
-    <p v-if="store.errorMessage" style="padding:0 14px;color:#e5484d;font-size:10px">{{ store.errorMessage }}</p>
-    <button class="submit" :disabled="!valid || isSubmitting" type="button" @click="submit">{{ isSubmitting ? '처리 중...' : (editing ? '수정 완료' : '등록하기') }}</button>
+    <button class="submit" :disabled="!valid" type="button" @click="submit">{{ editing ? '수정 완료' : '등록하기' }}</button>
     <BottomNav />
   </main>
 </template>

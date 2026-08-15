@@ -25,6 +25,18 @@ public class ChecklistService {
     private final ChecklistMapper checklistMapper;
 
     /**
+     * 여행 생성 시 기본 체크리스트 항목 초기화 (이미 생성되었으면 스킵)
+     */
+    @Transactional
+    public void initializeChecklist(Long tripId) {
+        // 이미 생성된 체크리스트가 있는지 확인
+        if (checklistMapper.selectChecklistSummaryByTripId(tripId).getTotalItemCount() > 0) {
+            return;
+        }
+        checklistMapper.insertDefaultChecklistsFromTemplate(tripId);
+    }
+
+    /**
      * 1. 여행 체크리스트 전체 현황 요약 조회
      */
     public ChecklistSummaryResponseDto getChecklistSummary(Long tripId, Long currentUserId) {

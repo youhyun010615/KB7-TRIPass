@@ -1,21 +1,24 @@
 package com.tripass.travel.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-/** 현재 여행 조회 응답에 포함되는 국가별 상세 정보입니다. */
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripCountryDetailDto {
-
+public class TripCountryGoalResponseDto {
     private Long tripCountryId;
+    private Long countryId;
     private String countryName;
+    private String currencyCode;
     private LocalDate arrivalDate;
     private LocalDate departureDate;
+    private Integer displayOrder;
     private BigDecimal targetBudget;
 }
