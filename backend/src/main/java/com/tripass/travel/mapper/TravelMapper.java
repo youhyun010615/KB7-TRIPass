@@ -54,6 +54,8 @@ public interface TravelMapper {
 
     List<TripCountryBudgetContextDto> findTripCountryBudgetContexts(@Param("tripId") Long tripId);
 
+    List<TravelTransactionDto> findTravelTransactions(@Param("tripId") Long tripId, @Param("countryId") Long countryId);
+
     CountryBudgetBaselineDto findCountryBudgetBaseline(@Param("countryId") Long countryId);
 
     void upsertTripBudgetRecommendation(TripBudgetRecommendationCommandDto command);

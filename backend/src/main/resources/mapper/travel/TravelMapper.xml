@@ -6,11 +6,19 @@
 
     <resultMap id="DashboardResultMap" type="TravelStatusResponseDto">
         <result property="totalRemainingFund" column="total_remaining_fund"/>
-        <result property="dailyAvailableAmount" column="daily_available_amount"/>
+        <association property="tripInfo" javaType="TripBasicInfoDto">
+            <result property="tripId" column="trip_id"/>
+            <result property="tripName" column="trip_name"/>
+            <result property="startDate" column="start_date"/>
+            <result property="endDate" column="end_date"/>
+        </association>
         <collection property="countries" ofType="CountryStatusDto">
+            <result property="tripCountryId" column="id"/>
             <result property="countryName" column="country_name"/>
-            <result property="remainingFund" column="country_remaining_fund"/>
-            <result property="remainingDays" column="remaining_days"/>
+            <result property="targetBudget" column="target_budget"/>
+            <result property="spentAmount" column="spent_amount"/>
+            <result property="totalDays" column="total_days"/>
+            <result property="passedDays" column="passed_days"/>
         </collection>
     </resultMap>
 
@@ -19,29 +27,38 @@
         WITH TripStats AS (
             SELECT
                 t.id AS trip_id,
+                t.trip_name,
+                t.start_date,
+                t.end_date,
                 t.total_target_amount,
-                COALESCE(SUM(tr.amount), 0) AS total_spent,
-                DATEDIFF(t.end_date, CURRENT_DATE) AS remaining_trip_days
+                COALESCE(SUM(tr.amount), 0) AS total_spent
             FROM trips t
                      LEFT JOIN transactions tr ON t.id = tr.trip_id AND tr.is_deleted = 0
             WHERE t.id = #{tripId} AND t.is_deleted = 0
-            GROUP BY t.id
+            GROUP BY t.id, t.trip_name, t.start_date, t.end_date
         )
         SELECT
+            ts.trip_id,
+            ts.trip_name,
+            ts.start_date,
+            ts.end_date,
             (ts.total_target_amount - ts.total_spent) AS total_remaining_fund,
-            CASE
-                WHEN ts.remaining_trip_days > 0 THEN (ts.total_target_amount - ts.total_spent) / ts.remaining_trip_days
-                ELSE 0
-                END AS daily_available_amount,
+            tc.id AS id,
             c.country_name,
-            tc.target_budget - COALESCE(SUM(tr.amount), 0) AS country_remaining_fund,
-            DATEDIFF(tc.departure_date, CURRENT_DATE) AS remaining_days
+            tc.target_budget,
+            COALESCE(SUM(tr.amount), 0) AS spent_amount,
+            DATEDIFF(tc.departure_date, tc.arrival_date) + 1 AS total_days,
+            CASE
+                WHEN CURRENT_DATE <![CDATA[<]]> tc.arrival_date THEN 0
+                WHEN CURRENT_DATE <![CDATA[>]]> tc.departure_date THEN DATEDIFF(tc.departure_date, tc.arrival_date) + 1
+                ELSE DATEDIFF(CURRENT_DATE, tc.arrival_date)
+            END AS passed_days
         FROM TripStats ts
                  JOIN trip_countries tc ON ts.trip_id = tc.trip_id
                  JOIN countries c ON tc.country_id = c.id
                  LEFT JOIN transactions tr ON tc.id = tr.trip_country_id AND tr.is_deleted = 0
         WHERE tc.is_deleted = 0
-        GROUP BY ts.trip_id, tc.id, c.country_name, tc.target_budget, tc.departure_date, ts.total_target_amount, ts.total_spent, ts.remaining_trip_days
+        GROUP BY ts.trip_id, ts.trip_name, ts.start_date, ts.end_date, tc.id, c.country_name, tc.target_budget, tc.arrival_date, tc.departure_date, ts.total_target_amount, ts.total_spent
     </select>
 
     <resultMap id="BudgetCheckResultMap" type="BudgetCheckResponseDto">
@@ -457,5 +474,29 @@
         WHERE id = #{id}
           AND is_deleted = 0
     </update>
+
+    <select id="findTravelTransactions" resultType="TravelTransactionDto">
+        SELECT
+            t.id AS transactionId,
+            t.trip_id,
+            c.country_name,
+            sc.category_name,
+            t.merchant_name,
+            t.amount,
+            t.original_amount,
+            t.applied_exchange_rate,
+            cur.symbol AS currencySymbol,
+            t.transaction_date,
+            t.transaction_type
+        FROM transactions t
+        LEFT JOIN trip_countries tc ON t.trip_country_id = tc.id
+        LEFT JOIN countries c ON tc.country_id = c.id
+        LEFT JOIN spending_categories sc ON t.category_id = sc.id
+        LEFT JOIN currencies cur ON t.currency_id = cur.id
+        WHERE t.trip_id = #{tripId}
+          AND t.is_deleted = 0
+          AND (#{countryId} IS NULL OR t.trip_country_id = #{countryId})
+        ORDER BY t.transaction_date DESC
+    </select>
 
 </mapper>

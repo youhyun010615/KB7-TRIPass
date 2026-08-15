@@ -31,10 +31,11 @@ public class TravelController {
     @GetMapping("/{id}/travel-status")
     public ResponseEntity<ApiResponse<TravelStatusResponseDto>> getTravelStatus(
             @PathVariable Long id,
+            @RequestParam(required = false) Long countryId,
             Authentication authentication) {
         Long userId = getAuthenticatedUserId(authentication);
 
-        TravelStatusResponseDto data = travelService.getTravelStatus(id, userId);
+        TravelStatusResponseDto data = travelService.getTravelStatus(id, userId, countryId);
         return ResponseEntity.ok(ApiResponse.success("여행 대시보드 조회 성공", data));
     }
 

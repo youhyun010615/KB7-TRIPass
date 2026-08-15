@@ -58,3 +58,10 @@ export async function switchTravelMode(tripId, request) {
   });
   return unwrap(response);
 }
+
+export async function fetchTripStatus(tripId, countryId) {
+  const response = await api.get(`/trips/${tripId}/travel-status`, {
+    params: countryId ? { countryId } : undefined,
+  });
+  return unwrap(response);
+}

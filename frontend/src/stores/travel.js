@@ -7,6 +7,7 @@ import {
   fetchActiveTripGoal,
   fetchTripBudget,
   fetchTripCountries,
+  fetchTripStatus,
   generateTripBudget,
   updateTripGoal,
 } from '@/api/travel'
@@ -139,6 +140,8 @@ export const useTravelStore = defineStore('travel', () => {
   const loading = ref(false)
   const countryLoading = ref(false)
   const errorMessage = ref('')
+  const tripStatus = ref(null)
+  const statusLoading = ref(false)
 
   const accounts = accountSeed
   const selectedPlans = computed(() => selectedCountryCodes.value.map((key) => plans[key]).filter(Boolean))
@@ -427,6 +430,19 @@ export const useTravelStore = defineStore('travel', () => {
     }
   }
 
+  async function loadTripStatus(tripId, countryId = null) {
+    statusLoading.value = true
+    try {
+      tripStatus.value = await fetchTripStatus(tripId, countryId)
+      return tripStatus.value
+    } catch (error) {
+      errorMessage.value = apiErrorMessage(error, '여행 상태를 불러오지 못했습니다.')
+      return null
+    } finally {
+      statusLoading.value = false
+    }
+  }
+
   function resetGoal() {
     hasTravelGoal.value = false
     initialized.value = false
@@ -482,6 +498,8 @@ export const useTravelStore = defineStore('travel', () => {
     loading,
     countryLoading,
     errorMessage,
+    tripStatus,
+    statusLoading,
     totalTargetAmount,
     prepaidExpenseTotal,
     monthlySavingTarget,
@@ -495,6 +513,7 @@ export const useTravelStore = defineStore('travel', () => {
     loadCountries,
     loadActiveGoal,
     loadHomeDashboard,
+    loadTripStatus,
     setHomeSelectedCountry,
     toggleCountry,
     reorderCountries,

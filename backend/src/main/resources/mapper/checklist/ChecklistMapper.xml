@@ -146,8 +146,7 @@
                                           is_completed,
                                           is_excluded,
                                           is_custom,
-                                          is_carried_over,
-                                          is_deleted)
+                                          is_carried_over)
         SELECT #{tripId} AS trip_id,
                id        AS template_id,
                checklist_type,
@@ -156,10 +155,8 @@
                0         AS is_completed,
                0         AS is_excluded,
                0         AS is_custom,
-               0         AS is_carried_over,
-               0         AS is_deleted
+               0         AS is_carried_over
         FROM checklist_templates
-        WHERE is_deleted = 0;
     </insert>
 
     <!-- 커스텀 체크리스트 항목 생성 -->

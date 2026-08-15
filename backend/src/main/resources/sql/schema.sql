@@ -48,6 +48,7 @@ DROP TABLE IF EXISTS supported_institutions;
 DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS phone_verifications;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS user_fcm_tokens;
 
 SET FOREIGN_KEY_CHECKS = 1;
 

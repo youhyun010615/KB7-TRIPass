@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { useTravelStore } from '@/stores/travel';
 import NotificationBell from '@/components/common/NotificationBell.vue';
-import currencySymbols from '@/assets/currencySymbols.json';
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -15,6 +14,142 @@ const router = useRouter();
 const travelMode = useTravelModeStore();
 const travelStore = useTravelStore();
 
+// 데이터 바인딩을 위한 계산 속성 추가
+const tripStatus = computed(() => travelStore.tripStatus);
+const tripInfo = computed(() => tripStatus.value?.tripInfo);
+const countries = computed(() => tripStatus.value?.countries || []);
+
+// 국가 목록 캐싱 (필터링되지 않은 전체 목록)
+const persistentCountries = ref([]);
+
+// 국가 선택 목록 (API 연동)
+const destinations = computed(() => {
+  const all = { code: 'all', name: '전체', flag: '🌍', theme: '#17485b' };
+  const apiCountries = persistentCountries.value.map((c) => ({
+    code: c.tripCountryId.toString(),
+    name: c.countryName,
+    flag: countryFlagMap[c.countryName]
+      ? `fi fi-${countryFlagMap[c.countryName]}`
+      : '🌍',
+    theme: getCountryColor(c.countryName),
+  }));
+  return [all, ...apiCountries];
+});
+
+// 날짜 계산
+const today = computed(() => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+});
+
+const startDate = computed(() =>
+  tripInfo.value ? new Date(tripInfo.value.startDate) : null,
+);
+const endDate = computed(() =>
+  tripInfo.value ? new Date(tripInfo.value.endDate) : null,
+);
+
+const dday = computed(() => {
+  if (!endDate.value) return 0;
+  const diff = endDate.value - today.value;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+});
+
+const currentDay = computed(() => {
+  if (!startDate.value) return 1;
+  const diff = today.value - startDate.value;
+  return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
+});
+
+const totalTripDays = computed(() => {
+  if (!startDate.value || !endDate.value) return 1;
+  const diff = endDate.value - startDate.value;
+  return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+});
+
+// 자산 및 진행률 계산
+const totalRemainingFund = computed(
+  () => tripStatus.value?.totalRemainingFund || 0,
+);
+
+const totalBudget = computed(() =>
+  countries.value.reduce((sum, c) => sum + c.targetBudget, 0),
+);
+const totalSpent = computed(() =>
+  countries.value.reduce((sum, c) => sum + c.spentAmount, 0),
+);
+const overallProgress = computed(() =>
+  totalBudget.value > 0
+    ? Math.round((totalSpent.value / totalBudget.value) * 100)
+    : 0,
+);
+
+// 국가별 자산 (Carousel)
+const tripAssets = computed(() => {
+  return countries.value.map((c) => {
+    const assetTemplate = overallAssets.find(
+      (a) => a.country === c.countryName,
+    );
+    return {
+      ...assetTemplate,
+      amount: c.targetBudget - c.spentAmount,
+      local: `${c.countryName} 남은 금액`,
+    };
+  });
+});
+
+// 카테고리 아이콘 매핑
+const categoryIcons = {
+  식비: '🍴',
+  교통: '🚆',
+  숙박: '🏨',
+  쇼핑: '🛍️',
+  관광: '🎨',
+  기타: '💬',
+  카페: '☕',
+};
+
+function getCategoryIcon(name) {
+  return categoryIcons[name] || '📁';
+}
+
+// 국가별 색상 매핑 헬퍼
+function getCountryColor(countryName) {
+  if (countryName === '홍콩') return '#ffb800'; // 요청하신 노란색
+  const asset = overallAssets.find((a) => a.country === countryName);
+  return asset ? asset.theme : '#9aa4b3'; // 기본색
+}
+
+// 여행자금 체크를 위한 데이터 가공
+const categorySummary = computed(() => tripStatus.value?.categorySummary || []);
+
+const maxCategoryTotal = computed(() => {
+  return Math.max(...categorySummary.value.map((c) => c.totalAmount), 1);
+});
+
+const categoryList = computed(() => {
+  return categorySummary.value.map((cat) => {
+    const total = cat.totalAmount;
+    // 이제 바의 전체 길이를 maxCategoryTotal 대비로 설정 (비례적 표현)
+    const barWidthPercent = (total / maxCategoryTotal.value) * 100;
+
+    const details = cat.countryDetails.map((d) => ({
+      ...d,
+      // 세그먼트 폭은 해당 카테고리 전체 폭 내에서의 비율
+      percent: total > 0 ? (d.amount / total) * 100 : 0,
+    }));
+
+    return {
+      name: cat.categoryName,
+      total: cat.totalAmount,
+      barWidth: barWidthPercent,
+      details: details,
+      icon: getCategoryIcon(cat.categoryName),
+    };
+  });
+});
+
 const isReturnPeriod = computed(() => {
   if (!travelStore.homeDashboard?.endDate) return false;
 
@@ -23,375 +158,89 @@ const isReturnPeriod = computed(() => {
 
   // 실제 API에서 가져온 endDate 사용 (배열 또는 문자열 형태 처리)
   const endDateArray = travelStore.homeDashboard.endDate;
-  const endDate = Array.isArray(endDateArray) 
+  const endDate = Array.isArray(endDateArray)
     ? new Date(endDateArray[0], endDateArray[1] - 1, endDateArray[2])
     : new Date(endDateArray);
 
   const startCheckDate = new Date(endDate);
   startCheckDate.setDate(startCheckDate.getDate() - 1);
-  startCheckDate.setHours(0, 0, 0, 0); 
+  startCheckDate.setHours(0, 0, 0, 0);
 
   const endCheckDate = new Date(endDate);
   endCheckDate.setHours(23, 59, 59, 999);
 
   return today >= startCheckDate && today <= endCheckDate;
 });
+
 onMounted(async () => {
   await travelStore.loadActiveGoal();
-  console.log('Active trip loaded:', travelStore.tripId);
+  if (travelStore.tripId) {
+    // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
+    const status = await travelStore.loadTripStatus(travelStore.tripId, null);
+    persistentCountries.value = status?.countries || [];
+    console.log(
+      '초기 API 데이터 로드 및 국가 목록 캐싱 완료:',
+      persistentCountries.value,
+    );
+  }
 });
 
 const countryMenuOpen = ref(false);
+const selectedCountryId = ref('all');
+const assetsCarousel = ref(null);
 
-const destinations = [
-  {
-    code: 'all',
-    name: '전체',
-    title: '전체 여행',
-    flag: '🌍',
-    image: '',
-    theme: '#17485b',
-    currency: 'EUR',
-    rate: 1486.2,
-    dday: 13,
-    day: 2,
-    totalDays: 15,
-    remain: 3440000,
-    localAmount: '3,440,000원',
-    daily: '',
-    goal: 11500000,
-    prepaid: 4010000,
-    progress: 30,
-    categories: [
-      { icon: '🍴', name: '식비', amount: 600000, france: 27, swiss: 73 },
-      { icon: '☕', name: '카페', amount: 320000, france: 60, swiss: 40 },
-      { icon: '📦', name: '생활비', amount: 430000, france: 52, swiss: 48 },
-      { icon: '🛍️', name: '쇼핑', amount: 130000, france: 62, swiss: 38 },
-      { icon: '🎨', name: '취미·여가', amount: 110000, france: 55, swiss: 45 },
-      { icon: '💬', name: '기타', amount: 110000, france: 18, swiss: 82 },
-    ],
-  },
-  {
-    code: 'FR',
-    name: '프랑스',
-    title: '파리',
-    flag: '🇫🇷',
-    image: '/images/france.png',
-    theme: '#0b3c90',
-    currency: 'EUR',
-    rate: 1486.2,
-    dday: 5,
-    day: 2,
-    totalDays: 7,
-    remain: 590000,
-    localAmount: 'EUR 357.63',
-    daily: 'EUR 144.27',
-    dailyWon: '약 238,000원',
-    goal: 2000000,
-    prepaid: 810000,
-    progress: 30,
-    categories: [
-      {
-        icon: '🍴',
-        name: '식비',
-        amount: 150000,
-        percent: 55,
-        color: '#7962d9',
-      },
-      {
-        icon: '☕',
-        name: '카페',
-        amount: 120000,
-        percent: 48,
-        color: '#5e91ea',
-      },
-      {
-        icon: '📦',
-        name: '생활비',
-        amount: 180000,
-        percent: 62,
-        color: '#63c27e',
-      },
-      {
-        icon: '🛍️',
-        name: '쇼핑',
-        amount: 80000,
-        percent: 40,
-        color: '#8668dd',
-      },
-      {
-        icon: '🎨',
-        name: '취미·여가',
-        amount: 60000,
-        percent: 30,
-        color: '#efa43a',
-      },
-      {
-        icon: '💬',
-        name: '기타',
-        amount: 10000,
-        percent: 15,
-        color: '#87929f',
-      },
-    ],
-  },
-  {
-    code: 'CH',
-    name: '스위스',
-    title: '인터라켄',
-    flag: '🇨🇭',
-    image: '/images/switzerland.webp',
-    theme: '#97112d',
-    currency: 'CHF',
-    rate: 1704.6,
-    dday: 5,
-    day: 2,
-    totalDays: 7,
-    remain: 1000000,
-    localAmount: 'CHF 565.11',
-    daily: 'CHF 113.04',
-    dailyWon: '약 200,000원',
-    goal: 3000000,
-    prepaid: 990000,
-    progress: 33,
-    categories: [
-      {
-        icon: '🍴',
-        name: '식비',
-        amount: 450000,
-        percent: 60,
-        color: '#8065da',
-      },
-      {
-        icon: '☕',
-        name: '카페',
-        amount: 200000,
-        percent: 50,
-        color: '#6093ea',
-      },
-      {
-        icon: '📦',
-        name: '생활비',
-        amount: 250000,
-        percent: 66,
-        color: '#63c27e',
-      },
-      {
-        icon: '🛍️',
-        name: '쇼핑',
-        amount: 50000,
-        percent: 30,
-        color: '#8468dc',
-      },
-      {
-        icon: '🎨',
-        name: '취미·여가',
-        amount: 50000,
-        percent: 30,
-        color: '#efa43a',
-      },
-      {
-        icon: '💬',
-        name: '기타',
-        amount: 100000,
-        percent: 45,
-        color: '#87929f',
-      },
-    ],
-  },
-  {
-    code: 'DE',
-    name: '독일',
-    title: '베를린',
-    flag: '🇩🇪',
-    image: '/images/germany.png',
-    theme: '#171717',
-    currency: 'EUR',
-    rate: 1486.2,
-    dday: 5,
-    day: 2,
-    totalDays: 7,
-    remain: 720000,
-    localAmount: 'EUR 484.46',
-    daily: 'EUR 96.89',
-    dailyWon: '약 144,000원',
-    goal: 2500000,
-    prepaid: 830000,
-    progress: 34,
-    categories: [
-      {
-        icon: '🍴',
-        name: '식비',
-        amount: 240000,
-        percent: 58,
-        color: '#d5a300',
-      },
-      {
-        icon: '☕',
-        name: '카페',
-        amount: 90000,
-        percent: 38,
-        color: '#638fe3',
-      },
-      {
-        icon: '📦',
-        name: '생활비',
-        amount: 160000,
-        percent: 52,
-        color: '#63c27e',
-      },
-      {
-        icon: '🛍️',
-        name: '쇼핑',
-        amount: 80000,
-        percent: 35,
-        color: '#e1a000',
-      },
-      {
-        icon: '🎨',
-        name: '취미·여가',
-        amount: 70000,
-        percent: 31,
-        color: '#d95e49',
-      },
-      {
-        icon: '💬',
-        name: '기타',
-        amount: 40000,
-        percent: 20,
-        color: '#87929f',
-      },
-    ],
-  },
-  {
-    code: 'JP',
-    name: '일본',
-    title: '도쿄',
-    flag: '🇯🇵',
-    image: '/images/japan.webp',
-    theme: '#d92d7a',
-    currency: 'JPY',
-    rate: 9.23,
-    dday: 5,
-    day: 2,
-    totalDays: 7,
-    remain: 650000,
-    localAmount: 'JPY 70,422',
-    daily: 'JPY 14,084',
-    dailyWon: '약 130,000원',
-    goal: 2200000,
-    prepaid: 760000,
-    progress: 35,
-    categories: [
-      {
-        icon: '🍴',
-        name: '식비',
-        amount: 220000,
-        percent: 60,
-        color: '#e55b9a',
-      },
-      {
-        icon: '☕',
-        name: '카페',
-        amount: 80000,
-        percent: 36,
-        color: '#638fe3',
-      },
-      {
-        icon: '📦',
-        name: '생활비',
-        amount: 150000,
-        percent: 48,
-        color: '#63c27e',
-      },
-      {
-        icon: '🛍️',
-        name: '쇼핑',
-        amount: 100000,
-        percent: 42,
-        color: '#ec5c9d',
-      },
-      {
-        icon: '🎨',
-        name: '취미·여가',
-        amount: 60000,
-        percent: 29,
-        color: '#efa43a',
-      },
-      {
-        icon: '💬',
-        name: '기타',
-        amount: 30000,
-        percent: 17,
-        color: '#87929f',
-      },
-    ],
-  },
-  {
-    code: 'HK',
-    name: '홍콩',
-    title: '홍콩',
-    flag: '🇭🇰',
-    image: '/images/Hong%20Kong.png',
-    theme: '#b8202e',
-    currency: 'HKD',
-    rate: 184.2,
-    dday: 5,
-    day: 2,
-    totalDays: 7,
-    remain: 480000,
-    localAmount: 'HKD 2,606.95',
-    daily: 'HKD 521.17',
-    dailyWon: '약 96,000원',
-    goal: 1800000,
-    prepaid: 620000,
-    progress: 38,
-    categories: [
-      {
-        icon: '🍴',
-        name: '식비',
-        amount: 180000,
-        percent: 57,
-        color: '#e0a400',
-      },
-      {
-        icon: '☕',
-        name: '카페',
-        amount: 60000,
-        percent: 32,
-        color: '#638fe3',
-      },
-      {
-        icon: '📦',
-        name: '생활비',
-        amount: 120000,
-        percent: 44,
-        color: '#63c27e',
-      },
-      {
-        icon: '🛍️',
-        name: '쇼핑',
-        amount: 70000,
-        percent: 36,
-        color: '#e0a400',
-      },
-      {
-        icon: '🎨',
-        name: '취미·여가',
-        amount: 40000,
-        percent: 25,
-        color: '#efa43a',
-      },
-      {
-        icon: '💬',
-        name: '기타',
-        amount: 20000,
-        percent: 15,
-        color: '#87929f',
-      },
-    ],
-  },
-];
+// 툴팁 상태 관리
+const tooltip = ref({
+  show: false,
+  text: '',
+  x: 0,
+  y: 0,
+});
+
+function showTooltip(e, text) {
+  tooltip.value = {
+    show: true,
+    text,
+    x: e.clientX,
+    y: e.clientY,
+  };
+}
+
+function hideTooltip() {
+  tooltip.value.show = false;
+
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  slider.addEventListener('mousedown', (e) => {
+    isDown = true;
+    slider.style.scrollBehavior = 'auto'; // 드래그 중에는 스무스 끔 (즉각 반응)
+    startX = e.pageX - slider.offsetLeft;
+    scrollLeft = slider.scrollLeft;
+  });
+  slider.addEventListener('mouseleave', () => {
+    isDown = false;
+    slider.style.scrollBehavior = 'smooth'; // 드래그 끝나면 다시 켬
+  });
+  slider.addEventListener('mouseup', () => {
+    isDown = false;
+    slider.style.scrollBehavior = 'smooth'; // 드래그 끝나면 다시 켬
+  });
+  slider.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - slider.offsetLeft;
+    const walk = (x - startX) * 2; // 스크롤 속도
+    slider.scrollLeft = scrollLeft - walk;
+  });
+}
+
+function selectDestination(item) {
+  selectedCountryId.value = item.code;
+  countryMenuOpen.value = false;
+  loadData();
+}
 
 const schedules = {
   all: [
@@ -546,7 +395,7 @@ const overallAssets = [
   {
     code: 'FR',
     flag: '🇫🇷',
-    city: '파리',
+    country: '프랑스',
     amount: 590000,
     local: '약 €128.10',
     image: '/images/france.png',
@@ -555,7 +404,7 @@ const overallAssets = [
   {
     code: 'CH',
     flag: '🇨🇭',
-    city: '스위스',
+    country: '스위스',
     amount: 1000000,
     local: '약 CHF 586.65',
     image: '/images/switzerland.webp',
@@ -564,7 +413,7 @@ const overallAssets = [
   {
     code: 'DE',
     flag: '🇩🇪',
-    city: '베를린',
+    country: '독일',
     amount: 720000,
     local: '약 EUR 484.46',
     image: '/images/germany.png',
@@ -573,7 +422,7 @@ const overallAssets = [
   {
     code: 'JP',
     flag: '🇯🇵',
-    city: '도쿄',
+    country: '일본',
     amount: 650000,
     local: '약 JPY 70,422',
     image: '/images/japan.webp',
@@ -582,7 +431,7 @@ const overallAssets = [
   {
     code: 'HK',
     flag: '🇭🇰',
-    city: '홍콩',
+    country: '홍콩',
     amount: 480000,
     local: '약 HKD 2,606.95',
     image: '/images/Hong%20Kong.png',
@@ -592,11 +441,69 @@ const overallAssets = [
 
 const selected = computed(
   () =>
-    destinations.find((item) => item.code === travelMode.selectedDestination) ??
-    destinations[0],
+    destinations.value.find((item) => item.code === selectedCountryId.value) ??
+    destinations.value[0],
 );
-const selectedSchedules = computed(() => schedules[selected.value.code]);
-const selectedRecent = computed(() => recent[selected.value.code]);
+// 국가별 flag-icons 클래스 매핑
+const countryFlagMap = {
+  프랑스: 'fr',
+  스위스: 'ch',
+  독일: 'de',
+  일본: 'jp',
+  홍콩: 'hk',
+};
+
+const selectedSchedules = computed(() => {
+  const apiSchedules = tripStatus.value?.upcomingSchedules || [];
+  return apiSchedules.map((s) => {
+    const d = new Date(s.dateTime);
+    // location 또는 title에서 국가명 추출 (예시)
+    const countryName = Object.keys(countryFlagMap).find(
+      (name) => s.location.includes(name) || s.title.includes(name),
+    );
+
+    return {
+      title: s.title,
+      date: `${d.getMonth() + 1}.${d.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][d.getDay()]})`,
+      time: `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`,
+      flagClass: countryFlagMap[countryName]
+        ? `fi fi-${countryFlagMap[countryName]}`
+        : 'fi fi-xx',
+      status: s.location,
+      warning: false,
+    };
+  });
+});
+
+// 최근 지출 내역 (API 연동)
+const recentTransactions = computed(
+  () => tripStatus.value?.recentTransactionsByCountry || {},
+);
+
+const selectedRecent = computed(() => {
+  let transactions = [];
+
+  if (selected.value.code === 'all') {
+    // 모든 나라의 거래 내역을 합침
+    transactions = Object.values(recentTransactions.value).flat();
+  } else {
+    // 선택된 나라의 거래 내역만 가져옴
+    transactions = recentTransactions.value[selected.value.name] || [];
+  }
+
+  // 날짜 기준 내림차순 정렬 및 상위 5개 추출
+  return transactions
+    .sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate))
+    .slice(0, 5)
+    .map((t) => {
+      return {
+        icon: getCategoryIcon(t.category), // 카테고리별 아이콘 재활용
+        place: `${t.description}`, // 예: "일본 택시"
+        meta: `${t.category} · ${new Date(t.transactionDate).toLocaleDateString()}`,
+        amount: `-${formatWon(t.amount)}(${t.originalAmount.toLocaleString()}${t.currency})`,
+      };
+    });
+});
 const calculatorDestination = computed(() =>
   selected.value.code === 'all'
     ? (destinations.find((item) => item.code === calculatorCountryCode.value) ??
@@ -616,11 +523,20 @@ const categoryTotal = computed(() =>
 function formatWon(value) {
   return `${Number(value || 0).toLocaleString('ko-KR')}원`;
 }
-function selectDestination(item) {
-  travelMode.selectDestination(item.code);
-  if (item.code !== 'all') travelMode.setCalculatorCurrency(item.currency);
-  countryMenuOpen.value = false;
-}
+
+// 데이터 로드
+const loadData = async () => {
+  console.log('선택된 국가 ID:', selectedCountryId.value);
+  if (travelStore.tripId) {
+    // API 호출하여 데이터만 갱신 (persistentCountries는 건드리지 않음)
+    await travelStore.loadTripStatus(
+      travelStore.tripId,
+      selectedCountryId.value === 'all' ? null : selectedCountryId.value,
+    );
+  }
+  console.log('필터링된 데이터 로드 완료:', tripStatus.value);
+};
+
 function openCalculator() {
   if (selected.value.code !== 'all')
     calculatorCountryCode.value = selected.value.code;
@@ -630,6 +546,7 @@ function openCalculator() {
       : selected.value.currency,
   );
 }
+
 function selectCalculatorDestination(item) {
   calculatorCountryCode.value = item.code;
   travelMode.setCalculatorCurrency(item.currency);
@@ -665,8 +582,7 @@ async function switchMode(mode) {
             :aria-expanded="countryMenuOpen"
             @click="countryMenuOpen = !countryMenuOpen"
           >
-            <span>{{ selected.flag }}</span
-            >{{ selected.name }}<i>⌄</i>
+            <span></span>{{ selected.name }}<i>⌄</i>
           </button>
           <div v-if="countryMenuOpen" class="country-menu">
             <button
@@ -676,8 +592,7 @@ async function switchMode(mode) {
               :class="{ active: item.code === selected.code }"
               @click="selectDestination(item)"
             >
-              <span>{{ item.flag }}</span
-              >{{ item.name }}
+              {{ item.name }}
             </button>
           </div>
         </div>
@@ -706,97 +621,81 @@ async function switchMode(mode) {
       <div class="perforation"><i /><span /><i /></div>
       <div class="ticket-main">
         <div class="trip-line">
-          <b>{{ selected.flag }} {{ selected.title }}</b
-          ><strong>D-{{ selected.dday }}</strong>
+          <b>{{ tripInfo?.tripName || '여행' }}</b
+          ><strong>D-{{ dday }}</strong>
         </div>
         <div class="trip-progress">
-          <small>{{ selected.day }}일차</small>
+          <small>{{ currentDay }}일차</small>
           <div>
             <i
               :style="{
-                width: `${(selected.day / selected.totalDays) * 100}%`,
+                width: `${(currentDay / totalTripDays) * 100}%`,
               }"
             />
           </div>
-          <small>{{ selected.totalDays }}일차</small>
+          <small>{{ totalTripDays }}일차</small>
         </div>
-        <p class="trip-description">
-          {{
-            selected.code === 'all'
-              ? '등록한 모든 여행의 남은 자산을 한눈에 확인해요'
-              : `${selected.title}에서 시작되는 설레는 여행을 즐겨보세요`
-          }}
-          ✨
-        </p>
+        <p class="trip-description">여행 남은 자산을 한눈에 확인해요 ✨</p>
         <div class="ticket-photo-space" />
 
         <div class="travel-summary-content">
-          <template v-if="selected.code === 'all'">
-            <div class="summary-title-wrapper">
-              <div class="summary-title">
-                <span>전체 남은 여행 자산 (합산)</span
-                ><strong>{{ formatWon(selected.remain) }}</strong>
-              </div>
-              <!-- 귀국 체크리스트 확인 버튼 추가 -->
-              <button
-                v-if="isReturnPeriod"
-                class="return-checklist-button"
-                @click="
-                  () => {
-                    const id =
-                      travelStore.tripId || travelStore.homeDashboard?.tripId;
-                    if (id) {
-                      router.push(`/mypage/checklists/return?tripId=${id}`);
-                    } else {
-                      console.error('tripId를 찾을 수 없습니다.');
-                    }
+          <div class="summary-title-wrapper">
+            <div class="summary-title">
+              <span>전체 남은 여행 자산 (합산)</span
+              ><strong>{{ formatWon(totalRemainingFund) }}</strong>
+            </div>
+            <button
+              v-if="isReturnPeriod"
+              class="return-checklist-button"
+              @click="
+                () => {
+                  const id =
+                    travelStore.tripId || travelStore.homeDashboard?.tripId;
+                  if (id) {
+                    router.push(`/mypage/checklists/return?tripId=${id}`);
+                  } else {
+                    console.error('tripId를 찾을 수 없습니다.');
                   }
-                "
-              >
-                귀국 체크리스트 확인하기 ›
-              </button>
+                }
+              "
+            >
+              귀국 체크리스트 확인하기 ›
+            </button>
+          </div>
+          <div
+            class="country-assets"
+            :style="{
+              'grid-template-columns':
+                selected.code === 'all' ? '1fr 1fr' : '1fr',
+            }"
+            ref="assetsCarousel"
+            aria-label="국가별 남은 여행 자산"
+          >
+            <div
+              v-for="asset in selected.code === 'all'
+                ? tripAssets
+                : tripAssets.filter((a) => a.code === selected.code)"
+              :key="asset.code"
+              class="country-asset-card"
+              :style="{
+                '--asset-image': `url(${asset.image})`,
+                '--asset-theme': asset.theme,
+              }"
+            >
+              <span>{{ asset.flag }} {{ asset.country }} 남은 여행 자산</span
+              ><b>{{ formatWon(asset.amount) }}</b
+              ><small>({{ asset.local }})</small>
             </div>
-            <div class="country-assets" aria-label="국가별 남은 여행 자산">
-              <div
-                v-for="asset in overallAssets"
-                :key="asset.code"
-                class="country-asset-card"
-                :style="{
-                  '--asset-image': `url(${asset.image})`,
-                  '--asset-theme': asset.theme,
-                }"
-              >
-                <span>{{ asset.flag }} {{ asset.city }} 남은 여행 자산</span
-                ><b>{{ formatWon(asset.amount) }}</b
-                ><small>({{ asset.local }})</small>
-              </div>
-            </div>
-          </template>
-          <template v-else>
-            <div class="summary-title asset-title">
-              <span>{{ selected.title }} 남은 여행 자산</span
-              ><strong
-                >{{ selected.localAmount }}
-                <small>(약 {{ formatWon(selected.remain) }})</small></strong
-              >
-            </div>
-            <div class="daily-budget">
-              <span>남은 5일 동안 하루에 쓸 수 있는 금액</span
-              ><b
-                >{{ selected.daily }}
-                <small>({{ selected.dailyWon }})</small></b
-              >
-            </div>
-          </template>
+          </div>
           <div class="fund-label">
-            <span>여행 자금 진행률</span><b>{{ selected.progress }}%</b>
+            <span>여행 자금 진행률</span><b>{{ overallProgress }}%</b>
           </div>
           <div class="fund-track">
-            <i :style="{ width: `${selected.progress}%` }" />
+            <i :style="{ width: `${overallProgress}%` }" />
           </div>
           <div class="fund-meta">
-            <span>목표 {{ formatWon(selected.goal) }}</span
-            ><span>사전 지불 금액 {{ formatWon(selected.prepaid) }}</span>
+            <span>목표 {{ formatWon(totalBudget) }}</span
+            ><span>현재 지출 {{ formatWon(totalSpent) }}</span>
           </div>
         </div>
       </div>
@@ -807,67 +706,59 @@ async function switchMode(mode) {
         @click="router.push('/travel/funds')"
       >
         <span>여행 목표 자금 관리</span>
-        <div class="stub-action">
-          <div class="barcode">
-            <i
-              v-for="(height, index) in [
-                18, 11, 22, 8, 17, 13, 23, 8, 19, 9, 15, 12, 21, 8, 18,
-              ]"
-              :key="index"
-              :style="{
-                height: `${height}px`,
-                width: index % 4 === 0 ? '3px' : '2px',
-              }"
-            />
-          </div>
-          <b>›</b>
-        </div>
       </button>
     </article>
+
+    <!-- 툴팁 컴포넌트 -->
+    <div
+      v-if="tooltip.show"
+      class="custom-tooltip"
+      :style="{ top: `${tooltip.y + 10}px`, left: `${tooltip.x + 10}px` }"
+    >
+      {{ tooltip.text }}
+    </div>
 
     <article
       class="card budget-card"
       role="button"
       tabindex="0"
-      aria-label="여행 자금 체크 상세 보기"
+      aria-label="여행자금 체크 상세 보기"
       @click="router.push('/travel/funds')"
       @keydown.enter="router.push('/travel/funds')"
     >
       <div class="card-title">
         <h2>여행자금 체크</h2>
-        <div v-if="selected.code === 'all'" class="legend">
-          <span>● 프랑스</span><span>● 스위스</span>
+        <div class="legend" v-if="countries.length > 0">
+          <span
+            v-for="c in countries"
+            :key="c.countryName"
+            :style="{ color: getCountryColor(c.countryName) }"
+            >● {{ c.countryName }}</span
+          >
         </div>
       </div>
-      <div
-        v-for="category in selected.categories"
-        :key="category.name"
-        class="budget-row"
-      >
+      <div v-for="cat in categoryList" :key="cat.name" class="budget-row">
         <span class="category"
-          ><i>{{ category.icon }}</i
-          >{{ category.name }}</span
+          ><i>{{ cat.icon }}</i
+          >{{ cat.name }}</span
         >
-        <div v-if="selected.code === 'all'" class="split-bar">
-          <i :style="{ width: `${category.france}%` }" /><em
-            :style="{ width: `${category.swiss}%` }"
-          />
-        </div>
-        <div v-else class="single-bar">
+        <div class="split-bar" :style="{ width: `${cat.barWidth}%` }">
           <i
+            v-for="d in cat.details"
+            :key="d.countryName"
+            @mouseover="
+              showTooltip($event, `${d.countryName}: ${formatWon(d.amount)}`)
+            "
+            @mouseleave="hideTooltip"
             :style="{
-              width: `${category.percent}%`,
-              background: category.color,
+              width: `${d.percent}%`,
+              background: getCountryColor(d.countryName),
             }"
           />
         </div>
-        <b>{{ formatWon(category.amount) }}</b>
-      </div>
-      <div v-if="selected.code !== 'all'" class="budget-total">
-        <span>지출 총합</span><strong>{{ formatWon(categoryTotal) }}</strong>
+        <b>{{ formatWon(cat.total) }}</b>
       </div>
     </article>
-
     <article class="card">
       <div class="card-title">
         <h2>다가오는 여행 일정</h2>
@@ -884,7 +775,9 @@ async function switchMode(mode) {
       >
         <span
           ><b v-if="item.date">{{ item.date }}</b
-          ><strong>{{ item.flag }} {{ item.title }}</strong
+          ><strong
+            ><i :class="item.flagClass" style="margin-right: 5px"></i
+            >{{ item.title }}</strong
           ><small>{{ item.time }}</small></span
         >
         <em :class="{ warning: item.warning }">{{ item.status }}</em>
@@ -909,7 +802,7 @@ async function switchMode(mode) {
         ><span
           ><b>{{ item.place }}</b
           ><small>{{ item.meta }}</small></span
-        ><strong>- {{ formatWon(item.amount) }}</strong>
+        ><strong> {{ item.amount }}</strong>
       </button>
     </article>
 
@@ -1961,5 +1854,16 @@ async function switchMode(mode) {
   right: auto;
   left: 0;
   top: 37px;
+}
+.custom-tooltip {
+  position: fixed;
+  z-index: 1000;
+  padding: 6px 10px;
+  background-color: #333;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 11px;
+  pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 </style>
