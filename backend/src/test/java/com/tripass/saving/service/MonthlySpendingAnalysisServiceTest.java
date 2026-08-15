@@ -83,7 +83,7 @@ class MonthlySpendingAnalysisServiceTest {
     @Test
     @DisplayName("정상 분석 생성 시 카테고리별 집계와 TOP3 추천 순위가 저장된다")
     void generate_savesAggregatesAndTopRecommendations() {
-        stubFirstCreation(new BigDecimal("700000"), LocalDateTime.of(2026, 1, 1, 0, 0));
+        stubFirstCreation(new BigDecimal("700000"));
 
         List<TransactionDto> accountTxns = List.of(
                 txn(1L, FOOD_ID, LocalDate.of(2026, 7, 1), "20000"),
@@ -141,7 +141,7 @@ class MonthlySpendingAnalysisServiceTest {
     @Test
     @DisplayName("체크카드 결제와 매칭되는 계좌 출금은 중복 제거되고 카드 쪽만 남는다")
     void generate_excludesDuplicateAccountTransaction() {
-        stubFirstCreation(null, LocalDateTime.of(2026, 1, 1, 0, 0));
+        stubFirstCreation(null);
 
         TransactionDto accountTxn = txnWithTime(201L, TRANSPORT_ID,
                 LocalDate.of(2026, 7, 1), LocalTime.of(12, 0, 0), "10000");
@@ -162,7 +162,7 @@ class MonthlySpendingAnalysisServiceTest {
     @Test
     @DisplayName("거래가 없는 사용자는 카테고리 결과 없이 총지출 0으로 저장된다")
     void generate_noTransactions_savesZeroSpendingAndNoCategories() {
-        stubFirstCreation(null, LocalDateTime.of(2026, 1, 1, 0, 0));
+        stubFirstCreation(null);
 
         when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
         when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
@@ -177,7 +177,7 @@ class MonthlySpendingAnalysisServiceTest {
     @Test
     @DisplayName("모든 후보가 필터에서 탈락하면 추천 순위가 하나도 매겨지지 않는다")
     void generate_noEligibleCandidates_noRecommendationRank() {
-        stubFirstCreation(null, LocalDateTime.of(2026, 1, 1, 0, 0));
+        stubFirstCreation(null);
 
         // 두 카테고리 모두 거래 3건뿐이라 최소 거래 횟수(5건) 미달
         List<TransactionDto> accountTxns = List.of(
@@ -200,14 +200,16 @@ class MonthlySpendingAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("연동 전이라 수집할 수 없었던 달은 데이터가 있어도 3개월 평균에서 제외한다")
-    void generate_excludesMonthsBeforeConnection() {
-        // 5월 10일 연동 -> 4월은 비교 불가(연동 전), 5월도 월 전체가 아니라 비교 불가, 6월만 비교 가능
-        stubFirstCreation(null, LocalDateTime.of(2026, 5, 10, 0, 0));
+    @DisplayName("과거 월에 전체 거래가 하나도 없으면 최근 3개월 평균에서 제외한다")
+    void generate_excludesMonthWithNoSpendingAtAll() {
+        // CODEF는 연동 시점부터가 아니라 과거 거래내역을 소급 조회하므로, 연동일이 아니라
+        // "그 달에 거래가 실제로 존재하는지"로 비교 가능 여부를 판단해야 한다.
+        stubFirstCreation(null);
 
-        List<TransactionDto> julyTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "18000"); // 90000원
-        List<TransactionDto> aprilTxns = List.of(txn(90L, FOOD_ID, LocalDate.of(2026, 4, 5), "999999999")); // 연동 전, 반영되면 안 됨
-        List<TransactionDto> juneTxns = List.of(txn(91L, FOOD_ID, LocalDate.of(2026, 6, 5), "30000"));
+        List<TransactionDto> julyTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "11000"); // 55000원
+        List<TransactionDto> aprilTxns = List.of(txn(90L, FOOD_ID, LocalDate.of(2026, 4, 5), "60000"));
+        // 5월은 어떤 카테고리든 거래가 전혀 없음 -> 조회 가능 여부를 알 수 없으므로 평균에서 제외해야 한다
+        List<TransactionDto> juneTxns = List.of(txn(91L, CAFE_ID, LocalDate.of(2026, 6, 5), "10000")); // FOOD 아님
 
         when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any()))
                 .thenReturn(concat(julyTxns, aprilTxns, juneTxns));
@@ -217,23 +219,25 @@ class MonthlySpendingAnalysisServiceTest {
         service.generateMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
 
         MonthlyCategoryAnalysisDto food = byCategory(captureInsertedCategories(), FOOD_ID);
-        // 6월(30000)만 비교 대상 -> 증가율 (90000-30000)/30000 = 2.0 -> 1.0000으로 캡핑
-        // 4월의 거대한 금액이 반영됐다면 평균이 훨씬 커져 증가 점수는 0에 가까워야 한다
-        assertEquals(new BigDecimal("1.0000"), food.getIncreaseScore());
+        // 5월을 제외하면(6월엔 FOOD 거래가 없어 0원 포함, 4월엔 60000) 평균=(60000+0)/2=30000
+        // -> 증가율 (55000-30000)/30000 = 0.8333
+        // 5월을 잘못 0원으로 포함해 3으로 나눴다면 평균=20000, 증가율=1.75->1.0000으로 캡핑되어 값이 달라진다
+        assertEquals(new BigDecimal("0.8333"), food.getIncreaseScore());
     }
 
     @Test
-    @DisplayName("수집 가능한 달인데 거래가 없으면 0원으로 평균에 포함한다")
-    void generate_includesZeroSpendingComparableMonth() {
-        stubFirstCreation(null, LocalDateTime.of(2026, 1, 1, 0, 0)); // 4~6월 모두 비교 가능
+    @DisplayName("과거 월에 다른 카테고리 거래가 있으면 조회 가능한 달로 보고 해당 카테고리는 0원으로 포함한다")
+    void generate_includesZeroSpendingForCollectedMonth() {
+        stubFirstCreation(null);
 
         List<TransactionDto> julyTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "18000"); // 90000원
         List<TransactionDto> aprilTxns = List.of(txn(90L, FOOD_ID, LocalDate.of(2026, 4, 5), "60000"));
-        // 5월은 거래 없음(0원으로 포함되어야 함)
+        // 5월은 FOOD 거래는 없지만 다른 카테고리 거래가 있어 "조회 가능한 달"로 간주되고, FOOD는 0원으로 포함되어야 한다
+        List<TransactionDto> mayTxns = List.of(txn(92L, CAFE_ID, LocalDate.of(2026, 5, 5), "5000"));
         List<TransactionDto> juneTxns = List.of(txn(91L, FOOD_ID, LocalDate.of(2026, 6, 5), "60000"));
 
         when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any()))
-                .thenReturn(concat(julyTxns, aprilTxns, juneTxns));
+                .thenReturn(concat(julyTxns, aprilTxns, mayTxns, juneTxns));
         when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
         when(mapper.findCreditCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
 
@@ -246,9 +250,29 @@ class MonthlySpendingAnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("최근에 연동했어도 과거 거래가 있으면 추천 후보가 된다")
+    void generate_recentConnectionStillEligibleWithPastData() {
+        // 연동일 개념 자체가 없어졌으므로(더 이상 findEarliestConnectionDate를 호출하지 않는다),
+        // 미션 기준 거래·금액·단일거래 비중만 만족하면 항상 추천 후보가 될 수 있어야 한다.
+        stubFirstCreation(null);
+
+        List<TransactionDto> foodTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "18000"); // 90000원
+        when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(foodTxns);
+        when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
+        when(mapper.findCreditCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
+
+        service.generateMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
+
+        MonthlyCategoryAnalysisDto food = byCategory(captureInsertedCategories(), FOOD_ID);
+        assertTrue(food.getRecommendationEligible());
+        assertNull(food.getExclusionReason());
+        assertEquals(1, food.getRecommendationRank());
+    }
+
+    @Test
     @DisplayName("LODGING/SIGHTSEEING 거래는 소비 리포트와 추천 분모에서 제외된다")
     void generate_excludesTravelOnlyCategories() {
-        stubFirstCreation(null, LocalDateTime.of(2026, 1, 1, 0, 0));
+        stubFirstCreation(null);
 
         List<TransactionDto> foodTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "20000"); // 100000원
         // LODGING/SIGHTSEEING은 AI 저축 미션 7개 카테고리가 아니라 영수증·예산 기능이 쓰는 여행 카테고리다.
@@ -272,42 +296,6 @@ class MonthlySpendingAnalysisServiceTest {
 
         MonthlyCategoryAnalysisDto food = byCategory(saved, FOOD_ID);
         assertEquals(new BigDecimal("1.0000"), food.getSpendingShareScore()); // 유일한 후보이므로 분모=자기 자신
-    }
-
-    @Test
-    @DisplayName("수집 기간이 정확히 30일이면 최소 수집 기간 필터를 통과한다")
-    void generate_collectionPeriodExactly30Days_isEligible() {
-        // 분석월 미션 마감일(2026-07-28)과 연동일을 양쪽 다 포함해서 세면 2026-06-29 연동이 정확히 30일째다.
-        stubFirstCreation(null, LocalDateTime.of(2026, 6, 29, 0, 0));
-
-        List<TransactionDto> foodTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "18000"); // 90000원
-        when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(foodTxns);
-        when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
-        when(mapper.findCreditCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
-
-        service.generateMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
-
-        MonthlyCategoryAnalysisDto food = byCategory(captureInsertedCategories(), FOOD_ID);
-        assertTrue(food.getRecommendationEligible());
-        assertNull(food.getExclusionReason());
-    }
-
-    @Test
-    @DisplayName("수집 기간이 정확히 29일이면 최소 수집 기간 필터에서 탈락한다")
-    void generate_collectionPeriodExactly29Days_isExcluded() {
-        // 하루 늦은 2026-06-30 연동은 29일이므로 탈락해야 한다.
-        stubFirstCreation(null, LocalDateTime.of(2026, 6, 30, 0, 0));
-
-        List<TransactionDto> foodTxns = fiveEvenTransactions(FOOD_ID, LocalDate.of(2026, 7, 1), "18000"); // 90000원
-        when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(foodTxns);
-        when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
-        when(mapper.findCreditCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
-
-        service.generateMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
-
-        MonthlyCategoryAnalysisDto food = byCategory(captureInsertedCategories(), FOOD_ID);
-        assertFalse(food.getRecommendationEligible());
-        assertEquals("INSUFFICIENT_COLLECTION_PERIOD", food.getExclusionReason());
     }
 
     @Test
@@ -412,6 +400,25 @@ class MonthlySpendingAnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("추천 후보가 없으면 지난달 기준 빈 상태 문구를 반환한다")
+    void get_noRecommendedCategories_returnsLastMonthEmptyMessage() {
+        MonthlySpendingAnalysisDto analysis = new MonthlySpendingAnalysisDto();
+        analysis.setId(1L);
+        analysis.setAnalysisYearMonth("2026-07");
+        analysis.setTargetYearMonth("2026-08");
+        analysis.setTotalSpending(new BigDecimal("300000"));
+
+        when(mapper.findMonthlyAnalysis(USER_ID, "2026-07")).thenReturn(analysis);
+        when(mapper.findCategoryAnalyses(1L)).thenReturn(List.of());
+        when(mapper.findRecommendedCategoryAnalyses(1L)).thenReturn(List.of());
+
+        MonthlyAnalysisResponseDto response = service.getMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
+
+        assertTrue(response.recommendedCategories().isEmpty());
+        assertEquals("지난달에는 절감이 필요한 소비 카테고리가 발견되지 않았어요.", response.coachingSummary());
+    }
+
+    @Test
     @DisplayName("존재하지 않는 리포트를 조회하면 404 예외를 던진다")
     void get_notFound_throws() {
         when(mapper.findMonthlyAnalysis(USER_ID, "2026-07")).thenReturn(null);
@@ -452,12 +459,11 @@ class MonthlySpendingAnalysisServiceTest {
 
     // ===== 테스트 헬퍼 =====
 
-    private void stubFirstCreation(BigDecimal savingTarget, LocalDateTime earliestConnectionDate) {
+    private void stubFirstCreation(BigDecimal savingTarget) {
         stubConsumptionCategoryIds();
         when(mapper.findMonthlyAnalysis(eq(USER_ID), any()))
                 .thenReturn(null, new MonthlySpendingAnalysisDto());
         when(mapper.findActiveSavingTargetAmount(USER_ID)).thenReturn(savingTarget);
-        when(mapper.findEarliestConnectionDate(USER_ID)).thenReturn(earliestConnectionDate);
         doAnswer(invocation -> {
             MonthlySpendingAnalysisDto dto = invocation.getArgument(0);
             dto.setId(999L);

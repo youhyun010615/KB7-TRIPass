@@ -28,9 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +51,6 @@ import java.util.stream.Stream;
 public class MonthlySpendingAnalysisService {
 
     private static final int MISSION_COMPARISON_MONTHS = 3;
-    private static final int MISSION_CUTOFF_DAY = 28;
 
     private final MonthlySpendingAnalysisMapper mapper;
     private final DuplicateTransactionMatcher duplicateTransactionMatcher;
@@ -123,10 +120,8 @@ public class MonthlySpendingAnalysisService {
                 .toList();
         List<CategorizedSpending> analysisMonthSpending = spendingInMonth(allSpending, analysisYearMonth);
 
-        LocalDateTime earliestConnectionDate = mapper.findEarliestConnectionDate(userId);
-
         Map<Long, BigDecimal> previousMonthTotalByCategory =
-                buildPreviousMonthTotalByCategory(allSpending, analysisYearMonth, earliestConnectionDate);
+                buildPreviousMonthTotalByCategory(allSpending, analysisYearMonth);
 
         List<CategorySpendingStats> categoryStats = monthlyCategorySpendingCalculator.aggregate(
                 analysisMonthSpending, analysisYearMonth, previousMonthTotalByCategory);
@@ -139,12 +134,10 @@ public class MonthlySpendingAnalysisService {
                 .filter(stats -> !stats.categoryId().equals(otherCategoryId))
                 .toList();
 
-        int collectionPeriodDays = calculateCollectionPeriodDays(earliestConnectionDate, analysisYearMonth);
-
         Map<Long, EligibilityResult> eligibilityByCategory = sixCategoryStats.stream()
                 .collect(Collectors.toMap(
                         CategorySpendingStats::categoryId,
-                        stats -> recommendationEligibilityFilter.evaluate(stats, collectionPeriodDays)));
+                        recommendationEligibilityFilter::evaluate));
 
         List<CategorySpendingStats> eligibleCandidates = sixCategoryStats.stream()
                 .filter(stats -> eligibilityByCategory.get(stats.categoryId()).eligible())
@@ -156,7 +149,7 @@ public class MonthlySpendingAnalysisService {
 
         List<Long> sixCategoryIds = sixCategoryStats.stream().map(CategorySpendingStats::categoryId).toList();
         Map<Long, List<BigDecimal>> previousThreeMonthsMissionSpending = buildPreviousThreeMonthsMissionSpending(
-                allSpending, analysisYearMonth, earliestConnectionDate, sixCategoryIds);
+                allSpending, analysisYearMonth, sixCategoryIds);
 
         List<ScoredCandidate> scoredCandidates = recommendationScoreCalculator.calculate(
                 eligibleCandidates, sixCategoryTotalMissionSpending, previousThreeMonthsMissionSpending);
@@ -237,20 +230,22 @@ public class MonthlySpendingAnalysisService {
     }
 
     // ===== 이전 달 비교 데이터 =====
-    // 계좌·카드 연동 시작 전이라 데이터를 수집할 수 없었던 달은 비교 대상에서 아예 제외하고,
-    // 연동 이후 온전히 수집 가능했던 달인데 거래가 없었던 경우에만 0원으로 포함한다.
+    // CODEF 연동은 연동 시점부터가 아니라 과거 거래내역을 소급 조회하므로, 연동일이 아니라 실제 거래
+    // 존재 여부로 "그 달이 조회 가능했는지"를 판단한다. 그 달에 거래가 하나도 없으면 수집 여부를
+    // 알 수 없으므로 평균에서 제외하고, 다른 카테고리 거래는 있는데 특정 카테고리만 없으면 0원으로 포함한다.
+    // 실제 CODEF 조회 범위를 저장해 정확히 판단하는 건 후속 개선으로 분리한다.
 
-    private boolean isComparableMonth(LocalDateTime earliestConnectionDate, YearMonth month) {
-        return earliestConnectionDate != null
-                && !earliestConnectionDate.toLocalDate().isAfter(month.atDay(1));
+    private boolean hasAnySpendingInMonth(List<CategorizedSpending> allSpending, YearMonth month) {
+        return allSpending.stream()
+                .anyMatch(spending -> YearMonth.from(spending.transactionDate()).equals(month));
     }
 
     /** 전월(1개월 전) 대비 증감률 계산용, 전체 기간(1일~말일) 카테고리별 총지출. */
     private Map<Long, BigDecimal> buildPreviousMonthTotalByCategory(
-            List<CategorizedSpending> allSpending, YearMonth analysisYearMonth, LocalDateTime earliestConnectionDate
+            List<CategorizedSpending> allSpending, YearMonth analysisYearMonth
     ) {
         YearMonth previousMonth = analysisYearMonth.minusMonths(1);
-        if (!isComparableMonth(earliestConnectionDate, previousMonth)) {
+        if (!hasAnySpendingInMonth(allSpending, previousMonth)) {
             return Map.of();
         }
         List<CategorySpendingStats> previousMonthStats = monthlyCategorySpendingCalculator.aggregate(
@@ -259,15 +254,14 @@ public class MonthlySpendingAnalysisService {
                 .collect(Collectors.toMap(CategorySpendingStats::categoryId, CategorySpendingStats::totalSpending));
     }
 
-    /** 최근 3개월 평균 대비 증가율 계산용, 비교 가능한 달들의 미션기간(1~28일) 카테고리별 지출 목록. */
+    /** 최근 3개월 평균 대비 증가율 계산용, 조회 가능한 달들의 미션기간(1~28일) 카테고리별 지출 목록. */
     private Map<Long, List<BigDecimal>> buildPreviousThreeMonthsMissionSpending(
-            List<CategorizedSpending> allSpending, YearMonth analysisYearMonth,
-            LocalDateTime earliestConnectionDate, List<Long> categoryIds
+            List<CategorizedSpending> allSpending, YearMonth analysisYearMonth, List<Long> categoryIds
     ) {
         Map<Long, List<BigDecimal>> result = new HashMap<>();
         for (int monthsAgo = 1; monthsAgo <= MISSION_COMPARISON_MONTHS; monthsAgo++) {
             YearMonth month = analysisYearMonth.minusMonths(monthsAgo);
-            if (!isComparableMonth(earliestConnectionDate, month)) {
+            if (!hasAnySpendingInMonth(allSpending, month)) {
                 continue;
             }
             List<CategorySpendingStats> monthStats = monthlyCategorySpendingCalculator.aggregate(
@@ -281,17 +275,6 @@ public class MonthlySpendingAnalysisService {
             }
         }
         return result;
-    }
-
-    /** 계좌·카드 연동 시작일부터 분석월 미션 마감일(28일)까지의 수집 기간(일). 연동 이력이 없으면 0. */
-    private int calculateCollectionPeriodDays(LocalDateTime earliestConnectionDate, YearMonth analysisYearMonth) {
-        if (earliestConnectionDate == null) {
-            return 0;
-        }
-        LocalDate missionCutoff = analysisYearMonth.atDay(MISSION_CUTOFF_DAY);
-        // 연동일과 미션 마감일을 양쪽 다 수집된 날로 포함해서 센다(예: 6/29 연동, 7/28 마감이면 30일).
-        long days = ChronoUnit.DAYS.between(earliestConnectionDate.toLocalDate(), missionCutoff) + 1;
-        return (int) Math.max(days, 0);
     }
 
     // ===== 저장 =====

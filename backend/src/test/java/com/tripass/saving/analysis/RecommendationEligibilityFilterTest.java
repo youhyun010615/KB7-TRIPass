@@ -16,19 +16,9 @@ class RecommendationEligibilityFilterTest {
         CategorySpendingStats stats = stats(
                 new BigDecimal("100000"), 10, new BigDecimal("30000"));
 
-        EligibilityResult result = filter.evaluate(stats, 30);
+        EligibilityResult result = filter.evaluate(stats);
 
         assertTrue(result.eligible());
-    }
-
-    @Test
-    void 수집_기간이_30일_미만이면_제외한다() {
-        CategorySpendingStats stats = stats(
-                new BigDecimal("100000"), 10, new BigDecimal("30000"));
-
-        EligibilityResult result = filter.evaluate(stats, 29);
-
-        assertEquals(RecommendationEligibilityFilter.INSUFFICIENT_COLLECTION_PERIOD, result.exclusionReason());
     }
 
     @Test
@@ -36,7 +26,7 @@ class RecommendationEligibilityFilterTest {
         CategorySpendingStats stats = stats(
                 new BigDecimal("100000"), 4, new BigDecimal("30000"));
 
-        EligibilityResult result = filter.evaluate(stats, 30);
+        EligibilityResult result = filter.evaluate(stats);
 
         assertEquals(RecommendationEligibilityFilter.MIN_TRANSACTION_COUNT_NOT_MET, result.exclusionReason());
     }
@@ -46,7 +36,7 @@ class RecommendationEligibilityFilterTest {
         CategorySpendingStats stats = stats(
                 new BigDecimal("49999"), 10, new BigDecimal("10000"));
 
-        EligibilityResult result = filter.evaluate(stats, 30);
+        EligibilityResult result = filter.evaluate(stats);
 
         assertEquals(RecommendationEligibilityFilter.MIN_AMOUNT_NOT_MET, result.exclusionReason());
     }
@@ -56,7 +46,7 @@ class RecommendationEligibilityFilterTest {
         CategorySpendingStats stats = stats(
                 new BigDecimal("100000"), 10, new BigDecimal("50000"));
 
-        EligibilityResult result = filter.evaluate(stats, 30);
+        EligibilityResult result = filter.evaluate(stats);
 
         assertEquals(RecommendationEligibilityFilter.SINGLE_TRANSACTION_DOMINANT, result.exclusionReason());
     }
@@ -66,7 +56,7 @@ class RecommendationEligibilityFilterTest {
         CategorySpendingStats stats = stats(
                 new BigDecimal("100000"), 10, new BigDecimal("40000"));
 
-        EligibilityResult result = filter.evaluate(stats, 30);
+        EligibilityResult result = filter.evaluate(stats);
 
         assertTrue(result.eligible());
     }

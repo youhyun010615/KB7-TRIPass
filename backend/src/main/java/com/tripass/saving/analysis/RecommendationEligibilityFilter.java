@@ -13,18 +13,17 @@ public class RecommendationEligibilityFilter {
 
     public static final String MIN_TRANSACTION_COUNT_NOT_MET = "MIN_TRANSACTION_COUNT_NOT_MET";
     public static final String MIN_AMOUNT_NOT_MET = "MIN_AMOUNT_NOT_MET";
-    public static final String INSUFFICIENT_COLLECTION_PERIOD = "INSUFFICIENT_COLLECTION_PERIOD";
     public static final String SINGLE_TRANSACTION_DOMINANT = "SINGLE_TRANSACTION_DOMINANT";
 
     private static final int MIN_TRANSACTION_COUNT = 5;
     private static final BigDecimal MIN_SPENDING_AMOUNT = new BigDecimal("50000");
-    private static final int MIN_COLLECTION_PERIOD_DAYS = 30;
     private static final BigDecimal SINGLE_TRANSACTION_DOMINANCE_THRESHOLD = new BigDecimal("0.5");
 
-    public EligibilityResult evaluate(CategorySpendingStats stats, int collectionPeriodDays) {
-        if (collectionPeriodDays < MIN_COLLECTION_PERIOD_DAYS) {
-            return EligibilityResult.excluded(INSUFFICIENT_COLLECTION_PERIOD);
-        }
+    /**
+     * CODEF 연동은 연동 시점부터가 아니라 과거 거래내역을 소급 조회하는 방식이라, "연동 후 며칠"은
+     * 실제 데이터 신뢰도와 무관하다. 대신 거래 건수·금액·단일거래 비중만으로 신뢰도를 판단한다.
+     */
+    public EligibilityResult evaluate(CategorySpendingStats stats) {
         if (stats.missionTransactionCount() < MIN_TRANSACTION_COUNT) {
             return EligibilityResult.excluded(MIN_TRANSACTION_COUNT_NOT_MET);
         }

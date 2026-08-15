@@ -15,7 +15,7 @@ public class CoachingMessageGenerator {
 
     public String generateSummary(List<String> categoryNames) {
         if (categoryNames.isEmpty()) {
-            return "이번 달 분석할 절감 추천 카테고리가 없어요.";
+            return "지난달에는 절감이 필요한 소비 카테고리가 발견되지 않았어요.";
         }
         return "이번 달에는 " + String.join(", ", categoryNames) + " 소비를 줄여보세요.";
     }

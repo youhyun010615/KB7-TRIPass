@@ -19,7 +19,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -74,7 +73,6 @@ class MonthlySpendingAnalysisSpringWiringTest {
         when(mapper.findAccountWithdrawalTransactions(any(), any(), any())).thenReturn(List.of());
         when(mapper.findCheckCardWithdrawalTransactions(any(), any(), any())).thenReturn(List.of());
         when(mapper.findCreditCardWithdrawalTransactions(any(), any(), any())).thenReturn(List.of());
-        when(mapper.findEarliestConnectionDate(any())).thenReturn(LocalDateTime.of(2026, 1, 1, 0, 0));
         when(mapper.findActiveSavingTargetAmount(any())).thenReturn(new BigDecimal("700000"));
         when(mapper.findCategoryAnalyses(any())).thenReturn(List.of());
         when(mapper.findRecommendedCategoryAnalyses(any())).thenReturn(List.of());
