@@ -1,5 +1,8 @@
 package com.tripass.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -40,6 +43,9 @@ import java.util.List;
         "com.tripass.expense.controller",
         "com.tripass.ocr.controller",
         "com.tripass.report.controller",
+        "com.tripass.wallet.controller",
+        "com.tripass.wallet.fx.controller",
+        "com.tripass.wallet.travelcard.controller",
         "com.tripass.common.exception"
 })
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -55,8 +61,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
         );
 
         // ApiResponse 등의 JSON 응답을 처리한다.
+        // 기본 ObjectMapper는 LocalDate/LocalDateTime/OffsetDateTime을 타임스탬프(숫자)로
+        // 직렬화해 프론트엔드가 파싱할 수 없으므로, ISO-8601 문자열로 내려주도록 명시적으로 설정한다.
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
         converters.add(
-                new MappingJackson2HttpMessageConverter()
+                new MappingJackson2HttpMessageConverter(objectMapper)
         );
     }
 

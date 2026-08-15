@@ -33,5 +33,11 @@
         <package name="com.tripass.expense.dto"/>
         <package name="com.tripass.ocr.dto"/>
         <package name="com.tripass.report.dto"/>
+        <package name="com.tripass.wallet.domain"/>
+        <package name="com.tripass.wallet.dto"/>
+        <package name="com.tripass.wallet.dto.request"/>
+        <package name="com.tripass.wallet.dto.response"/>
+        <package name="com.tripass.wallet.fx.domain"/>
+        <package name="com.tripass.wallet.travelcard.domain"/>
     </typeAliases>
 </configuration>
