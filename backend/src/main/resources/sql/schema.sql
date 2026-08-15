@@ -3,6 +3,16 @@ USE tripass;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ===== DROP TABLES =====
+DROP TABLE IF EXISTS wallet_exchange_transaction;
+DROP TABLE IF EXISTS wallet_card_topup;
+DROP TABLE IF EXISTS travel_card_ledger;
+DROP TABLE IF EXISTS travel_card_balance;
+DROP TABLE IF EXISTS wallet_travel_card;
+DROP TABLE IF EXISTS wallet_auto_saving_logs;
+DROP TABLE IF EXISTS wallet_auto_saving_rule;
+DROP TABLE IF EXISTS wallet_ledger;
+DROP TABLE IF EXISTS wallet_account;
+DROP TABLE IF EXISTS wallet;
 DROP TABLE IF EXISTS receipt_items;
 DROP TABLE IF EXISTS receipts;
 DROP TABLE IF EXISTS trip_reports;
@@ -381,7 +391,248 @@ CREATE TABLE trips
 ) COMMENT '여행';
 
 
--- 15. 여행 국가
+-- 15. 월렛
+CREATE TABLE wallet
+(
+    id             BIGINT         NOT NULL AUTO_INCREMENT COMMENT '월렛 ID',
+    user_id        BIGINT         NOT NULL COMMENT '회원 ID',
+    balance_amount DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT '월렛 원화 잔액',
+    status         VARCHAR(20)    NOT NULL DEFAULT 'ACTIVE' COMMENT '월렛 상태(ACTIVE/INACTIVE/CLOSED)',
+    version        BIGINT         NOT NULL DEFAULT 0 COMMENT '동시성 제어 버전',
+    created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_user (user_id),
+    CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT '월렛';
+
+
+-- 16. 월렛 연동 계좌
+CREATE TABLE wallet_account
+(
+    id          BIGINT      NOT NULL AUTO_INCREMENT COMMENT '월렛 연동 계좌 ID',
+    wallet_id   BIGINT      NOT NULL COMMENT '월렛 ID',
+    account_id  BIGINT      NOT NULL COMMENT '연동 계좌 ID',
+    is_primary  BOOLEAN     NOT NULL DEFAULT FALSE COMMENT '대표 계좌 여부',
+    status      VARCHAR(20) NOT NULL DEFAULT 'LINKED' COMMENT '연동 상태(LINKED/UNLINKED)',
+    linked_at   TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '연동일시',
+    unlinked_at DATETIME    NULL COMMENT '연동해제일시',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_account_wallet_account (wallet_id, account_id),
+    CONSTRAINT fk_wallet_account_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
+    CONSTRAINT fk_wallet_account_account FOREIGN KEY (account_id) REFERENCES accounts (id)
+) COMMENT '월렛 연동 계좌';
+
+
+-- 17. 월렛 원화 원장
+CREATE TABLE wallet_ledger
+(
+    id                BIGINT         NOT NULL AUTO_INCREMENT COMMENT '월렛 원장 ID',
+    wallet_id         BIGINT         NOT NULL COMMENT '월렛 ID',
+    direction         VARCHAR(10)    NOT NULL COMMENT '입출금 방향(IN/OUT)',
+    transaction_type  VARCHAR(30)    NOT NULL COMMENT '거래 유형(CHARGE/WITHDRAW/CARD_TOPUP/EXCHANGE_SELL/MISSION_REWARD/REFUND/ADJUST)',
+    transfer_method   VARCHAR(30)    NULL COMMENT '충전 방식(MANUAL/AUTO_SAVING)',
+    amount            DECIMAL(18, 2) NOT NULL COMMENT '원화 거래 금액',
+    balance_before    DECIMAL(18, 2) NOT NULL COMMENT '거래 전 월렛 원화 잔액',
+    balance_after     DECIMAL(18, 2) NOT NULL COMMENT '거래 후 월렛 원화 잔액',
+    source_type       VARCHAR(30)    NOT NULL COMMENT '출발 대상 유형(ACCOUNT/WALLET/TRAVEL_CARD/MISSION/SYSTEM)',
+    source_id         BIGINT         NULL COMMENT '출발 대상 ID',
+    target_type       VARCHAR(30)    NOT NULL COMMENT '도착 대상 유형(ACCOUNT/WALLET/TRAVEL_CARD/SYSTEM)',
+    target_id         BIGINT         NULL COMMENT '도착 대상 ID',
+    idempotency_key   VARCHAR(100)   NULL COMMENT '중복 요청 방지 키',
+    memo              VARCHAR(500)   NULL COMMENT '메모',
+    created_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_ledger_idempotency (idempotency_key),
+    CONSTRAINT fk_wallet_ledger_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id)
+) COMMENT '월렛 원화 원장';
+
+
+-- 18. 월렛 자동 저축 설정
+CREATE TABLE wallet_auto_saving_rule
+(
+    id                 BIGINT         NOT NULL AUTO_INCREMENT COMMENT '자동 저축 설정 ID',
+    wallet_id          BIGINT         NOT NULL COMMENT '월렛 ID',
+    source_account_id  BIGINT         NOT NULL COMMENT '자동 송금 출금 계좌 ID',
+    amount             DECIMAL(18, 2) NOT NULL COMMENT '자동 송금 금액',
+    day_of_month       INT            NOT NULL COMMENT '자동 송금일(1~28)',
+    enabled            BOOLEAN        NOT NULL DEFAULT TRUE COMMENT '활성 여부',
+    next_transfer_date DATE           NULL COMMENT '다음 송금 예정일',
+    created_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at         TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_auto_saving_wallet (wallet_id),
+    CONSTRAINT chk_wallet_auto_saving_day CHECK (day_of_month BETWEEN 1 AND 28),
+    CONSTRAINT fk_wallet_auto_saving_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
+    CONSTRAINT fk_wallet_auto_saving_account FOREIGN KEY (source_account_id) REFERENCES accounts (id)
+) COMMENT '월렛 자동 저축 설정';
+
+
+-- 18-1. 월렛 자동 채우기 실행 기록(성공/실패)
+CREATE TABLE wallet_auto_saving_logs
+(
+    id          BIGINT         NOT NULL AUTO_INCREMENT COMMENT '자동 채우기 실행 기록 ID',
+    wallet_id   BIGINT         NOT NULL COMMENT '월렛 ID',
+    status      VARCHAR(10)    NOT NULL COMMENT '실행 결과(SUCCESS/FAILED)',
+    amount      DECIMAL(18, 2) NOT NULL COMMENT '자동 송금 시도 금액',
+    reason      VARCHAR(200)   NULL COMMENT '실패 사유(실패 시에만)',
+    executed_at TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '실행 일시',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_wallet_auto_saving_logs_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id)
+) COMMENT '월렛 자동 채우기 성공/실패 기록';
+
+
+-- 19. 사용자 보유 트래블카드
+CREATE TABLE user_travel_cards
+(
+    id                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT '사용자 보유 트래블카드 ID',
+    user_id            BIGINT       NOT NULL COMMENT '회원 ID',
+    travel_card_id     BIGINT       NULL COMMENT '트래블카드 상품 ID',
+    card_name          VARCHAR(150) NOT NULL COMMENT '카드명',
+    issuer_name        VARCHAR(100) NOT NULL COMMENT '카드사명',
+    masked_card_number VARCHAR(50)  NOT NULL COMMENT '마스킹 카드번호',
+    brand_name         VARCHAR(50)  NULL COMMENT '카드 브랜드/서비스명',
+    card_color         VARCHAR(20)  NULL COMMENT '화면 표시용 카드 색상',
+    status             VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '보유 카드 상태(ACTIVE/INACTIVE/EXPIRED)',
+    external_card_key  VARCHAR(255) NULL COMMENT '외부/목데이터 카드 식별 키',
+    is_deleted         TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
+    deleted_at         DATETIME     NULL COMMENT '삭제일시',
+    created_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_travel_cards_user_external (user_id, external_card_key),
+    CONSTRAINT fk_user_travel_cards_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_user_travel_cards_travel_card FOREIGN KEY (travel_card_id) REFERENCES travel_cards (id)
+) COMMENT '사용자 보유 트래블카드';
+
+
+-- 20. 월렛 트래블카드 연동
+CREATE TABLE wallet_travel_card
+(
+    id                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT '월렛 트래블카드 연동 ID',
+    wallet_id          BIGINT       NOT NULL COMMENT '월렛 ID',
+    user_travel_card_id BIGINT      NULL COMMENT '사용자 보유 트래블카드 ID',
+    travel_card_id     BIGINT       NOT NULL COMMENT '트래블카드 ID',
+    card_name          VARCHAR(150) NOT NULL COMMENT '카드명',
+    issuer_name        VARCHAR(100) NOT NULL COMMENT '카드사명',
+    masked_card_number VARCHAR(50)  NULL COMMENT '마스킹 카드번호',
+    status             VARCHAR(20)  NOT NULL DEFAULT 'LINKED' COMMENT '카드 연동 상태(LINKED/UNLINKED/INACTIVE)',
+    linked_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '연동일시',
+    unlinked_at        DATETIME     NULL COMMENT '연동해제일시',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_travel_card_wallet_card (wallet_id, travel_card_id),
+    UNIQUE KEY uk_wallet_travel_card_user_card (wallet_id, user_travel_card_id),
+    CONSTRAINT fk_wallet_travel_card_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
+    CONSTRAINT fk_wallet_travel_card_user_card FOREIGN KEY (user_travel_card_id) REFERENCES user_travel_cards (id),
+    CONSTRAINT fk_wallet_travel_card_card FOREIGN KEY (travel_card_id) REFERENCES travel_cards (id)
+) COMMENT '월렛 트래블카드 연동';
+
+
+-- 21. 트래블카드 외화 잔액
+CREATE TABLE travel_card_balance
+(
+    id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '트래블카드 외화 잔액 ID',
+    wallet_travel_card_id BIGINT         NOT NULL COMMENT '월렛 트래블카드 연동 ID',
+    currency_code         VARCHAR(3)     NOT NULL COMMENT '통화 코드',
+    balance_amount        DECIMAL(18, 2) NOT NULL DEFAULT 0 COMMENT '보유 외화 금액',
+    krw_estimated_amount  DECIMAL(18, 2) NULL COMMENT '원화 환산 추정 금액',
+    updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_travel_card_balance_card_currency (wallet_travel_card_id, currency_code),
+    CONSTRAINT fk_travel_card_balance_card FOREIGN KEY (wallet_travel_card_id) REFERENCES wallet_travel_card (id),
+    CONSTRAINT fk_travel_card_balance_currency FOREIGN KEY (currency_code) REFERENCES currencies (currency_code)
+) COMMENT '트래블카드 외화 잔액';
+
+
+-- 22. 트래블카드 외화 원장
+CREATE TABLE travel_card_ledger
+(
+    id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '트래블카드 외화 원장 ID',
+    wallet_travel_card_id BIGINT         NOT NULL COMMENT '월렛 트래블카드 연동 ID',
+    currency_code         VARCHAR(3)     NOT NULL COMMENT '통화 코드',
+    direction             VARCHAR(10)    NOT NULL COMMENT '입출금 방향(IN/OUT)',
+    transaction_type      VARCHAR(30)    NOT NULL COMMENT '외화 거래 유형(CARD_TOPUP/CARD_WITHDRAW/REFUND/ADJUST)',
+    foreign_amount        DECIMAL(18, 2) NOT NULL COMMENT '외화 거래 금액',
+    balance_before        DECIMAL(18, 2) NOT NULL COMMENT '거래 전 외화 잔액',
+    balance_after         DECIMAL(18, 2) NOT NULL COMMENT '거래 후 외화 잔액',
+    source_type           VARCHAR(30)    NOT NULL COMMENT '출발 대상 유형(WALLET/TRAVEL_CARD/SYSTEM)',
+    source_id             BIGINT         NULL COMMENT '출발 대상 ID',
+    target_type           VARCHAR(30)    NOT NULL COMMENT '도착 대상 유형(WALLET/TRAVEL_CARD/SYSTEM)',
+    target_id             BIGINT         NULL COMMENT '도착 대상 ID',
+    idempotency_key       VARCHAR(100)   NULL COMMENT '중복 요청 방지 키',
+    memo                  VARCHAR(500)   NULL COMMENT '메모',
+    created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_travel_card_ledger_idempotency (idempotency_key),
+    CONSTRAINT fk_travel_card_ledger_card FOREIGN KEY (wallet_travel_card_id) REFERENCES wallet_travel_card (id),
+    CONSTRAINT fk_travel_card_ledger_currency FOREIGN KEY (currency_code) REFERENCES currencies (currency_code)
+) COMMENT '트래블카드 외화 원장';
+
+
+-- 23. 월렛 카드 외화 충전 요청
+CREATE TABLE wallet_card_topup
+(
+    id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '카드 충전 ID',
+    wallet_id             BIGINT         NOT NULL COMMENT '월렛 ID',
+    wallet_travel_card_id BIGINT         NOT NULL COMMENT '월렛 트래블카드 연동 ID',
+    currency_code         VARCHAR(3)     NOT NULL COMMENT '충전 통화 코드',
+    krw_amount            DECIMAL(18, 2) NOT NULL COMMENT '월렛에서 차감할 원화 금액',
+    foreign_amount        DECIMAL(18, 2) NOT NULL COMMENT '카드에 충전할 외화 금액',
+    status                VARCHAR(20)    NOT NULL DEFAULT 'REQUESTED' COMMENT '충전 상태(REQUESTED/PROCESSING/COMPLETED/FAILED/CANCELED/REFUNDED)',
+    idempotency_key       VARCHAR(100)   NOT NULL COMMENT '중복 요청 방지 키',
+    external_transaction_id VARCHAR(100) NULL COMMENT '목 카드사 외부 거래 ID',
+    retry_count           INT            NOT NULL DEFAULT 0 COMMENT '재시도 횟수',
+    last_tried_at         DATETIME       NULL COMMENT '마지막 시도일시',
+    requested_at          TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '충전 요청일시',
+    completed_at          DATETIME       NULL COMMENT '충전 완료일시',
+    failed_at             DATETIME       NULL COMMENT '충전 실패일시',
+    failure_reason        VARCHAR(500)   NULL COMMENT '실패 사유',
+    wallet_ledger_id      BIGINT         NULL COMMENT '월렛 원화 원장 ID',
+    card_ledger_id        BIGINT         NULL COMMENT '트래블카드 외화 원장 ID',
+    refunded              BOOLEAN        NOT NULL DEFAULT FALSE COMMENT '환불 처리 여부',
+    created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_card_topup_idempotency (idempotency_key),
+    CONSTRAINT fk_wallet_card_topup_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
+    CONSTRAINT fk_wallet_card_topup_card FOREIGN KEY (wallet_travel_card_id) REFERENCES wallet_travel_card (id),
+    CONSTRAINT fk_wallet_card_topup_wallet_ledger FOREIGN KEY (wallet_ledger_id) REFERENCES wallet_ledger (id),
+    CONSTRAINT fk_wallet_card_topup_card_ledger FOREIGN KEY (card_ledger_id) REFERENCES travel_card_ledger (id),
+    CONSTRAINT fk_wallet_card_topup_currency FOREIGN KEY (currency_code) REFERENCES currencies (currency_code)
+) COMMENT '월렛 카드 외화 충전 요청';
+
+-- 24. 월렛 환전 거래
+CREATE TABLE wallet_exchange_transaction
+(
+    id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '환전 거래 ID',
+    wallet_id             BIGINT         NOT NULL COMMENT '월렛 ID',
+    wallet_travel_card_id BIGINT         NOT NULL COMMENT '월렛 트래블카드 연동 ID',
+    currency_code         VARCHAR(3)     NOT NULL COMMENT '환전 통화 코드',
+    exchange_type         VARCHAR(10)    NOT NULL COMMENT '환전 유형(BUY:원화→외화/SELL:외화→원화)',
+    krw_amount            DECIMAL(18, 2) NOT NULL COMMENT '원화 금액',
+    foreign_amount        DECIMAL(18, 2) NOT NULL COMMENT '외화 금액',
+    base_exchange_rate    DECIMAL(20, 8) NOT NULL COMMENT '기준 환율',
+    applied_exchange_rate DECIMAL(20, 8) NOT NULL COMMENT '적용 환율',
+    fee_rate              DECIMAL(7, 4)  NULL COMMENT '수수료율',
+    fee_amount            DECIMAL(18, 2) NULL COMMENT '수수료 금액',
+    status                VARCHAR(20)    NOT NULL DEFAULT 'REQUESTED' COMMENT '환전 상태(REQUESTED/PROCESSING/COMPLETED/FAILED/CANCELED)',
+    requested_at          TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '환전 요청일시',
+    completed_at          DATETIME       NULL COMMENT '환전 완료일시',
+    failed_at             DATETIME       NULL COMMENT '환전 실패일시',
+    failure_reason        VARCHAR(500)   NULL COMMENT '실패 사유',
+    wallet_ledger_id      BIGINT         NULL COMMENT '원화 월렛 원장 ID',
+    card_ledger_id        BIGINT         NULL COMMENT '트래블카드 외화 원장 ID',
+    created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    CONSTRAINT fk_wallet_exchange_transaction_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
+    CONSTRAINT fk_wallet_exchange_transaction_card FOREIGN KEY (wallet_travel_card_id) REFERENCES wallet_travel_card (id),
+    CONSTRAINT fk_wallet_exchange_transaction_currency FOREIGN KEY (currency_code) REFERENCES currencies (currency_code),
+    CONSTRAINT fk_wallet_exchange_transaction_wallet_ledger FOREIGN KEY (wallet_ledger_id) REFERENCES wallet_ledger (id),
+    CONSTRAINT fk_wallet_exchange_transaction_card_ledger FOREIGN KEY (card_ledger_id) REFERENCES travel_card_ledger (id)
+) COMMENT '월렛 환전 거래';
+
+-- 26. 여행 국가
 CREATE TABLE trip_countries
 (
     id             BIGINT         NOT NULL AUTO_INCREMENT COMMENT '여행 국가 ID',
@@ -401,7 +652,7 @@ CREATE TABLE trip_countries
 ) COMMENT '여행 국가';
 
 
--- 16. 거래 내역
+-- 27. 거래 내역
 CREATE TABLE transactions
 (
     id                    BIGINT         NOT NULL AUTO_INCREMENT COMMENT '거래 ID',
@@ -437,7 +688,7 @@ CREATE TABLE transactions
 ) COMMENT '거래 내역';
 
 
--- 17. 환율
+-- 28. 환율
 -- base_currency_id: 기준 통화(KRW), target_currency_id: 대상 통화(USD 등)
 CREATE TABLE exchange_rates
 (
@@ -457,7 +708,7 @@ CREATE TABLE exchange_rates
 ) COMMENT '환율';
 
 
--- 18. 관심 환율 알림
+-- 29. 관심 환율 알림
 CREATE TABLE exchange_rate_alerts
 (
     id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '관심 환율 알림 ID',
@@ -474,7 +725,7 @@ CREATE TABLE exchange_rate_alerts
 ) COMMENT '관심 환율 알림';
 
 
--- 19. 저축 계획
+-- 30. 저축 계획
 CREATE TABLE saving_plans
 (
     id             BIGINT         NOT NULL AUTO_INCREMENT COMMENT '저축 계획 ID',
@@ -492,7 +743,7 @@ CREATE TABLE saving_plans
 ) COMMENT '저축 계획';
 
 
--- 20. 카테고리 예산
+-- 31. 카테고리 예산
 CREATE TABLE category_budgets
 (
     id            BIGINT         NOT NULL AUTO_INCREMENT,
@@ -510,7 +761,7 @@ CREATE TABLE category_budgets
 ) COMMENT '카테고리 예산';
 
 
--- 21. 수입 출처
+-- 32. 수입 출처
 CREATE TABLE income_sources
 (
     id           BIGINT         NOT NULL AUTO_INCREMENT,
@@ -530,7 +781,7 @@ CREATE TABLE income_sources
 ) COMMENT '수입 출처';
 
 
--- 22. 고정 지출
+-- 33. 고정 지출
 CREATE TABLE fixed_expenses
 (
     id           BIGINT         NOT NULL AUTO_INCREMENT,
@@ -550,7 +801,7 @@ CREATE TABLE fixed_expenses
 ) COMMENT '고정 지출';
 
 
--- 23. 금융 일정
+-- 34. 금융 일정
 CREATE TABLE financial_schedules
 (
     id               BIGINT      NOT NULL AUTO_INCREMENT COMMENT '금융 일정 ID',
@@ -569,7 +820,7 @@ CREATE TABLE financial_schedules
 ) COMMENT '금융 일정';
 
 
--- 24. 여행 일정
+-- 35. 여행 일정
 CREATE TABLE trip_schedules
 (
     id              BIGINT         NOT NULL AUTO_INCREMENT COMMENT '여행 일정 ID',
@@ -595,7 +846,7 @@ CREATE TABLE trip_schedules
 ) COMMENT '여행 일정';
 
 
--- 25. 여행 체크리스트
+-- 36. 여행 체크리스트
 CREATE TABLE trip_checklist_items
 (
     id              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '여행 체크리스트 항목 ID',
@@ -618,7 +869,7 @@ CREATE TABLE trip_checklist_items
 ) COMMENT '여행 체크리스트';
 
 
--- 26. 사전 지출
+-- 37. 사전 지출
 CREATE TABLE pre_expenses
 (
     id              BIGINT         NOT NULL AUTO_INCREMENT,
@@ -638,7 +889,7 @@ CREATE TABLE pre_expenses
 ) COMMENT '사전 지출';
 
 
--- 27. 해외 영수증
+-- 38. 해외 영수증
 CREATE TABLE receipts
 (
     id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '해외 영수증 ID',
@@ -677,7 +928,7 @@ CREATE TABLE receipts
 ) COMMENT '해외 영수증';
 
 
--- 28. 영수증 품목
+-- 39. 영수증 품목
 CREATE TABLE receipt_items
 (
     id              BIGINT         NOT NULL AUTO_INCREMENT COMMENT '영수증 품목 ID',
@@ -696,7 +947,7 @@ CREATE TABLE receipt_items
 ) COMMENT '영수증 품목';
 
 
--- 29. 여행 리포트
+-- 40. 여행 리포트
 CREATE TABLE trip_reports
 (
     id                        BIGINT         NOT NULL AUTO_INCREMENT COMMENT '여행 리포트 ID',
@@ -719,7 +970,7 @@ CREATE TABLE trip_reports
 ) COMMENT '여행 리포트';
 
 
--- 30. 알림
+-- 41. 알림
 CREATE TABLE notifications
 (
     id                BIGINT       NOT NULL AUTO_INCREMENT COMMENT '알림 ID',
@@ -737,7 +988,7 @@ CREATE TABLE notifications
 ) COMMENT '알림';
 
 
--- 31. 알림 설정
+-- 42. 알림 설정
 CREATE TABLE notification_settings
 (
     id                         BIGINT    NOT NULL AUTO_INCREMENT COMMENT '알림 설정 ID',
@@ -754,7 +1005,7 @@ CREATE TABLE notification_settings
     CONSTRAINT fk_notification_settings_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) COMMENT '알림 설정';
 
--- 32. 환전 시장 데이터
+-- 43. 환전 시장 데이터
 CREATE TABLE exchange_market_data
 (
     id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT 'ID',
@@ -788,3 +1039,13 @@ CREATE INDEX idx_notifications_is_read ON notifications (user_id, is_read);
 CREATE INDEX idx_exchange_rates_rate_date ON exchange_rates (rate_date);
 CREATE INDEX idx_pre_expenses_trip_id ON pre_expenses (trip_id);
 CREATE INDEX idx_saving_plans_trip_id ON saving_plans (trip_id);
+CREATE INDEX idx_wallet_user_id ON wallet (user_id);
+CREATE INDEX idx_wallet_account_wallet_id ON wallet_account (wallet_id);
+CREATE INDEX idx_wallet_ledger_wallet_created ON wallet_ledger (wallet_id, created_at);
+CREATE INDEX idx_wallet_auto_saving_next_date ON wallet_auto_saving_rule (enabled, next_transfer_date);
+CREATE INDEX idx_user_travel_cards_user_id ON user_travel_cards (user_id, status, is_deleted);
+CREATE INDEX idx_wallet_travel_card_wallet_id ON wallet_travel_card (wallet_id);
+CREATE INDEX idx_travel_card_balance_card_id ON travel_card_balance (wallet_travel_card_id);
+CREATE INDEX idx_travel_card_ledger_card_created ON travel_card_ledger (wallet_travel_card_id, created_at);
+CREATE INDEX idx_wallet_card_topup_wallet_status ON wallet_card_topup (wallet_id, status);
+CREATE INDEX idx_wallet_exchange_transaction_wallet_status ON wallet_exchange_transaction (wallet_id, status);
