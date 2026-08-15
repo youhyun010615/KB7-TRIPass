@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 public class WeeklySavingMissionDto {
     private Long id;
     private Long monthlySavingMissionId;
+    private Long categoryId;
+    private String categoryCode;
+    private String categoryName;
     private Integer weekNumber;
     private LocalDate periodStartDate;
     private LocalDate periodEndDate;
