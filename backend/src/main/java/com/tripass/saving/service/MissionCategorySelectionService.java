@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -83,14 +84,11 @@ public class MissionCategorySelectionService {
         Long monthlySpendingAnalysisId = resolveAnalysisId(userId, analysisYearMonth);
         // 같은 분석에 대한 동시 PUT이 upsert/delete 순서가 엇갈리며 교착되지 않도록 먼저 직렬화한다.
         missionCategorySelectionMapper.lockMonthlySpendingAnalysis(monthlySpendingAnalysisId);
-        if (missionCategorySelectionMapper.countGeneratedMissions(monthlySpendingAnalysisId) > 0) {
-            throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_ALREADY_STARTED",
-                    "이미 시작한 미션의 카테고리와 절감률은 변경할 수 없습니다.");
-        }
 
         List<CategorySelectionItemDto> selections = request.getSelections();
 
         validateNoDuplicateCategories(selections);
+        validateStartedSelectionsUnchanged(monthlySpendingAnalysisId, selections);
 
         // 빈 selections(전체 선택 해제)면 TOP 3를 조회할 필요조차 없다.
         if (!selections.isEmpty()) {
@@ -101,6 +99,26 @@ public class MissionCategorySelectionService {
         missionCategorySelectionMapper.deleteSelectionsExcept(monthlySpendingAnalysisId, requestedCategoryIds);
 
         return buildSelectionsResponse(monthlySpendingAnalysisId);
+    }
+
+    /**
+     * 이미 생성된 미션의 선택값은 스냅샷과 연결돼 있으므로 유지한다.
+     * 대신 아직 시작하지 않은 추천 카테고리는 같은 요청에 추가할 수 있다.
+     */
+    private void validateStartedSelectionsUnchanged(
+            Long monthlySpendingAnalysisId, List<CategorySelectionItemDto> requestedSelections
+    ) {
+        Map<Long, CategorySelectionItemDto> requestedByCategory = requestedSelections.stream()
+                .collect(Collectors.toMap(CategorySelectionItemDto::getCategoryId, Function.identity()));
+
+        for (MissionCategorySelectionDto started :
+                missionCategorySelectionMapper.findStartedSelections(monthlySpendingAnalysisId)) {
+            CategorySelectionItemDto requested = requestedByCategory.get(started.getCategoryId());
+            if (requested == null || !started.getReductionRate().equals(requested.getReductionRate())) {
+                throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_ALREADY_STARTED",
+                        "이미 시작한 미션의 카테고리와 절감률은 변경할 수 없습니다.");
+            }
+        }
     }
 
     private void saveSelections(Long monthlySpendingAnalysisId, List<CategorySelectionItemDto> selections) {

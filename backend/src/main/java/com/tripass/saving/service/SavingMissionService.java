@@ -21,6 +21,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -45,7 +47,7 @@ public class SavingMissionService {
 
     /**
      * #220에서 확정한 선택을 스냅샷으로 복사해 월간·주간 미션을 생성한다.
-     * 동일 월의 미션이 이미 있으면 재생성하지 않고 기존 결과를 반환한다.
+     * 동일 월에 이미 생성된 카테고리는 유지하고, 새로 선택한 카테고리만 추가 생성한다.
      */
     @Transactional
     public CreationResult createMissions(Long userId, YearMonth targetYearMonth) {
@@ -53,18 +55,24 @@ public class SavingMissionService {
         mapper.lockMonthlySpendingAnalysis(analysis.getId());
 
         List<MonthlySavingMissionDto> existing = mapper.findMonthlyMissions(userId, targetYearMonth.toString());
-        if (!existing.isEmpty()) {
-            return new CreationResult(false, buildResponse(targetYearMonth, existing));
-        }
-
-        int startWeek = resolveStartWeek(targetYearMonth, LocalDate.now(clock));
         List<MissionCategorySelectionDto> selections = mapper.findSelections(analysis.getId());
-        if (selections.isEmpty()) {
+        if (selections.isEmpty() && existing.isEmpty()) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_SELECTION_REQUIRED",
                     "선택한 절감 미션이 없습니다. 카테고리별 절감률을 먼저 선택해 주세요.");
         }
 
-        for (MissionCategorySelectionDto selection : selections) {
+        Set<Long> startedCategoryIds = existing.stream()
+                .map(MonthlySavingMissionDto::getCategoryId)
+                .collect(Collectors.toSet());
+        List<MissionCategorySelectionDto> newSelections = selections.stream()
+                .filter(selection -> !startedCategoryIds.contains(selection.getCategoryId()))
+                .toList();
+        if (newSelections.isEmpty()) {
+            return new CreationResult(false, buildResponse(targetYearMonth, existing));
+        }
+
+        int startWeek = resolveStartWeek(targetYearMonth, LocalDate.now(clock));
+        for (MissionCategorySelectionDto selection : newSelections) {
             createCategoryMission(userId, analysis, targetYearMonth, selection, startWeek);
         }
         mapper.markReportClosed(userId, analysis.getAnalysisYearMonth());

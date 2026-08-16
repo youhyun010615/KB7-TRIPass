@@ -24,10 +24,17 @@
         ORDER BY mcs.category_id
     </select>
 
-    <select id="countGeneratedMissions" resultType="int">
-        SELECT COUNT(*)
-        FROM monthly_saving_missions
-        WHERE monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+    <select id="findStartedSelections" resultType="MissionCategorySelectionDto">
+        SELECT mcs.id, mcs.monthly_spending_analysis_id, mcs.category_id,
+               sc.category_code, sc.category_name,
+               mcs.reduction_rate, mcs.baseline_spending_amount,
+               mcs.monthly_reduction_target, mcs.monthly_usage_target,
+               mcs.created_at, mcs.updated_at
+        FROM mission_category_selections mcs
+                 JOIN spending_categories sc ON mcs.category_id = sc.id
+                 JOIN monthly_saving_missions msm ON msm.mission_category_selection_id = mcs.id
+        WHERE mcs.monthly_spending_analysis_id = #{monthlySpendingAnalysisId}
+        ORDER BY mcs.category_id
     </select>
 
     <delete id="deleteSelectionsExcept">
