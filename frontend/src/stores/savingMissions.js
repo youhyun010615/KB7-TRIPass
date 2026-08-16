@@ -37,12 +37,26 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
   const loading = ref(false);
   const submitting = ref(false);
   const errorMessage = ref('');
+  const addingMissions = ref(false);
 
   const hasStartedMissions = computed(
     () => Number(missions.value?.missionCount || 0) > 0,
   );
   const selectedCount = computed(
     () => Object.keys(selectedRates.value).length,
+  );
+  const startedCategoryIds = computed(
+    () => new Set((missions.value?.missions || []).map((mission) => String(mission.categoryId))),
+  );
+  const newSelectedCount = computed(
+    () => Object.keys(selectedRates.value).filter(
+      (categoryId) => !startedCategoryIds.value.has(categoryId),
+    ).length,
+  );
+  const canAddMissions = computed(
+    () => options.value.some(
+      (category) => !startedCategoryIds.value.has(String(category.categoryId)),
+    ),
   );
   const selectedOptions = computed(() =>
     options.value.flatMap((category) => {
@@ -62,6 +76,14 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
         sum + Number(item.selectedOption.monthlyReductionTarget || 0),
       0,
     ),
+  );
+  const newExpectedSavingAmount = computed(() =>
+    selectedOptions.value
+      .filter((item) => !startedCategoryIds.value.has(String(item.categoryId)))
+      .reduce(
+        (sum, item) => sum + Number(item.selectedOption.monthlyReductionTarget || 0),
+        0,
+      ),
   );
 
   function applySelections(savedSelections = []) {
@@ -89,6 +111,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
       selections.value = selectionData;
       missions.value = missionData;
       applySelections(selectionData?.selections || []);
+      addingMissions.value = false;
     } catch (error) {
       options.value = [];
       selections.value = null;
@@ -104,8 +127,9 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
   }
 
   function toggleCategory(category) {
-    if (hasStartedMissions.value) return;
     const key = String(category.categoryId);
+    if (startedCategoryIds.value.has(key)) return;
+    if (hasStartedMissions.value && !addingMissions.value) return;
     const next = { ...selectedRates.value };
     if (next[key]) {
       delete next[key];
@@ -119,15 +143,30 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
   }
 
   function selectRate(categoryId, reductionRate) {
-    if (hasStartedMissions.value) return;
+    const key = String(categoryId);
+    if (startedCategoryIds.value.has(key)) return;
+    if (hasStartedMissions.value && !addingMissions.value) return;
     selectedRates.value = {
       ...selectedRates.value,
-      [String(categoryId)]: Number(reductionRate),
+      [key]: Number(reductionRate),
     };
   }
 
+  function beginAddingMissions() {
+    if (!canAddMissions.value) return;
+    errorMessage.value = '';
+    addingMissions.value = true;
+  }
+
+  function cancelAddingMissions() {
+    applySelections(selections.value?.selections || []);
+    errorMessage.value = '';
+    addingMissions.value = false;
+  }
+
   async function startMissions() {
-    if (selectedCount.value === 0) {
+    const countToStart = hasStartedMissions.value ? newSelectedCount.value : selectedCount.value;
+    if (countToStart === 0) {
       errorMessage.value = '시작할 미션을 한 개 이상 선택해 주세요.';
       return null;
     }
@@ -146,6 +185,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
         request,
       );
       missions.value = await createSavingMissions(targetYearMonth.value);
+      addingMissions.value = false;
       return missions.value;
     } catch (error) {
       errorMessage.value = errorMessageOf(
@@ -168,13 +208,20 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
     loading,
     submitting,
     errorMessage,
+    addingMissions,
     hasStartedMissions,
     selectedCount,
+    startedCategoryIds,
+    newSelectedCount,
+    canAddMissions,
     selectedOptions,
     expectedSavingAmount,
+    newExpectedSavingAmount,
     load,
     toggleCategory,
     selectRate,
+    beginAddingMissions,
+    cancelAddingMissions,
     startMissions,
   };
 });
