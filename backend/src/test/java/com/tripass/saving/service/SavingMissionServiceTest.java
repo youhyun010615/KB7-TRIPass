@@ -89,6 +89,7 @@ class SavingMissionServiceTest {
     void repeatedCreateReturnsExistingMissionsWithoutInserting() {
         when(mapper.findAnalysisByTargetMonth(USER_ID, "2026-08")).thenReturn(analysis());
         when(mapper.findMonthlyMissions(USER_ID, "2026-08")).thenReturn(List.of(storedMonthlyMission()));
+        when(mapper.findSelections(ANALYSIS_ID)).thenReturn(List.of(selection()));
         when(mapper.findWeeklyMissions(100L)).thenReturn(List.of());
 
         SavingMissionService.CreationResult result = service.createMissions(USER_ID, TARGET_MONTH);
@@ -97,6 +98,39 @@ class SavingMissionServiceTest {
         assertEquals(1, result.data().missionCount());
         verify(mapper, never()).insertMonthlyMission(any());
         verify(mapper, never()).insertWeeklyMission(any());
+    }
+
+    @Test
+    void addsOnlyNewCategoryWhenMissionAlreadyExists() {
+        MonthlySavingMissionDto existing = storedMonthlyMission();
+        MissionCategorySelectionDto existingSelection = selection();
+        MissionCategorySelectionDto newSelection = selection(
+                21L, 4L, "SHOPPING", "쇼핑", 10, 200_000, 20_000, 180_000);
+        MonthlySavingMissionDto added = storedMonthlyMission(
+                101L, 4L, "SHOPPING", "쇼핑", 10, 20_000, 10_000);
+
+        when(mapper.findAnalysisByTargetMonth(USER_ID, "2026-08")).thenReturn(analysis());
+        when(mapper.findMonthlyMissions(USER_ID, "2026-08"))
+                .thenReturn(List.of(existing), List.of(existing, added));
+        when(mapper.findSelections(ANALYSIS_ID)).thenReturn(List.of(existingSelection, newSelection));
+        when(mapper.findWeeklyMissions(100L)).thenReturn(List.of());
+        when(mapper.findWeeklyMissions(101L)).thenReturn(List.of());
+        doAnswer(invocation -> {
+            MonthlySavingMissionDto value = invocation.getArgument(0);
+            value.setId(101L);
+            return null;
+        }).when(mapper).insertMonthlyMission(any(MonthlySavingMissionDto.class));
+
+        SavingMissionService.CreationResult result = service.createMissions(USER_ID, TARGET_MONTH);
+
+        ArgumentCaptor<MonthlySavingMissionDto> monthlyCaptor =
+                ArgumentCaptor.forClass(MonthlySavingMissionDto.class);
+        verify(mapper).insertMonthlyMission(monthlyCaptor.capture());
+        assertEquals(4L, monthlyCaptor.getValue().getCategoryId());
+        assertEquals(10_000, monthlyCaptor.getValue().getPlannedSavingAmount());
+        verify(mapper, org.mockito.Mockito.times(2)).insertWeeklyMission(any(WeeklySavingMissionDto.class));
+        assertEquals(true, result.created());
+        assertEquals(2, result.data().missionCount());
     }
 
     @Test
@@ -117,12 +151,12 @@ class SavingMissionServiceTest {
         service = new SavingMissionService(mapper, new MissionStartWeekPolicy(), lateClock);
         when(mapper.findAnalysisByTargetMonth(USER_ID, "2026-08")).thenReturn(analysis());
         when(mapper.findMonthlyMissions(USER_ID, "2026-08")).thenReturn(List.of());
+        when(mapper.findSelections(ANALYSIS_ID)).thenReturn(List.of(selection()));
 
         CustomException exception = assertThrows(CustomException.class,
                 () -> service.createMissions(USER_ID, TARGET_MONTH));
 
         assertEquals("MISSION_START_NOT_AVAILABLE", exception.getErrorCode());
-        verify(mapper, never()).findSelections(any());
     }
 
     private MonthlySpendingAnalysisDto analysis() {
@@ -135,32 +169,46 @@ class SavingMissionServiceTest {
     }
 
     private MissionCategorySelectionDto selection() {
+        return selection(20L, 2L, "CAFE", "카페", 30, 130_003, 39_001, 91_002);
+    }
+
+    private MissionCategorySelectionDto selection(
+            Long id, Long categoryId, String categoryCode, String categoryName, int reductionRate,
+            int baselineSpendingAmount, int monthlyReductionTarget, int monthlyUsageTarget
+    ) {
         MissionCategorySelectionDto dto = new MissionCategorySelectionDto();
-        dto.setId(20L);
+        dto.setId(id);
         dto.setMonthlySpendingAnalysisId(ANALYSIS_ID);
-        dto.setCategoryId(2L);
-        dto.setCategoryCode("CAFE");
-        dto.setCategoryName("카페");
-        dto.setReductionRate(30);
-        dto.setBaselineSpendingAmount(130_003);
-        dto.setMonthlyReductionTarget(39_001);
-        dto.setMonthlyUsageTarget(91_002);
+        dto.setCategoryId(categoryId);
+        dto.setCategoryCode(categoryCode);
+        dto.setCategoryName(categoryName);
+        dto.setReductionRate(reductionRate);
+        dto.setBaselineSpendingAmount(baselineSpendingAmount);
+        dto.setMonthlyReductionTarget(monthlyReductionTarget);
+        dto.setMonthlyUsageTarget(monthlyUsageTarget);
         return dto;
     }
 
     private MonthlySavingMissionDto storedMonthlyMission() {
+        return storedMonthlyMission(100L, 2L, "CAFE", "카페", 30, 39_001, 19_501);
+    }
+
+    private MonthlySavingMissionDto storedMonthlyMission(
+            Long id, Long categoryId, String categoryCode, String categoryName, int reductionRate,
+            int monthlyReductionTarget, int plannedSavingAmount
+    ) {
         MonthlySavingMissionDto dto = new MonthlySavingMissionDto();
-        dto.setId(100L);
+        dto.setId(id);
         dto.setUserId(USER_ID);
-        dto.setCategoryId(2L);
-        dto.setCategoryCode("CAFE");
-        dto.setCategoryName("카페");
+        dto.setCategoryId(categoryId);
+        dto.setCategoryCode(categoryCode);
+        dto.setCategoryName(categoryName);
         dto.setTargetYearMonth("2026-08");
-        dto.setReductionRate(30);
+        dto.setReductionRate(reductionRate);
         dto.setBaselineSpendingAmount(130_003);
-        dto.setMonthlyReductionTarget(39_001);
+        dto.setMonthlyReductionTarget(monthlyReductionTarget);
         dto.setMonthlyUsageTarget(91_002);
-        dto.setPlannedSavingAmount(19_501);
+        dto.setPlannedSavingAmount(plannedSavingAmount);
         dto.setStartWeek(3);
         dto.setStatus("IN_PROGRESS");
         return dto;

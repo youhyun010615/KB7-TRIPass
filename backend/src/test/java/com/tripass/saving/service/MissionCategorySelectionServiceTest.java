@@ -166,7 +166,8 @@ class MissionCategorySelectionServiceTest {
     @DisplayName("이미 미션이 생성된 분석의 절감률은 변경할 수 없다")
     void saveMissionSelections_afterMissionStarted_throws() {
         stubAnalysisExists();
-        when(missionCategorySelectionMapper.countGeneratedMissions(ANALYSIS_ID)).thenReturn(1);
+        when(missionCategorySelectionMapper.findStartedSelections(ANALYSIS_ID))
+                .thenReturn(List.of(savedSelection(FOOD_ID, "FOOD", "식비", 10, 100000)));
 
         CustomException exception = assertThrows(CustomException.class,
                 () -> service.saveMissionSelections(USER_ID, ANALYSIS_MONTH, requestOf(item(FOOD_ID, 30))));
@@ -174,6 +175,29 @@ class MissionCategorySelectionServiceTest {
         assertEquals("MISSION_ALREADY_STARTED", exception.getErrorCode());
         verify(missionCategorySelectionMapper, never()).upsertSelection(any());
         verify(missionCategorySelectionMapper, never()).deleteSelectionsExcept(any(), anyList());
+    }
+
+    @Test
+    @DisplayName("진행 중인 미션은 유지하면서 아직 시작하지 않은 추천 카테고리를 추가 저장한다")
+    void saveMissionSelections_addsNewCategoryWithoutChangingStartedMission() {
+        stubAnalysisExists();
+        when(missionCategorySelectionMapper.findStartedSelections(ANALYSIS_ID))
+                .thenReturn(List.of(savedSelection(FOOD_ID, "FOOD", "식비", 10, 100000)));
+        when(monthlySpendingAnalysisMapper.findRecommendedCategoryAnalyses(ANALYSIS_ID)).thenReturn(List.of(
+                topCategory(FOOD_ID, "FOOD", "식비", "100000"),
+                topCategory(CAFE_ID, "CAFE", "카페", "50000")
+        ));
+        when(missionCategorySelectionMapper.findSelections(ANALYSIS_ID)).thenReturn(List.of());
+
+        service.saveMissionSelections(
+                USER_ID, ANALYSIS_MONTH, requestOf(item(FOOD_ID, 10), item(CAFE_ID, 30)));
+
+        ArgumentCaptor<MissionCategorySelectionDto> captor =
+                ArgumentCaptor.forClass(MissionCategorySelectionDto.class);
+        verify(missionCategorySelectionMapper, org.mockito.Mockito.times(2)).upsertSelection(captor.capture());
+        assertEquals(30, byCategory(captor.getAllValues(), CAFE_ID).getReductionRate());
+        verify(missionCategorySelectionMapper)
+                .deleteSelectionsExcept(ANALYSIS_ID, List.of(FOOD_ID, CAFE_ID));
     }
 
     @Test
@@ -302,6 +326,20 @@ class MissionCategorySelectionServiceTest {
 
     private CategorySelectionItemDto item(Long categoryId, int reductionRate) {
         return CategorySelectionItemDto.builder().categoryId(categoryId).reductionRate(reductionRate).build();
+    }
+
+    private MissionCategorySelectionDto savedSelection(
+            Long categoryId, String categoryCode, String categoryName, int reductionRate, int baselineAmount
+    ) {
+        MissionCategorySelectionDto dto = new MissionCategorySelectionDto();
+        dto.setCategoryId(categoryId);
+        dto.setCategoryCode(categoryCode);
+        dto.setCategoryName(categoryName);
+        dto.setReductionRate(reductionRate);
+        dto.setBaselineSpendingAmount(baselineAmount);
+        dto.setMonthlyReductionTarget(baselineAmount * reductionRate / 100);
+        dto.setMonthlyUsageTarget(baselineAmount - dto.getMonthlyReductionTarget());
+        return dto;
     }
 
     private MissionCategorySelectionDto byCategory(List<MissionCategorySelectionDto> saved, Long categoryId) {

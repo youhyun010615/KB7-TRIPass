@@ -17,6 +17,10 @@ public interface MissionCategorySelectionMapper {
     List<MissionCategorySelectionDto> findSelections(
             @Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
 
+    /** 이미 월간 미션으로 생성되어 더 이상 수정할 수 없는 선택을 조회한다. */
+    List<MissionCategorySelectionDto> findStartedSelections(
+            @Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
+
     /**
      * 같은 월간 분석에 대한 동시 PUT 요청을 직렬화하기 위해 부모 행에 배타 잠금을 건다.
      * upsertSelection과 deleteSelectionsExcept가 서로 다른 카테고리 행을 각각 먼저 잠그면
@@ -24,9 +28,6 @@ public interface MissionCategorySelectionMapper {
      * 동시 요청 중 하나가 먼저 끝날 때까지 나머지가 대기하게 되어 교착이 원천적으로 생기지 않는다.
      */
     void lockMonthlySpendingAnalysis(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
-
-    /** 이미 생성된 미션이 있는지 확인한다. 미션 시작 후에는 선택 스냅샷을 변경할 수 없다. */
-    int countGeneratedMissions(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);
 
     /**
      * 요청에 포함되지 않은 기존 선택을 삭제한다(선택 해제). categoryIds가 비어 있으면
