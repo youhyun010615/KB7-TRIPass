@@ -24,6 +24,7 @@ import com.tripass.auth.dto.request.ChangePasswordRequest;
 import com.tripass.auth.model.RefreshToken;
 import com.tripass.auth.security.JwtTokenProvider;
 import com.tripass.auth.model.User;
+import com.tripass.wallet.service.WalletService;
 import com.tripass.common.exception.CustomException;
 import com.tripass.mypage.mapper.NotificationSettingMapper;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,7 @@ public class AuthServiceImpl implements AuthService {
     private final KakaoOAuthClient kakaoOAuthClient;
     private final GoogleOAuthClient googleOAuthClient;
     private final TransactionTemplate transactionTemplate;
+    private final WalletService walletService;
 
     // 영문, 숫자, 허용된 특수문자를 포함하는 8~64자리
     private static final Pattern PASSWORD_PATTERN =
@@ -187,6 +189,9 @@ public class AuthServiceImpl implements AuthService {
                     "이미 사용 중인 아이디입니다."
             );
         }
+
+        // 신규 일반 회원의 기본 월렛 생성
+        walletService.createWalletForUser(user.getId());
 
         // 회원 저장과 인증 결과 사용 처리는 @Transactional로 하나의 트랜잭션에 포함된다.
         phoneVerificationService
@@ -418,6 +423,8 @@ public class AuthServiceImpl implements AuthService {
                     "이미 등록된 카카오 회원 정보입니다."
             );
         }
+        // 신규 카카오 회원의 기본 월렛 생성
+        walletService.createWalletForUser(newUser.getId());
 
         return issueLoginTokens(newUser);
     }
@@ -506,6 +513,8 @@ public class AuthServiceImpl implements AuthService {
                     "이미 등록된 Google 회원 정보입니다."
             );
         }
+        // 신규 Google 회원의 기본 월렛 생성
+        walletService.createWalletForUser(newUser.getId());
 
         return issueLoginTokens(newUser);
     }
