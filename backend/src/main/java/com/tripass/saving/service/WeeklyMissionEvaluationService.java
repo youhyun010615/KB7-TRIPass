@@ -87,7 +87,9 @@ public class WeeklyMissionEvaluationService {
                 }
                 int actualSpending = spendingByCategory.getOrDefault(mission.getCategoryId(), 0);
                 boolean success = actualSpending <= mission.getWeeklyUsageLimit();
-                int actualSaving = success ? Math.max(mission.getWeeklyUsageLimit() - actualSpending, 0) : 0;
+                int weeklyBaselineSpending = mission.getWeeklyUsageLimit()
+                        + mission.getWeeklyExpectedSaving();
+                int actualSaving = success ? Math.max(weeklyBaselineSpending - actualSpending, 0) : 0;
                 String status = success ? "SUCCESS" : "FAILED";
 
                 int updated = missionMapper.updateWeeklyMissionEvaluation(
