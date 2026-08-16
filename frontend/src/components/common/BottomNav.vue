@@ -2,10 +2,12 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTravelModeStore } from '@/stores/travelMode'
+import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const route = useRoute()
 const travelModeStore = useTravelModeStore()
+const travelStore = useTravelStore()
 
 const savingsNavItems = [
   { name: '홈', path: '/', icon: 'home' },
@@ -19,7 +21,7 @@ const travelNavItems = [
   { name: '홈', path: '/', icon: 'home' },
   { name: '여행일정', path: '/schedule', icon: 'schedule' },
   { name: '여행자금 체크', path: '/travel/funds', icon: 'asset' },
-  { name: '영수증', path: '/receipt', icon: 'receipt' },
+  { name: '영수증', path: '/trips', icon: 'receipt', action: 'receipt' },
   { name: '마이페이지', path: '/mypage', icon: 'mypage' },
 ]
 
@@ -31,16 +33,40 @@ function isActive(path) {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
 }
+async function openReceipt() {
+  await travelStore.loadActiveGoal({ force: true })
+
+  if (!travelStore.tripId) {
+    window.alert('진행 중인 여행이 없어 영수증 보관함을 열 수 없습니다.')
+    return
+  }
+
+  await router.push({
+    name: 'Receipt',
+    params: {
+      tripId: travelStore.tripId,
+    },
+  })
+}
+
+async function handleNavigation(item) {
+  if (item.action === 'receipt') {
+    await openReceipt()
+    return
+  }
+
+  await router.push(item.path)
+}
 </script>
 
 <template>
   <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[390px] h-16 bg-white border-t border-gray-100 flex items-center">
     <button
       v-for="item in navItems"
-      :key="item.path"
+      :key="item.name"
       class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
       :class="isActive(item.path) ? 'text-[#3B5BDB]' : 'text-gray-400'"
-      @click="router.push(item.path)"
+      @click="handleNavigation(item)"
     >
       <!-- home -->
       <svg v-if="item.icon === 'home'" width="20" height="20" viewBox="0 0 24 24" fill="none">
