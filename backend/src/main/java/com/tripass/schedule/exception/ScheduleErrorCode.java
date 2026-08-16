@@ -47,6 +47,12 @@ public enum ScheduleErrorCode {
             HttpStatus.NOT_FOUND,
             "CURRENCY_NOT_FOUND",
             "선택한 통화 정보를 찾을 수 없습니다."
+    ),
+
+    SCHEDULE_DATE_OUT_OF_RANGE(
+            HttpStatus.BAD_REQUEST,
+            "SCHEDULE_DATE_OUT_OF_RANGE",
+            "일정 시간이 선택한 여행 국가의 방문 기간을 벗어났습니다."
     );
 
     private final HttpStatus status;

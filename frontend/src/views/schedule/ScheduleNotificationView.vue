@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelScheduleStore } from '@/stores/travelSchedule'
@@ -7,6 +7,10 @@ import { useTravelScheduleStore } from '@/stores/travelSchedule'
 const router = useRouter()
 const store = useTravelScheduleStore()
 const alerts = computed(() => store.sortedSchedules)
+
+onMounted(() => {
+  store.loadSchedules().catch(() => {})
+})
 const country = code => store.countries.find(item => item.code === code)
 const openDetail = item => {
   store.markNotificationRead(item.id)

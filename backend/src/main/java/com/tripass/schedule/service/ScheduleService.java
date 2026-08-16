@@ -11,11 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
 import static com.tripass.schedule.exception.ScheduleErrorCode.CURRENCY_NOT_FOUND;
+import static com.tripass.schedule.exception.ScheduleErrorCode.SCHEDULE_DATE_OUT_OF_RANGE;
 import static com.tripass.schedule.exception.ScheduleErrorCode.SCHEDULE_NOT_FOUND;
 import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_ACCESS_DENIED;
 import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_COUNTRY_NOT_FOUND;
@@ -85,6 +87,11 @@ public class ScheduleService {
                     TRIP_COUNTRY_NOT_FOUND
             );
         }
+
+        validateScheduledAtWithinCountryPeriod(
+                request.getScheduledAt().toLocalDate(),
+                tripCountry
+        );
 
         ZoneId zoneId = ZoneId.of(
                 tripCountry.getTimeZone()
@@ -176,6 +183,19 @@ public class ScheduleService {
         }
 
         return currencyId;
+    }
+
+    /** 일정 날짜가 선택한 여행 국가의 방문(도착~출발) 기간 안인지 검증합니다. */
+    private void validateScheduledAtWithinCountryPeriod(
+            LocalDate scheduledDate,
+            TripCountryContextRowDto tripCountry
+    ) {
+        if (scheduledDate.isBefore(tripCountry.getArrivalDate())
+                || scheduledDate.isAfter(tripCountry.getDepartureDate())) {
+            throw new ScheduleException(
+                    SCHEDULE_DATE_OUT_OF_RANGE
+            );
+        }
     }
 
     /** 목록 조회 결과를 API 응답으로 변환합니다. */
@@ -304,6 +324,11 @@ public class ScheduleService {
                     TRIP_COUNTRY_NOT_FOUND
             );
         }
+
+        validateScheduledAtWithinCountryPeriod(
+                request.getScheduledAt().toLocalDate(),
+                tripCountry
+        );
 
         ZoneId zoneId = ZoneId.of(
                 tripCountry.getTimeZone()
