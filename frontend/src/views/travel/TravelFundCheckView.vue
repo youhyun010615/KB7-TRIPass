@@ -63,7 +63,7 @@ const activeCountries = computed(() => {
     };
     return {
       ...c,
-      code: found.code,
+      code: c.tripCountryId ? c.tripCountryId.toString() : found.code,
       name: found.name,
       city: found.city,
       flag: found.flag,
@@ -300,8 +300,12 @@ function ratio(item) {
             <button
               type="button"
               :aria-label="`${item.name} 상세 보기`"
-              @click="router.push(`/travel/funds/categories/${item.key}`)"
+              @click="router.push({
+                path: `/travel/funds/categories/${item.key}`,
+                query: { tripCountryId: selectedBudget?.tripCountryId }
+              })"
             >
+
               <i :style="{ background: item.color }">{{ item.icon }}</i>
               <span>{{ item.name }}</span>
               <b>{{ formatWon(item.amount) }}</b>

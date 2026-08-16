@@ -628,7 +628,6 @@ export const useTravelStore = defineStore('travel', () => {
       return null;
     } finally {
       budgetLoading.value = false;
-      console.log('api로 받아온 데이터:', budgetCheckData.value);
     }
   }
 

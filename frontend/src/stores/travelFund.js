@@ -61,6 +61,12 @@ export const useTravelFundStore = defineStore('travelFund', () => {
   function period(code) {
     const country = countries.find(item => item.code === code)
     const plan = travel.selectedPlans.find(item => item.code === code)
+    if (!country) {
+      return {
+        startDate: plan?.startDate || '2000-01-01',
+        endDate: plan?.endDate || '2099-12-31',
+      }
+    }
     return {
       startDate: plan?.startDate || country.defaultStart,
       endDate: plan?.endDate || country.defaultEnd,
