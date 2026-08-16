@@ -8,6 +8,21 @@
         WHERE is_deleted = 0
     </select>
 
+    <select id="findAllByDate" resultType="com.tripass.exchange.domain.ExchangeRate">
+        SELECT * FROM exchange_rates
+        WHERE rate_date = #{date}
+    </select>
+
+    <select id="findMostRecentRates" resultType="com.tripass.exchange.domain.ExchangeRate">
+        SELECT *
+        FROM exchange_rates
+        WHERE rate_date = (
+            SELECT MAX(rate_date)
+            FROM exchange_rates
+            WHERE rate_date <![CDATA[<=]]> CURRENT_DATE
+        )
+    </select>
+
     <select id="getCurrencyIdByCode" resultType="Long">
         SELECT id FROM currencies WHERE currency_code = #{currencyCode}
     </select>

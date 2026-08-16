@@ -88,6 +88,10 @@ public class ExchangeRateService {
             entry("이집트", new CurrencyInfo("EGP", 1))
     );
 
+    public List<LatestExchangeRateDto> getLatestRates() {
+        return exchangeRateMapper.getLatestRates();
+    }
+
     public List<ExchangeRateAlert> findAllActiveAlerts() {
         return exchangeRateMapper.findAllActiveAlerts();
     }
