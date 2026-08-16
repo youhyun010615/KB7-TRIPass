@@ -71,7 +71,7 @@
     <select id="findWeeklyMissions" resultType="WeeklySavingMissionDto">
         SELECT id, monthly_saving_mission_id, week_number, period_start_date, period_end_date,
                weekly_usage_limit, weekly_expected_saving, actual_spending, actual_saving,
-               status, evaluated_at, created_at, updated_at
+               reward_amount, wallet_ledger_id, status, evaluated_at, rewarded_at, created_at, updated_at
         FROM weekly_saving_missions
         WHERE monthly_saving_mission_id = #{monthlySavingMissionId}
         ORDER BY week_number
@@ -83,8 +83,8 @@
                msm.category_id, sc.category_code, sc.category_name,
                wsm.week_number, wsm.period_start_date, wsm.period_end_date,
                wsm.weekly_usage_limit, wsm.weekly_expected_saving,
-               wsm.actual_spending, wsm.actual_saving, wsm.status,
-               wsm.evaluated_at, wsm.created_at, wsm.updated_at
+               wsm.actual_spending, wsm.actual_saving, wsm.reward_amount, wsm.wallet_ledger_id, wsm.status,
+               wsm.evaluated_at, wsm.rewarded_at, wsm.created_at, wsm.updated_at
         FROM weekly_saving_missions wsm
                  JOIN monthly_saving_missions msm ON msm.id = wsm.monthly_saving_mission_id
                  JOIN spending_categories sc ON sc.id = msm.category_id
@@ -104,6 +104,17 @@
             updated_at = NOW()
         WHERE id = #{id}
           AND status = 'PENDING'
+    </update>
+
+    <update id="updateWeeklyMissionReward">
+        UPDATE weekly_saving_missions
+        SET reward_amount = #{rewardAmount},
+            wallet_ledger_id = #{walletLedgerId},
+            rewarded_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND status = 'SUCCESS'
+          AND wallet_ledger_id IS NULL
     </update>
 
     <update id="completeMonthlyMissionIfAllWeeksEvaluated">

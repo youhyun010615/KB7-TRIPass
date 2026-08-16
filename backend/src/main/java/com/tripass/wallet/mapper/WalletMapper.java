@@ -64,6 +64,8 @@ public interface WalletMapper {
 
     boolean existsIdempotencyKey(@Param("idempotencyKey") String idempotencyKey);
 
+    WalletLedger findWalletLedgerByIdempotencyKey(@Param("idempotencyKey") String idempotencyKey);
+
     boolean existsTravelCardLedgerIdempotencyKey(@Param("idempotencyKey") String idempotencyKey);
 
     boolean existsTravelCardById(@Param("travelCardId") Long travelCardId);

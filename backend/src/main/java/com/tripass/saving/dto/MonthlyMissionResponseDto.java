@@ -12,6 +12,7 @@ public record MonthlyMissionResponseDto(
         Integer monthlyReductionTarget,
         Integer monthlyUsageTarget,
         Integer plannedSavingAmount,
+        Integer rewardAmount,
         Integer startWeek,
         String status,
         List<WeeklyMissionResponseDto> weeklyMissions
