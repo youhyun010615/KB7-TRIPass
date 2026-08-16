@@ -179,11 +179,18 @@ onMounted(async () => {
     // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
     const status = await travelStore.loadTripStatus(travelStore.tripId, null);
     persistentCountries.value = status?.countries || [];
+    
+    if (selectedCountryId.value !== 'all') {
+      await loadData();
+    }
   }
 });
 
 const countryMenuOpen = ref(false);
-const selectedCountryId = ref('all');
+const selectedCountryId = computed({
+  get: () => travelMode.selectedDestination,
+  set: (val) => travelMode.selectDestination(val)
+});
 const assetsCarousel = ref(null);
 
 // 툴팁 상태 관리

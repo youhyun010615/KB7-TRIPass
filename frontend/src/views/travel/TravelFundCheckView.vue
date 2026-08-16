@@ -63,7 +63,7 @@ const activeCountries = computed(() => {
     };
     return {
       ...c,
-      code: found.code,
+      code: c.tripCountryId ? c.tripCountryId.toString() : found.code,
       name: found.name,
       city: found.city,
       flag: found.flag,
