@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -563,6 +564,8 @@ class ScheduleServiceTest {
         row.setTimeZone("Europe/Paris");
         row.setDefaultCurrencyId(1L);
         row.setDefaultCurrencyCode("EUR");
+        row.setArrivalDate(LocalDate.of(2026, 8, 25));
+        row.setDepartureDate(LocalDate.of(2026, 8, 31));
 
         return row;
     }

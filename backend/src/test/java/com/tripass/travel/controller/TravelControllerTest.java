@@ -41,24 +41,28 @@ class TravelControllerTest {
     void getTravelStatus_DataContractTest() {
         // given
         Long tripId = 1L;
+        Long countryId = 7L;
         
         CountryStatusDto country = new CountryStatusDto();
+        country.setTripCountryId(countryId);
         country.setCountryName("일본");
-        country.setRemainingFund(800000L);
-        country.setRemainingDays(10L);
+        country.setTargetBudget(1_000_000L);
+        country.setSpentAmount(200_000L);
+        country.setTotalDays(10L);
+        country.setPassedDays(3L);
 
         TravelStatusResponseDto responseDto = new TravelStatusResponseDto();
         responseDto.setTotalRemainingFund(800000L);
-        responseDto.setDailyAvailableAmount(80000L);
         responseDto.setCountries(Collections.singletonList(country));
         Long userId = 1L;
 
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(userId);
-        when(travelService.getTravelStatus(tripId, userId)).thenReturn(responseDto);
+        when(travelService.getTravelStatus(tripId, userId, countryId)).thenReturn(responseDto);
 
         // when
-        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response = travelController.getTravelStatus(tripId, authentication);
+        ResponseEntity<ApiResponse<TravelStatusResponseDto>> response =
+                travelController.getTravelStatus(tripId, countryId, authentication);
 
         // then
         assertNotNull(response.getBody());
@@ -67,14 +71,16 @@ class TravelControllerTest {
         TravelStatusResponseDto data = response.getBody().getData();
         assertNotNull(data);
         assertEquals(800000L, data.getTotalRemainingFund());
-        assertEquals(80000L, data.getDailyAvailableAmount());
         
         List<CountryStatusDto> countries = data.getCountries();
         assertNotNull(countries);
         assertEquals(1, countries.size());
+        assertEquals(countryId, countries.get(0).getTripCountryId());
         assertEquals("일본", countries.get(0).getCountryName());
-        assertEquals(800000L, countries.get(0).getRemainingFund());
-        assertEquals(10L, countries.get(0).getRemainingDays());
+        assertEquals(1_000_000L, countries.get(0).getTargetBudget());
+        assertEquals(200_000L, countries.get(0).getSpentAmount());
+        assertEquals(10L, countries.get(0).getTotalDays());
+        assertEquals(3L, countries.get(0).getPassedDays());
     }
 
     @Test
