@@ -84,7 +84,9 @@
                c.country_name,
                c.time_zone,
                c.currency_id AS default_currency_id,
-               cur.currency_code AS default_currency_code
+               cur.currency_code AS default_currency_code,
+               tc.arrival_date,
+               tc.departure_date
         FROM trip_countries tc
                  INNER JOIN countries c
                             ON c.id = tc.country_id

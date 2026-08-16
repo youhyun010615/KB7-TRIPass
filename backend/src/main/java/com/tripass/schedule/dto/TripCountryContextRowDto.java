@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,4 +17,6 @@ public class TripCountryContextRowDto {
     private String timeZone;
     private Long defaultCurrencyId;
     private String defaultCurrencyCode;
+    private LocalDate arrivalDate;
+    private LocalDate departureDate;
 }
