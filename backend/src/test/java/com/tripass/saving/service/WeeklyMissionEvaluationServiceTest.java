@@ -55,14 +55,14 @@ class WeeklyMissionEvaluationServiceTest {
         givenMissions(mission);
         when(analysisMapper.findCreditCardWithdrawalTransactions(USER_ID, date(1), date(7)))
                 .thenReturn(List.of(transaction(101L, 2L, 30_000, LocalTime.of(12, 0))));
-        when(missionMapper.updateWeeklyMissionEvaluation(11L, 30_000, 0, "SUCCESS")).thenReturn(1);
+        when(missionMapper.updateWeeklyMissionEvaluation(11L, 30_000, 10_000, "SUCCESS")).thenReturn(1);
 
         WeeklyMissionEvaluationResponseDto result = service.evaluate(USER_ID, TARGET_MONTH, 1);
 
         assertEquals(1, result.successCount());
         assertEquals("SUCCESS", result.missions().get(0).status());
         assertEquals(30_000, result.missions().get(0).actualSpending());
-        assertEquals(0, result.missions().get(0).actualSaving());
+        assertEquals(10_000, result.missions().get(0).actualSaving());
     }
 
     @Test
@@ -80,15 +80,15 @@ class WeeklyMissionEvaluationServiceTest {
     }
 
     @Test
-    void noSpendingIsSuccessAndSavesWholeLimit() {
+    void noSpendingIsSuccessAndSavesWholeBaselineSpending() {
         WeeklySavingMissionDto mission = mission(11L, 2L, 30_000);
         givenMissions(mission);
-        when(missionMapper.updateWeeklyMissionEvaluation(11L, 0, 30_000, "SUCCESS")).thenReturn(1);
+        when(missionMapper.updateWeeklyMissionEvaluation(11L, 0, 40_000, "SUCCESS")).thenReturn(1);
 
         WeeklyMissionEvaluationResponseDto result = service.evaluate(USER_ID, TARGET_MONTH, 1);
 
         assertEquals(0, result.missions().get(0).actualSpending());
-        assertEquals(30_000, result.missions().get(0).actualSaving());
+        assertEquals(40_000, result.missions().get(0).actualSaving());
     }
 
     @Test
@@ -101,7 +101,7 @@ class WeeklyMissionEvaluationServiceTest {
                 .thenReturn(List.of(account));
         when(analysisMapper.findCheckCardWithdrawalTransactions(USER_ID, date(1), date(7)))
                 .thenReturn(List.of(check));
-        when(missionMapper.updateWeeklyMissionEvaluation(11L, 10_000, 5_000, "SUCCESS")).thenReturn(1);
+        when(missionMapper.updateWeeklyMissionEvaluation(11L, 10_000, 15_000, "SUCCESS")).thenReturn(1);
 
         WeeklyMissionEvaluationResponseDto result = service.evaluate(USER_ID, TARGET_MONTH, 1);
 
@@ -193,6 +193,7 @@ class WeeklyMissionEvaluationServiceTest {
         mission.setPeriodStartDate(date(1));
         mission.setPeriodEndDate(date(7));
         mission.setWeeklyUsageLimit(limit);
+        mission.setWeeklyExpectedSaving(10_000);
         mission.setStatus("PENDING");
         return mission;
     }
