@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.when;
  * saving 도메인 Mapper는 실제 쿼리를 실행하지 않도록 별도로 목 빈으로 대체한다.
  */
 @ExtendWith(SpringExtension.class)
+@WebAppConfiguration
 @ContextConfiguration(classes = {
         RootConfig.class,
         SecurityConfig.class,

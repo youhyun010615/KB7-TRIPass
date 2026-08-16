@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.when;
  * 동일하다 — DataSource·Mapper만 목 빈으로 대체하고 나머지는 프로덕션과 동일하게 조립한다.
  */
 @ExtendWith(SpringExtension.class)
+@WebAppConfiguration
 @ContextConfiguration(classes = {
         RootConfig.class,
         SecurityConfig.class,
