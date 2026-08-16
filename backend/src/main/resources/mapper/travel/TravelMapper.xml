@@ -511,6 +511,7 @@
         LEFT JOIN currencies cur ON t.currency_id = cur.id
         WHERE t.trip_id = #{tripId}
           AND t.is_deleted = 0
+          AND t.transaction_type = 'WITHDRAWAL'
           AND (#{countryId} IS NULL OR t.trip_country_id = #{countryId})
           AND (#{categoryName} IS NULL OR sc.category_name = #{categoryName})
         ORDER BY t.transaction_date DESC
