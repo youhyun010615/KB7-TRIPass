@@ -3,9 +3,11 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useExchangeStore } from '@/stores/exchange';
+import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useTravelStore } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
 import NotificationBell from '@/components/common/NotificationBell.vue';
+import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import TravelTicket from '@/components/savings/TravelTicket.vue';
 
 const props = defineProps({
@@ -14,6 +16,7 @@ const props = defineProps({
 
 const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
+const monthlyAnalysisStore = useMonthlyAnalysisStore();
 const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
@@ -25,6 +28,7 @@ onMounted(async () => {
   await Promise.all([
     travelStore.loadHomeDashboard({ force: true }),
     exchangeStore.updateExchangeRates(),
+    monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
   ]);
   await nextTick();
   restoreCountryPosition();
@@ -280,6 +284,16 @@ function restoreCountryPosition() {
 
 function retryHome() {
   travelStore.loadHomeDashboard({ force: true });
+}
+
+function retryMonthlyAnalysis() {
+  monthlyAnalysisStore.loadLatestAnalysis({ force: true });
+}
+
+function openMonthlyAnalysis() {
+  const yearMonth = monthlyAnalysisStore.report?.analysisYearMonth;
+  if (!yearMonth) return;
+  router.push({ name: 'MonthlyAnalysisReport', params: { yearMonth } });
 }
 
 function goWallet() {
@@ -667,6 +681,33 @@ async function switchMode(mode) {
         </button>
       </section>
 
+      <section
+        v-if="monthlyAnalysisStore.loading"
+        class="analysis-summary-skeleton mx-4 mt-3"
+        aria-label="월간 분석 리포트 로딩 중"
+      >
+        <i /><i /><i /><i />
+      </section>
+
+      <MonthlyAnalysisSummaryCard
+        v-else-if="monthlyAnalysisStore.hasVisibleReport"
+        class="mx-4 mt-3"
+        :report="monthlyAnalysisStore.report"
+        @open="openMonthlyAnalysis"
+      />
+
+      <section
+        v-else-if="monthlyAnalysisStore.errorMessage"
+        class="analysis-load-error mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>월간 분석 리포트를 불러오지 못했어요</b>
+          <small>{{ monthlyAnalysisStore.errorMessage }}</small>
+        </div>
+        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
+      </section>
+
       <section class="ai-report-card mx-4 mt-3">
         <div class="ai-report-heading">
           <div>
@@ -754,6 +795,85 @@ async function switchMode(mode) {
 .savings-mode-home {
   min-height: 100vh;
   background: #f3f6ff;
+}
+.analysis-summary-skeleton,
+.analysis-load-error {
+  border: 1px solid #d6e3fa;
+  border-radius: 22px;
+  background: #f8fbff;
+}
+.analysis-summary-skeleton {
+  display: grid;
+  gap: 10px;
+  padding: 19px;
+}
+.analysis-summary-skeleton i {
+  display: block;
+  height: 13px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #e7eef9 25%, #f5f8fd 50%, #e7eef9 75%);
+  background-size: 200% 100%;
+  animation: analysis-skeleton 1.25s infinite linear;
+}
+.analysis-summary-skeleton i:nth-child(1) {
+  width: 42%;
+}
+.analysis-summary-skeleton i:nth-child(2) {
+  width: 70%;
+  height: 40px;
+}
+.analysis-summary-skeleton i:nth-child(3),
+.analysis-summary-skeleton i:nth-child(4) {
+  height: 35px;
+}
+.analysis-load-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+}
+.analysis-load-error > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: #e7efff;
+  color: #286ce0;
+  font-size: 11px;
+  font-weight: 950;
+}
+.analysis-load-error div {
+  min-width: 0;
+  flex: 1;
+}
+.analysis-load-error b,
+.analysis-load-error small {
+  display: block;
+}
+.analysis-load-error b {
+  color: #26334d;
+  font-size: 11px;
+}
+.analysis-load-error small {
+  overflow: hidden;
+  margin-top: 3px;
+  color: #7b8da9;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.analysis-load-error button {
+  flex: none;
+  color: #286ce0;
+  font-size: 9px;
+  font-weight: 900;
+}
+@keyframes analysis-skeleton {
+  to {
+    background-position: -200% 0;
+  }
 }
 .home-state {
   display: flex;
