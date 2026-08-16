@@ -101,6 +101,13 @@ const defaultPresentation = {
 };
 
 const homeDashboard = computed(() => travelStore.homeDashboard);
+const isHomePending = computed(
+  () =>
+    travelStore.homeLoading ||
+    (!homeDashboard.value &&
+      !travelStore.homeError &&
+      (!travelStore.initialized || travelStore.hasTravelGoal)),
+);
 const countries = computed(() =>
   [...(homeDashboard.value?.countries || [])]
     .sort((a, b) => a.displayOrder - b.displayOrder)
@@ -338,7 +345,7 @@ async function switchMode(mode) {
 
 <template>
   <section class="savings-mode-home">
-    <template v-if="travelStore.homeLoading && !homeDashboard">
+    <template v-if="isHomePending">
       <div class="home-state" role="status" aria-live="polite">
         <span class="home-spinner" />
         <b>여행 저축 현황을 불러오고 있어요</b>
@@ -356,7 +363,7 @@ async function switchMode(mode) {
     </template>
 
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
-    <template v-else-if="!travelStore.hasTravelGoal">
+    <template v-else-if="!homeDashboard">
       <div class="px-5 pt-12 pb-3 bg-white/80">
         <div class="flex items-center justify-between">
           <button
