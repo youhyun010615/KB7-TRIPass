@@ -41,12 +41,12 @@ class MissionWalletRewardServiceTest {
     }
 
     @Test
-    void actualSavingAboveExpectedSavingRewardsOnlyExpectedAmount() {
+    void actualSavingAboveExpectedSavingRewardsFullActualAmount() {
         WeeklySavingMissionDto mission = successfulMission(11L, 12_500, 9_750);
         givenWallet();
         givenInsertedLedgerId(101L);
-        when(walletMapper.updateWalletBalance(WALLET_ID, BigDecimal.valueOf(109_750), 0L)).thenReturn(1);
-        when(missionMapper.updateWeeklyMissionReward(11L, 9_750, 101L)).thenReturn(1);
+        when(walletMapper.updateWalletBalance(WALLET_ID, BigDecimal.valueOf(112_500), 0L)).thenReturn(1);
+        when(missionMapper.updateWeeklyMissionReward(11L, 12_500, 101L)).thenReturn(1);
 
         service.rewardSuccessfulMissions(USER_ID, List.of(mission));
 
@@ -60,8 +60,8 @@ class MissionWalletRewardServiceTest {
         assertEquals("WALLET", ledger.getTargetType());
         assertEquals(WALLET_ID, ledger.getTargetId());
         assertEquals("MISSION_REWARD:WEEKLY:11", ledger.getIdempotencyKey());
-        assertEquals(0, BigDecimal.valueOf(9_750).compareTo(ledger.getAmount()));
-        assertEquals(9_750, mission.getRewardAmount());
+        assertEquals(0, BigDecimal.valueOf(12_500).compareTo(ledger.getAmount()));
+        assertEquals(12_500, mission.getRewardAmount());
         assertEquals(101L, mission.getWalletLedgerId());
         assertNotNull(mission.getRewardedAt());
     }

@@ -93,9 +93,7 @@ public class MissionWalletRewardService {
     }
 
     private int calculateRewardAmount(WeeklySavingMissionDto mission) {
-        int actualSaving = Math.max(defaultZero(mission.getActualSaving()), 0);
-        int expectedSaving = Math.max(defaultZero(mission.getWeeklyExpectedSaving()), 0);
-        return Math.min(actualSaving, expectedSaving);
+        return Math.max(defaultZero(mission.getActualSaving()), 0);
     }
 
     private WalletLedger createLedger(
