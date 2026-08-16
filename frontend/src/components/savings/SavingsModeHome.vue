@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
+import { useSavingMissionsStore } from '@/stores/savingMissions';
 import { useTravelStore } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
+import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
 import TravelTicket from '@/components/savings/TravelTicket.vue';
 
 const props = defineProps({
@@ -17,6 +19,7 @@ const props = defineProps({
 const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
 const monthlyAnalysisStore = useMonthlyAnalysisStore();
+const savingMissionsStore = useSavingMissionsStore();
 const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
@@ -29,6 +32,7 @@ onMounted(async () => {
     travelStore.loadHomeDashboard({ force: true }),
     exchangeStore.updateExchangeRates(),
     monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
+    savingMissionsStore.loadMissionStatus(),
   ]);
   await nextTick();
   restoreCountryPosition();
@@ -143,9 +147,6 @@ const homeSavingsPercent = computed(() =>
 const monthlyTarget = computed(() =>
   Number(homeDashboard.value?.monthlySavingTarget || 0),
 );
-const prepaidExpenseTotal = computed(() =>
-  Number(homeDashboard.value?.prepaidExpenseTotal || 0),
-);
 const daysUntilDeparture = computed(() => {
   // [ORIGINAL LOGIC]
   const startDate = homeDashboard.value?.startDate;
@@ -189,6 +190,11 @@ const monthlySavingPercent = computed(() =>
         Math.round((monthlySavedAmount.value / monthlyTarget.value) * 100),
       )
     : 0,
+);
+const homeInsightLoading = computed(
+  () =>
+    savingMissionsStore.missionStatusLoading ||
+    (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading),
 );
 const selectedExchangeRate = computed(() =>
   exchangeStore.getCurrency(selectedCountry.value.currency),
@@ -287,13 +293,20 @@ function retryHome() {
 }
 
 function retryMonthlyAnalysis() {
-  monthlyAnalysisStore.loadLatestAnalysis({ force: true });
+  Promise.all([
+    monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
+    savingMissionsStore.loadMissionStatus(),
+  ]);
 }
 
 function openMonthlyAnalysis() {
   const yearMonth = monthlyAnalysisStore.report?.analysisYearMonth;
   if (!yearMonth) return;
   router.push({ name: 'MonthlyAnalysisReport', params: { yearMonth } });
+}
+
+function openSavingMissions() {
+  router.push({ name: 'SavingsMissions' });
 }
 
 function goWallet() {
@@ -682,12 +695,19 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-if="monthlyAnalysisStore.loading"
+        v-if="homeInsightLoading"
         class="analysis-summary-skeleton mx-4 mt-3"
-        aria-label="월간 분석 리포트 로딩 중"
+        aria-label="월간 분석 및 미션 정보를 불러오는 중"
       >
         <i /><i /><i /><i />
       </section>
+
+      <HomeSavingMissionCard
+        v-else-if="savingMissionsStore.hasStartedMissions"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
 
       <MonthlyAnalysisSummaryCard
         v-else-if="monthlyAnalysisStore.hasVisibleReport"
@@ -706,41 +726,6 @@ async function switchMode(mode) {
           <small>{{ monthlyAnalysisStore.errorMessage }}</small>
         </div>
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
-      </section>
-
-      <section class="ai-report-card mx-4 mt-3">
-        <div class="ai-report-heading">
-          <div>
-            <p>{{ homeDashboard.tripName }}</p>
-            <small>등록한 여행 준비 요약</small>
-          </div>
-          <RouterLink :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
-            >수정하기 ›</RouterLink
-          >
-        </div>
-        <div class="ai-goal-status">
-          <span class="status-icon">✦</span>
-          <div>
-            <strong>출발까지 {{ daysUntilDeparture }}일 남았어요</strong>
-            <p>
-              {{ formatDate(homeDashboard.startDate) }} ~
-              {{ formatDate(homeDashboard.endDate) }}
-            </p>
-          </div>
-        </div>
-        <div class="trip-summary-row">
-          <span>방문 국가</span
-          ><b>{{
-            countries.map((country) => country.countryName).join(' · ')
-          }}</b>
-        </div>
-        <div class="trip-summary-row">
-          <span>항공·숙소 사전 지출</span
-          ><b>{{ formatCurrency(prepaidExpenseTotal) }}</b>
-        </div>
-        <div class="trip-summary-row">
-          <span>월 저축 목표</span><b>{{ formatCurrency(monthlyTarget) }}</b>
-        </div>
       </section>
 
       <!-- 오늘의 실시간 환율 -->

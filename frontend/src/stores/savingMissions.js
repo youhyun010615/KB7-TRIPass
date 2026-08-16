@@ -35,6 +35,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
   const missions = ref(null);
   const selectedRates = ref({});
   const loading = ref(false);
+  const missionStatusLoading = ref(false);
   const submitting = ref(false);
   const errorMessage = ref('');
   const addingMissions = ref(false);
@@ -126,6 +127,22 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
     }
   }
 
+  async function loadMissionStatus(yearMonth = previousYearMonth()) {
+    analysisYearMonth.value = yearMonth;
+    targetYearMonth.value = nextYearMonth(yearMonth);
+    missionStatusLoading.value = true;
+
+    try {
+      missions.value = await fetchSavingMissions(targetYearMonth.value);
+      return missions.value;
+    } catch (error) {
+      missions.value = null;
+      return null;
+    } finally {
+      missionStatusLoading.value = false;
+    }
+  }
+
   function toggleCategory(category) {
     const key = String(category.categoryId);
     if (startedCategoryIds.value.has(key)) return;
@@ -206,6 +223,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
     missions,
     selectedRates,
     loading,
+    missionStatusLoading,
     submitting,
     errorMessage,
     addingMissions,
@@ -218,6 +236,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
     expectedSavingAmount,
     newExpectedSavingAmount,
     load,
+    loadMissionStatus,
     toggleCategory,
     selectRate,
     beginAddingMissions,
