@@ -1309,13 +1309,18 @@ CREATE TABLE weekly_saving_missions
     weekly_expected_saving    INT         NOT NULL COMMENT '주간 예상 절약 금액(원)',
     actual_spending           INT         NULL COMMENT '주간 실제 지출액(원)',
     actual_saving             INT         NULL COMMENT '주간 실제 절약액(원)',
+    reward_amount             INT         NOT NULL DEFAULT 0 COMMENT 'TRIP 월렛에 실제 적립한 미션 보상액(원)',
+    wallet_ledger_id          BIGINT      NULL COMMENT '미션 보상 월렛 원장 ID',
     status                    VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '상태(PENDING/SUCCESS/FAILED)',
     evaluated_at              DATETIME    NULL COMMENT '판정 시각',
+    rewarded_at               DATETIME    NULL COMMENT 'TRIP 월렛 보상 적립 시각',
     created_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
     UNIQUE KEY uk_weekly_saving_missions_monthly_week (monthly_saving_mission_id, week_number),
+    UNIQUE KEY uk_weekly_saving_missions_wallet_ledger (wallet_ledger_id),
     CONSTRAINT fk_weekly_saving_missions_monthly FOREIGN KEY (monthly_saving_mission_id) REFERENCES monthly_saving_missions (id),
+    CONSTRAINT fk_weekly_saving_missions_wallet_ledger FOREIGN KEY (wallet_ledger_id) REFERENCES wallet_ledger (id),
     CONSTRAINT chk_weekly_saving_missions_week CHECK (week_number BETWEEN 1 AND 4)
 ) COMMENT '주간 카테고리 절감 미션';
 
