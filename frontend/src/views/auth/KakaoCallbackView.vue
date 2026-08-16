@@ -125,11 +125,8 @@ async function handleKakaoCallback() {
       )
     }
 
-    authStore.setToken(
+    authStore.handleLoginSuccess(
         loginData.accessToken,
-    )
-
-    authStore.setUser(
         loginData.user,
     )
 

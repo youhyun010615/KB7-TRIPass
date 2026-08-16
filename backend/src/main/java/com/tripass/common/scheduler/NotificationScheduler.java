@@ -1,6 +1,7 @@
 package com.tripass.common.scheduler;
 
 import com.tripass.common.util.FcmService;
+import com.tripass.exchange.service.ExchangeRateService;
 import com.tripass.mypage.domain.NotificationSetting;
 import com.tripass.mypage.mapper.NotificationSettingMapper;
 import com.tripass.mypage.mapper.NotificationTargetMapper;
@@ -25,6 +26,7 @@ public class NotificationScheduler {
     private final NotificationTargetMapper notificationTargetMapper;
     private final NotificationSettingMapper notificationSettingMapper;
     private final ScheduleMapper scheduleMapper;
+    private final ExchangeRateService exchangeRateService;
 
     // 매일 자정
     @Scheduled(cron = "0 0 0 * * *")
@@ -52,6 +54,41 @@ public class NotificationScheduler {
             String body = "여행은 어떠셨나요? 리포트를 확인해보세요.";
             String url = "/mypage/reports?tripId=" + trip.getId();
             sendToTrip(trip, "REPORT", title, body, url);
+        }
+    }
+
+    // 매일 12시 5분에 실행 (주중/주말 관계없이 최근 영업일 기준)
+    @Scheduled(cron = "0 5 12 * * *", zone = "Asia/Seoul")
+    public void sendExchangeRateAlerts() {
+        log.info("[Notification] 환율 알림 통합 스케줄러 시작");
+
+        java.util.Map<Long, java.math.BigDecimal> latestRates = exchangeRateService.getLatestRatesMap();
+        java.util.List<com.tripass.exchange.domain.ExchangeRateAlert> alerts = exchangeRateService.findAllActiveAlerts();
+        
+        for (com.tripass.exchange.domain.ExchangeRateAlert alert : alerts) {
+            java.math.BigDecimal rate = latestRates.get(alert.getCurrencyId());
+            
+            if (rate != null && rate.compareTo(java.math.BigDecimal.valueOf(alert.getTargetRate())) <= 0) {
+                sendExchangeRateNotification(alert, rate);
+            }
+        }
+    }
+
+    private void sendExchangeRateNotification(com.tripass.exchange.domain.ExchangeRateAlert alert, java.math.BigDecimal rate) {
+        NotificationSetting setting = notificationSettingMapper.getSettingByUserId(alert.getUserId());
+        // isExchangeRateEnabled 필드가 있다고 가정
+        if (setting == null || !setting.isAllEnabled() || !setting.isExchangeRateEnabled()) return; 
+
+        // 통화 코드 가져오기
+        String currencyCode = exchangeRateService.getCurrencyCodeById(alert.getCurrencyId());
+
+        String title = "관심 환율 알림";
+        String body = String.format("[%s] 설정하신 환율(%s원) 이하로 도달했습니다: %s원", currencyCode, alert.getTargetRate(), rate);
+        String url = "/exchange";
+
+        if (!notificationService.existsNotification(alert.getUserId(), "EXCHANGE", url, body)) {
+            fcmService.sendNotification(alert.getUserId(), title, body);
+            notificationService.insertNotification(alert.getUserId(), "EXCHANGE", title, body, url);
         }
     }
 

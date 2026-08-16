@@ -40,6 +40,12 @@ public interface ExchangeRateMapper {
     // 저장된 ID 조회
     Long findIdByCurrencyAndDate(@Param("baseCurrencyId") Long baseCurrencyId, @Param("targetCurrencyId") Long targetCurrencyId, @Param("rateDate") LocalDate rateDate);
 
+    // 날짜별 환율 목록 조회
+    List<ExchangeRate> findAllByDate(@Param("date") LocalDate date);
+
+    // 가장 최근 영업일 환율 조회
+    List<ExchangeRate> findMostRecentRates();
+
     // 이전 환율 조회
     BigDecimal getPreviousRate(@Param("targetId") Long targetId, @Param("currentDate") LocalDate currentDate);
 
@@ -48,6 +54,9 @@ public interface ExchangeRateMapper {
 
     // 관심 환율 알림 목록 조회
     List<ExchangeRateAlertResponseDto> getAlertsByUserId(@Param("userId") Long userId);
+
+    // 활성화된 모든 관심 환율 알림 조회
+    List<ExchangeRateAlert> findAllActiveAlerts();
 
     // 관심 환율 알림 등록
     void insertAlert(ExchangeRateAlert alert);

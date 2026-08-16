@@ -92,6 +92,26 @@ public class ExchangeRateService {
         return exchangeRateMapper.getLatestRates();
     }
 
+    public List<ExchangeRateAlert> findAllActiveAlerts() {
+        return exchangeRateMapper.findAllActiveAlerts();
+    }
+
+    public String getCurrencyCodeById(Long id) {
+        return exchangeRateMapper.getCurrencyCodeById(id);
+    }
+
+    public Map<Long, BigDecimal> getLatestRatesMap() {
+        LocalDate targetDate = LocalDate.now();
+        List<ExchangeRate> rates = exchangeRateMapper.findAllByDate(targetDate);
+        
+        if (rates == null || rates.isEmpty()) {
+            rates = exchangeRateMapper.findMostRecentRates();
+        }
+        
+        return rates.stream()
+                .collect(Collectors.toMap(ExchangeRate::getTargetCurrencyId, ExchangeRate::getDealBaseRate));
+    }
+
 
     public List<ExchangeRateAlertResponseDto> getAlertsByUserId(Long userId) {
         return exchangeRateMapper.getAlertsByUserId(userId);
