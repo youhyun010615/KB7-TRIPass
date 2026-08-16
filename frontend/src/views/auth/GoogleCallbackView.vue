@@ -127,11 +127,8 @@ async function handleGoogleCallback() {
       )
     }
 
-    authStore.setToken(
+    authStore.handleLoginSuccess(
         loginData.accessToken,
-    )
-
-    authStore.setUser(
         loginData.user,
     )
 

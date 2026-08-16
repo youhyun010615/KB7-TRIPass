@@ -88,8 +88,24 @@ public class ExchangeRateService {
             entry("이집트", new CurrencyInfo("EGP", 1))
     );
 
-    public List<LatestExchangeRateDto> getLatestRates() {
-        return exchangeRateMapper.getLatestRates();
+    public List<ExchangeRateAlert> findAllActiveAlerts() {
+        return exchangeRateMapper.findAllActiveAlerts();
+    }
+
+    public String getCurrencyCodeById(Long id) {
+        return exchangeRateMapper.getCurrencyCodeById(id);
+    }
+
+    public Map<Long, BigDecimal> getLatestRatesMap() {
+        LocalDate targetDate = LocalDate.now();
+        List<ExchangeRate> rates = exchangeRateMapper.findAllByDate(targetDate);
+        
+        if (rates == null || rates.isEmpty()) {
+            rates = exchangeRateMapper.findMostRecentRates();
+        }
+        
+        return rates.stream()
+                .collect(Collectors.toMap(ExchangeRate::getTargetCurrencyId, ExchangeRate::getDealBaseRate));
     }
 
 

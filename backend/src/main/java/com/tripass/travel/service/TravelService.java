@@ -45,8 +45,18 @@ public class TravelService {
         validateTripOwner(tripId, currentUserId);
 
         // 1. 대시보드 기본 정보 및 전체 국가 목록 조회
-        List<CountryStatusDto> allCountries = travelMapper.getTripDashboard(tripId).getCountries();
-        TripBasicInfoDto tripInfo = travelMapper.getTripDashboard(tripId).getTripInfo();
+        TravelStatusResponseDto dashboard = travelMapper.getTripDashboard(tripId);
+        if (dashboard == null) {
+            Trip trip = travelMapper.selectTripById(tripId);
+            dashboard = TravelStatusResponseDto.builder()
+                    .tripInfo(new TripBasicInfoDto(trip.getId(), trip.getTripName(), trip.getStartDate(), trip.getEndDate()))
+                    .countries(Collections.emptyList())
+                    .totalRemainingFund(0L)
+                    .build();
+        }
+
+        List<CountryStatusDto> allCountries = dashboard.getCountries();
+        TripBasicInfoDto tripInfo = dashboard.getTripInfo();
 
         List<CountryStatusDto> filteredCountries = allCountries;
         TripBasicInfoDto finalTripInfo = tripInfo;

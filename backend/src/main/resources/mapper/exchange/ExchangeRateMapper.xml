@@ -2,6 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripass.exchange.mapper.ExchangeRateMapper">
 
+    <select id="findAllActiveAlerts" resultType="com.tripass.exchange.domain.ExchangeRateAlert">
+        SELECT id, user_id AS userId, currency_id AS currencyId, target_rate AS targetRate, is_deleted AS isDeleted
+        FROM exchange_rate_alerts
+        WHERE is_deleted = 0
+    </select>
+
     <select id="getCurrencyIdByCode" resultType="Long">
         SELECT id FROM currencies WHERE currency_code = #{currencyCode}
     </select>

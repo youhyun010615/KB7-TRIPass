@@ -49,6 +49,9 @@ public interface ExchangeRateMapper {
     // 관심 환율 알림 목록 조회
     List<ExchangeRateAlertResponseDto> getAlertsByUserId(@Param("userId") Long userId);
 
+    // 활성화된 모든 관심 환율 알림 조회
+    List<ExchangeRateAlert> findAllActiveAlerts();
+
     // 관심 환율 알림 등록
     void insertAlert(ExchangeRateAlert alert);
 

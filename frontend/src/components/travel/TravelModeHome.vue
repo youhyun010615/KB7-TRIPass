@@ -15,6 +15,7 @@ const travelMode = useTravelModeStore();
 const travelStore = useTravelStore();
 
 // 데이터 바인딩을 위한 계산 속성 추가
+const tripId = computed(() => travelStore.tripId);
 const tripStatus = computed(() => travelStore.tripStatus);
 const tripInfo = computed(() => tripStatus.value?.tripInfo);
 const countries = computed(() => tripStatus.value?.countries || []);
@@ -43,12 +44,17 @@ const today = computed(() => {
   return d;
 });
 
-const startDate = computed(() =>
-  tripInfo.value ? new Date(tripInfo.value.startDate) : null,
-);
-const endDate = computed(() =>
-  tripInfo.value ? new Date(tripInfo.value.endDate) : null,
-);
+const startDate = computed(() => {
+  if (!tripInfo.value?.startDate) return null;
+  const [year, month, day] = tripInfo.value.startDate.split('-').map(Number);
+  return new Date(year, month - 1, day);
+});
+
+const endDate = computed(() => {
+  if (!tripInfo.value?.endDate) return null;
+  const [year, month, day] = tripInfo.value.endDate.split('-').map(Number);
+  return new Date(year, month - 1, day);
+});
 
 const dday = computed(() => {
   if (!endDate.value) return 0;
@@ -57,9 +63,13 @@ const dday = computed(() => {
 });
 
 const currentDay = computed(() => {
-  if (!startDate.value) return 1;
+  if (!startDate.value) return 0;
+
+  // 오늘 날짜가 시작일보다 이전이면 0일차
+  if (today.value < startDate.value) return 0;
+
   const diff = today.value - startDate.value;
-  return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
+  return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
 });
 
 const totalTripDays = computed(() => {
@@ -175,11 +185,11 @@ const isReturnPeriod = computed(() => {
 
 onMounted(async () => {
   await travelStore.loadActiveGoal();
-  if (travelStore.tripId) {
+  if (tripId.value) {
     // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
-    const status = await travelStore.loadTripStatus(travelStore.tripId, null);
+    const status = await travelStore.loadTripStatus(tripId.value, null);
     persistentCountries.value = status?.countries || [];
-    
+
     if (selectedCountryId.value !== 'all') {
       await loadData();
     }
@@ -189,7 +199,7 @@ onMounted(async () => {
 const countryMenuOpen = ref(false);
 const selectedCountryId = computed({
   get: () => travelMode.selectedDestination,
-  set: (val) => travelMode.selectDestination(val)
+  set: (val) => travelMode.selectDestination(val),
 });
 const assetsCarousel = ref(null);
 
@@ -215,155 +225,6 @@ function selectDestination(item) {
   countryMenuOpen.value = false;
   loadData();
 }
-
-const schedules = {
-  all: [
-    {
-      date: '2026.08.15 (수)',
-      flag: '🇫🇷',
-      title: '루브르 박물관 가이드 투어',
-      time: '10:30 · EUR 85.00',
-      status: '사전결제 완료',
-    },
-    {
-      date: '2026.08.21 (금)',
-      flag: '🇨🇭',
-      title: '체르마트 마터호른 샬레 숙소',
-      time: '15:00 체크인 · CHF 220.00',
-      status: '현장결제 필요',
-      warning: true,
-    },
-  ],
-  FR: [
-    {
-      date: '2026.08.15 (수)',
-      flag: '🇫🇷',
-      title: '루브르 박물관 가이드 투어',
-      time: '10:30 · EUR 85.00',
-      status: '사전결제 완료',
-    },
-    {
-      date: '',
-      flag: '🚆',
-      title: '파리 → 인터라켄 TGV 열차',
-      time: '14:00 · EUR 65.00',
-      status: '사전결제 완료',
-    },
-  ],
-  CH: [
-    {
-      date: '2026.08.15 (수)',
-      flag: '🇨🇭',
-      title: '융프라우 전망대',
-      time: '09:30 · CHF 72.00',
-      status: '사전결제 완료',
-    },
-    {
-      date: '',
-      flag: '🪂',
-      title: '패러글라이딩 체험',
-      time: '14:30 · CHF 110.00',
-      status: '현장결제 필요',
-      warning: true,
-    },
-  ],
-  DE: [
-    {
-      date: '2026.08.25 (화)',
-      flag: '🇩🇪',
-      title: '브란덴부르크 문 투어',
-      time: '10:00 · EUR 35.00',
-      status: '사전결제 완료',
-    },
-  ],
-  JP: [
-    {
-      date: '2026.08.25 (화)',
-      flag: '🇯🇵',
-      title: '시부야 전망대',
-      time: '18:00 · JPY 2,500',
-      status: '사전결제 완료',
-    },
-  ],
-  HK: [
-    {
-      date: '2026.08.25 (화)',
-      flag: '🇭🇰',
-      title: '빅토리아 피크 야경 투어',
-      time: '18:30 · HKD 320',
-      status: '사전결제 완료',
-    },
-  ],
-};
-
-const recent = {
-  all: [
-    {
-      icon: '☕',
-      place: 'Café de Flore (프랑스)',
-      meta: '식비 · 오늘 12:30',
-      amount: 18360,
-    },
-    {
-      icon: '🫕',
-      place: 'Swiss Fondue House (스위스)',
-      meta: '식비 · 어제 19:10',
-      amount: 68400,
-    },
-  ],
-  FR: [
-    {
-      icon: '☕',
-      place: 'Café de Flore',
-      meta: '식비 · 오늘 12:30',
-      amount: 18360,
-    },
-    {
-      icon: '🛒',
-      place: 'Monoprix',
-      meta: '생활비 · 오늘 15:10',
-      amount: 9945,
-    },
-  ],
-  CH: [
-    {
-      icon: '🫕',
-      place: 'Swiss Fondue House',
-      meta: '식비 · 오늘 12:30',
-      amount: 68400,
-    },
-    {
-      icon: '🚞',
-      place: 'Interlaken Ost',
-      meta: '교통 · 오늘 16:20',
-      amount: 42615,
-    },
-  ],
-  DE: [
-    {
-      icon: '🥨',
-      place: 'Zeit für Brot',
-      meta: '식비 · 오늘 10:20',
-      amount: 14860,
-    },
-  ],
-  JP: [
-    {
-      icon: '🍜',
-      place: '이치란 라멘',
-      meta: '식비 · 오늘 13:10',
-      amount: 12400,
-    },
-  ],
-  HK: [
-    {
-      icon: '🥟',
-      place: 'Tim Ho Wan',
-      meta: '식비 · 오늘 13:20',
-      amount: 38600,
-    },
-  ],
-};
 
 const overallAssets = [
   {
@@ -489,9 +350,6 @@ const convertedAmount = computed(() =>
     (Number(travelMode.calculatorAmount) || 0) *
       calculatorDestination.value.rate,
   ),
-);
-const categoryTotal = computed(() =>
-  selected.value.categories.reduce((sum, item) => sum + item.amount, 0),
 );
 
 function formatWon(value) {
