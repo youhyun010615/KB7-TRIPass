@@ -123,6 +123,9 @@ dependencies {
 // Windows 환경에서도 Java 소스를 UTF-8로 컴파일
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // 출력 디렉터리를 비운 뒤 일부 파일만 증분 컴파일하면 변경되지 않은 클래스가 사라진다.
+    // 중복 클래스 제거와 완전한 빌드 결과를 함께 보장하기 위해 전체 컴파일을 수행한다.
+    options.incremental = false
 
     // 삭제되거나 이름이 바뀐 소스의 이전 .class가 WAR에 남지 않게 한다.
     doFirst {
