@@ -22,8 +22,11 @@ public class WeeklySavingMissionDto {
     private Integer weeklyExpectedSaving;
     private Integer actualSpending;
     private Integer actualSaving;
+    private Integer rewardAmount;
+    private Long walletLedgerId;
     private String status;
     private LocalDateTime evaluatedAt;
+    private LocalDateTime rewardedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

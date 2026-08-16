@@ -1,6 +1,7 @@
 package com.tripass.saving.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record WeeklyMissionResponseDto(
         Long id,
@@ -11,6 +12,8 @@ public record WeeklyMissionResponseDto(
         Integer weeklyExpectedSaving,
         Integer actualSpending,
         Integer actualSaving,
+        Integer rewardAmount,
+        LocalDateTime rewardedAt,
         String status,
         String missionMessage
 ) {

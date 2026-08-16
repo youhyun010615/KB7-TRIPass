@@ -36,26 +36,31 @@ public class WeeklyMissionEvaluationService {
     private final SavingMissionMapper missionMapper;
     private final MonthlySpendingAnalysisMapper analysisMapper;
     private final DuplicateTransactionMatcher duplicateMatcher;
+    private final MissionWalletRewardService walletRewardService;
     private final Clock clock;
 
     @Autowired
     public WeeklyMissionEvaluationService(
             SavingMissionMapper missionMapper,
             MonthlySpendingAnalysisMapper analysisMapper,
-            DuplicateTransactionMatcher duplicateMatcher
+            DuplicateTransactionMatcher duplicateMatcher,
+            MissionWalletRewardService walletRewardService
     ) {
-        this(missionMapper, analysisMapper, duplicateMatcher, Clock.system(ZoneId.of("Asia/Seoul")));
+        this(missionMapper, analysisMapper, duplicateMatcher, walletRewardService,
+                Clock.system(ZoneId.of("Asia/Seoul")));
     }
 
     WeeklyMissionEvaluationService(
             SavingMissionMapper missionMapper,
             MonthlySpendingAnalysisMapper analysisMapper,
             DuplicateTransactionMatcher duplicateMatcher,
+            MissionWalletRewardService walletRewardService,
             Clock clock
     ) {
         this.missionMapper = missionMapper;
         this.analysisMapper = analysisMapper;
         this.duplicateMatcher = duplicateMatcher;
+        this.walletRewardService = walletRewardService;
         this.clock = clock;
     }
 
@@ -103,6 +108,8 @@ public class WeeklyMissionEvaluationService {
             monthlyMissionIds.forEach(missionMapper::completeMonthlyMissionIfAllWeeksEvaluated);
         }
 
+        walletRewardService.rewardSuccessfulMissions(userId, missions);
+
         return buildResponse(targetYearMonth, weekNumber, missions);
     }
 
@@ -144,7 +151,7 @@ public class WeeklyMissionEvaluationService {
                 .map(mission -> new WeeklyMissionEvaluationItemDto(
                         mission.getId(), mission.getCategoryId(), mission.getCategoryCode(), mission.getCategoryName(),
                         mission.getWeeklyUsageLimit(), mission.getActualSpending(), mission.getActualSaving(),
-                        mission.getStatus()))
+                        mission.getRewardAmount(), mission.getRewardedAt(), mission.getStatus()))
                 .toList();
         long successCount = items.stream().filter(item -> "SUCCESS".equals(item.status())).count();
         long failedCount = items.stream().filter(item -> "FAILED".equals(item.status())).count();

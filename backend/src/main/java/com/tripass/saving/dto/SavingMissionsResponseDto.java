@@ -6,6 +6,7 @@ public record SavingMissionsResponseDto(
         String targetYearMonth,
         Integer missionCount,
         Long totalPlannedSavingAmount,
+        Long totalRewardAmount,
         List<MonthlyMissionResponseDto> missions
 ) {
 }

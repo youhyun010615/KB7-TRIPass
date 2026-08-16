@@ -39,6 +39,7 @@ class WeeklyMissionEvaluationServiceTest {
 
     @Mock private SavingMissionMapper missionMapper;
     @Mock private MonthlySpendingAnalysisMapper analysisMapper;
+    @Mock private MissionWalletRewardService walletRewardService;
     private WeeklyMissionEvaluationService service;
 
     @BeforeEach
@@ -46,7 +47,7 @@ class WeeklyMissionEvaluationServiceTest {
         MockitoAnnotations.openMocks(this);
         Clock clock = Clock.fixed(Instant.parse("2026-08-08T00:00:00Z"), ZoneId.of("Asia/Seoul"));
         service = new WeeklyMissionEvaluationService(
-                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), clock);
+                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), walletRewardService, clock);
     }
 
     @Test
@@ -63,6 +64,7 @@ class WeeklyMissionEvaluationServiceTest {
         assertEquals("SUCCESS", result.missions().get(0).status());
         assertEquals(30_000, result.missions().get(0).actualSpending());
         assertEquals(10_000, result.missions().get(0).actualSaving());
+        verify(walletRewardService).rewardSuccessfulMissions(USER_ID, List.of(mission));
     }
 
     @Test
@@ -145,7 +147,7 @@ class WeeklyMissionEvaluationServiceTest {
     void cannotEvaluateBeforePeriodEnds() {
         Clock earlyClock = Clock.fixed(Instant.parse("2026-08-07T00:00:00Z"), ZoneId.of("Asia/Seoul"));
         service = new WeeklyMissionEvaluationService(
-                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), earlyClock);
+                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), walletRewardService, earlyClock);
         givenMissions(mission(11L, 2L, 30_000));
 
         CustomException error = assertThrows(CustomException.class,

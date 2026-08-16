@@ -158,18 +158,25 @@ public class SavingMissionService {
         List<MonthlyMissionResponseDto> missions = monthlyMissions.stream()
                 .map(this::toMonthlyResponse)
                 .toList();
-        long total = missions.stream().mapToLong(MonthlyMissionResponseDto::plannedSavingAmount).sum();
-        return new SavingMissionsResponseDto(targetYearMonth.toString(), missions.size(), total, missions);
+        long totalPlanned = missions.stream().mapToLong(MonthlyMissionResponseDto::plannedSavingAmount).sum();
+        long totalReward = missions.stream().mapToLong(MonthlyMissionResponseDto::rewardAmount).sum();
+        return new SavingMissionsResponseDto(
+                targetYearMonth.toString(), missions.size(), totalPlanned, totalReward, missions);
     }
 
     private MonthlyMissionResponseDto toMonthlyResponse(MonthlySavingMissionDto monthly) {
         List<WeeklyMissionResponseDto> weekly = mapper.findWeeklyMissions(monthly.getId()).stream()
                 .map(item -> toWeeklyResponse(monthly.getCategoryName(), item))
                 .toList();
+        int rewardAmount = weekly.stream()
+                .map(WeeklyMissionResponseDto::rewardAmount)
+                .filter(java.util.Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
         return new MonthlyMissionResponseDto(
                 monthly.getId(), monthly.getCategoryId(), monthly.getCategoryCode(), monthly.getCategoryName(),
                 monthly.getReductionRate(), monthly.getBaselineSpendingAmount(), monthly.getMonthlyReductionTarget(),
-                monthly.getMonthlyUsageTarget(), monthly.getPlannedSavingAmount(), monthly.getStartWeek(),
+                monthly.getMonthlyUsageTarget(), monthly.getPlannedSavingAmount(), rewardAmount, monthly.getStartWeek(),
                 monthly.getStatus(), weekly);
     }
 
@@ -178,7 +185,8 @@ public class SavingMissionService {
         return new WeeklyMissionResponseDto(
                 weekly.getId(), weekly.getWeekNumber(), weekly.getPeriodStartDate(), weekly.getPeriodEndDate(),
                 weekly.getWeeklyUsageLimit(), weekly.getWeeklyExpectedSaving(), weekly.getActualSpending(),
-                weekly.getActualSaving(), weekly.getStatus(), categoryName + " 지출을 " + amount + "원 줄이세요.");
+                weekly.getActualSaving(), weekly.getRewardAmount(), weekly.getRewardedAt(), weekly.getStatus(),
+                categoryName + " 지출을 " + amount + "원 줄이세요.");
     }
 
     /** Controller가 최초 생성(201)과 멱등 재호출(200)을 구분할 수 있게 하는 내부 결과. */

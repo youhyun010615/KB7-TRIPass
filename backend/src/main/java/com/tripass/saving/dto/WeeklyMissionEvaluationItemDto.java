@@ -8,6 +8,8 @@ public record WeeklyMissionEvaluationItemDto(
         Integer weeklyUsageLimit,
         Integer actualSpending,
         Integer actualSaving,
+        Integer rewardAmount,
+        java.time.LocalDateTime rewardedAt,
         String status
 ) {
 }

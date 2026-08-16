@@ -38,6 +38,11 @@ public interface SavingMissionMapper {
             @Param("actualSaving") int actualSaving,
             @Param("status") String status);
 
+    int updateWeeklyMissionReward(
+            @Param("id") Long id,
+            @Param("rewardAmount") int rewardAmount,
+            @Param("walletLedgerId") Long walletLedgerId);
+
     int completeMonthlyMissionIfAllWeeksEvaluated(@Param("monthlySavingMissionId") Long monthlySavingMissionId);
 
     int markReportClosed(@Param("userId") Long userId, @Param("analysisYearMonth") String analysisYearMonth);

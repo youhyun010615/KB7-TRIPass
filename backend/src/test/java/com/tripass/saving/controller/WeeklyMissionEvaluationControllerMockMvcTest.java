@@ -71,7 +71,8 @@ class WeeklyMissionEvaluationControllerMockMvcTest {
 
     private WeeklyMissionEvaluationResponseDto response() {
         WeeklyMissionEvaluationItemDto item = new WeeklyMissionEvaluationItemDto(
-                11L, 2L, "CAFE", "카페", 30_000, 20_000, 10_000, "SUCCESS");
+                11L, 2L, "CAFE", "카페", 30_000, 20_000, 10_000,
+                10_000, null, "SUCCESS");
         return new WeeklyMissionEvaluationResponseDto(
                 "2026-08", 1, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 7),
                 1, 1, 0, List.of(item));

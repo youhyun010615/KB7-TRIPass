@@ -55,6 +55,7 @@ class SavingMissionControllerMockMvcTest {
                 .andExpect(jsonPath("$.data.targetYearMonth").value("2026-08"))
                 .andExpect(jsonPath("$.data.missionCount").value(1))
                 .andExpect(jsonPath("$.data.totalPlannedSavingAmount").value(19500))
+                .andExpect(jsonPath("$.data.totalRewardAmount").value(0))
                 .andExpect(jsonPath("$.data.missions[0].categoryCode").value("CAFE"))
                 .andExpect(jsonPath("$.data.missions[0].weeklyMissions[0].weekNumber").value(3))
                 .andExpect(jsonPath("$.data.missions[0].weeklyMissions[0].missionMessage")
@@ -101,10 +102,11 @@ class SavingMissionControllerMockMvcTest {
     private SavingMissionsResponseDto response() {
         WeeklyMissionResponseDto weekly = new WeeklyMissionResponseDto(
                 11L, 3, LocalDate.of(2026, 8, 15), LocalDate.of(2026, 8, 21),
-                22_750, 9_750, null, null, "PENDING", "카페 지출을 9,750원 줄이세요.");
+                22_750, 9_750, null, null, 0, null,
+                "PENDING", "카페 지출을 9,750원 줄이세요.");
         MonthlyMissionResponseDto monthly = new MonthlyMissionResponseDto(
                 1L, 2L, "CAFE", "카페", 30, 130_000, 39_000, 91_000,
-                19_500, 3, "IN_PROGRESS", List.of(weekly));
-        return new SavingMissionsResponseDto("2026-08", 1, 19_500L, List.of(monthly));
+                19_500, 0, 3, "IN_PROGRESS", List.of(weekly));
+        return new SavingMissionsResponseDto("2026-08", 1, 19_500L, 0L, List.of(monthly));
     }
 }
