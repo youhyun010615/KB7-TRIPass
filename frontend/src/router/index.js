@@ -79,6 +79,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/savings/analyses/:yearMonth',
+      name: 'MonthlyAnalysisReport',
+      component: () =>
+        import('@/views/savings/MonthlyAnalysisReportView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/wallet',
       name: 'TripWallet',
       component: () => import('@/views/wallet/TripWalletView.vue'),
