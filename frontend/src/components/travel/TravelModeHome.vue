@@ -761,7 +761,7 @@ async function switchMode(mode) {
       <div class="card-title">
         <h2>최근 지출 내역</h2>
         <button type="button" @click="router.push('/asset/transactions')">
-          전체 보기
+          전체 거래내역
         </button>
       </div>
       <button

@@ -1,19 +1,53 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { useTravelFundStore } from '@/stores/travelFund';
+import { useTravelStore } from '@/stores/travel'; // 추가
+import { fetchTripTransactions } from '@/api/travel'; // 추가
 
 const route = useRoute();
 const router = useRouter();
 const travelMode = useTravelModeStore();
 const fund = useTravelFundStore();
+const travel = useTravelStore(); // 추가
+
+const transactions = ref([]); // ref로 변경
+
 const category = computed(
   () => fund.getCategory(route.params.categoryId) ?? fund.categories[0],
 );
-const transactions = computed(() =>
-  fund.categoryTransactions(travelMode.selectedDestination, category.value.id),
-);
+
+// 데이터 가져오는 함수
+const loadTransactions = async () => {
+  const tripId = travel.tripId; // 활성 여행 ID 사용
+  if (!tripId || !travel.activeTrip) return; // 활성 여행 정보가 없으면 대기
+
+  // route.query에서 tripCountryId를 직접 가져옴
+  const countryId = route.query.tripCountryId || null;
+  const categoryName = category.value.name === '취미·여가' ? '취미여가' : category.value.name;
+
+  
+
+  try {
+    transactions.value = await fetchTripTransactions(
+      tripId,
+      countryId,
+      categoryName,
+    );
+  } catch (error) {
+    console.error('거래 내역 조회 실패:', error);
+    transactions.value = [];
+  }
+};
+
+// 마운트 시 및 category/destination 변경 시 데이터 다시 불러오기
+onMounted(async () => {
+  if (!travel.tripId) await travel.loadActiveGoal(); // tripId가 없으면 로드 시도
+  loadTransactions();
+});
+watch([() => travelMode.selectedDestination, category], loadTransactions);
+
 const total = computed(() =>
   transactions.value.reduce((sum, item) => sum + item.amount, 0),
 );
@@ -71,14 +105,14 @@ const dateLabel = (value) =>
     <section class="transaction-list">
       <button
         v-for="item in transactions"
-        :key="item.id"
+        :key="item.transactionId"
         type="button"
-        @click="router.push(`/travel/funds/transactions/${item.id}`)"
+        @click="router.push(`/travel/funds/transactions/${item.transactionId}`)"
       >
-        <span class="merchant-icon">{{ item.icon }}</span>
+        <span class="merchant-icon">{{ item.categoryName?.[0] || '?' }}</span>
         <span class="merchant"
-          ><small>{{ dateLabel(item.date) }}</small
-          ><b>{{ item.merchant }}</b></span
+          ><small>{{ dateLabel(item.transactionDate) }}</small
+          ><b>{{ item.merchantName }}</b></span
         >
         <span class="amount"
           ><b>-{{ money(item.amount) }}</b

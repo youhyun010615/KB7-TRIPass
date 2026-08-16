@@ -66,6 +66,16 @@ export async function fetchTripStatus(tripId, countryId) {
   return unwrap(response);
 }
 
+export async function fetchTripTransactions(tripId, countryId, categoryName) {
+  const response = await api.get(`/trips/${tripId}/transactions`, {
+    params: {
+      countryId: countryId || undefined,
+      categoryName: categoryName || undefined,
+    },
+  });
+  return unwrap(response);
+}
+
 export async function fetchBudgetCheck(tripId) {
   const response = await api.get(`/trips/${tripId}/budget-check`);
   return unwrap(response);

@@ -52,6 +52,21 @@ public class TravelController {
         return ResponseEntity.ok(ApiResponse.success("여행 자금 체크 조회 성공", data));
     }
 
+    /**
+     * 3. 여행 상세 거래 내역 조회 (필터링 가능)
+     */
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<ApiResponse<List<TravelTransactionDto>>> getTripTransactions(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long countryId,
+            @RequestParam(required = false) String categoryName,
+            Authentication authentication) {
+        Long userId = getAuthenticatedUserId(authentication);
+
+        List<TravelTransactionDto> data = travelService.getTripTransactions(id, userId, countryId, categoryName);
+        return ResponseEntity.ok(ApiResponse.success("거래 내역 조회 성공", data));
+    }
+
 
     /**
      * 여행/저축 모드 전환 (토글)

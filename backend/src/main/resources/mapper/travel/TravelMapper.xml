@@ -148,7 +148,7 @@
     </select>
 
     <!-- 유저의 현재 화면 모드(current_view_mode) 조회 -->
-    <select id="selectUserCurrentViewMode" resultType="String">
+    <select id="selectUserCurrentViewMode" resultType="java.lang.String">
         SELECT current_view_mode
         FROM users
         WHERE id = #{userId}
@@ -512,6 +512,7 @@
         WHERE t.trip_id = #{tripId}
           AND t.is_deleted = 0
           AND (#{countryId} IS NULL OR t.trip_country_id = #{countryId})
+          AND (#{categoryName} IS NULL OR sc.category_name = #{categoryName})
         ORDER BY t.transaction_date DESC
     </select>
 

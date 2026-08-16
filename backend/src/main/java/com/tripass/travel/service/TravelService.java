@@ -31,6 +31,14 @@ public class TravelService {
 
 
     /**
+     * 여행 상세 거래 내역 조회 (필터링 가능)
+     */
+    public List<TravelTransactionDto> getTripTransactions(Long tripId, Long currentUserId, Long countryId, String categoryName) {
+        validateTripOwner(tripId, currentUserId);
+        return travelMapper.findTravelTransactions(tripId, countryId, categoryName);
+    }
+
+    /**
      * 여행 대시보드 상태 조회
      */
     public TravelStatusResponseDto getTravelStatus(Long tripId, Long currentUserId, Long countryId) {
@@ -87,7 +95,7 @@ public class TravelService {
         result.setUpcomingSchedules(upcomingSchedules);
 
         // 3. 여행 거래 내역 조회 (Mapper 활용 - countryId 전달)
-        List<TravelTransactionDto> allTransactions = travelMapper.findTravelTransactions(tripId, countryId);
+        List<TravelTransactionDto> allTransactions = travelMapper.findTravelTransactions(tripId, countryId, null);
 
         // 4. 카테고리/국가별 지출 집계
         Map<String, Map<String, Long>> categoryAndCountrySpent = allTransactions.stream()
