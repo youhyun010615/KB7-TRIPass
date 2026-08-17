@@ -67,6 +67,9 @@ public class ReportService {
     /** 여행 후 리포트를 조회합니다. */
     public PostTripReportResponseDto getPostTripReport(Long tripId, Long currentUserId) {
         TripBasicRowDto trip = validateTripOwnerAndGet(tripId, currentUserId);
+        if (!"ENDED".equals(trip.getStatus())) {
+            throw new ReportException(ReportErrorCode.TRIP_NOT_ENDED);
+        }
 
         List<String> countryNames = reportMapper.findTripCountryNames(tripId);
         BigDecimal targetBudget = orZero(trip.getTotalTargetAmount());

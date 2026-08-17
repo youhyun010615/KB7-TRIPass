@@ -18,6 +18,12 @@ public enum ReportErrorCode {
             HttpStatus.FORBIDDEN,
             "TRIP_ACCESS_DENIED",
             "해당 여행에 접근할 권한이 없습니다."
+    ),
+
+    TRIP_NOT_ENDED(
+            HttpStatus.BAD_REQUEST,
+            "TRIP_NOT_ENDED",
+            "아직 종료되지 않은 여행입니다."
     );
 
     private final HttpStatus status;
