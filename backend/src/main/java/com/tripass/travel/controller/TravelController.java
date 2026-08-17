@@ -101,6 +101,16 @@ public class TravelController {
                 .body(ApiResponse.success("여행 목표 등록 성공", data));
     }
 
+    /** 로그인 사용자가 등록한 전체 여행 목록을 조회합니다. */
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TripListItemResponseDto>>> getMyTrips(
+            Authentication authentication
+    ) {
+        Long userId = getAuthenticatedUserId(authentication);
+        List<TripListItemResponseDto> data = travelService.getMyTrips(userId);
+        return ResponseEntity.ok(ApiResponse.success("여행 목록 조회 성공", data));
+    }
+
     /** 로그인 사용자의 진행 중 여행 목표를 조회합니다. */
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<TripGoalResponseDto>> getActiveTripGoal(
