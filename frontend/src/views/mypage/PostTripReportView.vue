@@ -8,7 +8,10 @@ import { exportElementToPdf } from '@/utils/pdf'
 const route = useRoute()
 const router = useRouter()
 const store = useTravelReportStore()
-const tripId = computed(() => Number(route.query.tripId || 1))
+const tripId = computed(() => {
+  const parsed = Number(route.query.tripId)
+  return route.query.tripId && Number.isFinite(parsed) && parsed > 0 ? parsed : null
+})
 const r = computed(() => store.postTripView)
 const spent = computed(() => r.value?.spent ?? 0)
 const remaining = computed(() => r.value?.remaining ?? 0)
@@ -16,8 +19,12 @@ const receipts = computed(() => r.value?.receiptCount ?? 0)
 const downloading = ref(false)
 const reportContent = ref(null)
 
-onMounted(() => store.loadPostTripReport(tripId.value))
-watch(tripId, id => store.loadPostTripReport(id))
+onMounted(() => {
+  if (tripId.value) store.loadPostTripReport(tripId.value)
+})
+watch(tripId, id => {
+  if (id) store.loadPostTripReport(id)
+})
 
 function money(v) {
   return Number(v).toLocaleString() + '원'
@@ -90,7 +97,8 @@ const categorySegments = computed(() => {
   <main class="page">
     <header><button type="button" @click="router.back()">‹</button><h1>여행 후 리포트</h1><span /></header>
 
-    <p v-if="!r && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
+    <p v-if="!tripId" class="loading error">여행 정보를 찾을 수 없어요.</p>
+    <p v-else-if="!r && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
     <p v-else-if="!r" class="loading">불러오는 중...</p>
 
     <template v-else>

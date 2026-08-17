@@ -7,7 +7,7 @@ import { fetchMyTrips } from '@/api/travel'
 const router = useRouter()
 
 const travels = ref([])
-const loading = ref(false)
+const loading = ref(true)
 
 function formatDateRange(startDate, endDate) {
   const fmt = d => (d ? d.replaceAll('-', '.') : '')
@@ -29,7 +29,7 @@ onMounted(async () => {
       title: t.tripName,
       subtitle: t.countryNames || '',
       dateRange: formatDateRange(t.startDate, t.endDate),
-      days: t.totalDays || 0,
+      days: t.totalDays || 1,
       status: statusLabel(t.status),
     }))
   } catch (error) {

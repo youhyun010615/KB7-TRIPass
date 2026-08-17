@@ -5,24 +5,29 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 
 const route=useRoute(); const router=useRouter(); const store=useTravelReportStore()
-const tripId=computed(()=>Number(route.query.tripId||1)); const report=computed(()=>store.tripSummary)
+const tripId=computed(()=>{
+  const parsed = Number(route.query.tripId)
+  return route.query.tripId && Number.isFinite(parsed) && parsed > 0 ? parsed : null
+})
+const report=computed(()=>store.tripSummary)
 
 function load(id) {
   store.loadPreTripReport(id)
   store.loadTripBasic(id)
 }
-onMounted(() => load(tripId.value))
-watch(tripId, id => load(id))
+onMounted(() => { if (tripId.value) load(tripId.value) })
+watch(tripId, id => { if (id) load(id) })
 </script>
 
 <template><main class="page"><header><button @click="router.back()">‹</button><h1>여행 리포트</h1><span/></header>
-  <p v-if="!report && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
+  <p v-if="!tripId" class="loading error">여행 정보를 찾을 수 없어요.</p>
+  <p v-else-if="!report && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
   <p v-else-if="!report" class="loading">불러오는 중...</p>
   <template v-else>
   <section class="ticket"><small>TRIP REPORT ARCHIVE</small><div><h2>{{ report.flags }} {{ report.title }}</h2><b>D-{{ report.dDay }}</b></div><i/><p>생성된 리포트</p><div class="total"><strong>2개</strong><em>여행 전 · 여행 후</em></div></section>
   <h3>리포트 목록</h3>
   <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue">▥</span><div><b>여행 대비 리포트</b><small>예산과 여행 자금 준비 현황</small></div><em>확인</em><strong>›</strong></button>
-  <button class="report-card" :class="{disabled:report.status!=='완료'}" @click="report.status==='완료'&&router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b><small>지출 분석과 여행 기록 요약</small></div><em class="after">{{ report.status==='완료'?'여행 후':'준비 중' }}</em><strong>›</strong></button>
+  <button class="report-card" :class="{disabled:report.status!=='완료'}" :disabled="report.status!=='완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b><small>지출 분석과 여행 기록 요약</small></div><em class="after">{{ report.status==='완료'?'여행 후':'준비 중' }}</em><strong>›</strong></button>
   <aside>✈️ <span><b>여행 단계에 맞춰 리포트를 확인해 보세요</b><small>여행 전후의 자금 변화를 한눈에 볼 수 있어요.</small></span></aside>
   </template>
   <BottomNav/></main></template>

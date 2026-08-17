@@ -41,6 +41,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
 
   // 여행 리포트 목록 화면의 상태(완료/예정) 배지용 기본 정보를 조회한다.
   async function loadTripBasic(tripId) {
+    tripBasic.value = null
     try {
       tripBasic.value = await fetchTripGoal(tripId)
     } catch (error) {
@@ -64,6 +65,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   async function loadPreTripReport(tripId) {
     loading.value = true
     errorMessage.value = ''
+    preTripReport.value = null
     try {
       preTripReport.value = await fetchPreTripReport(tripId)
     } catch (error) {
@@ -111,6 +113,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   async function loadPostTripReport(tripId) {
     loading.value = true
     errorMessage.value = ''
+    postTripReport.value = null
     try {
       postTripReport.value = await fetchPostTripReport(tripId)
     } catch (error) {
