@@ -1,35 +1,43 @@
 <script setup>
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
+import { fetchMyTrips } from '@/api/travel'
 
 const router = useRouter()
 
-const travels = [
-  {
-    id: 1,
-    title: '총 2개국 배낭여행',
-    subtitle: '프랑스 · 이탈리아',
-    dateRange: '2025.07.10 ~ 2025.07.24',
-    days: 14,
-    status: '완료',
-  },
-  {
-    id: 2,
-    title: '동남아 단기 여행',
-    subtitle: '태국 · 홍콩',
-    dateRange: '2025.09.01 ~ 2025.09.08',
-    days: 7,
-    status: '예정',
-  },
-  {
-    id: 3,
-    title: '일본 오사카 여행',
-    subtitle: '일본',
-    dateRange: '2024.12.20 ~ 2024.12.25',
-    days: 5,
-    status: '완료',
-  },
-]
+const travels = ref([])
+const loading = ref(false)
+
+function formatDateRange(startDate, endDate) {
+  const fmt = d => (d ? d.replaceAll('-', '.') : '')
+  return `${fmt(startDate)} ~ ${fmt(endDate)}`
+}
+
+function statusLabel(status) {
+  if (status === 'ENDED') return '완료'
+  if (status === 'TRAVELING') return '여행 중'
+  return '예정'
+}
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const data = await fetchMyTrips()
+    travels.value = (data || []).map(t => ({
+      id: t.tripId,
+      title: t.tripName,
+      subtitle: t.countryNames || '',
+      dateRange: formatDateRange(t.startDate, t.endDate),
+      days: t.totalDays || 0,
+      status: statusLabel(t.status),
+    }))
+  } catch (error) {
+    console.error('여행 목록 조회 실패:', error)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
@@ -46,8 +54,11 @@ const travels = [
       <div class="w-8" />
     </div>
 
+    <p v-if="loading" class="text-center text-xs text-gray-400 py-10">불러오는 중...</p>
+    <p v-else-if="!travels.length" class="text-center text-xs text-gray-400 py-10">등록된 여행이 없어요.</p>
+
     <!-- 여행 카드 목록 -->
-    <div class="px-4 flex flex-col gap-3">
+    <div v-else class="px-4 flex flex-col gap-3">
       <button
         v-for="travel in travels"
         :key="travel.id"
