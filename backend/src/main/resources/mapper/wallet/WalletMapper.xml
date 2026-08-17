@@ -172,13 +172,13 @@
             resultType="WalletMonthlySavingDetailResponseDto">
         SELECT
             #{month} AS month,
-            GREATEST(COALESCE(SUM(
+            COALESCE(SUM(
                 CASE
                     WHEN direction = 'IN' THEN amount
                     WHEN direction = 'OUT' THEN -amount
                     ELSE 0
                 END
-            ), 0), 0) AS saved_amount,
+            ), 0) AS saved_amount,
             COALESCE(SUM(
                 CASE
                     WHEN direction = 'IN' THEN amount
