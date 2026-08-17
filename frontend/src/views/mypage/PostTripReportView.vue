@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
+import { exportElementToPdf } from '@/utils/pdf'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +14,7 @@ const spent = computed(() => r.value?.spent ?? 0)
 const remaining = computed(() => r.value?.remaining ?? 0)
 const receipts = computed(() => r.value?.receiptCount ?? 0)
 const downloading = ref(false)
+const reportContent = ref(null)
 
 onMounted(() => store.loadPostTripReport(tripId.value))
 watch(tripId, id => store.loadPostTripReport(id))
@@ -20,9 +22,16 @@ watch(tripId, id => store.loadPostTripReport(id))
 function money(v) {
   return Number(v).toLocaleString() + '원'
 }
-function download() {
+async function download() {
+  if (downloading.value) return
   downloading.value = true
-  setTimeout(() => (downloading.value = false), 1100)
+  try {
+    await exportElementToPdf(reportContent.value, `여행후리포트_${r.value.trip.title}.pdf`)
+  } catch (error) {
+    console.error('PDF 저장 실패:', error)
+  } finally {
+    downloading.value = false
+  }
 }
 
 // 가공 지표 (화면에 표기하는 라벨은 "지출 분석 요약", 값은 백엔드에서 계산되어 내려온다)
@@ -85,6 +94,7 @@ const categorySegments = computed(() => {
     <p v-else-if="!r" class="loading">불러오는 중...</p>
 
     <template v-else>
+    <div ref="reportContent" class="pdf-content">
     <section class="summary">
       <small>TRIP RESULT REPORT</small>
       <div><h2>{{ r.trip.flags }} {{ r.trip.title }}</h2><em>여행 완료</em></div>
@@ -168,8 +178,9 @@ const categorySegments = computed(() => {
       <h3>다음 여행 준비 제안</h3>
       <p>이번 여행 지출({{ money(spent) }}) 기준, 다음 여행은 월 {{ money(nextTripMonthly) }}씩 {{ nextTripMonths }}개월 저축을 추천해요.</p>
     </section>
+    </div>
 
-    <button class="pdf" type="button" @click="download">{{ downloading ? 'PDF 생성 중...' : '▣ PDF 저장하기' }}</button>
+    <button class="pdf" type="button" @click="download" :disabled="downloading">{{ downloading ? 'PDF 생성 중...' : '▣ PDF 저장하기' }}</button>
     </template>
 
     <BottomNav />
@@ -226,4 +237,5 @@ const categorySegments = computed(() => {
 .stat-table td:last-child { text-align: right; font-weight: 800; color: #111a2d; }
 .next-trip p { margin-top: 10px; color: #55708f; font-size: 9px; line-height: 1.6; }
 .pdf { width: 100%; margin-top: 12px; padding: 14px; border-radius: 11px; background: #174695; color: #fff; font-size: 11px; font-weight: 900; }
+.pdf:disabled { opacity: 0.6; }
 </style>
