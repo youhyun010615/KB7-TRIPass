@@ -139,55 +139,32 @@
             resultType="WalletMonthlySavingResponseDto">
         WITH RECURSIVE month_range AS (
             SELECT
-                CAST(DATE_FORMAT(DATE_SUB(CURRENT_DATE, INTERVAL 5 MONTH), '%Y-%m-01') AS DATE) AS month_start,
-                CAST(DATE_FORMAT(COALESCE((
-                    SELECT t.created_at
-                    FROM trips t
-                    WHERE t.user_id = #{userId}
-                      AND t.is_deleted = 0
-                      AND t.status IN ('PLANNING', 'TRAVELING')
-                    ORDER BY
-                        CASE
-                            WHEN t.created_at IS NULL THEN 1
-                            ELSE 0
-                        END,
-                        t.created_at,
-                        t.id DESC
-                    LIMIT 1
-                ), CURRENT_DATE), '%Y-%m-01') AS DATE) AS trip_created_month
+                CAST(DATE_FORMAT(DATE_SUB(CURRENT_DATE, INTERVAL 5 MONTH), '%Y-%m-01') AS DATE) AS month_start
             UNION ALL
             SELECT
-                DATE_ADD(month_start, INTERVAL 1 MONTH),
-                trip_created_month
+                DATE_ADD(month_start, INTERVAL 1 MONTH)
             FROM month_range
             WHERE month_start <![CDATA[<]]> CAST(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') AS DATE)
         )
         SELECT
             DATE_FORMAT(mr.month_start, '%Y-%m') AS month,
-            CASE
-                WHEN mr.month_start <![CDATA[<]]> mr.trip_created_month THEN 0
-                ELSE COALESCE(SUM(
-                    CASE
-                        WHEN wl.direction = 'IN' THEN wl.amount
-                        WHEN wl.direction = 'OUT' THEN -wl.amount
-                        ELSE 0
-                    END
-                ), 0)
-            END AS saved_amount,
+            COALESCE(SUM(
+                CASE
+                    WHEN wl.direction = 'IN' THEN wl.amount
+                    WHEN wl.direction = 'OUT' THEN -wl.amount
+                    ELSE 0
+                END
+            ), 0) AS saved_amount,
             CASE
                 WHEN DATE_FORMAT(mr.month_start, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m') THEN TRUE
                 ELSE FALSE
             END AS current_month,
-            CASE
-                WHEN mr.month_start <![CDATA[<]]> mr.trip_created_month THEN FALSE
-                ELSE TRUE
-            END AS available
+            TRUE AS available
         FROM month_range mr
                  LEFT JOIN wallet_ledger wl
                            ON wl.wallet_id = #{walletId}
                                AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(mr.month_start, '%Y-%m')
-                               AND mr.month_start <![CDATA[>=]]> mr.trip_created_month
-        GROUP BY mr.month_start, mr.trip_created_month
+        GROUP BY mr.month_start
         ORDER BY mr.month_start
     </select>
 
