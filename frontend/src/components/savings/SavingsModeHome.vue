@@ -786,8 +786,9 @@ async function switchMode(mode) {
         v-else-if="monthlyAnalysisStore.notFound"
         class="analysis-empty-state mx-4 mt-3"
       >
-        <span>AI</span>
-        <div>
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openFinancialSources">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
           <b>
             {{
               hasLinkedFinancialSources
@@ -802,9 +803,14 @@ async function switchMode(mode) {
                 : '계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.'
             }}
           </small>
-        </div>
-        <button type="button" @click="openFinancialSources">
-          {{ hasLinkedFinancialSources ? '연동 자산 확인하기' : '금융 데이터 연결하기' }}
+          <em>
+            {{
+              hasLinkedFinancialSources
+                ? '연동 자산 확인하기'
+                : '금융 데이터 연결하기'
+            }}
+            <i aria-hidden="true">›</i>
+          </em>
         </button>
       </section>
 
@@ -895,13 +901,14 @@ async function switchMode(mode) {
 }
 .analysis-load-error,
 .analysis-empty-state {
+  padding: 14px;
+}
+.analysis-load-error {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px;
 }
-.analysis-load-error > span,
-.analysis-empty-state > span {
+.analysis-load-error > span {
   display: grid;
   width: 36px;
   height: 36px;
@@ -912,24 +919,19 @@ async function switchMode(mode) {
   font-size: 11px;
   font-weight: 950;
 }
-.analysis-load-error div,
-.analysis-empty-state div {
+.analysis-load-error div {
   min-width: 0;
   flex: 1;
 }
 .analysis-load-error b,
-.analysis-load-error small,
-.analysis-empty-state b,
-.analysis-empty-state small {
+.analysis-load-error small {
   display: block;
 }
-.analysis-load-error b,
-.analysis-empty-state b {
+.analysis-load-error b {
   color: #26334d;
   font-size: 11px;
 }
-.analysis-load-error small,
-.analysis-empty-state small {
+.analysis-load-error small {
   overflow: hidden;
   margin-top: 3px;
   color: #7b8da9;
@@ -937,17 +939,77 @@ async function switchMode(mode) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.analysis-load-error button,
-.analysis-empty-state button {
+.analysis-load-error button {
   flex: none;
   color: #286ce0;
   font-size: 9px;
   font-weight: 900;
   white-space: nowrap;
 }
-.analysis-empty-state small {
-  line-height: 1.45;
-  white-space: normal;
+.analysis-empty-state {
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgb(36 80 153 / 7%);
+}
+.analysis-empty-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #286ce0;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+.analysis-empty-state > button {
+  display: flex;
+  width: 100%;
+  min-height: 176px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 18px 16px;
+  border: 1px dashed #c9d8ef;
+  border-radius: 17px;
+  background: #f6f8fc;
+  text-align: center;
+}
+.analysis-empty-plus {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 13px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e4edff;
+  color: #286ce0;
+  font-size: 28px;
+  font-weight: 400;
+}
+.analysis-empty-state b {
+  color: #26334d;
+  font-size: 14px;
+}
+.analysis-empty-state button > small {
+  max-width: 290px;
+  margin-top: 7px;
+  color: #8190a9;
+  font-size: 10px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+.analysis-empty-state em {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  color: #286ce0;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+.analysis-empty-state em i {
+  font-size: 17px;
+  font-style: normal;
+  line-height: 1;
 }
 @keyframes analysis-skeleton {
   to {
