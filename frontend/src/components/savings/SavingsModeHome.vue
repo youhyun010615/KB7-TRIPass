@@ -51,15 +51,27 @@ async function loadFinancialSources() {
   }
 }
 
+async function loadHomeInsights({ force = false } = {}) {
+  await Promise.all([
+    loadFinancialSources(),
+    savingMissionsStore.loadMissionStatus(),
+  ]);
+
+  if (financialSourcesError.value || !hasLinkedFinancialSources.value) {
+    monthlyAnalysisStore.resetAnalysis();
+    return;
+  }
+
+  await monthlyAnalysisStore.loadLatestAnalysis({ force });
+}
+
 onMounted(async () => {
   await nextTick();
   restoreCountryPosition();
   await Promise.all([
     travelStore.loadHomeDashboard({ force: true }),
     exchangeStore.updateExchangeRates(),
-    monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
-    savingMissionsStore.loadMissionStatus(),
-    loadFinancialSources(),
+    loadHomeInsights({ force: true }),
   ]);
   await nextTick();
   restoreCountryPosition();
@@ -330,11 +342,7 @@ function retryHome() {
 }
 
 function retryMonthlyAnalysis() {
-  Promise.all([
-    monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
-    savingMissionsStore.loadMissionStatus(),
-    loadFinancialSources(),
-  ]);
+  loadHomeInsights({ force: true });
 }
 
 function openFinancialSources() {
@@ -783,7 +791,7 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="monthlyAnalysisStore.notFound"
+        v-else-if="!hasLinkedFinancialSources || monthlyAnalysisStore.notFound"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>

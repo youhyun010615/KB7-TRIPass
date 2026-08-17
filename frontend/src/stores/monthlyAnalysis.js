@@ -33,6 +33,15 @@ export const useMonthlyAnalysisStore = defineStore('monthlyAnalysis', () => {
     () => Boolean(report.value) && !isClosed.value,
   );
 
+  function resetAnalysis() {
+    report.value = null;
+    selectedYearMonth.value = '';
+    loading.value = false;
+    updatingStatus.value = false;
+    notFound.value = false;
+    errorMessage.value = '';
+  }
+
   async function loadAnalysis(yearMonth, { force = false } = {}) {
     if (!yearMonth) return null;
     if (
@@ -130,6 +139,7 @@ export const useMonthlyAnalysisStore = defineStore('monthlyAnalysis', () => {
     reportStatus,
     isClosed,
     hasVisibleReport,
+    resetAnalysis,
     loadAnalysis,
     loadLatestAnalysis,
     markViewed,
