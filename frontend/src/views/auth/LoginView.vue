@@ -6,9 +6,7 @@ import {
   getGoogleAuthorizationUrl,
   getKakaoAuthorizationUrl,
   login as loginApi,
-  logout as logoutApi,
 } from '@/api/auth'
-import api from '@/api'
 import AuthBoardingPass from '@/components/auth/AuthBoardingPass.vue'
 
 const router = useRouter()
@@ -51,38 +49,6 @@ async function login() {
     }
     // Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.handleLoginSuccess(loginData.accessToken, loginData.user)
-
-    try {
-      // 이전 로그인 사용자의 프로필 완료 상태를 먼저 제거한다.
-      authStore.resetProfileCompletion()
-
-      const accountResponse = await api.get('/accounts')
-      const linkedAccounts = accountResponse.data?.data ?? []
-
-      if (linkedAccounts.length > 0) {
-        authStore.completeProfile()
-      }
-    } catch (accountError) {
-      console.error('연동 계좌 확인 실패', accountError)
-
-      if (accountError.response?.status === 401) {
-        try {
-          await logoutApi()
-        } catch (logoutError) {
-          console.error('로그인 상태 정리 실패', logoutError)
-        } finally {
-          authStore.logout()
-        }
-
-        errorMsg.value = '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
-        return
-      }
-
-      // 네트워크 오류나 서버 오류에서는 로그인 상태를 유지한다.
-      errorMsg.value =
-        '연동 계좌 정보를 확인하지 못했습니다. 로그인 버튼을 눌러 다시 시도해 주세요.'
-      return
-    }
 
     //RefreshToken은 HttpOnly 쿠키로 자동 저장되므로
     //프론트 JavaScript에서 직접 처리하지 않는다.

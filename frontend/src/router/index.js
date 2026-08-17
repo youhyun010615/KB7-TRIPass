@@ -606,15 +606,6 @@ router.beforeEach((to) => {
     return { name: 'Home' };
   }
 
-  // 로그인 후 금융 프로필 미완료 시 등록 페이지로 강제 이동
-  if (
-    authStore.isLoggedIn &&
-    !authStore.isProfileComplete &&
-    to.name !== 'FinancialProfile' &&
-    to.meta.requiresAuth
-  ) {
-    return { name: 'FinancialProfile' };
-  }
 });
 
 // 계좌 잔액, 환율 등 API 응답이 늦게 도착해 화면에 0이나 빈 값이 잠깐 보이는 문제를 막기 위해,
