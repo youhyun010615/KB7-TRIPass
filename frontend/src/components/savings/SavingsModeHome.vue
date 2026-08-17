@@ -7,6 +7,8 @@ import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
 import { useTravelStore } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
+import { getAccounts } from '@/api/asset';
+import { getCards } from '@/api/card';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
@@ -24,6 +26,30 @@ const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
 const userName = computed(() => authStore.user?.name ?? '회원');
+const linkedAccountCount = ref(0);
+const linkedCardCount = ref(0);
+const financialSourcesLoading = ref(false);
+const financialSourcesError = ref('');
+const hasLinkedFinancialSources = computed(
+  () => linkedAccountCount.value + linkedCardCount.value > 0,
+);
+
+async function loadFinancialSources() {
+  financialSourcesLoading.value = true;
+  financialSourcesError.value = '';
+  try {
+    const [accountResponse, cardResponse] = await Promise.all([
+      getAccounts(),
+      getCards(),
+    ]);
+    linkedAccountCount.value = accountResponse.data?.data?.length ?? 0;
+    linkedCardCount.value = cardResponse.data?.data?.length ?? 0;
+  } catch {
+    financialSourcesError.value = '금융 데이터 연결 상태를 확인하지 못했어요.';
+  } finally {
+    financialSourcesLoading.value = false;
+  }
+}
 
 onMounted(async () => {
   await nextTick();
@@ -33,6 +59,7 @@ onMounted(async () => {
     exchangeStore.updateExchangeRates(),
     monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
     savingMissionsStore.loadMissionStatus(),
+    loadFinancialSources(),
   ]);
   await nextTick();
   restoreCountryPosition();
@@ -201,7 +228,10 @@ const monthlySavingPercent = computed(() =>
 const homeInsightLoading = computed(
   () =>
     savingMissionsStore.missionStatusLoading ||
-    (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading),
+    (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading) ||
+    (!savingMissionsStore.hasStartedMissions &&
+      !monthlyAnalysisStore.hasVisibleReport &&
+      financialSourcesLoading.value),
 );
 const selectedExchangeRate = computed(() =>
   exchangeStore.getCurrency(selectedCountry.value.currency),
@@ -303,7 +333,12 @@ function retryMonthlyAnalysis() {
   Promise.all([
     monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
     savingMissionsStore.loadMissionStatus(),
+    loadFinancialSources(),
   ]);
+}
+
+function openFinancialSources() {
+  router.push('/mypage/assets');
 }
 
 function openMonthlyAnalysis() {
@@ -735,6 +770,44 @@ async function switchMode(mode) {
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
+      <section
+        v-else-if="financialSourcesError"
+        class="analysis-load-error mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>금융 데이터 연결 상태를 확인하지 못했어요</b>
+          <small>{{ financialSourcesError }}</small>
+        </div>
+        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
+      </section>
+
+      <section
+        v-else-if="monthlyAnalysisStore.notFound"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>
+            {{
+              hasLinkedFinancialSources
+                ? '아직 분석할 지난달 거래가 없어요'
+                : '맞춤 저축 미션을 준비해 볼까요?'
+            }}
+          </b>
+          <small>
+            {{
+              hasLinkedFinancialSources
+                ? '분류된 계좌·카드 지출이 쌓이면 소비 분석과 맞춤 미션을 보여드려요.'
+                : '계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.'
+            }}
+          </small>
+        </div>
+        <button type="button" @click="openFinancialSources">
+          {{ hasLinkedFinancialSources ? '연동 자산 확인하기' : '금융 데이터 연결하기' }}
+        </button>
+      </section>
+
       <!-- 오늘의 실시간 환율 -->
       <div class="exchange-live-card mx-4 mt-3 mb-4" :style="exchangeCardStyle">
         <div class="exchange-card-head">
@@ -789,7 +862,8 @@ async function switchMode(mode) {
   background: #f3f6ff;
 }
 .analysis-summary-skeleton,
-.analysis-load-error {
+.analysis-load-error,
+.analysis-empty-state {
   border: 1px solid #d6e3fa;
   border-radius: 22px;
   background: #f8fbff;
@@ -819,13 +893,15 @@ async function switchMode(mode) {
 .analysis-summary-skeleton i:nth-child(4) {
   height: 35px;
 }
-.analysis-load-error {
+.analysis-load-error,
+.analysis-empty-state {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px;
 }
-.analysis-load-error > span {
+.analysis-load-error > span,
+.analysis-empty-state > span {
   display: grid;
   width: 36px;
   height: 36px;
@@ -836,19 +912,24 @@ async function switchMode(mode) {
   font-size: 11px;
   font-weight: 950;
 }
-.analysis-load-error div {
+.analysis-load-error div,
+.analysis-empty-state div {
   min-width: 0;
   flex: 1;
 }
 .analysis-load-error b,
-.analysis-load-error small {
+.analysis-load-error small,
+.analysis-empty-state b,
+.analysis-empty-state small {
   display: block;
 }
-.analysis-load-error b {
+.analysis-load-error b,
+.analysis-empty-state b {
   color: #26334d;
   font-size: 11px;
 }
-.analysis-load-error small {
+.analysis-load-error small,
+.analysis-empty-state small {
   overflow: hidden;
   margin-top: 3px;
   color: #7b8da9;
@@ -856,11 +937,17 @@ async function switchMode(mode) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.analysis-load-error button {
+.analysis-load-error button,
+.analysis-empty-state button {
   flex: none;
   color: #286ce0;
   font-size: 9px;
   font-weight: 900;
+  white-space: nowrap;
+}
+.analysis-empty-state small {
+  line-height: 1.45;
+  white-space: normal;
 }
 @keyframes analysis-skeleton {
   to {
