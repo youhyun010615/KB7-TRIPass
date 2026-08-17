@@ -46,12 +46,6 @@ watch(accounts, (items) => {
 const money = value => `${Math.abs(Number(value || 0)).toLocaleString('ko-KR')}원`
 const shortMoney = value => `${Math.abs(Math.floor(Number(value || 0) / 10000)).toLocaleString('ko-KR')}만`
 const maxChart = computed(() => Math.max(...wallet.monthlySavings.map(item => Math.abs(item.amount || 0)), 1))
-const safeSavingRate = computed(() => {
-  const rate = Number(wallet.savingRate)
-  if (!Number.isFinite(rate)) return 0
-  return Math.max(0, Math.min(100, Math.round(rate)))
-})
-const progressWidth = computed(() => `${safeSavingRate.value}%`)
 const isCurrentMonth = item => item.isCurrent || item.month === '8월'
 const isAvailableMonth = item => item.available !== false
 const monthKey = item => item.monthKey || `2026-${String(item.month).replace(/[^0-9]/g, '').padStart(2, '0')}`
@@ -288,11 +282,6 @@ async function confirmUnlinkTravelCard() {
           <span>원</span>
         </div>
         <p class="emergency">비상금: {{ money(wallet.emergencyAmount) }}</p>
-        <div class="goal-row">
-          <span>목표 {{ wallet.targetAmount.toLocaleString('ko-KR') }}원</span>
-          <b>{{ safeSavingRate }}%</b>
-        </div>
-        <div class="goal-bar"><i :style="{ width: progressWidth }" /></div>
         <div class="wallet-actions">
           <button type="button" @click="openTransfer('charge')">채우기</button>
           <button type="button" @click="openTransfer('withdraw')">빼기</button>
