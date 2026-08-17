@@ -138,7 +138,8 @@ function back() {
   router.back()
 }
 
-function finish() {
+async function finish() {
+  await store.loadHomeDashboard({ force: true })
   router.push('/')
 }
 </script>
@@ -327,7 +328,9 @@ function finish() {
         <div><span>남은 저축 기간</span><b>{{ store.remainingMonths }}개월</b></div>
       </section>
       <section class="monthly-preview"><span>매달 저축하면 돼요</span><b>{{ money(store.monthlySavingTarget) }}</b><small>백엔드가 목표 금액·월렛 잔액·남은 기간으로 계산했어요.</small></section>
-      <button class="primary-cta" @click="finish">TRIP 월렛 저축 시작하기</button>
+      <button class="primary-cta" :disabled="store.homeLoading" @click="finish">
+        {{ store.homeLoading ? '여행 저축 홈을 불러오고 있어요…' : 'TRIP 월렛 저축 시작하기' }}
+      </button>
     </template>
 
     <DatePickerSheet

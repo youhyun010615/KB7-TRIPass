@@ -93,6 +93,12 @@ function apiErrorMessage(error, fallback) {
   return error.response?.data?.message || fallback;
 }
 
+function isNotFound(error, code) {
+  return (
+    error.response?.status === 404 || error.response?.data?.code === code
+  );
+}
+
 function decorateCountry(country) {
   const presentation = countryPresentation[country.countryName] || {};
   return {
@@ -453,6 +459,9 @@ export const useTravelStore = defineStore('travel', () => {
         await updateTripGoal(tripId.value, goalPayload());
       } else {
         const created = await createTripGoal(goalPayload());
+        if (!created?.tripId) {
+          throw new Error('여행 목표 생성 응답에 여행 ID가 없습니다.');
+        }
         tripId.value = created.tripId;
       }
       applyRecommendation(await generateTripBudget(tripId.value));
@@ -547,7 +556,7 @@ export const useTravelStore = defineStore('travel', () => {
       }
       return result;
     } catch (error) {
-      if (error.response?.data?.code !== 'TRIP_NOT_FOUND') {
+      if (!isNotFound(error, 'TRIP_NOT_FOUND')) {
         errorMessage.value = apiErrorMessage(
           error,
           '진행 중인 여행 목표를 불러오지 못했습니다.',
@@ -580,7 +589,7 @@ export const useTravelStore = defineStore('travel', () => {
       hasTravelGoal.value = Boolean(result.tripId);
       return result;
     } catch (error) {
-      if (error.response?.data?.code === 'TRIP_NOT_FOUND') {
+      if (isNotFound(error, 'TRIP_NOT_FOUND')) {
         homeDashboard.value = null;
         hasTravelGoal.value = false;
         tripId.value = null;

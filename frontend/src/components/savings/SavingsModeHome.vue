@@ -7,6 +7,8 @@ import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
 import { useTravelStore } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
+import { getAccounts } from '@/api/asset';
+import { getCards } from '@/api/card';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
@@ -24,6 +26,30 @@ const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
 const userName = computed(() => authStore.user?.name ?? '회원');
+const linkedAccountCount = ref(0);
+const linkedCardCount = ref(0);
+const financialSourcesLoading = ref(false);
+const financialSourcesError = ref('');
+const hasLinkedFinancialSources = computed(
+  () => linkedAccountCount.value + linkedCardCount.value > 0,
+);
+
+async function loadFinancialSources() {
+  financialSourcesLoading.value = true;
+  financialSourcesError.value = '';
+  try {
+    const [accountResponse, cardResponse] = await Promise.all([
+      getAccounts(),
+      getCards(),
+    ]);
+    linkedAccountCount.value = accountResponse.data?.data?.length ?? 0;
+    linkedCardCount.value = cardResponse.data?.data?.length ?? 0;
+  } catch {
+    financialSourcesError.value = '금융 데이터 연결 상태를 확인하지 못했어요.';
+  } finally {
+    financialSourcesLoading.value = false;
+  }
+}
 
 onMounted(async () => {
   await nextTick();
@@ -33,6 +59,7 @@ onMounted(async () => {
     exchangeStore.updateExchangeRates(),
     monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
     savingMissionsStore.loadMissionStatus(),
+    loadFinancialSources(),
   ]);
   await nextTick();
   restoreCountryPosition();
@@ -101,6 +128,13 @@ const defaultPresentation = {
 };
 
 const homeDashboard = computed(() => travelStore.homeDashboard);
+const isHomePending = computed(
+  () =>
+    travelStore.homeLoading ||
+    (!homeDashboard.value &&
+      !travelStore.homeError &&
+      (!travelStore.initialized || travelStore.hasTravelGoal)),
+);
 const countries = computed(() =>
   [...(homeDashboard.value?.countries || [])]
     .sort((a, b) => a.displayOrder - b.displayOrder)
@@ -194,7 +228,10 @@ const monthlySavingPercent = computed(() =>
 const homeInsightLoading = computed(
   () =>
     savingMissionsStore.missionStatusLoading ||
-    (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading),
+    (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading) ||
+    (!savingMissionsStore.hasStartedMissions &&
+      !monthlyAnalysisStore.hasVisibleReport &&
+      financialSourcesLoading.value),
 );
 const selectedExchangeRate = computed(() =>
   exchangeStore.getCurrency(selectedCountry.value.currency),
@@ -296,7 +333,12 @@ function retryMonthlyAnalysis() {
   Promise.all([
     monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
     savingMissionsStore.loadMissionStatus(),
+    loadFinancialSources(),
   ]);
+}
+
+function openFinancialSources() {
+  router.push('/mypage/assets');
 }
 
 function openMonthlyAnalysis() {
@@ -338,7 +380,7 @@ async function switchMode(mode) {
 
 <template>
   <section class="savings-mode-home">
-    <template v-if="travelStore.homeLoading && !homeDashboard">
+    <template v-if="isHomePending">
       <div class="home-state" role="status" aria-live="polite">
         <span class="home-spinner" />
         <b>여행 저축 현황을 불러오고 있어요</b>
@@ -356,7 +398,7 @@ async function switchMode(mode) {
     </template>
 
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
-    <template v-else-if="!travelStore.hasTravelGoal">
+    <template v-else-if="!homeDashboard">
       <div class="px-5 pt-12 pb-3 bg-white/80">
         <div class="flex items-center justify-between">
           <button
@@ -728,6 +770,50 @@ async function switchMode(mode) {
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
+      <section
+        v-else-if="financialSourcesError"
+        class="analysis-load-error mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>금융 데이터 연결 상태를 확인하지 못했어요</b>
+          <small>{{ financialSourcesError }}</small>
+        </div>
+        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
+      </section>
+
+      <section
+        v-else-if="monthlyAnalysisStore.notFound"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openFinancialSources">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
+          <b>
+            {{
+              hasLinkedFinancialSources
+                ? '아직 분석할 지난달 거래가 없어요'
+                : '맞춤 저축 미션을 준비해 볼까요?'
+            }}
+          </b>
+          <small>
+            {{
+              hasLinkedFinancialSources
+                ? '분류된 계좌·카드 지출이 쌓이면 소비 분석과 맞춤 미션을 보여드려요.'
+                : '계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.'
+            }}
+          </small>
+          <em>
+            {{
+              hasLinkedFinancialSources
+                ? '연동 자산 확인하기'
+                : '금융 데이터 연결하기'
+            }}
+            <i aria-hidden="true">›</i>
+          </em>
+        </button>
+      </section>
+
       <!-- 오늘의 실시간 환율 -->
       <div class="exchange-live-card mx-4 mt-3 mb-4" :style="exchangeCardStyle">
         <div class="exchange-card-head">
@@ -782,7 +868,8 @@ async function switchMode(mode) {
   background: #f3f6ff;
 }
 .analysis-summary-skeleton,
-.analysis-load-error {
+.analysis-load-error,
+.analysis-empty-state {
   border: 1px solid #d6e3fa;
   border-radius: 22px;
   background: #f8fbff;
@@ -812,11 +899,14 @@ async function switchMode(mode) {
 .analysis-summary-skeleton i:nth-child(4) {
   height: 35px;
 }
+.analysis-load-error,
+.analysis-empty-state {
+  padding: 14px;
+}
 .analysis-load-error {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px;
 }
 .analysis-load-error > span {
   display: grid;
@@ -854,6 +944,72 @@ async function switchMode(mode) {
   color: #286ce0;
   font-size: 9px;
   font-weight: 900;
+  white-space: nowrap;
+}
+.analysis-empty-state {
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgb(36 80 153 / 7%);
+}
+.analysis-empty-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #286ce0;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+.analysis-empty-state > button {
+  display: flex;
+  width: 100%;
+  min-height: 176px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 18px 16px;
+  border: 1px dashed #c9d8ef;
+  border-radius: 17px;
+  background: #f6f8fc;
+  text-align: center;
+}
+.analysis-empty-plus {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 13px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e4edff;
+  color: #286ce0;
+  font-size: 28px;
+  font-weight: 400;
+}
+.analysis-empty-state b {
+  color: #26334d;
+  font-size: 14px;
+}
+.analysis-empty-state button > small {
+  max-width: 290px;
+  margin-top: 7px;
+  color: #8190a9;
+  font-size: 10px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+.analysis-empty-state em {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+  color: #286ce0;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+.analysis-empty-state em i {
+  font-size: 17px;
+  font-style: normal;
+  line-height: 1;
 }
 @keyframes analysis-skeleton {
   to {
