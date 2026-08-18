@@ -13,6 +13,7 @@ import { getCards } from '@/api/card';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
+import aiIcon from '@/assets/icons/ai.svg';
 
 const props = defineProps({
   onSwitchMode: { type: Function, default: null },
@@ -374,7 +375,7 @@ function retryMonthlyAnalysis() {
 }
 
 function openFinancialSources() {
-  router.push('/mypage/assets');
+  router.push('/profile/financial?step=1&from=asset');
 }
 
 function openTravelGoalSetup() {
@@ -454,8 +455,7 @@ async function switchMode(mode) {
           <NotificationBell />
         </div>
         <h1 class="home-header-title">
-          <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
-          TRIPASS
+          <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
         </h1>
       </div>
       <div :style="{ height: savingsHeaderHeight + 'px' }" aria-hidden="true" />
@@ -477,8 +477,9 @@ async function switchMode(mode) {
           </span>
         </div>
         <div class="empty-trip-body">
-          <span class="empty-trip-badge">
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M2 16l20-7-7 20-3-8-8-3-2-2z" fill="#FFD466"/></svg>
+          <span class="empty-trip-badge" aria-hidden="true">
+            <i class="empty-plane-trail"></i>
+            <img src="@/assets/icons/yellow_airplane.png" alt="" />
           </span>
           <div>
             <strong>아직 등록된 여행이 없어요</strong>
@@ -496,6 +497,77 @@ async function switchMode(mode) {
           <span class="empty-trip-barcode" aria-hidden="true"></span>
         </div>
       </article>
+
+      <section
+        v-if="homeInsightLoading"
+        class="analysis-summary-skeleton mx-4 mt-3"
+        aria-label="저축 미션 정보를 불러오는 중"
+      >
+        <i /><i /><i /><i />
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.errorMessage"
+        class="analysis-load-error mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>준비 상태를 확인하지 못했어요</b>
+          <small>{{ savingReadinessStore.errorMessage }}</small>
+        </div>
+        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.needsTravelGoalAndFinancialAsset"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <div class="home-mission-setup-body">
+          <div class="home-mission-ai-stage" aria-hidden="true">
+            <span class="home-mission-ai-orbit"></span>
+            <span class="home-mission-ai-spark one">✦</span>
+            <span class="home-mission-ai-spark two">✦</span>
+            <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
+          </div>
+          <b>AI 추천 미션을 받아보세요!</b>
+          <small>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</small>
+          <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
+        </div>
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.needsTravelGoal"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openTravelGoalSetup">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
+          <b>아직 여행 목표를 설정하지 않았어요</b>
+          <small>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</small>
+          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
+        </button>
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.needsFinancialAsset"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openFinancialSources">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
+          <b>계좌나 카드를 연결해 주세요</b>
+          <small>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</small>
+          <em>금융 데이터 연결하기<i aria-hidden="true">›</i></em>
+        </button>
+      </section>
+
+      <HomeSavingMissionCard
+        v-else-if="savingMissionsStore.hasStartedMissions"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
 
       <div class="empty-trip-guide mx-4 mt-3">
         <span class="guide-label">TRIPASS GUIDE</span>
@@ -517,8 +589,7 @@ async function switchMode(mode) {
           <NotificationBell />
         </div>
         <h1 class="home-header-title">
-          <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
-          TRIPASS
+          <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
         </h1>
       </div>
       <div :style="{ height: savingsHeaderHeight + 'px' }" aria-hidden="true" />
@@ -767,12 +838,17 @@ async function switchMode(mode) {
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openTravelGoalSetup">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>여행 목표와 계좌·카드 연결이 필요해요</b>
-          <small>등록을 완료하면 월간·주간 저축 미션을 확인할 수 있어요.</small>
-          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
-        </button>
+        <div class="home-mission-setup-body">
+          <div class="home-mission-ai-stage" aria-hidden="true">
+            <span class="home-mission-ai-orbit"></span>
+            <span class="home-mission-ai-spark one">✦</span>
+            <span class="home-mission-ai-spark two">✦</span>
+            <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
+          </div>
+          <b>AI 추천 미션을 받아보세요!</b>
+          <small>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</small>
+          <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
+        </div>
       </section>
 
       <section
@@ -964,6 +1040,7 @@ async function switchMode(mode) {
   text-align: center;
 }
 .empty-trip-badge {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -971,6 +1048,29 @@ async function switchMode(mode) {
   height: 46px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 0 rgba(255, 212, 102, 0.28);
+  animation: empty-plane-beacon 2.4s ease-out infinite;
+}
+.empty-trip-badge img {
+  position: relative;
+  z-index: 2;
+  width: 29px;
+  height: 29px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.2));
+  animation: empty-plane-takeoff 2.4s ease-in-out infinite;
+}
+.empty-plane-trail {
+  position: absolute;
+  top: 26px;
+  left: -10px;
+  width: 28px;
+  height: 2px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, rgba(255, 212, 102, 0.75));
+  transform: rotate(-18deg);
+  transform-origin: right center;
+  animation: empty-plane-trail 2.4s ease-in-out infinite;
 }
 .empty-trip-body strong {
   font-size: 16.5px;
@@ -992,6 +1092,24 @@ async function switchMode(mode) {
   background: #fff;
   font-size: 14px;
   font-weight: 800;
+}
+@keyframes empty-plane-takeoff {
+  0%, 100% { transform: translate(-6px, 5px) rotate(-10deg); }
+  45% { transform: translate(6px, -5px) rotate(3deg); }
+  65% { transform: translate(8px, -6px) rotate(5deg); }
+}
+@keyframes empty-plane-trail {
+  0%, 100% { opacity: .2; transform: scaleX(.55) rotate(-18deg); }
+  45%, 65% { opacity: 1; transform: scaleX(1.15) rotate(-18deg); }
+}
+@keyframes empty-plane-beacon {
+  0% { box-shadow: 0 0 0 0 rgba(255, 212, 102, .3); }
+  70%, 100% { box-shadow: 0 0 0 12px rgba(255, 212, 102, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .empty-trip-badge,
+  .empty-trip-badge img,
+  .empty-plane-trail { animation: none; }
 }
 .empty-trip-tear { position: relative; height: 18px; }
 .empty-trip-notch {
@@ -1131,6 +1249,7 @@ async function switchMode(mode) {
   white-space: nowrap;
 }
 .analysis-empty-state {
+  position: relative;
   padding: 18px;
   background: #fff;
   box-shadow: 0 10px 24px rgb(36 80 153 / 7%);
@@ -1144,6 +1263,7 @@ async function switchMode(mode) {
   letter-spacing: 0.12em;
 }
 .analysis-empty-state > button {
+  position: relative;
   display: flex;
   width: 100%;
   min-height: 176px;
@@ -1156,6 +1276,8 @@ async function switchMode(mode) {
   background: #f6f8fc;
   text-align: center;
 }
+.home-mission-setup-body{display:flex;min-height:210px;padding:22px 18px 18px;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #c9d8ef;border-radius:17px;background:linear-gradient(180deg,#f7faff,#f3f7fd);text-align:center}.home-mission-flight{position:relative;width:126px;height:45px;margin-bottom:13px}.home-mission-flight-route{position:absolute;top:22px;left:8px;right:8px;border-top:2px dashed #b9ccef}.home-mission-flight-start,.home-mission-flight-end{position:absolute;top:18px;width:10px;height:10px;border:2px solid #8eafe5;border-radius:50%;background:#f6f9ff}.home-mission-flight-start{left:2px}.home-mission-flight-end{right:2px}.home-mission-flight-end::after{position:absolute;inset:-6px;border:1px solid rgb(40 108 224 / 28%);border-radius:50%;content:'';animation:home-mission-destination-pulse 1.9s ease-out infinite}.home-mission-flight img{position:absolute;z-index:2;top:10px;left:7px;width:25px;height:25px;filter:drop-shadow(0 5px 5px rgb(40 108 224 / 22%));animation:home-mission-plane-travel 2.8s ease-in-out infinite}.home-mission-setup-body b{color:#26334d;font-size:14px;font-weight:900}.home-mission-setup-body>small{max-width:290px;margin-top:7px;color:#8190a9;font-size:10px;line-height:1.55;word-break:keep-all}.home-mission-setup-body>button{margin-top:17px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}
+.home-mission-ai-stage{position:relative;width:82px;height:72px;margin-bottom:10px}.home-mission-ai-core{position:absolute;top:8px;left:13px;z-index:2;display:grid;width:56px;height:56px;place-items:center;border-radius:20px;background:linear-gradient(145deg,#dbe8ff,#fff);box-shadow:0 10px 24px rgb(40 108 224 / 20%);animation:home-ai-float 2.6s ease-in-out infinite}.home-mission-ai-core img{width:30px;height:30px;filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%)}.home-mission-ai-orbit{position:absolute;inset:0;border:1.5px dashed #9fb9e8;border-radius:50%;animation:home-ai-orbit 7s linear infinite}.home-mission-ai-spark{position:absolute;z-index:3;color:#4a82df;font-size:13px;animation:home-ai-spark 1.8s ease-in-out infinite}.home-mission-ai-spark.one{top:0;right:2px}.home-mission-ai-spark.two{bottom:2px;left:0;animation-delay:.8s}
 .analysis-empty-plus {
   display: grid;
   width: 48px;
@@ -1199,6 +1321,19 @@ async function switchMode(mode) {
   to {
     background-position: -200% 0;
   }
+}
+@keyframes home-mission-plane-travel{0%{opacity:.35;transform:translate(0,4px) rotate(-8deg)}18%{opacity:1}50%{transform:translate(47px,-5px) rotate(2deg)}82%{opacity:1}100%{opacity:.35;transform:translate(94px,2px) rotate(9deg)}}
+@keyframes home-mission-destination-pulse{0%{opacity:.8;transform:scale(.55)}100%{opacity:0;transform:scale(1.45)}}
+@keyframes home-ai-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes home-ai-orbit{to{transform:rotate(360deg)}}
+@keyframes home-ai-spark{0%,100%{opacity:.2;transform:scale(.65) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(90deg)}}
+@media (prefers-reduced-motion: reduce) {
+  .home-mission-flight img,
+  .home-mission-flight-end::after { animation: none; }
+  .home-mission-flight img { left: 50%; transform: translateX(-50%); }
+  .home-mission-ai-core,
+  .home-mission-ai-orbit,
+  .home-mission-ai-spark { animation: none; }
 }
 .home-state {
   display: flex;
@@ -2346,27 +2481,11 @@ async function switchMode(mode) {
   color: #10192b;
   letter-spacing: -0.02em;
 }
-.header-plane {
-  width: 13px;
-  height: 13px;
-  animation: header-plane-fly 2.6s ease-in-out infinite;
-}
-@keyframes header-plane-fly {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-    filter: brightness(1) drop-shadow(0 0 0 rgba(47, 112, 242, 0));
-  }
-  25% {
-    transform: translateY(-1.5px) rotate(-8deg);
-  }
-  50% {
-    transform: translateY(0) rotate(0deg);
-    filter: brightness(1.6) drop-shadow(0 0 3px rgba(47, 112, 242, 0.55));
-  }
-  75% {
-    transform: translateY(1.5px) rotate(6deg);
-  }
+.home-wordmark {
+  display: block;
+  width: 88px;
+  height: auto;
+  object-fit: contain;
 }
 .mode-switch-control {
   flex: none;

@@ -53,6 +53,10 @@ onMounted(() => {
 
 // 개인화된 통화 목록 계산
 const displayCurrencies = computed(() => {
+  if (travel.selectedPlans.length === 0) {
+    return exchange.currencies;
+  }
+
   const codes = new Set([
     ...exchange.interestedCurrencyCodes,
     ...exchange.alerts.map((a) => a.currencyCode),
