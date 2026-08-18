@@ -3,7 +3,6 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
-import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
 import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
@@ -80,20 +79,6 @@ watch(
   { immediate: true },
 );
 
-const format = (v, d = 2) =>
-  Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: d });
-
-const currentAlert = computed(() =>
-  exchange.alerts.find((a) => a.currencyCode === exchange.selectedCode),
-);
-
-function handleAlertAction() {
-  if (currentAlert.value) {
-    router.push(`/exchange/alerts/${currentAlert.value.id}`);
-  } else {
-    router.push('/exchange/alerts/add');
-  }
-}
 </script>
 
 <template>
@@ -104,36 +89,30 @@ function handleAlertAction() {
           <div class="exchange-header-top">
             <div>
               <p class="exchange-header-eyebrow">
-                <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
-                TRIPASS
+                <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
               </p>
-              <h1>환율·환전</h1>
+              <h1>EXCHANGE</h1>
             </div>
             <NotificationBell />
           </div>
-          <div
-            v-if="exchange.lastUpdateDate && currentTab === 'rate'"
-            class="update-info"
-          >
-            {{ exchange.lastUpdateDate }} 고시 기준
-          </div>
-          <nav class="main-tabs">
-            <button
-              :class="{ active: currentTab === 'rate' }"
-              @click="currentTab = 'rate'"
-            >
-              환율
-            </button>
-            <button
-              :class="{ active: currentTab === 'exchange' }"
-              @click="currentTab = 'exchange'"
-            >
-              환전
-            </button>
-          </nav>
         </header>
       </div>
       <div :style="{ height: exchangeHeaderHeight + 'px' }" aria-hidden="true" />
+
+      <nav class="main-tabs">
+        <button
+          :class="{ active: currentTab === 'rate' }"
+          @click="currentTab = 'rate'"
+        >
+          환율
+        </button>
+        <button
+          :class="{ active: currentTab === 'exchange' }"
+          @click="currentTab = 'exchange'"
+        >
+          환전
+        </button>
+      </nav>
 
       <!-- 환율 탭 -->
       <section v-if="currentTab === 'rate'">
@@ -143,7 +122,12 @@ function handleAlertAction() {
             @click="router.push('/exchange/currencies')"
             class="action-card-btn"
           >
-            <span class="icon-circle primary">💵</span>
+            <span class="icon-circle primary" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8" />
+                <path d="M9.4 9.25c.5-.75 1.35-1.15 2.55-1.15 1.45 0 2.45.67 2.45 1.75 0 2.65-5 1.1-5 3.9 0 1.15 1.03 1.95 2.7 1.95 1.25 0 2.18-.42 2.72-1.28M12 6.8v10.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </span>
             <div class="btn-text">
               <strong>환율 더보기</strong>
               <p>모든 통화 환율</p>
@@ -153,7 +137,12 @@ function handleAlertAction() {
             @click="router.push('/exchange/alerts')"
             class="action-card-btn"
           >
-            <span class="icon-circle secondary">🔔</span>
+            <span class="icon-circle secondary" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6.8 16.4h10.4l-1.2-1.8V11a4 4 0 0 0-8 0v3.6l-1.2 1.8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <path d="M10.2 18.2a2 2 0 0 0 3.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              </svg>
+            </span>
             <div class="btn-text">
               <strong>내 알림 목록</strong>
               <p>환율 지정 알림</p>
@@ -166,18 +155,10 @@ function handleAlertAction() {
             :currencies="displayCurrencies"
           />
 
-          <ExchangeTicket
-            v-if="exchange.selectedCurrency"
-            :name="exchange.selectedCurrency.name"
-            :rate="exchange.selectedCurrency.rate"
-            :unit="exchange.selectedCurrency.unit"
-            :subtitle="`어제보다 ${exchange.selectedCurrency.change > 0 ? '▲' : '▼'} ${format(Math.abs(exchange.selectedCurrency.change))}원`"
-            :selectedCode="exchange.selectedCode"
-            :flagClass="exchange.selectedCurrency.flagClass"
-            :symbol="exchange.selectedCurrency.symbol"
-            @add-alert="handleAlertAction"
+          <CurrencyChart
+            :currency="exchange.selectedCurrency"
+            :last-update-date="exchange.lastUpdateDate"
           />
-          <CurrencyChart :currency="exchange.selectedCurrency" />
           <ExchangeCalculator />
         </template>
         <template v-else>
@@ -217,15 +198,15 @@ function handleAlertAction() {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f4f5f9;
+  background: #f3f5fa;
   color: #10192d;
 }
 .shell {
   width: min(100%, 390px);
   min-height: 100vh;
   margin: auto;
-  padding: 0 18px 100px;
-  background: #f4f5f9;
+  padding: 0 20px 100px;
+  background: #f3f5fa;
 }
 .exchange-header-fixed {
   position: fixed;
@@ -234,8 +215,8 @@ function handleAlertAction() {
   z-index: 60;
   width: 100%;
   max-width: 390px;
-  padding: 42px 18px 1px;
-  background: #f4f5f9;
+  padding: 42px 20px 12px;
+  background: #f3f5fa;
   transform: translateX(-50%);
 }
 .exchange-header-top {
@@ -253,6 +234,12 @@ function handleAlertAction() {
   letter-spacing: 0.15em;
   color: #0b2a6b;
   margin-bottom: 4px;
+}
+.header-wordmark {
+  display: block;
+  width: 88px;
+  height: auto;
+  object-fit: contain;
 }
 .header-plane {
   width: 12px;
@@ -279,34 +266,35 @@ function handleAlertAction() {
 header h1 {
   margin-top: 2px;
   text-align: left;
-  font-size: 19px;
-  font-weight: 900;
-  color: #10192b;
-}
-.update-info {
-  margin-top: 14px;
-  font-size: 11px;
-  color: #64748b;
-  margin-bottom: 18px;
+  font-size: 17px;
+  font-weight: 400;
+  color: #29466f;
 }
 .main-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 0;
+  padding: 5px;
+  margin: 8px 0 10px;
+  border-radius: 999px;
+  background: #e9ecf3;
 }
 .main-tabs button {
-  padding: 12px;
+  min-height: 38px;
+  padding: 8px;
   border: none;
-  border-radius: 12px;
-  background: #e2e8f0;
-  color: #64748b;
-  font-weight: bold;
+  border-radius: 999px;
+  background: transparent;
+  color: #929caf;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
 }
 .main-tabs button.active {
-  background: #17387f;
+  background: #123478;
   color: #fff;
+  box-shadow: 0 5px 12px rgba(18, 52, 120, .18);
 }
 
 .exchange-map {
@@ -322,17 +310,20 @@ header h1 {
 .header-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin: 12px 0 14px;
 }
 .action-card-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid #e1e6ed;
-  border-radius: 14px;
+  gap: 9px;
+  min-width: 0;
+  min-height: 68px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 16px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(23, 43, 77, .055);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -345,32 +336,39 @@ header h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  font-size: 14px;
+}
+.icon-circle svg {
+  width: 18px;
+  height: 18px;
 }
 .icon-circle.primary {
-  background: #f0f4fc;
-  color: #17387f;
+  background: #eaf1ff;
+  color: #2f6fea;
 }
 .icon-circle.secondary {
-  background: #fff8e7;
-  color: #ff9f0a;
+  background: #fff3d9;
+  color: #d89000;
 }
 .btn-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .btn-text strong {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   color: #10192d;
+  white-space: nowrap;
 }
 .btn-text p {
-  font-size: 9px;
-  color: #8c98a8;
-  margin-top: 1px;
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: #96a1b5;
+  white-space: nowrap;
 }
 .empty-state {
   display: flex;

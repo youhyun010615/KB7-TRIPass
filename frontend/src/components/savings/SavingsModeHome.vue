@@ -56,13 +56,6 @@ watch(savingsHeaderEl, (el) => {
     savingsHeaderResizeObserver.observe(el);
   }
 });
-const passNumber = computed(() => {
-  const d = new Date();
-  const yy = String(d.getFullYear()).slice(-2);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yy}${mm}${dd}`;
-});
 const linkedAccountCount = ref(0);
 const linkedCardCount = ref(0);
 const financialSourcesLoading = ref(false);
@@ -471,30 +464,19 @@ async function switchMode(mode) {
         <span class="empty-trip-orbit" aria-hidden="true"></span>
         <div class="empty-trip-band">
           <span>TRIPASS · START JOURNEY</span>
-          <span class="empty-trip-goal">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 16l20-7-7 20-3-8-8-3-2-2z" fill="#FFD466"/></svg>
-            GOAL
-          </span>
         </div>
         <div class="empty-trip-body">
-          <span class="empty-trip-badge" aria-hidden="true">
-            <i class="empty-plane-trail"></i>
-            <img src="@/assets/icons/yellow_airplane.png" alt="" />
+          <span class="empty-trip-badge empty-map-badge" aria-hidden="true">
+            <svg class="empty-map-pin" viewBox="0 0 32 32" fill="none">
+              <path d="M16 28s8-7.4 8-15a8 8 0 1 0-16 0c0 7.6 8 15 8 15Z" fill="#FFD466" />
+              <circle cx="16" cy="13" r="3.25" fill="#123C94" />
+            </svg>
           </span>
           <div>
             <strong>아직 등록된 여행이 없어요</strong>
             <p>여행명·국가·일정을 등록하면<br>AI가 목표 예산과 월 저축액을 제안해요</p>
           </div>
           <button type="button" class="empty-trip-cta" @click="router.push({ name: 'TravelRegister' })">여행 계획 등록하기</button>
-        </div>
-        <div class="empty-trip-tear" aria-hidden="true">
-          <span class="empty-trip-notch left"></span>
-          <span class="empty-trip-notch right"></span>
-          <span class="empty-trip-dash"></span>
-        </div>
-        <div class="empty-trip-footer">
-          <span>PASS NO. TRP-{{ passNumber }}</span>
-          <span class="empty-trip-barcode" aria-hidden="true"></span>
         </div>
       </article>
 
@@ -998,9 +980,10 @@ async function switchMode(mode) {
   margin-top: 12px;
   border-radius: 20px;
   overflow: hidden;
+  border: 1px solid rgba(105, 151, 232, .22);
   color: #fff;
-  background: linear-gradient(155deg, #0b2a6b 0%, #123c94 60%, #17459f 100%);
-  box-shadow: 0 12px 26px rgba(11, 42, 107, 0.24);
+  background: linear-gradient(145deg, #0b2a6b 0%, #123c94 62%, #174da7 100%);
+  box-shadow: 0 12px 26px rgba(11, 42, 107, .22);
 }
 .empty-trip-orbit {
   position: absolute;
@@ -1009,26 +992,19 @@ async function switchMode(mode) {
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, .07);
 }
 .empty-trip-band {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px 0;
+  padding: 17px 18px 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.55);
-}
-.empty-trip-goal {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  letter-spacing: 0.1em;
-  color: #ffd466;
+  color: rgba(255, 255, 255, .6);
 }
 .empty-trip-body {
   position: relative;
@@ -1036,7 +1012,7 @@ async function switchMode(mode) {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 26px 22px 22px;
+  padding: 20px 22px 22px;
   text-align: center;
 }
 .empty-trip-badge {
@@ -1047,30 +1023,15 @@ async function switchMode(mode) {
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, .12);
   box-shadow: 0 0 0 0 rgba(255, 212, 102, 0.28);
   animation: empty-plane-beacon 2.4s ease-out infinite;
 }
-.empty-trip-badge img {
-  position: relative;
-  z-index: 2;
+.empty-map-pin {
   width: 29px;
   height: 29px;
-  object-fit: contain;
-  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.2));
-  animation: empty-plane-takeoff 2.4s ease-in-out infinite;
-}
-.empty-plane-trail {
-  position: absolute;
-  top: 26px;
-  left: -10px;
-  width: 28px;
-  height: 2px;
-  border-radius: 99px;
-  background: linear-gradient(90deg, transparent, rgba(255, 212, 102, 0.75));
-  transform: rotate(-18deg);
-  transform-origin: right center;
-  animation: empty-plane-trail 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.18));
+  animation: empty-map-float 2.4s ease-in-out infinite;
 }
 .empty-trip-body strong {
   font-size: 16.5px;
@@ -1078,7 +1039,7 @@ async function switchMode(mode) {
 }
 .empty-trip-body p {
   margin-top: 6px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, .68);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -1089,18 +1050,14 @@ async function switchMode(mode) {
   border: 0;
   border-radius: 12px;
   color: #0b2a6b;
-  background: #fff;
+  background: #ffd466;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
+  box-shadow: 0 7px 16px rgba(2, 18, 50, .2);
 }
-@keyframes empty-plane-takeoff {
-  0%, 100% { transform: translate(-6px, 5px) rotate(-10deg); }
-  45% { transform: translate(6px, -5px) rotate(3deg); }
-  65% { transform: translate(8px, -6px) rotate(5deg); }
-}
-@keyframes empty-plane-trail {
-  0%, 100% { opacity: .2; transform: scaleX(.55) rotate(-18deg); }
-  45%, 65% { opacity: 1; transform: scaleX(1.15) rotate(-18deg); }
+@keyframes empty-map-float {
+  0%, 100% { transform: translateY(2px); }
+  50% { transform: translateY(-3px); }
 }
 @keyframes empty-plane-beacon {
   0% { box-shadow: 0 0 0 0 rgba(255, 212, 102, .3); }
@@ -1108,8 +1065,7 @@ async function switchMode(mode) {
 }
 @media (prefers-reduced-motion: reduce) {
   .empty-trip-badge,
-  .empty-trip-badge img,
-  .empty-plane-trail { animation: none; }
+  .empty-map-pin { animation: none; }
 }
 .empty-trip-tear { position: relative; height: 18px; }
 .empty-trip-notch {

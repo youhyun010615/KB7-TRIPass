@@ -340,8 +340,7 @@ async function confirmUnlinkTravelCard() {
       <header class="wallet-header">
         <div>
           <p>
-            <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
-            TRIPASS
+            <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
           </p>
           <h1>WALLET</h1>
         </div>
@@ -645,4 +644,6 @@ async function confirmUnlinkTravelCard() {
 .chart-item{border:0;background:transparent;text-align:center}.chart-item:disabled{cursor:default}.monthly-detail-sheet{display:flex;flex-direction:column;max-height:82vh;padding-bottom:0}.monthly-detail-sheet>.sheet-handle,.monthly-detail-sheet>.monthly-detail-head,.monthly-detail-sheet>.monthly-detail-total,.monthly-detail-sheet>.monthly-detail-summary{flex:none}.monthly-detail-head{display:flex;align-items:flex-start;justify-content:space-between}.monthly-detail-head p{color:#1768f2;font-size:13px;font-weight:800}.monthly-detail-head h2{margin-top:3px;font-size:22px;font-weight:800;letter-spacing:-.04em}.monthly-detail-head button{padding:4px 8px;color:#64748b;font-size:22px}.monthly-detail-total{margin-top:18px;padding:18px;border-radius:18px;background:#f4f8ff}.monthly-detail-total span{display:block;color:#64748b;font-size:12px;font-weight:700}.monthly-detail-total strong{display:block;margin-top:6px;color:#111827;font-size:30px;font-weight:800;letter-spacing:-.04em}.monthly-detail-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.monthly-detail-summary div{padding:14px;border-radius:16px;background:#f8fbff;border:1px solid #e4ebf5}.monthly-detail-summary span{display:block;color:#8b98ad;font-size:12px;font-weight:700}.monthly-detail-summary b{display:block;margin-top:5px;color:#1768f2;font-size:18px;font-weight:800}.monthly-detail-summary div:last-child b{color:#ef4444}.monthly-ledger-list{flex:1 1 auto;min-height:0;display:grid;align-content:start;gap:10px;margin-top:16px;padding-bottom:34px;overflow-y:auto}.monthly-ledger-list>p{padding:18px;border-radius:16px;background:#f8fbff;color:#8b98ad;font-size:13px;font-weight:700;text-align:center}.monthly-ledger-list article{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:15px;background:#fff;border:1px solid #e4ebf5}.monthly-ledger-list article b{display:block;font-size:14px;font-weight:800;color:#111827}.monthly-ledger-list article span{display:block;margin-top:4px;color:#94a3b8;font-size:11px;font-weight:600}.monthly-ledger-list article strong{color:#1768f2;font-size:15px;font-weight:800;white-space:nowrap}.monthly-ledger-list article strong.out{color:#ef4444}
 .wallet-page{word-break:keep-all}.wallet-page h1,.wallet-page h2,.wallet-page h3{text-wrap:balance}.wallet-page p{text-wrap:pretty}
 .chart-amount{display:block;font-size:11px;font-weight:700;color:#2563eb;white-space:nowrap}.chart-amount.current,.chart-item>span.current{color:#b8860b}.chart-amount.negative,.chart-item>span.negative{color:#ef4444}.chart-amount.zero,.chart-item>span.zero{color:#4b5563}.chart-amount.disabled,.chart-item>span.disabled{color:#b6c1d1}
+.header-wordmark{display:block;width:88px;height:auto;object-fit:contain}
+.wallet-header h1{font-size:17px;font-weight:400;color:#29466f;letter-spacing:normal}
 </style>

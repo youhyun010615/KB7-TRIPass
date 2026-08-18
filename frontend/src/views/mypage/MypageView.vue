@@ -129,8 +129,7 @@ const notificationRows = [
       <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 42px">
         <div>
           <p class="mypage-header-eyebrow">
-            <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
-            TRIPASS
+            <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
           </p>
           <h1 class="mypage-header-title">MyPage</h1>
         </div>
@@ -142,40 +141,32 @@ const notificationRows = [
     <div class="px-4 flex flex-col gap-[22px]">
 
       <!-- 멤버 패스 카드 -->
-      <div class="relative rounded-[22px] overflow-hidden text-white" style="background: linear-gradient(155deg, #0B2A6B 0%, #123C94 62%, #17459F 100%); box-shadow: 0 10px 24px rgba(11,42,107,0.22)">
-        <div class="absolute rounded-full" style="top:-58px; right:-40px; width:150px; height:150px; background: rgba(255,212,102,0.1)"></div>
+      <section class="member-card">
+        <span class="member-card-glow" aria-hidden="true"></span>
+        <header class="member-card-head">
+          <img src="@/assets/brand/tripass-text.png" alt="TRIPASS" />
+          <span>MEMBER · {{ authStore.user?.id ?? '000000' }}</span>
+        </header>
 
-        <div class="relative flex items-center justify-between px-5 py-[13px]" style="background: rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.12)">
-          <div class="flex items-center gap-2">
-            <img src="@/assets/icons/yellow_airplane.png" width="15" height="15" alt="" />
-            <span class="text-[10.5px] font-extrabold tracking-[0.12em]" style="color:#FFD466">TRIPASS MEMBER PASS</span>
-          </div>
-          <span class="font-mono text-[10.5px] font-bold" style="color: rgba(255,255,255,0.65)">TP-{{ authStore.user?.id ?? '000000' }}</span>
-        </div>
-
-        <div class="relative px-5 py-[18px]">
-          <div class="flex items-center gap-[11px]">
-            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0" style="background: rgba(255,255,255,0.14)">
-              {{ authStore.user?.name?.[0] ?? '고' }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-[15px] font-black">{{ authStore.user?.name ?? '고객' }}</div>
-              <div class="text-[10.5px] mt-0.5" style="color: rgba(255,255,255,0.55)">{{ memberIdentity }}</div>
-            </div>
-          </div>
-
-          <div class="text-[11px] font-extrabold mt-[18px]" style="color:#FFD466; letter-spacing:0.06em">전체 보유금액</div>
-          <div class="font-mono text-[33px] font-bold mt-1.5" style="letter-spacing:-0.02em">{{ formatWon(totalAssets) }}</div>
-
-          <div class="flex items-center gap-2.5 mt-[18px] pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" class="flex-shrink-0"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.8"/><path d="M3 10.5h18" stroke="rgba(255,255,255,0.75)" stroke-width="1.8"/></svg>
-            <span class="flex-1 text-[12.5px] font-extrabold">통장 {{ accountCount }}개 · 카드 {{ cardCount }}장 연동 중</span>
-            <button type="button" class="flex-shrink-0 text-[11.5px] font-extrabold active:opacity-70" style="color:#FFD466" @click="router.push('/mypage/assets')">
-              연동된 계좌·카드 ›
-            </button>
+        <div class="member-profile">
+          <span class="member-avatar">{{ authStore.user?.name?.[0] ?? '고' }}</span>
+          <div>
+            <strong>{{ authStore.user?.name ?? '고객' }}님</strong>
+            <small>{{ memberIdentity }}</small>
           </div>
         </div>
-      </div>
+
+        <div class="member-assets">
+          <small>연결 자산</small>
+          <strong>{{ formatWon(totalAssets) }}</strong>
+        </div>
+
+        <button type="button" class="member-link" @click="router.push('/mypage/assets')">
+          <span>계좌 {{ accountCount }} · 카드 {{ cardCount }}</span>
+          <b>자산 관리하기</b>
+          <i>›</i>
+        </button>
+      </section>
 
       <!-- 나의 관리 -->
       <div class="flex flex-col gap-[11px]">
@@ -278,6 +269,93 @@ const notificationRows = [
 </template>
 
 <style scoped>
+.member-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid rgba(105, 151, 232, .22);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #0b2a6b 0%, #123c94 62%, #174da7 100%);
+  box-shadow: 0 12px 26px rgba(11, 42, 107, .22);
+  color: #fff;
+}
+.member-card-glow {
+  position: absolute;
+  top: -70px;
+  right: -50px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .07);
+}
+.member-card-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.member-card-head img {
+  width: 76px;
+  height: auto;
+  filter: brightness(0) invert(1);
+}
+.member-card-head span {
+  color: rgba(255, 255, 255, .52);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.member-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 19px;
+}
+.member-avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 13px;
+  background: #ffd466;
+  color: #0b2a6b;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 6px 13px rgba(2, 18, 50, .2);
+}
+.member-profile strong { display: block; font-size: 14px; font-weight: 800; }
+.member-profile small { display: block; margin-top: 2px; color: rgba(255, 255, 255, .55); font-size: 10px; }
+.member-assets { position: relative; margin-top: 19px; }
+.member-assets small { display: block; color: #ffd466; font-size: 10px; font-weight: 700; }
+.member-assets strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+.member-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 17px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .09);
+  color: rgba(255, 255, 255, .7);
+  text-align: left;
+}
+.member-link span { font-size: 11px; font-weight: 600; }
+.member-link b { color: #ffd466; font-size: 11px; font-weight: 800; }
+.member-link i { color: #ffd466; font-size: 18px; font-style: normal; line-height: 1; }
 .mypage-header-fixed {
   position: fixed;
   top: 0;
@@ -300,9 +378,15 @@ const notificationRows = [
 }
 .mypage-header-title {
   margin-top: 2px;
-  font-size: 19px;
-  font-weight: 900;
-  color: #10192b;
+  font-size: 17px;
+  font-weight: 400;
+  color: #29466f;
+}
+.header-wordmark {
+  display: block;
+  width: 88px;
+  height: auto;
+  object-fit: contain;
 }
 .header-plane {
   width: 12px;

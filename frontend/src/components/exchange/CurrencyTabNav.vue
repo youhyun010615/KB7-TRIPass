@@ -53,8 +53,8 @@ const scroll = (direction) => {
 .nav-wrapper {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 10px 0;
+  gap: 7px;
+  padding: 8px 0 11px;
   background: transparent;
   position: sticky;
   top: 0;
@@ -64,7 +64,7 @@ const scroll = (direction) => {
   display: flex;
   overflow-x: auto;
   scroll-behavior: smooth;
-  gap: 8px;
+  gap: 7px;
   flex: 1;
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -75,35 +75,43 @@ const scroll = (direction) => {
 .nav-container button {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 6px;
-  padding: 6px 12px;
-  border-radius: 16px;
+  min-height: 38px;
+  padding: 7px 13px;
+  border-radius: 999px;
   background: #fff;
-  border: 1px solid #e2e7ed;
-  font-size: 11px;
+  border: 1px solid #dce3ee;
+  font-size: 12px;
+  font-weight: 800;
   white-space: nowrap;
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 .nav-container button span.fi {
-  width: 14px;
-  height: 10px;
+  width: 15px;
+  height: 11px;
   background-size: cover;
   border-radius: 1px;
   vertical-align: middle;
 }
 .nav-container button.active {
-  background: #17387f;
+  background: #123478;
   color: #fff;
-  border-color: #17387f;
+  border-color: #123478;
+  box-shadow: 0 6px 12px rgba(18, 52, 120, .16);
 }
 .arrow {
   background: #fff;
-  border: 1px solid #e2e7ed;
+  border: 1px solid #dce3ee;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  color: #6f7d94;
+  font-size: 19px;
+  box-shadow: 0 3px 8px rgba(30, 49, 79, .04);
   cursor: pointer;
   display: flex;
   align-items: center;
