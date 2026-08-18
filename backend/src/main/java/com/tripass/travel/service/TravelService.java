@@ -268,6 +268,11 @@ public class TravelService {
         return response;
     }
 
+    /** 로그인 사용자가 등록한 전체 여행 목록을 조회합니다. */
+    public List<TripListItemResponseDto> getMyTrips(Long currentUserId) {
+        return travelMapper.findTripsByUserId(currentUserId);
+    }
+
     /** 여행 등록 후 저축 홈에서 사용하는 활성 여행 요약 정보를 조회합니다. */
     public TripHomeDashboardResponseDto getActiveTripHome(Long currentUserId) {
         TripGoalResponseDto trip = getActiveTripGoal(currentUserId);

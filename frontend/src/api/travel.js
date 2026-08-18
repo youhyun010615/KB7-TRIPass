@@ -9,6 +9,11 @@ export async function fetchTripCountries(keyword = '') {
   return unwrap(response);
 }
 
+export async function fetchMyTrips() {
+  const response = await api.get('/trips');
+  return unwrap(response);
+}
+
 export async function createTripGoal(payload) {
   const response = await api.post('/trips', payload);
   return unwrap(response);

@@ -42,6 +42,8 @@ public interface TravelMapper {
 
     TripGoalResponseDto findActiveTripGoalByUserId(@Param("userId") Long userId);
 
+    List<TripListItemResponseDto> findTripsByUserId(@Param("userId") Long userId);
+
     List<TripCountryCatalogResponseDto> findCountries(@Param("keyword") String keyword);
 
     boolean existsCountryById(@Param("countryId") Long countryId);
