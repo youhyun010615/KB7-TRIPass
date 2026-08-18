@@ -11,6 +11,7 @@ import cafeIcon from '@/assets/icons/cafe.svg'
 import shoppingIcon from '@/assets/icons/shopping-cart.svg'
 import taxiIcon from '@/assets/icons/taxi.svg'
 import leisureIcon from '@/assets/icons/hobby_drink.svg'
+import aiIcon from '@/assets/icons/ai.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,15 +50,23 @@ onBeforeUnmount(() => {
 // 대시보드가 아니라 바로 카테고리 선택 화면을 보여준다.
 const showSelection = ref(route.query.from === 'analysis')
 
-// 미션을 하나도 시작하지 않은 상태에서 보여줄 메인 탭 대시보드 여부
-const showEmptyDashboard = computed(
+// 추천 미션을 선택/추가하는 화면인지 여부: 이 상태에서만 뒤로가기 헤더를 쓴다.
+const showSelectionFlow = computed(
+  () => showSelection.value || missionStore.addingMissions,
+)
+
+// 미션 시작 여부와 무관하게 보여줄 메인 탭 대시보드 여부
+const showDashboard = computed(
   () =>
     readinessStore.isReady &&
     !readinessStore.loading &&
     !missionStore.loading &&
     !missionStore.errorMessage &&
-    !missionStore.hasStartedMissions &&
-    !showSelection.value,
+    !showSelectionFlow.value,
+)
+
+const completedMissionCount = computed(
+  () => (missionStore.missions?.missions || []).filter((mission) => mission.status === 'SUCCESS').length,
 )
 
 // monthlyFund 스토어의 카테고리 id를 저축 미션 카테고리 코드로 매핑한다.
@@ -103,12 +112,6 @@ const categoryMeta = {
 
 const analysisMonthLabel = computed(() => monthLabel(missionStore.analysisYearMonth))
 const targetMonthLabel = computed(() => monthLabel(missionStore.targetYearMonth))
-const progressPercent = computed(() => {
-  const planned = Number(missionStore.missions?.totalPlannedSavingAmount || 0)
-  const reward = Number(missionStore.missions?.totalRewardAmount || 0)
-  if (!planned) return 0
-  return Math.min(100, Math.round((reward / planned) * 100))
-})
 
 onMounted(async () => {
   await loadReadinessAndMissions()
@@ -131,7 +134,7 @@ function goTravelGoalSetup() {
 }
 
 function goFinancialSources() {
-  router.push('/mypage/assets')
+  router.push('/profile/financial?step=1&from=asset')
 }
 
 function monthLabel(yearMonth) {
@@ -227,7 +230,7 @@ function goBack() {
 <template>
   <main class="mission-page">
     <div ref="missionHeaderEl" class="mission-header-fixed">
-      <header v-if="showEmptyDashboard" class="dashboard-header">
+      <header v-if="!showSelectionFlow" class="dashboard-header">
         <div>
           <p>
             <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
@@ -268,11 +271,19 @@ function goBack() {
       <button type="button" @click="retryReadiness">다시 시도</button>
     </section>
 
-    <section v-else-if="readinessStore.needsTravelGoalAndFinancialAsset" class="state-card guide-card">
-      <span>＋</span>
-      <h2>여행 목표와 계좌·카드 연결이 필요해요</h2>
-      <p>등록을 완료하면 월간·주간 저축 미션을 확인할 수 있어요.</p>
-      <button type="button" @click="goTravelGoalSetup">여행 목표 설정하기</button>
+    <section v-else-if="readinessStore.needsTravelGoalAndFinancialAsset" class="mission-home-setup">
+      <span class="mission-home-label">AI SAVING MISSION</span>
+      <div class="mission-home-setup-body">
+        <div class="mission-ai-stage" aria-hidden="true">
+          <span class="mission-ai-orbit"></span>
+          <span class="mission-ai-spark one">✦</span>
+          <span class="mission-ai-spark two">✦</span>
+          <span class="mission-ai-core"><img :src="aiIcon" alt="" /></span>
+        </div>
+        <h2>AI 추천 미션을 받아보세요!</h2>
+        <p>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</p>
+        <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
+      </div>
     </section>
 
     <section v-else-if="readinessStore.needsTravelGoal" class="state-card guide-card">
@@ -304,16 +315,16 @@ function goBack() {
       </button>
     </section>
 
-    <template v-else-if="showEmptyDashboard">
+    <template v-else-if="showDashboard">
       <section class="mission-savings-card">
         <p>MISSION SAVINGS</p>
         <div class="mission-savings-amount">
-          <strong>0원</strong>
+          <strong>{{ formatCurrency(missionStore.missions?.totalRewardAmount) }}</strong>
           <span>미션으로 모은 저축액</span>
         </div>
         <div class="mission-savings-divider"></div>
         <div class="mission-savings-foot">
-          <span>수행 완료 미션 0개</span>
+          <span>수행 완료 미션 {{ completedMissionCount }}개</span>
         </div>
       </section>
 
@@ -343,9 +354,81 @@ function goBack() {
       </section>
 
       <section class="active-missions-card">
-        <span class="active-missions-title">수행 중 미션</span>
-        <p class="active-missions-empty">수행중인 미션이 없어요.<br />수행할 미션을 선택하세요.</p>
-        <button type="button" class="dashboard-cta" @click="openSelection">추천 미션 보러가기 ›</button>
+        <div class="active-missions-head">
+          <span class="active-missions-title">수행 중 미션</span>
+          <span v-if="missionStore.hasStartedMissions" class="active-missions-month">{{ targetMonthLabel }}</span>
+        </div>
+
+        <template v-if="missionStore.hasStartedMissions">
+          <article
+            v-for="mission in missionStore.missions.missions"
+            :key="mission.id"
+            class="progress-card"
+            :style="{ '--accent': metaOf(mission.categoryCode).color, '--soft': metaOf(mission.categoryCode).soft }"
+          >
+            <div class="mission-card-head">
+              <span class="category-icon">
+                <img v-if="metaOf(mission.categoryCode).iconSrc" :src="metaOf(mission.categoryCode).iconSrc" alt="" />
+                <template v-else>{{ metaOf(mission.categoryCode).icon }}</template>
+              </span>
+              <div>
+                <small>{{ mission.categoryName }} · {{ mission.reductionRate }}% 절감</small>
+                <h3>{{ mission.categoryName }} 소비 줄이기</h3>
+              </div>
+              <span :class="['status-chip', statusClass(mission.status)]">
+                {{ statusLabel(mission.status) }}
+              </span>
+            </div>
+
+            <template v-if="displayedWeek(mission)">
+              <div class="week-heading">
+                <b>{{ displayedWeek(mission).weekNumber }}주차 미션</b>
+                <span>
+                  {{ formatDate(displayedWeek(mission).periodStartDate) }}~{{ formatDate(displayedWeek(mission).periodEndDate) }}
+                </span>
+              </div>
+              <p class="mission-message">{{ displayedWeek(mission).missionMessage }}</p>
+              <div class="spending-numbers">
+                <div><small>사용 금액</small><strong>{{ formatCurrency(displayedWeek(mission).actualSpending) }}</strong></div>
+                <div><small>남은 한도</small><strong>{{ formatCurrency(remainingLimit(displayedWeek(mission))) }}</strong></div>
+              </div>
+              <div class="spending-progress">
+                <i :style="{ width: `${weekProgress(displayedWeek(mission))}%` }"></i>
+              </div>
+              <p class="limit-caption">
+                주간 사용 한도 {{ formatCurrency(displayedWeek(mission).weeklyUsageLimit) }}
+              </p>
+            </template>
+
+            <div class="week-dots">
+              <span
+                v-for="week in mission.weeklyMissions"
+                :key="week.id"
+                :class="statusClass(week.status)"
+                :title="`${week.weekNumber}주차 ${statusLabel(week.status)}`"
+              >{{ week.weekNumber }}</span>
+            </div>
+          </article>
+
+          <button
+            v-if="missionStore.canAddMissions"
+            type="button"
+            class="add-mission-button"
+            @click="missionStore.beginAddingMissions"
+          >
+            <span>＋</span>
+            <div>
+              <small>아직 남은 추천 항목이 있어요</small>
+              <strong>추천 미션 추가하기</strong>
+            </div>
+            <b>›</b>
+          </button>
+        </template>
+
+        <template v-else>
+          <p class="active-missions-empty">수행중인 미션이 없어요.<br />수행할 미션을 선택하세요.</p>
+          <button type="button" class="dashboard-cta" @click="openSelection">추천 미션 보러가기 ›</button>
+        </template>
       </section>
 
       <button
@@ -356,97 +439,6 @@ function goBack() {
       >
         지난 달 리포트 보러가기
       </button>
-    </template>
-
-    <template v-else-if="missionStore.hasStartedMissions && !missionStore.addingMissions">
-      <section class="mission-hero">
-        <p>{{ targetMonthLabel }} MISSION SAVINGS</p>
-        <div class="hero-amount">
-          <strong>{{ formatCurrency(missionStore.missions.totalRewardAmount) }}</strong>
-          <span>/ {{ formatCurrency(missionStore.missions.totalPlannedSavingAmount) }}</span>
-        </div>
-        <div class="hero-progress">
-          <i :style="{ width: `${progressPercent}%` }"></i>
-        </div>
-        <div class="hero-foot">
-          <span>미션 {{ missionStore.missions.missionCount }}개 진행</span>
-          <b>{{ progressPercent }}%</b>
-        </div>
-      </section>
-
-      <section class="progress-section">
-        <div class="section-title">
-          <div>
-            <small>ACTIVE MISSIONS</small>
-            <h2>수행 중인 미션</h2>
-          </div>
-          <span>{{ targetMonthLabel }}</span>
-        </div>
-
-        <article
-          v-for="mission in missionStore.missions.missions"
-          :key="mission.id"
-          class="progress-card"
-          :style="{ '--accent': metaOf(mission.categoryCode).color, '--soft': metaOf(mission.categoryCode).soft }"
-        >
-          <div class="mission-card-head">
-            <span class="category-icon">
-              <img v-if="metaOf(mission.categoryCode).iconSrc" :src="metaOf(mission.categoryCode).iconSrc" alt="" />
-              <template v-else>{{ metaOf(mission.categoryCode).icon }}</template>
-            </span>
-            <div>
-              <small>{{ mission.categoryName }} · {{ mission.reductionRate }}% 절감</small>
-              <h3>{{ mission.categoryName }} 소비 줄이기</h3>
-            </div>
-            <span :class="['status-chip', statusClass(mission.status)]">
-              {{ statusLabel(mission.status) }}
-            </span>
-          </div>
-
-          <template v-if="displayedWeek(mission)">
-            <div class="week-heading">
-              <b>{{ displayedWeek(mission).weekNumber }}주차 미션</b>
-              <span>
-                {{ formatDate(displayedWeek(mission).periodStartDate) }}~{{ formatDate(displayedWeek(mission).periodEndDate) }}
-              </span>
-            </div>
-            <p class="mission-message">{{ displayedWeek(mission).missionMessage }}</p>
-            <div class="spending-numbers">
-              <div><small>사용 금액</small><strong>{{ formatCurrency(displayedWeek(mission).actualSpending) }}</strong></div>
-              <div><small>남은 한도</small><strong>{{ formatCurrency(remainingLimit(displayedWeek(mission))) }}</strong></div>
-            </div>
-            <div class="spending-progress">
-              <i :style="{ width: `${weekProgress(displayedWeek(mission))}%` }"></i>
-            </div>
-            <p class="limit-caption">
-              주간 사용 한도 {{ formatCurrency(displayedWeek(mission).weeklyUsageLimit) }}
-            </p>
-          </template>
-
-          <div class="week-dots">
-            <span
-              v-for="week in mission.weeklyMissions"
-              :key="week.id"
-              :class="statusClass(week.status)"
-              :title="`${week.weekNumber}주차 ${statusLabel(week.status)}`"
-            >{{ week.weekNumber }}</span>
-          </div>
-        </article>
-
-        <button
-          v-if="missionStore.canAddMissions"
-          type="button"
-          class="add-mission-button"
-          @click="missionStore.beginAddingMissions"
-        >
-          <span>＋</span>
-          <div>
-            <small>아직 남은 추천 항목이 있어요</small>
-            <strong>추천 미션 추가하기</strong>
-          </div>
-          <b>›</b>
-        </button>
-      </section>
     </template>
 
     <template v-else>
@@ -551,25 +543,12 @@ function goBack() {
       </section>
     </template>
 
-    <section
-      v-if="readinessStore.needsTravelGoalAndFinancialAsset"
-      class="mission-setup-guide"
-    >
-      <span class="mission-guide-label">TRIPASS GUIDE</span>
-      <strong>목표 설정부터 월렛 저축까지</strong>
-      <p>여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요.</p>
-      <button type="button" @click="goFinancialSources">
-        금융 데이터 연결하기
-        <i aria-hidden="true">›</i>
-      </button>
-    </section>
-
     <BottomNav />
   </main>
 </template>
 
 <style scoped>
-.mission-page{--navy:#153b86;min-height:100vh;padding:0 18px 104px;background:linear-gradient(180deg,#f4f7ff 0%,#eef3fc 100%);color:#132348}.mission-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;padding:42px 18px 14px;background:#f4f7ff;transform:translateX(-50%)}@media(min-width:600px){.mission-header-fixed{max-width:430px}}.page-header{display:flex;align-items:center;justify-content:space-between}.page-header>button{width:42px;height:42px;border-radius:14px;background:#fff;color:#193d82;font-size:28px;font-weight:700;box-shadow:0 5px 16px #24487512}.page-header>div{text-align:center}.page-header p,.section-title small,.mission-hero>p{color:#f07638;font-size:9px;font-weight:900;letter-spacing:.16em}.page-header h1{margin-top:3px;font-size:22px;font-weight:900;letter-spacing:-.05em}.page-header .report-link{font-size:11px}.page-header .report-link:disabled{opacity:.45}.state-card{margin-top:28px;padding:34px 24px;border:1px solid #d5e2f8;border-radius:24px;background:#fff;text-align:center;box-shadow:0 10px 30px #1e40700b}.state-card>span{display:grid;width:54px;height:54px;margin:0 auto;place-items:center;border-radius:18px;background:#edf3ff;color:#316fe0;font-size:25px;font-weight:900}.state-card h2{margin-top:15px;font-size:17px;font-weight:900}.state-card p{margin-top:7px;color:#73829d;font-size:11px;line-height:1.6}.state-card button{margin-top:19px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}.loading-plane{animation:fly 1.4s ease-in-out infinite}@keyframes fly{50%{transform:translate(8px,-5px)}}.recommendation-hero{display:flex;gap:15px;margin-top:24px;padding:22px;border-radius:25px;background:linear-gradient(135deg,#173c89,#2f70d9);color:#fff;box-shadow:0 13px 30px #163f8d2b}.ai-badge{display:grid;flex:0 0 52px;height:52px;place-items:center;border:1px solid #ffffff60;border-radius:18px;background:#ffffff18;font-size:18px;font-weight:900}.recommendation-hero p{color:#ffc36b;font-size:10px;font-weight:900}.recommendation-hero h2{margin-top:7px;font-size:20px;font-weight:900;line-height:1.35;letter-spacing:-.04em}.recommendation-hero span{display:block;margin-top:8px;color:#cbdcff;font-size:10px;line-height:1.45}.option-section,.progress-section{margin-top:27px}.section-title{display:flex;align-items:end;justify-content:space-between}.section-title h2{margin-top:4px;font-size:19px;font-weight:900}.section-title>span{padding:6px 10px;border-radius:20px;background:#e1ebfc;color:#3966aa;font-size:10px;font-weight:800}.option-card,.progress-card{--accent:#3478e5;--soft:#eaf2ff;margin-top:12px;overflow:hidden;border:1px solid #dce5f3;border-radius:21px;background:#fff;box-shadow:0 8px 22px #263e650b}.option-card.selected{border-color:var(--accent);box-shadow:0 10px 25px color-mix(in srgb,var(--accent) 16%,transparent)}.option-toggle{display:flex;width:100%;align-items:center;gap:12px;padding:16px;text-align:left}.category-icon{display:grid;flex:0 0 43px;height:43px;place-items:center;border-radius:14px;background:var(--soft);font-size:20px}.option-toggle>div,.mission-card-head>div{min-width:0;flex:1}.option-toggle small,.mission-card-head small{color:var(--accent);font-size:9px;font-weight:900}.option-toggle h3,.mission-card-head h3{margin-top:2px;font-size:15px;font-weight:900}.option-toggle p{margin-top:5px;color:#78869f;font-size:10px;line-height:1.4}.option-toggle>i{display:grid;width:27px;height:27px;place-items:center;border-radius:50%;background:#edf2fa;color:#557092;font-style:normal;font-weight:900}.selected .option-toggle>i{background:var(--accent);color:#fff}.rate-panel{padding:15px 16px 17px;border-top:1px dashed #dbe3ef;background:color-mix(in srgb,var(--soft) 46%,white)}.rate-panel>p{font-size:11px;font-weight:900}.rate-buttons{display:flex;gap:8px;margin-top:10px}.rate-buttons button{flex:1;padding:10px;border:1px solid #cfdaea;border-radius:10px;background:#fff;color:#6a7890;font-size:12px;font-weight:900}.rate-buttons button.active{border-color:var(--accent);background:var(--accent);color:#fff}.rate-result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rate-result>div{padding:11px;border-radius:12px;background:#fff}.rate-result small,.spending-numbers small{display:block;color:#8491a6;font-size:9px}.rate-result strong,.spending-numbers strong{display:block;margin-top:4px;color:#173d82;font-size:13px;font-weight:900}.start-summary{position:sticky;bottom:73px;z-index:5;margin-top:24px;padding:18px;border-radius:22px;background:#102f72;color:#fff;box-shadow:0 14px 32px #0f2f7250}.start-summary small{color:#adc5f2;font-size:9px}.start-summary strong{display:block;margin-top:5px;color:#ffd26d;font-size:22px;font-weight:900}.start-summary div>p{margin-top:3px;color:#c8d8f6;font-size:10px}.start-summary>button{width:100%;margin-top:14px;padding:13px;border-radius:13px;background:linear-gradient(90deg,#ff8843,#ffb44c);font-size:13px;font-weight:900}.start-summary>button:disabled{background:#6b7d9e;color:#d4dceb}.inline-error{margin-top:10px;color:#ffb9b9;font-size:10px}.mission-hero{margin-top:24px;padding:21px;border-radius:25px;background:linear-gradient(135deg,#153a84,#2768d3);color:#fff;box-shadow:0 13px 30px #163f8d2b}.hero-amount{display:flex;align-items:baseline;gap:6px;margin-top:11px}.hero-amount strong{font-size:25px;font-weight:900}.hero-amount span{color:#bcd0f5;font-size:11px}.hero-progress,.spending-progress{height:8px;margin-top:15px;overflow:hidden;border-radius:20px;background:#ffffff2b}.hero-progress i,.spending-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff8245,#ffd45e)}.hero-foot{display:flex;justify-content:space-between;margin-top:9px;color:#bfd1f3;font-size:10px}.hero-foot b{color:#ffd56f}.progress-card{padding:16px}.mission-card-head{display:flex;align-items:center;gap:11px}.status-chip{padding:6px 8px;border-radius:20px;background:#e7edf6;color:#65758e;font-size:9px;font-weight:900}.status-chip.in-progress,.status-chip.success{background:#e4f7f1;color:#149477}.status-chip.failed{background:#ffeded;color:#db5050}.week-heading{display:flex;justify-content:space-between;margin-top:17px;padding-top:14px;border-top:1px dashed #dbe3ef}.week-heading b{font-size:12px}.week-heading span{color:#7d8ba1;font-size:10px}.mission-message{margin-top:7px;color:#62728d;font-size:10px}.spending-numbers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.spending-numbers>div{padding:11px;border-radius:12px;background:#f5f8fd}.spending-progress{margin-top:12px;background:#e8edf5}.limit-caption{margin-top:7px;text-align:right;color:#8290a5;font-size:9px}.week-dots{display:flex;gap:7px;margin-top:14px}.week-dots span{display:grid;width:25px;height:25px;place-items:center;border-radius:50%;background:#e9eef6;color:#7d8a9e;font-size:9px;font-weight:900}.week-dots .in-progress{background:#dceaff;color:#2666cb}.week-dots .success{background:#def5ed;color:#118e70}.week-dots .failed{background:#ffe5e5;color:#d84848}.empty-card{margin-bottom:16px}.category-icon img{width:20px;height:20px}
+.mission-page{--navy:#153b86;min-height:100vh;padding:0 18px 104px;background:linear-gradient(180deg,#f4f7ff 0%,#eef3fc 100%);color:#132348}.mission-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;padding:42px 18px 14px;background:#f4f7ff;transform:translateX(-50%)}@media(min-width:600px){.mission-header-fixed{max-width:430px}}.page-header{display:flex;align-items:center;justify-content:space-between}.page-header>button{width:42px;height:42px;border-radius:14px;background:#fff;color:#193d82;font-size:28px;font-weight:700;box-shadow:0 5px 16px #24487512}.page-header>div{text-align:center}.page-header p,.section-title small{color:#f07638;font-size:9px;font-weight:900;letter-spacing:.16em}.page-header h1{margin-top:3px;font-size:22px;font-weight:900;letter-spacing:-.05em}.page-header .report-link{font-size:11px}.page-header .report-link:disabled{opacity:.45}.state-card{margin-top:28px;padding:34px 24px;border:1px solid #d5e2f8;border-radius:24px;background:#fff;text-align:center;box-shadow:0 10px 30px #1e40700b}.state-card>span{display:grid;width:54px;height:54px;margin:0 auto;place-items:center;border-radius:18px;background:#edf3ff;color:#316fe0;font-size:25px;font-weight:900}.state-card h2{margin-top:15px;font-size:17px;font-weight:900}.state-card p{margin-top:7px;color:#73829d;font-size:11px;line-height:1.6}.state-card button{margin-top:19px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}.loading-plane{animation:fly 1.4s ease-in-out infinite}@keyframes fly{50%{transform:translate(8px,-5px)}}.recommendation-hero{display:flex;gap:15px;margin-top:24px;padding:22px;border-radius:25px;background:linear-gradient(135deg,#173c89,#2f70d9);color:#fff;box-shadow:0 13px 30px #163f8d2b}.ai-badge{display:grid;flex:0 0 52px;height:52px;place-items:center;border:1px solid #ffffff60;border-radius:18px;background:#ffffff18;font-size:18px;font-weight:900}.recommendation-hero p{color:#ffc36b;font-size:10px;font-weight:900}.recommendation-hero h2{margin-top:7px;font-size:20px;font-weight:900;line-height:1.35;letter-spacing:-.04em}.recommendation-hero span{display:block;margin-top:8px;color:#cbdcff;font-size:10px;line-height:1.45}.option-section{margin-top:27px}.section-title{display:flex;align-items:end;justify-content:space-between}.section-title h2{margin-top:4px;font-size:19px;font-weight:900}.section-title>span{padding:6px 10px;border-radius:20px;background:#e1ebfc;color:#3966aa;font-size:10px;font-weight:800}.option-card,.progress-card{--accent:#3478e5;--soft:#eaf2ff;margin-top:12px;overflow:hidden;border:1px solid #dce5f3;border-radius:21px;background:#fff;box-shadow:0 8px 22px #263e650b}.option-card.selected{border-color:var(--accent);box-shadow:0 10px 25px color-mix(in srgb,var(--accent) 16%,transparent)}.option-toggle{display:flex;width:100%;align-items:center;gap:12px;padding:16px;text-align:left}.category-icon{display:grid;flex:0 0 43px;height:43px;place-items:center;border-radius:14px;background:var(--soft);font-size:20px}.option-toggle>div,.mission-card-head>div{min-width:0;flex:1}.option-toggle small,.mission-card-head small{color:var(--accent);font-size:9px;font-weight:900}.option-toggle h3,.mission-card-head h3{margin-top:2px;font-size:15px;font-weight:900}.option-toggle p{margin-top:5px;color:#78869f;font-size:10px;line-height:1.4}.option-toggle>i{display:grid;width:27px;height:27px;place-items:center;border-radius:50%;background:#edf2fa;color:#557092;font-style:normal;font-weight:900}.selected .option-toggle>i{background:var(--accent);color:#fff}.rate-panel{padding:15px 16px 17px;border-top:1px dashed #dbe3ef;background:color-mix(in srgb,var(--soft) 46%,white)}.rate-panel>p{font-size:11px;font-weight:900}.rate-buttons{display:flex;gap:8px;margin-top:10px}.rate-buttons button{flex:1;padding:10px;border:1px solid #cfdaea;border-radius:10px;background:#fff;color:#6a7890;font-size:12px;font-weight:900}.rate-buttons button.active{border-color:var(--accent);background:var(--accent);color:#fff}.rate-result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rate-result>div{padding:11px;border-radius:12px;background:#fff}.rate-result small,.spending-numbers small{display:block;color:#8491a6;font-size:9px}.rate-result strong,.spending-numbers strong{display:block;margin-top:4px;color:#173d82;font-size:13px;font-weight:900}.start-summary{position:sticky;bottom:73px;z-index:5;margin-top:24px;padding:18px;border-radius:22px;background:#102f72;color:#fff;box-shadow:0 14px 32px #0f2f7250}.start-summary small{color:#adc5f2;font-size:9px}.start-summary strong{display:block;margin-top:5px;color:#ffd26d;font-size:22px;font-weight:900}.start-summary div>p{margin-top:3px;color:#c8d8f6;font-size:10px}.start-summary>button{width:100%;margin-top:14px;padding:13px;border-radius:13px;background:linear-gradient(90deg,#ff8843,#ffb44c);font-size:13px;font-weight:900}.start-summary>button:disabled{background:#6b7d9e;color:#d4dceb}.inline-error{margin-top:10px;color:#ffb9b9;font-size:10px}.spending-progress{height:8px;margin-top:12px;overflow:hidden;border-radius:20px;background:#e8edf5}.spending-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff8245,#ffd45e)}.progress-card{padding:16px;margin-top:0}.mission-card-head{display:flex;align-items:center;gap:11px}.status-chip{padding:6px 8px;border-radius:20px;background:#e7edf6;color:#65758e;font-size:9px;font-weight:900}.status-chip.in-progress,.status-chip.success{background:#e4f7f1;color:#149477}.status-chip.failed{background:#ffeded;color:#db5050}.week-heading{display:flex;justify-content:space-between;margin-top:17px;padding-top:14px;border-top:1px dashed #dbe3ef}.week-heading b{font-size:12px}.week-heading span{color:#7d8ba1;font-size:10px}.mission-message{margin-top:7px;color:#62728d;font-size:10px}.spending-numbers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.spending-numbers>div{padding:11px;border-radius:12px;background:#f5f8fd}.limit-caption{margin-top:7px;text-align:right;color:#8290a5;font-size:9px}.week-dots{display:flex;gap:7px;margin-top:14px}.week-dots span{display:grid;width:25px;height:25px;place-items:center;border-radius:50%;background:#e9eef6;color:#7d8a9e;font-size:9px;font-weight:900}.week-dots .in-progress{background:#dceaff;color:#2666cb}.week-dots .success{background:#def5ed;color:#118e70}.week-dots .failed{background:#ffe5e5;color:#d84848}.empty-card{margin-bottom:16px}.category-icon img{width:20px;height:20px}
 .dashboard-header{display:flex;align-items:flex-start;justify-content:space-between}
 .dashboard-header p{display:flex;align-items:center;gap:4px;font-family:'Space Mono',monospace;font-size:9.5px;font-weight:800;letter-spacing:.15em;color:#0b2a6b;margin-bottom:4px}
 .header-plane{width:12px;height:12px;animation:header-plane-fly 2.6s ease-in-out infinite}
@@ -602,11 +581,14 @@ function goBack() {
 .fund-check-amount{flex-shrink:0;font-family:'Space Mono',monospace;font-size:11px;color:#5a6478;white-space:nowrap}
 .fund-check-ratio{flex-shrink:0;width:30px;text-align:right;font-family:'Space Mono',monospace;font-size:12px;font-weight:800;color:#98a2b3}
 .active-missions-card{display:flex;flex-direction:column;gap:14px;margin-top:16px;padding:20px;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(16,25,43,.06)}
+.active-missions-head{display:flex;align-items:center;justify-content:space-between}
 .active-missions-title{font-size:15px;font-weight:900;color:#10192b}
+.active-missions-month{padding:6px 10px;border-radius:20px;background:#e1ebfc;color:#3966aa;font-size:10px;font-weight:800}
 .active-missions-empty{font-size:12.5px;font-weight:600;color:#5a6478;line-height:1.5}
 .dashboard-cta{border-radius:99px;padding:13px;text-align:center;font-size:13px;font-weight:800;background:#0b2a6b;color:#fff}
 .dashboard-cta.outline{width:100%;margin-top:16px;padding:14px;font-size:13.5px}
-.mission-setup-guide{display:flex;flex-direction:column;gap:6px;margin-top:16px;padding:16px;border:1px solid #d8e5fc;border-radius:16px;background:#eaf1ff}.mission-guide-label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;font-weight:800;letter-spacing:.1em;color:#2f6fed}.mission-setup-guide strong{font-size:14.5px;font-weight:800;color:#10192b}.mission-setup-guide p{color:#5a6478;font-size:11.5px;line-height:1.6}.mission-setup-guide button{display:flex;width:100%;margin-top:8px;padding:12px 14px;align-items:center;justify-content:space-between;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}.mission-setup-guide button i{font-size:18px;font-style:normal;line-height:1}
+.mission-home-setup{position:relative;margin-top:28px;padding:18px;border:1px solid #d6e3fa;border-radius:22px;background:#fff;box-shadow:0 10px 24px rgb(36 80 153 / 7%)}.mission-home-label{display:block;margin-bottom:10px;color:#286ce0;font-size:9px;font-weight:950;letter-spacing:.12em}.mission-home-setup-body{display:flex;min-height:210px;padding:22px 18px 18px;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #c9d8ef;border-radius:17px;background:linear-gradient(180deg,#f7faff,#f3f7fd);text-align:center}.mission-flight{position:relative;width:126px;height:45px;margin-bottom:13px}.mission-flight-route{position:absolute;top:22px;left:8px;right:8px;border-top:2px dashed #b9ccef}.mission-flight-start,.mission-flight-end{position:absolute;top:18px;width:10px;height:10px;border:2px solid #8eafe5;border-radius:50%;background:#f6f9ff}.mission-flight-start{left:2px}.mission-flight-end{right:2px}.mission-flight-end::after{position:absolute;inset:-6px;border:1px solid rgb(40 108 224 / 28%);border-radius:50%;content:'';animation:mission-destination-pulse 1.9s ease-out infinite}.mission-flight img{position:absolute;z-index:2;top:10px;left:7px;width:25px;height:25px;filter:drop-shadow(0 5px 5px rgb(40 108 224 / 22%));animation:mission-plane-travel 2.8s ease-in-out infinite}.mission-home-setup-body h2{color:#26334d;font-size:14px;font-weight:900}.mission-home-setup-body p{max-width:290px;margin-top:7px;color:#8190a9;font-size:10px;line-height:1.55;word-break:keep-all}.mission-home-setup-body button{margin-top:17px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}@keyframes mission-plane-travel{0%{opacity:.35;transform:translate(0,4px) rotate(-8deg)}18%{opacity:1}50%{transform:translate(47px,-5px) rotate(2deg)}82%{opacity:1}100%{opacity:.35;transform:translate(94px,2px) rotate(9deg)}}@keyframes mission-destination-pulse{0%{opacity:.8;transform:scale(.55)}100%{opacity:0;transform:scale(1.45)}}@media(prefers-reduced-motion:reduce){.mission-flight img,.mission-flight-end::after{animation:none}.mission-flight img{left:50%;transform:translateX(-50%)}}
+.mission-ai-stage{position:relative;width:82px;height:72px;margin-bottom:10px}.mission-ai-core{position:absolute;top:8px;left:13px;z-index:2;display:grid;width:56px;height:56px;place-items:center;border-radius:20px;background:linear-gradient(145deg,#dbe8ff,#fff);box-shadow:0 10px 24px rgb(40 108 224 / 20%);animation:mission-ai-float 2.6s ease-in-out infinite}.mission-ai-core img{width:30px;height:30px;filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%)}.mission-ai-orbit{position:absolute;inset:0;border:1.5px dashed #9fb9e8;border-radius:50%;animation:mission-ai-orbit 7s linear infinite}.mission-ai-spark{position:absolute;z-index:3;color:#4a82df;font-size:13px;animation:mission-ai-spark 1.8s ease-in-out infinite}.mission-ai-spark.one{top:0;right:2px}.mission-ai-spark.two{bottom:2px;left:0;animation-delay:.8s}@keyframes mission-ai-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}@keyframes mission-ai-orbit{to{transform:rotate(360deg)}}@keyframes mission-ai-spark{0%,100%{opacity:.2;transform:scale(.65) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(90deg)}}@media(prefers-reduced-motion:reduce){.mission-ai-core,.mission-ai-orbit,.mission-ai-spark{animation:none}}
 @media (min-width:600px){.mission-page{max-width:430px;margin:0 auto}}
 .option-card.locked{border-color:#dce5f3;background:#f8fafe;box-shadow:none}.option-card.locked .option-toggle{cursor:default}.option-card.locked .option-toggle>i{background:#e4f7f1;color:#149477;font-size:9px}.add-mission-button{display:flex;width:100%;margin-top:18px;padding:15px 16px;align-items:center;gap:12px;border:1px dashed #8badde;border-radius:18px;background:#f7faff;color:#1d4f9f;text-align:left;transition:transform .2s ease,background .2s ease}.add-mission-button:hover{background:#edf4ff;transform:translateY(-2px)}.add-mission-button>span{display:grid;flex:0 0 38px;height:38px;place-items:center;border-radius:12px;background:#e4eeff;font-size:20px;font-weight:800}.add-mission-button>div{min-width:0;flex:1}.add-mission-button small{display:block;color:#7284a2;font-size:9px}.add-mission-button strong{display:block;margin-top:3px;font-size:13px;font-weight:900}.add-mission-button>b{font-size:24px}.cancel-add-button{margin-top:8px!important;background:transparent!important;color:#c8d8f6!important;box-shadow:none!important}.cancel-add-button:hover{color:#fff!important}
 </style>
