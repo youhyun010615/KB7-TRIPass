@@ -646,4 +646,169 @@ async function confirmUnlinkTravelCard() {
 .chart-amount{display:block;font-size:11px;font-weight:700;color:#2563eb;white-space:nowrap}.chart-amount.current,.chart-item>span.current{color:#b8860b}.chart-amount.negative,.chart-item>span.negative{color:#ef4444}.chart-amount.zero,.chart-item>span.zero{color:#4b5563}.chart-amount.disabled,.chart-item>span.disabled{color:#b6c1d1}
 .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}
 .wallet-header h1{font-size:17px;font-weight:400;color:#29466f;letter-spacing:normal}
+
+/* Compact wallet visual */
+.wallet-card{margin-top:16px;padding-top:10px}
+.wallet-card-tab{
+  top:0;
+  left:24px;
+  width:112px;
+  height:28px;
+  border:1px solid rgba(116,156,225,.28);
+  border-bottom:0;
+  border-radius:15px 15px 0 0;
+  background:#0d2b67;
+  box-shadow:0 -5px 12px rgba(13,43,103,.08);
+}
+.wallet-card-tab:after{
+  position:absolute;
+  right:12px;
+  bottom:6px;
+  left:12px;
+  border-top:1px dashed rgba(180,205,246,.35);
+  content:"";
+}
+.wallet-card-inner{
+  padding:20px 19px 16px;
+  border:1px solid rgba(121,161,229,.25);
+  border-radius:20px;
+  background:linear-gradient(145deg,#0b2a61 0%,#123b82 58%,#174b9c 100%);
+  box-shadow:0 12px 24px rgba(18,48,102,.18);
+}
+.wallet-card-inner:before{
+  inset:8px;
+  border:1px dashed rgba(180,205,246,.3);
+  border-radius:15px;
+}
+.wallet-card-top b{font-size:14px;font-weight:700;letter-spacing:.01em}
+.wallet-card-top button{font-size:10px;font-weight:500}
+.wallet-balance{gap:6px;margin-top:18px}
+.wallet-balance strong{font-size:32px;font-weight:700;letter-spacing:-.035em}
+.wallet-balance span{font-size:13px;font-weight:600}
+.emergency{margin-top:8px;font-size:11px;font-weight:600}
+.wallet-actions{
+  grid-template-columns:1fr 1fr 46px;
+  gap:7px;
+  margin-top:18px;
+  padding:7px;
+  border:1px solid rgba(170,197,239,.2);
+  border-radius:14px;
+  background:rgba(5,24,61,.22);
+  box-shadow:inset 0 1px 5px rgba(2,15,40,.16);
+}
+.wallet-actions button{
+  height:35px;
+  border-color:rgba(184,207,244,.32);
+  border-radius:10px;
+  background:rgba(255,255,255,.09);
+  font-size:12px;
+  font-weight:600;
+}
+.wallet-actions .history-button{background:rgba(4,25,67,.28);font-size:10.5px}
+
+/* Reduce visual density across the wallet tab */
+.white-card{margin-top:14px;border-radius:20px}
+.saving-card{padding:19px 17px}
+.section-title h2,.linked-title h2{font-size:17px;font-weight:700;letter-spacing:-.025em}
+.saving-chart{gap:5px;margin-top:17px}
+.bar-wrap{width:42px;height:104px}
+.chart-item i{width:27px;border-radius:7px}
+.chart-amount{font-size:9.5px}
+.chart-item>span{font-size:11px}
+.saving-hint{margin-top:12px;padding:9px 10px;font-size:10.5px}
+.empty-card{padding:28px 19px 21px}
+.empty-icon{width:54px;height:54px;margin-bottom:14px;border-radius:17px}
+.empty-card h2{font-size:17px;font-weight:700}
+.empty-card p{margin-top:7px;font-size:12px}
+.primary-button{height:42px;margin-top:19px;border-radius:12px;font-size:13px;font-weight:700}
+.recommend-row{margin-top:10px}
+.recommend-link{font-size:10.5px}
+.linked-card{padding:19px 18px}
+.linked-title button{font-size:10.5px}
+.travel-card-box{grid-template-columns:112px 1fr;gap:13px;margin-top:17px}
+.card-info h3{font-size:15px}
+.travel-card-meta dt{font-size:9.5px}
+.travel-card-meta dd{font-size:10.5px}
+.card-info button{height:38px;border-radius:11px;font-size:12px;font-weight:700}
+.linked-card hr{margin:18px 0}
+.currency-title{font-size:15px;font-weight:700}
+.currency-head button{font-size:11px}
+.currency-row{padding:9px 10px!important}
+.currency-row>b{font-size:13px!important}
+.currency-row>strong{font-size:14px!important}
+
+.wallet-sheet{padding:10px 18px 24px}
+.wallet-sheet h2{font-size:17px;font-weight:700}
+.wallet-sheet>p{font-size:10.5px}
+.withdraw-mode-tabs button{height:34px;font-size:10.5px}
+.wallet-sheet label{margin-top:15px;font-size:10.5px}
+.wallet-sheet select,.amount-field{height:43px;margin-top:6px;border-radius:11px;font-size:12px}
+.amount-field input{font-size:15px;font-weight:600}
+.quick-amounts{gap:6px}
+.quick-amounts button{padding:6px 10px;font-size:10.5px;font-weight:600}
+.confirm-transfer{height:44px;margin-top:19px;border-radius:12px;font-size:13px;font-weight:700}
+.auto-charge-preview.compact{padding:11px 12px;border-radius:14px}
+.auto-charge-preview.compact h3{font-size:12px}
+.auto-charge-preview.compact p{font-size:10px}
+.auto-charge-preview.compact button{height:30px;padding:0 11px;font-size:10.5px}
+.auto-modal-head h2{font-size:17px}
+.modal-field{height:43px}
+.modal-field input{font-size:15px;font-weight:700}
+.modal-save{height:44px;font-size:13px}
+
+/* Modern digital wallet card */
+.wallet-card{margin-top:16px;padding-top:0}
+.wallet-card-tab{display:none}
+.wallet-card-inner{
+  overflow:hidden;
+  padding:20px 19px 16px;
+  border:0;
+  border-radius:22px;
+  background:linear-gradient(135deg,#102d6d 0%,#174b9f 55%,#2874dc 100%);
+  box-shadow:0 14px 28px rgba(30,79,166,.2);
+}
+.wallet-card-inner:before{
+  top:-72px;
+  right:-48px;
+  bottom:auto;
+  left:auto;
+  width:158px;
+  height:158px;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+}
+.wallet-card-inner:after{
+  position:absolute;
+  right:28px;
+  bottom:-56px;
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  background:rgba(58,139,242,.16);
+  content:"";
+  pointer-events:none;
+}
+.wallet-card-top b{color:#fff;font-size:13px;font-weight:600}
+.wallet-card-top button{color:rgba(255,255,255,.7)}
+.emergency{color:#ffd86f}
+.wallet-actions{
+  gap:2px;
+  padding:4px;
+  border:0;
+  border-radius:13px;
+  background:rgba(5,28,72,.25);
+  box-shadow:none;
+  backdrop-filter:blur(8px);
+}
+.wallet-actions button{
+  height:35px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:rgba(255,255,255,.88);
+}
+.wallet-actions button:first-child,
+.wallet-actions button:nth-child(2){background:rgba(255,255,255,.1)}
+.wallet-actions .history-button{background:transparent;color:rgba(255,255,255,.65)}
 </style>
