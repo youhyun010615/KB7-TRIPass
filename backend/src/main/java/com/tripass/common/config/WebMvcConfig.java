@@ -6,11 +6,14 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
+import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -19,6 +22,7 @@ import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -50,26 +54,35 @@ import java.util.List;
 })
 public class WebMvcConfig implements WebMvcConfigurer {
 
+    @Bean
+    public CharacterEncodingFilter characterEncodingFilter() {
+        CharacterEncodingFilter filter = new CharacterEncodingFilter();
+        filter.setEncoding("UTF-8");
+        filter.setForceEncoding(true);
+        return filter;
+    }
+
     /** JSON 및 이미지 byte[] 메시지 컨버터 등록 */
     @Override
     public void configureMessageConverters(
             List<HttpMessageConverter<?>> converters
     ) {
-        // 이미지 파일의 byte[] 응답을 처리한다.
         converters.add(
                 new ByteArrayHttpMessageConverter()
         );
 
-        // ApiResponse 등의 JSON 응답을 처리한다.
-        // 기본 ObjectMapper는 LocalDate/LocalDateTime/OffsetDateTime을 타임스탬프(숫자)로
-        // 직렬화해 프론트엔드가 파싱할 수 없으므로, ISO-8601 문자열로 내려주도록 명시적으로 설정한다.
+        StringHttpMessageConverter stringConverter =
+                new StringHttpMessageConverter(StandardCharsets.UTF_8);
+        converters.add(stringConverter);
+
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        converters.add(
-                new MappingJackson2HttpMessageConverter(objectMapper)
-        );
+        MappingJackson2HttpMessageConverter jsonConverter =
+                new MappingJackson2HttpMessageConverter(objectMapper);
+        jsonConverter.setDefaultCharset(StandardCharsets.UTF_8);
+        converters.add(jsonConverter);
     }
 
     /** 정적 리소스 서빙 허용 */
