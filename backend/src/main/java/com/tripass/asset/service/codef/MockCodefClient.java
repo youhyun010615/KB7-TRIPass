@@ -21,33 +21,23 @@ public class MockCodefClient implements CodefClient {
 
     private static final String ACCESS_TOKEN = "mock-codef-access-token";
 
-    private static final List<Map<String, Object>> BANK_TRANSACTIONS = List.of(
-            bankTransaction("20260701", "090000", "3500000", "0", "3500000", "7월 급여"),
-            bankTransaction("20260703", "081500", "0", "65000", "3435000", "KB카드 결제"),
-            bankTransaction("20260710", "120000", "0", "150000", "3285000", "여행 월렛 저축"),
-            bankTransaction("20260725", "183000", "0", "89000", "3196000", "통신비 자동이체"),
-            bankTransaction("20260801", "090000", "3500000", "0", "6696000", "8월 급여"),
-            bankTransaction("20260805", "081500", "0", "412700", "6283300", "KB카드 결제"),
-            bankTransaction("20260812", "121000", "0", "200000", "6083300", "여행 월렛 저축")
-    );
+    private static final List<Map<String, Object>> BANK_TRANSACTIONS = buildBankTransactions();
 
-    private static final List<Map<String, Object>> GENERAL_CARD_TRANSACTIONS = List.of(
-            cardTransaction("20260702", "081500", "5500", "QA1001", "메가커피 강남점", "커피전문점"),
-            cardTransaction("20260705", "194000", "32000", "QA1002", "오늘의식탁", "일반음식점"),
-            cardTransaction("20260708", "202000", "58000", "QA1003", "라이프마트", "대형마트"),
-            cardTransaction("20260712", "133000", "14500", "QA1004", "교보문고", "서점"),
-            cardTransaction("20260716", "074000", "1500", "QA1005", "서울교통공사", "대중교통"),
-            cardTransaction("20260721", "211000", "12900", "QA1006", "넷플릭스", "온라인서비스"),
-            cardTransaction("20260803", "122000", "11000", "QA1007", "오늘의식탁", "일반음식점"),
-            cardTransaction("20260807", "091000", "4800", "QA1008", "카페모먼트", "커피전문점"),
-            cardTransaction("20260811", "181500", "74000", "QA1009", "올리브영", "생활용품")
-    );
+    /**
+     * 2026년 4~6월 비교 데이터, 7월 분석 데이터, 8월 미션 진행 데이터를 모두 포함한다.
+     * 사용자가 Mock 카드를 연결한 뒤 승인내역을 동기화해야 서비스 DB에 적재된다.
+     */
+    private static final List<Map<String, Object>> GENERAL_CARD_TRANSACTIONS = buildGeneralCardTransactions();
 
     private static final List<Map<String, Object>> TRAVEL_CARD_TRANSACTIONS = List.of(
             cardTransaction("20260718", "101000", "42000", "QT2001", "대한항공", "항공사"),
             cardTransaction("20260719", "143000", "185000", "QT2002", "호텔스닷컴", "숙박"),
-            cardTransaction("20260809", "160000", "36000", "QT2003", "JR EAST", "해외교통"),
-            cardTransaction("20260810", "193000", "52000", "QT2004", "SUSHI TOKYO", "해외음식점")
+            cardTransaction("20260722", "180000", "68000", "QT2003", "스위스패스", "해외교통"),
+            cardTransaction("20260724", "193000", "52000", "QT2004", "ZURICH DINING", "해외음식점"),
+            cardTransaction("20260809", "160000", "36000", "QT2005", "JR EAST", "해외교통"),
+            cardTransaction("20260810", "193000", "52000", "QT2006", "SUSHI TOKYO", "해외음식점"),
+            cardTransaction("20260812", "140000", "89000", "QT2007", "TOKYO HOTEL", "숙박"),
+            cardTransaction("20260814", "173000", "31000", "QT2008", "TOKYO SOUVENIR", "해외쇼핑")
     );
 
     @Override
@@ -111,8 +101,8 @@ public class MockCodefClient implements CodefClient {
                         "resAccount", "12345678901234",
                         "resAccountName", "KB QA 주거래통장",
                         "resAccountKind", "입출금",
-                        "resAccountBalance", "6083300",
-                        "resWithdrawableAmount", "6083300"
+                        "resAccountBalance", "14379300",
+                        "resWithdrawableAmount", "14379300"
                 )
         ));
         return success(data);
@@ -179,6 +169,146 @@ public class MockCodefClient implements CodefClient {
             }
         }
         return filtered;
+    }
+
+    private static List<Map<String, Object>> buildBankTransactions() {
+        List<Map<String, Object>> transactions = new ArrayList<>();
+        transactions.add(bankTransaction("20260401", "090000", "3500000", "0", "3500000", "4월 급여"));
+        transactions.add(bankTransaction("20260405", "081500", "0", "296000", "3204000", "KB카드 결제"));
+        transactions.add(bankTransaction("20260410", "120000", "0", "150000", "3054000", "여행 월렛 저축"));
+        transactions.add(bankTransaction("20260425", "183000", "0", "89000", "2965000", "통신비 자동이체"));
+        transactions.add(bankTransaction("20260501", "090000", "3500000", "0", "6465000", "5월 급여"));
+        transactions.add(bankTransaction("20260505", "081500", "0", "318000", "6147000", "KB카드 결제"));
+        transactions.add(bankTransaction("20260510", "120000", "0", "150000", "5997000", "여행 월렛 저축"));
+        transactions.add(bankTransaction("20260525", "183000", "0", "89000", "5908000", "통신비 자동이체"));
+        transactions.add(bankTransaction("20260601", "090000", "3500000", "0", "9408000", "6월 급여"));
+        transactions.add(bankTransaction("20260605", "081500", "0", "342000", "9066000", "KB카드 결제"));
+        transactions.add(bankTransaction("20260610", "120000", "0", "200000", "8866000", "여행 월렛 저축"));
+        transactions.add(bankTransaction("20260625", "183000", "0", "89000", "8777000", "통신비 자동이체"));
+        transactions.add(bankTransaction("20260701", "090000", "3500000", "0", "12277000", "7월 급여"));
+        transactions.add(bankTransaction("20260705", "081500", "0", "546000", "11731000", "KB카드 결제"));
+        transactions.add(bankTransaction("20260710", "120000", "0", "150000", "11581000", "여행 월렛 저축"));
+        transactions.add(bankTransaction("20260725", "183000", "0", "89000", "11492000", "통신비 자동이체"));
+        transactions.add(bankTransaction("20260801", "090000", "3500000", "0", "14992000", "8월 급여"));
+        transactions.add(bankTransaction("20260805", "081500", "0", "412700", "14579300", "KB카드 결제"));
+        transactions.add(bankTransaction("20260812", "121000", "0", "200000", "14379300", "여행 월렛 저축"));
+        return List.copyOf(transactions);
+    }
+
+    private static List<Map<String, Object>> buildGeneralCardTransactions() {
+        List<Map<String, Object>> transactions = new ArrayList<>();
+        int[] comparisonDays = {2, 6, 11, 17, 24};
+
+        for (int month = 4; month <= 6; month++) {
+            String yearMonth = "2026" + String.format("%02d", month);
+            int adjustment = (month - 4) * 500;
+            addRegularCategoryTransactions(transactions, yearMonth, "FOOD", "일반음식점",
+                    new String[]{"한상차림", "오늘의식탁", "도시락공방"},
+                    comparisonDays, 10500 + adjustment, 1000);
+            addRegularCategoryTransactions(transactions, yearMonth, "CAFE", "커피전문점",
+                    new String[]{"카페모먼트", "브루잉하우스", "데일리커피"},
+                    comparisonDays, 7500 + adjustment, 500);
+            addRegularCategoryTransactions(transactions, yearMonth, "SHOPPING", "일반의류",
+                    new String[]{"스타일샵", "데일리몰", "라이프마켓"},
+                    comparisonDays, 14000 + adjustment, 1500);
+            addRegularCategoryTransactions(transactions, yearMonth, "LIVING", "편의점",
+                    new String[]{"KB편의점", "생활마켓", "우리약국"},
+                    comparisonDays, 11000 + adjustment, 700);
+            addRegularCategoryTransactions(transactions, yearMonth, "TRANSPORT", "택시",
+                    new String[]{"KB택시", "서울교통", "모바일택시"},
+                    comparisonDays, 9000 + adjustment, 500);
+            addRegularCategoryTransactions(transactions, yearMonth, "LEISURE", "영화공연장",
+                    new String[]{"메가시네마", "문화극장", "플레이존"},
+                    comparisonDays, 12000 + adjustment, 1200);
+        }
+
+        int[] analysisDays = {2, 5, 9, 13, 18, 24};
+        addRegularCategoryTransactions(transactions, "202607", "FOOD", "일반음식점",
+                new String[]{"한상차림", "오늘의식탁", "키친테이블"}, analysisDays, 16000, 1200);
+        addRegularCategoryTransactions(transactions, "202607", "CAFE", "커피전문점",
+                new String[]{"카페모먼트", "브루잉하우스", "데일리커피"}, analysisDays, 9000, 600);
+        addRegularCategoryTransactions(transactions, "202607", "SHOPPING", "일반의류",
+                new String[]{"스타일샵", "데일리몰", "라이프마켓"}, analysisDays, 22000, 1800);
+        addRegularCategoryTransactions(transactions, "202607", "LIVING", "편의점",
+                new String[]{"KB편의점", "생활마켓", "우리약국"}, analysisDays, 12000, 800);
+        addRegularCategoryTransactions(transactions, "202607", "TRANSPORT", "택시",
+                new String[]{"KB택시", "서울교통", "모바일택시"}, analysisDays, 9500, 700);
+        addRegularCategoryTransactions(transactions, "202607", "LEISURE", "영화공연장",
+                new String[]{"메가시네마", "문화극장", "플레이존"}, analysisDays, 15500, 1500);
+
+        transactions.add(cardTransaction("20260707", "211000", "12900", "QA2607OTHER01",
+                "넷플릭스", "온라인서비스"));
+        transactions.add(cardTransaction("20260714", "133000", "14500", "QA2607OTHER02",
+                "교보문고", "서점"));
+        transactions.add(cardTransaction("20260727", "170000", "27000", "QA2607OTHER03",
+                "반려생활", "기타서비스"));
+
+        // 8월에는 주차별 금액을 다르게 두어 미션 성공·실패·진행 중 상태를 함께 검증한다.
+        int[] missionDays = {2, 5, 9, 12, 16};
+        addCategoryTransactions(transactions, "202608", "FOOD", "일반음식점",
+                new String[]{"한상차림", "오늘의식탁", "키친테이블"}, missionDays,
+                new int[]{9000, 10000, 18000, 17000, 12000});
+        addCategoryTransactions(transactions, "202608", "CAFE", "커피전문점",
+                new String[]{"카페모먼트", "브루잉하우스", "데일리커피"}, missionDays,
+                new int[]{4000, 4500, 7000, 7500, 5000});
+        addCategoryTransactions(transactions, "202608", "SHOPPING", "일반의류",
+                new String[]{"스타일샵", "데일리몰", "라이프마켓"}, missionDays,
+                new int[]{9000, 11000, 21000, 22000, 15000});
+        addCategoryTransactions(transactions, "202608", "LIVING", "편의점",
+                new String[]{"KB편의점", "생활마켓", "우리약국"}, missionDays,
+                new int[]{6000, 6500, 9000, 10000, 7000});
+        addCategoryTransactions(transactions, "202608", "TRANSPORT", "택시",
+                new String[]{"KB택시", "서울교통", "모바일택시"}, missionDays,
+                new int[]{4500, 5000, 7000, 7500, 5500});
+        addCategoryTransactions(transactions, "202608", "LEISURE", "영화공연장",
+                new String[]{"메가시네마", "문화극장", "플레이존"}, missionDays,
+                new int[]{7000, 8000, 14000, 15000, 9000});
+
+        return List.copyOf(transactions);
+    }
+
+    private static void addRegularCategoryTransactions(
+            List<Map<String, Object>> transactions,
+            String yearMonth,
+            String categoryCode,
+            String merchantType,
+            String[] merchants,
+            int[] days,
+            int baseAmount,
+            int step
+    ) {
+        int[] amounts = new int[days.length];
+        for (int i = 0; i < amounts.length; i++) {
+            amounts[i] = baseAmount + (i % 3) * step;
+        }
+        addCategoryTransactions(transactions, yearMonth, categoryCode, merchantType, merchants, days, amounts);
+    }
+
+    private static void addCategoryTransactions(
+            List<Map<String, Object>> transactions,
+            String yearMonth,
+            String categoryCode,
+            String merchantType,
+            String[] merchants,
+            int[] days,
+            int[] amounts
+    ) {
+        if (days.length != amounts.length) {
+            throw new IllegalArgumentException("Mock 거래 일자와 금액 개수가 일치해야 합니다.");
+        }
+        for (int i = 0; i < days.length; i++) {
+            String date = yearMonth + String.format("%02d", days[i]);
+            String time = String.format("%02d%02d00", 9 + (i * 2) % 12, (i * 11) % 60);
+            String approvalNo = "QA" + yearMonth.substring(2) + categoryCode + String.format("%02d", i + 1);
+            transactions.add(cardTransaction(
+                    date,
+                    time,
+                    String.valueOf(amounts[i]),
+                    approvalNo,
+                    merchants[i % merchants.length],
+                    merchantType
+            ));
+        }
     }
 
     private static Map<String, Object> bankTransaction(
