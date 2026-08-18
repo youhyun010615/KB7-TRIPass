@@ -82,40 +82,50 @@
                 tc.id AS trip_country_id,
                 c.country_name,
                 tc.target_budget,
-                COALESCE((SELECT SUM(pe.direct_amount) 
-                          FROM pre_expenses pe 
-                          WHERE pe.trip_country_id = tc.id), 0) AS pre_expense_total,
-                COALESCE((SELECT SUM(tr.amount) 
-                          FROM transactions tr 
-                          WHERE tr.trip_country_id = tc.id AND tr.is_pre_expense = 0 AND tr.is_deleted = 0), 0) AS travel_expense_total
+                COALESCE((SELECT SUM(pe.direct_amount)
+                          FROM pre_expenses pe
+                          WHERE pe.trip_country_id = tc.id
+                            AND pe.is_deleted = 0), 0) AS pre_expense_total,
+                COALESCE((SELECT SUM(tr.amount)
+                          FROM transactions tr
+                          WHERE tr.trip_country_id = tc.id
+                            AND tr.is_pre_expense = 0
+                            AND tr.is_deleted = 0), 0) AS travel_expense_total
             FROM trip_countries tc
-            JOIN countries c ON tc.country_id = c.id
+                     JOIN countries c ON tc.country_id = c.id
             WHERE tc.trip_id = #{tripId}
+              AND tc.is_deleted = 0
         ),
-        CategoryStats AS (
-            SELECT
-                tc.id AS trip_country_id,
-                sc.category_name,
-                COALESCE(SUM(tr.amount), 0) AS amount,
-                (COALESCE(SUM(tr.amount), 0) / NULLIF((SELECT SUM(amount) FROM transactions WHERE trip_country_id = tc.id AND is_pre_expense = 0 AND is_deleted = 0), 0) * 100) AS percentage
-            FROM trip_countries tc
-            LEFT JOIN transactions tr ON tc.id = tr.trip_country_id AND tr.is_pre_expense = 0 AND tr.is_deleted = 0
-            LEFT JOIN spending_categories sc ON tr.category_id = sc.id
-            WHERE tc.trip_id = #{tripId}
+             CategoryStats AS (
+                 SELECT
+                     tc.id AS trip_country_id,
+                     sc.category_name,
+                     COALESCE(SUM(tr.amount), 0) AS amount,
+                     (COALESCE(SUM(tr.amount), 0) / NULLIF((SELECT SUM(amount)
+                                                            FROM transactions
+                                                            WHERE trip_country_id = tc.id
+                                                              AND is_pre_expense = 0
+                                                              AND is_deleted = 0), 0) * 100) AS percentage
+                 FROM trip_countries tc
+                          LEFT JOIN transactions tr ON tc.id = tr.trip_country_id
+                     AND tr.is_pre_expense = 0
+                     AND tr.is_deleted = 0
+                          LEFT JOIN spending_categories sc ON tr.category_id = sc.id
+                 WHERE tc.trip_id = #{tripId}
+                   AND tc.is_deleted = 0
             GROUP BY tc.id, sc.category_name
-        )
+            )
         SELECT
             cs.trip_country_id,
             cs.country_name,
             cs.target_budget,
             cs.pre_expense_total,
             cs.travel_expense_total,
-            (cs.target_budget - cs.pre_expense_total - cs.travel_expense_total) AS remaining_fund,
             cats.category_name,
-            cats.amount,
-            cats.percentage
+            cats.amount AS category_amount,
+            cats.percentage AS category_percentage
         FROM CountryStats cs
-        LEFT JOIN CategoryStats cats ON cs.trip_country_id = cats.trip_country_id
+                 LEFT JOIN CategoryStats cats ON cs.trip_country_id = cats.trip_country_id
     </select>
 
     <!-- 회원의 현재 화면 모드(current_view_mode) 업데이트 -->
