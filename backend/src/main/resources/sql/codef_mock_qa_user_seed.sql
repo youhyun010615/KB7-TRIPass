@@ -48,6 +48,16 @@ ON DUPLICATE KEY UPDATE
     deleted_at = NULL,
     updated_at = NOW();
 
+-- 직접 Seed로 생성한 QA 사용자도 회원가입 사용자와 동일하게 기본 월렛을 가진다.
+INSERT INTO wallet (user_id, balance_amount, status, version, created_at, updated_at)
+SELECT u.id, 0, 'ACTIVE', 0, NOW(), NOW()
+FROM users u
+WHERE u.login_provider = 'LOCAL'
+  AND u.login_id = 'qafinance'
+ON DUPLICATE KEY UPDATE
+    status = 'ACTIVE',
+    updated_at = NOW();
+
 -- 신규 상태 확인: 아래 네 값이 모두 0이어야 QA를 처음부터 시작할 수 있다.
 SELECT
     u.id,

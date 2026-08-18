@@ -208,7 +208,11 @@
             wl.balance_after,
             wl.memo,
             wl.created_at,
-            COALESCE(acc.account_name, wtc.card_name) AS account_name
+            COALESCE(
+                acc.account_name,
+                wtc.card_name,
+                CONCAT(wr.bank_name, ' ****', RIGHT(wr.account_number, 4))
+            ) AS account_name
         FROM wallet_ledger wl
         LEFT JOIN accounts acc
             ON acc.id = CASE
@@ -220,6 +224,9 @@
                 WHEN wl.source_type = 'TRAVEL_CARD' THEN wl.source_id
                 WHEN wl.target_type = 'TRAVEL_CARD' THEN wl.target_id
             END
+        LEFT JOIN wallet_withdraw_recipient wr
+            ON wl.target_type = 'RECIPIENT_ACCOUNT'
+           AND wr.id = wl.target_id
         WHERE wl.wallet_id = #{walletId}
           AND DATE_FORMAT(wl.created_at, '%Y-%m') = #{month}
         ORDER BY wl.created_at DESC, wl.id DESC
@@ -507,6 +514,59 @@
         ORDER BY a.id DESC
     </select>
 
+    <select id="findWithdrawAccountsByUserId" resultMap="WalletAccountResultMap">
+        SELECT a.id AS account_id,
+               COALESCE(si.institution_name, cci.organization_name, '등록 계좌') AS bank_name,
+               a.account_name,
+               CONCAT('****', RIGHT(a.account_number, 4)) AS masked_account_number,
+               a.balance, a.withdrawable_amount,
+               CASE WHEN wa.id IS NULL THEN FALSE ELSE TRUE END AS linked,
+               COALESCE(wa.is_primary, FALSE) AS primary_account
+        FROM accounts a
+        LEFT JOIN wallet w ON w.user_id = a.user_id AND w.status = 'ACTIVE'
+        LEFT JOIN wallet_account wa ON wa.wallet_id = w.id AND wa.account_id = a.id AND wa.status = 'LINKED'
+        LEFT JOIN codef_connected_institutions cci ON cci.codef_connection_id = a.codef_connection_id AND cci.is_active = TRUE
+        LEFT JOIN supported_institutions si ON si.organization_code = cci.organization_code AND si.is_active = TRUE
+        WHERE a.user_id = #{userId} AND a.is_deleted = 0 AND a.is_active = TRUE
+        ORDER BY primary_account DESC, linked DESC, a.id DESC
+    </select>
+
+    <insert id="upsertWithdrawRecipient" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wallet_withdraw_recipient
+            (user_id, bank_code, bank_name, account_number, account_holder_name, last_used_at, use_count)
+        VALUES
+            (#{userId}, #{bankCode}, #{bankName}, #{accountNumber}, #{accountHolderName}, NOW(), 1)
+        ON DUPLICATE KEY UPDATE
+            id = LAST_INSERT_ID(id),
+            bank_name = VALUES(bank_name),
+            account_holder_name = VALUES(account_holder_name),
+            last_used_at = NOW(),
+            use_count = use_count + 1,
+            is_deleted = 0,
+            deleted_at = NULL,
+            updated_at = NOW()
+    </insert>
+
+    <select id="findRecentWithdrawRecipients" resultType="WalletWithdrawRecipientResponseDto">
+        SELECT id AS recipient_id, bank_code, bank_name,
+               CONCAT('****', RIGHT(account_number, 4)) AS masked_account_number,
+               account_holder_name, last_used_at, use_count
+        FROM wallet_withdraw_recipient
+        WHERE user_id = #{userId} AND is_deleted = 0
+        ORDER BY last_used_at DESC, id DESC
+        LIMIT 5
+    </select>
+
+    <select id="findWithdrawRecipientByIdAndUserId" resultType="WalletWithdrawRecipient">
+        SELECT id, user_id, bank_code, bank_name, account_number,
+               account_holder_name, last_used_at, use_count
+        FROM wallet_withdraw_recipient
+        WHERE id = #{recipientId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
     <select id="findPrimaryAccountByWalletId"
             resultType="WalletAccountResponseDto">
         SELECT
@@ -613,7 +673,11 @@
             wl.balance_after,
             wl.memo,
             wl.created_at,
-            COALESCE(acc.account_name, wtc.card_name) AS account_name
+            COALESCE(
+                acc.account_name,
+                wtc.card_name,
+                CONCAT(wr.bank_name, ' ****', RIGHT(wr.account_number, 4))
+            ) AS account_name
         FROM wallet_ledger wl
         LEFT JOIN accounts acc
             ON acc.id = CASE
@@ -625,6 +689,9 @@
                 WHEN wl.source_type = 'TRAVEL_CARD' THEN wl.source_id
                 WHEN wl.target_type = 'TRAVEL_CARD' THEN wl.target_id
             END
+        LEFT JOIN wallet_withdraw_recipient wr
+            ON wl.target_type = 'RECIPIENT_ACCOUNT'
+           AND wr.id = wl.target_id
         WHERE wl.wallet_id = #{walletId}
         ORDER BY wl.created_at DESC, wl.id DESC
     </select>

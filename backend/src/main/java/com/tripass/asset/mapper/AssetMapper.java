@@ -27,6 +27,15 @@ public interface AssetMapper {
             @org.apache.ibatis.annotations.Param("organizationCode") String organizationCode,
             @org.apache.ibatis.annotations.Param("accountNumber") String accountNumber
     );
+    AccountDto findAccountByUserIdAndNumberOnly(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("accountNumber") String accountNumber
+    );
+    int linkCardsToAccountByPaymentNumber(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("accountId") Long accountId,
+            @org.apache.ibatis.annotations.Param("accountNumber") String accountNumber
+    );
     List<AccountDto> findAccountsByUserId(Long userId);
 
     void deleteAccount(

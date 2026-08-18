@@ -81,6 +81,9 @@ class MockCodefClientTest {
         List<?> cardList = (List<?>) cards.get("data");
         assertEquals(2, cardList.size());
         assertTrue(cardList.stream().map(String::valueOf).anyMatch(value -> value.contains("트래블러스")));
+        assertTrue(cardList.stream()
+                .map(card -> (Map<?, ?>) card)
+                .allMatch(card -> "12345678901234".equals(card.get("resPaymentAccount"))));
 
         Map<String, Object> body = connectedBody(MockCodefClient.CARD_ORGANIZATION);
         body.put("cardNo", "5412-****-****-2710");
@@ -94,7 +97,43 @@ class MockCodefClientTest {
         assertSuccess(approvals);
         List<?> approvalList = (List<?>) approvals.get("data");
         assertFalse(approvalList.isEmpty());
-        assertEquals(9, approvalList.size());
+        assertEquals(69, approvalList.size());
+    }
+
+    @Test
+    void 월간분석과_미션QA에_필요한_비교월과_분석월_거래를_반환한다() {
+        Map<String, Object> comparisonBody = connectedBody(MockCodefClient.CARD_ORGANIZATION);
+        comparisonBody.put("cardNo", "5412-****-****-2710");
+        comparisonBody.put("startDate", "20260401");
+        comparisonBody.put("endDate", "20260630");
+
+        Map<String, Object> comparisonResponse = client.callApi(
+                token,
+                "/v1/kr/card/p/account/approval-list",
+                comparisonBody
+        );
+        assertSuccess(comparisonResponse);
+        assertEquals(90, ((List<?>) comparisonResponse.get("data")).size());
+
+        Map<String, Object> analysisBody = connectedBody(MockCodefClient.CARD_ORGANIZATION);
+        analysisBody.put("cardNo", "5412-****-****-2710");
+        analysisBody.put("startDate", "20260701");
+        analysisBody.put("endDate", "20260731");
+
+        Map<String, Object> analysisResponse = client.callApi(
+                token,
+                "/v1/kr/card/p/account/approval-list",
+                analysisBody
+        );
+        assertSuccess(analysisResponse);
+        List<?> analysisTransactions = (List<?>) analysisResponse.get("data");
+        assertEquals(39, analysisTransactions.size());
+        assertEquals(6, countMerchantType(analysisTransactions, "일반음식점"));
+        assertEquals(6, countMerchantType(analysisTransactions, "커피전문점"));
+        assertEquals(6, countMerchantType(analysisTransactions, "일반의류"));
+        assertEquals(6, countMerchantType(analysisTransactions, "편의점"));
+        assertEquals(6, countMerchantType(analysisTransactions, "택시"));
+        assertEquals(6, countMerchantType(analysisTransactions, "영화공연장"));
     }
 
     private Map<String, Object> connectionBody(
@@ -129,5 +168,13 @@ class MockCodefClientTest {
 
     private void assertSuccess(Map<String, Object> response) {
         assertEquals("CF-00000", responseResult(response).get("code"));
+    }
+
+    private long countMerchantType(List<?> transactions, String merchantType) {
+        return transactions.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .filter(transaction -> merchantType.equals(transaction.get("resMemberStoreType")))
+                .count();
     }
 }

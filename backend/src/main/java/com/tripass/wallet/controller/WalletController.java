@@ -128,6 +128,18 @@ public class WalletController {
         );
     }
 
+    @ApiOperation(value = "월렛 출금 계좌 선택 정보 조회",
+            notes = "프로필에 등록된 계좌와 최근 직접 입력한 수취계좌를 조회합니다.")
+    @GetMapping("/withdraw/options")
+    public ResponseEntity<ApiResponse<WalletWithdrawOptionsResponseDto>> getWithdrawOptions(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "월렛 출금 계좌 선택 정보 조회 성공",
+                walletService.getWithdrawOptions(userId)
+        ));
+    }
+
     @ApiOperation(
             value = "월렛 연동 계좌 목록 조회",
             notes = "로그인 사용자의 월렛에 연결된 계좌 목록을 조회합니다."
