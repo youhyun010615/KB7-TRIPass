@@ -31,6 +31,9 @@ jobs:
       - name: Create serviceAccountKey.json
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' > src/main/resources/serviceAccountKey.json
 
+      - name: Create Google Cloud credentials
+        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > src/main/resources/google-credentials.json
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
