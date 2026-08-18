@@ -268,6 +268,23 @@
         LIMIT 1
     </select>
 
+    <select id="findTripsByUserId" resultType="TripListItemResponseDto">
+        SELECT t.id AS tripId,
+               t.trip_name,
+               t.status,
+               t.start_date,
+               t.end_date,
+               DATEDIFF(t.end_date, t.start_date) + 1                       AS totalDays,
+               GROUP_CONCAT(c.country_name ORDER BY tc.display_order SEPARATOR ' · ') AS countryNames
+        FROM trips t
+                 LEFT JOIN trip_countries tc ON tc.trip_id = t.id AND tc.is_deleted = 0
+                 LEFT JOIN countries c ON c.id = tc.country_id
+        WHERE t.user_id = #{userId}
+          AND t.is_deleted = 0
+        GROUP BY t.id, t.trip_name, t.status, t.start_date, t.end_date
+        ORDER BY t.start_date DESC
+    </select>
+
     <select id="findCountries" resultType="TripCountryCatalogResponseDto">
         SELECT COALESCE(
                    MAX(CASE WHEN cb.id IS NOT NULL THEN c.id END),
