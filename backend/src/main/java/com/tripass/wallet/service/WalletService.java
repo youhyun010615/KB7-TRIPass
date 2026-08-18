@@ -152,9 +152,14 @@ public class WalletService {
     }
 
     public List<WalletAccountResponseDto> getAccountOptions(Long userId) {
-        getWalletId(userId);
-
         return walletMapper.findAccountOptionsByUserId(userId);
+    }
+
+    public WalletWithdrawOptionsResponseDto getWithdrawOptions(Long userId) {
+        return WalletWithdrawOptionsResponseDto.builder()
+                .registeredAccounts(walletMapper.findWithdrawAccountsByUserId(userId))
+                .recentAccounts(walletMapper.findRecentWithdrawRecipients(userId))
+                .build();
     }
 
     @Transactional
@@ -207,9 +212,33 @@ public class WalletService {
 
         Wallet wallet = getWalletForUpdate(userId);
 
-        validateLinkedAccount(wallet.getId(), request.getTargetAccountId());
+        if (request.getTargetAccountId() != null) {
+            validateWithdrawRegisteredAccount(userId, wallet.getId(), request.getTargetAccountId());
+        }
         validateSufficientBalance(wallet.getBalanceAmount(), request.getAmount());
-        increaseAccountBalance(userId, request.getTargetAccountId(), request.getAmount());
+
+        Long targetId;
+        WalletTargetType targetType;
+        String memo;
+        if (request.getTargetAccountId() != null) {
+            increaseAccountBalance(userId, request.getTargetAccountId(), request.getAmount());
+            targetId = request.getTargetAccountId();
+            targetType = WalletTargetType.ACCOUNT;
+            memo = "등록 계좌로 월렛 출금";
+        } else {
+            validateManualWithdrawAccount(request);
+            WalletWithdrawRecipient recipient = WalletWithdrawRecipient.builder()
+                    .userId(userId)
+                    .bankCode(request.getBankCode().trim())
+                    .bankName(request.getBankName().trim())
+                    .accountNumber(request.getAccountNumber().replaceAll("[^0-9]", ""))
+                    .accountHolderName(trimToNull(request.getAccountHolderName()))
+                    .build();
+            walletMapper.upsertWithdrawRecipient(recipient);
+            targetId = recipient.getId();
+            targetType = WalletTargetType.RECIPIENT_ACCOUNT;
+            memo = "직접 입력 계좌로 월렛 출금";
+        }
 
         BigDecimal nextBalance =
                 wallet.getBalanceAmount().subtract(request.getAmount());
@@ -226,10 +255,10 @@ public class WalletService {
                 nextBalance,
                 WalletSourceType.WALLET,
                 wallet.getId(),
-                WalletTargetType.ACCOUNT,
-                request.getTargetAccountId(),
+                targetType,
+                targetId,
                 request.getIdempotencyKey(),
-                "월렛 출금"
+                memo
         );
 
         return WalletCommandResponseDto.builder()
@@ -749,6 +778,10 @@ public class WalletService {
         Wallet wallet = walletMapper.findWalletByUserIdForUpdate(userId);
 
         if (wallet == null) {
+            createWalletForUser(userId);
+            wallet = walletMapper.findWalletByUserIdForUpdate(userId);
+        }
+        if (wallet == null) {
             throw new WalletException(WALLET_NOT_FOUND);
         }
 
@@ -783,10 +816,33 @@ public class WalletService {
         }
     }
 
+    private void validateWithdrawRegisteredAccount(Long userId, Long walletId, Long accountId) {
+        if (!walletMapper.existsLinkedAccount(walletId, accountId)
+                && !walletMapper.existsLinkedAccountByUserId(userId, accountId)) {
+            throw new WalletException(WALLET_ACCOUNT_NOT_FOUND);
+        }
+    }
+
     private void validateIdempotencyKey(String idempotencyKey) {
         if (walletMapper.existsIdempotencyKey(idempotencyKey)) {
             throw new WalletException(DUPLICATED_REQUEST);
         }
+    }
+
+    private void validateManualWithdrawAccount(WalletWithdrawRequestDto request) {
+        String accountNumber = request.getAccountNumber() == null
+                ? "" : request.getAccountNumber().replaceAll("[^0-9]", "");
+        if (isBlank(request.getBankCode()) || isBlank(request.getBankName()) || accountNumber.length() < 8) {
+            throw new WalletException(INVALID_WITHDRAW_ACCOUNT);
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private String trimToNull(String value) {
+        return isBlank(value) ? null : value.trim();
     }
 
     private void validateTravelCardLedgerIdempotencyKey(String idempotencyKey) {

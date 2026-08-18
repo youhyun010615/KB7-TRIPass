@@ -14,8 +14,12 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class WalletWithdrawRequestDto {
 
-    @NotNull(message = "입금 계좌 ID는 필수입니다.")
     private Long targetAccountId;
+
+    private String bankCode;
+    private String bankName;
+    private String accountNumber;
+    private String accountHolderName;
 
     @NotNull(message = "출금 금액은 필수입니다.")
     @DecimalMin(value = "1", message = "출금 금액은 1원 이상이어야 합니다.")

@@ -4,6 +4,7 @@ import com.tripass.wallet.domain.Wallet;
 import com.tripass.wallet.domain.WalletAutoSavingLog;
 import com.tripass.wallet.domain.WalletAutoSavingRule;
 import com.tripass.wallet.domain.WalletLedger;
+import com.tripass.wallet.domain.WalletWithdrawRecipient;
 import com.tripass.wallet.dto.request.*;
 import com.tripass.wallet.dto.response.*;
 import com.tripass.wallet.exception.WalletException;
@@ -321,6 +322,34 @@ class WalletServiceTest {
         verify(walletMapper).insertWalletLedger(captor.capture());
         assertEquals("OUT", captor.getValue().getDirection());
         assertEquals("WITHDRAW", captor.getValue().getTransactionType());
+    }
+
+    @Test
+    void 직접_입력한_계좌로_출금하고_최근계좌를_저장한다() {
+        WalletWithdrawRequestDto request = withdrawRequest(null, BigDecimal.valueOf(200_000), "key-direct");
+        ReflectionTestUtils.setField(request, "bankCode", "004");
+        ReflectionTestUtils.setField(request, "bankName", "KB국민은행");
+        ReflectionTestUtils.setField(request, "accountNumber", "123-456-789012");
+        ReflectionTestUtils.setField(request, "accountHolderName", "금융QA");
+
+        when(walletMapper.existsIdempotencyKey("key-direct")).thenReturn(false);
+        when(walletMapper.findWalletByUserIdForUpdate(1L)).thenReturn(createWallet());
+        doAnswer(invocation -> {
+            WalletWithdrawRecipient recipient = invocation.getArgument(0);
+            recipient.setId(77L);
+            return 1;
+        }).when(walletMapper).upsertWithdrawRecipient(any(WalletWithdrawRecipient.class));
+        when(walletMapper.updateWalletBalance(100L, BigDecimal.valueOf(800_000), 0L)).thenReturn(1);
+
+        WalletCommandResponseDto result = walletService.withdraw(1L, request);
+
+        assertEquals(0, BigDecimal.valueOf(800_000).compareTo(result.getBalanceAmount()));
+        verify(walletMapper, never()).increaseAccountBalance(anyLong(), anyLong(), any(BigDecimal.class));
+
+        ArgumentCaptor<WalletLedger> ledgerCaptor = ArgumentCaptor.forClass(WalletLedger.class);
+        verify(walletMapper).insertWalletLedger(ledgerCaptor.capture());
+        assertEquals("RECIPIENT_ACCOUNT", ledgerCaptor.getValue().getTargetType());
+        assertEquals(77L, ledgerCaptor.getValue().getTargetId());
     }
 
     @Test
