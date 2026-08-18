@@ -117,7 +117,7 @@ async function removeCard(card) {
   <main class="asset-link-page">
     <header class="page-header">
       <button type="button" aria-label="마이페이지로 이동" @click="router.push('/mypage')">‹</button>
-      <div><small>MY ASSETS</small><h1>자산관리</h1></div>
+      <h1>자산관리</h1>
     </header>
 
     <div v-if="loading" class="state-message">연동 자산을 불러오는 중...</div>
@@ -126,9 +126,16 @@ async function removeCard(card) {
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <section class="summary-card">
-        <div class="summary-heading"><small>총 연동 자산</small><span>실시간 조회</span></div>
+        <div class="summary-heading">
+          <div><span class="summary-icon">₩</span><small>총 연동 자산</small></div>
+          <span>계좌·카드 합산</span>
+        </div>
         <strong>{{ formatWon(totalBalance) }}</strong>
-        <p>통장 {{ accounts.length }}개 · 카드 {{ cardStore.cards.length }}장</p>
+        <div class="summary-counts">
+          <span><small>연결 통장</small><b>{{ accounts.length }}개</b></span>
+          <i></i>
+          <span><small>연결 카드</small><b>{{ cardStore.cards.length }}장</b></span>
+        </div>
       </section>
 
       <section class="asset-section">
@@ -201,4 +208,20 @@ async function removeCard(card) {
 .account-add-slide>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
 .account-add-slide>strong{margin-top:11px;font-size:12px;font-weight:800}
 .account-add-slide>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
+.page-header{height:92px;padding-top:34px}
+.page-header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.03em}
+.summary-card{min-height:auto;padding:20px;border:1px solid #bfd2f1;border-radius:22px;background:linear-gradient(135deg,#dce9fb 0%,#c8daf6 100%);color:#10192d;box-shadow:0 11px 25px rgba(35,73,136,.12)}
+.summary-card::before{content:'';position:absolute;left:-34px;bottom:-62px;width:132px;height:132px;border:1px solid rgba(36,91,179,.14);border-radius:50%}
+.summary-card::after{right:-48px;top:-68px;width:160px;height:160px;background:rgba(73,126,211,.13)}
+.summary-heading{position:relative;z-index:1;align-items:center}
+.summary-heading>div{display:flex;align-items:center;gap:8px}
+.summary-icon{display:grid;width:30px;height:30px;place-items:center;border-radius:10px;background:#2d62b8;color:#fff;font-size:14px;font-weight:800;box-shadow:0 5px 11px rgba(37,83,158,.2)}
+.summary-heading small{color:#29466f;font-size:12px;font-weight:800}
+.summary-heading>span{padding:5px 8px;background:rgba(255,255,255,.48);color:#4c6385;font-size:8px;font-weight:700}
+.summary-card>strong{position:relative;z-index:1;margin-top:20px;color:#10192d;font-size:32px;font-weight:800;letter-spacing:-.05em}
+.summary-counts{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;gap:15px;margin-top:20px;padding:13px 15px;border:1px solid rgba(255,255,255,.5);border-radius:15px;background:rgba(255,255,255,.48);backdrop-filter:blur(5px)}
+.summary-counts>span{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.summary-counts small{color:#64758e;font-size:9px;font-weight:600}
+.summary-counts b{color:#174a99;font-size:11px;font-weight:800;white-space:nowrap}
+.summary-counts i{width:1px;height:20px;background:#b8c9e2}
 </style>
