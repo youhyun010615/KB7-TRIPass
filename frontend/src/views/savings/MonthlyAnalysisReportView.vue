@@ -181,7 +181,8 @@ function goMissions() {
           </div>
         </div>
         <div v-else class="saving-unavailable">
-          <span>i</span>{{ savingResult?.resultMessage }}
+          <span>i</span>
+          <b>{{ savingResult?.resultMessage || '이번 달 저축 목표가 설정되지 않아 결과를 계산할 수 없어요.' }}</b>
         </div>
 
         <dl v-if="savingAvailable" class="saving-metrics">
@@ -344,7 +345,7 @@ function goMissions() {
 }
 .report-header h1 {
   margin-top: 2px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 950;
 }
 .report-header .close-icon {
@@ -398,7 +399,7 @@ function goMissions() {
   max-width: 270px;
   margin-top: 8px;
   color: #d3e1ff;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 .viewed-badge {
@@ -409,7 +410,7 @@ function goMissions() {
   border-radius: 999px;
   background: #ffffff12;
   color: #ffd35e;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 900;
 }
 .report-section {
@@ -435,20 +436,20 @@ function goMissions() {
 }
 .section-title small {
   color: #f06a2a;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 950;
   letter-spacing: 0.12em;
 }
 .section-title h3 {
   margin-top: 3px;
   color: #173f8d;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 950;
 }
 .section-title > span {
   padding: 5px 8px;
   border-radius: 999px;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 900;
 }
 .section-title > span.success {
@@ -486,13 +487,18 @@ function goMissions() {
 }
 .saving-message b {
   color: #173f8d;
-  font-size: 11px;
+  font-size: 13px;
 }
-.saving-message small,
-.saving-unavailable {
+.saving-message small {
   margin-top: 4px;
   color: #7186aa;
-  font-size: 9px;
+  font-size: 10.5px;
+}
+.saving-unavailable b {
+  color: #173f8d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
 }
 .saving-metrics {
   display: grid;
@@ -511,12 +517,12 @@ function goMissions() {
 }
 .saving-metrics dt {
   color: #8a9bb6;
-  font-size: 8px;
+  font-size: 9px;
 }
 .saving-metrics dd {
   margin-top: 4px;
   color: #173f8d;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
 }
 .total-spending {
@@ -528,12 +534,12 @@ function goMissions() {
 }
 .total-spending small {
   color: #8a9bb6;
-  font-size: 8px;
+  font-size: 9.5px;
 }
 .total-spending b {
   margin-top: 3px;
   color: #17213a;
-  font-size: 15px;
+  font-size: 16px;
 }
 .category-list {
   display: grid;
@@ -542,21 +548,21 @@ function goMissions() {
 }
 .category-item {
   display: grid;
-  grid-template-columns: 34px 1fr 38px;
+  grid-template-columns: 38px 1fr 42px;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
 .category-icon {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   place-items: center;
-  border-radius: 11px;
-  font-size: 15px;
+  border-radius: 12px;
+  font-size: 16px;
 }
 .category-icon img {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
 }
 .category-detail > div {
   display: flex;
@@ -565,16 +571,17 @@ function goMissions() {
 }
 .category-detail b {
   color: #26334d;
-  font-size: 10px;
+  font-size: 13px;
+  font-weight: 800;
 }
 .category-detail small {
   color: #9aa8bb;
-  font-size: 7px;
+  font-size: 9.5px;
 }
 .category-detail strong {
   margin-left: auto;
   color: #536887;
-  font-size: 9px;
+  font-size: 11px;
 }
 .category-detail > i {
   display: block;
@@ -592,7 +599,7 @@ function goMissions() {
 }
 .category-item > b {
   color: #173f8d;
-  font-size: 10px;
+  font-size: 12px;
   text-align: right;
 }
 .ai-label {
@@ -617,7 +624,7 @@ function goMissions() {
 }
 .coaching-summary p {
   color: #eef4ff;
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.6;
 }
 .recommendation-list {
@@ -627,42 +634,42 @@ function goMissions() {
 }
 .recommendation-list li {
   display: grid;
-  grid-template-columns: 22px 34px 1fr;
+  grid-template-columns: 24px 38px 1fr;
   align-items: center;
-  gap: 8px;
-  padding: 11px;
+  gap: 9px;
+  padding: 12px;
   border: 1px solid #e3eaf5;
   border-radius: 14px;
 }
 .recommendation-list li > b {
   display: grid;
-  width: 21px;
-  height: 21px;
+  width: 23px;
+  height: 23px;
   place-items: center;
   border-radius: 50%;
   background: #dce9ff;
   color: #286ce0;
-  font-size: 9px;
+  font-size: 10px;
 }
 .recommendation-list li > span {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 12px;
 }
 .recommendation-list li > span img {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 .recommendation-list strong {
   color: #26334d;
-  font-size: 11px;
+  font-size: 13px;
 }
 .recommendation-list p {
   margin-top: 3px;
   color: #7186aa;
-  font-size: 8px;
+  font-size: 9.5px;
   line-height: 1.45;
 }
 .mission-guide {
@@ -671,7 +678,7 @@ function goMissions() {
   border-radius: 12px;
   background: #fff7e7;
   color: #9a6813;
-  font-size: 9px;
+  font-size: 10.5px;
   line-height: 1.5;
 }
 .mission-button {
@@ -681,22 +688,37 @@ function goMissions() {
   justify-content: center;
   gap: 8px;
   margin-top: 11px;
-  padding: 14px;
+  padding: 15px;
   border-radius: 14px;
   background: #173f8d;
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
+  animation: mission-button-pulse 2.4s ease-out infinite;
 }
 .mission-button span {
   font-size: 18px;
+}
+@keyframes mission-button-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(23, 63, 141, 0.35);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px rgba(23, 63, 141, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-button {
+    animation: none;
+  }
 }
 .close-report-button {
   display: block;
   margin: 17px auto 0;
   padding: 10px 14px;
   color: #7b8da9;
-  font-size: 10px;
+  font-size: 11px;
   text-decoration: underline;
 }
 .report-state {
@@ -711,21 +733,21 @@ function goMissions() {
 .report-state b {
   margin-top: 14px;
   color: #173f8d;
-  font-size: 15px;
+  font-size: 16px;
 }
 .report-state small {
   margin-top: 7px;
   color: #7b8da9;
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.5;
 }
 .report-state button {
   margin-top: 16px;
-  padding: 10px 15px;
+  padding: 11px 16px;
   border-radius: 12px;
   background: #173f8d;
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
 }
 .state-icon,
@@ -755,7 +777,7 @@ function goMissions() {
   border-radius: 11px;
   background: #fff0f0;
   color: #d94b4b;
-  font-size: 9px;
+  font-size: 10.5px;
 }
 @keyframes spin {
   to {

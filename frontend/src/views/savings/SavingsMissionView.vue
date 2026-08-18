@@ -13,6 +13,7 @@ import shoppingIcon from '@/assets/icons/shopping-cart.svg'
 import taxiIcon from '@/assets/icons/taxi.svg'
 import leisureIcon from '@/assets/icons/hobby_drink.svg'
 import aiIcon from '@/assets/icons/ai.svg'
+import aiReportIcon from '@/assets/icons/ai_report.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +56,9 @@ onBeforeUnmount(() => {
 
 // 리포트의 "추천 미션 보러가기"에서 넘어온 경우, 미션 미등록 상태여도
 // 대시보드가 아니라 바로 카테고리 선택 화면을 보여준다.
-const showSelection = ref(route.query.from === 'analysis')
+const showSelection = ref(
+  route.query.from === 'analysis' || route.query.view === 'recommendations',
+)
 
 // 추천 미션을 선택/추가하는 화면인지 여부: 이 상태에서만 뒤로가기 헤더를 쓴다.
 const showSelectionFlow = computed(
@@ -156,7 +159,7 @@ function retryReadiness() {
 }
 
 function goFinancialSources() {
-  router.push('/profile/financial?step=1&from=asset')
+  router.push('/profile/financial?step=1')
 }
 
 function monthLabel(yearMonth) {
@@ -200,6 +203,15 @@ function displayedWeek(mission) {
     null
   )
 }
+
+const currentDisplayedWeek = computed(() => {
+  const missions = missionStore.missions?.missions || []
+  for (const mission of missions) {
+    const week = displayedWeek(mission)
+    if (week) return week
+  }
+  return null
+})
 
 function remainingLimit(week) {
   return Math.max(
@@ -332,13 +344,26 @@ function goBack() {
         <div class="mission-savings-divider"></div>
         <div class="mission-savings-foot">
           <span>수행 완료 미션 {{ completedMissionCount }}개</span>
+          <button
+            type="button"
+            class="mission-report-link"
+            :disabled="!missionStore.analysisYearMonth"
+            @click="openAnalysis"
+          >
+            <img :src="aiReportIcon" alt="" aria-hidden="true" />
+            {{ analysisMonthLabel }} 리포트
+          </button>
         </div>
       </section>
 
       <section class="fund-check-card">
-        <span class="fund-check-title">이달의 자금 체크</span>
-        <div class="fund-check-total-label">총 지출</div>
-        <div class="fund-check-total">{{ formatCurrency(dashboardTotalSpending) }}</div>
+        <div class="fund-check-head-row">
+          <span class="fund-check-title">이달의 자금 체크</span>
+          <div class="fund-check-total-block">
+            <div class="fund-check-total-label">총 지출</div>
+            <div class="fund-check-total">{{ formatCurrency(dashboardTotalSpending) }}</div>
+          </div>
+        </div>
         <div class="fund-check-divider"></div>
         <div class="fund-check-row-heading">
           <span>카테고리별 지출</span>
@@ -362,8 +387,14 @@ function goBack() {
 
       <section class="active-missions-card">
         <div class="active-missions-head">
-          <span class="active-missions-title">수행 중 미션</span>
-          <span v-if="missionStore.hasStartedMissions" class="active-missions-month">{{ targetMonthLabel }}</span>
+          <span class="active-missions-title">
+            {{
+              missionStore.hasStartedMissions && currentDisplayedWeek
+                ? `${targetMonthLabel} ${currentDisplayedWeek.weekNumber}주차 저축 미션`
+                : '수행 중 미션'
+            }}
+            <span class="mission-title-ai-badge" aria-hidden="true"><img :src="aiIcon" alt="" /></span>
+          </span>
         </div>
 
         <template v-if="missionStore.hasStartedMissions">
@@ -379,8 +410,8 @@ function goBack() {
                 <template v-else>{{ metaOf(mission.categoryCode).icon }}</template>
               </span>
               <div>
-                <small>{{ mission.categoryName }} · {{ mission.reductionRate }}% 절감</small>
-                <h3>{{ mission.categoryName }} 소비 줄이기</h3>
+                <h3>{{ mission.categoryName }} {{ mission.reductionRate }}% 줄이기</h3>
+                <small v-if="displayedWeek(mission)">{{ displayedWeek(mission).missionMessage }}</small>
               </div>
               <span :class="['status-chip', statusClass(mission.status)]">
                 {{ statusLabel(mission.status) }}
@@ -388,33 +419,18 @@ function goBack() {
             </div>
 
             <template v-if="displayedWeek(mission)">
-              <div class="week-heading">
-                <b>{{ displayedWeek(mission).weekNumber }}주차 미션</b>
-                <span>
-                  {{ formatDate(displayedWeek(mission).periodStartDate) }}~{{ formatDate(displayedWeek(mission).periodEndDate) }}
-                </span>
-              </div>
-              <p class="mission-message">{{ displayedWeek(mission).missionMessage }}</p>
-              <div class="spending-numbers">
-                <div><small>사용 금액</small><strong>{{ formatCurrency(displayedWeek(mission).actualSpending) }}</strong></div>
-                <div><small>남은 한도</small><strong>{{ formatCurrency(remainingLimit(displayedWeek(mission))) }}</strong></div>
+              <div class="spending-caption">
+                <span>사용 금액</span>
+                <strong>{{ formatCurrency(displayedWeek(mission).actualSpending) }}</strong>
               </div>
               <div class="spending-progress">
                 <i :style="{ width: `${weekProgress(displayedWeek(mission))}%` }"></i>
               </div>
-              <p class="limit-caption">
-                주간 사용 한도 {{ formatCurrency(displayedWeek(mission).weeklyUsageLimit) }}
-              </p>
+              <div class="limit-caption">
+                <span>남은 한도 {{ formatCurrency(remainingLimit(displayedWeek(mission))) }}</span>
+                <span>주간 사용 한도 {{ formatCurrency(displayedWeek(mission).weeklyUsageLimit) }}</span>
+              </div>
             </template>
-
-            <div class="week-dots">
-              <span
-                v-for="week in mission.weeklyMissions"
-                :key="week.id"
-                :class="statusClass(week.status)"
-                :title="`${week.weekNumber}주차 ${statusLabel(week.status)}`"
-              >{{ week.weekNumber }}</span>
-            </div>
           </article>
 
           <button
@@ -437,15 +453,6 @@ function goBack() {
           <button type="button" class="dashboard-cta" @click="openSelection">추천 미션 보러가기 ›</button>
         </template>
       </section>
-
-      <button
-        type="button"
-        class="dashboard-cta outline"
-        :disabled="!missionStore.analysisYearMonth"
-        @click="openAnalysis"
-      >
-        지난 달 리포트 보러가기
-      </button>
     </template>
 
     <template v-else>
@@ -555,7 +562,18 @@ function goBack() {
 </template>
 
 <style scoped>
-.mission-page{--navy:#153b86;min-height:100vh;padding:0 18px 104px;background:linear-gradient(180deg,#f4f7ff 0%,#eef3fc 100%);color:#132348}.mission-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;padding:42px 18px 14px;background:#f4f7ff;transform:translateX(-50%)}@media(min-width:600px){.mission-header-fixed{max-width:430px}}.page-header{display:flex;align-items:center;justify-content:space-between}.page-header>button{width:42px;height:42px;border-radius:14px;background:#fff;color:#193d82;font-size:28px;font-weight:700;box-shadow:0 5px 16px #24487512}.page-header>div{text-align:center}.page-header p,.section-title small{color:#f07638;font-size:9px;font-weight:900;letter-spacing:.16em}.page-header h1{margin-top:3px;font-size:22px;font-weight:900;letter-spacing:-.05em}.page-header .report-link{font-size:11px}.page-header .report-link:disabled{opacity:.45}.state-card{margin-top:28px;padding:34px 24px;border:1px solid #d5e2f8;border-radius:24px;background:#fff;text-align:center;box-shadow:0 10px 30px #1e40700b}.state-card>span{display:grid;width:54px;height:54px;margin:0 auto;place-items:center;border-radius:18px;background:#edf3ff;color:#316fe0;font-size:25px;font-weight:900}.state-card h2{margin-top:15px;font-size:17px;font-weight:900}.state-card p{margin-top:7px;color:#73829d;font-size:11px;line-height:1.6}.state-card button{margin-top:19px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}.loading-plane{animation:fly 1.4s ease-in-out infinite}@keyframes fly{50%{transform:translate(8px,-5px)}}.recommendation-hero{display:flex;gap:15px;margin-top:24px;padding:22px;border-radius:25px;background:linear-gradient(135deg,#173c89,#2f70d9);color:#fff;box-shadow:0 13px 30px #163f8d2b}.ai-badge{display:grid;flex:0 0 52px;height:52px;place-items:center;border:1px solid #ffffff60;border-radius:18px;background:#ffffff18;font-size:18px;font-weight:900}.recommendation-hero p{color:#ffc36b;font-size:10px;font-weight:900}.recommendation-hero h2{margin-top:7px;font-size:20px;font-weight:900;line-height:1.35;letter-spacing:-.04em}.recommendation-hero span{display:block;margin-top:8px;color:#cbdcff;font-size:10px;line-height:1.45}.option-section{margin-top:27px}.section-title{display:flex;align-items:end;justify-content:space-between}.section-title h2{margin-top:4px;font-size:19px;font-weight:900}.section-title>span{padding:6px 10px;border-radius:20px;background:#e1ebfc;color:#3966aa;font-size:10px;font-weight:800}.option-card,.progress-card{--accent:#3478e5;--soft:#eaf2ff;margin-top:12px;overflow:hidden;border:1px solid #dce5f3;border-radius:21px;background:#fff;box-shadow:0 8px 22px #263e650b}.option-card.selected{border-color:var(--accent);box-shadow:0 10px 25px color-mix(in srgb,var(--accent) 16%,transparent)}.option-toggle{display:flex;width:100%;align-items:center;gap:12px;padding:16px;text-align:left}.category-icon{display:grid;flex:0 0 43px;height:43px;place-items:center;border-radius:14px;background:var(--soft);font-size:20px}.option-toggle>div,.mission-card-head>div{min-width:0;flex:1}.option-toggle small,.mission-card-head small{color:var(--accent);font-size:9px;font-weight:900}.option-toggle h3,.mission-card-head h3{margin-top:2px;font-size:15px;font-weight:900}.option-toggle p{margin-top:5px;color:#78869f;font-size:10px;line-height:1.4}.option-toggle>i{display:grid;width:27px;height:27px;place-items:center;border-radius:50%;background:#edf2fa;color:#557092;font-style:normal;font-weight:900}.selected .option-toggle>i{background:var(--accent);color:#fff}.rate-panel{padding:15px 16px 17px;border-top:1px dashed #dbe3ef;background:color-mix(in srgb,var(--soft) 46%,white)}.rate-panel>p{font-size:11px;font-weight:900}.rate-buttons{display:flex;gap:8px;margin-top:10px}.rate-buttons button{flex:1;padding:10px;border:1px solid #cfdaea;border-radius:10px;background:#fff;color:#6a7890;font-size:12px;font-weight:900}.rate-buttons button.active{border-color:var(--accent);background:var(--accent);color:#fff}.rate-result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rate-result>div{padding:11px;border-radius:12px;background:#fff}.rate-result small,.spending-numbers small{display:block;color:#8491a6;font-size:9px}.rate-result strong,.spending-numbers strong{display:block;margin-top:4px;color:#173d82;font-size:13px;font-weight:900}.start-summary{position:sticky;bottom:73px;z-index:5;margin-top:24px;padding:18px;border-radius:22px;background:#102f72;color:#fff;box-shadow:0 14px 32px #0f2f7250}.start-summary small{color:#adc5f2;font-size:9px}.start-summary strong{display:block;margin-top:5px;color:#ffd26d;font-size:22px;font-weight:900}.start-summary div>p{margin-top:3px;color:#c8d8f6;font-size:10px}.start-summary>button{width:100%;margin-top:14px;padding:13px;border-radius:13px;background:linear-gradient(90deg,#ff8843,#ffb44c);font-size:13px;font-weight:900}.start-summary>button:disabled{background:#6b7d9e;color:#d4dceb}.inline-error{margin-top:10px;color:#ffb9b9;font-size:10px}.spending-progress{height:8px;margin-top:12px;overflow:hidden;border-radius:20px;background:#e8edf5}.spending-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff8245,#ffd45e)}.progress-card{padding:16px;margin-top:0}.mission-card-head{display:flex;align-items:center;gap:11px}.status-chip{padding:6px 8px;border-radius:20px;background:#e7edf6;color:#65758e;font-size:9px;font-weight:900}.status-chip.in-progress,.status-chip.success{background:#e4f7f1;color:#149477}.status-chip.failed{background:#ffeded;color:#db5050}.week-heading{display:flex;justify-content:space-between;margin-top:17px;padding-top:14px;border-top:1px dashed #dbe3ef}.week-heading b{font-size:12px}.week-heading span{color:#7d8ba1;font-size:10px}.mission-message{margin-top:7px;color:#62728d;font-size:10px}.spending-numbers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.spending-numbers>div{padding:11px;border-radius:12px;background:#f5f8fd}.limit-caption{margin-top:7px;text-align:right;color:#8290a5;font-size:9px}.week-dots{display:flex;gap:7px;margin-top:14px}.week-dots span{display:grid;width:25px;height:25px;place-items:center;border-radius:50%;background:#e9eef6;color:#7d8a9e;font-size:9px;font-weight:900}.week-dots .in-progress{background:#dceaff;color:#2666cb}.week-dots .success{background:#def5ed;color:#118e70}.week-dots .failed{background:#ffe5e5;color:#d84848}.empty-card{margin-bottom:16px}.category-icon img{width:20px;height:20px}
+.mission-page{--navy:#153b86;min-height:100vh;padding:0 18px 104px;background:#fff;color:#132348}.mission-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;padding:42px 18px 14px;background:#fff;transform:translateX(-50%)}@media(min-width:600px){.mission-header-fixed{max-width:430px}}.page-header{display:flex;align-items:center;justify-content:space-between}.page-header>button{width:42px;height:42px;border-radius:14px;background:#fff;color:#193d82;font-size:28px;font-weight:700;box-shadow:0 5px 16px #24487512}.page-header>div{text-align:center}.page-header p,.section-title small{color:#f07638;font-size:9px;font-weight:900;letter-spacing:.16em}.page-header h1{margin-top:3px;font-size:22px;font-weight:900;letter-spacing:-.05em}.page-header .report-link{color:#1768f2;font-size:11px;font-weight:800}.page-header .report-link:disabled{opacity:.45}.state-card{margin-top:28px;padding:34px 24px;border:1px solid #d5e2f8;border-radius:24px;background:#fff;text-align:center;box-shadow:0 10px 30px #1e40700b}.state-card>span{display:grid;width:54px;height:54px;margin:0 auto;place-items:center;border-radius:18px;background:#edf3ff;color:#316fe0;font-size:25px;font-weight:900}.state-card h2{margin-top:15px;font-size:17px;font-weight:900}.state-card p{margin-top:7px;color:#73829d;font-size:12px;line-height:1.6}.state-card button{margin-top:19px;padding:12px 24px;border-radius:12px;background:#245ec4;color:#fff;font-size:13px;font-weight:900}.loading-plane{animation:fly 1.4s ease-in-out infinite}@keyframes fly{50%{transform:translate(8px,-5px)}}.recommendation-hero{position:relative;display:flex;overflow:hidden;gap:15px;margin-top:24px;padding:22px;border-radius:25px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 62%,#2f70d9 100%);color:#fff;box-shadow:0 13px 30px #163f8d2b}.recommendation-hero::after{content:'';position:absolute;top:-58px;right:-46px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}.ai-badge{position:relative;z-index:1;display:grid;flex:0 0 52px;height:52px;place-items:center;border:1px solid #ffffff60;border-radius:18px;background:#ffffff18;font-size:18px;font-weight:900}.recommendation-hero p{color:#ffc36b;font-size:11px;font-weight:900}.recommendation-hero h2{margin-top:7px;font-size:20px;font-weight:900;line-height:1.35;letter-spacing:-.04em}.recommendation-hero span{display:block;margin-top:8px;color:#cbdcff;font-size:11px;line-height:1.5}.option-section{margin-top:27px}.section-title{display:flex;align-items:end;justify-content:space-between}.section-title h2{margin-top:4px;font-size:19px;font-weight:900}.section-title>span{padding:6px 10px;border-radius:20px;background:#e6f0ff;color:#1768f2;font-size:10.5px;font-weight:800}.option-card,.progress-card{--accent:#3478e5;--soft:#eaf2ff;margin-top:12px;overflow:hidden;border:1px solid #dce5f3;border-radius:21px;background:#fff;box-shadow:0 8px 22px #263e650b}.option-card.selected{border-color:var(--accent);box-shadow:0 10px 25px color-mix(in srgb,var(--accent) 16%,transparent)}.option-toggle{display:flex;width:100%;align-items:center;gap:12px;padding:16px;text-align:left}.category-icon{position:relative;display:grid;flex:0 0 43px;height:43px;place-items:center;border-radius:14px;background:var(--soft);font-size:20px}.mission-title-ai-badge{display:inline-flex;flex:none;align-items:center;animation:mission-title-ai-pulse 1.6s ease-in-out infinite}.mission-title-ai-badge img{width:18px;height:18px;object-fit:contain}@keyframes mission-title-ai-pulse{0%,100%{opacity:.6;transform:scale(.85) rotate(-3deg);filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%) drop-shadow(0 0 0 rgba(23,104,242,0))}50%{opacity:1;transform:scale(1.25) rotate(3deg);filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%) drop-shadow(0 0 7px rgba(23,104,242,.6))}}.option-toggle>div,.mission-card-head>div{min-width:0;flex:1}.option-toggle small,.mission-card-head small{color:var(--accent);font-size:10px;font-weight:900}.option-toggle h3,.mission-card-head h3{margin-top:2px;font-size:15px;font-weight:900}.option-toggle p{margin-top:5px;color:#78869f;font-size:11px;line-height:1.45}.option-toggle>i{display:grid;width:27px;height:27px;place-items:center;border-radius:50%;background:#edf2fa;color:#557092;font-style:normal;font-weight:900}.selected .option-toggle>i{background:var(--accent);color:#fff}.rate-panel{padding:15px 16px 17px;border-top:1px dashed #dbe3ef;background:color-mix(in srgb,var(--soft) 46%,white)}.rate-panel>p{font-size:12px;font-weight:900}.rate-buttons{display:flex;gap:8px;margin-top:10px}.rate-buttons button{display:flex;flex:1;height:40px;align-items:center;justify-content:center;padding:0 10px;border:1px solid #cfdaea;border-radius:10px;background:#fff;color:#6a7890;font-size:12.5px;font-weight:900}.rate-buttons button.active{border-color:var(--accent);background:var(--accent);color:#fff}.rate-result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rate-result>div{padding:11px;border-radius:12px;background:#fff}.rate-result small{display:block;color:#8491a6;font-size:10px}.rate-result strong{display:block;margin-top:4px;color:#173d82;font-size:14px;font-weight:900}.spending-caption{display:flex;align-items:baseline;justify-content:space-between;margin-top:17px;padding-top:14px;border-top:1px dashed #dbe3ef}.spending-caption span{color:#8491a6;font-size:9px;font-weight:700}.spending-caption strong{color:#173d82;font-size:13px;font-weight:900}.start-summary{position:sticky;bottom:73px;z-index:5;overflow:hidden;margin-top:24px;padding:18px;border-radius:22px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 62%,#2f70d9 100%);color:#fff;box-shadow:0 14px 32px #0f2f7250}.start-summary::after{content:'';position:absolute;top:-50px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}.start-summary small{position:relative;z-index:1;color:#adc5f2;font-size:10px}.start-summary strong{position:relative;z-index:1;display:block;margin-top:5px;color:#ffd466;font-size:22px;font-weight:900}.start-summary div>p{position:relative;z-index:1;margin-top:3px;color:#c8d8f6;font-size:11px}.start-summary>button{position:relative;z-index:1;width:100%;margin-top:14px;padding:13px;border-radius:13px;background:#ffd466;color:#0b2a6b;font-size:13px;font-weight:900;animation:empty-hero-cta-pulse 2.4s ease-out infinite}.start-summary>button:disabled{background:#6b7d9e;color:#d4dceb;animation:none}.inline-error{margin-top:10px;color:#ffb9b9;font-size:10px}.spending-progress{height:8px;margin-top:12px;overflow:hidden;border-radius:20px;background:#e8edf5}.spending-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff8245,#ffd45e)}.progress-card{padding:16px;margin-top:0;background:linear-gradient(165deg,#ffffff 0%,color-mix(in srgb,var(--soft) 55%,white) 100%);border-color:color-mix(in srgb,var(--accent) 18%,#dce5f3);animation:mission-dash-enter .45s cubic-bezier(.22,1,.36,1) both;transition:transform .15s ease}
+.progress-card:active{transform:scale(.985)}
+.active-missions-card .progress-card:nth-of-type(1){animation-delay:.1s}
+.active-missions-card .progress-card:nth-of-type(2){animation-delay:.17s}
+.active-missions-card .progress-card:nth-of-type(3){animation-delay:.24s}
+.active-missions-card .progress-card:nth-of-type(4){animation-delay:.31s}
+.status-chip.in-progress{animation:status-pulse 2.4s ease-in-out infinite}
+@keyframes mission-dash-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fund-bar-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes status-pulse{0%,100%{box-shadow:0 0 0 0 rgba(20,148,119,.25)}50%{box-shadow:0 0 0 5px rgba(20,148,119,0)}}
+@keyframes empty-hero-cta-pulse{0%{box-shadow:0 0 0 0 rgba(255,212,102,.5)}70%,100%{box-shadow:0 0 0 9px rgba(255,212,102,0)}}
+@media(prefers-reduced-motion:reduce){.mission-savings-card,.fund-check-card,.active-missions-card,.progress-card,.fund-check-bar>div,.status-chip.in-progress,.start-summary>button,.mission-title-ai-badge{animation:none}}.mission-card-head{display:flex;align-items:center;gap:11px}.status-chip{padding:6px 8px;border-radius:20px;background:#e7edf6;color:#65758e;font-size:9px;font-weight:900}.status-chip.in-progress,.status-chip.success{background:#e4f7f1;color:#149477}.status-chip.failed{background:#ffeded;color:#db5050}.limit-caption{display:flex;justify-content:space-between;gap:8px;margin-top:9px;color:#8290a5;font-size:9px}.mission-card-head h3{font-size:13.5px}.mission-card-head small{display:block;margin-top:3px;color:#5a6478;font-size:10px;font-weight:600;line-height:1.4}.empty-card{margin-bottom:16px}.category-icon img{width:20px;height:20px}
 .dashboard-header{display:flex;align-items:flex-start;justify-content:space-between}
 .dashboard-header p{display:flex;align-items:center;gap:4px;font-family:'Space Mono',monospace;font-size:9.5px;font-weight:800;letter-spacing:.15em;color:#0b2a6b;margin-bottom:4px}
 .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}
@@ -563,18 +581,24 @@ function goBack() {
 @keyframes header-plane-fly{0%,100%{transform:translateY(0) rotate(0deg);filter:brightness(1) drop-shadow(0 0 0 rgba(47,112,242,0))}25%{transform:translateY(-1.5px) rotate(-8deg)}50%{transform:translateY(0) rotate(0deg);filter:brightness(1.6) drop-shadow(0 0 3px rgba(47,112,242,.55))}75%{transform:translateY(1.5px) rotate(6deg)}}
 .dashboard-header h1{margin-top:2px;font-size:17px;font-weight:400;color:#29466f}
 .dashboard-header .bell{margin-top:0}
-.mission-savings-card{position:relative;margin-top:24px;padding:18px 20px;border-radius:18px;background:linear-gradient(155deg,#0b2a6b 0%,#123c94 60%,#17459f 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24)}
+.mission-savings-card{position:relative;overflow:hidden;margin-top:24px;padding:18px 20px;border-radius:18px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 62%,#2f70d9 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24);animation:mission-dash-enter .5s cubic-bezier(.22,1,.36,1) both}
+.mission-savings-card::after{content:'';position:absolute;top:-56px;right:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
 .mission-savings-card>p{font-size:11px;font-weight:800;letter-spacing:.1em;color:#ffd466}
 .mission-savings-amount{display:flex;align-items:baseline;gap:8px;margin-top:8px}
 .mission-savings-amount strong{font-family:'Space Mono',monospace;font-size:28px;font-weight:700}
 .mission-savings-amount span{font-size:12px;font-weight:700;color:rgba(255,255,255,.65)}
 .mission-savings-divider{height:1px;background:rgba(255,255,255,.16);margin:14px 0}
-.mission-savings-foot{display:flex;align-items:center;justify-content:space-between}
+.mission-savings-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .mission-savings-foot span{font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
-.fund-check-card{margin-top:16px;padding:20px;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(16,25,43,.06)}
+.mission-report-link{display:inline-flex;flex:none;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;background:#ffd466;color:#0b2a6b;font-size:10.5px;font-weight:800;white-space:nowrap}
+.mission-report-link img{width:12px;height:12px;object-fit:contain}
+.mission-report-link:disabled{opacity:.5}
+.fund-check-card{margin-top:16px;padding:20px;border:1px solid #e7edf9;border-radius:20px;background:linear-gradient(165deg,#ffffff 0%,#f6f9ff 100%);box-shadow:0 8px 22px rgba(16,25,43,.07);animation:mission-dash-enter .5s .08s cubic-bezier(.22,1,.36,1) both}
+.fund-check-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .fund-check-title{font-size:15px;font-weight:900;color:#10192b}
-.fund-check-total-label{font-size:11.5px;font-weight:700;color:#98a2b3;margin-top:16px}
-.fund-check-total{font-family:'Space Mono',monospace;font-size:27px;font-weight:800;color:#10192b;margin-top:6px}
+.fund-check-total-block{flex:none;text-align:right}
+.fund-check-total-label{font-size:11.5px;font-weight:700;color:#98a2b3}
+.fund-check-total{font-family:'Space Mono',monospace;font-size:21px;font-weight:800;color:#10192b;margin-top:6px}
 .fund-check-divider{height:1px;background:#f1f3f8;margin:18px 0}
 .fund-check-row-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .fund-check-row-heading>span:first-child{font-size:13.5px;font-weight:900;color:#10192b}
@@ -585,18 +609,21 @@ function goBack() {
 .fund-check-icon img{width:16px;height:16px}
 .fund-check-name{width:42px;flex-shrink:0;font-size:12.5px;font-weight:700;color:#10192b}
 .fund-check-bar{flex:1;height:6px;border-radius:99px;background:#edf0f6;overflow:hidden}
-.fund-check-bar>div{height:100%;border-radius:inherit;background:#0b2a6b}
+.fund-check-bar>div{height:100%;border-radius:inherit;background:linear-gradient(90deg,#0b2a6b,#2f70d9);transform-origin:left;animation:fund-bar-grow .9s cubic-bezier(.22,1,.36,1) both}
+.fund-check-row:nth-child(1) .fund-check-bar>div{animation-delay:.08s}
+.fund-check-row:nth-child(2) .fund-check-bar>div{animation-delay:.15s}
+.fund-check-row:nth-child(3) .fund-check-bar>div{animation-delay:.22s}
+.fund-check-row:nth-child(4) .fund-check-bar>div{animation-delay:.29s}
+.fund-check-row:nth-child(5) .fund-check-bar>div{animation-delay:.36s}
 .fund-check-amount{flex-shrink:0;font-family:'Space Mono',monospace;font-size:11px;color:#5a6478;white-space:nowrap}
 .fund-check-ratio{flex-shrink:0;width:30px;text-align:right;font-family:'Space Mono',monospace;font-size:12px;font-weight:800;color:#98a2b3}
-.active-missions-card{display:flex;flex-direction:column;gap:14px;margin-top:16px;padding:20px;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(16,25,43,.06)}
-.active-missions-head{display:flex;align-items:center;justify-content:space-between}
-.active-missions-title{font-size:15px;font-weight:900;color:#10192b}
-.active-missions-month{padding:6px 10px;border-radius:20px;background:#e1ebfc;color:#3966aa;font-size:10px;font-weight:800}
+.active-missions-card{display:flex;flex-direction:column;gap:14px;margin-top:16px;padding:20px;border:1px solid #bcd2ff;border-radius:20px;background:linear-gradient(150deg,#eff5ff 0%,#e6f0ff 100%);box-shadow:0 8px 22px rgba(16,25,43,.07);animation:mission-dash-enter .5s .16s cubic-bezier(.22,1,.36,1) both}
+.active-missions-head{display:flex;align-items:center}
+.active-missions-title{display:inline-flex;align-items:center;gap:2px;font-size:15px;font-weight:900;color:#173f8d}
 .active-missions-empty{font-size:12.5px;font-weight:600;color:#5a6478;line-height:1.5}
 .dashboard-cta{border-radius:99px;padding:13px;text-align:center;font-size:13px;font-weight:800;background:#0b2a6b;color:#fff}
-.dashboard-cta.outline{width:100%;margin-top:16px;padding:14px;font-size:13.5px}
 .mission-home-setup{position:relative;margin-top:28px;padding:18px;border:1px solid #d6e3fa;border-radius:22px;background:#fff;box-shadow:0 10px 24px rgb(36 80 153 / 7%)}.mission-home-label{display:block;margin-bottom:10px;color:#286ce0;font-size:9px;font-weight:950;letter-spacing:.12em}.mission-home-setup-body{display:flex;min-height:210px;padding:22px 18px 18px;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #c9d8ef;border-radius:17px;background:linear-gradient(180deg,#f7faff,#f3f7fd);text-align:center}.mission-flight{position:relative;width:126px;height:45px;margin-bottom:13px}.mission-flight-route{position:absolute;top:22px;left:8px;right:8px;border-top:2px dashed #b9ccef}.mission-flight-start,.mission-flight-end{position:absolute;top:18px;width:10px;height:10px;border:2px solid #8eafe5;border-radius:50%;background:#f6f9ff}.mission-flight-start{left:2px}.mission-flight-end{right:2px}.mission-flight-end::after{position:absolute;inset:-6px;border:1px solid rgb(40 108 224 / 28%);border-radius:50%;content:'';animation:mission-destination-pulse 1.9s ease-out infinite}.mission-flight img{position:absolute;z-index:2;top:10px;left:7px;width:25px;height:25px;filter:drop-shadow(0 5px 5px rgb(40 108 224 / 22%));animation:mission-plane-travel 2.8s ease-in-out infinite}.mission-home-setup-body h2{color:#26334d;font-size:14px;font-weight:900}.mission-home-setup-body p{max-width:290px;margin-top:7px;color:#8190a9;font-size:10px;line-height:1.55;word-break:keep-all}.mission-home-setup-body button{margin-top:17px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}@keyframes mission-plane-travel{0%{opacity:.35;transform:translate(0,4px) rotate(-8deg)}18%{opacity:1}50%{transform:translate(47px,-5px) rotate(2deg)}82%{opacity:1}100%{opacity:.35;transform:translate(94px,2px) rotate(9deg)}}@keyframes mission-destination-pulse{0%{opacity:.8;transform:scale(.55)}100%{opacity:0;transform:scale(1.45)}}@media(prefers-reduced-motion:reduce){.mission-flight img,.mission-flight-end::after{animation:none}.mission-flight img{left:50%;transform:translateX(-50%)}}
 .mission-ai-stage{position:relative;width:82px;height:72px;margin-bottom:10px}.mission-ai-core{position:absolute;top:8px;left:13px;z-index:2;display:grid;width:56px;height:56px;place-items:center;border-radius:20px;background:linear-gradient(145deg,#dbe8ff,#fff);box-shadow:0 10px 24px rgb(40 108 224 / 20%);animation:mission-ai-float 2.6s ease-in-out infinite}.mission-ai-core img{width:30px;height:30px;filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%)}.mission-ai-orbit{position:absolute;inset:0;border:1.5px dashed #9fb9e8;border-radius:50%;animation:mission-ai-orbit 7s linear infinite}.mission-ai-spark{position:absolute;z-index:3;color:#4a82df;font-size:13px;animation:mission-ai-spark 1.8s ease-in-out infinite}.mission-ai-spark.one{top:0;right:2px}.mission-ai-spark.two{bottom:2px;left:0;animation-delay:.8s}@keyframes mission-ai-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}@keyframes mission-ai-orbit{to{transform:rotate(360deg)}}@keyframes mission-ai-spark{0%,100%{opacity:.2;transform:scale(.65) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(90deg)}}@media(prefers-reduced-motion:reduce){.mission-ai-core,.mission-ai-orbit,.mission-ai-spark{animation:none}}
 @media (min-width:600px){.mission-page{max-width:430px;margin:0 auto}}
-.option-card.locked{border-color:#dce5f3;background:#f8fafe;box-shadow:none}.option-card.locked .option-toggle{cursor:default}.option-card.locked .option-toggle>i{background:#e4f7f1;color:#149477;font-size:9px}.add-mission-button{display:flex;width:100%;margin-top:18px;padding:15px 16px;align-items:center;gap:12px;border:1px dashed #8badde;border-radius:18px;background:#f7faff;color:#1d4f9f;text-align:left;transition:transform .2s ease,background .2s ease}.add-mission-button:hover{background:#edf4ff;transform:translateY(-2px)}.add-mission-button>span{display:grid;flex:0 0 38px;height:38px;place-items:center;border-radius:12px;background:#e4eeff;font-size:20px;font-weight:800}.add-mission-button>div{min-width:0;flex:1}.add-mission-button small{display:block;color:#7284a2;font-size:9px}.add-mission-button strong{display:block;margin-top:3px;font-size:13px;font-weight:900}.add-mission-button>b{font-size:24px}.cancel-add-button{margin-top:8px!important;background:transparent!important;color:#c8d8f6!important;box-shadow:none!important}.cancel-add-button:hover{color:#fff!important}
+.option-card.locked{border-color:#dce5f3;background:#f8fafe;box-shadow:none}.option-card.locked .option-toggle{cursor:default}.option-card.locked .option-toggle>i{background:#e4f7f1;color:#149477;font-size:9px}.add-mission-button{display:flex;width:100%;margin-top:18px;padding:15px 16px;align-items:center;gap:12px;border:1px dashed #8badde;border-radius:18px;background:#f7faff;color:#1d4f9f;text-align:left;transition:transform .2s ease,background .2s ease}.add-mission-button:hover{background:#edf4ff;transform:translateY(-2px)}.add-mission-button>span{display:grid;flex:0 0 38px;height:38px;place-items:center;border-radius:12px;background:#e4eeff;font-size:20px;font-weight:800}.add-mission-button>div{min-width:0;flex:1}.add-mission-button small{display:block;color:#7284a2;font-size:10px}.add-mission-button strong{display:block;margin-top:3px;font-size:14px;font-weight:900}.add-mission-button>b{font-size:24px}.cancel-add-button{margin-top:8px!important;background:transparent!important;color:#c8d8f6!important;box-shadow:none!important}.cancel-add-button:hover{color:#fff!important}
 </style>

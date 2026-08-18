@@ -143,20 +143,20 @@ watch(() => props.currency, fetchHistory, { immediate: true });
 </script>
 
 <template v-if="props.currency">
-  <nav>
-    <button
-      v-for="p in periods"
-      :key="p[0]"
-      :class="{ active: exchange.period === p[0] }"
-      @click="exchange.period = p[0]"
-    >
-      {{ p[1] }}
-    </button>
-  </nav>
   <section class="chart">
-    <h2>
-      최근 {{ periods.find((p) => p[0] === exchange.period)?.[1] }} 환율 추이
-    </h2>
+    <div class="chart-head">
+      <h2>환율 추이</h2>
+      <nav>
+        <button
+          v-for="p in periods"
+          :key="p[0]"
+          :class="{ active: exchange.period === p[0] }"
+          @click="exchange.period = p[0]"
+        >
+          {{ p[1] }}
+        </button>
+      </nav>
+    </div>
     <div class="rate-row">
       <strong
         >{{ safeCurrency.unit }}{{ safeCurrency.symbol }} =
@@ -169,31 +169,38 @@ watch(() => props.currency, fetchHistory, { immediate: true });
       </p>
       <small v-if="lastUpdateDate" class="update-info">
         {{ lastUpdateDate }} 고시 기준
+        <span class="update-note">· 매일 오전 11시 갱신</span>
       </small>
     </div>
-    <div class="chart-container" style="height: 200px">
+    <div class="chart-container" style="height: 148px">
       <Line :data="chartData" :options="chartOptions" />
     </div>
   </section>
 </template>
 
 <style scoped>
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 nav {
   display: grid;
+  flex: none;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
-  margin-top: 18px;
-  padding: 5px;
+  padding: 3px;
   border-radius: 999px;
   background: #e9ecf3;
 }
 nav button {
-  min-height: 34px;
-  padding: 6px 10px;
+  min-height: 24px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: transparent;
   color: #929caf;
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
 }
 nav .active {
@@ -211,14 +218,14 @@ nav .active {
 }
 .chart h2 {
   color: #96a3b8;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 .chart strong {
   display: block;
   margin-top: 12px;
   color: #10192d;
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 800;
   letter-spacing: .02em;
   white-space: nowrap;
@@ -237,8 +244,11 @@ nav .active {
   font-weight: 500;
   white-space: nowrap;
 }
+.update-note {
+  color: #b7c0cf;
+}
 .chart strong small {
-  font-size: 13px;
+  font-size: 11.5px;
 }
 .chart p {
   margin-top: 2px;

@@ -1,13 +1,21 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import BottomNav from '@/components/common/BottomNav.vue'
-import ProductTicket from '@/components/financial/ProductTicket.vue'
 import { useTravelCardsStore } from '@/stores/travelCards'
+import { getTravelCardImage } from '@/utils/travelCard'
 
 const router = useRouter()
 const travelCardsStore = useTravelCardsStore()
+const openFilter = ref('')
+const resultCount = computed(() => travelCardsStore.cards.length)
+const hasActiveFilters = computed(() => Boolean(
+    travelCardsStore.keyword.trim() ||
+    travelCardsStore.currencyCode ||
+    travelCardsStore.instantUse !== null ||
+    travelCardsStore.transitCard !== null,
+))
 
 const currencyOptions = [
   { code: '', name: '전체 통화' },
@@ -40,6 +48,45 @@ const companyColors = {
   하나카드: '#12aa92',
   우리카드: '#2472c8',
   신한카드: '#2865e8',
+}
+
+const instantUseOptions = [
+  { value: null, label: '전체' },
+  { value: true, label: '바로 이용 가능' },
+  { value: false, label: '연계계좌 필요' },
+]
+
+const transitCardOptions = [
+  { value: null, label: '전체' },
+  { value: true, label: '지원' },
+  { value: false, label: '미지원' },
+]
+
+const selectedCurrencyLabel = computed(() => {
+  const selected = currencyOptions.find((item) => item.code === travelCardsStore.currencyCode)
+  return selected?.name || '전체 통화'
+})
+const selectedInstantUseLabel = computed(() =>
+  instantUseOptions.find((item) => item.value === travelCardsStore.instantUse)?.label || '전체',
+)
+const selectedTransitCardLabel = computed(() =>
+  transitCardOptions.find((item) => item.value === travelCardsStore.transitCard)?.label || '전체',
+)
+
+function toggleFilter(filterName) {
+  openFilter.value = openFilter.value === filterName ? '' : filterName
+}
+
+async function selectFilter(filterName, value) {
+  if (filterName === 'currency') travelCardsStore.currencyCode = value
+  if (filterName === 'instantUse') travelCardsStore.instantUse = value
+  if (filterName === 'transitCard') travelCardsStore.transitCard = value
+  openFilter.value = ''
+  await applyFilters()
+}
+
+function closeFilters() {
+  openFilter.value = ''
 }
 
 function getCompanyColor(cardCompany) {
@@ -116,7 +163,14 @@ function toggleComparison(cardId) {
   }
 }
 
-onMounted(loadCards)
+onMounted(() => {
+  loadCards()
+  document.addEventListener('click', closeFilters)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeFilters)
+})
 </script>
 
 <template>
@@ -132,43 +186,36 @@ onMounted(loadCards)
           ‹
         </button>
 
-        <h1>트래블카드 찾기</h1>
+        <div>
+          <small>TRIPASS CARD FINDER</small>
+          <h1>트래블카드 찾기</h1>
+        </div>
 
         <span />
       </header>
 
-      <ProductTicket
-          title="여행에 맞는 트래블카드"
-          subtitle="결제 수수료와 환전 혜택을 비교해 보세요"
-      />
-
-      <button
-          type="button"
-          class="comparison-link"
-          @click="openComparison"
-      >
-        <span class="comparison-icon">▣</span>
-
-        <span class="comparison-copy">
-          <b>카드 비교</b>
-          <small>최대 3개까지 한눈에 비교</small>
-        </span>
-
-        <em>
-          {{ travelCardsStore.comparedCardCount }}개 선택 ›
-        </em>
-      </button>
+      <section class="finder-hero">
+        <span class="hero-orbit" aria-hidden="true"></span>
+        <div class="hero-copy">
+          <small>SMART TRAVEL CARD</small>
+          <h2>내 여행에 맞는<br />카드를 찾아보세요</h2>
+          <p>환전·해외결제·교통 혜택을<br />한곳에서 비교할 수 있어요.</p>
+        </div>
+        <div class="hero-card" aria-hidden="true">
+          <i></i><b>TRIPASS</b><span>GLOBAL PASS</span>
+        </div>
+      </section>
 
       <form
           class="search-form"
           @submit.prevent="searchCards"
       >
-        <span aria-hidden="true">⌕</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
 
         <input
             v-model="travelCardsStore.keyword"
             type="search"
-            placeholder="카드명·카드사·은행명으로 검색"
+            placeholder="카드명 또는 카드사를 검색하세요"
             aria-label="트래블카드 검색어"
         />
 
@@ -176,65 +223,74 @@ onMounted(loadCards)
             type="submit"
             :disabled="travelCardsStore.listLoading"
         >
-          검색
+          찾기
         </button>
       </form>
 
       <section class="filters">
-        <label>
-          <span>지원 통화</span>
-
-          <select
-              v-model="travelCardsStore.currencyCode"
-              @change="applyFilters"
-          >
-            <option
+        <div class="filter-field" @click.stop>
+          <span>여행 통화</span>
+          <button type="button" :aria-expanded="openFilter === 'currency'" @click="toggleFilter('currency')">
+            {{ selectedCurrencyLabel }} <i>⌄</i>
+          </button>
+          <div v-if="openFilter === 'currency'" class="filter-menu wide">
+            <button
                 v-for="currency in currencyOptions"
                 :key="currency.code || 'ALL'"
-                :value="currency.code"
+                type="button"
+                :class="{ selected: travelCardsStore.currencyCode === currency.code }"
+                @click="selectFilter('currency', currency.code)"
             >
-              {{ currency.name }}
-              {{ currency.code ? `(${currency.code})` : '' }}
-            </option>
-          </select>
-        </label>
+              <span>{{ currency.name }}</span><small>{{ currency.code || 'ALL' }}</small>
+            </button>
+          </div>
+        </div>
 
-        <label>
-          <span>즉시 사용</span>
+        <div class="filter-field" @click.stop>
+          <span>이용 방식</span>
+          <button type="button" :aria-expanded="openFilter === 'instantUse'" @click="toggleFilter('instantUse')">
+            {{ selectedInstantUseLabel }} <i>⌄</i>
+          </button>
+          <div v-if="openFilter === 'instantUse'" class="filter-menu">
+            <button v-for="option in instantUseOptions" :key="String(option.value)" type="button" :class="{ selected: travelCardsStore.instantUse === option.value }" @click="selectFilter('instantUse', option.value)">
+              <span>{{ option.label }}</span>
+            </button>
+          </div>
+        </div>
 
-          <select
-              v-model="travelCardsStore.instantUse"
-              @change="applyFilters"
-          >
-            <option :value="null">전체</option>
-            <option :value="true">가능</option>
-            <option :value="false">별도 계좌 필요</option>
-          </select>
-        </label>
-
-        <label>
-          <span>교통카드</span>
-
-          <select
-              v-model="travelCardsStore.transitCard"
-              @change="applyFilters"
-          >
-            <option :value="null">전체</option>
-            <option :value="true">지원</option>
-            <option :value="false">미지원</option>
-          </select>
-        </label>
+        <div class="filter-field" @click.stop>
+          <span>교통 기능</span>
+          <button type="button" :aria-expanded="openFilter === 'transitCard'" @click="toggleFilter('transitCard')">
+            {{ selectedTransitCardLabel }} <i>⌄</i>
+          </button>
+          <div v-if="openFilter === 'transitCard'" class="filter-menu">
+            <button v-for="option in transitCardOptions" :key="String(option.value)" type="button" :class="{ selected: travelCardsStore.transitCard === option.value }" @click="selectFilter('transitCard', option.value)">
+              <span>{{ option.label }}</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <div class="list-heading">
-        <h2>트래블카드</h2>
+        <div>
+          <small>TRIP PICK</small>
+          <h2>추천 카드 <b>{{ resultCount }}</b></h2>
+        </div>
 
-        <button
-            type="button"
-            @click="resetFilters"
-        >
-          필터 초기화
-        </button>
+        <div class="list-actions">
+          <button
+              v-if="hasActiveFilters"
+              type="button"
+              class="reset-button"
+              @click="resetFilters"
+          >
+            초기화 ↻
+          </button>
+          <button type="button" class="list-compare-button" @click="openComparison">
+            카드 비교
+            <b>{{ travelCardsStore.comparedCardCount }}</b>
+          </button>
+        </div>
       </div>
 
       <section
@@ -277,19 +333,25 @@ onMounted(loadCards)
 
       <section
           v-else
-          class="card-list"
+          class="card-carousel"
       >
         <article
             v-for="card in travelCardsStore.cards"
             :key="card.id"
-            class="card-item"
+            class="card-tile"
         >
           <button
               type="button"
-              class="card-main"
+              class="card-tile-visual"
               @click="openCardDetail(card.id)"
           >
+            <img
+                v-if="getTravelCardImage(card.cardCompany)"
+                :src="getTravelCardImage(card.cardCompany)"
+                :alt="`${card.cardCompany} ${card.cardName}`"
+            />
             <i
+                v-else
                 :style="{
                 background: getCompanyColor(
                   card.cardCompany,
@@ -298,48 +360,33 @@ onMounted(loadCards)
             >
               {{ getCompanyCode(card.cardCompany) }}
             </i>
-
-            <span class="card-copy">
-              <b>{{ card.cardName }}</b>
-
-              <small>
-                {{ card.cardCompany }}
-                <template v-if="card.bankName">
-                  · {{ card.bankName }}
-                </template>
-              </small>
-
-              <small>
-                지원 통화
-                {{ card.supportedCurrencyCount }}개
-                ·
-                {{
-                  card.transitCard
-                      ? '교통카드 지원'
-                      : '교통카드 미지원'
-                }}
-              </small>
-            </span>
-
-            <strong>
-              {{ card.foreignCurrencyHoldingLimit }}
-            </strong>
-
-            <em>›</em>
+            <small
+                class="card-tile-status"
+                :class="{ available: card.instantUse }"
+            >
+              {{ card.instantUse ? '바로 이용 가능' : '연계계좌 필요' }}
+            </small>
           </button>
 
-          <div class="card-footer">
-            <span
-                :class="{
-                available: card.instantUse,
-              }"
-            >
-              {{
-                card.instantUse
-                    ? '별도 계좌 개설 없이 이용 가능'
-                    : '연계 외화계좌 필요'
-              }}
+          <button
+              type="button"
+              class="card-tile-copy"
+              @click="openCardDetail(card.id)"
+          >
+            <small class="company-name">{{ card.cardCompany }}</small>
+            <b>{{ card.cardName }}</b>
+
+            <span class="card-tags">
+              <small>통화 {{ card.supportedCurrencyCount }}개</small>
+              <small :class="{ muted: !card.transitCard }">{{ card.transitCard ? '교통카드' : '교통 미지원' }}</small>
             </span>
+          </button>
+
+          <div class="card-tile-footer">
+            <div>
+              <small>외화보유한도</small>
+              <strong>{{ card.foreignCurrencyHoldingLimit || '카드별 확인' }}</strong>
+            </div>
 
             <button
                 type="button"
@@ -352,13 +399,24 @@ onMounted(loadCards)
             >
               {{
                 travelCardsStore.isCompared(card.id)
-                    ? '비교 선택됨'
-                    : '비교 추가'
+                    ? '✓ 비교 담기 완료'
+                    : '+ 비교 담기'
               }}
             </button>
           </div>
         </article>
       </section>
+      <p class="carousel-hint">오른쪽으로 스크롤하면서 카드를 확인해보세요 ›</p>
+
+      <button
+          v-if="travelCardsStore.comparedCardCount"
+          type="button"
+          class="floating-compare"
+          @click="openComparison"
+      >
+        <span><b>{{ travelCardsStore.comparedCardCount }}</b>개의 카드가 담겼어요</span>
+        <strong>비교하기 ›</strong>
+      </button>
 
       <BottomNav />
     </div>
@@ -366,97 +424,23 @@ onMounted(loadCards)
 </template>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  background: #e7ecf4;
-  color: #10192d;
-}
-
-.shell {
-  width: min(100%, 390px);
-  min-height: 100vh;
-  margin: auto;
-  padding: 52px 18px 100px;
-  background: #f7f5ef;
-}
-
-.page-header {
-  display: grid;
-  grid-template-columns: 32px 1fr 32px;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.back-button {
-  border: 0;
-  background: none;
-  font-size: 25px;
-  text-align: left;
-}
-
-.page-header h1 {
-  font-size: 18px;
-  font-weight: 900;
-  text-align: center;
-}
-
-.comparison-link {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 36px 1fr auto;
-  align-items: center;
-  gap: 9px;
-  margin-top: 14px;
-  padding: 12px;
-  border: 1px solid #e0e6ed;
-  border-radius: 13px;
-  background: #fff;
-  text-align: left;
-}
-
-.comparison-icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 10px;
-  background: #edf3ff;
-  color: #174494;
-}
-
-.comparison-copy b,
-.comparison-copy small {
-  display: block;
-}
-
-.comparison-copy b {
-  font-size: 11px;
-}
-
-.comparison-copy small {
-  margin-top: 3px;
-  color: #8792a2;
-  font-size: 8px;
-}
-
-.comparison-link em {
-  color: #2870dc;
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 900;
-}
+.page{min-height:100vh;background:#e9eef7;color:#101b33}.shell{width:min(100%,430px);min-height:100vh;margin:auto;padding:42px 18px 118px;background:linear-gradient(180deg,#f4f7ff 0%,#edf3fc 100%)}
+.page-header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;margin-bottom:17px}.back-button{display:grid;width:42px;height:42px;place-items:center;border:0;border-radius:14px;background:#fff;color:#16366f;font-size:28px;box-shadow:0 5px 16px #24487512}.page-header>div{text-align:center}.page-header small{color:#2f6fd8;font-size:8px;font-weight:900;letter-spacing:.13em}.page-header h1{margin-top:2px;font-size:18px;font-weight:900}
+.finder-hero{position:relative;display:flex;min-height:184px;overflow:hidden;padding:23px 20px;border-radius:25px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 68%,#2f70d9 100%);color:#fff;box-shadow:0 16px 34px #123a8529}.hero-copy{position:relative;z-index:2}.hero-copy small{color:#ffd268;font-size:8px;font-weight:900;letter-spacing:.14em}.hero-copy h2{margin-top:10px;font-size:21px;font-weight:900;line-height:1.3;letter-spacing:-.04em}.hero-copy p{margin-top:9px;color:#c8d9f8;font-size:10px;line-height:1.55}.hero-orbit{position:absolute;top:-70px;right:-60px;width:190px;height:190px;border-radius:50%;background:#ffffff12}.hero-card{position:absolute;right:-21px;bottom:-18px;width:142px;height:91px;padding:17px;border:1px solid #ffffff3a;border-radius:18px;background:linear-gradient(145deg,#ffffff29,#8fb9ff25);box-shadow:0 14px 28px #071c4c50;transform:rotate(-8deg);backdrop-filter:blur(5px)}.hero-card i{display:block;width:24px;height:17px;border-radius:5px;background:linear-gradient(135deg,#ffd76c,#eca82d)}.hero-card b,.hero-card span{display:block}.hero-card b{margin-top:11px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em}.hero-card span{margin-top:3px;color:#cbdcff;font-size:6px;letter-spacing:.16em}
 
 .search-form {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
-  padding: 8px 9px 8px 12px;
-  border: 1px solid #e1e6ed;
-  border-radius: 11px;
+  margin-top: 15px;
+  padding: 7px 8px 7px 14px;
+  border: 1px solid #d8e2f1;
+  border-radius: 15px;
   background: #fff;
-  color: #9aa5b5;
+  color: #71819b;
+  box-shadow:0 7px 20px #253f6b0b;
 }
+.search-form svg{width:19px;height:19px;flex:none}
 
 .search-form input {
   min-width: 0;
@@ -464,15 +448,15 @@ onMounted(loadCards)
   border: 0;
   outline: none;
   background: transparent;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .search-form button {
-  padding: 7px 11px;
-  border-radius: 8px;
-  background: #1c58ae;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: #173f8d;
   color: #fff;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
 }
 
@@ -480,152 +464,121 @@ onMounted(loadCards)
   background: #aeb9ca;
 }
 
-.filters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.filters label:first-child {
-  grid-column: 1 / 3;
-}
-
-.filters label {
-  display: grid;
-  gap: 5px;
-}
-
-.filters label > span {
-  color: #738095;
-  font-size: 8px;
-  font-weight: 700;
-}
-
-.filters select {
-  width: 100%;
-  padding: 9px 10px;
-  border: 1px solid #dfe5ed;
-  border-radius: 10px;
-  outline: none;
-  background: #fff;
-  color: #26354b;
-  font-size: 9px;
-}
+.filters{position:relative;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.filter-field{position:relative;display:grid;gap:5px}.filter-field:first-child{grid-column:1/3}.filter-field>span{padding-left:2px;color:#738095;font-size:10px;font-weight:700}.filter-field>button{display:flex;width:100%;min-height:40px;align-items:center;justify-content:space-between;padding:9px 11px;border:1px solid #d9e3f1;border-radius:11px;background:#fff;color:#26354b;font-size:10px;font-weight:700;text-align:left}.filter-field>button[aria-expanded=true]{border-color:#4b7fd0;box-shadow:0 0 0 3px #3478e516}.filter-field>button i{color:#6680a7;font-size:13px;font-style:normal}.filter-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:50;width:100%;overflow:hidden;padding:5px;border:1px solid #d8e2f0;border-radius:12px;background:#fff;box-shadow:0 13px 30px #1737612b}.filter-menu.wide{display:grid;max-height:244px;grid-template-columns:1fr 1fr;overflow-y:auto}.filter-menu>button{display:flex;width:100%;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;background:#fff;color:#34425a;font-size:10px;text-align:left}.filter-menu>button:hover,.filter-menu>button.selected{background:#edf4ff;color:#1e5fbd;font-weight:900}.filter-menu>button small{color:#8998ad;font-size:8px}.filter-menu>button.selected small{color:#4e7fc5}
 
 .list-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 18px 2px 8px;
+  margin: 22px 2px 10px;
 }
+.list-heading small{color:#2e6fd9;font-size:10px;font-weight:900;letter-spacing:.13em}.list-heading h2{margin-top:3px;font-size:16px}.list-heading h2 b{color:#2d6dd5;font-size:11px}
 
-.list-heading h2 {
-  font-size: 13px;
-}
+.list-actions{display:flex;align-items:center;gap:7px}.list-actions .reset-button{color:#2d6bc8;font-size:9px;font-weight:700}.list-compare-button{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #d2def0;border-radius:10px;background:#fff;color:#173f8d;font-size:9px;font-weight:900;box-shadow:0 4px 12px #253f6b0d}.list-compare-button b{display:grid;width:18px;height:18px;place-items:center;border-radius:6px;background:#ffce61;color:#143674;font-size:8px}
 
-.list-heading button {
-  color: #2d6bc8;
-  font-size: 8px;
-  font-weight: 700;
-}
+.card-carousel{display:flex;gap:14px;margin-top:2px;padding:4px 2px 10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.card-carousel::-webkit-scrollbar{display:none}
+.carousel-hint{margin:2px 2px 0;color:#9aa7bb;font-size:9.5px;font-weight:600;text-align:right}
 
-.card-list {
-  display: grid;
-  gap: 9px;
-}
-
-.card-item {
+.card-tile {
+  flex: 0 0 172px;
+  scroll-snap-align: start;
   overflow: hidden;
   border: 1px solid #e1e6ed;
-  border-radius: 14px;
+  border-radius: 22px;
   background: #fff;
+  box-shadow:0 8px 22px #263e650b;
 }
 
-.card-main {
-  display: grid;
+.card-tile-visual {
+  position: relative;
+  display: flex;
   width: 100%;
-  grid-template-columns: 40px minmax(0, 1fr) auto 8px;
+  aspect-ratio: 0.66;
   align-items: center;
-  gap: 9px;
-  padding: 13px 12px;
-  text-align: left;
+  justify-content: center;
+  padding: 16px;
+  border: none;
+  background: linear-gradient(165deg, #eef3fd, #e3ebfa);
 }
 
-.card-main i {
+.card-tile-visual img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 12px 22px rgba(20, 42, 94, 0.18);
+}
+
+.card-tile-visual > i {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 64px;
+  height: 64px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 16px;
   color: #fff;
-  font-size: 9px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 900;
 }
 
-.card-copy {
-  min-width: 0;
+.card-tile-status {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #ffffffe6;
+  color: #78869a;
+  font-size: 7.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(20, 42, 94, 0.12);
 }
 
-.card-copy b,
-.card-copy small {
+.card-tile-status.available {
+  background: #e5f7f1;
+  color: #078a68;
+}
+
+.card-tile-copy {
   display: block;
+  width: 100%;
+  padding: 13px 14px 0;
+  text-align: left;
 }
 
-.card-copy b {
+.card-tile-copy b,.card-tile-copy small{display:block}.card-tile-copy .company-name{margin:0;color:#3972c6;font-size:9px;font-weight:800}
+
+.card-tile-copy b {
   overflow: hidden;
-  font-size: 10px;
+  margin-top:4px;font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.card-copy small {
-  margin-top: 4px;
-  color: #8995a5;
-  font-size: 7px;
-  line-height: 1.4;
-}
+.card-tile-copy .card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.card-tile-copy .card-tags small{margin:0;padding:5px 7px;border-radius:99px;background:#edf4ff;color:#376aaa;font-size:8px}.card-tile-copy .card-tags small.muted{background:#f2f4f7;color:#8995a7}
 
-.card-main strong {
-  max-width: 92px;
-  color: #1768d3;
-  font-size: 8px;
-  line-height: 1.4;
-  text-align: right;
-}
-
-.card-main em {
-  color: #9ba6b5;
-  font-size: 18px;
-  font-style: normal;
-}
-
-.card-footer {
+.card-tile-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 12px 14px 14px;
   border-top: 1px solid #edf0f4;
   background: #fbfcfe;
 }
 
-.card-footer > span {
-  color: #8d98a7;
-  font-size: 7px;
-}
-
-.card-footer > span.available {
-  color: #07966c;
-  font-weight: 700;
-}
+.card-tile-footer>div{display:flex;flex-direction:column;gap:3px}.card-tile-footer>div small{color:#8a97aa;font-size:8px;white-space:nowrap}.card-tile-footer>div strong{color:#173c82;font-size:10px;line-height:1.3;word-break:keep-all}
 
 .comparison-toggle {
-  padding: 5px 9px;
-  border-radius: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
   background: #edf2fa;
   color: #68788e;
-  font-size: 7px;
+  font-size: 9px;
+  text-align: center;
 }
 
 .comparison-toggle.selected {
@@ -673,4 +626,6 @@ onMounted(loadCards)
 .state-card.error b {
   color: #d44747;
 }
+.floating-compare{position:fixed;bottom:82px;left:50%;z-index:45;display:flex;width:min(calc(100% - 36px),394px);align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ffffff30;border-radius:16px;background:#102f72;color:#fff;box-shadow:0 14px 30px #0d2d7150;transform:translateX(-50%)}.floating-compare span{color:#cbd9f4;font-size:10px}.floating-compare span b{display:inline-grid;width:21px;height:21px;margin-right:5px;place-items:center;border-radius:7px;background:#ffd36b;color:#133575}.floating-compare strong{font-size:11px}
+@media(max-width:360px){.hero-card{right:-38px}.hero-copy h2{font-size:19px}}
 </style>

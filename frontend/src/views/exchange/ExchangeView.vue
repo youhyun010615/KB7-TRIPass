@@ -6,13 +6,12 @@ import NotificationBell from '@/components/common/NotificationBell.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
-import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
-import { useTravelStore } from '@/stores/travel';
+import { useExchangeStore } from '@/stores/exchange';
 
 const router = useRouter();
 const exchange = useExchangeStore();
-const travel = useTravelStore();
 const currencySearch = ref('');
+const countryDropdownOpen = ref(false);
 
 const currencyCountryNames = {
   AED: '아랍에미리트', AUD: '호주', BHD: '바레인', BND: '브루나이',
@@ -59,23 +58,9 @@ onMounted(() => {
   exchange.updateExchangeRates();
 });
 
-// 개인화된 통화 목록 계산
-const displayCurrencies = computed(() => {
-  if (travel.selectedPlans.length === 0) {
-    return exchange.currencies;
-  }
-
-  const codes = new Set([
-    ...exchange.interestedCurrencyCodes,
-    ...exchange.alerts.map((a) => a.currencyCode),
-    ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
-  ]);
-  return exchange.currencies.filter((c) => codes.has(c.code));
-});
-
 const filteredCurrencies = computed(() => {
   const keyword = currencySearch.value.trim().toLocaleLowerCase('ko-KR');
-  return displayCurrencies.value
+  return exchange.currencies
     .map((currency) => ({
       ...currency,
       countryName: currencyCountryNames[currency.code] || currency.name || currency.code,
@@ -89,7 +74,7 @@ const filteredCurrencies = computed(() => {
 });
 
 watch(
-  displayCurrencies,
+  () => exchange.currencies,
   (newList) => {
     if (newList && newList.length > 0) {
       const isSelectedValid = newList.some(
@@ -197,20 +182,38 @@ watch(
         </div>
 
         <template v-if="filteredCurrencies.length > 0">
-          <div class="currency-country-list" aria-label="지원 국가 목록">
+          <div class="currency-select" :class="{ open: countryDropdownOpen || !!currencySearch }">
             <button
-              v-for="currency in filteredCurrencies"
-              :key="currency.code"
               type="button"
-              :class="{ active: exchange.selectedCode === currency.code }"
-              @click="exchange.selectedCode = currency.code"
+              class="currency-select-trigger"
+              :aria-expanded="countryDropdownOpen || !!currencySearch"
+              @click="countryDropdownOpen = !countryDropdownOpen"
             >
-              <span class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
-              <span class="currency-country-name">{{ currency.countryName }}</span>
-              <span class="currency-country-unit">{{ currency.name }}</span>
-              <b>{{ currency.code }}</b>
-              <span class="currency-country-check" aria-hidden="true">✓</span>
+              <span class="fi currency-country-flag" :class="exchange.selectedCurrency?.flagClass" aria-hidden="true"></span>
+              <span class="currency-select-info">
+                <span class="currency-country-name">{{ currencyCountryNames[exchange.selectedCode] || exchange.selectedCurrency?.name }}</span>
+                <span class="currency-country-unit">{{ exchange.selectedCurrency?.name }} · {{ exchange.selectedCode }}</span>
+              </span>
+              <svg class="currency-select-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </button>
+
+            <div v-if="countryDropdownOpen || currencySearch" class="currency-country-list" aria-label="지원 국가 목록">
+              <button
+                v-for="currency in filteredCurrencies"
+                :key="currency.code"
+                type="button"
+                :class="{ active: exchange.selectedCode === currency.code }"
+                @click="exchange.selectedCode = currency.code; countryDropdownOpen = false; currencySearch = ''"
+              >
+                <span class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
+                <span class="currency-country-name">{{ currency.countryName }}</span>
+                <span class="currency-country-unit">{{ currency.name }}</span>
+                <b>{{ currency.code }}</b>
+                <span class="currency-country-check" aria-hidden="true">✓</span>
+              </button>
+            </div>
           </div>
 
           <CurrencyChart
@@ -278,7 +281,7 @@ watch(
   z-index: 60;
   width: 100%;
   max-width: 390px;
-  padding: 42px 20px 12px;
+  padding: 42px 20px 8px;
   background: #f3f5fa;
   transform: translateX(-50%);
 }
@@ -373,18 +376,18 @@ header h1 {
 .header-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 12px 0 14px;
+  gap: 10px;
+  margin: 8px 0 9px;
 }
 .action-card-btn {
   display: flex;
   align-items: center;
   gap: 9px;
   min-width: 0;
-  min-height: 68px;
-  padding: 11px 12px;
+  min-height: 58px;
+  padding: 9px 12px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 14px;
   background: #fff;
   box-shadow: 0 8px 22px rgba(23, 43, 77, .055);
   cursor: pointer;
@@ -438,7 +441,7 @@ header h1 {
   grid-template-columns: 20px minmax(0, 1fr) 26px;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 40px;
   padding: 0 10px 0 13px;
   margin: 2px 0 3px;
   border: 1px solid #dce4f0;
@@ -477,10 +480,53 @@ header h1 {
   font-size: 18px;
   line-height: 1;
 }
+.currency-select {
+  margin: 8px 0 12px;
+}
+.currency-select-trigger {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 22px 1fr 16px;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 8px 14px;
+  border: 1px solid #e0e7f1;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(23, 43, 77, .045);
+  text-align: left;
+}
+.currency-select.open .currency-select-trigger {
+  border-color: #b7cdf6;
+  border-radius: 14px 14px 0 0;
+  box-shadow: none;
+}
+.currency-select-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.currency-select-chevron {
+  width: 15px;
+  height: 15px;
+  color: #8b97a9;
+  transition: transform .2s ease;
+}
+.currency-select.open .currency-select-chevron {
+  transform: rotate(180deg);
+}
+.currency-select .currency-country-list {
+  max-height: 220px;
+  margin: 0;
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+}
 .currency-country-list {
   display: grid;
-  max-height: 194px;
-  margin: 8px 0 14px;
+  max-height: 172px;
+  margin: 8px 0 12px;
   overflow-y: auto;
   border: 1px solid #e0e7f1;
   border-radius: 16px;
