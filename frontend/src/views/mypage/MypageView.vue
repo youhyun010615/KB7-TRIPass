@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
 import { getAccounts } from '@/api/asset'
@@ -7,18 +7,48 @@ import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
 import { useMypageStore } from '@/stores/mypage'
 import BottomNav from '@/components/common/BottomNav.vue'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const cardStore = useCardStore()
 const mypageStore = useMypageStore()
 
+// 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
+const mypageHeaderEl = ref(null)
+const mypageHeaderHeight = ref(0)
+let mypageHeaderResizeObserver = null
+
+function syncMypageHeaderHeight() {
+  if (mypageHeaderEl.value) {
+    mypageHeaderHeight.value = mypageHeaderEl.value.offsetHeight
+  }
+}
+
+watch(mypageHeaderEl, (el) => {
+  mypageHeaderResizeObserver?.disconnect()
+  mypageHeaderResizeObserver = null
+  if (!el) return
+
+  syncMypageHeaderHeight()
+  if (window.ResizeObserver) {
+    mypageHeaderResizeObserver = new ResizeObserver(syncMypageHeaderHeight)
+    mypageHeaderResizeObserver.observe(el)
+  }
+})
+
+onBeforeUnmount(() => {
+  mypageHeaderResizeObserver?.disconnect()
+})
+
 const isLoggingOut = ref(false)
 const accounts = ref([])
 
 const memberIdentity = computed(() => {
   const provider = authStore.user?.loginProvider ?? 'LOCAL'
-  if (provider !== 'LOCAL') return authStore.user?.email ?? '이메일 미등록'
+  if (provider !== 'LOCAL') {
+    return authStore.user?.email ?? authStore.user?.loginId ?? authStore.user?.id ?? 'tripass'
+  }
   return authStore.user?.loginId ?? authStore.user?.id ?? 'tripass'
 })
 
@@ -81,12 +111,6 @@ const myManageItems = computed(() => [
     path: '/mypage/travel',
     icon: 'travel',
   },
-  {
-    label: '계좌·카드 연동',
-    sub: `통장 ${accountCount.value}개 · 카드 ${cardCount.value}장 연동 중`,
-    path: '/mypage/assets',
-    icon: 'card',
-  },
 ])
 
 const notificationRows = [
@@ -101,9 +125,19 @@ const notificationRows = [
   <div class="min-h-screen pb-20 flex flex-col" style="background: #F4F5F9">
 
     <!-- 헤더 -->
-    <div class="flex items-center px-5 pt-14 pb-3">
-      <h1 class="text-2xl font-bold text-gray-900">마이페이지</h1>
+    <div ref="mypageHeaderEl" class="mypage-header-fixed">
+      <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 42px">
+        <div>
+          <p class="mypage-header-eyebrow">
+            <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
+            TRIPASS
+          </p>
+          <h1 class="mypage-header-title">MyPage</h1>
+        </div>
+        <NotificationBell />
+      </div>
     </div>
+    <div :style="{ height: mypageHeaderHeight + 'px' }" aria-hidden="true" />
 
     <div class="px-4 flex flex-col gap-[22px]">
 
@@ -113,7 +147,7 @@ const notificationRows = [
 
         <div class="relative flex items-center justify-between px-5 py-[13px]" style="background: rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.12)">
           <div class="flex items-center gap-2">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 16l7-2 3.5-8 2 .5-2 7.5 5.5-1.5.5 1.5-5 3 2 5-2-.5-2-4-3 3.5-.5 2-1.5-.5.5-3-6.5 2z" fill="#FFD466"/></svg>
+            <img src="@/assets/icons/yellow_airplane.png" width="15" height="15" alt="" />
             <span class="text-[10.5px] font-extrabold tracking-[0.12em]" style="color:#FFD466">TRIPASS MEMBER PASS</span>
           </div>
           <span class="font-mono text-[10.5px] font-bold" style="color: rgba(255,255,255,0.65)">TP-{{ authStore.user?.id ?? '000000' }}</span>
@@ -160,9 +194,7 @@ const notificationRows = [
                 <circle cx="12" cy="8" r="3.4" stroke="#2F6FED" stroke-width="1.9"/>
                 <path d="M5 20c1.2-3.8 4-5.6 7-5.6s5.8 1.8 7 5.6" stroke="#2F6FED" stroke-width="1.9" stroke-linecap="round"/>
               </svg>
-              <svg v-if="item.icon === 'travel'" width="19" height="19" viewBox="0 0 24 24" fill="none">
-                <path d="M2 16l7-2 3.5-8 2 .5-2 7.5 5.5-1.5.5 1.5-5 3 2 5-2-.5-2-4-3 3.5-.5 2-1.5-.5.5-3-6.5 2z" fill="#2F6FED"/>
-              </svg>
+              <img v-if="item.icon === 'travel'" src="@/assets/icons/blue_airplane.svg" width="19" height="19" alt="" />
               <svg v-if="item.icon === 'card'" width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="#2F6FED" stroke-width="1.8"/>
                 <path d="M3 10.5h18" stroke="#2F6FED" stroke-width="1.8"/>
@@ -244,3 +276,54 @@ const notificationRows = [
     <BottomNav />
   </div>
 </template>
+
+<style scoped>
+.mypage-header-fixed {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 60;
+  width: 100%;
+  background: #f4f5f9;
+  transform: translateX(-50%);
+}
+.mypage-header-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0b2a6b;
+  margin-bottom: 4px;
+}
+.mypage-header-title {
+  margin-top: 2px;
+  font-size: 19px;
+  font-weight: 900;
+  color: #10192b;
+}
+.header-plane {
+  width: 12px;
+  height: 12px;
+  animation: header-plane-fly 2.6s ease-in-out infinite;
+}
+@keyframes header-plane-fly {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(47, 112, 242, 0));
+  }
+  25% {
+    transform: translateY(-1.5px) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+    filter: brightness(1.6) drop-shadow(0 0 3px rgba(47, 112, 242, 0.55));
+  }
+  75% {
+    transform: translateY(1.5px) rotate(6deg);
+  }
+}
+</style>

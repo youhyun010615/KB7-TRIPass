@@ -1,5 +1,10 @@
 <script setup>
 import { computed } from 'vue';
+import foodIcon from '@/assets/icons/food.svg';
+import cafeIcon from '@/assets/icons/cafe.svg';
+import shoppingIcon from '@/assets/icons/shopping-cart.svg';
+import taxiIcon from '@/assets/icons/taxi.svg';
+import leisureIcon from '@/assets/icons/hobby_drink.svg';
 
 const props = defineProps({
   report: { type: Object, required: true },
@@ -8,12 +13,12 @@ const props = defineProps({
 defineEmits(['open']);
 
 const categoryMeta = {
-  FOOD: { icon: '🍽', color: '#2457aa' },
-  CAFE: { icon: '☕', color: '#3b82f6' },
+  FOOD: { icon: '🍽', iconSrc: foodIcon, color: '#2457aa' },
+  CAFE: { icon: '☕', iconSrc: cafeIcon, color: '#3b82f6' },
   LIVING: { icon: '🧺', color: '#13a184' },
-  SHOPPING: { icon: '🛍', color: '#f59e0b' },
-  HOBBY: { icon: '🎮', color: '#8b5cf6' },
-  TRANSPORT: { icon: '🚌', color: '#0ea5e9' },
+  SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, color: '#f59e0b' },
+  HOBBY: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
+  TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, color: '#0ea5e9' },
   OTHER: { icon: '•••', color: '#64748b' },
 };
 
@@ -106,9 +111,10 @@ function metaOf(categoryCode) {
         class="category-row"
       >
         <b>{{ category.rank }}</b>
-        <i :style="{ background: `${metaOf(category.categoryCode).color}18` }">{{
-          metaOf(category.categoryCode).icon
-        }}</i>
+        <i :style="{ background: `${metaOf(category.categoryCode).color}18` }">
+          <img v-if="metaOf(category.categoryCode).iconSrc" :src="metaOf(category.categoryCode).iconSrc" alt="" />
+          <template v-else>{{ metaOf(category.categoryCode).icon }}</template>
+        </i>
         <div>
           <strong>{{ category.categoryName }}</strong>
           <small>{{ formatCurrency(category.amount) }} · {{ category.ratio }}%</small>
@@ -310,6 +316,10 @@ function metaOf(categoryCode) {
   border-radius: 10px;
   font-size: 14px;
   font-style: normal;
+}
+.category-row > i img {
+  width: 16px;
+  height: 16px;
 }
 .category-row div strong {
   display: block;

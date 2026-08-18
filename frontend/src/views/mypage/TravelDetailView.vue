@@ -1,153 +1,280 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
+import { fetchMyTrips } from '@/api/travel'
+import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
+import { getReceipts } from '@/api/receipt'
+import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const route = useRoute()
+const travelStore = useTravelStore()
 
-const travel = {
-  id: 1,
-  title: '총 2개국 배낭여행',
-  countries: ['프랑스', '이탈리아'],
-  dateRange: '2025.07.10 ~ 2025.07.24',
-  days: 14,
-  nights: 13,
-  totalBudget: 2850000,
-  spentBudget: 2430000,
-  status: '완료',
+const loading = ref(true)
+const trip = ref(null)
+const report = ref(null)
+const receipts = ref([])
+
+function splitCountryNames(joined) {
+  return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
 }
 
-const menus = [
-  {
-    label: '여행 리포트',
-    desc: '여행 지출 분석과 요약',
-    path: `/mypage/reports?tripId=${route.params.id}`,
-    icon: 'report',
-  },
-  {
-    label: '체크리스트',
-    desc: '준비물과 할 일 목록',
-    path: `/mypage/checklists?tripId=${route.params.id}`,
-    icon: 'checklist',
-  },
-  {
-    label: '영수증 관리',
-    desc: '촬영한 영수증과 번역 내역',
-    path: `/receipt?tripId=${route.params.id}`,
-    icon: 'receipt',
-  },
-  {
-    label: '일정 관리',
-    desc: '날짜별 여행 일정',
-    path: `/schedule?tripId=${route.params.id}`,
-    icon: 'schedule',
-  },
-]
-
-function formatCurrency(n) {
-  return n.toLocaleString('ko-KR') + '원'
+function flagOf(countryName) {
+  return travelStore.countryFlagMap[countryName]?.emoji ?? '🌍'
 }
-const spentPercent = Math.round((travel.spentBudget / travel.totalBudget) * 100)
+
+const isEnded = computed(() => trip.value?.status === 'ENDED')
+const countryFlags = computed(() => splitCountryNames(trip.value?.countryNames).map(flagOf))
+const countryLabel = computed(() => splitCountryNames(trip.value?.countryNames).join(' · '))
+
+function formatDateRange(startDate, endDate) {
+  const fmt = (d) => (d ? d.replaceAll('-', '.') : '')
+  return `${fmt(startDate)} - ${fmt(endDate)}`
+}
+
+function formatWon(amount) {
+  return `${Number(amount || 0).toLocaleString('ko-KR')}원`
+}
+
+const savingsPercent = computed(() =>
+  Math.min(100, Math.max(0, Number(report.value?.savingsPercent ?? 0))),
+)
+
+// 접수된 영수증 중 원화(KRW) 항목만 합산한다. 외화 영수증은 환율 변환 API가
+// 없어 그대로 합산하면 총액이 왜곡되므로 제외한다.
+const krwReceiptTotal = computed(() =>
+  receipts.value
+    .filter((r) => r.currencyCode === 'KRW')
+    .reduce((sum, r) => sum + Number(r.totalAmount || 0), 0),
+)
+
+const budgetDiff = computed(() => Number(report.value?.targetBudget || 0) - Number(report.value?.spent || 0))
+
+const menuItems = computed(() => {
+  const tripId = trip.value?.tripId
+  if (isEnded.value) {
+    return [
+      { label: '여행 리포트', desc: '예산과 지출 분석', icon: 'report', path: `/mypage/reports/post-trip?tripId=${tripId}` },
+      { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}` },
+      { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/schedule?tripId=${tripId}` },
+      { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${tripId}/receipts` },
+      { label: '완료 미션', desc: '매달 진행했던 미션 기록', icon: 'mission', path: '/missions' },
+    ]
+  }
+  return [
+    { label: '여행 리포트', desc: '예산과 지출 분석', icon: 'report', path: `/mypage/reports/pre-trip?tripId=${tripId}`, badge: '준비 중' },
+    { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}`, badge: `${report.value?.checklistCompleted ?? 0}/${report.value?.checklistTotal ?? 0}` },
+    { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/schedule?tripId=${tripId}`, badge: `${report.value?.scheduleCount ?? 0}개` },
+    { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${tripId}/receipts`, badge: `${receipts.value.length}장` },
+    { label: '완료 미션', desc: '매달 진행했던 미션 기록', icon: 'mission', path: '/missions', badge: '-' },
+  ]
+})
+
+function goEdit() {
+  router.push({ name: 'TravelRegister', query: { mode: 'edit' } })
+}
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const tripId = route.params.id
+    const trips = (await fetchMyTrips()) || []
+    trip.value = trips.find((t) => String(t.tripId) === String(tripId)) || null
+
+    if (trip.value) {
+      if (trip.value.status === 'ENDED') {
+        report.value = await fetchPostTripReport(tripId)
+      } else {
+        report.value = await fetchPreTripReport(tripId)
+        const receiptRes = await getReceipts(tripId)
+        receipts.value = receiptRes.data?.data ?? []
+      }
+    }
+  } catch (error) {
+    console.error('여행 상세 조회 실패:', error)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #F7F4EE">
+  <div class="min-h-screen pb-20 flex flex-col" style="background: #F4F5F9">
 
     <!-- 헤더 -->
-    <div class="flex items-center justify-between px-5 pt-14 pb-4">
-      <button @click="router.back()" class="p-1">
+    <div class="flex items-center gap-3 px-5 pt-14 pb-3">
+      <button type="button" class="p-1" @click="router.back()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18L9 12L15 6" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 6l-6 6 6 6" stroke="#10192B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <h1 class="text-base font-bold text-gray-900">여행 상세</h1>
-      <div class="w-8" />
+      <h1 class="flex-1 text-[18px] font-black text-gray-900 truncate">{{ trip?.tripName ?? '여행 상세' }}</h1>
+      <button v-if="!isEnded" type="button" class="text-[13px] font-bold flex-shrink-0" style="color:#2F6FED" @click="goEdit">편집</button>
+      <span v-else class="text-[13px] font-bold flex-shrink-0" style="color:#2F6FED">공유</span>
     </div>
 
-    <!-- 여행 요약 카드 -->
-    <div class="mx-4 rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #2A4DB0 0%, #1A337A 100%)">
-      <div class="px-5 pt-5 pb-6">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-white/60 text-[11px]">{{ travel.dateRange }}</span>
-          <span class="text-white/40 text-[10px] font-semibold px-2 py-0.5 rounded-full" style="border: 1px solid rgba(255,255,255,0.3)">{{ travel.status }}</span>
-        </div>
-        <h2 class="text-white text-xl font-bold mb-1">{{ travel.title }}</h2>
-        <p class="text-white/70 text-sm">{{ travel.countries.join(' · ') }}</p>
+    <p v-if="loading" class="text-center text-xs text-gray-400 py-10">불러오는 중...</p>
+    <p v-else-if="!trip" class="text-center text-xs text-gray-400 py-10">여행 정보를 찾을 수 없어요.</p>
 
-        <!-- 통계 행 -->
-        <div class="flex gap-6 mt-5">
-          <div>
-            <p class="text-white/50 text-[10px] mb-0.5">여행 기간</p>
-            <p class="text-white font-bold text-lg">{{ travel.nights }}박 {{ travel.days }}일</p>
-          </div>
-          <div>
-            <p class="text-white/50 text-[10px] mb-0.5">방문 국가</p>
-            <p class="text-white font-bold text-lg">{{ travel.countries.length }}개국</p>
-          </div>
+    <div v-else class="px-4 flex flex-col gap-6">
+
+      <!-- 여행 요약 카드 -->
+      <div class="relative rounded-[20px] text-white p-5 overflow-hidden" style="background: linear-gradient(155deg, #0B2A6B 0%, #123C94 62%, #17459F 100%); box-shadow: 0 10px 24px rgba(11,42,107,0.2)">
+        <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
+
+        <div class="relative flex items-center justify-between">
+          <p class="text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">{{ isEnded ? 'TRIP COMPLETED' : 'MY TRIP ARCHIVE' }}</p>
+          <span class="text-[10.5px] font-bold" :style="isEnded ? 'color:#FFD466' : 'color:rgba(255,255,255,0.55)'">{{ isEnded ? '여행 완료' : '준비 중' }}</span>
         </div>
 
-        <!-- 예산 바 -->
-        <div class="mt-5">
-          <div class="flex justify-between items-center mb-2">
-            <p class="text-white/60 text-[11px]">지출 현황</p>
-            <p class="text-white text-xs font-semibold">{{ spentPercent }}%</p>
+        <div class="relative flex items-center gap-2 mt-3 text-lg">
+          <span v-for="(flag, i) in countryFlags" :key="i">{{ flag }}</span>
+          <span class="text-[15px] font-extrabold">{{ countryLabel }}</span>
+        </div>
+        <p class="relative font-mono text-[12px] font-bold mt-1.5" style="color: rgba(255,255,255,0.6)">
+          {{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일
+        </p>
+
+        <template v-if="!isEnded">
+          <div class="relative flex items-end justify-between mt-4">
+            <div />
+            <div class="text-right">
+              <p class="font-mono text-[26px] font-bold" style="color:#FFD466">D-{{ report?.daysUntilTrip ?? '-' }}</p>
+              <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.55)">출국까지</p>
+            </div>
           </div>
-          <div class="h-1.5 rounded-full bg-white/20">
-            <div class="h-full rounded-full bg-white transition-all" :style="{ width: spentPercent + '%' }" />
+          <div class="relative mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
+            <div class="flex items-baseline justify-between text-[11px] font-bold">
+              <span style="color: rgba(255,255,255,0.6)">여행 자금 {{ formatWon(report?.targetBudget) }} 목표</span>
+              <span style="color:#FFD466">{{ savingsPercent }}%</span>
+            </div>
+            <div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background: rgba(255,255,255,0.18)">
+              <div class="h-full rounded-full" :style="{ width: `${savingsPercent}%`, background: '#FFD466' }"></div>
+            </div>
           </div>
-          <div class="flex justify-between mt-1.5">
-            <p class="text-white/60 text-[10px]">{{ formatCurrency(travel.spentBudget) }}</p>
-            <p class="text-white/60 text-[10px]">{{ formatCurrency(travel.totalBudget) }}</p>
+        </template>
+
+        <template v-else>
+          <div class="relative mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
+            <div class="flex items-end justify-between">
+              <div>
+                <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.6)">총 지출</p>
+                <p class="font-mono text-[26px] font-bold mt-1">{{ formatWon(report?.spent) }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.6)">예산 대비</p>
+                <p class="text-[13px] font-bold mt-1" style="color:#FFD466">
+                  {{ budgetDiff >= 0 ? '-' : '+' }}{{ formatWon(Math.abs(budgetDiff)) }} {{ budgetDiff >= 0 ? '절약' : '초과' }}
+                </p>
+              </div>
+            </div>
           </div>
+        </template>
+      </div>
+
+      <!-- 통계 (예정된 여행에서만 노출) -->
+      <div v-if="!isEnded" class="grid grid-cols-3 gap-3">
+        <div class="bg-white rounded-2xl py-4 text-center" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
+          <p class="text-[19px] font-black text-gray-900">{{ report?.scheduleCount ?? 0 }}</p>
+          <p class="text-[11px] font-bold text-gray-400 mt-0.5">등록 일정</p>
+        </div>
+        <div class="bg-white rounded-2xl py-4 text-center" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
+          <p class="text-[19px] font-black text-gray-900">{{ receipts.length }}</p>
+          <p class="text-[11px] font-bold text-gray-400 mt-0.5">영수증</p>
+        </div>
+        <div class="bg-white rounded-2xl py-4 text-center">
+          <p class="text-[17px] font-black text-gray-900 font-mono">{{ krwReceiptTotal.toLocaleString('ko-KR') }}</p>
+          <p class="text-[11px] font-bold text-gray-400 mt-0.5">누적 지출(원)</p>
         </div>
       </div>
-    </div>
 
-    <!-- 메뉴 -->
-    <div class="px-4 mt-4">
-      <div class="bg-white rounded-2xl overflow-hidden">
-        <button
-          v-for="(item, i) in menus"
-          :key="item.label"
-          class="w-full flex items-center gap-4 px-4 py-4 active:bg-gray-50"
-          :class="i < menus.length - 1 ? 'border-b border-gray-100' : ''"
-          @click="router.push(item.path)"
-        >
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #EEF2FF">
-            <!-- report -->
-            <svg v-if="item.icon === 'report'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M14 2V8H20" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="8" y1="13" x2="16" y2="13" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-              <line x1="8" y1="17" x2="12" y2="17" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <!-- checklist -->
-            <svg v-if="item.icon === 'checklist'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M9 11L12 14L22 4" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <!-- receipt -->
-            <svg v-if="item.icon === 'receipt'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M5 3H19V21L16.5 19.5L14 21L11.5 19.5L9 21L5 19V3Z" stroke="#3B5BDB" stroke-width="2" stroke-linejoin="round"/>
-              <path d="M9 8H15M9 12H15M9 16H13" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <!-- schedule -->
-            <svg v-if="item.icon === 'schedule'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="4" width="18" height="18" rx="2" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M16 2V6M8 2V6M3 10H21" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-left">
-            <p class="text-sm font-semibold text-gray-900">{{ item.label }}</p>
+      <!-- 메뉴 -->
+      <div class="flex flex-col gap-3">
+        <h2 class="text-lg font-black text-gray-900 px-0.5">{{ isEnded ? '여행 기록' : '여행 관리 메뉴' }}</h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            v-for="(item, i) in menuItems"
+            :key="item.label"
+            type="button"
+            class="menu-tile text-left active:scale-[0.97]"
+            :class="{ 'col-span-2': i === menuItems.length - 1 && menuItems.length % 2 === 1 }"
+            :style="{ animationDelay: `${i * 70}ms` }"
+            @click="router.push(item.path)"
+          >
+            <div class="flex items-start justify-between">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #EEF2FF">
+                <svg v-if="item.icon === 'report'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 2V8H20" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="8" y1="13" x2="16" y2="13" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="8" y1="17" x2="12" y2="17" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <svg v-else-if="item.icon === 'checklist'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 11L12 14L22 4" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg v-else-if="item.icon === 'schedule'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M16 2V6M8 2V6M3 10H21" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg v-else-if="item.icon === 'receipt'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 3H19V21L16.5 19.5L14 21L11.5 19.5L9 21L5 19V3Z" stroke="#3B5BDB" stroke-width="2" stroke-linejoin="round"/>
+                  <path d="M9 8H15M9 12H15M9 16H13" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <svg v-else-if="item.icon === 'mission'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="#3B5BDB" stroke-width="2"/>
+                  <path d="M9 12L11 14L15.5 9.5" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span
+                v-if="item.badge"
+                class="flex-shrink-0 text-[10.5px] font-bold px-2 py-[3px] rounded-full"
+                :style="item.badge === '준비 중' ? 'background:#EAF1FF; color:#0B2A6B' : 'background:#F4F5F9; color:#111827'"
+              >{{ item.badge }}</span>
+            </div>
+            <p class="text-sm font-semibold text-gray-900 mt-3">{{ item.label }}</p>
             <p class="text-xs text-gray-400 mt-0.5">{{ item.desc }}</p>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+          </button>
+        </div>
       </div>
     </div>
 
     <BottomNav />
   </div>
 </template>
+
+<style scoped>
+.menu-tile {
+  padding: 16px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(16, 25, 43, 0.07);
+  opacity: 0;
+  transform: translateY(18px) scale(0.9);
+  animation: tile-pop-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.15s ease;
+}
+@keyframes tile-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-tile {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+</style>

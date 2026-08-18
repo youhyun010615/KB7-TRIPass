@@ -220,7 +220,7 @@ onMounted(async () => {
             class="w-full flex items-center gap-3 py-4 text-left active:bg-gray-50"
             :class="i < pastTrips.length - 1 ? 'border-b' : ''"
             style="border-color:#F1F3F8"
-            @click="router.push(`/mypage/reports?tripId=${trip.tripId}`)"
+            @click="router.push(`/mypage/travel/${trip.tripId}`)"
           >
             <span class="text-[19px] leading-none flex-shrink-0">{{ flagOf(splitCountryNames(trip.countryNames)[0]) }}</span>
             <div class="flex-1 min-w-0">

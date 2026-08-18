@@ -102,29 +102,38 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
     loading.value = true;
     errorMessage.value = '';
 
+    // 진행 중인 미션 현황은 핵심 데이터이므로 실패 시 에러 화면을 보여준다.
     try {
-      const [optionData, selectionData, missionData] = await Promise.all([
-        fetchMissionOptions(yearMonth),
-        fetchMissionSelections(yearMonth),
-        fetchSavingMissions(targetYearMonth.value),
-      ]);
-      options.value = optionData || [];
-      selections.value = selectionData;
-      missions.value = missionData;
-      applySelections(selectionData?.selections || []);
-      addingMissions.value = false;
+      missions.value = await fetchSavingMissions(targetYearMonth.value);
     } catch (error) {
-      options.value = [];
-      selections.value = null;
       missions.value = null;
-      selectedRates.value = {};
+      loading.value = false;
       errorMessage.value = errorMessageOf(
         error,
         '저축 미션 정보를 불러오지 못했어요.',
       );
-    } finally {
-      loading.value = false;
+      return;
     }
+
+    // 지난달 소비 분석/추천 데이터는 계좌 연동 직후처럼 아직 쌓이지 않았을 수 있어
+    // 실패하더라도 위에서 이미 불러온 미션 현황(메인 대시보드)은 그대로 보여준다.
+    try {
+      const [optionData, selectionData] = await Promise.all([
+        fetchMissionOptions(yearMonth),
+        fetchMissionSelections(yearMonth),
+      ]);
+      options.value = optionData || [];
+      selections.value = selectionData;
+      applySelections(selectionData?.selections || []);
+    } catch {
+      options.value = [];
+      selections.value = null;
+      selectedRates.value = {};
+      analysisYearMonth.value = '';
+    }
+
+    addingMissions.value = false;
+    loading.value = false;
   }
 
   async function loadMissionStatus(yearMonth = previousYearMonth()) {
