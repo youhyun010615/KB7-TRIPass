@@ -28,6 +28,7 @@ ChartJS.register(
 
 const props = defineProps({
   currency: Object,
+  lastUpdateDate: String,
 });
 
 const safeCurrency = computed(() => props.currency || {});
@@ -156,10 +157,15 @@ watch(() => props.currency, fetchHistory, { immediate: true });
     <h2>
       최근 {{ periods.find((p) => p[0] === exchange.period)?.[1] }} 환율 추이
     </h2>
-    <strong
-      >{{ safeCurrency.unit }}{{ safeCurrency.symbol }} =
-      {{ format(safeCurrency.rate) }}<small>원</small></strong
-    >
+    <div class="rate-row">
+      <strong
+        >{{ safeCurrency.unit }}{{ safeCurrency.symbol }} =
+        {{ format(safeCurrency.rate) }}<small>원</small></strong
+      >
+      <small v-if="lastUpdateDate" class="update-info">
+        {{ lastUpdateDate }} 고시 기준
+      </small>
+    </div>
     <p :class="{ up: safeCurrency.change > 0, down: safeCurrency.change <= 0 }">
       <span class="arrow">{{ safeCurrency.change > 0 ? '▲' : '▼' }}</span>
       {{ format(Math.abs(safeCurrency.change)) }}원
@@ -172,48 +178,76 @@ watch(() => props.currency, fetchHistory, { immediate: true });
 
 <style scoped>
 nav {
-  display: flex;
-  gap: 7px;
-  margin-top: 13px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 18px;
+  padding: 5px;
+  border-radius: 999px;
+  background: #e9ecf3;
 }
 nav button {
-  padding: 8px 13px;
-  border-radius: 14px;
-  background: #fff;
-  color: #738096;
-  font-size: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: #929caf;
+  font-size: 12px;
+  font-weight: 700;
 }
 nav .active {
-  background: #176ff2;
+  background: #123478;
   color: #fff;
+  box-shadow: 0 5px 12px rgba(18, 52, 120, .17);
 }
 .chart {
-  margin-top: 12px;
-  padding: 15px;
-  border: 1px solid #e1e6ed;
-  border-radius: 15px;
+  margin-top: 18px;
+  padding: 22px 18px 18px;
+  border: 0;
+  border-radius: 22px;
   background: #fff;
+  box-shadow: 0 8px 24px rgba(23, 43, 77, .05);
 }
 .chart h2 {
-  font-size: 11px;
+  color: #96a3b8;
+  font-size: 14px;
+  font-weight: 700;
 }
 .chart strong {
   display: block;
-  margin-top: 10px;
-  color: #174494;
-  font-size: 22px;
+  margin-top: 12px;
+  color: #10192d;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.rate-row {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+}
+.update-info {
+  align-self: flex-end;
+  color: #9aa6b8;
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 .chart strong small {
-  font-size: 9px;
+  font-size: 13px;
 }
 .chart p {
-  font-size: 8px;
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 700;
 }
 .chart p.up {
-  color: #dd665a;
+  color: #ed5555;
 }
 .chart p.down {
-  color: #1b2dd3;
+  color: #3972d8;
 }
 .chart .arrow {
   margin-right: 2px;

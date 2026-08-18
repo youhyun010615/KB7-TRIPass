@@ -81,33 +81,45 @@ function updateKrw(event) {
 
 <style scoped>
 .calculator {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #e1e6ed;
-  border-radius: 15px;
+  margin-top: 18px;
+  padding: 20px 18px;
+  border: 0;
+  border-radius: 22px;
   background: #fff;
+  box-shadow: 0 8px 24px rgba(23, 43, 77, .05);
 }
 .calculator h2 {
-  font-size: 11px;
+  color: #10192d;
+  font-size: 16px;
+  font-weight: 800;
 }
 .calculator > div {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
   align-items: end;
-  gap: 4px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 16px;
 }
 .calculator label {
   display: grid;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f7f8fa;
-  color: #8c97a7;
-  font-size: 7px;
+  min-width: 0;
+  padding: 13px;
+  border-radius: 15px;
+  background: #f5f7fb;
+  color: #8d99ad;
+  font-size: 10px;
 }
 .calculator input,
 .calculator strong {
-  font-size: 14px;
-  font-weight: 900;
+  min-width: 0;
+  margin-top: 7px;
+  color: #17233a;
+  font-size: 13px;
+  font-weight: 700;
+}
+.calculator b {
+  margin-top: 4px;
+  color: #6f7d94;
+  font-size: 10px;
 }
 </style>

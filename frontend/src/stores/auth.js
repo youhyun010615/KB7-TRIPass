@@ -11,6 +11,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isProfileComplete = ref(
     localStorage.getItem('isProfileComplete') === 'true',
   );
+  // null은 아직 계좌 연동 여부를 확인하지 않은 상태를 의미한다.
+  const hasLinkedAccount = ref(null);
 
   const isLoggedIn = computed(() => Boolean(accessToken.value));
 
@@ -31,6 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function handleLoginSuccess(token, userInfo) {
     setToken(token);
     setUser(userInfo);
+    hasLinkedAccount.value = null;
 
     // FCM 토큰 등록
     try {
@@ -61,11 +64,16 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('isProfileComplete');
   }
 
+  function setHasLinkedAccount(linked) {
+    hasLinkedAccount.value = Boolean(linked);
+  }
+
   // 프론트에 저장된 로그인 정보를 제거한다.
   function logout() {
     accessToken.value = null;
     user.value = null;
     isProfileComplete.value = false;
+    hasLinkedAccount.value = null;
     localStorage.removeItem('accessToken');
     localStorage.removeItem('tripass-user');
     localStorage.removeItem('isProfileComplete');
@@ -76,12 +84,14 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isLoggedIn,
     isProfileComplete,
+    hasLinkedAccount,
     setToken,
     setUser,
     handleLoginSuccess,
     updateUser,
     completeProfile,
     resetProfileCompletion,
+    setHasLinkedAccount,
     logout,
   };
 });
