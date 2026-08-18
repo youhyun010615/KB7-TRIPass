@@ -4,6 +4,10 @@ export function getAccounts() {
   return api.get('/accounts')
 }
 
+export function getAccountInstitutions() {
+  return api.get('/accounts/institutions')
+}
+
 export function getAccountTransactions(accountId, params) {
   return api.get(`/accounts/${accountId}/transactions`, { params })
 }

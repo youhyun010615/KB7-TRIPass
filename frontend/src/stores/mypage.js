@@ -95,17 +95,35 @@ export const useMypageStore = defineStore('mypage', () => {
   // 알림 설정 변경 순서 보장을 위한 큐
   let settingsQueue = Promise.resolve();
 
+  const notificationTypeKeys = [
+    'travelScheduleEnabled',
+    'exchangeRateEnabled',
+    'checklistEnabled',
+    'travelReportEnabled',
+  ]
+
   // 알림 설정 토글
   async function toggleSetting(key) {
-    const previousValue = settings.value[key]
-    settings.value[key] = !settings.value[key]
-    
+    // 이전 상태 전체를 스냅샷으로 남겨서, 전체 알림 토글처럼 여러 필드가
+    // 한 번에 바뀌는 경우에도 실패 시 전부 원복할 수 있게 한다.
+    const previousSettings = { ...settings.value }
+    const nextValue = !settings.value[key]
+    settings.value[key] = nextValue
+
+    // 전체 알림을 껐다 켰다 하면 개별 알림 항목도 같이 맞춰서, 화면과 실제
+    // 발송 여부가 항상 일치하도록 한다.
+    if (key === 'allEnabled') {
+      notificationTypeKeys.forEach((typeKey) => {
+        settings.value[typeKey] = nextValue
+      })
+    }
+
     // 큐를 사용하여 요청 순서 보장
     settingsQueue = settingsQueue.then(async () => {
       try {
         await api.updateSettings(settings.value)
       } catch (error) {
-        settings.value[key] = previousValue // 실패 시 복구
+        settings.value = previousSettings // 실패 시 전체 원복
         console.error('알림 설정 수정 실패', error)
       }
     });
