@@ -252,6 +252,29 @@
         WHERE id = #{id}
     </update>
 
+    <!-- 연동 카드가 트래블카드 상품 마스터와 일치할 때만 사용자 보유 카드로 등록 -->
+    <insert id="upsertUserTravelCardFromLinkedCard">
+        INSERT INTO user_travel_cards
+            (user_id, travel_card_id, card_name, issuer_name, masked_card_number,
+             brand_name, card_color, status, external_card_key, is_deleted, created_at, updated_at)
+        SELECT #{userId}, tc.id, tc.card_name, tc.card_company, #{maskedCardNumber},
+               'CODEF', 'BLUE', 'ACTIVE',
+               CONCAT('CODEF:', #{organizationCode}, ':', #{maskedCardNumber}), FALSE, NOW(), NOW()
+        FROM travel_cards tc
+        WHERE tc.card_name = #{cardName}
+          AND tc.is_active = TRUE
+        LIMIT 1
+        ON DUPLICATE KEY UPDATE
+            travel_card_id = VALUES(travel_card_id),
+            card_name = VALUES(card_name),
+            issuer_name = VALUES(issuer_name),
+            masked_card_number = VALUES(masked_card_number),
+            status = 'ACTIVE',
+            is_deleted = FALSE,
+            deleted_at = NULL,
+            updated_at = NOW()
+    </insert>
+
     <!-- 사용자의 연동 카드 목록 조회 -->
     <select id="findCardsByUserId" resultType="CardDto">
         SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code, last_synced_at
