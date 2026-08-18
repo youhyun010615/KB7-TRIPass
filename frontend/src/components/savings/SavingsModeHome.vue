@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
+import { useSavingReadinessStore } from '@/stores/savingReadiness';
 import { useTravelStore } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { getAccounts } from '@/api/asset';
@@ -12,7 +13,6 @@ import { getCards } from '@/api/card';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
-import TravelTicket from '@/components/savings/TravelTicket.vue';
 
 const props = defineProps({
   onSwitchMode: { type: Function, default: null },
@@ -22,10 +22,18 @@ const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
 const monthlyAnalysisStore = useMonthlyAnalysisStore();
 const savingMissionsStore = useSavingMissionsStore();
+const savingReadinessStore = useSavingReadinessStore();
 const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
 const userName = computed(() => authStore.user?.name ?? '회원');
+const passNumber = computed(() => {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
+});
 const linkedAccountCount = ref(0);
 const linkedCardCount = ref(0);
 const financialSourcesLoading = ref(false);
@@ -71,6 +79,7 @@ onMounted(async () => {
   await Promise.all([
     travelStore.loadHomeDashboard({ force: true }),
     exchangeStore.updateExchangeRates(),
+    savingReadinessStore.load({ force: true }),
     loadHomeInsights({ force: true }),
   ]);
   await nextTick();
@@ -239,6 +248,7 @@ const monthlySavingPercent = computed(() =>
 );
 const homeInsightLoading = computed(
   () =>
+    savingReadinessStore.loading ||
     savingMissionsStore.missionStatusLoading ||
     (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading) ||
     (!savingMissionsStore.hasStartedMissions &&
@@ -342,11 +352,18 @@ function retryHome() {
 }
 
 function retryMonthlyAnalysis() {
-  loadHomeInsights({ force: true });
+  Promise.all([
+    savingReadinessStore.load({ force: true }),
+    loadHomeInsights({ force: true }),
+  ]);
 }
 
 function openFinancialSources() {
   router.push('/mypage/assets');
+}
+
+function openTravelGoalSetup() {
+  router.push({ name: 'TravelRegister' });
 }
 
 function openMonthlyAnalysis() {
@@ -375,6 +392,10 @@ function goToPreparationChecklist() {
 // [END ADDED]
 
 async function switchMode(mode) {
+  if (mode === 'travel' && !homeDashboard.value) {
+    window.alert('여행 계획을 먼저 등록해 주세요.');
+    return;
+  }
   const isTravelMode = mode === 'travel' ? true : false;
   const success = travelModeStore.toggleTravelMode(isTravelMode);
 
@@ -407,14 +428,13 @@ async function switchMode(mode) {
 
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
     <template v-else-if="!homeDashboard">
-      <div class="px-5 pt-12 pb-3 bg-white/80">
+      <div class="px-5 pt-12 pb-3">
         <div class="flex items-center justify-between">
-          <button
-            class="px-3 py-1.5 rounded-full text-xs font-bold"
-            style="background: #eef2ff; color: #263f8c"
-          >
-            여행 저축
-          </button>
+          <div class="mode-switch-control savings-selected">
+            <span class="mode-switch-thumb" />
+            <button type="button" @click="switchMode('travel')">여행</button>
+            <button type="button" class="selected">저축</button>
+          </div>
           <NotificationBell />
         </div>
         <p class="mt-2 text-lg font-extrabold">안녕하세요, {{ userName }}님</p>
@@ -423,41 +443,41 @@ async function switchMode(mode) {
         </p>
       </div>
 
-      <div class="px-4 mt-3">
-        <TravelTicket eyebrow="TRIPASS · START JOURNEY">
-          <div class="py-1 text-center">
-            <div class="mb-2 text-2xl">✈</div>
-            <h2 class="text-[16px] font-extrabold">
-              아직 등록된 여행이 없어요
-            </h2>
-            <p class="mt-2 text-[10px] leading-4 text-blue-100">
-              여행명·국가·일정을 등록하면<br />AI가 목표 예산과 월 저축액을
-              제안해요.
-            </p>
-            <button
-              class="w-full h-11 mt-4 rounded-xl text-[12px] font-extrabold text-white"
-              style="background: #ff7a36"
-              @click="router.push('/savings')"
-            >
-              여행 계획 등록하기
-            </button>
+      <article class="empty-trip-ticket mx-4 mt-3">
+        <span class="empty-trip-orbit" aria-hidden="true"></span>
+        <div class="empty-trip-band">
+          <span>TRIPASS · START JOURNEY</span>
+          <span class="empty-trip-goal">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 16l20-7-7 20-3-8-8-3-2-2z" fill="#FFD466"/></svg>
+            GOAL
+          </span>
+        </div>
+        <div class="empty-trip-body">
+          <span class="empty-trip-badge">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M2 16l20-7-7 20-3-8-8-3-2-2z" fill="#FFD466"/></svg>
+          </span>
+          <div>
+            <strong>아직 등록된 여행이 없어요</strong>
+            <p>여행명·국가·일정을 등록하면<br>AI가 목표 예산과 월 저축액을 제안해요</p>
           </div>
-        </TravelTicket>
-      </div>
+          <button type="button" class="empty-trip-cta" @click="router.push({ name: 'TravelRegister' })">여행 계획 등록하기</button>
+        </div>
+        <div class="empty-trip-tear" aria-hidden="true">
+          <span class="empty-trip-notch left"></span>
+          <span class="empty-trip-notch right"></span>
+          <span class="empty-trip-dash"></span>
+        </div>
+        <div class="empty-trip-footer">
+          <span>PASS NO. TRP-{{ passNumber }}</span>
+          <span class="empty-trip-barcode" aria-hidden="true"></span>
+        </div>
+      </article>
 
-      <section
-        class="mx-4 mt-4 rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-4"
-      >
-        <p class="text-[10px] font-extrabold" style="color: #2864e8">
-          TRIPASS GUIDE
-        </p>
-        <h2 class="mt-1 text-[15px] font-extrabold">
-          목표 설정부터 월렛 저축까지
-        </h2>
-        <p class="mt-1 text-[10px] leading-4 text-slate-500">
-          여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요.
-        </p>
-      </section>
+      <div class="empty-trip-guide mx-4 mt-3">
+        <span class="guide-label">TRIPASS GUIDE</span>
+        <strong>목표 설정부터 월렛 저축까지</strong>
+        <p>여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요</p>
+      </div>
     </template>
 
     <!-- ══ 여행 저축 모드 ══════════════════════════════════════ -->
@@ -467,10 +487,9 @@ async function switchMode(mode) {
         <div
           v-if="daysUntilDeparture <= 0"
           class="mode-switch-control savings-selected"
-          @click="switchMode('travel')"
         >
           <span class="mode-switch-thumb" />
-          <button type="button">여행</button>
+          <button type="button" @click="switchMode('travel')">여행</button>
           <button type="button" class="selected">저축</button>
         </div>
 
@@ -752,6 +771,57 @@ async function switchMode(mode) {
         <i /><i /><i /><i />
       </section>
 
+      <section
+        v-else-if="savingReadinessStore.errorMessage"
+        class="analysis-load-error mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>준비 상태를 확인하지 못했어요</b>
+          <small>{{ savingReadinessStore.errorMessage }}</small>
+        </div>
+        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.needsTravelGoalAndFinancialAsset"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openTravelGoalSetup">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
+          <b>여행 목표와 계좌·카드 연결이 필요해요</b>
+          <small>등록을 완료하면 월간·주간 저축 미션을 확인할 수 있어요.</small>
+          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
+        </button>
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.needsTravelGoal"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openTravelGoalSetup">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
+          <b>아직 여행 목표를 설정하지 않았어요</b>
+          <small>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</small>
+          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
+        </button>
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.needsFinancialAsset"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <button type="button" @click="openFinancialSources">
+          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
+          <b>계좌나 카드를 연결해 주세요</b>
+          <small>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</small>
+          <em>금융 데이터 연결하기<i aria-hidden="true">›</i></em>
+        </button>
+      </section>
+
       <HomeSavingMissionCard
         v-else-if="savingMissionsStore.hasStartedMissions"
         class="mx-4 mt-3"
@@ -871,6 +941,136 @@ async function switchMode(mode) {
 </template>
 
 <style scoped>
+.empty-trip-ticket {
+  position: relative;
+  margin-top: 12px;
+  border-radius: 20px;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(155deg, #0b2a6b 0%, #123c94 60%, #17459f 100%);
+  box-shadow: 0 12px 26px rgba(11, 42, 107, 0.24);
+}
+.empty-trip-orbit {
+  position: absolute;
+  top: -50px;
+  right: -40px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+.empty-trip-band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.empty-trip-goal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.1em;
+  color: #ffd466;
+}
+.empty-trip-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 22px 22px;
+  text-align: center;
+}
+.empty-trip-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+.empty-trip-body strong {
+  font-size: 16.5px;
+  font-weight: 800;
+}
+.empty-trip-body p {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.empty-trip-cta {
+  width: 100%;
+  margin-top: 2px;
+  padding: 13px;
+  border: 0;
+  border-radius: 12px;
+  color: #0b2a6b;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+.empty-trip-tear { position: relative; height: 18px; }
+.empty-trip-notch {
+  position: absolute;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f3f6ff;
+}
+.empty-trip-notch.left { left: -9px; }
+.empty-trip-notch.right { right: -9px; }
+.empty-trip-dash {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 9px;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0 5px, transparent 5px 10px);
+}
+.empty-trip-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+.empty-trip-barcode {
+  width: 90px;
+  height: 16px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 4px, #fff 4px 5px, transparent 5px 9px, #fff 9px 12px, transparent 12px 14px);
+}
+.empty-trip-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid #d8e5fc;
+  border-radius: 16px;
+  background: #eaf1ff;
+}
+.empty-trip-guide .guide-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #2f6fed;
+}
+.empty-trip-guide strong { font-size: 14.5px; font-weight: 800; color: #10192b; }
+.empty-trip-guide p { font-size: 11.5px; color: #5a6478; line-height: 1.6; }
 .savings-mode-home {
   min-height: 100vh;
   background: #f3f6ff;
@@ -1126,9 +1326,9 @@ async function switchMode(mode) {
   width: 84px;
   padding: 2px;
   overflow: hidden;
-  border: 1px solid #d9dee7;
   border-radius: 999px;
-  background: #eceff3;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(16, 25, 43, 0.06);
 }
 .mode-switch-control button {
   position: relative;

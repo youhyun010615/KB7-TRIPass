@@ -5,11 +5,13 @@ import { logout as logoutApi } from '@/api/auth'
 import { getAccounts } from '@/api/asset'
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
+import { useMypageStore } from '@/stores/mypage'
 import BottomNav from '@/components/common/BottomNav.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const cardStore = useCardStore()
+const mypageStore = useMypageStore()
 
 const isLoggingOut = ref(false)
 const accounts = ref([])
@@ -39,6 +41,7 @@ onMounted(async () => {
     accounts.value = []
   }
   await cardStore.loadCards()
+  await mypageStore.fetchSettings()
 })
 
 async function logout() {
@@ -73,12 +76,6 @@ const myManageItems = computed(() => [
     icon: 'user',
   },
   {
-    label: '금융 프로필',
-    sub: '월 수입과 자산 정보',
-    path: '/mypage/financial-profile',
-    icon: 'financial',
-  },
-  {
     label: '여행 관리',
     sub: '등록한 여행과 관련 기록',
     path: '/mypage/travel',
@@ -92,160 +89,151 @@ const myManageItems = computed(() => [
   },
 ])
 
-const serviceItems = [
-  {
-    label: '알림 설정',
-    sub: '일정·환율·리포트 알림',
-    path: '/mypage/notification',
-    icon: 'bell',
-  },
-  {
-    label: '고객지원',
-    sub: '공지사항과 문의',
-    path: '/mypage/support',
-    icon: 'help',
-  },
+const notificationRows = [
+  { key: 'travelScheduleEnabled', label: '여행 일정', sub: '출국 D-day와 예약 일정' },
+  { key: 'exchangeRateEnabled', label: '환율 및 환전', sub: '목표 환율 도달 시' },
+  { key: 'checklistEnabled', label: '체크리스트', sub: '준비물·서류 리마인드' },
+  { key: 'travelReportEnabled', label: '여행 리포트', sub: '월간 지출 요약' },
 ]
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #F7F4EE">
+  <div class="min-h-screen pb-20 flex flex-col" style="background: #F4F5F9">
 
     <!-- 헤더 -->
     <div class="flex items-center px-5 pt-14 pb-3">
       <h1 class="text-2xl font-bold text-gray-900">마이페이지</h1>
     </div>
 
-    <!-- 멤버 패스 카드 -->
-    <div class="mx-4 mt-1 rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #2A4DB0 0%, #1A337A 100%)">
-      <div class="flex items-center justify-between px-4 pt-3 pb-2">
-        <span class="text-white/60 text-[10px] font-semibold tracking-widest">TRIPASS MEMBER PASS</span>
-        <span class="text-white/60 text-[10px]">NO. TP-260715</span>
-      </div>
-      <div class="flex items-center gap-4 px-4 pb-4">
-        <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center text-xl font-bold flex-shrink-0" style="color: #1A337A">
-          {{ authStore.user?.name?.[0] ?? '유' }}
+    <div class="px-4 flex flex-col gap-[22px]">
+
+      <!-- 멤버 패스 카드 -->
+      <div class="relative rounded-[22px] overflow-hidden text-white" style="background: linear-gradient(155deg, #0B2A6B 0%, #123C94 62%, #17459F 100%); box-shadow: 0 10px 24px rgba(11,42,107,0.22)">
+        <div class="absolute rounded-full" style="top:-58px; right:-40px; width:150px; height:150px; background: rgba(255,212,102,0.1)"></div>
+
+        <div class="relative flex items-center justify-between px-5 py-[13px]" style="background: rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.12)">
+          <div class="flex items-center gap-2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 16l7-2 3.5-8 2 .5-2 7.5 5.5-1.5.5 1.5-5 3 2 5-2-.5-2-4-3 3.5-.5 2-1.5-.5.5-3-6.5 2z" fill="#FFD466"/></svg>
+            <span class="text-[10.5px] font-extrabold tracking-[0.12em]" style="color:#FFD466">TRIPASS MEMBER PASS</span>
+          </div>
+          <span class="font-mono text-[10.5px] font-bold" style="color: rgba(255,255,255,0.65)">TP-{{ authStore.user?.id ?? '000000' }}</span>
         </div>
-        <div>
-          <p class="text-white font-bold text-xl leading-tight">{{ authStore.user?.name ?? '권유현' }}</p>
-          <p class="text-white/60 text-sm mt-0.5">{{ memberIdentity }}</p>
+
+        <div class="relative px-5 py-[18px]">
+          <div class="flex items-center gap-[11px]">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0" style="background: rgba(255,255,255,0.14)">
+              {{ authStore.user?.name?.[0] ?? '고' }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-black">{{ authStore.user?.name ?? '고객' }}</div>
+              <div class="text-[10.5px] mt-0.5" style="color: rgba(255,255,255,0.55)">{{ memberIdentity }}</div>
+            </div>
+          </div>
+
+          <div class="text-[11px] font-extrabold mt-[18px]" style="color:#FFD466; letter-spacing:0.06em">전체 보유금액</div>
+          <div class="font-mono text-[33px] font-bold mt-1.5" style="letter-spacing:-0.02em">{{ formatWon(totalAssets) }}</div>
+
+          <div class="flex items-center gap-2.5 mt-[18px] pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" class="flex-shrink-0"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.8"/><path d="M3 10.5h18" stroke="rgba(255,255,255,0.75)" stroke-width="1.8"/></svg>
+            <span class="flex-1 text-[12.5px] font-extrabold">통장 {{ accountCount }}개 · 카드 {{ cardCount }}장 연동 중</span>
+            <button type="button" class="flex-shrink-0 text-[11.5px] font-extrabold active:opacity-70" style="color:#FFD466" @click="router.push('/mypage/assets')">
+              연동된 계좌·카드 ›
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 총 보유금액 -->
-      <div class="px-4 pb-2">
-        <p class="text-white/60 text-xs mb-1">전체 보유금액</p>
-        <p class="text-white text-2xl font-bold">{{ formatWon(totalAssets) }}</p>
+      <!-- 나의 관리 -->
+      <div class="flex flex-col gap-[11px]">
+        <h2 class="text-base font-black text-gray-900 px-0.5">나의 관리</h2>
+        <div class="bg-white rounded-[20px] overflow-hidden" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
+          <button
+            v-for="(item, i) in myManageItems"
+            :key="item.label"
+            class="w-full flex items-center gap-[13px] px-[18px] py-[15px] active:bg-gray-50"
+            :class="i < myManageItems.length - 1 ? 'border-b' : ''"
+            style="border-color: #F1F3F8"
+            @click="router.push(item.path)"
+          >
+            <div class="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0" style="background: #EAF1FF">
+              <svg v-if="item.icon === 'user'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="3.4" stroke="#2F6FED" stroke-width="1.9"/>
+                <path d="M5 20c1.2-3.8 4-5.6 7-5.6s5.8 1.8 7 5.6" stroke="#2F6FED" stroke-width="1.9" stroke-linecap="round"/>
+              </svg>
+              <svg v-if="item.icon === 'travel'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M2 16l7-2 3.5-8 2 .5-2 7.5 5.5-1.5.5 1.5-5 3 2 5-2-.5-2-4-3 3.5-.5 2-1.5-.5.5-3-6.5 2z" fill="#2F6FED"/>
+              </svg>
+              <svg v-if="item.icon === 'card'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="#2F6FED" stroke-width="1.8"/>
+                <path d="M3 10.5h18" stroke="#2F6FED" stroke-width="1.8"/>
+              </svg>
+            </div>
+            <div class="flex-1 text-left">
+              <p class="text-[14px] font-extrabold text-gray-900">{{ item.label }}</p>
+              <p class="text-[11.5px] text-gray-400 mt-[3px]">{{ item.sub }}</p>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M9 6l6 6-6 6" stroke="#C7CDD8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <!-- 연동 현황 + 거래내역 이동 -->
-      <div
-        class="w-full flex items-center justify-between px-4 py-3 mt-1"
-        style="border-top: 1px solid rgba(255,255,255,0.15)"
-      >
-        <button type="button" class="flex items-center gap-2 active:opacity-70" @click="router.push('/mypage/assets')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="5" width="20" height="14" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
-            <path d="M2 10H22" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
-          </svg>
-          <span class="text-white/70 text-xs">
-            통장 {{ accountCount }}개 · 카드 {{ cardCount }}장 연동 중
-          </span>
-        </button>
-        <button type="button" class="flex items-center gap-1 active:opacity-70" @click="router.push('/asset/transactions')">
-          <span class="text-white/70 text-xs">거래내역</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
+      <!-- 알림 설정 -->
+      <div class="flex flex-col gap-[11px]">
+        <div class="flex items-center justify-between px-0.5">
+          <span class="text-base font-black text-gray-900">알림 설정</span>
+          <div class="flex items-center gap-2">
+            <span class="text-[11.5px] font-extrabold" style="color:#98A2B3">전체 알림</span>
+            <button
+              type="button"
+              class="relative w-[42px] h-6 rounded-full flex items-center px-[3px] transition-colors"
+              :style="{ background: mypageStore.settings.allEnabled ? '#2F6FED' : '#DDE2EC', justifyContent: mypageStore.settings.allEnabled ? 'flex-end' : 'flex-start' }"
+              :aria-pressed="mypageStore.settings.allEnabled"
+              aria-label="전체 알림"
+              @click="mypageStore.toggleSetting('allEnabled')"
+            >
+              <span class="w-[18px] h-[18px] rounded-full bg-white"></span>
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-[20px] overflow-hidden" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
+          <div
+            v-for="(row, i) in notificationRows"
+            :key="row.key"
+            class="flex items-center gap-3 px-[18px] py-[14px]"
+            :class="i < notificationRows.length - 1 ? 'border-b' : ''"
+            style="border-color: #F1F3F8"
+          >
+            <div class="flex-1">
+              <div class="text-[14px] font-extrabold text-gray-900">{{ row.label }}</div>
+              <div class="text-[11px] text-gray-400 mt-[3px]">{{ row.sub }}</div>
+            </div>
+            <button
+              type="button"
+              class="relative w-[42px] h-6 rounded-full flex items-center px-[3px] flex-shrink-0 transition-colors"
+              :disabled="mypageStore.settings.allEnabled"
+              :style="{ background: (mypageStore.settings.allEnabled || mypageStore.settings[row.key]) ? '#2F6FED' : '#DDE2EC', justifyContent: (mypageStore.settings.allEnabled || mypageStore.settings[row.key]) ? 'flex-end' : 'flex-start' }"
+              :aria-pressed="mypageStore.settings.allEnabled || mypageStore.settings[row.key]"
+              :aria-label="row.label"
+              @click="mypageStore.toggleSetting(row.key)"
+            >
+              <span class="w-[18px] h-[18px] rounded-full bg-white"></span>
+            </button>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl px-[18px] py-[14px] flex items-center gap-3" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
+          <div class="flex-1">
+            <div class="text-[11.5px] font-bold" style="color:#98A2B3">알림 수신 시간</div>
+            <div class="text-[14px] font-extrabold text-gray-900 mt-1">오전 9:00 – 오후 10:00</div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- 나의 관리 -->
-    <div class="px-4 mt-5">
-      <h2 class="text-base font-bold text-gray-900 mb-3">나의 관리</h2>
-      <div class="bg-white rounded-2xl overflow-hidden">
-        <button
-          v-for="(item, i) in myManageItems"
-          :key="item.label"
-          class="w-full flex items-center gap-4 px-4 py-4 active:bg-gray-50"
-          :class="i < myManageItems.length - 1 ? 'border-b border-gray-100' : ''"
-          @click="router.push(item.path)"
-        >
-          <!-- 아이콘 -->
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #EEF2FF">
-            <!-- user -->
-            <svg v-if="item.icon === 'user'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" stroke="#3B5BDB" stroke-width="2"/>
-              <path d="M4 20C4 17.24 7.58 15 12 15C16.42 15 20 17.24 20 20" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <!-- financial -->
-            <svg v-if="item.icon === 'financial'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="4" width="18" height="4" rx="1" stroke="#3B5BDB" stroke-width="2"/>
-              <rect x="3" y="10" width="18" height="4" rx="1" stroke="#3B5BDB" stroke-width="2"/>
-              <rect x="3" y="16" width="18" height="4" rx="1" stroke="#3B5BDB" stroke-width="2"/>
-            </svg>
-            <!-- travel -->
-            <svg v-if="item.icon === 'travel'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M21 3L3 10.5L10 13.5M21 3L13.5 21L10 13.5M21 3L10 13.5" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <!-- card -->
-            <svg v-if="item.icon === 'card'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="5" width="20" height="14" rx="2" stroke="#3B5BDB" stroke-width="2"/>
-              <path d="M2 10H22" stroke="#3B5BDB" stroke-width="2"/>
-            </svg>
-          </div>
-          <!-- 텍스트 -->
-          <div class="flex-1 text-left">
-            <p class="text-sm font-semibold text-gray-900">{{ item.label }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ item.sub }}</p>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- 서비스 설정 -->
-    <div class="px-4 mt-5">
-      <h2 class="text-base font-bold text-gray-900 mb-3">서비스 설정</h2>
-      <div class="bg-white rounded-2xl overflow-hidden">
-        <button
-          v-for="(item, i) in serviceItems"
-          :key="item.label"
-          class="w-full flex items-center gap-4 px-4 py-4 active:bg-gray-50"
-          :class="i < serviceItems.length - 1 ? 'border-b border-gray-100' : ''"
-          @click="router.push(item.path)"
-        >
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #EEF2FF">
-            <!-- bell -->
-            <svg v-if="item.icon === 'bell'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M18 8C18 6.4 17.37 4.84 16.24 3.76C15.12 2.63 13.59 2 12 2C10.41 2 8.88 2.63 7.76 3.76C6.63 4.84 6 6.4 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M13.73 21C13.55 21.3 13.3 21.55 12.99 21.73C12.68 21.91 12.34 22 12 22C11.66 22 11.32 21.91 11.01 21.73C10.7 21.55 10.45 21.3 10.27 21" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <!-- help -->
-            <svg v-if="item.icon === 'help'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#3B5BDB" stroke-width="2"/>
-              <path d="M9.09 9C9.33 8.34 9.77 7.77 10.37 7.37C10.97 6.97 11.67 6.74 12.4 6.72C13.84 6.69 15.1 7.63 15.5 9C15.91 10.37 15.24 11.85 14 12.5C13.37 12.84 12.96 13.5 12.96 14.22V15" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="12" cy="18" r="1" fill="#3B5BDB"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-left">
-            <p class="text-sm font-semibold text-gray-900">{{ item.label }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ item.sub }}</p>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="px-4 mt-5 mb-4">
       <button
           type="button"
-          class="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+          class="w-full py-3.5 mb-4 rounded-2xl text-sm font-semibold text-center"
+          style="color: #B4BCC9"
           :disabled="isLoggingOut"
           @click="logout"
       >

@@ -26,6 +26,10 @@ export async function withdrawWallet(payload) {
   return dataOf(await api.post('/wallet/withdraw', payload))
 }
 
+export async function fetchWalletWithdrawOptions() {
+  return dataOf(await api.get('/wallet/withdraw/options'))
+}
+
 export async function fetchWalletAccounts() {
   return dataOf(await api.get('/wallet/accounts'))
 }
