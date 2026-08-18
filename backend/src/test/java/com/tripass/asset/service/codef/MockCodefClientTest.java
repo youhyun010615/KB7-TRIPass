@@ -81,6 +81,9 @@ class MockCodefClientTest {
         List<?> cardList = (List<?>) cards.get("data");
         assertEquals(2, cardList.size());
         assertTrue(cardList.stream().map(String::valueOf).anyMatch(value -> value.contains("트래블러스")));
+        assertTrue(cardList.stream()
+                .map(card -> (Map<?, ?>) card)
+                .allMatch(card -> "12345678901234".equals(card.get("resPaymentAccount"))));
 
         Map<String, Object> body = connectedBody(MockCodefClient.CARD_ORGANIZATION);
         body.put("cardNo", "5412-****-****-2710");

@@ -184,6 +184,7 @@ public class AssetService {
                 } else {
                     assetMapper.insertAccount(dto);
                 }
+                assetMapper.linkCardsToAccountByPaymentNumber(userId, dto.getId(), dto.getAccountNumber());
                 saved.add(dto);
             }
 
@@ -325,6 +326,14 @@ public class AssetService {
                 dto.setCardName((String) card.getOrDefault("resCardName", req.getOrganizationName() + " 카드"));
                 dto.setMaskedCardNumber((String) card.get("resCardNo"));
                 dto.setOrganizationCode(req.getOrganizationCode());
+                dto.setPaymentAccountNumber((String) card.get("resPaymentAccount"));
+                if (dto.getPaymentAccountNumber() != null && !dto.getPaymentAccountNumber().isBlank()) {
+                    AccountDto paymentAccount = assetMapper.findAccountByUserIdAndNumberOnly(
+                            userId, dto.getPaymentAccountNumber());
+                    if (paymentAccount != null) {
+                        dto.setLinkedAccountId(paymentAccount.getId());
+                    }
+                }
                 String resCardType = String.valueOf(card.getOrDefault("resCardType", ""));
                 dto.setCardType(
                         "02".equals(resCardType) || resCardType.contains("체크")

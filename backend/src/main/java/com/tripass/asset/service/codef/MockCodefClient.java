@@ -116,12 +116,14 @@ public class MockCodefClient implements CodefClient {
                 mapOf(
                         "resCardName", "KB QA 체크카드",
                         "resCardNo", "5412-****-****-2710",
-                        "resCardType", "02"
+                        "resCardType", "02",
+                        "resPaymentAccount", "12345678901234"
                 ),
                 mapOf(
                         "resCardName", "트래블러스 체크카드",
                         "resCardNo", "5412-****-****-2711",
-                        "resCardType", "02"
+                        "resCardType", "02",
+                        "resPaymentAccount", "12345678901234"
                 )
         ));
     }
