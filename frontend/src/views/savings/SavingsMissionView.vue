@@ -3,10 +3,12 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useSavingMissionsStore } from '@/stores/savingMissions'
+import { useSavingReadinessStore } from '@/stores/savingReadiness'
 
 const route = useRoute()
 const router = useRouter()
 const missionStore = useSavingMissionsStore()
+const readinessStore = useSavingReadinessStore()
 
 const categoryMeta = {
   FOOD: { icon: '🍴', color: '#ff7548', soft: '#fff0e9' },
@@ -27,10 +29,21 @@ const progressPercent = computed(() => {
   return Math.min(100, Math.round((reward / planned) * 100))
 })
 
-onMounted(() => {
+onMounted(async () => {
   const yearMonth = String(route.query.yearMonth || '')
-  missionStore.load(yearMonth || undefined)
+  await readinessStore.load()
+  if (readinessStore.isReady) {
+    missionStore.load(yearMonth || undefined)
+  }
 })
+
+function goTravelGoalSetup() {
+  router.push({ name: 'TravelRegister' })
+}
+
+function goFinancialSources() {
+  router.push('/mypage/assets')
+}
 
 function monthLabel(yearMonth) {
   if (!yearMonth) return ''
@@ -132,7 +145,33 @@ function goBack() {
       </button>
     </header>
 
-    <section v-if="missionStore.loading" class="state-card loading-card">
+    <section v-if="readinessStore.loading" class="state-card loading-card">
+      <span class="loading-plane">✈</span>
+      <h2>AI 미션을 준비하고 있어요</h2>
+      <p>지난달 소비 분석과 저장된 미션을 확인하고 있어요.</p>
+    </section>
+
+    <section v-else-if="readinessStore.needsTravelGoalAndFinancialAsset" class="state-card guide-card">
+      <span>＋</span>
+      <h2>여행 목표와 계좌·카드 연결이 필요해요</h2>
+      <p>등록을 완료하면 월간·주간 저축 미션을 확인할 수 있어요.</p>
+    </section>
+
+    <section v-else-if="readinessStore.needsTravelGoal" class="state-card guide-card">
+      <span>＋</span>
+      <h2>아직 여행 목표를 설정하지 않았어요</h2>
+      <p>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</p>
+      <button type="button" @click="goTravelGoalSetup">여행 목표 설정하기</button>
+    </section>
+
+    <section v-else-if="readinessStore.needsFinancialAsset" class="state-card guide-card">
+      <span>＋</span>
+      <h2>계좌나 카드를 연결해 주세요</h2>
+      <p>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</p>
+      <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
+    </section>
+
+    <section v-else-if="missionStore.loading" class="state-card loading-card">
       <span class="loading-plane">✈</span>
       <h2>AI 미션을 준비하고 있어요</h2>
       <p>지난달 소비 분석과 저장된 미션을 확인하고 있어요.</p>
