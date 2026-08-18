@@ -91,6 +91,12 @@ public interface AssetMapper {
             @org.apache.ibatis.annotations.Param("userId") Long userId,
             @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber
     );
+    void upsertUserTravelCardFromLinkedCard(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("cardName") String cardName,
+            @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber,
+            @org.apache.ibatis.annotations.Param("organizationCode") String organizationCode
+    );
 
     // transactions (카드 — 중복 시 merchant_name 업데이트, 신규 시 INSERT)
     void upsertTransactionFromCard(TransactionDto dto);
