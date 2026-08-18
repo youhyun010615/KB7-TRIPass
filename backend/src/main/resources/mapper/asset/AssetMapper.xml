@@ -85,7 +85,6 @@
             updated_at = NOW()
         WHERE user_id = #{userId}
           AND account_number = #{accountNumber}
-          AND is_deleted = 0
     </update>
 
     <select id = "findAccountsByUserId" resultType = "AccountDto">
@@ -257,15 +256,14 @@
     <!-- user_id + masked_card_number로 기존 연동 카드 조회 (재연동 시 중복 저장 방지) -->
     <select id="findCardByUserIdAndNumber" resultType="CardDto">
         SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code,
-               payment_account_number, linked_account_id, last_synced_at
+               payment_account_number, linked_account_id, is_deleted, last_synced_at
         FROM cards
         WHERE user_id = #{userId}
           AND masked_card_number = #{maskedCardNumber}
-          AND is_deleted = 0
         LIMIT 1
     </select>
 
-    <!-- 재연동 시 기존 카드 정보 갱신 -->
+    <!-- 재연동 시 기존 카드 정보 갱신 (삭제된 카드도 복구) -->
     <update id="updateCardOnReconnect">
         UPDATE cards
         SET codef_connection_id = #{codefConnectionId},
@@ -274,6 +272,8 @@
             organization_code   = #{organizationCode},
             payment_account_number = #{paymentAccountNumber},
             linked_account_id   = #{linkedAccountId},
+            is_deleted          = 0,
+            deleted_at          = NULL,
             updated_at          = NOW()
         WHERE id = #{id}
     </update>
