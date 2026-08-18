@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import { useSavingMissionsStore } from '@/stores/savingMissions'
-import { useSavingReadinessStore } from '@/stores/savingReadiness'
 import { useMonthlyFundStore } from '@/stores/monthlyFund'
+import { getAccounts } from '@/api/asset'
+import { getCards } from '@/api/card'
 import foodIcon from '@/assets/icons/food.svg'
 import cafeIcon from '@/assets/icons/cafe.svg'
 import shoppingIcon from '@/assets/icons/shopping-cart.svg'
@@ -16,8 +17,14 @@ import aiIcon from '@/assets/icons/ai.svg'
 const route = useRoute()
 const router = useRouter()
 const missionStore = useSavingMissionsStore()
-const readinessStore = useSavingReadinessStore()
 const monthlyFundStore = useMonthlyFundStore()
+const linkedAccountCount = ref(0)
+const linkedCardCount = ref(0)
+const financialSourcesLoading = ref(true)
+const financialSourcesError = ref('')
+const hasLinkedFinancialSources = computed(
+  () => linkedAccountCount.value + linkedCardCount.value > 0,
+)
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
 const missionHeaderEl = ref(null)
@@ -58,8 +65,8 @@ const showSelectionFlow = computed(
 // 미션 시작 여부와 무관하게 보여줄 메인 탭 대시보드 여부
 const showDashboard = computed(
   () =>
-    readinessStore.isReady &&
-    !readinessStore.loading &&
+    hasLinkedFinancialSources.value &&
+    !financialSourcesLoading.value &&
     !missionStore.loading &&
     !missionStore.errorMessage &&
     !showSelectionFlow.value,
@@ -114,23 +121,38 @@ const analysisMonthLabel = computed(() => monthLabel(missionStore.analysisYearMo
 const targetMonthLabel = computed(() => monthLabel(missionStore.targetYearMonth))
 
 onMounted(async () => {
-  await loadReadinessAndMissions()
+  await loadFinancialSourcesAndMissions()
 })
 
-async function loadReadinessAndMissions() {
+async function loadFinancialSourcesAndMissions() {
   const yearMonth = String(route.query.yearMonth || '')
-  await readinessStore.load({ force: true })
-  if (readinessStore.isReady) {
-    missionStore.load(yearMonth || undefined)
+  financialSourcesLoading.value = true
+  financialSourcesError.value = ''
+
+  const [accountResult, cardResult] = await Promise.allSettled([
+    getAccounts(),
+    getCards(),
+  ])
+
+  linkedAccountCount.value = accountResult.status === 'fulfilled'
+    ? accountResult.value.data?.data?.length ?? 0
+    : 0
+  linkedCardCount.value = cardResult.status === 'fulfilled'
+    ? cardResult.value.data?.data?.length ?? 0
+    : 0
+
+  if (accountResult.status === 'rejected' && cardResult.status === 'rejected') {
+    financialSourcesError.value = '금융 데이터 연결 상태를 확인하지 못했어요.'
+  }
+  financialSourcesLoading.value = false
+
+  if (hasLinkedFinancialSources.value) {
+    await missionStore.load(yearMonth || undefined)
   }
 }
 
 function retryReadiness() {
-  loadReadinessAndMissions()
-}
-
-function goTravelGoalSetup() {
-  router.push({ name: 'TravelRegister' })
+  loadFinancialSourcesAndMissions()
 }
 
 function goFinancialSources() {
@@ -257,20 +279,20 @@ function goBack() {
     </div>
     <div :style="{ height: missionHeaderHeight + 'px' }" aria-hidden="true" />
 
-    <section v-if="readinessStore.loading" class="state-card loading-card">
+    <section v-if="financialSourcesLoading" class="state-card loading-card">
       <span class="loading-plane">✈</span>
       <h2>AI 미션을 준비하고 있어요</h2>
       <p>지난달 소비 분석과 저장된 미션을 확인하고 있어요.</p>
     </section>
 
-    <section v-else-if="readinessStore.errorMessage" class="state-card error-card">
+    <section v-else-if="financialSourcesError" class="state-card error-card">
       <span>!</span>
       <h2>준비 상태를 확인하지 못했어요</h2>
-      <p>{{ readinessStore.errorMessage }}</p>
+      <p>{{ financialSourcesError }}</p>
       <button type="button" @click="retryReadiness">다시 시도</button>
     </section>
 
-    <section v-else-if="readinessStore.needsTravelGoalAndFinancialAsset" class="mission-home-setup">
+    <section v-else-if="!hasLinkedFinancialSources" class="mission-home-setup">
       <span class="mission-home-label">AI SAVING MISSION</span>
       <div class="mission-home-setup-body">
         <div class="mission-ai-stage" aria-hidden="true">
@@ -283,20 +305,6 @@ function goBack() {
         <p>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</p>
         <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
       </div>
-    </section>
-
-    <section v-else-if="readinessStore.needsTravelGoal" class="state-card guide-card">
-      <span>＋</span>
-      <h2>아직 여행 목표를 설정하지 않았어요</h2>
-      <p>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</p>
-      <button type="button" @click="goTravelGoalSetup">여행 목표 설정하기</button>
-    </section>
-
-    <section v-else-if="readinessStore.needsFinancialAsset" class="state-card guide-card">
-      <span>＋</span>
-      <h2>계좌나 카드를 연결해 주세요</h2>
-      <p>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</p>
-      <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
     </section>
 
     <section v-else-if="missionStore.loading" class="state-card loading-card">

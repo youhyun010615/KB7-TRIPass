@@ -12,15 +12,15 @@ export const useSavingReadinessStore = defineStore('savingReadiness', () => {
   const errorMessage = ref('');
   const loaded = ref(false);
 
-  const isReady = computed(() => status.value === 'READY');
-  const needsTravelGoal = computed(
-    () => status.value === 'TRAVEL_GOAL_REQUIRED',
+  // 저축 미션은 여행 목표와 독립적으로 동작한다. 금융 자산만 연결되어 있다면
+  // 서버가 TRAVEL_GOAL_REQUIRED를 반환해도 미션 화면을 정상 노출한다.
+  const isReady = computed(
+    () => status.value === 'READY' || status.value === 'TRAVEL_GOAL_REQUIRED',
   );
   const needsFinancialAsset = computed(
-    () => status.value === 'FINANCIAL_ASSET_REQUIRED',
-  );
-  const needsTravelGoalAndFinancialAsset = computed(
-    () => status.value === 'TRAVEL_GOAL_AND_FINANCIAL_ASSET_REQUIRED',
+    () =>
+      status.value === 'FINANCIAL_ASSET_REQUIRED' ||
+      status.value === 'TRAVEL_GOAL_AND_FINANCIAL_ASSET_REQUIRED',
   );
   const needsSetup = computed(
     () => loaded.value && !isReady.value && !errorMessage.value,
@@ -54,9 +54,7 @@ export const useSavingReadinessStore = defineStore('savingReadiness', () => {
     errorMessage,
     loaded,
     isReady,
-    needsTravelGoal,
     needsFinancialAsset,
-    needsTravelGoalAndFinancialAsset,
     needsSetup,
     load,
   };
