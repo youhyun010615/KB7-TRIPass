@@ -16,6 +16,13 @@ const travelStore = useTravelStore();
 
 // 데이터 바인딩을 위한 계산 속성 추가
 const tripId = computed(() => travelStore.tripId);
+const passNumber = computed(() => {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}${mm}${dd}`;
+});
 const tripStatus = computed(() => travelStore.tripStatus);
 const tripInfo = computed(() => tripStatus.value?.tripInfo);
 const countries = computed(() => tripStatus.value?.countries || []);
@@ -433,6 +440,44 @@ async function switchMode(mode) {
       <NotificationBell />
     </header>
 
+    <template v-if="!tripId">
+      <article class="empty-trip-ticket">
+        <span class="empty-trip-orbit" aria-hidden="true"></span>
+        <div class="empty-trip-band">
+          <span>TRIPASS · START JOURNEY</span>
+          <span class="empty-trip-goal">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 16l20-7-7 20-3-8-8-3-2-2z" fill="#FFD466"/></svg>
+            GOAL
+          </span>
+        </div>
+        <div class="empty-trip-body">
+          <span class="empty-trip-badge">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M2 16l20-7-7 20-3-8-8-3-2-2z" fill="#FFD466"/></svg>
+          </span>
+          <div>
+            <strong>아직 등록된 여행이 없어요</strong>
+            <p>여행명·국가·일정을 등록하면<br>AI가 목표 예산과 월 저축액을 제안해요</p>
+          </div>
+          <button type="button" class="empty-trip-cta" @click="router.push({ name: 'TravelRegister' })">여행 계획 등록하기</button>
+        </div>
+        <div class="empty-trip-tear" aria-hidden="true">
+          <span class="empty-trip-notch left"></span>
+          <span class="empty-trip-notch right"></span>
+          <span class="empty-trip-dash"></span>
+        </div>
+        <div class="empty-trip-footer">
+          <span>PASS NO. TRP-{{ passNumber }}</span>
+          <span class="empty-trip-barcode" aria-hidden="true"></span>
+        </div>
+      </article>
+
+      <div class="empty-trip-guide">
+        <span class="guide-label">TRIPASS GUIDE</span>
+        <strong>목표 설정부터 월렛 저축까지</strong>
+        <p>여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요</p>
+      </div>
+    </template>
+    <template v-else>
     <article
       class="ticket"
       :class="[
@@ -692,6 +737,7 @@ async function switchMode(mode) {
     >
       ▦
     </button>
+    </template>
   </section>
 </template>
 
@@ -703,6 +749,137 @@ async function switchMode(mode) {
   background: #f8f6f1;
   color: #10192d;
 }
+.empty-trip-ticket {
+  position: relative;
+  margin: 18px 16px 0;
+  border-radius: 20px;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(155deg, #0b2a6b 0%, #123c94 60%, #17459f 100%);
+  box-shadow: 0 12px 26px rgba(11, 42, 107, 0.24);
+}
+.empty-trip-orbit {
+  position: absolute;
+  top: -50px;
+  right: -40px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+.empty-trip-band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.empty-trip-goal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.1em;
+  color: #ffd466;
+}
+.empty-trip-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 22px 22px;
+  text-align: center;
+}
+.empty-trip-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+.empty-trip-body strong {
+  font-size: 16.5px;
+  font-weight: 800;
+}
+.empty-trip-body p {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.empty-trip-cta {
+  width: 100%;
+  margin-top: 2px;
+  padding: 13px;
+  border: 0;
+  border-radius: 12px;
+  color: #0b2a6b;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+.empty-trip-tear { position: relative; height: 18px; }
+.empty-trip-notch {
+  position: absolute;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f8f6f1;
+}
+.empty-trip-notch.left { left: -9px; }
+.empty-trip-notch.right { right: -9px; }
+.empty-trip-dash {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 9px;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0 5px, transparent 5px 10px);
+}
+.empty-trip-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+.empty-trip-barcode {
+  width: 90px;
+  height: 16px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 4px, #fff 4px 5px, transparent 5px 9px, #fff 9px 12px, transparent 12px 14px);
+}
+.empty-trip-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 16px 0;
+  padding: 16px;
+  border: 1px solid #d8e5fc;
+  border-radius: 16px;
+  background: #eaf1ff;
+}
+.empty-trip-guide .guide-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #2f6fed;
+}
+.empty-trip-guide strong { font-size: 14.5px; font-weight: 800; color: #10192b; }
+.empty-trip-guide p { font-size: 11.5px; color: #5a6478; line-height: 1.6; }
 .summary-title-wrapper {
   display: flex;
   align-items: center;
