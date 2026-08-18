@@ -135,7 +135,7 @@ function back() {
     showValidation.value = false
     return
   }
-  router.back()
+  router.replace({ name: 'Home' })
 }
 
 async function finish() {
