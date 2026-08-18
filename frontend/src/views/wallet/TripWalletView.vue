@@ -37,6 +37,7 @@ const selectedAccount = ref(null)
 const withdrawMode = ref('registered') // 'registered' | 'recent' | 'manual'
 const selectedRecentRecipientId = ref(null)
 const bankInstitutions = ref([])
+const bankInstitutionsError = ref('')
 const manualBankCode = ref('')
 const manualAccountNumber = ref('')
 const manualAccountHolderName = ref('')
@@ -125,6 +126,7 @@ async function openTransfer(mode) {
   manualBankCode.value = ''
   manualAccountNumber.value = ''
   manualAccountHolderName.value = ''
+  bankInstitutionsError.value = ''
 
   // linkedAccounts는 페이지 진입 시 로컬 캐시로 먼저 채워지고 잠시 뒤 최신 데이터로 교체된다.
   // 그 사이에 시트를 열면 오래된 잔액으로 주계좌가 선택될 수 있어, 열기 전에 최신 계좌 정보를 받아온다.
@@ -133,18 +135,28 @@ async function openTransfer(mode) {
     if (mode === 'withdraw') {
       await wallet.loadWithdrawOptions()
       selectedRecentRecipientId.value = wallet.withdrawRecentAccounts[0]?.recipientId ?? null
-      if (!bankInstitutions.value.length) {
-        const res = await getAccountInstitutions()
-        bankInstitutions.value = res.data?.data ?? []
-      }
+      await loadBankInstitutions()
     }
   } catch {
     // 최신 데이터를 못 받아오면 캐시된 값으로라도 계속 진행한다.
   }
 
-  const registeredForWithdraw = wallet.withdrawRegisteredAccounts.length ? wallet.withdrawRegisteredAccounts : accounts.value
-  selectedAccount.value = registeredForWithdraw.find(account => account.isPrimary)?.accountId ?? registeredForWithdraw[0]?.accountId ?? null
+  const accountsForSelection = mode === 'withdraw' && wallet.withdrawRegisteredAccounts.length
+    ? wallet.withdrawRegisteredAccounts
+    : accounts.value
+  selectedAccount.value = accountsForSelection.find(account => account.isPrimary)?.accountId ?? accountsForSelection[0]?.accountId ?? null
   showTransfer.value = true
+}
+
+async function loadBankInstitutions() {
+  if (bankInstitutions.value.length) return
+  try {
+    const res = await getAccountInstitutions()
+    bankInstitutions.value = res.data?.data ?? []
+    bankInstitutionsError.value = ''
+  } catch {
+    bankInstitutionsError.value = '은행 목록을 불러오지 못했어요.'
+  }
 }
 
 const quickAmountValues = [10000, 50000, 100000, 1000000]
@@ -468,13 +480,17 @@ async function confirmUnlinkTravelCard() {
             <template v-else>
               <label>
                 은행 선택
-                <select v-model="manualBankCode">
+                <select v-model="manualBankCode" :disabled="!bankInstitutions.length">
                   <option value="" disabled>은행을 선택해 주세요</option>
                   <option v-for="bank in bankInstitutions" :key="bank.organizationCode" :value="bank.organizationCode">
                     {{ bank.institutionName }}
                   </option>
                 </select>
               </label>
+              <p v-if="bankInstitutionsError" class="empty-inline-hint">
+                {{ bankInstitutionsError }}
+                <button type="button" style="margin-left:6px;color:#2f70e9;font-weight:700;text-decoration:underline" @click="loadBankInstitutions">다시 시도</button>
+              </p>
               <label>
                 계좌번호
                 <div class="amount-field"><input v-model="manualAccountNumber" inputmode="numeric" placeholder="'-' 없이 숫자만 입력"></div>

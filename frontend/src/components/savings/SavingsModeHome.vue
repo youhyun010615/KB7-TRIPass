@@ -430,9 +430,9 @@ async function switchMode(mode) {
     <template v-else-if="!homeDashboard">
       <div class="px-5 pt-12 pb-3">
         <div class="flex items-center justify-between">
-          <div class="mode-switch-control savings-selected" @click="switchMode('travel')">
+          <div class="mode-switch-control savings-selected">
             <span class="mode-switch-thumb" />
-            <button type="button">여행</button>
+            <button type="button" @click="switchMode('travel')">여행</button>
             <button type="button" class="selected">저축</button>
           </div>
           <NotificationBell />
@@ -487,10 +487,9 @@ async function switchMode(mode) {
         <div
           v-if="daysUntilDeparture <= 0"
           class="mode-switch-control savings-selected"
-          @click="switchMode('travel')"
         >
           <span class="mode-switch-thumb" />
-          <button type="button">여행</button>
+          <button type="button" @click="switchMode('travel')">여행</button>
           <button type="button" class="selected">저축</button>
         </div>
 
@@ -770,6 +769,18 @@ async function switchMode(mode) {
         aria-label="월간 분석 및 미션 정보를 불러오는 중"
       >
         <i /><i /><i /><i />
+      </section>
+
+      <section
+        v-else-if="savingReadinessStore.errorMessage"
+        class="analysis-load-error mx-4 mt-3"
+      >
+        <span>AI</span>
+        <div>
+          <b>준비 상태를 확인하지 못했어요</b>
+          <small>{{ savingReadinessStore.errorMessage }}</small>
+        </div>
+        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
       <section

@@ -122,10 +122,10 @@ const notificationRows = [
         <div class="relative px-5 py-[18px]">
           <div class="flex items-center gap-[11px]">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0" style="background: rgba(255,255,255,0.14)">
-              {{ authStore.user?.name?.[0] ?? '유' }}
+              {{ authStore.user?.name?.[0] ?? '고' }}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-[15px] font-black">{{ authStore.user?.name ?? '권유현' }}</div>
+              <div class="text-[15px] font-black">{{ authStore.user?.name ?? '고객' }}</div>
               <div class="text-[10.5px] mt-0.5" style="color: rgba(255,255,255,0.55)">{{ memberIdentity }}</div>
             </div>
           </div>
@@ -189,6 +189,8 @@ const notificationRows = [
               type="button"
               class="relative w-[42px] h-6 rounded-full flex items-center px-[3px] transition-colors"
               :style="{ background: mypageStore.settings.allEnabled ? '#2F6FED' : '#DDE2EC', justifyContent: mypageStore.settings.allEnabled ? 'flex-end' : 'flex-start' }"
+              :aria-pressed="mypageStore.settings.allEnabled"
+              aria-label="전체 알림"
               @click="mypageStore.toggleSetting('allEnabled')"
             >
               <span class="w-[18px] h-[18px] rounded-full bg-white"></span>
@@ -212,6 +214,8 @@ const notificationRows = [
               class="relative w-[42px] h-6 rounded-full flex items-center px-[3px] flex-shrink-0 transition-colors"
               :disabled="mypageStore.settings.allEnabled"
               :style="{ background: (mypageStore.settings.allEnabled || mypageStore.settings[row.key]) ? '#2F6FED' : '#DDE2EC', justifyContent: (mypageStore.settings.allEnabled || mypageStore.settings[row.key]) ? 'flex-end' : 'flex-start' }"
+              :aria-pressed="mypageStore.settings.allEnabled || mypageStore.settings[row.key]"
+              :aria-label="row.label"
               @click="mypageStore.toggleSetting(row.key)"
             >
               <span class="w-[18px] h-[18px] rounded-full bg-white"></span>

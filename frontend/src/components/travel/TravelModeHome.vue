@@ -409,11 +409,10 @@ async function switchMode(mode) {
         <div
           class="mode-toggle travel-selected"
           aria-label="서비스 모드 전환"
-          @click="switchMode('savings')"
         >
           <span class="mode-thumb" />
           <button class="active" type="button">여행</button>
-          <button type="button">저축</button>
+          <button type="button" @click="switchMode('savings')">저축</button>
         </div>
         <div class="country-select">
           <button

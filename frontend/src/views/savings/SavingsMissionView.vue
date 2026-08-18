@@ -30,12 +30,20 @@ const progressPercent = computed(() => {
 })
 
 onMounted(async () => {
+  await loadReadinessAndMissions()
+})
+
+async function loadReadinessAndMissions() {
   const yearMonth = String(route.query.yearMonth || '')
-  await readinessStore.load()
+  await readinessStore.load({ force: true })
   if (readinessStore.isReady) {
     missionStore.load(yearMonth || undefined)
   }
-})
+}
+
+function retryReadiness() {
+  loadReadinessAndMissions()
+}
 
 function goTravelGoalSetup() {
   router.push({ name: 'TravelRegister' })
@@ -151,10 +159,21 @@ function goBack() {
       <p>지난달 소비 분석과 저장된 미션을 확인하고 있어요.</p>
     </section>
 
+    <section v-else-if="readinessStore.errorMessage" class="state-card error-card">
+      <span>!</span>
+      <h2>준비 상태를 확인하지 못했어요</h2>
+      <p>{{ readinessStore.errorMessage }}</p>
+      <button type="button" @click="retryReadiness">다시 시도</button>
+    </section>
+
     <section v-else-if="readinessStore.needsTravelGoalAndFinancialAsset" class="state-card guide-card">
       <span>＋</span>
       <h2>여행 목표와 계좌·카드 연결이 필요해요</h2>
       <p>등록을 완료하면 월간·주간 저축 미션을 확인할 수 있어요.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button type="button" @click="goTravelGoalSetup">여행 목표 설정하기</button>
+        <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
+      </div>
     </section>
 
     <section v-else-if="readinessStore.needsTravelGoal" class="state-card guide-card">

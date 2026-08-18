@@ -103,6 +103,9 @@ async function startConnection() {
   step.value = 4
   connectionProgress.value = 20
 
+  const enteredPassword = password.value
+  password.value = ''
+
   try {
     connectionProgress.value = 50
     const res = await api.post('/accounts/codef/connect', {
@@ -111,7 +114,7 @@ async function startConnection() {
       businessType: selectedBank.value.businessType,
       loginType: '1',
       loginId: loginId.value,
-      password: password.value,
+      password: enteredPassword,
     })
     linkedAccounts.value = res.data.data
     connectionProgress.value = 100
@@ -157,6 +160,9 @@ async function startCardConnection() {
   cardConnectionProgress.value = 20
   step.value = CARD_CONNECTING_STEP
 
+  const enteredCardPassword = cardPassword.value
+  cardPassword.value = ''
+
   try {
     cardConnectionProgress.value = 50
     const res = await linkCard({
@@ -165,7 +171,7 @@ async function startCardConnection() {
       cardType: 'CF',
       loginType: '1',
       loginId: cardLoginId.value.trim(),
-      password: cardPassword.value,
+      password: enteredCardPassword,
     })
     linkedCards.value = res.data?.data ?? []
     cardConnectionProgress.value = 100
@@ -297,7 +303,7 @@ onMounted(() => {
         <div class="intro-hero compact">
           <span class="hero-orbit" aria-hidden="true"></span>
           <header class="simple-header on-dark"><button @click="step = 0">‹</button><strong>은행 계좌 불러오기</strong></header>
-          <h2 class="hero-heading">{{ authStore.user?.name ?? '아영' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
+          <h2 class="hero-heading">{{ authStore.user?.name ?? '고객' }}님이 쓰는<br>은행 계좌 정보를 불러올게요</h2>
         </div>
         <div class="intro-content">
           <div class="intro-card">
