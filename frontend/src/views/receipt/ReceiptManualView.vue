@@ -499,22 +499,18 @@ function createRequestData() {
     ocrRawText: null,
 
     items: form.items.map(
-        (item, index) => ({
+        item => ({
           originalName:
               item.originalName.trim(),
 
           translatedName:
-              item.translatedName.trim() ||
-              null,
+              item.translatedName.trim() || null,
 
           quantity:
               Number(item.quantity),
 
           amount:
               Number(item.amount),
-
-          displayOrder:
-              index + 1,
         }),
     ),
 
