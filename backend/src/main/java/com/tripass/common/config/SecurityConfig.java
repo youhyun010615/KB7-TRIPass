@@ -88,7 +88,9 @@ public class SecurityConfig {
         // Vue 개발 서버 주소 — 빌드 배포 시 실제 도메인으로 변경
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
-                "http://localhost:5174"
+                "http://localhost:5174",
+                "https://tripass-frontend.vercel.app",
+                "https://*.vercel.app"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
