@@ -15,6 +15,7 @@ import {
   fetchWalletMain,
   fetchWalletMonthlySavingDetail,
   fetchWalletTravelCardBalances,
+  fetchWalletWithdrawOptions,
   linkWalletAccount,
   linkWalletTravelCard,
   saveWalletAutoSaving,
@@ -177,6 +178,16 @@ function normalizeAccount(account) {
   }
 }
 
+function normalizeRecentAccount(item) {
+  return {
+    recipientId: item.recipientId ?? item.id,
+    bankName: item.bankName || '',
+    accountNumber: item.maskedAccountNumber || item.accountNumber || '',
+    accountHolderName: item.accountHolderName || item.holderName || '',
+    lastUsedAt: item.lastUsedAt || item.usedAt || null,
+  }
+}
+
 function normalizeForeignBalance(item) {
   const code = item.currencyCode || item.code
   return {
@@ -259,6 +270,8 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
   const linkedAccount = ref(saved?.linkedAccount ?? '')
   const linkedAccounts = ref(saved?.linkedAccounts ?? [])
   const accountOptions = ref(saved?.accountOptions ?? [])
+  const withdrawRegisteredAccounts = ref([])
+  const withdrawRecentAccounts = ref([])
   const autoCharge = ref(saved?.autoCharge ?? { enabled: false, day: 25, amount: 0, accountId: null })
   const monthlySavings = ref(saved?.monthlySavings ?? initialMonthlySavings)
   const transactions = ref(saved?.transactions ?? [])
@@ -371,6 +384,19 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     }
   }
 
+  async function loadWithdrawOptions() {
+    errorMessage.value = ''
+    try {
+      const data = await fetchWalletWithdrawOptions()
+      withdrawRegisteredAccounts.value = (data?.registeredAccounts ?? []).map(normalizeAccount)
+      withdrawRecentAccounts.value = (data?.recentAccounts ?? []).map(normalizeRecentAccount)
+      return { registeredAccounts: withdrawRegisteredAccounts.value, recentAccounts: withdrawRecentAccounts.value }
+    } catch (error) {
+      errorMessage.value = error.response?.data?.message || '출금 가능한 계좌를 불러오지 못했어요.'
+      throw error
+    }
+  }
+
   async function addAccount(accountId, primary = false) {
     const data = await linkWalletAccount({ accountId, primary })
     await Promise.all([loadAccounts(), loadAccountOptions()])
@@ -462,13 +488,40 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     return true
   }
 
-  async function withdraw(amount, targetAccountId = null) {
-    const normalizedTargetAccountId = Number.isFinite(Number(targetAccountId)) ? Number(targetAccountId) : null
-    const accountId = normalizedTargetAccountId ?? linkedAccounts.value.find(account => account.isPrimary)?.accountId ?? linkedAccounts.value[0]?.accountId
+  // mode: 'registered'(등록 계좌) | 'recent'(최근 계좌) | 'manual'(직접 입력).
+  // 세 방식 모두 서버가 받는 요청 바디 형태가 서로 달라서(targetAccountId / recipientId /
+  // bankCode·accountNumber·accountHolderName), 여기서 mode에 맞춰 조립한다.
+  async function withdraw({
+    mode = 'registered',
+    amount,
+    targetAccountId = null,
+    recipientId = null,
+    bankCode = '',
+    bankName = '',
+    accountNumber = '',
+    accountHolderName = '',
+  } = {}) {
     const value = parseAmount(amount)
-    if (!accountId || value <= 0 || value > balance.value) return false
+    if (value <= 0 || value > balance.value) return false
 
-    await withdrawWallet({ targetAccountId: accountId, amount: value, idempotencyKey: createIdempotencyKey('withdraw') })
+    const idempotencyKey = createIdempotencyKey('withdraw')
+    let payload
+
+    if (mode === 'recent') {
+      const normalizedRecipientId = Number.isFinite(Number(recipientId)) ? Number(recipientId) : null
+      if (!normalizedRecipientId) return false
+      payload = { recipientId: normalizedRecipientId, amount: value, idempotencyKey }
+    } else if (mode === 'manual') {
+      if (!bankCode || !accountNumber.trim() || !accountHolderName.trim()) return false
+      payload = { bankCode, bankName, accountNumber: accountNumber.trim(), accountHolderName: accountHolderName.trim(), amount: value, idempotencyKey }
+    } else {
+      const normalizedTargetAccountId = Number.isFinite(Number(targetAccountId)) ? Number(targetAccountId) : null
+      const accountId = normalizedTargetAccountId ?? linkedAccounts.value.find(account => account.isPrimary)?.accountId ?? linkedAccounts.value[0]?.accountId
+      if (!accountId) return false
+      payload = { targetAccountId: accountId, amount: value, idempotencyKey }
+    }
+
+    await withdrawWallet(payload)
     await Promise.all([loadWalletMain(), loadAccounts(), loadLedgers()])
     return true
   }
@@ -594,6 +647,8 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     linkedAccount,
     linkedAccounts,
     accountOptions,
+    withdrawRegisteredAccounts,
+    withdrawRecentAccounts,
     autoCharge,
     monthlySavings,
     monthlyDeposits,
@@ -614,6 +669,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     loadLedgers,
     loadAccounts,
     loadAccountOptions,
+    loadWithdrawOptions,
     addAccount,
     removeAccount,
     setPrimaryAccount,
