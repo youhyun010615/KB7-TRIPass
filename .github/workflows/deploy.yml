@@ -84,6 +84,7 @@ jobs:
             SOLAPI_API_SECRET=${{ secrets.SOLAPI_API_SECRET }}
             SOLAPI_FROM=${{ secrets.SOLAPI_FROM }}
             REFRESH_COOKIE_SECURE=${{ secrets.REFRESH_COOKIE_SECURE }}
+            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
             KAKAO_OAUTH_CLIENT_ID=${{ secrets.KAKAO_OAUTH_CLIENT_ID }}
             KAKAO_OAUTH_CLIENT_SECRET=${{ secrets.KAKAO_OAUTH_CLIENT_SECRET }}
             KAKAO_OAUTH_REDIRECT_URI=${{ secrets.KAKAO_OAUTH_REDIRECT_URI }}
