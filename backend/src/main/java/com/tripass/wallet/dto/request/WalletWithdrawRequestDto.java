@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 public class WalletWithdrawRequestDto {
 
     private Long targetAccountId;
+    private Long recipientId;
 
     private String bankCode;
     private String bankName;

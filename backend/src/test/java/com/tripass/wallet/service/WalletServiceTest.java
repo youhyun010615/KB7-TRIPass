@@ -353,6 +353,32 @@ class WalletServiceTest {
     }
 
     @Test
+    void 최근_출금계좌_ID로_저장된_계좌를_재사용한다() {
+        WalletWithdrawRequestDto request = withdrawRequest(null, BigDecimal.valueOf(100_000), "key-recent");
+        ReflectionTestUtils.setField(request, "recipientId", 77L);
+        WalletWithdrawRecipient recipient = WalletWithdrawRecipient.builder()
+                .id(77L)
+                .userId(1L)
+                .bankCode("004")
+                .bankName("KB국민은행")
+                .accountNumber("123456789012")
+                .build();
+
+        when(walletMapper.existsIdempotencyKey("key-recent")).thenReturn(false);
+        when(walletMapper.findWalletByUserIdForUpdate(1L)).thenReturn(createWallet());
+        when(walletMapper.findWithdrawRecipientByIdAndUserId(77L, 1L)).thenReturn(recipient);
+        when(walletMapper.updateWalletBalance(100L, BigDecimal.valueOf(900_000), 0L)).thenReturn(1);
+
+        walletService.withdraw(1L, request);
+
+        verify(walletMapper).upsertWithdrawRecipient(recipient);
+        ArgumentCaptor<WalletLedger> ledgerCaptor = ArgumentCaptor.forClass(WalletLedger.class);
+        verify(walletMapper).insertWalletLedger(ledgerCaptor.capture());
+        assertEquals("RECIPIENT_ACCOUNT", ledgerCaptor.getValue().getTargetType());
+        assertEquals(77L, ledgerCaptor.getValue().getTargetId());
+    }
+
+    @Test
     void 연동_해제할_계좌가_없으면_예외가_발생한다() {
         when(walletMapper.findWalletByUserIdForUpdate(1L))
                 .thenReturn(createWallet());

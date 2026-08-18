@@ -557,6 +557,16 @@
         LIMIT 5
     </select>
 
+    <select id="findWithdrawRecipientByIdAndUserId" resultType="WalletWithdrawRecipient">
+        SELECT id, user_id, bank_code, bank_name, account_number,
+               account_holder_name, last_used_at, use_count
+        FROM wallet_withdraw_recipient
+        WHERE id = #{recipientId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
     <select id="findPrimaryAccountByWalletId"
             resultType="WalletAccountResponseDto">
         SELECT

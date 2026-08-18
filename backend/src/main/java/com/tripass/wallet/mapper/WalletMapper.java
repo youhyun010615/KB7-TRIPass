@@ -99,6 +99,11 @@ public interface WalletMapper {
 
     List<WalletWithdrawRecipientResponseDto> findRecentWithdrawRecipients(@Param("userId") Long userId);
 
+    WalletWithdrawRecipient findWithdrawRecipientByIdAndUserId(
+            @Param("recipientId") Long recipientId,
+            @Param("userId") Long userId
+    );
+
     WalletAccountResponseDto findPrimaryAccountByWalletId(@Param("walletId") Long walletId);
 
     int decreaseAccountBalance(

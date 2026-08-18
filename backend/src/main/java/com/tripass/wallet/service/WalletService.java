@@ -225,6 +225,16 @@ public class WalletService {
             targetId = request.getTargetAccountId();
             targetType = WalletTargetType.ACCOUNT;
             memo = "등록 계좌로 월렛 출금";
+        } else if (request.getRecipientId() != null) {
+            WalletWithdrawRecipient recipient = walletMapper.findWithdrawRecipientByIdAndUserId(
+                    request.getRecipientId(), userId);
+            if (recipient == null) {
+                throw new WalletException(INVALID_WITHDRAW_ACCOUNT);
+            }
+            walletMapper.upsertWithdrawRecipient(recipient);
+            targetId = recipient.getId();
+            targetType = WalletTargetType.RECIPIENT_ACCOUNT;
+            memo = "최근 계좌로 월렛 출금";
         } else {
             validateManualWithdrawAccount(request);
             WalletWithdrawRecipient recipient = WalletWithdrawRecipient.builder()
