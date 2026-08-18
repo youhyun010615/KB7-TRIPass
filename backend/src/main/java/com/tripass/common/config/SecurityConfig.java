@@ -74,6 +74,7 @@ public class SecurityConfig {
                                 ).permitAll()
 
                                 .antMatchers(HttpMethod.POST, "/api/v1/exchange-rates/sync").permitAll()
+                                .antMatchers(HttpMethod.POST, "/api/v1/banks/sync").permitAll()
 
                                 .anyRequest().authenticated()
                 )
