@@ -667,6 +667,9 @@ public class AssetService {
             throw new CustomException(HttpStatus.NOT_FOUND, "CARD_NOT_FOUND", "카드를 찾을 수 없습니다.");
         }
         assetMapper.deleteCard(cardId, userId);
+        if (card.getMaskedCardNumber() != null) {
+            assetMapper.deleteUserTravelCardByCard(userId, card.getMaskedCardNumber());
+        }
     }
 
     public List<TransactionDto> getCardTransactions(Long userId, Long cardId, String startDate, String endDate) {
