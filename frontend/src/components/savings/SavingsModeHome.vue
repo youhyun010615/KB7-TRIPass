@@ -377,10 +377,6 @@ function openFinancialSources() {
   router.push('/profile/financial?step=1&from=asset');
 }
 
-function openTravelGoalSetup() {
-  router.push({ name: 'TravelRegister' });
-}
-
 function openMonthlyAnalysis() {
   const yearMonth = monthlyAnalysisStore.report?.analysisYearMonth;
   if (!yearMonth) return;
@@ -764,19 +760,26 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="savingReadinessStore.errorMessage"
+        v-else-if="financialSourcesError"
         class="analysis-load-error mx-4 mt-3"
       >
         <span>AI</span>
         <div>
-          <b>준비 상태를 확인하지 못했어요</b>
-          <small>{{ savingReadinessStore.errorMessage }}</small>
+          <b>금융 데이터 연결 상태를 확인하지 못했어요</b>
+          <small>{{ financialSourcesError }}</small>
         </div>
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
+      <HomeSavingMissionCard
+        v-else-if="savingMissionsStore.hasStartedMissions"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
+
       <section
-        v-else-if="savingReadinessStore.needsTravelGoalAndFinancialAsset"
+        v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -792,39 +795,6 @@ async function switchMode(mode) {
           <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
         </div>
       </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsTravelGoal"
-        class="analysis-empty-state mx-4 mt-3"
-      >
-        <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openTravelGoalSetup">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>아직 여행 목표를 설정하지 않았어요</b>
-          <small>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
-        </button>
-      </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsFinancialAsset"
-        class="analysis-empty-state mx-4 mt-3"
-      >
-        <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openFinancialSources">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>계좌나 카드를 연결해 주세요</b>
-          <small>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>금융 데이터 연결하기<i aria-hidden="true">›</i></em>
-        </button>
-      </section>
-
-      <HomeSavingMissionCard
-        v-else-if="savingMissionsStore.hasStartedMissions"
-        class="mx-4 mt-3"
-        :mission-data="savingMissionsStore.missions"
-        @open="openSavingMissions"
-      />
 
       <MonthlyAnalysisSummaryCard
         v-else-if="monthlyAnalysisStore.hasVisibleReport"
@@ -845,47 +815,13 @@ async function switchMode(mode) {
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
-      <section
-        v-else-if="financialSourcesError"
-        class="analysis-load-error mx-4 mt-3"
-      >
-        <span>AI</span>
-        <div>
-          <b>금융 데이터 연결 상태를 확인하지 못했어요</b>
-          <small>{{ financialSourcesError }}</small>
-        </div>
-        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
-      </section>
-
-      <section
-        v-else-if="!hasLinkedFinancialSources || monthlyAnalysisStore.notFound"
-        class="analysis-empty-state mx-4 mt-3"
-      >
+      <section v-else class="analysis-empty-state mx-4 mt-3">
         <small class="analysis-empty-label">AI SAVING MISSION</small>
         <button type="button" @click="openFinancialSources">
           <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>
-            {{
-              hasLinkedFinancialSources
-                ? '아직 분석할 지난달 거래가 없어요'
-                : '맞춤 저축 미션을 준비해 볼까요?'
-            }}
-          </b>
-          <small>
-            {{
-              hasLinkedFinancialSources
-                ? '분류된 계좌·카드 지출이 쌓이면 소비 분석과 맞춤 미션을 보여드려요.'
-                : '계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.'
-            }}
-          </small>
-          <em>
-            {{
-              hasLinkedFinancialSources
-                ? '연동 자산 확인하기'
-                : '금융 데이터 연결하기'
-            }}
-            <i aria-hidden="true">›</i>
-          </em>
+          <b>아직 분석할 지난달 거래가 없어요</b>
+          <small>분류된 계좌·카드 지출이 쌓이면 소비 분석과 맞춤 미션을 보여드려요.</small>
+          <em>연동 자산 확인하기<i aria-hidden="true">›</i></em>
         </button>
       </section>
 
