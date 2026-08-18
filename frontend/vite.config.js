@@ -22,7 +22,8 @@ function loadEnvManual(filePath) {
   return env;
 }
 
-const env = loadEnvManual(path.resolve(__dirname, '.env'));
+const fileEnv = loadEnvManual(path.resolve(__dirname, '.env'));
+const env = { ...fileEnv, ...process.env };
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -53,7 +54,8 @@ export default defineConfig({
             .replace(/__VITE_FIREBASE_STORAGE_BUCKET__/g, env.VITE_FIREBASE_STORAGE_BUCKET || '')
             .replace(/__VITE_FIREBASE_MESSAGING_SENDER_ID__/g, env.VITE_FIREBASE_MESSAGING_SENDER_ID || '')
             .replace(/__VITE_FIREBASE_APP_ID__/g, env.VITE_FIREBASE_APP_ID || '')
-            .replace(/__VITE_FIREBASE_MEASUREMENT_ID__/g, env.VITE_FIREBASE_MEASUREMENT_ID || '');
+            .replace(/__VITE_FIREBASE_MEASUREMENT_ID__/g, env.VITE_FIREBASE_MEASUREMENT_ID || '')
+            .replace(/__VITE_FIREBASE_VAPID_KEY__/g, env.VITE_FIREBASE_VAPID_KEY || '');
           fs.writeFileSync(swPath, content);
         }
       },
