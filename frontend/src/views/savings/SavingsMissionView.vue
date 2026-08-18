@@ -272,10 +272,7 @@ function goBack() {
       <span>＋</span>
       <h2>여행 목표와 계좌·카드 연결이 필요해요</h2>
       <p>등록을 완료하면 월간·주간 저축 미션을 확인할 수 있어요.</p>
-      <div style="display:flex;gap:8px;justify-content:center">
-        <button type="button" @click="goTravelGoalSetup">여행 목표 설정하기</button>
-        <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
-      </div>
+      <button type="button" @click="goTravelGoalSetup">여행 목표 설정하기</button>
     </section>
 
     <section v-else-if="readinessStore.needsTravelGoal" class="state-card guide-card">
@@ -554,6 +551,19 @@ function goBack() {
       </section>
     </template>
 
+    <section
+      v-if="readinessStore.needsTravelGoalAndFinancialAsset"
+      class="mission-setup-guide"
+    >
+      <span class="mission-guide-label">TRIPASS GUIDE</span>
+      <strong>목표 설정부터 월렛 저축까지</strong>
+      <p>여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요.</p>
+      <button type="button" @click="goFinancialSources">
+        금융 데이터 연결하기
+        <i aria-hidden="true">›</i>
+      </button>
+    </section>
+
     <BottomNav />
   </main>
 </template>
@@ -596,6 +606,7 @@ function goBack() {
 .active-missions-empty{font-size:12.5px;font-weight:600;color:#5a6478;line-height:1.5}
 .dashboard-cta{border-radius:99px;padding:13px;text-align:center;font-size:13px;font-weight:800;background:#0b2a6b;color:#fff}
 .dashboard-cta.outline{width:100%;margin-top:16px;padding:14px;font-size:13.5px}
+.mission-setup-guide{display:flex;flex-direction:column;gap:6px;margin-top:16px;padding:16px;border:1px solid #d8e5fc;border-radius:16px;background:#eaf1ff}.mission-guide-label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;font-weight:800;letter-spacing:.1em;color:#2f6fed}.mission-setup-guide strong{font-size:14.5px;font-weight:800;color:#10192b}.mission-setup-guide p{color:#5a6478;font-size:11.5px;line-height:1.6}.mission-setup-guide button{display:flex;width:100%;margin-top:8px;padding:12px 14px;align-items:center;justify-content:space-between;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}.mission-setup-guide button i{font-size:18px;font-style:normal;line-height:1}
 @media (min-width:600px){.mission-page{max-width:430px;margin:0 auto}}
 .option-card.locked{border-color:#dce5f3;background:#f8fafe;box-shadow:none}.option-card.locked .option-toggle{cursor:default}.option-card.locked .option-toggle>i{background:#e4f7f1;color:#149477;font-size:9px}.add-mission-button{display:flex;width:100%;margin-top:18px;padding:15px 16px;align-items:center;gap:12px;border:1px dashed #8badde;border-radius:18px;background:#f7faff;color:#1d4f9f;text-align:left;transition:transform .2s ease,background .2s ease}.add-mission-button:hover{background:#edf4ff;transform:translateY(-2px)}.add-mission-button>span{display:grid;flex:0 0 38px;height:38px;place-items:center;border-radius:12px;background:#e4eeff;font-size:20px;font-weight:800}.add-mission-button>div{min-width:0;flex:1}.add-mission-button small{display:block;color:#7284a2;font-size:9px}.add-mission-button strong{display:block;margin-top:3px;font-size:13px;font-weight:900}.add-mission-button>b{font-size:24px}.cancel-add-button{margin-top:8px!important;background:transparent!important;color:#c8d8f6!important;box-shadow:none!important}.cancel-add-button:hover{color:#fff!important}
 </style>

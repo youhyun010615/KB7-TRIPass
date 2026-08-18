@@ -206,11 +206,17 @@ const moveToCurrentLocation = () => {
 };
 
 const mapLoadError = ref(false);
+const kakaoMapKey = import.meta.env.VITE_KAKAO_MAP_KEY?.trim();
 
 const loadKakaoMap = () => {
   return new Promise((resolve, reject) => {
     if (window.kakao && window.kakao.maps) {
       resolve();
+      return;
+    }
+
+    if (!kakaoMapKey) {
+      reject(new Error('VITE_KAKAO_MAP_KEY 환경변수가 설정되지 않았습니다.'));
       return;
     }
 
@@ -240,7 +246,7 @@ const loadKakaoMap = () => {
     }
 
     const script = document.createElement('script');
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(kakaoMapKey)}&autoload=false&libraries=services`;
 
     script.onload = () => {
       cleanup();
