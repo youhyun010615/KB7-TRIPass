@@ -446,7 +446,7 @@
 
     <select id="findAccountsByUserId"
             resultMap="WalletAccountResultMap">
-        SELECT
+        SELECT DISTINCT
             a.id AS account_id,
             COALESCE(si.institution_name, cci.organization_name, '연동 계좌') AS bank_name,
             a.account_name,
@@ -481,7 +481,7 @@
 
     <select id="findAccountOptionsByUserId"
             resultMap="WalletAccountResultMap">
-        SELECT
+        SELECT DISTINCT
             a.id AS account_id,
             COALESCE(si.institution_name, cci.organization_name, '등록 계좌') AS bank_name,
             a.account_name,
@@ -515,7 +515,7 @@
     </select>
 
     <select id="findWithdrawAccountsByUserId" resultMap="WalletAccountResultMap">
-        SELECT a.id AS account_id,
+        SELECT DISTINCT a.id AS account_id,
                COALESCE(si.institution_name, cci.organization_name, '등록 계좌') AS bank_name,
                a.account_name,
                CONCAT('****', RIGHT(a.account_number, 4)) AS masked_account_number,
