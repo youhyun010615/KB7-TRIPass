@@ -96,6 +96,10 @@ public interface AssetMapper {
             @org.apache.ibatis.annotations.Param("cardId") Long cardId,
             @org.apache.ibatis.annotations.Param("userId") Long userId
     );
+    void deleteUserTravelCardByCard(
+            @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber
+    );
     CardDto findCardByUserIdAndNumber(
             @org.apache.ibatis.annotations.Param("userId") Long userId,
             @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber

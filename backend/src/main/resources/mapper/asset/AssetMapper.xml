@@ -329,6 +329,14 @@
           AND is_deleted = 0
     </update>
 
+    <update id="deleteUserTravelCardByCard">
+        UPDATE user_travel_cards
+        SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND masked_card_number = #{maskedCardNumber}
+          AND is_deleted = FALSE
+    </update>
+
     <!-- CODEF 승인 취소 통보 시 기존 저장된 거래를 external_key로 찾아 논리 삭제 -->
     <update id="deleteTransactionByExternalKey">
         UPDATE transactions
