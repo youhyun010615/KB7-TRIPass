@@ -446,9 +446,9 @@
 
     <select id="findAccountsByUserId"
             resultMap="WalletAccountResultMap">
-        SELECT DISTINCT
+        SELECT
             a.id AS account_id,
-            COALESCE(si.institution_name, cci.organization_name, '연동 계좌') AS bank_name,
+            COALESCE(si.institution_name, '연동 계좌') AS bank_name,
             a.account_name,
             CASE
                 WHEN a.account_number IS NULL THEN NULL
@@ -466,11 +466,8 @@
                            ON wa.wallet_id = w.id
                                AND wa.account_id = a.id
                                AND wa.status = 'LINKED'
-                 LEFT JOIN codef_connected_institutions cci
-                           ON cci.codef_connection_id = a.codef_connection_id
-                               AND cci.is_active = TRUE
                  LEFT JOIN supported_institutions si
-                           ON si.organization_code = cci.organization_code
+                           ON si.organization_code = a.organization_code
                                AND si.is_active = TRUE
         WHERE a.user_id = #{userId}
           AND a.is_deleted = 0
@@ -481,9 +478,9 @@
 
     <select id="findAccountOptionsByUserId"
             resultMap="WalletAccountResultMap">
-        SELECT DISTINCT
+        SELECT
             a.id AS account_id,
-            COALESCE(si.institution_name, cci.organization_name, '등록 계좌') AS bank_name,
+            COALESCE(si.institution_name, '등록 계좌') AS bank_name,
             a.account_name,
             CASE
                 WHEN a.account_number IS NULL THEN NULL
@@ -501,11 +498,8 @@
                            ON wa.wallet_id = w.id
                                AND wa.account_id = a.id
                                AND wa.status = 'LINKED'
-                 LEFT JOIN codef_connected_institutions cci
-                           ON cci.codef_connection_id = a.codef_connection_id
-                               AND cci.is_active = TRUE
                  LEFT JOIN supported_institutions si
-                           ON si.organization_code = cci.organization_code
+                           ON si.organization_code = a.organization_code
                                AND si.is_active = TRUE
         WHERE a.user_id = #{userId}
           AND a.is_deleted = 0
@@ -515,8 +509,8 @@
     </select>
 
     <select id="findWithdrawAccountsByUserId" resultMap="WalletAccountResultMap">
-        SELECT DISTINCT a.id AS account_id,
-               COALESCE(si.institution_name, cci.organization_name, '등록 계좌') AS bank_name,
+        SELECT a.id AS account_id,
+               COALESCE(si.institution_name, '등록 계좌') AS bank_name,
                a.account_name,
                CONCAT('****', RIGHT(a.account_number, 4)) AS masked_account_number,
                a.balance, a.withdrawable_amount,
@@ -525,8 +519,7 @@
         FROM accounts a
         LEFT JOIN wallet w ON w.user_id = a.user_id AND w.status = 'ACTIVE'
         LEFT JOIN wallet_account wa ON wa.wallet_id = w.id AND wa.account_id = a.id AND wa.status = 'LINKED'
-        LEFT JOIN codef_connected_institutions cci ON cci.codef_connection_id = a.codef_connection_id AND cci.is_active = TRUE
-        LEFT JOIN supported_institutions si ON si.organization_code = cci.organization_code AND si.is_active = TRUE
+        LEFT JOIN supported_institutions si ON si.organization_code = a.organization_code AND si.is_active = TRUE
         WHERE a.user_id = #{userId} AND a.is_deleted = 0 AND a.is_active = TRUE
         ORDER BY primary_account DESC, linked DESC, a.id DESC
     </select>
