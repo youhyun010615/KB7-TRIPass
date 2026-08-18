@@ -116,18 +116,22 @@ const groups = computed(() => {
       const [h = 0, m = 0] = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00').split(':').map(Number)
       const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
       const amount = t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount)
+      const isCardPayment = Boolean(t.cardId)
       const item = {
         id: t.id,
         merchant: t.merchantName ?? '(내용없음)',
         category: t.categoryName ?? '기타',
-        method: realAccount.value.name || route.query.name || '',
+        method: isCardPayment
+          ? (t.paymentMethodName || t.sourceCardType || '카드 결제')
+          : (realAccount.value.name || route.query.name || ''),
         amount,
         time,
         dateLabel: label,
         balanceAfter: Number(t.balanceAfter ?? 0),
         memo: t.memo ?? '',
         isReal: true,
-        sourceType: 'ACCOUNT',
+        sourceType: isCardPayment ? 'CARD' : 'ACCOUNT',
+        isCardPayment,
       }
       const group = result.find((g) => g.date === date)
       if (group) group.items.push(item)
