@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useTripWalletStore } from '@/stores/tripWallet';
-import { getAccounts } from '@/api/asset';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -605,34 +604,6 @@ router.beforeEach(async (to) => {
   // 로그인 상태에서 온보딩 URL에 접근하면 홈으로 복귀한다.
   if (to.name === 'Onboarding' && authStore.isLoggedIn) {
     return { name: 'Home' };
-  }
-
-  // 로그인 사용자가 금융프로필 화면 외의 보호 페이지로 이동할 때
-  // 계좌 연동 여부를 확인하고, 연결 계좌가 없다면 금융프로필로 안내한다.
-  if (
-    to.meta.requiresAuth &&
-    authStore.isLoggedIn &&
-    to.name !== 'FinancialProfile' &&
-    (authStore.hasLinkedAccount === null ||
-      (authStore.hasLinkedAccount === false &&
-        !authStore.isProfileComplete))
-  ) {
-    try {
-      const response = await getAccounts();
-      const accounts = response.data?.data;
-      const hasLinkedAccount = Array.isArray(accounts) && accounts.length > 0;
-
-      authStore.setHasLinkedAccount(hasLinkedAccount);
-
-      if (!hasLinkedAccount) {
-        return {
-          name: 'FinancialProfile',
-          query: { redirect: to.fullPath },
-        };
-      }
-    } catch {
-      // 계좌 조회 장애가 전체 서비스 접근을 막지 않도록 기존 라우팅을 허용한다.
-    }
   }
 
 });

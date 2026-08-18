@@ -50,8 +50,21 @@ async function login() {
     // Access Token과 로그인 회원 정보를 Pinia에 저장한다.
     authStore.handleLoginSuccess(loginData.accessToken, loginData.user)
 
-    //RefreshToken은 HttpOnly 쿠키로 자동 저장되므로
-    //프론트 JavaScript에서 직접 처리하지 않는다.
+    // RefreshToken은 HttpOnly 쿠키로 자동 저장되므로
+    // 프론트 JavaScript에서 직접 처리하지 않는다.
+    const needsFinancialOnboarding =
+      sessionStorage.getItem('tripass-financial-onboarding-pending') === 'true'
+
+    // 신규 가입 직후 한 번만 금융 프로필 화면으로 안내한다.
+    if (needsFinancialOnboarding) {
+      sessionStorage.removeItem('tripass-financial-onboarding-pending')
+      await router.replace({
+        name: 'FinancialProfile',
+        query: { redirect: '/' },
+      })
+      return
+    }
+
     await router.replace('/')
   } catch (error) {
     errorMsg.value = error.response?.data?.message || '로그인에 실패했습니다.'

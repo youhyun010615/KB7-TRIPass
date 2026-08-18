@@ -8,6 +8,12 @@ export async function fetchMonthlyAnalysis(yearMonth) {
   return unwrap(response);
 }
 
+/** 해당 월 리포트가 없을 때 소비 내역을 집계해 새로 생성한다. */
+export async function generateMonthlyAnalysis(yearMonth) {
+  const response = await api.post(`/saving/analyses/${yearMonth}`);
+  return unwrap(response);
+}
+
 /** 처음 상세 화면을 연 리포트를 확인 상태로 변경한다. */
 export async function markMonthlyAnalysisViewed(yearMonth) {
   await api.patch(`/saving/analyses/${yearMonth}/view`);

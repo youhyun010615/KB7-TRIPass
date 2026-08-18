@@ -43,6 +43,13 @@ onBeforeUnmount(() => {
 
 const isLoggingOut = ref(false)
 const accounts = ref([])
+const notificationStartTime = ref(localStorage.getItem('tripass-notification-start') || '09:00')
+const notificationEndTime = ref(localStorage.getItem('tripass-notification-end') || '22:00')
+
+watch([notificationStartTime, notificationEndTime], ([start, end]) => {
+  localStorage.setItem('tripass-notification-start', start)
+  localStorage.setItem('tripass-notification-end', end)
+})
 
 const memberIdentity = computed(() => {
   const provider = authStore.user?.loginProvider ?? 'LOCAL'
@@ -149,7 +156,7 @@ const notificationRows = [
         </header>
 
         <div class="member-profile">
-          <span class="member-avatar">{{ authStore.user?.name?.[0] ?? '고' }}</span>
+          <span class="member-avatar"><img src="@/assets/icons/blue_profile.svg" alt="" /></span>
           <div>
             <strong>{{ authStore.user?.name ?? '고객' }}님</strong>
             <small>{{ memberIdentity }}</small>
@@ -181,10 +188,7 @@ const notificationRows = [
             @click="router.push(item.path)"
           >
             <div class="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0" style="background: #EAF1FF">
-              <svg v-if="item.icon === 'user'" width="19" height="19" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="8" r="3.4" stroke="#2F6FED" stroke-width="1.9"/>
-                <path d="M5 20c1.2-3.8 4-5.6 7-5.6s5.8 1.8 7 5.6" stroke="#2F6FED" stroke-width="1.9" stroke-linecap="round"/>
-              </svg>
+              <img v-if="item.icon === 'user'" src="@/assets/icons/blue_profile.svg" width="19" height="19" alt="" />
               <img v-if="item.icon === 'travel'" src="@/assets/icons/blue_airplane.svg" width="19" height="19" alt="" />
               <svg v-if="item.icon === 'card'" width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="#2F6FED" stroke-width="1.8"/>
@@ -245,21 +249,26 @@ const notificationRows = [
             </button>
           </div>
         </div>
-        <div class="bg-white rounded-2xl px-[18px] py-[14px] flex items-center gap-3" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
-          <div class="flex-1">
-            <div class="text-[11.5px] font-bold" style="color:#98A2B3">알림 수신 시간</div>
-            <div class="text-[14px] font-extrabold text-gray-900 mt-1">오전 9:00 – 오후 10:00</div>
+        <div class="notification-time-card">
+          <div class="notification-time-head">
+            <div><b>알림 수신 시간</b><small>설정한 시간 안에서 알림을 받아요</small></div>
+            <span>TIME</span>
+          </div>
+          <div class="notification-time-fields">
+            <label><span>시작</span><input v-model="notificationStartTime" type="time" aria-label="알림 시작 시간" /></label>
+            <i>–</i>
+            <label><span>종료</span><input v-model="notificationEndTime" type="time" aria-label="알림 종료 시간" /></label>
           </div>
         </div>
       </div>
 
       <button
           type="button"
-          class="w-full py-3.5 mb-4 rounded-2xl text-sm font-semibold text-center"
-          style="color: #B4BCC9"
+          class="logout-button"
           :disabled="isLoggingOut"
           @click="logout"
       >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10m4-4 3-3-3-3m3 3H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         {{ isLoggingOut ? '로그아웃 중...' : '로그아웃' }}
       </button>
     </div>
@@ -326,6 +335,7 @@ const notificationRows = [
   font-weight: 800;
   box-shadow: 0 6px 13px rgba(2, 18, 50, .2);
 }
+.member-avatar img { width: 21px; height: 21px; }
 .member-profile strong { display: block; font-size: 14px; font-weight: 800; }
 .member-profile small { display: block; margin-top: 2px; color: rgba(255, 255, 255, .55); font-size: 10px; }
 .member-assets { position: relative; margin-top: 19px; }
@@ -410,4 +420,25 @@ const notificationRows = [
     transform: translateY(1.5px) rotate(6deg);
   }
 }
+.notification-time-card {
+  padding: 15px 16px;
+  border: 1px solid #e8edf5;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(16,25,43,.055);
+}
+.notification-time-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px; }
+.notification-time-head b,.notification-time-head small { display:block; }
+.notification-time-head b { color:#111827;font-size:12px;font-weight:800; }
+.notification-time-head small { margin-top:3px;color:#9aa5b6;font-size:9px; }
+.notification-time-head>span { padding:4px 7px;border-radius:99px;background:#edf3ff;color:#3970d0;font-family:'Space Mono',monospace;font-size:7px;font-weight:800;letter-spacing:.08em; }
+.notification-time-fields { display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);align-items:end;gap:7px;margin-top:12px; }
+.notification-time-fields label { padding:8px 10px;border:1px solid #e5eaf2;border-radius:12px;background:#f7f9fc; }
+.notification-time-fields label>span { display:block;margin-bottom:3px;color:#8b98ab;font-size:8px;font-weight:700; }
+.notification-time-fields input { width:100%;border:0;outline:0;background:transparent;color:#17387f;font-size:12px;font-weight:800; }
+.notification-time-fields i { padding-bottom:11px;color:#a5afbd;font-style:normal;text-align:center; }
+.logout-button { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;margin:0 0 16px;border:1px solid #f0d9dd;border-radius:16px;background:#fff;color:#c94e5b;font-size:12px;font-weight:800;box-shadow:0 5px 14px rgba(116,31,45,.045); }
+.logout-button:active { background:#fff5f6; }
+.logout-button:disabled { opacity:.55; }
+.logout-button svg { width:17px;height:17px; }
 </style>

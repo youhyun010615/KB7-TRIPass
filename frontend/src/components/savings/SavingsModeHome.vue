@@ -67,18 +67,24 @@ const hasLinkedFinancialSources = computed(
 async function loadFinancialSources() {
   financialSourcesLoading.value = true;
   financialSourcesError.value = '';
-  try {
-    const [accountResponse, cardResponse] = await Promise.all([
-      getAccounts(),
-      getCards(),
-    ]);
-    linkedAccountCount.value = accountResponse.data?.data?.length ?? 0;
-    linkedCardCount.value = cardResponse.data?.data?.length ?? 0;
-  } catch {
+  const [accountResult, cardResult] = await Promise.allSettled([
+    getAccounts(),
+    getCards(),
+  ]);
+
+  linkedAccountCount.value =
+    accountResult.status === 'fulfilled'
+      ? accountResult.value.data?.data?.length ?? 0
+      : 0;
+  linkedCardCount.value =
+    cardResult.status === 'fulfilled'
+      ? cardResult.value.data?.data?.length ?? 0
+      : 0;
+
+  if (accountResult.status === 'rejected' && cardResult.status === 'rejected') {
     financialSourcesError.value = '금융 데이터 연결 상태를 확인하지 못했어요.';
-  } finally {
-    financialSourcesLoading.value = false;
   }
+  financialSourcesLoading.value = false;
 }
 
 async function loadHomeInsights({ force = false } = {}) {
@@ -92,7 +98,7 @@ async function loadHomeInsights({ force = false } = {}) {
     return;
   }
 
-  await monthlyAnalysisStore.loadLatestAnalysis({ force });
+  await monthlyAnalysisStore.loadCurrentAnalysis({ force });
 }
 
 onMounted(async () => {
@@ -480,28 +486,15 @@ async function switchMode(mode) {
         </div>
       </article>
 
-      <section
-        v-if="homeInsightLoading"
-        class="analysis-summary-skeleton mx-4 mt-3"
-        aria-label="저축 미션 정보를 불러오는 중"
-      >
-        <i /><i /><i /><i />
-      </section>
+      <HomeSavingMissionCard
+        v-if="savingMissionsStore.hasStartedMissions"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
 
       <section
-        v-else-if="savingReadinessStore.errorMessage"
-        class="analysis-load-error mx-4 mt-3"
-      >
-        <span>AI</span>
-        <div>
-          <b>준비 상태를 확인하지 못했어요</b>
-          <small>{{ savingReadinessStore.errorMessage }}</small>
-        </div>
-        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
-      </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsTravelGoalAndFinancialAsset"
+        v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -517,39 +510,6 @@ async function switchMode(mode) {
           <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
         </div>
       </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsTravelGoal"
-        class="analysis-empty-state mx-4 mt-3"
-      >
-        <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openTravelGoalSetup">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>아직 여행 목표를 설정하지 않았어요</b>
-          <small>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
-        </button>
-      </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsFinancialAsset"
-        class="analysis-empty-state mx-4 mt-3"
-      >
-        <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openFinancialSources">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>계좌나 카드를 연결해 주세요</b>
-          <small>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>금융 데이터 연결하기<i aria-hidden="true">›</i></em>
-        </button>
-      </section>
-
-      <HomeSavingMissionCard
-        v-else-if="savingMissionsStore.hasStartedMissions"
-        class="mx-4 mt-3"
-        :mission-data="savingMissionsStore.missions"
-        @open="openSavingMissions"
-      />
 
       <div class="empty-trip-guide mx-4 mt-3">
         <span class="guide-label">TRIPASS GUIDE</span>

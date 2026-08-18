@@ -3,7 +3,6 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
-import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
@@ -13,6 +12,16 @@ import { useTravelStore } from '@/stores/travel';
 const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
+const currencySearch = ref('');
+
+const currencyCountryNames = {
+  AED: '아랍에미리트', AUD: '호주', BHD: '바레인', BND: '브루나이',
+  CAD: '캐나다', CHF: '스위스', CNH: '중국', DKK: '덴마크',
+  EUR: '유럽연합', GBP: '영국', HKD: '홍콩', IDR: '인도네시아',
+  JPY: '일본', KWD: '쿠웨이트', MYR: '말레이시아', NOK: '노르웨이',
+  NZD: '뉴질랜드', SAR: '사우디아라비아', SEK: '스웨덴',
+  SGD: '싱가포르', THB: '태국', USD: '미국',
+};
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
 const exchangeHeaderEl = ref(null);
@@ -62,6 +71,21 @@ const displayCurrencies = computed(() => {
     ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
   ]);
   return exchange.currencies.filter((c) => codes.has(c.code));
+});
+
+const filteredCurrencies = computed(() => {
+  const keyword = currencySearch.value.trim().toLocaleLowerCase('ko-KR');
+  return displayCurrencies.value
+    .map((currency) => ({
+      ...currency,
+      countryName: currencyCountryNames[currency.code] || currency.name || currency.code,
+    }))
+    .filter((currency) =>
+      !keyword || [currency.countryName, currency.code, currency.name, currency.symbol]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('ko-KR').includes(keyword)),
+    )
+    .sort((a, b) => a.countryName.localeCompare(b.countryName, 'ko-KR'));
 });
 
 watch(
@@ -149,11 +173,45 @@ watch(
             </div>
           </button>
         </div>
-        <template v-if="displayCurrencies.length > 0">
-          <CurrencyTabNav
-            v-model="exchange.selectedCode"
-            :currencies="displayCurrencies"
+        <div class="currency-search">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
+            <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <input
+            v-model="currencySearch"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            aria-label="국가 또는 통화 검색"
+            placeholder="국가명 또는 통화코드 검색"
           />
+          <button
+            v-if="currencySearch"
+            type="button"
+            aria-label="검색어 지우기"
+            @click="currencySearch = ''"
+          >
+            ×
+          </button>
+        </div>
+
+        <template v-if="filteredCurrencies.length > 0">
+          <div class="currency-country-list" aria-label="지원 국가 목록">
+            <button
+              v-for="currency in filteredCurrencies"
+              :key="currency.code"
+              type="button"
+              :class="{ active: exchange.selectedCode === currency.code }"
+              @click="exchange.selectedCode = currency.code"
+            >
+              <span class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
+              <span class="currency-country-name">{{ currency.countryName }}</span>
+              <span class="currency-country-unit">{{ currency.name }}</span>
+              <b>{{ currency.code }}</b>
+              <span class="currency-country-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
 
           <CurrencyChart
             :currency="exchange.selectedCurrency"
@@ -161,6 +219,11 @@ watch(
           />
           <ExchangeCalculator />
         </template>
+        <div v-else-if="currencySearch" class="currency-search-empty">
+          <b>검색 결과가 없어요</b>
+          <p>국가명이나 통화코드를 다시 확인해 주세요.</p>
+          <button type="button" @click="currencySearch = ''">전체 통화 보기</button>
+        </div>
         <template v-else>
           <div class="empty-state">
             <div class="empty-icon">💸</div>
@@ -369,6 +432,129 @@ header h1 {
   font-size: 9.5px;
   color: #96a1b5;
   white-space: nowrap;
+}
+.currency-search {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px 0 13px;
+  margin: 2px 0 3px;
+  border: 1px solid #dce4f0;
+  border-radius: 14px;
+  background: #fff;
+  color: #7d8ba3;
+  box-shadow: 0 5px 16px rgba(23, 43, 77, .04);
+}
+.currency-search:focus-within {
+  border-color: #2f6fea;
+  box-shadow: 0 0 0 3px rgba(47, 111, 234, .1);
+}
+.currency-search svg {
+  width: 18px;
+  height: 18px;
+}
+.currency-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #17233b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.currency-search input::placeholder { color: #a0aabd; }
+.currency-search input::-webkit-search-cancel-button { display: none; }
+.currency-search button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef2f8;
+  color: #718097;
+  font-size: 18px;
+  line-height: 1;
+}
+.currency-country-list {
+  display: grid;
+  max-height: 194px;
+  margin: 8px 0 14px;
+  overflow-y: auto;
+  border: 1px solid #e0e7f1;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(23, 43, 77, .045);
+  scrollbar-width: thin;
+  scrollbar-color: #c8d3e3 transparent;
+}
+.currency-country-list button {
+  display: grid;
+  grid-template-columns: 22px minmax(66px, auto) minmax(0, 1fr) 34px 16px;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #edf1f6;
+  color: #162139;
+  text-align: left;
+}
+.currency-country-list button:last-child { border-bottom: 0; }
+.currency-country-list button.active { background: #edf4ff; }
+.currency-country-flag {
+  width: 19px;
+  height: 14px;
+  border-radius: 2px;
+  background-size: cover;
+}
+.currency-country-name {
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.currency-country-unit {
+  overflow: hidden;
+  color: #8b97a9;
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.currency-country-list b {
+  color: #596981;
+  font-size: 10px;
+  text-align: right;
+}
+.currency-country-check {
+  color: transparent;
+  font-size: 12px;
+  font-weight: 900;
+}
+.currency-country-list button.active .currency-country-name,
+.currency-country-list button.active b,
+.currency-country-list button.active .currency-country-check { color: #2464d8; }
+.currency-search-empty {
+  margin: 10px 0 16px;
+  padding: 28px 18px;
+  border: 1px dashed #cad5e5;
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+}
+.currency-search-empty b { font-size: 13px; }
+.currency-search-empty p {
+  margin-top: 6px;
+  color: #8a97aa;
+  font-size: 10px;
+}
+.currency-search-empty button {
+  margin-top: 14px;
+  padding: 8px 13px;
+  border-radius: 10px;
+  background: #eaf1ff;
+  color: #2464d8;
+  font-size: 10px;
+  font-weight: 800;
 }
 .empty-state {
   display: flex;

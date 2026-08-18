@@ -55,25 +55,38 @@ function updateKrw(event) {
 
 <template>
   <section class="calculator">
-    <h2>빠른 환율 계산</h2>
-    <div>
-      <label
-        >보내는 금액
-        <input
-          :value="sentAmount"
-          :class="amountClass(sentAmount)"
-          inputmode="numeric"
-          @input="updateKrw"
-        />
-        <b>KRW</b>
+    <div class="calculator-heading">
+      <div>
+        <small>QUICK CONVERTER</small>
+        <h2>빠른 환율 계산</h2>
+      </div>
+      <span>{{ exchange.selectedCode }} 환율 적용</span>
+    </div>
+    <div class="calculator-fields">
+      <label>
+        <span class="field-label">보내는 금액</span>
+        <span class="amount-row">
+          <input
+            :value="sentAmount"
+            :class="amountClass(sentAmount)"
+            inputmode="numeric"
+            aria-label="보내는 원화 금액"
+            @input="updateKrw"
+          />
+          <b>KRW</b>
+        </span>
       </label>
-      <span>→</span>
-      <label
-        >받는 금액
-        <strong :class="amountClass(receivedAmount)">{{
-          receivedAmount
-        }}</strong>
-        <b>{{ exchange.selectedCode }}</b>
+      <span class="convert-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <label class="result-field">
+        <span class="field-label">받는 금액</span>
+        <span class="amount-row">
+          <strong :class="amountClass(receivedAmount)">{{ receivedAmount }}</strong>
+          <b>{{ exchange.selectedCode }}</b>
+        </span>
       </label>
     </div>
   </section>
@@ -82,44 +95,122 @@ function updateKrw(event) {
 <style scoped>
 .calculator {
   margin-top: 18px;
-  padding: 20px 18px;
-  border: 0;
+  padding: 18px;
+  border: 1px solid #e5ebf4;
   border-radius: 22px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(23, 43, 77, .05);
+  box-shadow: 0 10px 26px rgba(23, 43, 77, .055);
+}
+.calculator-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+.calculator-heading small {
+  display: block;
+  margin-bottom: 3px;
+  color: #2f6fea;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
 }
 .calculator h2 {
   color: #10192d;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
 }
-.calculator > div {
+.calculator-heading > span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #3268c5;
+  font-size: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.calculator-fields {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
-  align-items: end;
-  gap: 8px;
-  margin-top: 16px;
+  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
 }
 .calculator label {
-  display: grid;
+  display: block;
   min-width: 0;
-  padding: 13px;
-  border-radius: 15px;
-  background: #f5f7fb;
+  padding: 12px;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  background: #f7f9fc;
   color: #8d99ad;
-  font-size: 10px;
+}
+.calculator label:focus-within {
+  border-color: #9bbaf1;
+  background: #f3f7ff;
+}
+.field-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+}
+.amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  margin-top: 7px;
 }
 .calculator input,
 .calculator strong {
+  display: block;
+  width: 100%;
   min-width: 0;
-  margin-top: 7px;
   color: #17233a;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.2;
+}
+.calculator input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.calculator input.compact,
+.calculator strong.compact { font-size: 12px; }
+.calculator input.tiny,
+.calculator strong.tiny { font-size: 10px; }
+.result-field {
+  background: #f1f5fd !important;
 }
 .calculator b {
-  margin-top: 4px;
-  color: #6f7d94;
-  font-size: 10px;
+  flex: 0 0 auto;
+  color: #53647e;
+  font-size: 8.5px;
+  font-weight: 800;
+}
+.convert-arrow {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  align-self: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #173b82;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(23, 59, 130, .22);
+}
+.convert-arrow svg {
+  width: 15px;
+  height: 15px;
+}
+@media (max-width: 360px) {
+  .calculator { padding: 15px; }
+  .calculator-fields { grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); gap: 3px; }
+  .convert-arrow { width: 28px; height: 28px; }
+  .calculator label { padding: 10px 8px; }
 }
 </style>
