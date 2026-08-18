@@ -162,14 +162,15 @@ watch(() => props.currency, fetchHistory, { immediate: true });
         >{{ safeCurrency.unit }}{{ safeCurrency.symbol }} =
         {{ format(safeCurrency.rate) }}<small>원</small></strong
       >
+      <p class="change-row" :class="{ up: safeCurrency.change > 0, down: safeCurrency.change <= 0 }">
+        <span class="arrow">{{ safeCurrency.change > 0 ? '▲' : '▼' }}</span>
+        {{ format(Math.abs(safeCurrency.change)) }}원
+        <small>전일 대비</small>
+      </p>
       <small v-if="lastUpdateDate" class="update-info">
         {{ lastUpdateDate }} 고시 기준
       </small>
     </div>
-    <p :class="{ up: safeCurrency.change > 0, down: safeCurrency.change <= 0 }">
-      <span class="arrow">{{ safeCurrency.change > 0 ? '▲' : '▼' }}</span>
-      {{ format(Math.abs(safeCurrency.change)) }}원
-    </p>
     <div class="chart-container" style="height: 200px">
       <Line :data="chartData" :options="chartOptions" />
     </div>
@@ -226,10 +227,11 @@ nav .active {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  gap: 5px;
+  gap: 0;
 }
 .update-info {
   align-self: flex-end;
+  margin-top: 7px;
   color: #9aa6b8;
   font-size: 9px;
   font-weight: 500;
@@ -239,9 +241,21 @@ nav .active {
   font-size: 13px;
 }
 .chart p {
-  margin-top: 5px;
+  margin-top: 2px;
   font-size: 12px;
   font-weight: 700;
+}
+.chart .change-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.25;
+}
+.chart .change-row small {
+  margin-left: 3px;
+  color: #9aa6b8;
+  font-size: 8.5px;
+  font-weight: 600;
 }
 .chart p.up {
   color: #ed5555;
