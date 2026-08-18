@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useExchangeStore } from '@/stores/exchange';
@@ -27,6 +27,34 @@ const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
 const userName = computed(() => authStore.user?.name ?? '회원');
+
+// 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
+// position:sticky가 동작하지 않는다. 대신 position:fixed로 고정하고,
+// 실제 렌더 높이를 측정해 뒤에 그만큼의 여백을 확보한다.
+const savingsHeaderEl = ref(null);
+const savingsHeaderHeight = ref(0);
+let savingsHeaderResizeObserver = null;
+
+function syncSavingsHeaderHeight() {
+  if (savingsHeaderEl.value) {
+    savingsHeaderHeight.value = savingsHeaderEl.value.offsetHeight;
+  }
+}
+
+// 헤더는 v-else 분기에서만 렌더링되므로, 마운트 시점에 아직 없을 수 있다.
+// homeDashboard가 늦게 도착해 분기가 바뀌는 경우까지 대응하기 위해
+// ref 자체를 감시해서 등장할 때마다 옵저버를 다시 붙인다.
+watch(savingsHeaderEl, (el) => {
+  savingsHeaderResizeObserver?.disconnect();
+  savingsHeaderResizeObserver = null;
+  if (!el) return;
+
+  syncSavingsHeaderHeight();
+  if (window.ResizeObserver) {
+    savingsHeaderResizeObserver = new ResizeObserver(syncSavingsHeaderHeight);
+    savingsHeaderResizeObserver.observe(el);
+  }
+});
 const passNumber = computed(() => {
   const d = new Date();
   const yy = String(d.getFullYear()).slice(-2);
@@ -84,6 +112,10 @@ onMounted(async () => {
   ]);
   await nextTick();
   restoreCountryPosition();
+});
+
+onBeforeUnmount(() => {
+  savingsHeaderResizeObserver?.disconnect();
 });
 
 const countryPresentation = {
@@ -202,26 +234,9 @@ const homeSavingsPercent = computed(() =>
 const monthlyTarget = computed(() =>
   Number(homeDashboard.value?.monthlySavingTarget || 0),
 );
-const daysUntilDeparture = computed(() => {
-  // [ORIGINAL LOGIC]
-  const startDate = homeDashboard.value?.startDate;
-  if (!startDate) return Number(homeDashboard.value?.daysUntilDeparture || 0);
-
-  let targetDate;
-  if (Array.isArray(startDate)) {
-    const [year, month, day] = startDate;
-    targetDate = new Date(year, month - 1, day);
-  } else {
-    targetDate = new Date(startDate);
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  targetDate.setHours(0, 0, 0, 0);
-
-  const diffTime = targetDate.getTime() - today.getTime();
-  return Math.round(diffTime / (1000 * 60 * 60 * 24));
-});
+const daysUntilDeparture = computed(() =>
+  Number(homeDashboard.value?.daysUntilDeparture ?? 0),
+);
 
 const checklistInfo = computed(() => {
   const days = daysUntilDeparture.value;
@@ -428,8 +443,9 @@ async function switchMode(mode) {
 
     <!-- ══ 여행 미등록 홈 ══════════════════════════════════════ -->
     <template v-else-if="!homeDashboard">
-      <div class="px-5 pt-12 pb-3">
-        <div class="flex items-center justify-between">
+      <!-- 헤더: 앱 프레임의 overflow:hidden 때문에 sticky 대신 fixed로 고정 -->
+      <div ref="savingsHeaderEl" class="savings-home-header">
+        <div class="savings-header-row">
           <div class="mode-switch-control savings-selected">
             <span class="mode-switch-thumb" />
             <button type="button" @click="switchMode('travel')">여행</button>
@@ -437,6 +453,14 @@ async function switchMode(mode) {
           </div>
           <NotificationBell />
         </div>
+        <h1 class="home-header-title">
+          <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
+          TRIPASS
+        </h1>
+      </div>
+      <div :style="{ height: savingsHeaderHeight + 'px' }" aria-hidden="true" />
+
+      <div class="px-5 pt-3 pb-3">
         <p class="mt-2 text-lg font-extrabold">안녕하세요, {{ userName }}님</p>
         <p class="mt-1 text-[10px] text-slate-500">
           새로운 여행을 함께 준비해 볼까요?
@@ -482,40 +506,22 @@ async function switchMode(mode) {
 
     <!-- ══ 여행 저축 모드 ══════════════════════════════════════ -->
     <template v-else>
-      <!-- 헤더 -->
-      <div class="savings-home-header">
-        <div
-          v-if="daysUntilDeparture <= 0"
-          class="mode-switch-control savings-selected"
-        >
-          <span class="mode-switch-thumb" />
-          <button type="button" @click="switchMode('travel')">여행</button>
-          <button type="button" class="selected">저축</button>
-        </div>
-
-        <div class="savings-header-row savings-greeting-row">
-          <h1>안녕하세요, {{ userName }}님</h1>
+      <!-- 헤더: 앱 프레임의 overflow:hidden 때문에 sticky 대신 fixed로 고정 -->
+      <div ref="savingsHeaderEl" class="savings-home-header">
+        <div class="savings-header-row">
+          <div class="mode-switch-control savings-selected">
+            <span class="mode-switch-thumb" />
+            <button type="button" @click="switchMode('travel')">여행</button>
+            <button type="button" class="selected">저축</button>
+          </div>
           <NotificationBell />
         </div>
-
-        <section class="active-trip-heading">
-          <div class="active-trip-icon">✈</div>
-          <div class="active-trip-copy">
-            <small>MY NEXT TRIP</small>
-            <h2>{{ homeDashboard.tripName }}</h2>
-            <p>
-              <span>출발</span>{{ formatDate(homeDashboard.startDate) }}
-              <i>·</i> D-{{ daysUntilDeparture }}
-            </p>
-          </div>
-          <RouterLink
-            class="trip-edit-button"
-            :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
-          >
-            수정 <span>›</span>
-          </RouterLink>
-        </section>
+        <h1 class="home-header-title">
+          <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
+          TRIPASS
+        </h1>
       </div>
+      <div :style="{ height: savingsHeaderHeight + 'px' }" aria-hidden="true" />
 
       <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 -->
       <div
@@ -539,22 +545,20 @@ async function switchMode(mode) {
               class="px-5 pt-4 pb-3 flex items-center justify-between"
               :style="`background:${country.headerBg}`"
             >
+              <span
+                class="text-[10px] font-bold tracking-widest"
+                style="color: #ffd466"
+                >TRIPASS AIR</span
+              >
               <span class="text-white/70 text-[10px] font-bold tracking-widest"
                 >BOARDING PASS</span
               >
-              <span class="text-white/50 text-[10px] tracking-widest"
-                >TRIPASS AIR</span
+              <RouterLink
+                class="text-white text-[10px] font-semibold whitespace-nowrap"
+                :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
               >
-              <span class="text-white/70 text-[10px] font-semibold"
-                >NO. {{ country.code }}-{{ country.displayOrder }}</span
-              >
-            </div>
-
-            <!-- 사진의 시작 경계와 정확히 맞닿는 상단 절취선 -->
-            <div class="ticket-cutline ticket-cutline-top">
-              <div class="ticket-notch ticket-notch-left" />
-              <div class="ticket-dashed-line" />
-              <div class="ticket-notch ticket-notch-right" />
+                여행 계획 수정하기 ›
+              </RouterLink>
             </div>
 
             <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
@@ -586,14 +590,9 @@ async function switchMode(mode) {
                       {{ country.flag }} {{ country.name }}
                     </p>
                   </div>
-                  <div class="flex-1 flex items-center mt-3.5">
-                    <div
-                      class="flex-1 border-t border-dashed border-white/40"
-                    />
-                    <span class="mx-2 text-yellow-300 text-lg">✈</span>
-                    <div
-                      class="flex-1 border-t border-dashed border-white/40"
-                    />
+                  <div class="flex-1 mt-3.5 destination-route" aria-hidden="true">
+                    <i></i>
+                    <span>✈</span>
                   </div>
                   <div class="text-right flex-none">
                     <p
@@ -602,14 +601,15 @@ async function switchMode(mode) {
                       Departure
                     </p>
                     <p
-                      class="text-white text-[26px] font-extrabold leading-none"
+                      class="text-[26px] font-extrabold leading-none"
+                      style="color: #ffd466"
                     >
                       D-{{ daysUntilDeparture }}
                     </p>
                   </div>
                 </div>
                 <p class="ticket-description text-white/90 text-[12px] mt-3">
-                  {{ country.desc }} ✨
+                  {{ country.desc }}
                 </p>
 
                 <!-- 사진이 보이는 여백 및 체크리스트 버튼 -->
@@ -632,7 +632,7 @@ async function switchMode(mode) {
                     <span class="font-semibold text-[13px] text-white">{{
                       ticketSavingCopy.title
                     }}</span>
-                    <span class="text-white font-extrabold text-[14px]"
+                    <span class="font-extrabold text-[14px]" style="color: #ffd466"
                       >{{ homeSavingsPercent }}%</span
                     >
                   </div>
@@ -680,26 +680,14 @@ async function switchMode(mode) {
                   @click="goWallet"
                 >
                   <span class="text-[13px] font-bold text-white">송금하기</span>
-                  <div class="flex items-center gap-2">
-                    <div class="flex gap-[1.5px] items-end h-5">
-                      <div
-                        v-for="(h, i) in [
-                          14, 7, 20, 5, 14, 9, 20, 5, 16, 5, 12, 8, 18, 5, 14,
-                        ]"
-                        :key="i"
-                        class="bg-white/85 rounded-[0.5px]"
-                        :style="`height:${h}px;width:${i % 4 === 0 ? '2.5px' : '1.5px'}`"
-                      />
-                    </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M9 18L15 12L9 6"
-                        stroke="#FFFFFF"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                      />
-                    </svg>
-                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M9 18L15 12L9 6"
+                      stroke="#FFFFFF"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                    />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -718,33 +706,24 @@ async function switchMode(mode) {
       </div>
 
       <section class="month-saving-card mx-4 mt-3">
-        <div class="month-card-route" aria-hidden="true">
-          <i /><span>✈</span><i />
-        </div>
         <div class="month-saving-heading">
-          <div>
-            <small>MONTHLY TRAVEL FUND</small>
-            <h2>{{ currentMonthLabel }} 여행 저축</h2>
-          </div>
-          <p>D-{{ daysUntilDeparture }}</p>
+          <h2>{{ currentMonthLabel }} 여행 저축</h2>
         </div>
         <div class="month-saving-values">
           <div>
-            <span>◎</span><small>이번 달 목표</small
-            ><b>{{ formatCurrency(monthlyTarget) }}</b>
+            <small>이번 달 목표</small><b>{{ formatCurrency(monthlyTarget) }}</b>
           </div>
           <div>
-            <span>✓</span><small>저축한 금액</small
+            <small>저축한 금액</small
             ><b>{{ formatCurrency(monthlySavedAmount) }}</b>
           </div>
           <div>
-            <span>▣</span><small>남은 저축</small
+            <small>남은 저축</small
             ><b>{{ formatCurrency(monthlyRemainingAmount) }}</b>
           </div>
         </div>
         <div class="month-progress-label">
-          <span>이번 달 저축 여정</span
-          ><strong>{{ monthlySavingPercent }}%</strong>
+          <strong>{{ monthlySavingPercent }}%</strong>
         </div>
         <div class="month-saving-progress">
           <i :style="{ width: `${monthlySavingPercent}%` }" />
@@ -932,9 +911,6 @@ async function switchMode(mode) {
             >환율 정보를 불러오는 중</span
           >
         </div>
-        <div class="exchange-route" aria-hidden="true">
-          <i /><span>✈</span><i />
-        </div>
       </div>
     </template>
   </section>
@@ -1024,7 +1000,7 @@ async function switchMode(mode) {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #f3f6ff;
+  background: #f4f5f9;
 }
 .empty-trip-notch.left { left: -9px; }
 .empty-trip-notch.right { right: -9px; }
@@ -1073,7 +1049,7 @@ async function switchMode(mode) {
 .empty-trip-guide p { font-size: 11.5px; color: #5a6478; line-height: 1.6; }
 .savings-mode-home {
   min-height: 100vh;
-  background: #f3f6ff;
+  background: #f4f5f9;
 }
 .analysis-summary-skeleton,
 .analysis-load-error,
@@ -1293,9 +1269,6 @@ async function switchMode(mode) {
   align-items: center;
   height: 0;
 }
-.ticket-cutline-top {
-  transform: translateY(0);
-}
 .ticket-cutline-bottom {
   margin-top: 14px;
 }
@@ -1305,7 +1278,7 @@ async function switchMode(mode) {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #f7f4ee;
+  background: #f4f5f9;
   transform: translateY(-50%);
 }
 .ticket-notch-left {
@@ -1414,9 +1387,11 @@ async function switchMode(mode) {
   box-shadow: 0 7px 16px rgba(19, 59, 123, 0.06);
 }
 .month-saving-heading {
+  display: block;
+}
+.month-saving-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 .month-saving-heading p {
   display: inline-block;
@@ -1779,94 +1754,6 @@ async function switchMode(mode) {
   font-size: 21px;
   line-height: 1.25;
 }
-.active-trip-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid #dae6fb;
-  border-radius: 17px;
-  background: linear-gradient(135deg, #fff 0%, #eef5ff 100%);
-  box-shadow: 0 8px 22px rgba(24, 61, 130, 0.09);
-}
-.active-trip-icon {
-  display: grid;
-  flex: 0 0 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #173f8d, #3475e6);
-  color: #fff;
-  font-size: 20px;
-  box-shadow: 0 7px 14px rgba(36, 105, 232, 0.24);
-}
-.active-trip-copy {
-  min-width: 0;
-}
-.active-trip-copy {
-  flex: 1;
-}
-.active-trip-copy small {
-  color: #6d8dc0;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.13em;
-}
-.active-trip-copy h2 {
-  overflow: hidden;
-  margin-top: 3px;
-  color: #173f8d;
-  font-size: 19px;
-  font-weight: 950;
-  letter-spacing: -0.04em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.active-trip-copy p {
-  margin-top: 6px;
-  color: #526b93;
-  font-size: 12px;
-  font-weight: 750;
-}
-.active-trip-copy p span {
-  margin-right: 6px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  background: #dceaff;
-  color: #2469e8;
-  font-size: 9px;
-  font-weight: 900;
-}
-.active-trip-copy p i {
-  margin: 0 4px;
-  color: #9cb0cf;
-  font-style: normal;
-}
-.trip-edit-button {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 10px;
-  border: 1px solid #c9dcfa;
-  border-radius: 10px;
-  background: #fff;
-  color: #2469e8;
-  font-size: 11px;
-  font-weight: 900;
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease;
-}
-.trip-edit-button span {
-  font-size: 15px;
-  line-height: 1;
-}
-.trip-edit-button:active {
-  transform: scale(0.95);
-  background: #edf4ff;
-}
 .country-carousel {
   display: flex;
   gap: 0;
@@ -1977,24 +1864,46 @@ async function switchMode(mode) {
   border-radius: 50%;
   content: '';
 }
-.month-card-route {
+.destination-route {
+  position: relative;
+  height: 20px;
+}
+.destination-route i {
   position: absolute;
-  top: 23px;
-  right: 88px;
-  display: flex;
-  width: 78px;
-  align-items: center;
-  color: #ef7b3c;
-  opacity: 0.75;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(255, 255, 255, 0.4);
 }
-.month-card-route i {
-  flex: 1;
-  border-top: 1px dashed #ef9b6f;
+.destination-route span {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  color: #fde047;
+  font-size: 18px;
+  transform: translate(-50%, -50%);
+  animation: plane-travel 3.4s ease-in-out infinite;
 }
-.month-card-route span {
-  margin: 0 5px;
-  font-size: 13px;
-  transform: rotate(7deg);
+@keyframes plane-travel {
+  0% {
+    left: 0%;
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-4deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(2deg);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-4deg);
+  }
 }
 .month-saving-heading {
   position: relative;
@@ -2044,26 +1953,6 @@ async function switchMode(mode) {
 }
 .month-saving-values > div + div {
   border-left: 1px solid rgba(198, 213, 238, 0.8);
-}
-.month-saving-values > div > span {
-  display: grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  background: #e7effe;
-  color: #2469e8;
-  font-size: 11px;
-  font-weight: 900;
-}
-.month-saving-values > div:nth-child(2) > span {
-  background: #e3f7f1;
-  color: #0a9a82;
-}
-.month-saving-values > div:nth-child(3) > span {
-  background: #fff0e7;
-  color: #e86e31;
 }
 .month-saving-values small {
   color: #7183a3;
@@ -2258,8 +2147,20 @@ async function switchMode(mode) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--exchange-accent);
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+  background: #4cd97b;
+  box-shadow: 0 0 0 4px rgba(76, 217, 123, 0.18);
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(76, 217, 123, 0.18);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(76, 217, 123, 0.06);
+    opacity: 0.6;
+  }
 }
 .exchange-card-head span {
   color: rgba(255, 255, 255, 0.88);
@@ -2352,23 +2253,6 @@ async function switchMode(mode) {
   color: rgba(255, 255, 255, 0.65);
   font-size: 9px;
 }
-.exchange-route {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 17px 14px;
-  color: var(--exchange-accent);
-  opacity: 0.7;
-}
-.exchange-route i {
-  flex: 1;
-  border-top: 1px dashed rgba(255, 255, 255, 0.24);
-}
-.exchange-route span {
-  margin: 0 8px;
-  font-size: 12px;
-}
 @keyframes home-fade-down {
   from {
     opacity: 0;
@@ -2432,6 +2316,247 @@ async function switchMode(mode) {
     transform: rotate(360deg);
   }
 }
+
+/* ── 여행 등록 후 홈 화면 - 후보 A 사이즈/디자인 반영 ── */
+.savings-home-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 390px;
+  z-index: 60;
+  padding: 14px 20px;
+  background: #f4f5f9;
+  transform: translateX(-50%);
+  animation: none;
+}
+.savings-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.home-header-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 19px;
+  font-weight: 900;
+  color: #10192b;
+  letter-spacing: -0.02em;
+}
+.header-plane {
+  width: 13px;
+  height: 13px;
+  animation: header-plane-fly 2.6s ease-in-out infinite;
+}
+@keyframes header-plane-fly {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(47, 112, 242, 0));
+  }
+  25% {
+    transform: translateY(-1.5px) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+    filter: brightness(1.6) drop-shadow(0 0 3px rgba(47, 112, 242, 0.55));
+  }
+  75% {
+    transform: translateY(1.5px) rotate(6deg);
+  }
+}
+.mode-switch-control {
+  flex: none;
+  width: 112px;
+  padding: 3px;
+  background: #edeff3;
+  box-shadow: none;
+}
+.mode-switch-control button {
+  height: auto;
+  padding: 6px 0;
+  font-size: 11px;
+  font-weight: 800;
+}
+.mode-switch-thumb {
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  height: auto;
+  width: calc(50% - 3px);
+  background: #0b2a6b;
+}
+
+
+.month-saving-card {
+  margin-top: 16px;
+  padding: 18px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff8ef 0%, #ffffff 55%);
+  box-shadow: 0 4px 14px rgba(16, 25, 43, 0.06);
+}
+.month-saving-card::before {
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  border: none;
+  background: radial-gradient(
+    circle,
+    rgba(242, 153, 74, 0.16) 0%,
+    rgba(242, 153, 74, 0) 70%
+  );
+}
+.month-saving-heading {
+  margin-bottom: 16px;
+}
+.month-saving-heading h2 {
+  margin-top: 0;
+  font-size: 17px;
+  white-space: nowrap;
+}
+.month-saving-values {
+  gap: 10px;
+  margin-top: 0;
+}
+.month-saving-values > div {
+  padding: 15px 10px;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(16, 25, 43, 0.05);
+}
+.month-saving-values > div + div {
+  border-left: none;
+}
+.month-saving-values small {
+  color: #98a2b3;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.month-saving-values b {
+  margin-top: 6px;
+  color: #10192b;
+  font-size: 14px;
+}
+.month-progress-label {
+  justify-content: flex-end;
+  margin-top: 16px;
+  color: #5a6478;
+  font-size: 12.5px;
+}
+.month-progress-label strong {
+  color: #2f6fed;
+  font-size: 13.5px;
+}
+.month-saving-progress {
+  height: 6px;
+  margin-top: 10px;
+  border: none;
+  background: #edf0f6;
+}
+.month-saving-progress i {
+  background: #2f6fed;
+}
+.month-saving-progress i::before {
+  width: 12px;
+  height: 12px;
+  background: #f2994a;
+}
+.month-wallet-button {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #0b2a6b;
+  box-shadow: none;
+}
+.month-wallet-button > span i {
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.month-wallet-button > b {
+  color: #ffd466;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.analysis-load-error {
+  padding: 14px 15px;
+  border: none;
+  border-radius: 14px;
+  background: #f6f8fc;
+  gap: 12px;
+}
+.analysis-load-error > span {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #eaf1ff;
+  color: #2f6fed;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.analysis-load-error b {
+  color: #10192b;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.analysis-load-error small {
+  color: #98a2b3;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.analysis-load-error button {
+  color: #2f6fed;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.exchange-live-card {
+  margin-top: 16px;
+  border-radius: 16px;
+}
+.exchange-card-head {
+  padding: 14px 18px;
+}
+.exchange-card-head span {
+  font-size: 10px;
+}
+.exchange-card-head time {
+  font-size: 9.5px;
+}
+.exchange-country-mark > span {
+  flex: 0 0 32px;
+  height: 32px;
+  background: #fff;
+  font-size: 15px;
+}
+.exchange-country-mark small {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.exchange-country-mark b {
+  font-size: 13.5px;
+}
+.exchange-rate-value > b {
+  font-size: 20px;
+}
+.exchange-rate-value > span {
+  background: rgba(76, 217, 123, 0.15);
+  color: #4cd97b;
+}
+.exchange-rate-value > span.up {
+  color: #4cd97b;
+}
+.exchange-rate-value > span.down {
+  color: #ff6b6b;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .savings-home-header,
   .country-carousel,

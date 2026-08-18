@@ -2,6 +2,11 @@
 import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
+import foodIcon from '@/assets/icons/food.svg';
+import cafeIcon from '@/assets/icons/cafe.svg';
+import shoppingIcon from '@/assets/icons/shopping-cart.svg';
+import taxiIcon from '@/assets/icons/taxi.svg';
+import leisureIcon from '@/assets/icons/hobby_drink.svg';
 
 const route = useRoute();
 const router = useRouter();
@@ -10,12 +15,12 @@ const analysisStore = useMonthlyAnalysisStore();
 const yearMonth = computed(() => String(route.params.yearMonth || ''));
 const report = computed(() => analysisStore.report);
 const categoryMeta = {
-  FOOD: { icon: '🍽', color: '#2457aa' },
-  CAFE: { icon: '☕', color: '#3b82f6' },
+  FOOD: { icon: '🍽', iconSrc: foodIcon, color: '#2457aa' },
+  CAFE: { icon: '☕', iconSrc: cafeIcon, color: '#3b82f6' },
   LIVING: { icon: '🧺', color: '#13a184' },
-  SHOPPING: { icon: '🛍', color: '#f59e0b' },
-  HOBBY: { icon: '🎮', color: '#8b5cf6' },
-  TRANSPORT: { icon: '🚌', color: '#0ea5e9' },
+  SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, color: '#f59e0b' },
+  HOBBY: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
+  TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, color: '#0ea5e9' },
   OTHER: { icon: '•••', color: '#64748b' },
 };
 
@@ -219,8 +224,10 @@ function goMissions() {
                 background: `${metaOf(category.categoryCode).color}18`,
                 color: metaOf(category.categoryCode).color,
               }"
-              >{{ metaOf(category.categoryCode).icon }}</span
             >
+              <img v-if="metaOf(category.categoryCode).iconSrc" :src="metaOf(category.categoryCode).iconSrc" alt="" />
+              <template v-else>{{ metaOf(category.categoryCode).icon }}</template>
+            </span>
             <div class="category-detail">
               <div>
                 <b>{{ category.categoryName }}</b>
@@ -265,8 +272,10 @@ function goMissions() {
               :style="{
                 background: `${metaOf(recommendation.categoryCode).color}18`,
               }"
-              >{{ metaOf(recommendation.categoryCode).icon }}</span
             >
+              <img v-if="metaOf(recommendation.categoryCode).iconSrc" :src="metaOf(recommendation.categoryCode).iconSrc" alt="" />
+              <template v-else>{{ metaOf(recommendation.categoryCode).icon }}</template>
+            </span>
             <div>
               <strong>{{ recommendation.categoryName }}</strong>
               <p>{{ recommendation.recommendationReason }}</p>
@@ -545,6 +554,10 @@ function goMissions() {
   border-radius: 11px;
   font-size: 15px;
 }
+.category-icon img {
+  width: 17px;
+  height: 17px;
+}
 .category-detail > div {
   display: flex;
   align-items: center;
@@ -637,6 +650,10 @@ function goMissions() {
   height: 32px;
   place-items: center;
   border-radius: 11px;
+}
+.recommendation-list li > span img {
+  width: 16px;
+  height: 16px;
 }
 .recommendation-list strong {
   color: #26334d;

@@ -4,6 +4,10 @@ import { useRouter } from 'vue-router';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { useTravelStore } from '@/stores/travel';
 import NotificationBell from '@/components/common/NotificationBell.vue';
+import foodIcon from '@/assets/icons/food.svg';
+import cafeIcon from '@/assets/icons/cafe.svg';
+import shoppingIcon from '@/assets/icons/shopping-cart.svg';
+import taxiIcon from '@/assets/icons/taxi.svg';
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -127,9 +131,18 @@ const categoryIcons = {
   카페: '☕',
   생활비: '📦',
 };
+const categoryIconImages = {
+  식비: foodIcon,
+  카페: cafeIcon,
+  쇼핑: shoppingIcon,
+  교통: taxiIcon,
+};
 
 function getCategoryIcon(name) {
-  return categoryIcons[name] || '📁';
+  return {
+    iconSrc: categoryIconImages[name] || null,
+    icon: categoryIcons[name] || '📁',
+  };
 }
 
 // 국가별 색상 매핑 헬퍼
@@ -624,8 +637,11 @@ async function switchMode(mode) {
       </div>
       <div v-else v-for="cat in categoryList" :key="cat.name" class="budget-row">
         <span class="category"
-          ><i>{{ cat.icon }}</i
-          >{{ cat.name }}</span
+          ><i>
+            <img v-if="cat.icon.iconSrc" :src="cat.icon.iconSrc" alt="" />
+            <template v-else>{{ cat.icon.icon }}</template>
+          </i>
+          {{ cat.name }}</span
         >
         <div class="split-bar" :style="{ width: `${cat.barWidth}%` }">
           <i
@@ -691,8 +707,11 @@ async function switchMode(mode) {
         type="button"
         @click="router.push('/asset/transactions')"
       >
-        <i>{{ item.icon }}</i
-        ><span
+        <i>
+          <img v-if="item.icon.iconSrc" :src="item.icon.iconSrc" alt="" />
+          <template v-else>{{ item.icon.icon }}</template>
+        </i>
+        <span
           ><b>{{ item.place }}</b
           ><small>{{ item.meta }}</small></span
         ><strong> {{ item.amount }}</strong>
@@ -1254,6 +1273,10 @@ async function switchMode(mode) {
   background: #f3f5f8;
   font-style: normal;
 }
+.category i img {
+  width: 14px;
+  height: 14px;
+}
 .single-bar,
 .split-bar {
   display: flex;
@@ -1340,7 +1363,13 @@ async function switchMode(mode) {
   text-align: left;
 }
 .recent-row > i {
+  display: grid;
+  place-items: center;
   font-style: normal;
+}
+.recent-row > i img {
+  width: 16px;
+  height: 16px;
 }
 .recent-row span > * {
   display: block;

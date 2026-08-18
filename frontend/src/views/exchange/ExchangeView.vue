@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
+import NotificationBell from '@/components/common/NotificationBell.vue';
 import ExchangeTicket from '@/components/exchange/ExchangeTicket.vue';
 import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
@@ -13,6 +14,33 @@ import { useTravelStore } from '@/stores/travel';
 const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
+
+// 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
+const exchangeHeaderEl = ref(null);
+const exchangeHeaderHeight = ref(0);
+let exchangeHeaderResizeObserver = null;
+
+function syncExchangeHeaderHeight() {
+  if (exchangeHeaderEl.value) {
+    exchangeHeaderHeight.value = exchangeHeaderEl.value.offsetHeight;
+  }
+}
+
+watch(exchangeHeaderEl, (el) => {
+  exchangeHeaderResizeObserver?.disconnect();
+  exchangeHeaderResizeObserver = null;
+  if (!el) return;
+
+  syncExchangeHeaderHeight();
+  if (window.ResizeObserver) {
+    exchangeHeaderResizeObserver = new ResizeObserver(syncExchangeHeaderHeight);
+    exchangeHeaderResizeObserver.observe(el);
+  }
+});
+
+onBeforeUnmount(() => {
+  exchangeHeaderResizeObserver?.disconnect();
+});
 
 const currentTab = computed({
   get: () => exchange.currentTab,
@@ -67,29 +95,41 @@ function handleAlertAction() {
 <template>
   <main class="page">
     <div class="shell">
-      <header>
-        <h1>환율·환전</h1>
-        <div
-          v-if="exchange.lastUpdateDate && currentTab === 'rate'"
-          class="update-info"
-        >
-          {{ exchange.lastUpdateDate }} 고시 기준
-        </div>
-        <nav class="main-tabs">
-          <button
-            :class="{ active: currentTab === 'rate' }"
-            @click="currentTab = 'rate'"
+      <div ref="exchangeHeaderEl" class="exchange-header-fixed">
+        <header>
+          <div class="exchange-header-top">
+            <div>
+              <p class="exchange-header-eyebrow">
+                <img src="@/assets/icons/blue_airplane.svg" class="header-plane" alt="" />
+                TRIPASS
+              </p>
+              <h1>환율·환전</h1>
+            </div>
+            <NotificationBell />
+          </div>
+          <div
+            v-if="exchange.lastUpdateDate && currentTab === 'rate'"
+            class="update-info"
           >
-            환율
-          </button>
-          <button
-            :class="{ active: currentTab === 'exchange' }"
-            @click="currentTab = 'exchange'"
-          >
-            환전
-          </button>
-        </nav>
-      </header>
+            {{ exchange.lastUpdateDate }} 고시 기준
+          </div>
+          <nav class="main-tabs">
+            <button
+              :class="{ active: currentTab === 'rate' }"
+              @click="currentTab = 'rate'"
+            >
+              환율
+            </button>
+            <button
+              :class="{ active: currentTab === 'exchange' }"
+              @click="currentTab = 'exchange'"
+            >
+              환전
+            </button>
+          </nav>
+        </header>
+      </div>
+      <div :style="{ height: exchangeHeaderHeight + 'px' }" aria-hidden="true" />
 
       <!-- 환율 탭 -->
       <section v-if="currentTab === 'rate'">
@@ -173,24 +213,74 @@ function handleAlertAction() {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #e7ecf4;
+  background: #f4f5f9;
   color: #10192d;
 }
 .shell {
   width: min(100%, 390px);
   min-height: 100vh;
   margin: auto;
-  padding: 52px 18px 100px;
-  background: #f7f5ef;
+  padding: 0 18px 100px;
+  background: #f4f5f9;
+}
+.exchange-header-fixed {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 60;
+  width: 100%;
+  max-width: 390px;
+  padding: 42px 18px 1px;
+  background: #f4f5f9;
+  transform: translateX(-50%);
+}
+.exchange-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.exchange-header-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0b2a6b;
+  margin-bottom: 4px;
+}
+.header-plane {
+  width: 12px;
+  height: 12px;
+  animation: header-plane-fly 2.6s ease-in-out infinite;
+}
+@keyframes header-plane-fly {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(47, 112, 242, 0));
+  }
+  25% {
+    transform: translateY(-1.5px) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+    filter: brightness(1.6) drop-shadow(0 0 3px rgba(47, 112, 242, 0.55));
+  }
+  75% {
+    transform: translateY(1.5px) rotate(6deg);
+  }
 }
 header h1 {
-  text-align: center;
-  font-size: 18px;
+  margin-top: 2px;
+  text-align: left;
+  font-size: 19px;
   font-weight: 900;
-  margin-bottom: 8px;
+  color: #10192b;
 }
 .update-info {
-  text-align: center;
+  margin-top: 14px;
   font-size: 11px;
   color: #64748b;
   margin-bottom: 18px;
