@@ -73,6 +73,8 @@ public class SecurityConfig {
                                         "/swagger-resources/**"
                                 ).permitAll()
 
+                                .antMatchers(HttpMethod.POST, "/api/v1/exchange-rates/sync").permitAll()
+
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(
