@@ -4,6 +4,7 @@ import com.tripass.asset.dto.TransactionDto;
 import com.tripass.asset.dto.TransactionReclassificationResponseDto;
 import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.asset.duplicate.DuplicateTransactionMatcher;
+import com.tripass.asset.service.codef.CodefClient;
 import com.tripass.saving.classification.CategoryClassificationResult;
 import com.tripass.saving.classification.ConsumptionCategoryCode;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
@@ -30,11 +31,15 @@ class AssetServiceReclassificationTest {
     @Mock
     private TransactionCategoryClassifier transactionCategoryClassifier;
 
+    @Mock
+    private CodefClient codefClient;
+
     private AssetService assetService;
 
     @BeforeEach
     void setUp() {
-        assetService = new AssetService(assetMapper, transactionCategoryClassifier, new DuplicateTransactionMatcher());
+        assetService = new AssetService(
+                assetMapper, transactionCategoryClassifier, new DuplicateTransactionMatcher(), codefClient);
     }
 
     @Test

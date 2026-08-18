@@ -4,6 +4,7 @@ import com.tripass.wallet.domain.Wallet;
 import com.tripass.wallet.domain.WalletAutoSavingLog;
 import com.tripass.wallet.domain.WalletAutoSavingRule;
 import com.tripass.wallet.domain.WalletLedger;
+import com.tripass.wallet.domain.WalletWithdrawRecipient;
 import com.tripass.wallet.dto.request.*;
 import com.tripass.wallet.dto.response.*;
 import com.tripass.wallet.exception.WalletException;
@@ -321,6 +322,60 @@ class WalletServiceTest {
         verify(walletMapper).insertWalletLedger(captor.capture());
         assertEquals("OUT", captor.getValue().getDirection());
         assertEquals("WITHDRAW", captor.getValue().getTransactionType());
+    }
+
+    @Test
+    void 직접_입력한_계좌로_출금하고_최근계좌를_저장한다() {
+        WalletWithdrawRequestDto request = withdrawRequest(null, BigDecimal.valueOf(200_000), "key-direct");
+        ReflectionTestUtils.setField(request, "bankCode", "004");
+        ReflectionTestUtils.setField(request, "bankName", "KB국민은행");
+        ReflectionTestUtils.setField(request, "accountNumber", "123-456-789012");
+        ReflectionTestUtils.setField(request, "accountHolderName", "금융QA");
+
+        when(walletMapper.existsIdempotencyKey("key-direct")).thenReturn(false);
+        when(walletMapper.findWalletByUserIdForUpdate(1L)).thenReturn(createWallet());
+        doAnswer(invocation -> {
+            WalletWithdrawRecipient recipient = invocation.getArgument(0);
+            recipient.setId(77L);
+            return 1;
+        }).when(walletMapper).upsertWithdrawRecipient(any(WalletWithdrawRecipient.class));
+        when(walletMapper.updateWalletBalance(100L, BigDecimal.valueOf(800_000), 0L)).thenReturn(1);
+
+        WalletCommandResponseDto result = walletService.withdraw(1L, request);
+
+        assertEquals(0, BigDecimal.valueOf(800_000).compareTo(result.getBalanceAmount()));
+        verify(walletMapper, never()).increaseAccountBalance(anyLong(), anyLong(), any(BigDecimal.class));
+
+        ArgumentCaptor<WalletLedger> ledgerCaptor = ArgumentCaptor.forClass(WalletLedger.class);
+        verify(walletMapper).insertWalletLedger(ledgerCaptor.capture());
+        assertEquals("RECIPIENT_ACCOUNT", ledgerCaptor.getValue().getTargetType());
+        assertEquals(77L, ledgerCaptor.getValue().getTargetId());
+    }
+
+    @Test
+    void 최근_출금계좌_ID로_저장된_계좌를_재사용한다() {
+        WalletWithdrawRequestDto request = withdrawRequest(null, BigDecimal.valueOf(100_000), "key-recent");
+        ReflectionTestUtils.setField(request, "recipientId", 77L);
+        WalletWithdrawRecipient recipient = WalletWithdrawRecipient.builder()
+                .id(77L)
+                .userId(1L)
+                .bankCode("004")
+                .bankName("KB국민은행")
+                .accountNumber("123456789012")
+                .build();
+
+        when(walletMapper.existsIdempotencyKey("key-recent")).thenReturn(false);
+        when(walletMapper.findWalletByUserIdForUpdate(1L)).thenReturn(createWallet());
+        when(walletMapper.findWithdrawRecipientByIdAndUserId(77L, 1L)).thenReturn(recipient);
+        when(walletMapper.updateWalletBalance(100L, BigDecimal.valueOf(900_000), 0L)).thenReturn(1);
+
+        walletService.withdraw(1L, request);
+
+        verify(walletMapper).upsertWithdrawRecipient(recipient);
+        ArgumentCaptor<WalletLedger> ledgerCaptor = ArgumentCaptor.forClass(WalletLedger.class);
+        verify(walletMapper).insertWalletLedger(ledgerCaptor.capture());
+        assertEquals("RECIPIENT_ACCOUNT", ledgerCaptor.getValue().getTargetType());
+        assertEquals(77L, ledgerCaptor.getValue().getTargetId());
     }
 
     @Test

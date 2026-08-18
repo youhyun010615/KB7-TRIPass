@@ -21,6 +21,7 @@ public enum WalletErrorCode {
     INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "금액이 올바르지 않습니다."),
     INVALID_CURRENCY_CODE(HttpStatus.BAD_REQUEST, "통화 코드가 올바르지 않습니다."),
     INVALID_MONTH(HttpStatus.BAD_REQUEST, "조회 월 형식이 올바르지 않습니다."),
+    INVALID_WITHDRAW_ACCOUNT(HttpStatus.BAD_REQUEST, "출금 계좌를 선택하거나 올바른 계좌 정보를 입력해 주세요."),
     INSUFFICIENT_ACCOUNT_BALANCE(HttpStatus.BAD_REQUEST, "계좌 출금 가능 잔액이 부족합니다."),
     INSUFFICIENT_WALLET_BALANCE(HttpStatus.BAD_REQUEST, "월렛 잔액이 부족합니다."),
     DUPLICATED_REQUEST(HttpStatus.CONFLICT, "이미 처리된 요청입니다."),

@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS wallet_auto_saving_logs;
 DROP TABLE IF EXISTS wallet_auto_saving_rule;
 DROP TABLE IF EXISTS wallet_ledger;
 DROP TABLE IF EXISTS wallet_account;
+DROP TABLE IF EXISTS wallet_withdraw_recipient;
 DROP TABLE IF EXISTS wallet;
 DROP TABLE IF EXISTS receipt_participants;
 DROP TABLE IF EXISTS receipt_items;
@@ -400,6 +401,8 @@ CREATE TABLE cards
     masked_card_number  VARCHAR(30)  NULL                    COMMENT '마스킹된 카드번호',
     card_type           VARCHAR(20)  NOT NULL DEFAULT 'CREDIT' COMMENT '카드 유형(CREDIT:신용/CHECK:체크)',
     organization_code   VARCHAR(20)  NULL                    COMMENT 'CODEF 기관코드',
+    payment_account_number VARCHAR(50) NULL                  COMMENT '카드 결제계좌 번호(CODEF 응답 기준)',
+    linked_account_id   BIGINT       NULL                    COMMENT '서비스에 연동된 카드 결제계좌 ID',
     last_synced_at      TIMESTAMP    NULL                    COMMENT '마지막 거래내역 동기화 시각',
     is_deleted          TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '삭제 여부',
     deleted_at          DATETIME     NULL                    COMMENT '삭제일시',
@@ -407,8 +410,10 @@ CREATE TABLE cards
     updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
     UNIQUE KEY uk_cards_user_masked_number (user_id, masked_card_number),
+    KEY idx_cards_linked_account (linked_account_id),
     CONSTRAINT fk_cards_user             FOREIGN KEY (user_id)             REFERENCES users (id),
-    CONSTRAINT fk_cards_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id)
+    CONSTRAINT fk_cards_codef_connection FOREIGN KEY (codef_connection_id) REFERENCES codef_connections (id),
+    CONSTRAINT fk_cards_linked_account    FOREIGN KEY (linked_account_id)   REFERENCES accounts (id)
 ) COMMENT '연동 카드';
 
 
@@ -462,6 +467,28 @@ CREATE TABLE wallet_account
     CONSTRAINT fk_wallet_account_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
     CONSTRAINT fk_wallet_account_account FOREIGN KEY (account_id) REFERENCES accounts (id)
 ) COMMENT '월렛 연동 계좌';
+
+
+-- 16-1. 월렛 최근 출금 계좌
+CREATE TABLE wallet_withdraw_recipient
+(
+    id                  BIGINT       NOT NULL AUTO_INCREMENT COMMENT '최근 출금 계좌 ID',
+    user_id             BIGINT       NOT NULL COMMENT '회원 ID',
+    bank_code           VARCHAR(20)  NOT NULL COMMENT '금융기관 코드',
+    bank_name           VARCHAR(100) NOT NULL COMMENT '금융기관명',
+    account_number      VARCHAR(100) NOT NULL COMMENT '수취 계좌번호',
+    account_holder_name VARCHAR(100) NULL COMMENT '예금주명',
+    last_used_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '최근 출금 시각',
+    use_count           INT          NOT NULL DEFAULT 1 COMMENT '출금 사용 횟수',
+    is_deleted          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '삭제 여부',
+    deleted_at          DATETIME     NULL COMMENT '삭제일시',
+    created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
+    updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wallet_withdraw_recipient_user_account (user_id, bank_code, account_number),
+    KEY idx_wallet_withdraw_recipient_recent (user_id, last_used_at),
+    CONSTRAINT fk_wallet_withdraw_recipient_user FOREIGN KEY (user_id) REFERENCES users (id)
+) COMMENT '월렛 최근 출금 계좌';
 
 
 -- 17. 월렛 원화 원장

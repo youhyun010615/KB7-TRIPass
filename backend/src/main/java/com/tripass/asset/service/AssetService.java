@@ -3,12 +3,11 @@ package com.tripass.asset.service;
 import com.tripass.asset.dto.*;
 import com.tripass.asset.duplicate.DuplicateTransactionMatcher;
 import com.tripass.asset.mapper.AssetMapper;
+import com.tripass.asset.service.codef.CodefClient;
 import com.tripass.common.exception.CustomException;
-import com.tripass.common.util.CodefUtil;
 import com.tripass.saving.classification.CategoryClassificationResult;
 import com.tripass.saving.classification.CategorySource;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,28 +26,25 @@ public class AssetService {
     private final AssetMapper assetMapper;
     private final TransactionCategoryClassifier transactionCategoryClassifier;
     private final DuplicateTransactionMatcher duplicateTransactionMatcher;
-
-    @Value("${codef.client-id}")
-    private String clientId;
-
-    @Value("${codef.client-secret}")
-    private String clientSecret;
+    private final CodefClient codefClient;
 
     public AssetService(
             AssetMapper assetMapper,
             TransactionCategoryClassifier transactionCategoryClassifier,
-            DuplicateTransactionMatcher duplicateTransactionMatcher
+            DuplicateTransactionMatcher duplicateTransactionMatcher,
+            CodefClient codefClient
     ) {
         this.assetMapper = assetMapper;
         this.transactionCategoryClassifier = transactionCategoryClassifier;
         this.duplicateTransactionMatcher = duplicateTransactionMatcher;
+        this.codefClient = codefClient;
     }
 
     @Transactional
     public List<AccountDto> linkBank(Long userId, CodefLinkRequestDto req) {
         try {
-            String encryptedPw = CodefUtil.encryptRSA(req.getPassword());
-            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+            String encryptedPw = codefClient.encodePassword(req.getPassword());
+            String accessToken = codefClient.getAccessToken();
 
             CodefConnectionDto existingConn = assetMapper.findConnectionByUserId(userId);
             String connectedId;
@@ -68,7 +64,7 @@ public class AssetService {
                 Map<String, Object> createBody = new HashMap<>();
                 createBody.put("accountList", List.of(account));
 
-                Map<String, Object> createResult = CodefUtil.callApi(accessToken, "/v1/account/create", createBody);
+                Map<String, Object> createResult = codefClient.callApi(accessToken, "/v1/account/create", createBody);
                 Map<String, Object> createResultCode = (Map<String, Object>) createResult.get("result");
                 if (createResultCode == null || !"CF-00000".equals(createResultCode.get("code"))) {
                     String msg = createResultCode != null ? (String) createResultCode.get("message") : "알 수 없는 오류";
@@ -85,39 +81,44 @@ public class AssetService {
             } else {
                 // 기존 connectedId에 기관 추가
                 connectedId = existingConn.getConnectedId();
+                CodefConnectedInstitutionDto registered = assetMapper.findConnectedInstitution(
+                        existingConn.getId(), req.getOrganizationCode(), req.getBusinessType());
+                institutionAlreadyRegistered = registered != null;
 
-                Map<String, Object> addAccount = new HashMap<>();
-                addAccount.put("countryCode", "KR");
-                addAccount.put("businessType", req.getBusinessType());
-                addAccount.put("clientType", "P");
-                addAccount.put("organization", req.getOrganizationCode());
-                addAccount.put("loginType", req.getLoginType());
-                addAccount.put("id", req.getLoginId());
-                addAccount.put("password", encryptedPw);
+                if (!institutionAlreadyRegistered) {
+                    Map<String, Object> addAccount = new HashMap<>();
+                    addAccount.put("countryCode", "KR");
+                    addAccount.put("businessType", req.getBusinessType());
+                    addAccount.put("clientType", "P");
+                    addAccount.put("organization", req.getOrganizationCode());
+                    addAccount.put("loginType", req.getLoginType());
+                    addAccount.put("id", req.getLoginId());
+                    addAccount.put("password", encryptedPw);
 
-                Map<String, Object> addBody = new HashMap<>();
-                addBody.put("connectedId", connectedId);
-                addBody.put("accountList", List.of(addAccount));
+                    Map<String, Object> addBody = new HashMap<>();
+                    addBody.put("connectedId", connectedId);
+                    addBody.put("accountList", List.of(addAccount));
 
-                Map<String, Object> addResult = CodefUtil.callApi(accessToken, "/v1/account/add", addBody);
-                Map<String, Object> addResultCode = (Map<String, Object>) addResult.get("result");
-                if (addResultCode == null || !"CF-00000".equals(addResultCode.get("code"))) {
-                    // add 실패 시 기관이 이미 등록된 상태인지 계좌 목록 조회로 확인
-                    Map<String, Object> listCheckBody = new HashMap<>();
-                    listCheckBody.put("connectedId", connectedId);
-                    listCheckBody.put("organization", req.getOrganizationCode());
-                    listCheckBody.put("startDate", "19000101");
-                    listCheckBody.put("endDate", "99991231");
-                    listCheckBody.put("orderBy", "0");
-                    listCheckBody.put("inquiryType", "0");
-                    Map<String, Object> listCheck = CodefUtil.callApi(accessToken, "/v1/kr/bank/p/account/account-list", listCheckBody);
-                    Map<String, Object> listCheckCode = (Map<String, Object>) listCheck.get("result");
-                    if (listCheckCode == null || !"CF-00000".equals(listCheckCode.get("code"))) {
-                        String msg = addResultCode != null ? (String) addResultCode.get("message") : "알 수 없는 오류";
-                        throw new CustomException(HttpStatus.BAD_REQUEST, "CODEF_LINK_FAIL", "기관 추가 실패: " + msg);
+                    Map<String, Object> addResult = codefClient.callApi(accessToken, "/v1/account/add", addBody);
+                    Map<String, Object> addResultCode = (Map<String, Object>) addResult.get("result");
+                    if (addResultCode == null || !"CF-00000".equals(addResultCode.get("code"))) {
+                        // CODEF에는 등록됐지만 로컬 기관 기록이 누락된 상태인지 목록 조회로 확인한다.
+                        Map<String, Object> listCheckBody = new HashMap<>();
+                        listCheckBody.put("connectedId", connectedId);
+                        listCheckBody.put("organization", req.getOrganizationCode());
+                        listCheckBody.put("startDate", "19000101");
+                        listCheckBody.put("endDate", "99991231");
+                        listCheckBody.put("orderBy", "0");
+                        listCheckBody.put("inquiryType", "0");
+                        Map<String, Object> listCheck = codefClient.callApi(
+                                accessToken, "/v1/kr/bank/p/account/account-list", listCheckBody);
+                        Map<String, Object> listCheckCode = (Map<String, Object>) listCheck.get("result");
+                        if (listCheckCode == null || !"CF-00000".equals(listCheckCode.get("code"))) {
+                            String msg = addResultCode != null
+                                    ? (String) addResultCode.get("message") : "알 수 없는 오류";
+                            throw new CustomException(HttpStatus.BAD_REQUEST, "CODEF_LINK_FAIL", "기관 추가 실패: " + msg);
+                        }
                     }
-                    // 계좌 조회 성공 → 기관이 이미 Codef에 등록된 상태, institution 중복 insert 생략
-                    institutionAlreadyRegistered = true;
                 }
             }
 
@@ -140,7 +141,7 @@ public class AssetService {
             listBody.put("orderBy", "0");
             listBody.put("inquiryType", "0");
 
-            Map<String, Object> listResult = CodefUtil.callApi(accessToken, "/v1/kr/bank/p/account/account-list", listBody);
+            Map<String, Object> listResult = codefClient.callApi(accessToken, "/v1/kr/bank/p/account/account-list", listBody);
             Map<String, Object> listResultCode = (Map<String, Object>) listResult.get("result");
             if (listResultCode == null || !"CF-00000".equals(listResultCode.get("code"))) {
                 String msg = listResultCode != null ? (String) listResultCode.get("message") : "알 수 없는 오류";
@@ -183,6 +184,7 @@ public class AssetService {
                 } else {
                     assetMapper.insertAccount(dto);
                 }
+                assetMapper.linkCardsToAccountByPaymentNumber(userId, dto.getId(), dto.getAccountNumber());
                 saved.add(dto);
             }
 
@@ -198,8 +200,8 @@ public class AssetService {
     @Transactional
     public List<CardDto> linkCard(Long userId, CardLinkRequestDto req) {
         try {
-            String encryptedPw = CodefUtil.encryptRSA(req.getPassword());
-            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+            String encryptedPw = codefClient.encodePassword(req.getPassword());
+            String accessToken = codefClient.getAccessToken();
 
             CodefConnectionDto conn = assetMapper.findConnectionByUserId(userId);
             String connectedId;
@@ -218,7 +220,7 @@ public class AssetService {
                 Map<String, Object> createBody = new HashMap<>();
                 createBody.put("accountList", List.of(account));
 
-                Map<String, Object> createResult = CodefUtil.callApi(accessToken, "/v1/account/create", createBody);
+                Map<String, Object> createResult = codefClient.callApi(accessToken, "/v1/account/create", createBody);
                 Map<String, Object> resultCode = (Map<String, Object>) createResult.get("result");
                 if (resultCode == null || !"CF-00000".equals(resultCode.get("code"))) {
                     String msg = resultCode != null ? (String) resultCode.get("message") : "알 수 없는 오류";
@@ -254,7 +256,7 @@ public class AssetService {
                     addBody.put("connectedId", connectedId);
                     addBody.put("accountList", List.of(addAccount));
 
-                    Map<String, Object> addResult = CodefUtil.callApi(accessToken, "/v1/account/add", addBody);
+                    Map<String, Object> addResult = codefClient.callApi(accessToken, "/v1/account/add", addBody);
                     Map<String, Object> addResultCode = (Map<String, Object>) addResult.get("result");
                     if (addResultCode == null || !"CF-00000".equals(addResultCode.get("code"))) {
                         // CODEF 서버에는 이미 등록돼 있지만 DB 기록만 없는 불일치 상태일 수 있으므로
@@ -273,7 +275,7 @@ public class AssetService {
             listBody.put("startDate", "19000101");
             listBody.put("endDate", "99991231");
 
-            Map<String, Object> listResult = CodefUtil.callApi(accessToken, "/v1/kr/card/p/account/card-list", listBody);
+            Map<String, Object> listResult = codefClient.callApi(accessToken, "/v1/kr/card/p/account/card-list", listBody);
             Map<String, Object> listResultCode = (Map<String, Object>) listResult.get("result");
             if (listResultCode == null || !"CF-00000".equals(listResultCode.get("code"))) {
                 if (addFailMsg != null) {
@@ -324,6 +326,14 @@ public class AssetService {
                 dto.setCardName((String) card.getOrDefault("resCardName", req.getOrganizationName() + " 카드"));
                 dto.setMaskedCardNumber((String) card.get("resCardNo"));
                 dto.setOrganizationCode(req.getOrganizationCode());
+                dto.setPaymentAccountNumber((String) card.get("resPaymentAccount"));
+                if (dto.getPaymentAccountNumber() != null && !dto.getPaymentAccountNumber().isBlank()) {
+                    AccountDto paymentAccount = assetMapper.findAccountByUserIdAndNumberOnly(
+                            userId, dto.getPaymentAccountNumber());
+                    if (paymentAccount != null) {
+                        dto.setLinkedAccountId(paymentAccount.getId());
+                    }
+                }
                 String resCardType = String.valueOf(card.getOrDefault("resCardType", ""));
                 dto.setCardType(
                         "02".equals(resCardType) || resCardType.contains("체크")
@@ -338,6 +348,14 @@ public class AssetService {
                 } else {
                     assetMapper.insertCard(dto);
                 }
+                // 트래블카드 상품과 이름이 일치할 때만 사용자 보유 트래블카드로 등록한다.
+                // 이후 월렛 연결은 기존 화면에서 사용자가 직접 수행한다.
+                assetMapper.upsertUserTravelCardFromLinkedCard(
+                        userId,
+                        dto.getCardName(),
+                        dto.getMaskedCardNumber(),
+                        dto.getOrganizationCode()
+                );
                 saved.add(dto);
             }
 
@@ -373,7 +391,7 @@ public class AssetService {
     public List<TransactionDto> fetchTransactions(Long userId, TransactionRequestDto req)
     {
         try{
-            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+            String accessToken = codefClient.getAccessToken();
 
             //계좌 정보 조회(계좌번호 필요)
             AccountDto account = assetMapper.findAccountById(req.getAccountId(), userId);
@@ -397,7 +415,7 @@ public class AssetService {
             body.put("orderBy", "0");
             body.put("inquiryType", "0");
 
-            Map<String, Object> result = CodefUtil.callApi(accessToken, "/v1/kr/bank/p/account/transaction-list", body);
+            Map<String, Object> result = codefClient.callApi(accessToken, "/v1/kr/bank/p/account/transaction-list", body);
             Map<String, Object> resultCode = (Map<String, Object>) result.get("result");
             if (resultCode == null || !"CF-00000".equals(resultCode.get("code"))) {
                 String msg = resultCode != null ? (String) resultCode.get("message") : "알 수 없는 오류";
@@ -453,7 +471,7 @@ public class AssetService {
     @Transactional
     public List<TransactionDto> fetchCardTransactions(Long userId, Long cardId, String startDate, String endDate) {
         try {
-            String accessToken = CodefUtil.getAccessToken(clientId, clientSecret);
+            String accessToken = codefClient.getAccessToken();
 
             CardDto card = assetMapper.findCardByIdAndUserId(cardId, userId);
             if (card == null) {
@@ -475,7 +493,7 @@ public class AssetService {
             body.put("inquiryType", "0");
             body.put("memberStoreInfoType", "1");
 
-            Map<String, Object> result = CodefUtil.callApi(accessToken, "/v1/kr/card/p/account/approval-list", body);
+            Map<String, Object> result = codefClient.callApi(accessToken, "/v1/kr/card/p/account/approval-list", body);
             Map<String, Object> resultCode = (Map<String, Object>) result.get("result");
             if (resultCode == null || !"CF-00000".equals(resultCode.get("code"))) {
                 String msg = resultCode != null ? (String) resultCode.get("message") : "알 수 없는 오류";

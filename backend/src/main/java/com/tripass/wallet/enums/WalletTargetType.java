@@ -4,6 +4,7 @@ package com.tripass.wallet.enums;
 
 public enum WalletTargetType {
     ACCOUNT,
+    RECIPIENT_ACCOUNT,
     WALLET,
     TRAVEL_CARD,
     SYSTEM

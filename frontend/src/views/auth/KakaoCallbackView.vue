@@ -6,7 +6,6 @@ import {
   loginWithKakao,
   logout as logoutApi,
 } from '@/api/auth'
-import api from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,20 +35,6 @@ async function clearFailedLogin() {
     )
   } finally {
     authStore.logout()
-  }
-}
-
-async function checkLinkedAccounts() {
-  authStore.resetProfileCompletion()
-
-  const accountResponse =
-      await api.get('/accounts')
-
-  const linkedAccounts =
-      accountResponse.data?.data ?? []
-
-  if (linkedAccounts.length > 0) {
-    authStore.completeProfile()
   }
 }
 
@@ -129,33 +114,6 @@ async function handleKakaoCallback() {
         loginData.accessToken,
         loginData.user,
     )
-
-    try {
-      await checkLinkedAccounts()
-    } catch (accountError) {
-      console.error(
-          '연동 계좌 확인 실패',
-          accountError,
-      )
-
-      if (
-          accountError.response?.status === 401
-      ) {
-        await clearFailedLogin()
-
-        errorMessage.value =
-            '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
-
-        loading.value = false
-        return
-      }
-
-      errorMessage.value =
-          '연동 계좌 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'
-
-      loading.value = false
-      return
-    }
 
     await router.replace('/')
   } catch (error) {

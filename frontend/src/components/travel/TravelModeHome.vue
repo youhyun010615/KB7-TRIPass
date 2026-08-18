@@ -620,7 +620,10 @@ async function switchMode(mode) {
           >
         </div>
       </div>
-      <div v-for="cat in categoryList" :key="cat.name" class="budget-row">
+      <div v-if="categoryList.length === 0" class="empty-msg">
+        여행 자금 체크 내역이 없어요.
+      </div>
+      <div v-else v-for="cat in categoryList" :key="cat.name" class="budget-row">
         <span class="category"
           ><i>{{ cat.icon }}</i
           >{{ cat.name }}</span
@@ -649,7 +652,11 @@ async function switchMode(mode) {
           전체 보기
         </button>
       </div>
+      <div v-if="selectedSchedules.length === 0" class="empty-msg">
+        다가오는 여행 일정이 없어요.
+      </div>
       <button
+        v-else
         v-for="item in selectedSchedules"
         :key="item.title"
         class="schedule-row"
@@ -674,7 +681,11 @@ async function switchMode(mode) {
           전체 거래내역
         </button>
       </div>
+      <div v-if="selectedRecent.length === 0" class="empty-msg">
+        최근 지출 내역이 없어요.
+      </div>
       <button
+        v-else
         v-for="item in selectedRecent"
         :key="item.place"
         class="recent-row"
@@ -1880,5 +1891,11 @@ async function switchMode(mode) {
   font-size: 11px;
   pointer-events: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+.empty-msg {
+  padding: 24px 0;
+  text-align: center;
+  color: #8c98a9;
+  font-size: 11px;
 }
 </style>
