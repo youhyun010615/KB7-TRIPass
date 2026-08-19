@@ -35,10 +35,6 @@ const analysisMonthLabel = computed(() => {
   const month = Number(report.value?.analysisYearMonth?.split('-')[1]);
   return Number.isFinite(month) ? `${month}월` : '지난달';
 });
-const targetMonthLabel = computed(() => {
-  const month = Number(report.value?.targetYearMonth?.split('-')[1]);
-  return Number.isFinite(month) ? `${month}월` : '이번 달';
-});
 const categories = computed(() =>
   [...(report.value?.spendingCategories || [])].sort(
     (a, b) => a.rank - b.rank,
@@ -294,11 +290,6 @@ function goMissions() {
           </div>
         </div>
 
-        <div class="coaching-summary">
-          <span class="sparkle">✦</span>
-          <p>{{ report.coachingSummary }}</p>
-        </div>
-
         <ol class="recommendation-list">
           <li
             v-for="recommendation in recommendations"
@@ -326,8 +317,7 @@ function goMissions() {
 
         <p class="mission-guide">
           <span class="sparkle" aria-hidden="true">✦</span>
-          {{ targetMonthLabel }}에는 카테고리별 절감률을 선택해 나만의 미션을
-          시작할 수 있어요.
+          카테고리별 절감률을 선택해 나만의 미션을 시작할 수 있어요.
         </p>
         <button type="button" class="mission-button" @click="goMissions">
           추천 미션 보러 가기 <span>›</span>
@@ -575,18 +565,15 @@ function goMissions() {
   font-weight: 900;
 }
 .total-spending {
-  text-align: right;
-}
-.total-spending small,
-.total-spending b {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
 }
 .total-spending small {
   color: #8a9bb6;
   font-size: 9.5px;
 }
 .total-spending b {
-  margin-top: 3px;
   color: #17213a;
   font-size: 16px;
 }
@@ -675,20 +662,6 @@ function goMissions() {
   object-fit: contain;
   filter: brightness(0) invert(1);
 }
-.coaching-summary {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px;
-}
-.coaching-summary > .sparkle {
-  color: #f0a93c;
-  animation: sparkle-twinkle 1.8s ease-in-out infinite;
-}
-.coaching-summary p {
-  color: #536887;
-  font-size: 11.5px;
-  line-height: 1.6;
-}
 .recommendation-list {
   display: grid;
   gap: 9px;
@@ -733,13 +706,14 @@ function goMissions() {
 .mission-guide {
   margin-top: 14px;
   color: #78869f;
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 11.5px;
+  line-height: 1.6;
   word-break: keep-all;
 }
 .mission-guide .sparkle {
   margin-right: 3px;
   color: #f0a93c;
+  font-size: 16px;
   animation: sparkle-twinkle 1.8s ease-in-out infinite;
 }
 .mission-button {
