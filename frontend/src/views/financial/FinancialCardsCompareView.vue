@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelCardsStore } from '@/stores/travelCards'
-import { getSettlementTypeLabel } from '@/utils/travelCard'
+import { getSettlementTypeLabel, getTravelCardImage } from '@/utils/travelCard'
 
 const router = useRouter()
 const travelCardsStore = useTravelCardsStore()
@@ -78,7 +78,7 @@ const comparisonRows = [
 
 const tableGridStyle = computed(() => ({
   gridTemplateColumns:
-      `104px repeat(${Math.max(comparisonCards.value.length, 1)}, minmax(112px, 1fr))`,
+      `84px repeat(${Math.max(comparisonCards.value.length, 1)}, minmax(98px, 1fr))`,
 }))
 
 const canOpenFirstCard = computed(
@@ -185,7 +185,12 @@ onMounted(loadComparison)
           ‹
         </button>
 
-        <h1>카드 비교</h1>
+        <div>
+          <small>TRIPASS CARD FINDER</small>
+          <h1>카드 비교</h1>
+        </div>
+
+        <span />
       </header>
 
       <section class="selection-section">
@@ -217,7 +222,14 @@ onMounted(loadComparison)
                 class="selected-card-content"
                 @click="openCardDetail(card.id)"
             >
+              <img
+                  v-if="getTravelCardImage(card.cardCompany)"
+                  class="card-thumb"
+                  :src="getTravelCardImage(card.cardCompany)"
+                  :alt="`${card.cardCompany} ${card.cardName}`"
+              />
               <span
+                  v-else
                   class="card-symbol"
                   :style="{
                   backgroundColor: getCardColor(card.id),
@@ -382,16 +394,16 @@ onMounted(loadComparison)
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #e8edf5;
-  color: #101a2e;
+  background: #e9eef7;
+  color: #101b33;
 }
 
 .shell {
-  width: min(100%, 390px);
+  width: min(100%, 430px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 48px 18px 110px;
-  background: #f8f6f1;
+  padding: 42px 18px 118px;
+  background: linear-gradient(180deg, #f4f7ff 0%, #edf3fc 100%);
 }
 
 button {
@@ -401,27 +413,43 @@ button {
 }
 
 .page-header {
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
   align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  margin-bottom: 22px;
+  margin-bottom: 17px;
+}
+
+.page-header > div {
+  text-align: center;
+}
+
+.page-header small {
+  color: #2f6fd8;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
 }
 
 .page-header h1 {
-  margin: 0;
-  font-size: 19px;
+  margin-top: 2px;
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .back-button {
-  position: absolute;
-  left: 0;
-  width: 32px;
-  padding: 0;
-  background: transparent;
-  color: #101a2e;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  color: #16366f;
   font-size: 28px;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
+}
+
+.selection-section {
+  margin-top: 4px;
 }
 
 .selection-heading {
@@ -431,44 +459,56 @@ button {
 }
 
 .selection-heading strong {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .selection-count {
-  padding: 7px 11px;
-  border-radius: 18px;
-  background: #1871e8;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #173f8d;
   color: #fff;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
 }
 
 .selected-card-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 9px;
   margin-top: 13px;
 }
 
 .selected-card,
 .add-card-button {
   position: relative;
-  min-height: 102px;
-  border: 1px solid #d6dfeb;
-  border-radius: 13px;
+  min-height: 122px;
+  overflow: hidden;
+  border: 1px solid #e1e6ed;
+  border-radius: 17px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(38, 62, 101, 0.05);
 }
 
 .selected-card-content {
   display: flex;
   width: 100%;
   height: 100%;
-  min-height: 100px;
-  padding: 14px 8px 9px;
+  min-height: 120px;
+  padding: 14px 8px 10px;
   align-items: center;
   flex-direction: column;
   justify-content: center;
   background: transparent;
+}
+
+.card-thumb {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e7ecf3;
+  border-radius: 12px;
+  background: #f5f7fa;
+  object-fit: cover;
 }
 
 .card-symbol {
@@ -477,7 +517,7 @@ button {
   height: 28px;
   padding: 0 7px;
   place-items: center;
-  border-radius: 7px;
+  border-radius: 8px;
   color: #fff;
   font-size: 9px;
   font-weight: 900;
@@ -485,9 +525,10 @@ button {
 
 .selected-card strong {
   display: -webkit-box;
-  margin-top: 7px;
+  margin-top: 9px;
   overflow: hidden;
-  font-size: 9px;
+  font-size: 10px;
+  font-weight: 800;
   line-height: 1.35;
   text-align: center;
   word-break: keep-all;
@@ -496,20 +537,25 @@ button {
 }
 
 .selected-card small {
-  margin-top: 3px;
-  color: #7f8da1;
-  font-size: 8px;
+  margin-top: 4px;
+  color: #8a97aa;
+  font-size: 8.5px;
 }
 
 .remove-button {
   position: absolute;
   z-index: 1;
-  top: 4px;
-  right: 7px;
-  padding: 2px;
-  background: transparent;
-  color: #9ca9bb;
-  font-size: 20px;
+  top: 6px;
+  right: 8px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1f3f6;
+  color: #78869a;
+  font-size: 15px;
+  line-height: 1;
 }
 
 .add-card-button {
@@ -517,35 +563,40 @@ button {
   align-items: center;
   flex-direction: column;
   justify-content: center;
-  color: #256dd5;
+  border: 1.5px dashed #b9c9df;
+  background: #f8fbff;
+  color: #2f6fe9;
 }
 
 .add-card-button strong {
-  font-size: 25px;
+  font-size: 22px;
   font-weight: 400;
 }
 
 .add-card-button span {
-  margin-top: 5px;
-  font-size: 9px;
+  margin-top: 6px;
+  font-size: 9.5px;
+  font-weight: 700;
 }
 
 .state-panel {
   display: flex;
   min-height: 245px;
-  margin-top: 25px;
+  margin-top: 16px;
   padding: 30px 20px;
   align-items: center;
-  border: 1px solid #dce4ef;
-  border-radius: 16px;
+  border: 1px solid #e1e6ed;
+  border-radius: 22px;
   flex-direction: column;
   justify-content: center;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(38, 62, 101, 0.05);
   text-align: center;
 }
 
 .state-panel strong {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .state-panel p {
@@ -557,11 +608,11 @@ button {
 }
 
 .state-panel button {
-  padding: 11px 17px;
-  border-radius: 9px;
-  background: #173f8e;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #173f8d;
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -571,7 +622,7 @@ button {
 }
 
 .state-panel .secondary-button {
-  border: 1px solid #ccd7e7;
+  border: 1px solid #d2def0;
   background: #fff;
   color: #52657f;
 }
@@ -591,7 +642,7 @@ button {
 }
 
 .comparison-section {
-  margin-top: 25px;
+  margin-top: 16px;
 }
 
 .comparison-heading {
@@ -603,28 +654,31 @@ button {
 
 .comparison-heading h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 900;
 }
 
 .comparison-heading p {
   margin: 4px 0 0;
   color: #8190a5;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .clear-button {
   padding: 4px;
   background: transparent;
-  color: #667993;
-  font-size: 10px;
+  color: #5a6478;
+  font-size: 10.5px;
+  font-weight: 700;
 }
 
 .comparison-scroll {
   position: relative;
   overflow-x: auto;
-  border: 1px solid #dce4ef;
-  border-radius: 15px;
+  border: 1px solid #e1e6ed;
+  border-radius: 19px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(38, 62, 101, 0.05);
 }
 
 .comparison-table {
@@ -634,7 +688,7 @@ button {
 
 .table-row {
   display: grid;
-  border-top: 1px solid #e9edf3;
+  border-top: 1px solid #f1f3f8;
 }
 
 .table-row:first-child {
@@ -643,16 +697,17 @@ button {
 
 .table-row > * {
   display: flex;
-  min-height: 54px;
-  padding: 11px 8px;
+  min-height: 50px;
+  padding: 9px 7px;
   align-items: center;
-  border-left: 1px solid #eef1f5;
+  border-left: 1px solid #f1f3f8;
   justify-content: center;
-  font-size: 9px;
-  line-height: 1.45;
+  font-size: 9.5px;
+  line-height: 1.4;
   text-align: center;
   white-space: normal;
   word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .table-row > *:first-child {
@@ -662,48 +717,55 @@ button {
 .table-row > strong {
   align-items: flex-start;
   justify-content: flex-start;
-  color: #66758c;
+  color: #5a6478;
+  font-weight: 700;
   text-align: left;
 }
 
 .table-header {
-  background: #f2f5f9;
+  background: #f4f7ff;
 }
 
 .table-header > * {
   min-height: 56px;
-  color: #18253a;
+  color: #10192b;
   font-weight: 900;
 }
 
 .table-header button {
+  display: -webkit-box;
+  overflow: hidden;
   background: transparent;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .table-header button:hover {
-  color: #1268db;
+  color: #2f6fe9;
   text-decoration: underline;
 }
 
 .comparison-guide {
-  margin: 9px 3px 0;
+  margin: 10px 3px 0;
   color: #8090a5;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .detail-button {
   width: 100%;
-  min-height: 50px;
+  min-height: 52px;
   margin-top: 20px;
-  border-radius: 12px;
-  background: #173f8e;
+  border-radius: 14px;
+  background: #173f8d;
   color: #fff;
   font-size: 14px;
   font-weight: 900;
+  box-shadow: 0 10px 22px rgba(23, 63, 141, 0.16);
 }
 
 .detail-button:disabled {
   background: #adb8c8;
+  box-shadow: none;
   cursor: default;
 }
 
@@ -718,12 +780,12 @@ button {
   left: 0;
   z-index: 2;
   background: #fff;
-  box-shadow: 5px 0 8px -7px rgba(16, 26, 46, 0.45);
+  box-shadow: 5px 0 8px -7px rgba(16, 26, 46, 0.15);
 }
 
 /* 표 헤더의 비교 항목 셀 */
 .table-header > :first-child {
   z-index: 3;
-  background: #f2f5f9;
+  background: #f4f7ff;
 }
 </style>

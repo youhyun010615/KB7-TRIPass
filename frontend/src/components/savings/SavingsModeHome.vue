@@ -1,7 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
@@ -19,7 +18,6 @@ const props = defineProps({
   onSwitchMode: { type: Function, default: null },
 });
 
-const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
 const monthlyAnalysisStore = useMonthlyAnalysisStore();
 const savingMissionsStore = useSavingMissionsStore();
@@ -27,7 +25,6 @@ const savingReadinessStore = useSavingReadinessStore();
 const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
 const router = useRouter();
-const userName = computed(() => authStore.user?.name ?? '회원');
 
 // 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
 // position:sticky가 동작하지 않는다. 대신 position:fixed로 고정하고,
@@ -67,18 +64,24 @@ const hasLinkedFinancialSources = computed(
 async function loadFinancialSources() {
   financialSourcesLoading.value = true;
   financialSourcesError.value = '';
-  try {
-    const [accountResponse, cardResponse] = await Promise.all([
-      getAccounts(),
-      getCards(),
-    ]);
-    linkedAccountCount.value = accountResponse.data?.data?.length ?? 0;
-    linkedCardCount.value = cardResponse.data?.data?.length ?? 0;
-  } catch {
+  const [accountResult, cardResult] = await Promise.allSettled([
+    getAccounts(),
+    getCards(),
+  ]);
+
+  linkedAccountCount.value =
+    accountResult.status === 'fulfilled'
+      ? accountResult.value.data?.data?.length ?? 0
+      : 0;
+  linkedCardCount.value =
+    cardResult.status === 'fulfilled'
+      ? cardResult.value.data?.data?.length ?? 0
+      : 0;
+
+  if (accountResult.status === 'rejected' && cardResult.status === 'rejected') {
     financialSourcesError.value = '금융 데이터 연결 상태를 확인하지 못했어요.';
-  } finally {
-    financialSourcesLoading.value = false;
   }
+  financialSourcesLoading.value = false;
 }
 
 async function loadHomeInsights({ force = false } = {}) {
@@ -92,7 +95,7 @@ async function loadHomeInsights({ force = false } = {}) {
     return;
   }
 
-  await monthlyAnalysisStore.loadLatestAnalysis({ force });
+  await monthlyAnalysisStore.loadCurrentAnalysis({ force });
 }
 
 onMounted(async () => {
@@ -368,11 +371,7 @@ function retryMonthlyAnalysis() {
 }
 
 function openFinancialSources() {
-  router.push('/profile/financial?step=1&from=asset');
-}
-
-function openTravelGoalSetup() {
-  router.push({ name: 'TravelRegister' });
+  router.push('/profile/financial?step=1');
 }
 
 function openMonthlyAnalysis() {
@@ -383,6 +382,13 @@ function openMonthlyAnalysis() {
 
 function openSavingMissions() {
   router.push({ name: 'SavingsMissions' });
+}
+
+function openRecommendedMissions() {
+  router.push({
+    name: 'SavingsMissions',
+    query: { view: 'recommendations', from: 'home' },
+  });
 }
 
 function goWallet() {
@@ -453,14 +459,15 @@ async function switchMode(mode) {
       </div>
       <div :style="{ height: savingsHeaderHeight + 'px' }" aria-hidden="true" />
 
-      <div class="px-5 pt-3 pb-3">
-        <p class="mt-2 text-lg font-extrabold">안녕하세요, {{ userName }}님</p>
-        <p class="mt-1 text-[10px] text-slate-500">
-          새로운 여행을 함께 준비해 볼까요?
-        </p>
+      <div class="empty-trip-guide mx-4 mt-3">
+        <span class="guide-label">TRIPASS GUIDE</span>
+        <strong>목표 설정부터 월렛 저축까지</strong>
+        <p>여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요</p>
       </div>
 
-      <article class="empty-trip-ticket mx-4 mt-3">
+      <div class="empty-trip-ticket-wrap mx-4 mt-3">
+        <span class="empty-trip-backdrop-glow" aria-hidden="true"></span>
+        <article class="empty-trip-ticket">
         <span class="empty-trip-orbit" aria-hidden="true"></span>
         <div class="empty-trip-band">
           <span>TRIPASS · START JOURNEY</span>
@@ -478,30 +485,18 @@ async function switchMode(mode) {
           </div>
           <button type="button" class="empty-trip-cta" @click="router.push({ name: 'TravelRegister' })">여행 계획 등록하기</button>
         </div>
-      </article>
+        </article>
+      </div>
+
+      <HomeSavingMissionCard
+        v-if="savingMissionsStore.hasStartedMissions"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
 
       <section
-        v-if="homeInsightLoading"
-        class="analysis-summary-skeleton mx-4 mt-3"
-        aria-label="저축 미션 정보를 불러오는 중"
-      >
-        <i /><i /><i /><i />
-      </section>
-
-      <section
-        v-else-if="savingReadinessStore.errorMessage"
-        class="analysis-load-error mx-4 mt-3"
-      >
-        <span>AI</span>
-        <div>
-          <b>준비 상태를 확인하지 못했어요</b>
-          <small>{{ savingReadinessStore.errorMessage }}</small>
-        </div>
-        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
-      </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsTravelGoalAndFinancialAsset"
+        v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -519,43 +514,22 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="savingReadinessStore.needsTravelGoal"
+        v-else-if="!financialSourcesLoading && hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openTravelGoalSetup">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>아직 여행 목표를 설정하지 않았어요</b>
-          <small>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
-        </button>
+        <div class="home-mission-setup-body">
+          <div class="home-mission-ai-stage" aria-hidden="true">
+            <span class="home-mission-ai-orbit"></span>
+            <span class="home-mission-ai-spark one">✦</span>
+            <span class="home-mission-ai-spark two">✦</span>
+            <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
+          </div>
+          <b>맞춤 저축 미션을 시작해 보세요!</b>
+          <small>연결된 금융 데이터를 분석해 줄이기 좋은 소비와 절약 목표를 추천해 드려요.</small>
+          <button type="button" @click="openRecommendedMissions">추천 미션 보러가기</button>
+        </div>
       </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsFinancialAsset"
-        class="analysis-empty-state mx-4 mt-3"
-      >
-        <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openFinancialSources">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>계좌나 카드를 연결해 주세요</b>
-          <small>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>금융 데이터 연결하기<i aria-hidden="true">›</i></em>
-        </button>
-      </section>
-
-      <HomeSavingMissionCard
-        v-else-if="savingMissionsStore.hasStartedMissions"
-        class="mx-4 mt-3"
-        :mission-data="savingMissionsStore.missions"
-        @open="openSavingMissions"
-      />
-
-      <div class="empty-trip-guide mx-4 mt-3">
-        <span class="guide-label">TRIPASS GUIDE</span>
-        <strong>목표 설정부터 월렛 저축까지</strong>
-        <p>여행 예산은 AI가 제안하고, 실제 저축은 TRIP 월렛에서 관리해요</p>
-      </div>
     </template>
 
     <!-- ══ 여행 저축 모드 ══════════════════════════════════════ -->
@@ -804,19 +778,26 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="savingReadinessStore.errorMessage"
+        v-else-if="financialSourcesError"
         class="analysis-load-error mx-4 mt-3"
       >
         <span>AI</span>
         <div>
-          <b>준비 상태를 확인하지 못했어요</b>
-          <small>{{ savingReadinessStore.errorMessage }}</small>
+          <b>금융 데이터 연결 상태를 확인하지 못했어요</b>
+          <small>{{ financialSourcesError }}</small>
         </div>
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
+      <HomeSavingMissionCard
+        v-else-if="savingMissionsStore.hasStartedMissions"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
+
       <section
-        v-else-if="savingReadinessStore.needsTravelGoalAndFinancialAsset"
+        v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -834,37 +815,22 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="savingReadinessStore.needsTravelGoal"
+        v-else-if="!financialSourcesLoading && hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openTravelGoalSetup">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>아직 여행 목표를 설정하지 않았어요</b>
-          <small>여행 목표를 설정하면 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>여행 목표 설정하기<i aria-hidden="true">›</i></em>
-        </button>
+        <div class="home-mission-setup-body">
+          <div class="home-mission-ai-stage" aria-hidden="true">
+            <span class="home-mission-ai-orbit"></span>
+            <span class="home-mission-ai-spark one">✦</span>
+            <span class="home-mission-ai-spark two">✦</span>
+            <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
+          </div>
+          <b>맞춤 저축 미션을 시작해 보세요!</b>
+          <small>연결된 금융 데이터를 분석해 줄이기 좋은 소비와 절약 목표를 추천해 드려요.</small>
+          <button type="button" @click="openRecommendedMissions">추천 미션 보러가기</button>
+        </div>
       </section>
-
-      <section
-        v-else-if="savingReadinessStore.needsFinancialAsset"
-        class="analysis-empty-state mx-4 mt-3"
-      >
-        <small class="analysis-empty-label">AI SAVING MISSION</small>
-        <button type="button" @click="openFinancialSources">
-          <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>계좌나 카드를 연결해 주세요</b>
-          <small>거래내역이 쌓이면 소비 분석과 맞춤 저축 미션을 확인할 수 있어요.</small>
-          <em>금융 데이터 연결하기<i aria-hidden="true">›</i></em>
-        </button>
-      </section>
-
-      <HomeSavingMissionCard
-        v-else-if="savingMissionsStore.hasStartedMissions"
-        class="mx-4 mt-3"
-        :mission-data="savingMissionsStore.missions"
-        @open="openSavingMissions"
-      />
 
       <MonthlyAnalysisSummaryCard
         v-else-if="monthlyAnalysisStore.hasVisibleReport"
@@ -885,47 +851,13 @@ async function switchMode(mode) {
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
-      <section
-        v-else-if="financialSourcesError"
-        class="analysis-load-error mx-4 mt-3"
-      >
-        <span>AI</span>
-        <div>
-          <b>금융 데이터 연결 상태를 확인하지 못했어요</b>
-          <small>{{ financialSourcesError }}</small>
-        </div>
-        <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
-      </section>
-
-      <section
-        v-else-if="!hasLinkedFinancialSources || monthlyAnalysisStore.notFound"
-        class="analysis-empty-state mx-4 mt-3"
-      >
+      <section v-else class="analysis-empty-state mx-4 mt-3">
         <small class="analysis-empty-label">AI SAVING MISSION</small>
         <button type="button" @click="openFinancialSources">
           <span class="analysis-empty-plus" aria-hidden="true">＋</span>
-          <b>
-            {{
-              hasLinkedFinancialSources
-                ? '아직 분석할 지난달 거래가 없어요'
-                : '맞춤 저축 미션을 준비해 볼까요?'
-            }}
-          </b>
-          <small>
-            {{
-              hasLinkedFinancialSources
-                ? '분류된 계좌·카드 지출이 쌓이면 소비 분석과 맞춤 미션을 보여드려요.'
-                : '계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.'
-            }}
-          </small>
-          <em>
-            {{
-              hasLinkedFinancialSources
-                ? '연동 자산 확인하기'
-                : '금융 데이터 연결하기'
-            }}
-            <i aria-hidden="true">›</i>
-          </em>
+          <b>아직 분석할 지난달 거래가 없어요</b>
+          <small>분류된 계좌·카드 지출이 쌓이면 소비 분석과 맞춤 미션을 보여드려요.</small>
+          <em>연동 자산 확인하기<i aria-hidden="true">›</i></em>
         </button>
       </section>
 
@@ -975,6 +907,20 @@ async function switchMode(mode) {
 </template>
 
 <style scoped>
+.empty-trip-ticket-wrap {
+  position: relative;
+}
+.empty-trip-backdrop-glow {
+  position: absolute;
+  top: -22px;
+  left: 6%;
+  right: 6%;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(23, 77, 167, .38) 0%, rgba(23, 77, 167, 0) 72%);
+  filter: blur(4px);
+  pointer-events: none;
+}
 .empty-trip-ticket {
   position: relative;
   margin-top: 12px;
@@ -2268,7 +2214,7 @@ async function switchMode(mode) {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 19px 17px;

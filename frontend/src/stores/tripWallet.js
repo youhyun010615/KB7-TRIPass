@@ -398,7 +398,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
   }
 
   async function addAccount(accountId, primary = false) {
-    const data = await linkWalletAccount({ accountId, primary })
+    const data = await linkWalletAccount({ accountId, isPrimary: primary })
     await Promise.all([loadAccounts(), loadAccountOptions()])
     return data
   }

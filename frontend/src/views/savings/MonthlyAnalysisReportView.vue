@@ -7,6 +7,8 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
+import aiIcon from '@/assets/icons/ai.svg';
+import aiReportIcon from '@/assets/icons/ai_report.svg';
 
 const route = useRoute();
 const router = useRouter();
@@ -145,9 +147,16 @@ function goMissions() {
 
     <template v-else>
       <section class="report-hero">
-        <div class="hero-route"><i /><span>✈</span><i /></div>
+        <span class="hero-ai-scan" aria-hidden="true">
+          <img class="hero-ai-badge" :src="aiIcon" alt="" />
+          <span class="hero-ai-ping"></span>
+          <span class="hero-ai-ping delay"></span>
+        </span>
         <small>{{ report.analysisYearMonth }}</small>
-        <h2>{{ analysisMonthLabel }} AI 분석 리포트</h2>
+        <h2>
+          {{ analysisMonthLabel }} AI 분석 리포트
+          <img class="hero-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+        </h2>
         <p>여행을 더 자주 떠날 수 있도록 지난달 금융 습관을 정리했어요.</p>
         <span class="viewed-badge">AI 분석 완료</span>
       </section>
@@ -181,7 +190,8 @@ function goMissions() {
           </div>
         </div>
         <div v-else class="saving-unavailable">
-          <span>i</span>{{ savingResult?.resultMessage }}
+          <span>i</span>
+          <b>{{ savingResult?.resultMessage || '이번 달 저축 목표가 설정되지 않아 결과를 계산할 수 없어요.' }}</b>
         </div>
 
         <dl v-if="savingAvailable" class="saving-metrics">
@@ -254,11 +264,11 @@ function goMissions() {
             <small>AI COACHING</small>
             <h3>이번 달 절약 포인트</h3>
           </div>
-          <span class="ai-label">AI</span>
+          <span class="ai-label"><img :src="aiIcon" alt="" /></span>
         </div>
 
         <div class="coaching-summary">
-          <span>✦</span>
+          <span class="sparkle">✦</span>
           <p>{{ report.coachingSummary }}</p>
         </div>
 
@@ -344,7 +354,7 @@ function goMissions() {
 }
 .report-header h1 {
   margin-top: 2px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 950;
 }
 .report-header .close-icon {
@@ -354,7 +364,7 @@ function goMissions() {
   position: relative;
   overflow: hidden;
   margin: 14px;
-  padding: 26px 20px 22px;
+  padding: 20px 20px 18px;
   border-radius: 25px;
   background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
   color: #fff;
@@ -371,17 +381,6 @@ function goMissions() {
   border-radius: 50%;
   content: '';
 }
-.hero-route {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 18px;
-  color: #ffd35e;
-}
-.hero-route i {
-  flex: 1;
-  border-top: 1px dashed #ffffff55;
-}
 .report-hero > small {
   color: #b9d1ff;
   font-size: 9px;
@@ -389,16 +388,55 @@ function goMissions() {
   letter-spacing: 0.13em;
 }
 .report-hero h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin-top: 5px;
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 950;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.05em;
+}
+.hero-report-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
+}
+.hero-ai-scan {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+.hero-ai-badge {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  animation: hero-ai-badge-pulse 1.6s ease-in-out infinite;
+}
+.hero-ai-ping {
+  position: absolute;
+  inset: -6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+  animation: hero-ai-ping 1.8s ease-out infinite;
+}
+.hero-ai-ping.delay {
+  animation-delay: 0.9s;
 }
 .report-hero p {
   max-width: 270px;
   margin-top: 8px;
   color: #d3e1ff;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 .viewed-badge {
@@ -409,7 +447,7 @@ function goMissions() {
   border-radius: 999px;
   background: #ffffff12;
   color: #ffd35e;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 900;
 }
 .report-section {
@@ -435,20 +473,20 @@ function goMissions() {
 }
 .section-title small {
   color: #f06a2a;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 950;
   letter-spacing: 0.12em;
 }
 .section-title h3 {
   margin-top: 3px;
   color: #173f8d;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 950;
 }
 .section-title > span {
   padding: 5px 8px;
   border-radius: 999px;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 900;
 }
 .section-title > span.success {
@@ -486,13 +524,18 @@ function goMissions() {
 }
 .saving-message b {
   color: #173f8d;
-  font-size: 11px;
+  font-size: 13px;
 }
-.saving-message small,
-.saving-unavailable {
+.saving-message small {
   margin-top: 4px;
   color: #7186aa;
-  font-size: 9px;
+  font-size: 10.5px;
+}
+.saving-unavailable b {
+  color: #173f8d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
 }
 .saving-metrics {
   display: grid;
@@ -511,12 +554,12 @@ function goMissions() {
 }
 .saving-metrics dt {
   color: #8a9bb6;
-  font-size: 8px;
+  font-size: 9px;
 }
 .saving-metrics dd {
   margin-top: 4px;
   color: #173f8d;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
 }
 .total-spending {
@@ -528,12 +571,12 @@ function goMissions() {
 }
 .total-spending small {
   color: #8a9bb6;
-  font-size: 8px;
+  font-size: 9.5px;
 }
 .total-spending b {
   margin-top: 3px;
   color: #17213a;
-  font-size: 15px;
+  font-size: 16px;
 }
 .category-list {
   display: grid;
@@ -542,21 +585,21 @@ function goMissions() {
 }
 .category-item {
   display: grid;
-  grid-template-columns: 34px 1fr 38px;
+  grid-template-columns: 38px 1fr 42px;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
 .category-icon {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   place-items: center;
-  border-radius: 11px;
-  font-size: 15px;
+  border-radius: 12px;
+  font-size: 16px;
 }
 .category-icon img {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
 }
 .category-detail > div {
   display: flex;
@@ -565,16 +608,17 @@ function goMissions() {
 }
 .category-detail b {
   color: #26334d;
-  font-size: 10px;
+  font-size: 13px;
+  font-weight: 800;
 }
 .category-detail small {
   color: #9aa8bb;
-  font-size: 7px;
+  font-size: 9.5px;
 }
 .category-detail strong {
   margin-left: auto;
   color: #536887;
-  font-size: 9px;
+  font-size: 11px;
 }
 .category-detail > i {
   display: block;
@@ -592,7 +636,7 @@ function goMissions() {
 }
 .category-item > b {
   color: #173f8d;
-  font-size: 10px;
+  font-size: 12px;
   text-align: right;
 }
 .ai-label {
@@ -600,8 +644,17 @@ function goMissions() {
   width: 30px;
   height: 30px;
   place-items: center;
+  border-radius: 10px;
   background: #173f8d !important;
   color: #fff;
+  box-shadow: 0 0 0 0 rgba(23, 63, 141, 0.35);
+  animation: ai-label-pulse 2s ease-in-out infinite;
+}
+.ai-label img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 .coaching-summary {
   display: flex;
@@ -612,12 +665,13 @@ function goMissions() {
   background: linear-gradient(135deg, #173f8d, #286ce0);
   color: #fff;
 }
-.coaching-summary > span {
+.coaching-summary > .sparkle {
   color: #ffd35e;
+  animation: sparkle-twinkle 1.8s ease-in-out infinite;
 }
 .coaching-summary p {
   color: #eef4ff;
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.6;
 }
 .recommendation-list {
@@ -627,42 +681,42 @@ function goMissions() {
 }
 .recommendation-list li {
   display: grid;
-  grid-template-columns: 22px 34px 1fr;
+  grid-template-columns: 24px 38px 1fr;
   align-items: center;
-  gap: 8px;
-  padding: 11px;
+  gap: 9px;
+  padding: 12px;
   border: 1px solid #e3eaf5;
   border-radius: 14px;
 }
 .recommendation-list li > b {
   display: grid;
-  width: 21px;
-  height: 21px;
+  width: 23px;
+  height: 23px;
   place-items: center;
   border-radius: 50%;
   background: #dce9ff;
   color: #286ce0;
-  font-size: 9px;
+  font-size: 10px;
 }
 .recommendation-list li > span {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 12px;
 }
 .recommendation-list li > span img {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 .recommendation-list strong {
   color: #26334d;
-  font-size: 11px;
+  font-size: 13px;
 }
 .recommendation-list p {
   margin-top: 3px;
   color: #7186aa;
-  font-size: 8px;
+  font-size: 9.5px;
   line-height: 1.45;
 }
 .mission-guide {
@@ -671,7 +725,7 @@ function goMissions() {
   border-radius: 12px;
   background: #fff7e7;
   color: #9a6813;
-  font-size: 9px;
+  font-size: 10.5px;
   line-height: 1.5;
 }
 .mission-button {
@@ -681,22 +735,37 @@ function goMissions() {
   justify-content: center;
   gap: 8px;
   margin-top: 11px;
-  padding: 14px;
+  padding: 15px;
   border-radius: 14px;
   background: #173f8d;
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
+  animation: mission-button-pulse 2.4s ease-out infinite;
 }
 .mission-button span {
   font-size: 18px;
+}
+@keyframes mission-button-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(23, 63, 141, 0.35);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px rgba(23, 63, 141, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-button {
+    animation: none;
+  }
 }
 .close-report-button {
   display: block;
   margin: 17px auto 0;
   padding: 10px 14px;
   color: #7b8da9;
-  font-size: 10px;
+  font-size: 11px;
   text-decoration: underline;
 }
 .report-state {
@@ -711,21 +780,21 @@ function goMissions() {
 .report-state b {
   margin-top: 14px;
   color: #173f8d;
-  font-size: 15px;
+  font-size: 16px;
 }
 .report-state small {
   margin-top: 7px;
   color: #7b8da9;
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.5;
 }
 .report-state button {
   margin-top: 16px;
-  padding: 10px 15px;
+  padding: 11px 16px;
   border-radius: 12px;
   background: #173f8d;
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
 }
 .state-icon,
@@ -755,7 +824,7 @@ function goMissions() {
   border-radius: 11px;
   background: #fff0f0;
   color: #d94b4b;
-  font-size: 9px;
+  font-size: 10.5px;
 }
 @keyframes spin {
   to {
@@ -772,9 +841,54 @@ function goMissions() {
     transform: translateY(0);
   }
 }
+@keyframes hero-ai-badge-pulse {
+  0%,
+  100% {
+    transform: scale(0.9);
+    filter: brightness(0) invert(1) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.75));
+  }
+}
+@keyframes hero-ai-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+@keyframes ai-label-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(23, 63, 141, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(23, 63, 141, 0);
+  }
+}
+@keyframes sparkle-twinkle {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.85) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(90deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .report-hero,
-  .report-section {
+  .report-section,
+  .hero-ai-badge,
+  .hero-ai-ping,
+  .ai-label,
+  .sparkle {
     animation: none;
   }
 }

@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import {
   closeMonthlyAnalysis,
   fetchMonthlyAnalysis,
+  generateMonthlyAnalysis,
   markMonthlyAnalysisViewed,
 } from '@/api/monthlyAnalysis';
 
@@ -13,6 +14,10 @@ function previousYearMonth(baseDate = new Date()) {
     1,
   );
   return `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function currentYearMonth(baseDate = new Date()) {
+  return `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function apiErrorMessage(error, fallback) {
@@ -42,7 +47,10 @@ export const useMonthlyAnalysisStore = defineStore('monthlyAnalysis', () => {
     errorMessage.value = '';
   }
 
-  async function loadAnalysis(yearMonth, { force = false } = {}) {
+  async function loadAnalysis(
+    yearMonth,
+    { force = false, generateIfMissing = false } = {},
+  ) {
     if (!yearMonth) return null;
     if (
       !force &&
@@ -65,6 +73,21 @@ export const useMonthlyAnalysisStore = defineStore('monthlyAnalysis', () => {
         error.response?.status === 404 ||
         error.response?.data?.code === 'MONTHLY_ANALYSIS_NOT_FOUND'
       ) {
+        if (generateIfMissing) {
+          try {
+            report.value = await generateMonthlyAnalysis(yearMonth);
+            notFound.value = false;
+            return report.value;
+          } catch (generateError) {
+            report.value = null;
+            errorMessage.value = apiErrorMessage(
+              generateError,
+              '이달의 자금 체크를 생성하지 못했어요.',
+            );
+            return null;
+          }
+        }
+
         report.value = null;
         notFound.value = true;
         return null;
@@ -83,6 +106,13 @@ export const useMonthlyAnalysisStore = defineStore('monthlyAnalysis', () => {
 
   function loadLatestAnalysis(options) {
     return loadAnalysis(previousYearMonth(), options);
+  }
+
+  function loadCurrentAnalysis(options = {}) {
+    return loadAnalysis(currentYearMonth(), {
+      ...options,
+      generateIfMissing: true,
+    });
   }
 
   async function markViewed() {
@@ -142,6 +172,7 @@ export const useMonthlyAnalysisStore = defineStore('monthlyAnalysis', () => {
     resetAnalysis,
     loadAnalysis,
     loadLatestAnalysis,
+    loadCurrentAnalysis,
     markViewed,
     closeReport,
   };
