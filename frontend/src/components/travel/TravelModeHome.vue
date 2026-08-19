@@ -2,7 +2,11 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTravelModeStore } from '@/stores/travelMode';
-import { useTravelStore, countryPresentation as globalCountryPresentation } from '@/stores/travel';
+import {
+  useTravelStore,
+  countryPresentation as globalCountryPresentation,
+  getTravelCountryColors,
+} from '@/stores/travel';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import foodIcon from '@/assets/icons/food.svg';
 import cafeIcon from '@/assets/icons/cafe.svg';
@@ -95,8 +99,8 @@ const destinations = computed(() => {
     name: '전체',
     flag: '🌍',
     theme: '#17485b',
-    progressBg: travelDefaultPresentation.progressBg,
-    barColor: travelDefaultPresentation.barColor,
+    progressBg: getTravelCountryColors().progressBg,
+    barColor: getTravelCountryColors().barColor,
     targetBudget: totalTargetBudget,
     spentAmount: totalSpentAmount,
     dayRangeStart: 1,
@@ -198,66 +202,9 @@ function getCategoryIcon(name) {
   };
 }
 
-// 국가별 색상 팔레트 — 저축모드 홈(SavingsModeHome.vue)의 countryPresentation과 동일한 값
-// (저축모드 파일은 건드리지 않는다는 원칙 때문에 값만 그대로 복제해서 사용한다)
-const travelCountryPresentation = {
-  프랑스: {
-    headerBg: '#1a2d6e',
-    progressBg: 'rgba(0,35,149,0.80)',
-    barColor: 'linear-gradient(90deg,#002395 0%,#EDEDED 50%,#ED2939 100%)',
-  },
-  스위스: {
-    headerBg: '#7a0d1e',
-    progressBg: 'rgba(122,13,30,0.82)',
-    barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 60%,#FF0000 100%)',
-  },
-  독일: {
-    headerBg: '#111111',
-    progressBg: 'rgba(17,17,17,0.85)',
-    barColor: 'linear-gradient(90deg,#000000 0%,#DD0000 50%,#FFCE00 100%)',
-  },
-  일본: {
-    headerBg: '#c2185b',
-    progressBg: 'rgba(194,24,91,0.82)',
-    barColor:
-      'linear-gradient(90deg,#FFFFFF 0%,#BC002D 35%,#BC002D 65%,#FFFFFF 100%)',
-  },
-  홍콩: {
-    headerBg: '#b8202e',
-    progressBg: 'rgba(184,32,46,0.84)',
-    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFDE00 100%)',
-  },
-};
-const travelDefaultPresentation = {
-  headerBg: '#173f8d',
-  progressBg: 'rgba(23,63,141,0.84)',
-  barColor: 'linear-gradient(90deg,#64d8cb,#fff0b3)',
-};
-
-// 저축모드 홈의 hexToRgba/fallbackPresentation과 동일한 로직 — 위 5개국 외의 나머지 국가는
-// 공용 국가 정보(stores/travel.js countryPresentation)의 accent 색상으로 대체한다.
-function hexToRgba(hex, alpha) {
-  const clean = (hex || '').replace('#', '');
-  const num = parseInt(clean, 16);
-  if (Number.isNaN(num)) return `rgba(23,63,141,${alpha})`;
-  const r = (num >> 16) & 255;
-  const g = (num >> 8) & 255;
-  const b = num & 255;
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-function getCountryPresentation(countryName) {
-  if (travelCountryPresentation[countryName]) {
-    return travelCountryPresentation[countryName];
-  }
-  const accent = globalCountryPresentation[countryName]?.accent;
-  if (!accent) return travelDefaultPresentation;
-  return {
-    headerBg: accent,
-    progressBg: hexToRgba(accent, 0.84),
-    barColor: `linear-gradient(90deg, ${accent} 0%, ${accent}99 100%)`,
-  };
-}
+// 국가별 색상 — stores/travel.js의 getTravelCountryColors()가 유일한 소스다.
+// (여행모드의 다른 화면들과 색이 어긋나지 않도록 이 화면만의 사본을 두지 않는다)
+const getCountryPresentation = getTravelCountryColors;
 
 // 국가별 색상 매핑 헬퍼 (저축모드와 동일한 headerBg 사용)
 function getCountryColor(countryName) {

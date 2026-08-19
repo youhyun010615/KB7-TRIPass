@@ -89,6 +89,68 @@ export const countryPresentation = {
   미국: { code: 'US', city: '뉴욕', flag: '🇺🇸', accent: '#1d4ed8', image: imageUS },
 };
 
+// 저축모드 홈(SavingsModeHome.vue)의 countryPresentation과 동일한 값 — 여행모드
+// 화면들(홈 보딩패스, 여행 자금 체크 등)이 전부 이 하나의 함수를 통해 색을 가져오게 해서
+// 화면마다 색이 달라지는 걸 방지한다. (저축모드 파일 자체는 건드리지 않는다)
+const curatedTravelCountryColors = {
+  프랑스: {
+    headerBg: '#1a2d6e',
+    progressBg: 'rgba(0,35,149,0.80)',
+    barColor: 'linear-gradient(90deg,#002395 0%,#EDEDED 50%,#ED2939 100%)',
+  },
+  스위스: {
+    headerBg: '#7a0d1e',
+    progressBg: 'rgba(122,13,30,0.82)',
+    barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 60%,#FF0000 100%)',
+  },
+  독일: {
+    headerBg: '#111111',
+    progressBg: 'rgba(17,17,17,0.85)',
+    barColor: 'linear-gradient(90deg,#000000 0%,#DD0000 50%,#FFCE00 100%)',
+  },
+  일본: {
+    headerBg: '#c2185b',
+    progressBg: 'rgba(194,24,91,0.82)',
+    barColor:
+      'linear-gradient(90deg,#FFFFFF 0%,#BC002D 35%,#BC002D 65%,#FFFFFF 100%)',
+  },
+  홍콩: {
+    headerBg: '#b8202e',
+    progressBg: 'rgba(184,32,46,0.84)',
+    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFDE00 100%)',
+  },
+};
+const defaultTravelCountryColor = {
+  headerBg: '#173f8d',
+  progressBg: 'rgba(23,63,141,0.84)',
+  barColor: 'linear-gradient(90deg,#64d8cb,#fff0b3)',
+};
+
+function hexToRgba(hex, alpha) {
+  const clean = (hex || '').replace('#', '');
+  const num = parseInt(clean, 16);
+  if (Number.isNaN(num)) return `rgba(23,63,141,${alpha})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// 국가 이름으로 { headerBg, progressBg, barColor } 를 반환한다 — 여행모드의
+// 모든 화면이 국가 색을 정할 때는 이 함수 하나만 쓴다.
+export function getTravelCountryColors(countryName) {
+  if (curatedTravelCountryColors[countryName]) {
+    return curatedTravelCountryColors[countryName];
+  }
+  const accent = countryPresentation[countryName]?.accent;
+  if (!accent) return defaultTravelCountryColor;
+  return {
+    headerBg: accent,
+    progressBg: hexToRgba(accent, 0.84),
+    barColor: `linear-gradient(90deg, ${accent} 0%, ${accent}99 100%)`,
+  };
+}
+
 const accountSeed = [
   {
     id: 1,

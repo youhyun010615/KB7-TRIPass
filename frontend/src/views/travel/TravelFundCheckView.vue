@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useTravelModeStore } from '@/stores/travelMode';
-import { useTravelStore } from '@/stores/travel';
+import { useTravelStore, getTravelCountryColors } from '@/stores/travel';
 
 const router = useRouter();
 const travelMode = useTravelModeStore();
@@ -69,7 +69,7 @@ const activeCountries = computed(() => {
       flag: found.flag,
       flagClass: travel.countryFlagMap[found.name]?.class || '',
       image: countryImageMap[found.name] || '',
-      theme: found.accent,
+      theme: getTravelCountryColors(found.name).headerBg,
     };
   });
 });
@@ -104,13 +104,12 @@ const selectedBudget = computed(() => {
   );
 });
 
-const usable = computed(
-  () =>
-    (selectedBudget.value?.targetBudget || 0) -
-    (selectedBudget.value?.preExpenseTotal || 0),
-);
 const spent = computed(() => selectedBudget.value?.travelExpenseTotal || 0);
-const balance = computed(() => selectedBudget.value?.remainingFund || 0);
+// 홈탭 보딩패스의 "여행 자금 진행률" 바와 동일한 디자인/계산식
+const fundPercent = computed(() => {
+  const target = selectedBudget.value?.targetBudget || 0;
+  return target > 0 ? Math.round((spent.value / target) * 100) : 0;
+});
 
 const countryRows = computed(() => {
   if (!travel.budgetCheckData || !Array.isArray(travel.budgetCheckData))
@@ -214,14 +213,22 @@ function ratio(item) {
         <small>TRIPASS BUDGET</small>
       </div>
       <div class="ticket-rule"><i /><span /><i /></div>
-      <div class="ticket-values">
-        <div>
-          <small>여행 목표 예산</small
-          ><strong>{{ formatWon(selectedBudget?.targetBudget) }}</strong>
+      <div class="fund-progress-box">
+        <div class="fund-progress-head">
+          <span>여행 자금 진행률</span><strong>{{ fundPercent }}%</strong>
         </div>
-        <div>
-          <small>사전 지불 금액</small
-          ><strong>{{ formatWon(selectedBudget?.preExpenseTotal) }}</strong>
+        <div class="fund-progress-track">
+          <i :style="{ width: `${fundPercent}%` }" />
+        </div>
+        <div class="fund-progress-meta">
+          <div>
+            <b>{{ formatWon(spent) }}</b>
+            <small>SPENT</small>
+          </div>
+          <div class="align-right">
+            <b>{{ formatWon(selectedBudget?.targetBudget) }}</b>
+            <small>BUDGET</small>
+          </div>
         </div>
       </div>
       <div class="ticket-rule bottom"><i /><span /><i /></div>
@@ -232,30 +239,6 @@ function ratio(item) {
           :class="{ wide: index % 4 === 0 }"
         />
       </div>
-    </section>
-
-    <section class="content-card consumption-card">
-      <h2>예산 소비 요약</h2>
-      <div class="calculation">
-        <div>
-          <small>{{
-            selected.code === 'all' ? '남은 가능 금액' : '사용 가능 금액'
-          }}</small
-          ><strong>{{ formatWon(usable) }}</strong
-          ><span>여행 목표 예산<br />- 사전 지불 금액</span>
-        </div>
-        <b>−</b>
-        <div>
-          <small>지출 금액</small><strong>{{ formatWon(spent) }}</strong
-          ><span>현재까지<br />실제 지출 금액</span>
-        </div>
-        <b>=</b>
-        <div class="balance">
-          <small>현재 잔액</small><strong>{{ formatWon(balance) }}</strong
-          ><span>사용 가능 금액<br />- 사용 금액</span>
-        </div>
-      </div>
-      <p>ⓘ 사용 가능 금액에서 실제 사용 금액을 차감한 현재 잔액이에요.</p>
     </section>
 
     <section class="content-card country-card">
@@ -413,27 +396,6 @@ function ratio(item) {
 .ticket-rule span {
   border-top: 1px dashed #ffffff80;
 }
-.ticket-values {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 18px 15px 15px;
-}
-.ticket-values > div + div {
-  padding-left: 16px;
-  border-left: 1px solid #ffffff40;
-}
-.ticket-values small,
-.ticket-values strong {
-  display: block;
-}
-.ticket-values small {
-  color: #dce8fa;
-  font-size: 9px;
-}
-.ticket-values strong {
-  margin-top: 7px;
-  font-size: 19px;
-}
 .ticket-rule.bottom {
   position: absolute;
   right: 0;
@@ -469,51 +431,58 @@ function ratio(item) {
   font-size: 15px;
   font-weight: 900;
 }
-.consumption-card {
-  padding-bottom: 9px;
+.fund-progress-box {
+  margin: 4px 15px 15px;
+  padding: 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme) 82%, black 6%);
 }
-.calculation {
-  display: grid;
-  grid-template-columns: 1fr 12px 1fr 12px 1fr;
-  align-items: center;
-  margin-top: 13px;
-}
-.calculation > b {
-  text-align: center;
-  color: #657389;
-}
-.calculation > div {
-  min-width: 0;
-  padding: 12px 4px;
-  border: 1px solid #dfe6f0;
-  border-radius: 11px;
-  text-align: center;
-}
-.calculation small,
-.calculation strong,
-.calculation span {
-  display: block;
-}
-.calculation small {
-  color: #8a98ab;
-  font-size: 8px;
-}
-.calculation strong {
-  margin: 8px 0;
-  color: #256ee7;
+.fund-progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #fff;
   font-size: 13px;
+  font-weight: 600;
 }
-.calculation span {
-  color: #9ca7b5;
-  font-size: 7px;
-  line-height: 1.45;
+.fund-progress-head strong {
+  color: #ffd466;
+  font-size: 14px;
+  font-weight: 800;
 }
-.calculation .balance {
-  border-color: #bcebd6;
-  background: #eefbf5;
+.fund-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.25);
 }
-.calculation .balance strong {
-  color: #13a967;
+.fund-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: #ffd466;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fund-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.fund-progress-meta b {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.fund-progress-meta small {
+  display: block;
+  margin-top: 1px;
+  color: #ffffffa6;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+.fund-progress-meta .align-right {
+  text-align: right;
 }
 .content-card > p {
   margin: 10px -7px 0;
