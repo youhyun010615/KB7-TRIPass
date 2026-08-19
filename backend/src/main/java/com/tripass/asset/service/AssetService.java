@@ -8,6 +8,8 @@ import com.tripass.common.exception.CustomException;
 import com.tripass.saving.classification.CategoryClassificationResult;
 import com.tripass.saving.classification.CategorySource;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
+import com.tripass.saving.service.MonthlySpendingAnalysisService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
+@Log4j2
 @Service
 @Transactional(readOnly = true)
 public class AssetService {
@@ -27,17 +31,20 @@ public class AssetService {
     private final TransactionCategoryClassifier transactionCategoryClassifier;
     private final DuplicateTransactionMatcher duplicateTransactionMatcher;
     private final CodefClient codefClient;
+    private final MonthlySpendingAnalysisService monthlySpendingAnalysisService;
 
     public AssetService(
             AssetMapper assetMapper,
             TransactionCategoryClassifier transactionCategoryClassifier,
             DuplicateTransactionMatcher duplicateTransactionMatcher,
-            CodefClient codefClient
+            CodefClient codefClient,
+            MonthlySpendingAnalysisService monthlySpendingAnalysisService
     ) {
         this.assetMapper = assetMapper;
         this.transactionCategoryClassifier = transactionCategoryClassifier;
         this.duplicateTransactionMatcher = duplicateTransactionMatcher;
         this.codefClient = codefClient;
+        this.monthlySpendingAnalysisService = monthlySpendingAnalysisService;
     }
 
     @Transactional
@@ -460,6 +467,8 @@ public class AssetService {
                 saved.add(dto);
             }
 
+            tryAutoGenerateAnalysis(userId);
+
             return saved;
         } catch (CustomException e) {
             throw e;
@@ -563,6 +572,8 @@ public class AssetService {
             }
 
             assetMapper.updateCardLastSyncedAt(cardId);
+
+            tryAutoGenerateAnalysis(userId);
 
             return saved;
 
@@ -761,6 +772,16 @@ public class AssetService {
         }
 
         return assetMapper.findCalendarByMonth(userId, year, month, type);
+    }
+
+    private void tryAutoGenerateAnalysis(Long userId) {
+        try {
+            YearMonth previousMonth = YearMonth.now().minusMonths(1);
+            monthlySpendingAnalysisService.generateMonthlyAnalysis(userId, previousMonth);
+            log.info("신규 사용자 자동 분석 리포트 생성 완료 - userId: {}, 분석월: {}", userId, previousMonth);
+        } catch (Exception e) {
+            log.warn("자동 분석 리포트 생성 실패 (거래 동기화는 정상) - userId: {}, 사유: {}", userId, e.getMessage());
+        }
     }
 
     private String resolveAccountType(String resAccountKind) {

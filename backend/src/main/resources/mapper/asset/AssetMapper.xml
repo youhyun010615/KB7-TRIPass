@@ -425,4 +425,12 @@
           AND is_deleted = 0
     </update>
 
+    <select id="findUserIdsWithLinkedAssets" resultType="long">
+        SELECT DISTINCT user_id FROM (
+            SELECT user_id FROM accounts WHERE is_deleted = 0
+            UNION
+            SELECT user_id FROM cards WHERE is_deleted = 0
+        ) linked_users
+    </select>
+
 </mapper>

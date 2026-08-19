@@ -134,4 +134,6 @@ public interface AssetMapper {
             @org.apache.ibatis.annotations.Param("type") String type
     );
 
+    List<Long> findUserIdsWithLinkedAssets();
+
 }

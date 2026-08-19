@@ -1,11 +1,13 @@
 package com.tripass.common.scheduler;
 
+import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.common.util.FcmService;
 import com.tripass.exchange.service.ExchangeRateService;
 import com.tripass.mypage.domain.NotificationSetting;
 import com.tripass.mypage.mapper.NotificationSettingMapper;
 import com.tripass.mypage.mapper.NotificationTargetMapper;
 import com.tripass.mypage.service.NotificationService;
+import com.tripass.saving.service.MonthlySpendingAnalysisService;
 import com.tripass.schedule.domain.TripSchedule;
 import com.tripass.schedule.mapper.ScheduleMapper;
 import com.tripass.travel.domain.Trip;
@@ -14,6 +16,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @Component
@@ -27,6 +31,8 @@ public class NotificationScheduler {
     private final NotificationSettingMapper notificationSettingMapper;
     private final ScheduleMapper scheduleMapper;
     private final ExchangeRateService exchangeRateService;
+    private final MonthlySpendingAnalysisService monthlySpendingAnalysisService;
+    private final AssetMapper assetMapper;
 
     // 매일 자정
     @Scheduled(cron = "0 0 0 * * *")
@@ -38,6 +44,15 @@ public class NotificationScheduler {
         sendChecklistNotification(1, "여행 D-1", "마지막 준비는 완벽한가요?");
         sendReturnNotification(1, "여행의 마무리", "안전한 귀국을 위해 체크리스트를 확인하세요.");
         
+        // 여행 7일 전 — 여행 대비 리포트
+        List<Trip> upcomingTrips = notificationTargetMapper.findTripsByStartDateOffset(7);
+        for (Trip trip : upcomingTrips) {
+            String title = "여행 대비 리포트";
+            String body = "출발까지 일주일! 목표 달성 현황과 준비 상태를 확인해보세요.";
+            String url = "/mypage/reports?tripId=" + trip.getId();
+            sendToTrip(trip, "REPORT", title, body, url);
+        }
+
         // 여행 시작 당일 (D-DAY)
         List<Trip> startingTrips = notificationTargetMapper.findTripsStartingToday();
         for (Trip trip : startingTrips) {
@@ -111,6 +126,7 @@ public class NotificationScheduler {
     private void sendToTrip(Trip trip, String type, String title, String body, String url) {
         NotificationSetting setting = notificationSettingMapper.getSettingByUserId(trip.getUserId());
         if (setting == null || !setting.isAllEnabled()) return;
+        if (!isWithinAllowedTime(setting)) return;
 
         boolean enabled = false;
         if ("CHECKLIST".equals(type) && setting.isChecklistEnabled()) enabled = true;
@@ -125,8 +141,42 @@ public class NotificationScheduler {
         }
     }
 
-    // 10분마다 실행
-    @Scheduled(cron = "0 */10 * * * *")
+    private boolean isWithinAllowedTime(NotificationSetting setting) {
+        LocalTime start = setting.getQuietStartTime();
+        LocalTime end = setting.getQuietEndTime();
+        if (start == null || end == null) return true;
+
+        LocalTime now = LocalTime.now();
+        if (start.isBefore(end)) {
+            return !now.isBefore(start) && now.isBefore(end);
+        }
+        return !now.isBefore(start) || now.isBefore(end);
+    }
+
+    @Scheduled(cron = "0 0 1 1 * *", zone = "Asia/Seoul")
+    public void generateMonthlyAnalysisReports() {
+        YearMonth previousMonth = YearMonth.now().minusMonths(1);
+        log.info("월간 소비 분석 리포트 자동 생성 시작: {}월", previousMonth);
+
+        List<Long> userIds = assetMapper.findUserIdsWithLinkedAssets();
+        int successCount = 0;
+        int failCount = 0;
+
+        for (Long userId : userIds) {
+            try {
+                monthlySpendingAnalysisService.generateMonthlyAnalysis(userId, previousMonth);
+                successCount++;
+            } catch (Exception e) {
+                failCount++;
+                log.warn("월간 분석 리포트 생성 실패 - userId: {}, 사유: {}", userId, e.getMessage());
+            }
+        }
+
+        log.info("월간 소비 분석 리포트 생성 완료: 성공 {}명, 실패 {}명", successCount, failCount);
+    }
+
+    // 1분마다 실행
+    @Scheduled(cron = "0 */1 * * * *")
     public void sendScheduleReminders() {
         log.info("여행 일정 리마인더 스케줄러 시작");
 
