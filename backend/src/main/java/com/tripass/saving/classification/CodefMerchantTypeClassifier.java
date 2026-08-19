@@ -10,8 +10,10 @@ import static com.tripass.saving.classification.ConsumptionCategoryCode.CAFE;
 import static com.tripass.saving.classification.ConsumptionCategoryCode.FOOD;
 import static com.tripass.saving.classification.ConsumptionCategoryCode.LEISURE;
 import static com.tripass.saving.classification.ConsumptionCategoryCode.LIVING;
+import static com.tripass.saving.classification.ConsumptionCategoryCode.LODGING;
 import static com.tripass.saving.classification.ConsumptionCategoryCode.OTHER;
 import static com.tripass.saving.classification.ConsumptionCategoryCode.SHOPPING;
+import static com.tripass.saving.classification.ConsumptionCategoryCode.SIGHTSEEING;
 import static com.tripass.saving.classification.ConsumptionCategoryCode.TRANSPORT;
 
 @Component
@@ -75,7 +77,16 @@ public class CodefMerchantTypeClassifier {
                     Map.entry("노래방", LEISURE),
 
                     // 기타
-                    Map.entry("기타서비스", OTHER)
+                    Map.entry("기타서비스", OTHER),
+
+                    // 해외 업종
+                    Map.entry("해외음식점", FOOD),
+                    Map.entry("해외카페", CAFE),
+                    Map.entry("해외쇼핑", SHOPPING),
+                    Map.entry("해외교통", TRANSPORT),
+                    Map.entry("해외관광", SIGHTSEEING),
+                    Map.entry("숙박", LODGING),
+                    Map.entry("항공사", TRANSPORT)
             );
 
     /**

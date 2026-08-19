@@ -13,6 +13,8 @@ public enum ConsumptionCategoryCode {
     LIVING("생활비"),
     TRANSPORT("교통비"),
     LEISURE("취미여가"),
+    LODGING("숙박"),
+    SIGHTSEEING("관광"),
     OTHER("기타");
 
     private final String displayName;
