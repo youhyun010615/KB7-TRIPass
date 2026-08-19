@@ -3,12 +3,15 @@ import { defineStore } from 'pinia'
 import { useTravelStore } from '@/stores/travel'
 
 const categorySeed = [
-  { id: 'food', name: '식비', icon: '🍴', color: '#2378ea', description:'식사, 배달, 식료품' },
-  { id: 'cafe', name: '카페', icon: '☕', color: '#7248df', description:'커피와 디저트' },
-  { id: 'living', name: '생활비', icon: '📦', color: '#22ad6f', description:'마트, 편의점, 생활용품' },
-  { id: 'shopping', name: '쇼핑', icon: '🛍️', color: '#ef3b86', description:'의류, 화장품, 기념품' },
-  { id: 'hobby', name: '취미·여가', icon: '🎨', color: '#ff912f', description:'관광, 공연, 액티비티' },
-  { id: 'other', name: '기타', icon: '•••', color: '#98a7ba', description:'그 외 여행 지출' },
+  { id: 1, name: '식비', icon: '🍴', color: '#2378ea', description:'식사, 배달, 식료품' },
+  { id: 2, name: '교통', icon: '🚗', color: '#3b82f6', description:'택시, 버스, 지하철' },
+  { id: 3, name: '숙박', icon: '🏨', color: '#f59e0b', description:'호텔, 숙소' },
+  { id: 4, name: '쇼핑', icon: '🛍️', color: '#ef3b86', description:'의류, 화장품, 기념품' },
+  { id: 5, name: '관광', icon: '🎫', color: '#8b5cf6', description:'입장료, 관광지' },
+  { id: 6, name: '기타', icon: '•••', color: '#98a7ba', description:'그 외 여행 지출' },
+  { id: 7, name: '카페', icon: '☕', color: '#7248df', description:'커피와 디저트' },
+  { id: 8, name: '생활비', icon: '📦', color: '#22ad6f', description:'마트, 편의점, 생활용품' },
+  { id: 9, name: '취미여가', icon: '🎨', color: '#ff912f', description:'영화, 공연, 운동' },
 ]
 
 const countrySeed = [
@@ -21,25 +24,25 @@ const countrySeed = [
 
 const templates = {
   FR: [
-    ['Café de Flore', 68_000, 'food', '🍽️', 0, '파리에서 즐긴 첫 저녁 식사'], ['Boulangerie Utopie', 42_000, 'food', '🥐', 2, '아침 식사'], ['Le Comptoir', 40_000, 'food', '🍴', 4, '점심 식사'],
-    ['Merci Coffee', 55_000, 'cafe', '☕', 1, '커피와 디저트'], ['Angelina Paris', 65_000, 'cafe', '🍰', 5, '몽블랑 디저트'], ['Monoprix', 180_000, 'living', '🛒', 2, '여행 생활용품'],
-    ['Galeries Lafayette', 80_000, 'shopping', '🛍️', 3, '기념품 구매'], ['Seine Cruise', 60_000, 'hobby', '🛥️', 4, '센강 크루즈'], ['Metro Ticket', 10_000, 'other', '🚇', 1, '교통권 구매'],
+    ['Café de Flore', 68_000, 1, '🍽️', 0, '파리에서 즐긴 첫 저녁 식사'], ['Boulangerie Utopie', 42_000, 1, '🥐', 2, '아침 식사'], ['Le Comptoir', 40_000, 1, '🍴', 4, '점심 식사'],
+    ['Merci Coffee', 55_000, 7, '☕', 1, '커피와 디저트'], ['Angelina Paris', 65_000, 7, '🍰', 5, '몽블랑 디저트'], ['Monoprix', 180_000, 8, '🛒', 2, '여행 생활용품'],
+    ['Galeries Lafayette', 80_000, 4, '🛍️', 3, '기념품 구매'], ['Seine Cruise', 60_000, 9, '🛥️', 4, '센강 크루즈'], ['Metro Ticket', 10_000, 2, '🚇', 1, '교통권 구매'],
   ],
   CH: [
-    ['Swiss Fondue House', 250_000, 'food', '🫕', 0, '퐁뒤 저녁 식사'], ['Coop Interlaken', 200_000, 'food', '🥗', 2, '식료품 구매'], ['Velo Cafe', 200_000, 'cafe', '☕', 1, '브런치 카페'],
-    ['Migros', 250_000, 'living', '🛒', 1, '여행 생활용품'], ['Interlaken Souvenir', 50_000, 'shopping', '🛍️', 2, '기념품 구매'], ['Harder Kulm', 50_000, 'hobby', '🚞', 0, '전망대 이용'], ['Locker', 10_000, 'other', '🧳', 2, '보관함 이용'],
+    ['Swiss Fondue House', 250_000, 1, '🫕', 0, '퐁뒤 저녁 식사'], ['Coop Interlaken', 200_000, 1, '🥗', 2, '식료품 구매'], ['Velo Cafe', 200_000, 7, '☕', 1, '브런치 카페'],
+    ['Migros', 250_000, 8, '🛒', 1, '여행 생활용품'], ['Interlaken Souvenir', 50_000, 4, '🛍️', 2, '기념품 구매'], ['Harder Kulm', 50_000, 5, '🚞', 0, '전망대 이용'], ['Locker', 10_000, 6, '🧳', 2, '보관함 이용'],
   ],
   DE: [
-    ['Zeit für Brot', 140_000, 'food', '🥨', 0, '베를린 식사'], ['Markthalle Neun', 140_000, 'food', '🍴', 2, '마켓 식사'], ['The Barn', 130_000, 'cafe', '☕', 1, '커피'],
-    ['dm Drogerie', 260_000, 'living', '🧴', 1, '생활용품'], ['KaDeWe', 110_000, 'shopping', '🛍️', 2, '기념품'], ['Museum Island', 100_000, 'hobby', '🏛️', 0, '박물관 관람'], ['BVG', 70_000, 'other', '🚇', 2, '교통권'],
+    ['Zeit für Brot', 140_000, 1, '🥨', 0, '베를린 식사'], ['Markthalle Neun', 140_000, 1, '🍴', 2, '마켓 식사'], ['The Barn', 130_000, 7, '☕', 1, '커피'],
+    ['dm Drogerie', 260_000, 8, '🧴', 1, '생활용품'], ['KaDeWe', 110_000, 4, '🛍️', 2, '기념품'], ['Museum Island', 100_000, 5, '🏛️', 0, '박물관 관람'], ['BVG', 70_000, 2, '🚇', 2, '교통권'],
   ],
   JP: [
-    ['이치란 라멘', 120_000, 'food', '🍜', 0, '도쿄 첫 식사'], ['스시다이', 110_000, 'food', '🍣', 2, '스시 식사'], ['블루보틀 시부야', 100_000, 'cafe', '☕', 1, '커피'],
-    ['돈키호테', 190_000, 'living', '🛒', 2, '여행 생활용품'], ['시부야 PARCO', 120_000, 'shopping', '🛍️', 3, '쇼핑'], ['도쿄 스카이트리', 90_000, 'hobby', '🗼', 1, '전망대'], ['Suica', 60_000, 'other', '🚃', 0, '교통카드 충전'],
+    ['이치란 라멘', 120_000, 1, '🍜', 0, '도쿄 첫 식사'], ['스시다이', 110_000, 1, '🍣', 2, '스시 식사'], ['블루보틀 시부야', 100_000, 7, '☕', 1, '커피'],
+    ['돈키호테', 190_000, 8, '🛒', 2, '여행 생활용품'], ['시부야 PARCO', 120_000, 4, '🛍️', 3, '쇼핑'], ['도쿄 스카이트리', 90_000, 5, '🗼', 1, '전망대'], ['Suica', 60_000, 2, '🚃', 0, '교통카드 충전'],
   ],
   HK: [
-    ['Tim Ho Wan', 110_000, 'food', '🥟', 0, '딤섬 식사'], ['Mak Man Kee', 100_000, 'food', '🍜', 2, '완탕면 식사'], ['NOC Coffee', 90_000, 'cafe', '☕', 1, '커피'],
-    ['Market Place', 160_000, 'living', '🛒', 2, '생활용품'], ['K11 MUSEA', 100_000, 'shopping', '🛍️', 3, '쇼핑'], ['Victoria Peak', 80_000, 'hobby', '🚠', 1, '피크 트램'], ['Octopus', 60_000, 'other', '🚇', 0, '옥토퍼스 충전'],
+    ['Tim Ho Wan', 110_000, 1, '🥟', 0, '딤섬 식사'], ['Mak Man Kee', 100_000, 1, '🍜', 2, '완탕면 식사'], ['NOC Coffee', 90_000, 7, '☕', 1, '커피'],
+    ['Market Place', 160_000, 8, '🛒', 2, '생활용품'], ['K11 MUSEA', 100_000, 4, '🛍️', 3, '쇼핑'], ['Victoria Peak', 80_000, 5, '🚠', 1, '피크 트램'], ['Octopus', 60_000, 2, '🚇', 0, '옥토퍼스 충전'],
   ],
 }
 

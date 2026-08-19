@@ -10,25 +10,28 @@ import java.util.Map;
  *
  * <p>서비스 DB에 계좌/카드를 미리 넣지 않고 실제 CODEF 형태의 응답만 제공한다.
  * 사용자가 기존 연동 화면에서 아래 자격증명을 입력한 뒤에야 AssetService가 데이터를 저장한다.</p>
+ *
+ * <h3>Mock 사용자</h3>
+ * <ul>
+ *   <li>{@code tripassqa} / {@code Mock1234!} — 저축 모드 QA용 (국내 소비 분석·미션)</li>
+ *   <li>{@code tripasstravel} / {@code Mock1234!} — 여행 모드 QA용 (저축 이력 + 유럽 여행 지출: 프랑스→독일→스위스)</li>
+ * </ul>
  */
 public class MockCodefClient implements CodefClient {
 
     public static final String LOGIN_ID = "tripassqa";
+    public static final String TRAVEL_LOGIN_ID = "tripasstravel";
     public static final String PASSWORD = "Mock1234!";
     public static final String CONNECTED_ID = "MOCK-CONNECTED-TRIPASS-QA";
+    public static final String TRAVEL_CONNECTED_ID = "MOCK-CONNECTED-TRIPASS-TRAVEL";
     public static final String BANK_ORGANIZATION = "0004";
     public static final String CARD_ORGANIZATION = "0301";
 
     private static final String ACCESS_TOKEN = "mock-codef-access-token";
 
+    // ===== tripassqa 데이터 =====
     private static final List<Map<String, Object>> BANK_TRANSACTIONS = buildBankTransactions();
-
-    /**
-     * 2026년 4~6월 비교 데이터, 7월 분석 데이터, 8월 미션 진행 데이터를 모두 포함한다.
-     * 사용자가 Mock 카드를 연결한 뒤 승인내역을 동기화해야 서비스 DB에 적재된다.
-     */
     private static final List<Map<String, Object>> GENERAL_CARD_TRANSACTIONS = buildGeneralCardTransactions();
-
     private static final List<Map<String, Object>> TRAVEL_CARD_TRANSACTIONS = List.of(
             cardTransaction("20260718", "101000", "42000", "QT2001", "대한항공", "항공사"),
             cardTransaction("20260719", "143000", "185000", "QT2002", "호텔스닷컴", "숙박"),
@@ -40,9 +43,13 @@ public class MockCodefClient implements CodefClient {
             cardTransaction("20260814", "173000", "31000", "QT2008", "TOKYO SOUVENIR", "해외쇼핑")
     );
 
+    // ===== tripasstravel 데이터 =====
+    private static final List<Map<String, Object>> TRAVEL_USER_BANK_TRANSACTIONS = buildTravelUserBankTransactions();
+    private static final List<Map<String, Object>> TRAVEL_USER_CARD_TRANSACTIONS = buildTravelUserCardTransactions();
+    private static final List<Map<String, Object>> TRAVEL_USER_TRAVELCARD_TRANSACTIONS = buildTravelUserTravelCardTransactions();
+
     @Override
     public String encodePassword(String plainPassword) {
-        // Mock 구현에서는 요청 검증을 위해 평문을 내부 메모리에서만 사용한다.
         return plainPassword;
     }
 
@@ -67,93 +74,182 @@ public class MockCodefClient implements CodefClient {
         };
     }
 
+    private String resolveLoginId(Map<String, Object> body) {
+        Object rawAccounts = body.get("accountList");
+        if (rawAccounts instanceof List<?> accounts && !accounts.isEmpty()
+                && accounts.get(0) instanceof Map<?, ?> account) {
+            return String.valueOf(account.get("id"));
+        }
+        return null;
+    }
+
+    private String resolveConnectedId(Map<String, Object> body) {
+        return String.valueOf(body.get("connectedId"));
+    }
+
+    private boolean isTravelUser(Map<String, Object> body) {
+        return TRAVEL_CONNECTED_ID.equals(resolveConnectedId(body));
+    }
+
     private Map<String, Object> connect(Map<String, Object> body) {
         Object rawAccounts = body.get("accountList");
         if (!(rawAccounts instanceof List<?> accounts) || accounts.isEmpty()
                 || !(accounts.get(0) instanceof Map<?, ?> account)) {
             return failure("CF-01002", "연동 계정 정보가 없습니다.");
         }
-        if (!LOGIN_ID.equals(String.valueOf(account.get("id")))
-                || !PASSWORD.equals(String.valueOf(account.get("password")))) {
-            return failure("CF-01002", "Mock 금융기관 아이디 또는 비밀번호가 올바르지 않습니다.");
-        }
+
+        String loginId = String.valueOf(account.get("id"));
+        String password = String.valueOf(account.get("password"));
         String organization = String.valueOf(account.get("organization"));
+
         if (!BANK_ORGANIZATION.equals(organization) && !CARD_ORGANIZATION.equals(organization)) {
             return failure("CF-01003", "Mock에서 지원하지 않는 금융기관입니다.");
         }
-        return success(Map.of("connectedId", CONNECTED_ID));
+
+        if (LOGIN_ID.equals(loginId) && PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", CONNECTED_ID));
+        }
+        if (TRAVEL_LOGIN_ID.equals(loginId) && PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", TRAVEL_CONNECTED_ID));
+        }
+
+        return failure("CF-01002", "Mock 금융기관 아이디 또는 비밀번호가 올바르지 않습니다.");
     }
 
     private Map<String, Object> bankAccounts(Map<String, Object> body) {
-        if (!isConnected(body) || !BANK_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
+        String connectedId = resolveConnectedId(body);
+        if (!BANK_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
             return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
         }
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("resDepositTrust", List.of(
-                mapOf(
-                        "resAccount", "98765432101234",
-                        "resAccountName", "KB Star 정기예금",
-                        "resAccountKind", "예금",
-                        "resAccountBalance", "12000000",
-                        "resWithdrawableAmount", "12000000"
-                ),
-                mapOf(
-                        "resAccount", "12345678901234",
-                        "resAccountName", "KB QA 주거래통장",
-                        "resAccountKind", "입출금",
-                        "resAccountBalance", "14379300",
-                        "resWithdrawableAmount", "14379300"
-                )
-        ));
-        return success(data);
+
+        if (CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf(
+                            "resAccount", "98765432101234",
+                            "resAccountName", "KB Star 정기예금",
+                            "resAccountKind", "예금",
+                            "resAccountBalance", "12000000",
+                            "resWithdrawableAmount", "12000000"
+                    ),
+                    mapOf(
+                            "resAccount", "12345678901234",
+                            "resAccountName", "KB QA 주거래통장",
+                            "resAccountKind", "입출금",
+                            "resAccountBalance", "14379300",
+                            "resWithdrawableAmount", "14379300"
+                    )
+            ));
+            return success(data);
+        }
+
+        if (TRAVEL_CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf(
+                            "resAccount", "55512340001234",
+                            "resAccountName", "KB 여행적금",
+                            "resAccountKind", "입출금",
+                            "resAccountBalance", "8520000",
+                            "resWithdrawableAmount", "8520000"
+                    )
+            ));
+            return success(data);
+        }
+
+        return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
     private Map<String, Object> cards(Map<String, Object> body) {
-        if (!isConnected(body) || !CARD_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
+        String connectedId = resolveConnectedId(body);
+        if (!CARD_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
             return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
         }
-        return success(List.of(
-                mapOf(
-                        "resCardName", "KB QA 체크카드",
-                        "resCardNo", "5412-****-****-2710",
-                        "resCardType", "02",
-                        "resPaymentAccount", "12345678901234"
-                ),
-                mapOf(
-                        "resCardName", "트래블러스 체크카드",
-                        "resCardNo", "5412-****-****-2711",
-                        "resCardType", "02",
-                        "resPaymentAccount", "12345678901234"
-                )
-        ));
+
+        if (CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(
+                    mapOf(
+                            "resCardName", "KB QA 체크카드",
+                            "resCardNo", "5412-****-****-2710",
+                            "resCardType", "02",
+                            "resPaymentAccount", "12345678901234"
+                    ),
+                    mapOf(
+                            "resCardName", "트래블러스 체크카드",
+                            "resCardNo", "5412-****-****-2711",
+                            "resCardType", "02",
+                            "resPaymentAccount", "12345678901234"
+                    )
+            ));
+        }
+
+        if (TRAVEL_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(
+                    mapOf(
+                            "resCardName", "KB 생활비 체크카드",
+                            "resCardNo", "5412-****-****-8801",
+                            "resCardType", "02",
+                            "resPaymentAccount", "55512340001234"
+                    ),
+                    mapOf(
+                            "resCardName", "KB 트래블 체크카드",
+                            "resCardNo", "5412-****-****-8802",
+                            "resCardType", "02",
+                            "resPaymentAccount", "55512340001234"
+                    )
+            ));
+        }
+
+        return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
     }
 
     private Map<String, Object> bankTransactions(Map<String, Object> body) {
-        if (!isConnected(body) || !BANK_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
+        String connectedId = resolveConnectedId(body);
+        if (!BANK_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
             return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
         }
         String account = String.valueOf(body.get("account"));
-        List<Map<String, Object>> transactions = "12345678901234".equals(account)
-                ? filterByDate(BANK_TRANSACTIONS, body, "resAccountTrDate")
-                : List.of();
-        return success(Map.of("resTrHistoryList", transactions));
+
+        if (CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> transactions = "12345678901234".equals(account)
+                    ? filterByDate(BANK_TRANSACTIONS, body, "resAccountTrDate")
+                    : List.of();
+            return success(Map.of("resTrHistoryList", transactions));
+        }
+
+        if (TRAVEL_CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> transactions = "55512340001234".equals(account)
+                    ? filterByDate(TRAVEL_USER_BANK_TRANSACTIONS, body, "resAccountTrDate")
+                    : List.of();
+            return success(Map.of("resTrHistoryList", transactions));
+        }
+
+        return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
     private Map<String, Object> cardTransactions(Map<String, Object> body) {
-        if (!isConnected(body) || !CARD_ORGANIZATION.equals(String.valueOf(body.get("organization")))) {
-            return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
-        }
+        String connectedId = resolveConnectedId(body);
         String cardNo = String.valueOf(body.get("cardNo"));
-        List<Map<String, Object>> source = switch (cardNo) {
-            case "5412-****-****-2710" -> GENERAL_CARD_TRANSACTIONS;
-            case "5412-****-****-2711" -> TRAVEL_CARD_TRANSACTIONS;
-            default -> List.of();
-        };
-        return success(filterByDate(source, body, "resUsedDate"));
-    }
 
-    private boolean isConnected(Map<String, Object> body) {
-        return CONNECTED_ID.equals(String.valueOf(body.get("connectedId")));
+        if (CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> source = switch (cardNo) {
+                case "5412-****-****-2710" -> GENERAL_CARD_TRANSACTIONS;
+                case "5412-****-****-2711" -> TRAVEL_CARD_TRANSACTIONS;
+                default -> List.of();
+            };
+            return success(filterByDate(source, body, "resUsedDate"));
+        }
+
+        if (TRAVEL_CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> source = switch (cardNo) {
+                case "5412-****-****-8801" -> TRAVEL_USER_CARD_TRANSACTIONS;
+                case "5412-****-****-8802" -> TRAVEL_USER_TRAVELCARD_TRANSACTIONS;
+                default -> List.of();
+            };
+            return success(filterByDate(source, body, "resUsedDate"));
+        }
+
+        return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
     }
 
     private List<Map<String, Object>> filterByDate(
@@ -172,6 +268,10 @@ public class MockCodefClient implements CodefClient {
         }
         return filtered;
     }
+
+    // ===================================================================
+    // tripassqa 거래 데이터 (저축 모드 QA)
+    // ===================================================================
 
     private static List<Map<String, Object>> buildBankTransactions() {
         List<Map<String, Object>> transactions = new ArrayList<>();
@@ -197,6 +297,10 @@ public class MockCodefClient implements CodefClient {
         return List.copyOf(transactions);
     }
 
+    /**
+     * 2026년 4~6월 비교 데이터, 7월 분석 데이터, 8월 미션 진행 데이터를 모두 포함한다.
+     * 사용자가 Mock 카드를 연결한 뒤 승인내역을 동기화해야 서비스 DB에 적재된다.
+     */
     private static List<Map<String, Object>> buildGeneralCardTransactions() {
         List<Map<String, Object>> transactions = new ArrayList<>();
         int[] comparisonDays = {2, 6, 11, 17, 24};
@@ -245,7 +349,6 @@ public class MockCodefClient implements CodefClient {
         transactions.add(cardTransaction("20260727", "170000", "27000", "QA2607OTHER03",
                 "반려생활", "기타서비스"));
 
-        // 8월에는 주차별 금액을 다르게 두어 미션 성공·실패·진행 중 상태를 함께 검증한다.
         int[] missionDays = {2, 5, 9, 12, 16};
         addCategoryTransactions(transactions, "202608", "FOOD", "일반음식점",
                 new String[]{"한상차림", "오늘의식탁", "키친테이블"}, missionDays,
@@ -268,6 +371,122 @@ public class MockCodefClient implements CodefClient {
 
         return List.copyOf(transactions);
     }
+
+    // ===================================================================
+    // tripasstravel 거래 데이터 (여행 모드 QA)
+    // 시나리오: 4~7월 저축하며 여행 준비 → 8/16 출발 (프랑스 → 독일 → 스위스)
+    // ===================================================================
+
+    private static List<Map<String, Object>> buildTravelUserBankTransactions() {
+        List<Map<String, Object>> t = new ArrayList<>();
+        // 4월: 급여 + 저축 + 생활비
+        t.add(bankTransaction("20260401", "090000", "3200000", "0", "3200000", "4월 급여"));
+        t.add(bankTransaction("20260405", "100000", "0", "280000", "2920000", "KB카드 결제"));
+        t.add(bankTransaction("20260410", "120000", "0", "300000", "2620000", "여행 월렛 저축"));
+        t.add(bankTransaction("20260425", "183000", "0", "85000", "2535000", "통신비 자동이체"));
+        // 5월
+        t.add(bankTransaction("20260501", "090000", "3200000", "0", "5735000", "5월 급여"));
+        t.add(bankTransaction("20260505", "100000", "0", "310000", "5425000", "KB카드 결제"));
+        t.add(bankTransaction("20260510", "120000", "0", "300000", "5125000", "여행 월렛 저축"));
+        t.add(bankTransaction("20260525", "183000", "0", "85000", "5040000", "통신비 자동이체"));
+        // 6월
+        t.add(bankTransaction("20260601", "090000", "3200000", "0", "8240000", "6월 급여"));
+        t.add(bankTransaction("20260605", "100000", "0", "295000", "7945000", "KB카드 결제"));
+        t.add(bankTransaction("20260610", "120000", "0", "350000", "7595000", "여행 월렛 저축"));
+        t.add(bankTransaction("20260625", "183000", "0", "85000", "7510000", "통신비 자동이체"));
+        // 7월
+        t.add(bankTransaction("20260701", "090000", "3200000", "0", "10710000", "7월 급여"));
+        t.add(bankTransaction("20260705", "100000", "0", "330000", "10380000", "KB카드 결제"));
+        t.add(bankTransaction("20260710", "120000", "0", "350000", "10030000", "여행 월렛 저축"));
+        t.add(bankTransaction("20260715", "140000", "0", "1200000", "8830000", "항공권 결제"));
+        t.add(bankTransaction("20260725", "183000", "0", "85000", "8745000", "통신비 자동이체"));
+        // 8월 (출발 전)
+        t.add(bankTransaction("20260801", "090000", "3200000", "0", "11945000", "8월 급여"));
+        t.add(bankTransaction("20260805", "100000", "0", "225000", "11720000", "KB카드 결제"));
+        t.add(bankTransaction("20260810", "120000", "0", "400000", "11320000", "여행 월렛 저축"));
+        t.add(bankTransaction("20260814", "150000", "0", "2800000", "8520000", "트래블카드 환전 충전"));
+        return List.copyOf(t);
+    }
+
+    private static List<Map<String, Object>> buildTravelUserCardTransactions() {
+        List<Map<String, Object>> t = new ArrayList<>();
+        int[] days = {3, 8, 14, 20, 26};
+
+        // 4~7월 국내 소비 (저축 기간)
+        for (int month = 4; month <= 7; month++) {
+            String ym = "2026" + String.format("%02d", month);
+            int adj = (month - 4) * 300;
+            addRegularCategoryTransactions(t, ym, "FOOD", "일반음식점",
+                    new String[]{"맛있는집", "한솥도시락", "김밥천국"}, days, 9000 + adj, 800);
+            addRegularCategoryTransactions(t, ym, "CAFE", "커피전문점",
+                    new String[]{"스타벅스", "이디야", "투썸"}, days, 5500 + adj, 400);
+            addRegularCategoryTransactions(t, ym, "SHOPPING", "일반의류",
+                    new String[]{"유니클로", "자라", "올리브영"}, days, 12000 + adj, 1200);
+            addRegularCategoryTransactions(t, ym, "LIVING", "편의점",
+                    new String[]{"CU편의점", "GS25", "세븐일레븐"}, days, 8000 + adj, 500);
+            addRegularCategoryTransactions(t, ym, "TRANSPORT", "택시",
+                    new String[]{"카카오택시", "서울지하철", "버스"}, days, 7000 + adj, 400);
+        }
+
+        // 8월 출발 전 (1~15일)
+        int[] preTripDays = {2, 5, 10, 13};
+        addCategoryTransactions(t, "202608", "FOOD", "일반음식점",
+                new String[]{"맛있는집", "한솥도시락", "김밥천국"}, preTripDays,
+                new int[]{8500, 9200, 11000, 7800});
+        addCategoryTransactions(t, "202608", "CAFE", "커피전문점",
+                new String[]{"스타벅스", "이디야"}, preTripDays,
+                new int[]{5500, 4800, 6200, 5000});
+        addCategoryTransactions(t, "202608", "LIVING", "편의점",
+                new String[]{"CU편의점", "GS25"}, preTripDays,
+                new int[]{3200, 4500, 2800, 5100});
+
+        return List.copyOf(t);
+    }
+
+    /**
+     * 여행 중 해외 트래블카드 거래.
+     * 프랑스 파리 (8/16~8/19) → 독일 뮌헨 (8/20~8/22) → 스위스 취리히 (8/23~8/25)
+     */
+    private static List<Map<String, Object>> buildTravelUserTravelCardTransactions() {
+        List<Map<String, Object>> t = new ArrayList<>();
+
+        // === 프랑스 파리 (8/16 ~ 8/19) ===
+        t.add(cardTransaction("20260816", "143000", "48000", "TV0801", "TAXI PARISIEN", "해외교통"));
+        t.add(cardTransaction("20260816", "190000", "35000", "TV0802", "LE PETIT BISTRO", "해외음식점"));
+        t.add(cardTransaction("20260816", "210000", "22000", "TV0803", "GALERIES LAFAYETTE", "해외쇼핑"));
+
+        t.add(cardTransaction("20260817", "083000", "32000", "TV0804", "CAFE DE FLORE", "해외카페"));
+        t.add(cardTransaction("20260817", "110000", "18000", "TV0805", "METRO PARIS RATP", "해외교통"));
+        t.add(cardTransaction("20260817", "140000", "55000", "TV0806", "LE BON MARCHE", "해외쇼핑"));
+        t.add(cardTransaction("20260817", "200000", "42000", "TV0808", "BRASSERIE LIPP", "해외음식점"));
+
+        t.add(cardTransaction("20260818", "090000", "25000", "TV0809", "MUSEE DU LOUVRE", "해외관광"));
+        t.add(cardTransaction("20260818", "130000", "28000", "TV0810", "BOULANGERIE PAIN", "해외음식점"));
+        t.add(cardTransaction("20260818", "160000", "38000", "TV0811", "PRINTEMPS PARIS", "해외쇼핑"));
+        t.add(cardTransaction("20260818", "193000", "45000", "TV0812", "LE COMPTOIR PARIS", "해외음식점"));
+
+        t.add(cardTransaction("20260819", "080000", "15000", "TV0813", "UBER PARIS CDG", "해외교통"));
+        t.add(cardTransaction("20260819", "100000", "30000", "TV0814", "DUTY FREE CDG", "해외쇼핑"));
+        t.add(cardTransaction("20260819", "120000", "18000", "TV0815", "CDG AIRPORT CAFE", "해외음식점"));
+
+        // === 독일 뮌헨 (8/20 ~ 8/22) ===
+        t.add(cardTransaction("20260820", "150000", "12000", "TV0816", "DB BAHN TICKET", "해외교통"));
+        t.add(cardTransaction("20260820", "180000", "25000", "TV0817", "HOFBRAUHAUS MUNCHEN", "해외음식점"));
+        t.add(cardTransaction("20260820", "200000", "32000", "TV0818", "KAUFHOF MARIENPLATZ", "해외쇼핑"));
+        t.add(cardTransaction("20260820", "220000", "9500", "TV0819", "CAFE LUITPOLD", "해외카페"));
+
+        t.add(cardTransaction("20260821", "090000", "20000", "TV0820", "SCHLOSS NYMPHENBURG", "해외관광"));
+        t.add(cardTransaction("20260821", "130000", "18000", "TV0821", "AUGUSTINER KELLER", "해외음식점"));
+        t.add(cardTransaction("20260821", "170000", "42000", "TV0822", "MAXIMILIANSTRASSE", "해외쇼핑"));
+
+        // === 스위스 취리히 (8/23 ~ 8/25, 아직 미래) ===
+
+        return List.copyOf(t);
+    }
+
+    // ===================================================================
+    // 공통 유틸리티
+    // ===================================================================
 
     private static void addRegularCategoryTransactions(
             List<Map<String, Object>> transactions,
