@@ -147,8 +147,7 @@ async function removeCard(card) {
 
       <section class="asset-section">
         <div class="section-title"><div><h2>내 통장</h2><small>좌우로 밀어 계좌를 확인하세요</small></div><span>{{ accounts.length }}개</span></div>
-        <p v-if="accounts.length === 0" class="empty-card">연동된 통장이 없어요.</p>
-        <div v-else class="account-carousel">
+        <div class="account-carousel">
           <article v-for="account in accounts" :key="account.id" class="account-slide" :class="accountTone(account)" @click="router.push(`/asset/accounts/${account.id}?isReal=true`)">
             <div class="account-slide-top">
               <div class="account-identity">
@@ -165,7 +164,6 @@ async function removeCard(card) {
             <small>다른 금융기관 계좌를 연결해 보세요</small>
           </button>
         </div>
-        <button v-if="accounts.length === 0" type="button" class="add-button" @click="router.push('/profile/financial?step=2&from=asset')"><span>＋</span><div><b>통장 추가하기</b><small>다른 금융기관 계좌 연결</small></div></button>
       </section>
 
       <section class="asset-section card-section">

@@ -96,9 +96,9 @@ function updateKrw(event) {
 .calculator {
   margin-top: 18px;
   padding: 18px;
-  border: 1px solid #e5ebf4;
+  border: 1px solid #bcd2ff;
   border-radius: 22px;
-  background: #fff;
+  background: linear-gradient(150deg, #eff5ff 0%, #e6f0ff 100%);
   box-shadow: 0 10px 26px rgba(23, 43, 77, .055);
 }
 .calculator-heading {
@@ -117,7 +117,7 @@ function updateKrw(event) {
   letter-spacing: .12em;
 }
 .calculator h2 {
-  color: #10192d;
+  color: #173f8d;
   font-size: 15px;
   font-weight: 800;
 }
