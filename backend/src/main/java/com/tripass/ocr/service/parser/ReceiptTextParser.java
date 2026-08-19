@@ -3,6 +3,7 @@ package com.tripass.ocr.service.parser;
 import com.tripass.ocr.dto.internal.ParsedReceiptData;
 import com.tripass.ocr.dto.internal.ParsedReceiptItem;
 import com.tripass.ocr.dto.internal.VisionOcrResult;
+import com.tripass.ocr.dto.internal.OcrTextBlock;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -67,6 +69,58 @@ public class ReceiptTextParser {
                             + "\\s*(?:[A-Z]{3})?"
                             + "\\s*$"
             );
+    // 스위스 식당 형식:
+    // 2xLatte Macchiato à 4.50 CHF 9.00
+    private static final Pattern SWISS_AT_PRICE_PATTERN =
+            Pattern.compile(
+                    "^\\s*(\\d+)\\s*[x×]\\s*"
+                            + "(.+?)\\s+"
+                            + "[àa@]\\s*"
+                            + "(-?\\d+[.,]\\d{1,3})\\s+"
+                            + "CHF\\s+"
+                            + "(-?\\d+[.,]\\d{1,3})"
+                            + "\\s*$",
+                    Pattern.CASE_INSENSITIVE
+            );
+    // 품목명 + 수량 + 단가 + 최종 금액 형식
+    private static final Pattern COLUMN_ITEM_PATTERN =
+            Pattern.compile(
+                    "^(.+?)\\s+"
+                            + "(\\d+)\\s+"
+                            + "(-?\\d+[.,]\\d{1,3})\\s+"
+                            + "(-?\\d+[.,]\\d{1,3})"
+                            + "\\s*[A-Z]?$"
+            );
+
+    // 홍콩·일본 형식: 수량 품목명 금액
+    private static final Pattern QUANTITY_NAME_AMOUNT_PATTERN =
+            Pattern.compile(
+                    "^\\s*(\\d+)\\s+"
+                            + "(.+?)\\s+"
+                            + "(["
+                            + CURRENCY_SYMBOLS
+                            + "]?\\s*-?\\d[\\d.,]*)"
+                            + "\\s*[!A-Z]?$"
+            );
+
+    // 독일 형식: 품목명 금액 세금분류문자
+    private static final Pattern EUROPEAN_ITEM_PATTERN =
+            Pattern.compile(
+                    "^(.+?)\\s+"
+                            + "(?:EUR\\s+)?"
+                            + "(-?\\d+[.,]\\d{1,3})"
+                            + "\\s*[A-Z]?$",
+                    Pattern.CASE_INSENSITIVE
+            );
+    // 프랑스 형식: 수량 품목명 단가 최종금액
+    private static final Pattern QUANTITY_UNIT_TOTAL_PATTERN =
+            Pattern.compile(
+                    "^\\s*(\\d+)\\s+"
+                            + "(.+?)\\s+"
+                            + "(-?\\d+[.,]\\d{1,3})\\s+"
+                            + "(-?\\d+[.,]\\d{1,3})"
+                            + "\\s*[A-Z]?$"
+            );
 
     // 수량 표현: 1x, 2 x, 3×
     private static final Pattern EXPLICIT_QUANTITY_PATTERN =
@@ -98,6 +152,8 @@ public class ReceiptTextParser {
                             + "|\\btotal\\b"
                             + "|\\btot\\b"
                             + "|tot\\s+euro"
+                            + "|\\bsumme\\b"
+                            + "|\\bendbetrag\\b"
                             + "|결제\\s*금액"
                             + "|총\\s*액"
                             + "|합\\s*계"
@@ -138,24 +194,72 @@ public class ReceiptTextParser {
     private static final Pattern NON_ITEM_PATTERN =
             Pattern.compile(
                     "(?iu)"
-                            + "(전화|\\btel\\.?\\s*[:#]?|\\bphone\\b|주소|우편번호|"
-                            + "번호|주문번호|승인번호|가맹점번호|카드번호|"
-                            + "사업자|대표자|발급사|매입사|"
-                            + "\\brcs\\b|\\bcaidset\\b|"
-                            + "\\bdirection\\b|\\btable\\s*[:#]?|"
-                            + "\\b(?:lun|mar|mer|jeu|ven|sam|dim)\\.?\\s*\\d|"
+                            + "(전화|"
+                            + "\\btel\\.?\\s*[:#]?|"
+                            + "\\bphone\\b|"
+                            + "주소|"
+                            + "우편번호|"
+                            + "번호|"
+                            + "주문번호|"
+                            + "승인번호|"
+                            + "가맹점번호|"
+                            + "카드번호|"
+                            + "사업자|"
+                            + "대표자|"
+                            + "발급사|"
+                            + "매입사|"
+                            + "\\brech\\.?\\s*nr\\.?|"
+                            + "\\brechnung\\b|"
+                            + "\\brcs\\b|"
+                            + "\\bcaidset\\b|"
+                            + "\\bdirection\\b|"
+                            + "\\btable\\s*[:#]?|"
+                            + "\\b(?:lun|mar|mer|jeu|ven|sam|dim)"
+                            + "\\.?\\s*\\d|"
                             + "\\b(?:street|road|avenue|rue)\\b|"
-                            + "\\b[A-Z]{1,2}\\d[A-Z\\d]?\\s+\\d[A-Z]{2}\\b|"
+                            + "\\b(?:str\\.?|strasse|straße)\\s*\\d+[a-z]?\\b|"
+                            + "\\b[A-Z]{1,2}\\d[A-Z\\d]?"
+                            + "\\s+\\d[A-Z]{2}\\b|"
                             + "(?:서울|부산|대구|인천|광주|대전|울산|세종|"
                             + "경기|강원|충북|충남|전북|전남|경북|경남|제주)"
                             + ".*(?:시|군|구|로|길)\\s*\\d|"
                             + "\\bno\\.?\\s*\\d+|"
-                            + "공급가액|부가세|결제금액|"
+                            + "공급가액|"
+                            + "부가세|"
+                            + "결제금액|"
                             + "\\b(?:subtotal|change|cash)\\b|"
-                            + "お預り|お釣|現金|カード|クレジット|消費税|"
-                            + "www\\.|https?://|"
-                            + "merci|스탬프|광고|"
-                            + "device|printed|allergen)"
+                            + "お預り|"
+                            + "お釣|"
+                            + "現金|"
+                            + "カード|"
+                            + "クレジット|"
+                            + "消費税|"
+                            + "www\\.|"
+                            + "https?://|"
+                            + "merci|"
+                            + "스탬프|"
+                            + "광고|"
+                            + "device|"
+                            + "printed|"
+                            + "allergen|"
+                            + "\\bpfand\\b|"
+                            + "pfandrückgabe|"
+                            + "\\bnettobetrag\\b|"
+                            + "\\bmwst\\b|"
+                            + "\\bmehrwertsteuer\\b|"
+                            + "\\bservice\\s+charge\\b|"
+                            + "服務費|"
+                            + "人數|"
+                            + "人数|"
+                            + "인원수|"
+                            + "\\bguests?\\b|"
+                            + "\\bcovers?\\b|"
+                            + "小\\s*計|"
+                            + "合\\s*計|"
+                            + "内消費税|"
+                            + "お預り|"
+                            + "お釣り?|"
+                            + "\\bpurchase\\b)"
             );
 
     private static final Pattern MERCHANT_EXCLUSION_PATTERN =
@@ -178,16 +282,22 @@ public class ReceiptTextParser {
             return emptyResult();
         }
 
-        String rawText = ocrResult.getRawText();
+        String rawText =
+                ocrResult.getRawText();
 
-        List<String> lines =
+        // 상호명·날짜·통화·총액은 Vision 원문의 줄 구조를 사용한다.
+        List<String> rawLines =
                 normalizeLines(rawText);
 
+        // 좌표 기반 행 재구성은 품목 분석에만 사용한다.
+        List<String> itemLines =
+                createParsingLines(ocrResult);
+
         String merchantName =
-                findMerchantName(lines);
+                findMerchantName(rawLines);
 
         LocalDateTime paymentDateTime =
-                findPaymentDateTime(lines);
+                findPaymentDateTime(rawLines);
 
         String currencyCode =
                 findCurrencyCode(
@@ -196,12 +306,32 @@ public class ReceiptTextParser {
                 );
 
         BigDecimal totalAmount =
-                findTotalAmount(lines);
+                findTotalAmount(rawLines);
 
-        List<ParsedReceiptItem> items =
+        // 기존 Vision 원문 줄을 기준으로 품목을 분석한다.
+        List<ParsedReceiptItem> rawItems =
                 findItems(
-                        lines,
-                        merchantName
+                        rawLines,
+                        merchantName,
+                        totalAmount
+                );
+
+// 좌표를 이용해 재구성한 줄을 기준으로 품목을 분석한다.
+        List<ParsedReceiptItem> coordinateItems =
+                findItems(
+                        itemLines,
+                        merchantName,
+                        totalAmount
+                );
+
+        /*
+         * 기울어진 영수증에서는 좌표 행 재구성이 오히려 줄을
+         * 잘못 합칠 수 있으므로, 인식한 정상 품목 수가 많은 결과를 사용한다.
+         */
+        List<ParsedReceiptItem> items =
+                selectBetterItems(
+                        rawItems,
+                        coordinateItems
                 );
 
         return new ParsedReceiptData(
@@ -211,6 +341,240 @@ public class ReceiptTextParser {
                 totalAmount,
                 items
         );
+    }
+
+    private List<String> createParsingLines(
+            VisionOcrResult ocrResult
+    ) {
+        List<OcrTextBlock> textBlocks =
+                ocrResult.getTextBlocks();
+
+        if (textBlocks == null
+                || textBlocks.isEmpty()) {
+
+            return normalizeLines(
+                    ocrResult.getRawText()
+            );
+        }
+
+        List<String> reconstructedLines =
+                reconstructLines(textBlocks);
+
+        if (reconstructedLines.isEmpty()) {
+            return normalizeLines(
+                    ocrResult.getRawText()
+            );
+        }
+
+        return reconstructedLines;
+    }
+
+    private List<String> reconstructLines(
+            List<OcrTextBlock> textBlocks
+    ) {
+        List<PositionedText> positionedTexts =
+                textBlocks.stream()
+                        .filter(this::hasValidVertices)
+                        .map(this::toPositionedText)
+                        .sorted(
+                                Comparator
+                                        .comparingInt(
+                                                PositionedText::getCenterY
+                                        )
+                                        .thenComparingInt(
+                                                PositionedText::getLeftX
+                                        )
+                        )
+                        .collect(Collectors.toList());
+
+        if (positionedTexts.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<List<PositionedText>> rows =
+                new ArrayList<>();
+
+        for (PositionedText positionedText
+                : positionedTexts) {
+
+            List<PositionedText> matchedRow =
+                    findClosestRow(
+                            rows,
+                            positionedText
+                    );
+
+            if (matchedRow == null) {
+                matchedRow = new ArrayList<>();
+                rows.add(matchedRow);
+            }
+
+            matchedRow.add(positionedText);
+        }
+
+        rows.sort(
+                Comparator.comparingInt(
+                        this::calculateRowCenterY
+                )
+        );
+
+        return rows.stream()
+                .map(this::joinRowTexts)
+                .filter(line -> !line.isBlank())
+                .collect(Collectors.toList());
+    }
+
+    private boolean hasValidVertices(
+            OcrTextBlock block
+    ) {
+        return block != null
+                && block.getText() != null
+                && !block.getText().isBlank()
+                && block.getVertices() != null
+                && block.getVertices().size() >= 2;
+    }
+
+    private PositionedText toPositionedText(
+            OcrTextBlock block
+    ) {
+        int leftX = block.getVertices()
+                .stream()
+                .mapToInt(
+                        OcrTextBlock.Vertex::getX
+                )
+                .min()
+                .orElse(0);
+
+        int rightX = block.getVertices()
+                .stream()
+                .mapToInt(
+                        OcrTextBlock.Vertex::getX
+                )
+                .max()
+                .orElse(leftX);
+
+        int topY = block.getVertices()
+                .stream()
+                .mapToInt(
+                        OcrTextBlock.Vertex::getY
+                )
+                .min()
+                .orElse(0);
+
+        int bottomY = block.getVertices()
+                .stream()
+                .mapToInt(
+                        OcrTextBlock.Vertex::getY
+                )
+                .max()
+                .orElse(topY);
+
+        return new PositionedText(
+                block.getText().trim(),
+                leftX,
+                rightX,
+                topY,
+                bottomY
+        );
+    }
+
+    private List<PositionedText> findClosestRow(
+            List<List<PositionedText>> rows,
+            PositionedText candidate
+    ) {
+        List<PositionedText> closestRow = null;
+        int smallestDifference =
+                Integer.MAX_VALUE;
+
+        for (List<PositionedText> row : rows) {
+            int rowCenterY =
+                    calculateRowCenterY(row);
+
+            int difference =
+                    Math.abs(
+                            rowCenterY
+                                    - candidate.getCenterY()
+                    );
+
+            int rowHeight =
+                    calculateAverageRowHeight(row);
+
+            int tolerance =
+                    Math.max(
+                            8,
+                            Math.min(
+                                    30,
+                                    Math.max(
+                                            rowHeight,
+                                            candidate.getHeight()
+                                    ) / 2
+                            )
+                    );
+
+            if (difference <= tolerance
+                    && difference < smallestDifference) {
+
+                closestRow = row;
+                smallestDifference = difference;
+            }
+        }
+
+        return closestRow;
+    }
+
+    private int calculateRowCenterY(
+            List<PositionedText> row
+    ) {
+        return (int) row.stream()
+                .mapToInt(
+                        PositionedText::getCenterY
+                )
+                .average()
+                .orElse(0);
+    }
+
+    private int calculateAverageRowHeight(
+            List<PositionedText> row
+    ) {
+        return (int) row.stream()
+                .mapToInt(
+                        PositionedText::getHeight
+                )
+                .average()
+                .orElse(10);
+    }
+
+    private String joinRowTexts(
+            List<PositionedText> row
+    ) {
+        row.sort(
+                Comparator.comparingInt(
+                        PositionedText::getLeftX
+                )
+        );
+
+        StringBuilder builder =
+                new StringBuilder();
+
+        PositionedText previous = null;
+
+        for (PositionedText current : row) {
+            if (previous != null) {
+                int gap =
+                        current.getLeftX()
+                                - previous.getRightX();
+
+                if (gap > 2) {
+                    builder.append(' ');
+                }
+            }
+
+            builder.append(current.getText());
+            previous = current;
+        }
+
+        return builder.toString()
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private List<String> normalizeLines(
@@ -475,7 +839,6 @@ public class ReceiptTextParser {
         return EAST_ASIAN_DATE_TIME_PATTERN
                 .matcher(rawText)
                 .find()
-                || rawText.contains("合計")
                 || rawText.contains("領収")
                 || rawText.contains("領取証")
                 || rawText.contains("お預り")
@@ -575,10 +938,13 @@ public class ReceiptTextParser {
             List<String> lines,
             int index
     ) {
-        String line = lines.get(index);
+        String line =
+                lines.get(index);
 
         if (isSubtotalKeyword(line)
-                || TAX_PATTERN.matcher(line).find()) {
+                || TAX_PATTERN.matcher(line).find()
+                || isItemColumnHeader(line)) {
+
             return -1;
         }
 
@@ -590,13 +956,23 @@ public class ReceiptTextParser {
             return -1;
         }
 
-        String current = normalizeKeywordToken(line);
-        String next = normalizeKeywordToken(lines.get(index + 1));
+        String current =
+                normalizeKeywordToken(line);
 
-        if (("합".equals(current) && "계".equals(next))
-                || ("合".equals(current) && "計".equals(next))
-                || ("总".equals(current) && "计".equals(next))
-                || ("總".equals(current) && "計".equals(next))) {
+        String next =
+                normalizeKeywordToken(
+                        lines.get(index + 1)
+                );
+
+        if (("합".equals(current)
+                && "계".equals(next))
+                || ("合".equals(current)
+                && "計".equals(next))
+                || ("总".equals(current)
+                && "计".equals(next))
+                || ("總".equals(current)
+                && "計".equals(next))) {
+
             return index + 1;
         }
 
@@ -626,7 +1002,8 @@ public class ReceiptTextParser {
 
     private List<ParsedReceiptItem> findItems(
             List<String> lines,
-            String merchantName
+            String merchantName,
+            BigDecimal totalAmount
     ) {
         List<ParsedReceiptItem> items =
                 new ArrayList<>();
@@ -637,7 +1014,21 @@ public class ReceiptTextParser {
              index < lines.size();
              index++) {
 
-            String line = lines.get(index);
+            String line =
+                    lines.get(index);
+
+            /*
+             * 하나 이상의 품목을 찾은 후 합계·소계 영역이 나오면
+             * 이후 결제·세금·잔돈 정보가 품목으로 들어가지 않도록
+             * 품목 탐색을 종료한다.
+             */
+            if (!items.isEmpty()
+                    && isItemSectionEnd(
+                    lines,
+                    index
+            )) {
+                break;
+            }
 
             if (!isItemNameCandidate(
                     line,
@@ -646,12 +1037,128 @@ public class ReceiptTextParser {
                 continue;
             }
 
+            /*
+             * 스위스 식당 형식:
+             *
+             * 2xLatte Macchiato à 4.50 CHF 9.00
+             *
+             * 수량, 품목명, 단가, 통화, 최종 품목금액 순서다.
+             */
+            ParsedReceiptItem swissAtPriceItem =
+                    parseSwissAtPriceItem(
+                            line,
+                            displayOrder
+                    );
+
+            if (isAcceptableItem(
+                    swissAtPriceItem,
+                    totalAmount
+            )) {
+                items.add(swissAtPriceItem);
+                displayOrder++;
+                continue;
+            }
+
+            /*
+             * 프랑스 형식:
+             *
+             * 2 Expresso 2.50 5.00
+             *
+             * 수량, 품목명, 단가, 최종 품목금액 순서다.
+             */
+            ParsedReceiptItem quantityUnitTotalItem =
+                    parseQuantityUnitTotalItem(
+                            line,
+                            displayOrder
+                    );
+
+            if (isAcceptableItem(
+                    quantityUnitTotalItem,
+                    totalAmount
+            )) {
+                items.add(quantityUnitTotalItem);
+                displayOrder++;
+                continue;
+            }
+
+            /*
+             * 스위스 마트 형식:
+             *
+             * Bio Aelplerbrot 1 3.20 3.20
+             *
+             * 품목명, 수량, 단가, 최종 품목금액 순서다.
+             */
+            ParsedReceiptItem columnItem =
+                    parseColumnItem(
+                            line,
+                            displayOrder
+                    );
+
+            if (isAcceptableItem(
+                    columnItem,
+                    totalAmount
+            )) {
+                items.add(columnItem);
+                displayOrder++;
+                continue;
+            }
+
+            /*
+             * 홍콩·일본 형식:
+             *
+             * 1 水 $14
+             * 1 商品名 ¥151
+             */
+            ParsedReceiptItem quantityItem =
+                    parseQuantityNameAmountItem(
+                            line,
+                            displayOrder
+                    );
+
+            if (isAcceptableItem(
+                    quantityItem,
+                    totalAmount
+            )) {
+                items.add(quantityItem);
+                displayOrder++;
+                continue;
+            }
+
+            /*
+             * 독일 형식:
+             *
+             * Paprika-Mix 0,99 A
+             *
+             * 금액 뒤의 A/B는 세금 분류 문자다.
+             */
+            ParsedReceiptItem europeanItem =
+                    parseEuropeanItem(
+                            line,
+                            displayOrder
+                    );
+
+            if (isAcceptableItem(
+                    europeanItem,
+                    totalAmount
+            )) {
+                items.add(europeanItem);
+                displayOrder++;
+                continue;
+            }
+
+            /*
+             * 일반적인 같은 행 형식:
+             *
+             * Coffee 5.00
+             * 商品名 ¥151
+             */
             Matcher sameLineMatcher =
                     LINE_AMOUNT_PATTERN.matcher(line);
 
             if (sameLineMatcher.matches()) {
                 String originalName =
-                        sameLineMatcher.group(1).trim();
+                        sameLineMatcher.group(1)
+                                .trim();
 
                 BigDecimal amount =
                         parseAmount(
@@ -661,25 +1168,28 @@ public class ReceiptTextParser {
                 String cleanedName =
                         cleanItemName(originalName);
 
-                if (isValidParsedItem(
-                        cleanedName,
-                        amount
+                ParsedReceiptItem parsedItem =
+                        createItem(
+                                cleanedName,
+                                findQuantity(originalName),
+                                amount,
+                                displayOrder
+                        );
+
+                if (isAcceptableItem(
+                        parsedItem,
+                        totalAmount
                 )) {
-                    items.add(
-                            new ParsedReceiptItem(
-                                    cleanedName,
-                                    findQuantity(originalName),
-                                    amount,
-                                    displayOrder++
-                            )
-                    );
+                    items.add(parsedItem);
+                    displayOrder++;
                 }
 
                 continue;
             }
 
             /*
-             * 다음 행에 금액이 있는 형식:
+             * Vision 좌표를 적용해도 이름과 금액이 다른 줄로
+             * 분리된 경우에 사용하는 보조 처리:
              *
              * 1 Burger
              * 9.00
@@ -695,31 +1205,211 @@ public class ReceiptTextParser {
                                 3
                         );
 
-                if (amountResult != null) {
-                    String cleanedName =
-                            cleanItemName(line);
-
-                    if (isValidParsedItem(
-                            cleanedName,
-                            amountResult.getAmount()
-                    )) {
-                        items.add(
-                                new ParsedReceiptItem(
-                                        cleanedName,
-                                        findQuantity(line),
-                                        amountResult.getAmount(),
-                                        displayOrder++
-                                )
-                        );
-                    }
-
-                    index =
-                            amountResult.getLineIndex();
+                if (amountResult == null) {
+                    continue;
                 }
+
+                ParsedReceiptItem parsedItem =
+                        createItem(
+                                cleanItemName(line),
+                                findQuantity(line),
+                                amountResult.getAmount(),
+                                displayOrder
+                        );
+
+                if (isAcceptableItem(
+                        parsedItem,
+                        totalAmount
+                )) {
+                    items.add(parsedItem);
+                    displayOrder++;
+                }
+
+                /*
+                 * 현재 품목에 사용한 금액 행을 반복해서 분석하지
+                 * 않도록 반복문 위치를 해당 금액 행까지 이동한다.
+                 */
+                index =
+                        amountResult.getLineIndex();
             }
         }
 
         return items;
+    }
+
+    private ParsedReceiptItem parseColumnItem(
+            String line,
+            int displayOrder
+    ) {
+        Matcher matcher =
+                COLUMN_ITEM_PATTERN.matcher(line);
+
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        String name =
+                matcher.group(1).trim();
+
+        Integer quantity =
+                parseInteger(matcher.group(2));
+
+        BigDecimal finalAmount =
+                parseAmount(matcher.group(4));
+
+        return createItem(
+                name,
+                quantity,
+                finalAmount,
+                displayOrder
+        );
+    }
+
+    private ParsedReceiptItem parseQuantityNameAmountItem(
+            String line,
+            int displayOrder
+    ) {
+        Matcher matcher =
+                QUANTITY_NAME_AMOUNT_PATTERN.matcher(line);
+
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        int leadingNumber =
+                parseInteger(matcher.group(1));
+
+        /*
+         * 홍콩 영수증의 25처럼 큰 앞자리 숫자는
+         * 수량보다 메뉴 번호일 가능성이 높다.
+         */
+        Integer quantity =
+                leadingNumber >= 1
+                        && leadingNumber <= 9
+                        ? leadingNumber
+                        : null;
+
+        String name =
+                matcher.group(2).trim();
+
+        BigDecimal amount =
+                parseAmount(matcher.group(3));
+
+        return createItem(
+                name,
+                quantity,
+                amount,
+                displayOrder
+        );
+    }
+
+    private ParsedReceiptItem parseEuropeanItem(
+            String line,
+            int displayOrder
+    ) {
+        Matcher matcher =
+                EUROPEAN_ITEM_PATTERN.matcher(line);
+
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        String name =
+                matcher.group(1).trim();
+
+        /*
+         * 숫자와 기호가 포함된 헤더·식별번호 행은 제외한다.
+         */
+        if (!name.matches(".*[\\p{L}].*")) {
+            return null;
+        }
+
+        BigDecimal amount =
+                parseAmount(matcher.group(2));
+
+        return createItem(
+                cleanItemName(name),
+                findQuantity(name),
+                amount,
+                displayOrder
+        );
+    }
+
+    private ParsedReceiptItem createItem(
+            String name,
+            Integer quantity,
+            BigDecimal amount,
+            int displayOrder
+    ) {
+        if (!isValidParsedItem(
+                name,
+                amount
+        )) {
+            return null;
+        }
+
+        return new ParsedReceiptItem(
+                name,
+                quantity,
+                amount,
+                displayOrder
+        );
+    }
+
+    private boolean isAcceptableItem(
+            ParsedReceiptItem item,
+            BigDecimal totalAmount
+    ) {
+        if (item == null
+                || item.getAmount() == null) {
+            return false;
+        }
+
+        if (item.getAmount().signum() < 0) {
+            return false;
+        }
+
+        /*
+         * 단일 품목 금액이 총 결제금액보다 크면
+         * 받은 금액·전화번호 등일 가능성이 높다.
+         */
+        return totalAmount == null
+                || item.getAmount()
+                .compareTo(totalAmount) <= 0;
+    }
+
+    private boolean isItemSectionEnd(
+            List<String> lines,
+            int index
+    ) {
+        String line =
+                lines.get(index);
+
+        if (isSubtotalKeyword(line)
+                || TOTAL_PATTERN.matcher(line).find()) {
+            return true;
+        }
+
+        if (index + 1 >= lines.size()) {
+            return false;
+        }
+
+        String current =
+                normalizeKeywordToken(line);
+
+        String next =
+                normalizeKeywordToken(
+                        lines.get(index + 1)
+                );
+
+        return ("小".equals(current)
+                && "計".equals(next))
+                || ("合".equals(current)
+                && "計".equals(next))
+                || ("总".equals(current)
+                && "计".equals(next))
+                || ("總".equals(current)
+                && "計".equals(next));
     }
 
     private boolean isItemNameCandidate(
@@ -1066,6 +1756,80 @@ public class ReceiptTextParser {
         );
     }
 
+    private static class PositionedText {
+
+        private final String text;
+        private final int leftX;
+        private final int rightX;
+        private final int topY;
+        private final int bottomY;
+
+        private PositionedText(
+                String text,
+                int leftX,
+                int rightX,
+                int topY,
+                int bottomY
+        ) {
+            this.text = text;
+            this.leftX = leftX;
+            this.rightX = rightX;
+            this.topY = topY;
+            this.bottomY = bottomY;
+        }
+
+        private String getText() {
+            return text;
+        }
+
+        private int getLeftX() {
+            return leftX;
+        }
+
+        private int getRightX() {
+            return rightX;
+        }
+
+        private int getCenterY() {
+            return (topY + bottomY) / 2;
+        }
+
+        private int getHeight() {
+            return Math.max(
+                    1,
+                    bottomY - topY
+            );
+        }
+    }
+
+    private ParsedReceiptItem parseQuantityUnitTotalItem(
+            String line,
+            int displayOrder
+    ) {
+        Matcher matcher =
+                QUANTITY_UNIT_TOTAL_PATTERN.matcher(line);
+
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        Integer quantity =
+                parseInteger(matcher.group(1));
+
+        String name =
+                matcher.group(2).trim();
+
+        BigDecimal totalAmount =
+                parseAmount(matcher.group(4));
+
+        return createItem(
+                name,
+                quantity,
+                totalAmount,
+                displayOrder
+        );
+    }
+
     private static class AmountSearchResult {
 
         private final BigDecimal amount;
@@ -1087,4 +1851,103 @@ public class ReceiptTextParser {
             return lineIndex;
         }
     }
+
+    private List<ParsedReceiptItem> selectBetterItems(
+            List<ParsedReceiptItem> rawItems,
+            List<ParsedReceiptItem> coordinateItems
+    ) {
+        if (rawItems == null
+                || rawItems.isEmpty()) {
+
+            return coordinateItems == null
+                    ? Collections.emptyList()
+                    : coordinateItems;
+        }
+
+        if (coordinateItems == null
+                || coordinateItems.isEmpty()) {
+
+            return rawItems;
+        }
+
+        /*
+         * 현재는 품목 수가 더 많은 결과를 우선한다.
+         *
+         * 프랑스처럼 원문 줄 구조가 더 정확한 경우 rawItems가 선택되고,
+         * 일본 세븐일레븐처럼 줄 순서가 깨진 경우에는 좌표 결과가
+         * 더 많은 품목을 복원하면 coordinateItems가 선택된다.
+         */
+        return coordinateItems.size() > rawItems.size()
+                ? coordinateItems
+                : rawItems;
+    }
+
+    private boolean isItemColumnHeader(
+            String line
+    ) {
+        if (line == null
+                || line.isBlank()) {
+            return false;
+        }
+
+        String lowerLine =
+                line.toLowerCase(Locale.ROOT);
+
+        int matchedHeaderCount = 0;
+
+        if (lowerLine.contains("artikel")
+                || lowerLine.contains("article")) {
+            matchedHeaderCount++;
+        }
+
+        if (lowerLine.contains("menge")
+                || lowerLine.contains("quantity")) {
+            matchedHeaderCount++;
+        }
+
+        if (lowerLine.contains("preis")
+                || lowerLine.contains("price")) {
+            matchedHeaderCount++;
+        }
+
+        if (lowerLine.contains("aktion")
+                || lowerLine.contains("action")) {
+            matchedHeaderCount++;
+        }
+
+        if (lowerLine.contains("total")) {
+            matchedHeaderCount++;
+        }
+
+        return matchedHeaderCount >= 2;
+    }
+
+    private ParsedReceiptItem parseSwissAtPriceItem(
+            String line,
+            int displayOrder
+    ) {
+        Matcher matcher =
+                SWISS_AT_PRICE_PATTERN.matcher(line);
+
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        Integer quantity =
+                parseInteger(matcher.group(1));
+
+        String name =
+                matcher.group(2).trim();
+
+        BigDecimal finalAmount =
+                parseAmount(matcher.group(4));
+
+        return createItem(
+                name,
+                quantity,
+                finalAmount,
+                displayOrder
+        );
+    }
+
 }
