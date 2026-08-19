@@ -158,7 +158,7 @@ watch(
               </svg>
             </span>
             <div class="btn-text">
-              <strong>환율 더보기</strong>
+              <strong>모든 국가보기</strong>
               <p>모든 통화 환율</p>
             </div>
           </button>

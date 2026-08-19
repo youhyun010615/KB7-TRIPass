@@ -4,11 +4,9 @@ import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import { useExchangeStore } from '@/stores/exchange';
-import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const exchange = useExchangeStore();
-const travel = useTravelStore();
 const query = ref('');
 const openedCurrencyCode = ref(null);
 
@@ -16,7 +14,6 @@ onMounted(() => {
   if (exchange.currencies.length === 0) {
     exchange.updateExchangeRates();
   }
-  travel.loadActiveGoal();
 });
 
 const format = (value) =>
@@ -25,27 +22,12 @@ const format = (value) =>
     maximumFractionDigits: 2,
   });
 
-// 여행 미등록 시 전체 국가, 등록 시 여행에 등록된 국가만 표시한다(환율 탭과 동일한 규칙).
-const displayCurrencies = computed(() => {
-  if (travel.selectedPlans.length === 0) {
-    return exchange.currencies;
-  }
-
-  const countryIds = new Set(
-    travel.selectedPlans
-      .map((plan) => plan.countryId)
-      .filter((id) => id != null),
-  );
-
-  const filtered = exchange.currencies.filter((c) => countryIds.has(c.countryId));
-  return filtered.length > 0 ? filtered : exchange.currencies;
-});
-
+// 이 화면은 여행 등록 여부와 무관하게 항상 전체 국가의 통화를 보여준다.
 const filteredCurrencies = computed(() => {
   const keyword = query.value.trim().toLocaleLowerCase('ko-KR');
-  if (!keyword) return displayCurrencies.value;
+  if (!keyword) return exchange.currencies;
 
-  return displayCurrencies.value.filter((item) => {
+  return exchange.currencies.filter((item) => {
     // 각 필드를 소문자로 변환하여 검색어와 매칭 (OR 조건)
     const code = (item.code || '').toLocaleLowerCase('ko-KR');
     const name = (item.name || '').toLocaleLowerCase('ko-KR');
@@ -79,7 +61,7 @@ function toggleCurrency(item) {
           ‹
         </button>
         <div>
-          <h1>주요 통화</h1>
+          <h1>모든 국가 통화</h1>
           <small v-if="exchange.lastUpdateDate" class="update-info">
             {{ exchange.lastUpdateDate }} 고시 기준
           </small>
