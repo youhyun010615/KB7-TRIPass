@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { useTravelStore, countryPresentation as globalCountryPresentation } from '@/stores/travel';
@@ -18,6 +18,31 @@ const router = useRouter();
 const travelMode = useTravelModeStore();
 const travelStore = useTravelStore();
 
+// 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
+// position:sticky가 동작하지 않는다. 대신 position:fixed로 고정하고,
+// 실제 렌더 높이를 측정해 뒤에 그만큼의 여백을 확보한다. (저축모드 홈과 동일한 방식)
+const travelHeaderEl = ref(null);
+const travelHeaderHeight = ref(0);
+let travelHeaderResizeObserver = null;
+
+function syncTravelHeaderHeight() {
+  if (travelHeaderEl.value) {
+    travelHeaderHeight.value = travelHeaderEl.value.offsetHeight;
+  }
+}
+
+watch(travelHeaderEl, (el) => {
+  travelHeaderResizeObserver?.disconnect();
+  travelHeaderResizeObserver = null;
+  if (!el) return;
+
+  syncTravelHeaderHeight();
+  if (window.ResizeObserver) {
+    travelHeaderResizeObserver = new ResizeObserver(syncTravelHeaderHeight);
+    travelHeaderResizeObserver.observe(el);
+  }
+});
+
 // 데이터 바인딩을 위한 계산 속성 추가
 const tripId = computed(() => travelStore.tripId);
 const tripStatus = computed(() => travelStore.tripStatus);
@@ -27,19 +52,38 @@ const countries = computed(() => tripStatus.value?.countries || []);
 // 국가 목록 캐싱 (필터링되지 않은 전체 목록)
 const persistentCountries = ref([]);
 
-// 국가 선택 목록 (API 연동)
+// ISO 2자리 국가코드를 유니코드 국기 이모지로 변환 (텍스트로 그대로 표시 가능)
+function flagEmoji(iso2) {
+  return iso2
+    .toUpperCase()
+    .replace(/./g, (ch) => String.fromCodePoint(0x1f1e6 + ch.charCodeAt(0) - 65));
+}
+
+// 국가 선택 목록 (API 연동) — 캐러셀 슬라이드마다 독립적으로 렌더링할 수 있도록
+// 국가별 목표/지출 금액도 함께 들고 있는다.
 const destinations = computed(() => {
-  const all = { code: 'all', name: '전체', flag: '🌍', theme: '#17485b' };
+  const totalTargetBudget = persistentCountries.value.reduce((sum, c) => sum + c.targetBudget, 0);
+  const totalSpentAmount = persistentCountries.value.reduce((sum, c) => sum + c.spentAmount, 0);
+  const all = {
+    code: 'all',
+    name: '전체',
+    flag: '🌍',
+    theme: '#17485b',
+    targetBudget: totalTargetBudget,
+    spentAmount: totalSpentAmount,
+  };
   const apiCountries = persistentCountries.value.map((c) => ({
     code: c.tripCountryId.toString(),
     name: c.countryName,
     flag: countryFlagMap[c.countryName]
-      ? `fi fi-${countryFlagMap[c.countryName]}`
+      ? flagEmoji(countryFlagMap[c.countryName])
       : '🌍',
     theme: getCountryColor(c.countryName),
     image: overallAssets.find((a) => a.country === c.countryName)?.image
       || globalCountryPresentation[c.countryName]?.image
       || '',
+    targetBudget: c.targetBudget,
+    spentAmount: c.spentAmount,
   }));
   return [all, ...apiCountries];
 });
@@ -83,37 +127,6 @@ const totalTripDays = computed(() => {
   if (!startDate.value || !endDate.value) return 1;
   const diff = endDate.value - startDate.value;
   return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
-});
-
-// 자산 및 진행률 계산
-const totalRemainingFund = computed(
-  () => tripStatus.value?.totalRemainingFund || 0,
-);
-
-const totalBudget = computed(() =>
-  countries.value.reduce((sum, c) => sum + c.targetBudget, 0),
-);
-const totalSpent = computed(() =>
-  countries.value.reduce((sum, c) => sum + c.spentAmount, 0),
-);
-const overallProgress = computed(() =>
-  totalBudget.value > 0
-    ? Math.round((totalSpent.value / totalBudget.value) * 100)
-    : 0,
-);
-
-// 국가별 자산 (Carousel)
-const tripAssets = computed(() => {
-  return countries.value.map((c) => {
-    const assetTemplate = overallAssets.find(
-      (a) => a.country === c.countryName,
-    );
-    return {
-      ...assetTemplate,
-      amount: c.targetBudget - c.spentAmount,
-      local: `${c.countryName} 남은 금액`,
-    };
-  });
 });
 
 // 카테고리 아이콘 매핑
@@ -201,6 +214,8 @@ const isReturnPeriod = computed(() => {
 });
 
 onMounted(async () => {
+  await nextTick();
+  restoreCountryPosition();
   await travelStore.loadActiveGoal();
   if (tripId.value) {
     // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
@@ -211,14 +226,47 @@ onMounted(async () => {
       await loadData();
     }
   }
+  await nextTick();
+  restoreCountryPosition();
 });
 
-const countryMenuOpen = ref(false);
+onBeforeUnmount(() => {
+  travelHeaderResizeObserver?.disconnect();
+});
+
 const selectedCountryId = computed({
   get: () => travelMode.selectedDestination,
   set: (val) => travelMode.selectDestination(val),
 });
 const assetsCarousel = ref(null);
+const countryCarousel = ref(null);
+
+// 좌우 스와이프로 국가 전환 (저축모드 홈과 동일한 방식)
+function handleCountryScroll(event) {
+  const carousel = event.currentTarget;
+  if (!carousel?.clientWidth) return;
+
+  const idx = Math.max(
+    0,
+    Math.min(
+      destinations.value.length - 1,
+      Math.round(carousel.scrollLeft / carousel.clientWidth),
+    ),
+  );
+  const nextCode = destinations.value[idx]?.code;
+  if (!nextCode || nextCode === selectedCountryId.value) return;
+  selectedCountryId.value = nextCode;
+  loadData();
+}
+
+function restoreCountryPosition() {
+  const carousel = countryCarousel.value;
+  if (!carousel?.clientWidth || !destinations.value.length) return;
+
+  const savedIndex = destinations.value.findIndex((item) => item.code === selectedCountryId.value);
+  const idx = savedIndex >= 0 ? savedIndex : 0;
+  carousel.scrollLeft = idx * carousel.clientWidth;
+}
 
 // 툴팁 상태 관리
 const tooltip = ref({
@@ -235,12 +283,6 @@ function showTooltip(e, text) {
     x: e.clientX,
     y: e.clientY,
   };
-}
-
-function selectDestination(item) {
-  selectedCountryId.value = item.code;
-  countryMenuOpen.value = false;
-  loadData();
 }
 
 const overallAssets = [
@@ -425,40 +467,20 @@ async function switchMode(mode) {
 
 <template>
   <section class="travel-home">
-    <header class="travel-header">
-      <div class="header-controls">
-        <div
-          class="mode-toggle travel-selected"
-          aria-label="서비스 모드 전환"
-        >
-          <span class="mode-thumb" />
-          <button class="active" type="button">여행</button>
+    <div ref="travelHeaderEl" class="savings-home-header">
+      <div class="savings-header-row">
+        <div class="mode-switch-control">
+          <span class="mode-switch-thumb" />
+          <button type="button" class="selected">여행</button>
           <button type="button" @click="switchMode('savings')">저축</button>
         </div>
-        <div class="country-select">
-          <button
-            type="button"
-            :aria-expanded="countryMenuOpen"
-            @click="countryMenuOpen = !countryMenuOpen"
-          >
-            <span></span>{{ selected.name }}<i>⌄</i>
-          </button>
-          <div v-if="countryMenuOpen" class="country-menu">
-            <button
-              v-for="item in destinations"
-              :key="item.code"
-              type="button"
-              :class="{ active: item.code === selected.code }"
-              @click="selectDestination(item)"
-            >
-              {{ item.name }}
-            </button>
-          </div>
-        </div>
+        <NotificationBell />
       </div>
-      <h1>안녕하세요, {{ userName }}님</h1>
-      <NotificationBell />
-    </header>
+      <h1 class="home-header-title">
+        <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
+      </h1>
+    </div>
+    <div :style="{ height: travelHeaderHeight + 'px' }" aria-hidden="true" />
 
     <template v-if="!tripId">
       <article class="empty-trip-ticket">
@@ -488,119 +510,138 @@ async function switchMode(mode) {
       </div>
     </template>
     <template v-else>
-    <article
-      class="ticket"
-      :class="[
-        { combined: selected.code === 'all' },
-        `country-${selected.code}`,
-      ]"
-      :style="{
-        '--theme': selected.theme,
-        '--photo': `url(${selected.image})`,
-      }"
+    <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 (저축모드 홈과 동일한 방식) -->
+    <div
+      ref="countryCarousel"
+      class="country-carousel"
+      @scroll.passive="handleCountryScroll"
     >
-      <div class="ticket-top">
-        <span>BOARDING PASS</span><span>TRIPASS AIR</span
-        ><span
-          >NO. {{ selected.code === 'all' ? 'EUR' : selected.code }}-230</span
-        >
-      </div>
-      <div class="perforation"><i /><span /><i /></div>
-      <div class="ticket-main">
-        <div class="trip-line">
-          <b>{{ tripInfo?.tripName || '여행' }}</b
-          ><strong>D-{{ dday }}</strong>
-        </div>
-        <div class="trip-progress">
-          <small>{{ currentDay }}일차</small>
-          <div>
-            <i
-              :style="{
-                width: `${(currentDay / totalTripDays) * 100}%`,
-              }"
-            />
-          </div>
-          <small>{{ totalTripDays }}일차</small>
-        </div>
-        <p class="trip-description">여행 남은 자산을 한눈에 확인해요 ✨</p>
-        <div class="ticket-photo-space" />
-
-        <div class="travel-summary-content">
-          <div class="summary-title-wrapper">
-            <div class="summary-title">
-              <span
-                >{{
-                  selected.code === 'all'
-                    ? '전체 남은 여행 자산'
-                    : `${selected.name}에서 남은 여행 자산`
-                }}
-                (합산)</span
-              ><strong>{{ formatWon(totalRemainingFund) }}</strong>
-            </div>
-            <button
-              v-if="isReturnPeriod"
-              class="return-checklist-button"
-              @click="
-                () => {
-                  const id =
-                    travelStore.tripId || travelStore.homeDashboard?.tripId;
-                  if (id) {
-                    router.push(`/mypage/checklists/return?tripId=${id}`);
-                  } else {
-                    console.error('tripId를 찾을 수 없습니다.');
-                  }
-                }
-              "
-            >
-              귀국 체크리스트 확인하기 ›
-            </button>
-          </div>
-          <div
-            class="country-assets"
-            :style="{
-              'grid-template-columns':
-                selected.code === 'all' ? '1fr 1fr' : '1fr',
-            }"
-            ref="assetsCarousel"
-            aria-label="국가별 남은 여행 자산"
-          >
-            <div
-              v-for="asset in selected.code === 'all'
-                ? tripAssets
-                : tripAssets.filter((a) => a.code === selected.code)"
-              :key="asset.code"
-              class="country-asset-card"
-              :style="{
-                '--asset-image': `url(${asset.image})`,
-                '--asset-theme': asset.theme,
-              }"
-            >
-              <span>{{ asset.flag }} {{ asset.country }} 남은 여행 자산</span
-              ><b>{{ formatWon(asset.amount) }}</b
-              ><small>({{ asset.local }})</small>
-            </div>
-          </div>
-          <div class="fund-label">
-            <span>여행 자금 진행률</span><b>{{ overallProgress }}%</b>
-          </div>
-          <div class="fund-track">
-            <i :style="{ width: `${overallProgress}%` }" />
-          </div>
-          <div class="fund-meta">
-            <span>목표 {{ formatWon(totalBudget) }}</span
-            ><span>현재 지출 {{ formatWon(totalSpent) }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="perforation lower"><i /><span /><i /></div>
-      <button
-        class="ticket-stub"
-        type="button"
-        @click="router.push('/travel/funds')"
+      <article
+        v-for="item in destinations"
+        :key="item.code"
+        class="country-slide"
+        :class="{ active: selected.code === item.code }"
       >
-        <span>여행 목표 자금 관리</span>
-      </button>
-    </article>
+        <div
+          class="ticket"
+          :class="[
+            { combined: item.code === 'all' },
+            `country-${item.code}`,
+          ]"
+          :style="{
+            '--theme': item.theme,
+            '--photo': `url(${item.image})`,
+          }"
+        >
+          <div class="ticket-top">
+            <span>BOARDING PASS</span><span>TRIPASS AIR</span
+            ><span
+              >NO. {{ item.code === 'all' ? 'EUR' : item.code }}-230</span
+            >
+          </div>
+          <div class="perforation"><i /><span /><i /></div>
+          <div class="ticket-main">
+            <div class="trip-line">
+              <b>{{ tripInfo?.tripName || '여행' }}</b
+              ><strong>D-{{ dday }}</strong>
+            </div>
+            <div class="trip-progress">
+              <small>{{ currentDay }}일차</small>
+              <div>
+                <i
+                  :style="{
+                    width: `${(currentDay / totalTripDays) * 100}%`,
+                  }"
+                />
+              </div>
+              <small>{{ totalTripDays }}일차</small>
+            </div>
+            <p class="trip-description">여행 남은 자산을 한눈에 확인해요 ✨</p>
+            <div class="ticket-photo-space" />
+
+            <div class="travel-summary-content">
+              <div class="summary-title-wrapper">
+                <div class="summary-title">
+                  <span
+                    >{{
+                      item.code === 'all'
+                        ? '전체 남은 여행 자산'
+                        : `${item.name}에서 남은 여행 자산`
+                    }}
+                    (합산)</span
+                  ><strong>{{ formatWon(item.targetBudget - item.spentAmount) }}</strong>
+                </div>
+                <button
+                  v-if="isReturnPeriod"
+                  class="return-checklist-button"
+                  @click="
+                    () => {
+                      const id =
+                        travelStore.tripId || travelStore.homeDashboard?.tripId;
+                      if (id) {
+                        router.push(`/mypage/checklists/return?tripId=${id}`);
+                      } else {
+                        console.error('tripId를 찾을 수 없습니다.');
+                      }
+                    }
+                  "
+                >
+                  귀국 체크리스트 확인하기 ›
+                </button>
+              </div>
+              <div
+                v-if="item.code === 'all'"
+                class="country-assets"
+                style="grid-template-columns: 1fr 1fr"
+                aria-label="국가별 남은 여행 자산"
+              >
+                <div
+                  v-for="asset in destinations.slice(1)"
+                  :key="asset.code"
+                  class="country-asset-card"
+                  :style="{
+                    '--asset-image': `url(${asset.image})`,
+                    '--asset-theme': asset.theme,
+                  }"
+                >
+                  <span>{{ asset.flag }} {{ asset.name }} 남은 여행 자산</span
+                  ><b>{{ formatWon(asset.targetBudget - asset.spentAmount) }}</b>
+                </div>
+              </div>
+              <div class="fund-label">
+                <span>여행 자금 진행률</span
+                ><b>{{ item.targetBudget > 0 ? Math.round((item.spentAmount / item.targetBudget) * 100) : 0 }}%</b>
+              </div>
+              <div class="fund-track">
+                <i :style="{ width: `${item.targetBudget > 0 ? Math.round((item.spentAmount / item.targetBudget) * 100) : 0}%` }" />
+              </div>
+              <div class="fund-meta">
+                <span>목표 {{ formatWon(item.targetBudget) }}</span
+                ><span>현재 지출 {{ formatWon(item.spentAmount) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="perforation lower"><i /><span /><i /></div>
+          <button
+            class="ticket-stub"
+            type="button"
+            @click="router.push('/travel/funds')"
+          >
+            <span>여행 목표 자금 관리</span>
+          </button>
+        </div>
+      </article>
+    </div>
+    <div v-if="destinations.length > 1" class="country-carousel-meta">
+      <span>옆으로 넘겨 방문 국가를 확인하세요</span>
+      <div class="country-carousel-dots" aria-hidden="true">
+        <i
+          v-for="item in destinations"
+          :key="item.code"
+          :class="{ active: selected.code === item.code }"
+        />
+      </div>
+    </div>
 
     <!-- 툴팁 컴포넌트 -->
     <div
@@ -771,9 +812,10 @@ async function switchMode(mode) {
 <style scoped>
 .travel-home {
   width: min(100%, 390px);
+  min-height: 100vh;
   margin: auto;
   padding-bottom: 94px;
-  background: #f8f6f1;
+  background: #f4f5f9;
   color: #10192d;
 }
 .empty-trip-ticket {
@@ -875,7 +917,7 @@ async function switchMode(mode) {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #f8f6f1;
+  background: #f4f5f9;
 }
 .empty-trip-notch.left { left: -9px; }
 .empty-trip-notch.right { right: -9px; }
@@ -1021,12 +1063,132 @@ async function switchMode(mode) {
 }
 .ticket {
   position: relative;
-  margin: 0 16px;
+  margin: 0;
   overflow: hidden;
   border-radius: 18px;
   background: var(--theme);
   color: #fff;
   box-shadow: 0 8px 18px #2037652b;
+}
+/* ── 저축모드 홈과 동일한 공통 헤더 + 스와이프 캐러셀 ── */
+.savings-home-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 390px;
+  z-index: 60;
+  padding: 14px 20px;
+  background: #f4f5f9;
+  transform: translateX(-50%);
+}
+.savings-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.home-header-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+.home-wordmark {
+  display: block;
+  width: 88px;
+  height: auto;
+  object-fit: contain;
+}
+.mode-switch-control {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: none;
+  width: 112px;
+  padding: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edeff3;
+}
+.mode-switch-control button {
+  position: relative;
+  z-index: 2;
+  height: auto;
+  padding: 6px 0;
+  border-radius: 999px;
+  color: #6b7688;
+  font-size: 11px;
+  font-weight: 800;
+  transition: color 0.25s ease;
+}
+.mode-switch-control button.selected {
+  color: #fff;
+}
+.mode-switch-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: #173f8d;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.country-carousel {
+  display: flex;
+  gap: 0;
+  margin: 7px 16px 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+}
+.country-carousel::-webkit-scrollbar {
+  display: none;
+}
+.country-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: 0 1px 4px;
+  opacity: 0.56;
+  transform: scale(0.965);
+  transition: opacity 0.34s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+.country-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+.country-carousel-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 5px 21px 0;
+  color: #71809a;
+  font-size: 9px;
+  font-weight: 700;
+}
+.country-carousel-dots {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+}
+.country-carousel-dots i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: #cbd5e4;
+  transition: width 0.22s ease, background 0.22s ease;
+}
+.country-carousel-dots i.active {
+  width: 17px;
+  background: #173f8d;
 }
 .ticket-top {
   display: flex;
@@ -1049,7 +1211,7 @@ async function switchMode(mode) {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #f8f6f1;
+  background: #f4f5f9;
 }
 .perforation i:first-child {
   transform: translateX(-11px);
