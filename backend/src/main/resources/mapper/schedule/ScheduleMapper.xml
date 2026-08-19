@@ -181,7 +181,7 @@
         JOIN trips t ON ts.trip_id = t.id
         WHERE ts.is_deleted = 0
           AND ts.schedule_status = 'UPCOMING'
-          AND ts.scheduled_at BETWEEN NOW() + INTERVAL 55 MINUTE AND NOW() + INTERVAL 65 MINUTE
+          AND ts.scheduled_at BETWEEN NOW() + INTERVAL 59 MINUTE AND NOW() + INTERVAL 61 MINUTE
     </select>
 
 </mapper>

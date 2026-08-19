@@ -7,8 +7,8 @@
     </select>
 
     <insert id="insertDefaultSetting">
-        INSERT INTO notification_settings (user_id, all_enabled, travel_schedule_enabled, exchange_rate_enabled, checklist_enabled, travel_report_enabled)
-        VALUES (#{userId}, true, true, true, true, true)
+        INSERT INTO notification_settings (user_id, all_enabled, travel_schedule_enabled, exchange_rate_enabled, checklist_enabled, travel_report_enabled, quiet_start_time, quiet_end_time)
+        VALUES (#{userId}, true, true, true, true, true, '09:00:00', '22:00:00')
     </insert>
 
     <update id="updateSetting">
@@ -17,7 +17,9 @@
             travel_schedule_enabled = #{travelScheduleEnabled},
             exchange_rate_enabled = #{exchangeRateEnabled},
             checklist_enabled = #{checklistEnabled},
-            travel_report_enabled = #{travelReportEnabled}
+            travel_report_enabled = #{travelReportEnabled},
+            quiet_start_time = #{quietStartTime},
+            quiet_end_time = #{quietEndTime}
         WHERE user_id = #{userId}
     </update>
 
