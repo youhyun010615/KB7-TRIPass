@@ -279,6 +279,12 @@ public class TravelService {
         return travelMapper.updateEndedTrips(today);
     }
 
+    /** 시작일이 된 여행 중(PLANNING) 상태를 여행 중(TRAVELING)으로 일괄 전환합니다. */
+    @Transactional
+    public int updateTravelingTrips(LocalDate today) {
+        return travelMapper.updateTravelingTrips(today);
+    }
+
     /** 여행 등록 후 저축 홈에서 사용하는 활성 여행 요약 정보를 조회합니다. */
     public TripHomeDashboardResponseDto getActiveTripHome(Long currentUserId) {
         TripGoalResponseDto trip = getActiveTripGoal(currentUserId);

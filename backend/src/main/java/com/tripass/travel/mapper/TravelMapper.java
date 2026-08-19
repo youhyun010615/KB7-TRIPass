@@ -89,4 +89,7 @@ public interface TravelMapper {
 
     // 종료일이 지난 여행 중 상태(TRAVELING)를 완료(ENDED)로 일괄 전환
     int updateEndedTrips(@Param("today") LocalDate today);
+
+    // 시작일이 된 여행 중 상태(PLANNING)를 여행 중(TRAVELING)으로 일괄 전환
+    int updateTravelingTrips(@Param("today") LocalDate today);
 }

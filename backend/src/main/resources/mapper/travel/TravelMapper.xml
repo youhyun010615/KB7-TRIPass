@@ -557,4 +557,12 @@
           AND is_deleted = 0
     </update>
 
+    <update id="updateTravelingTrips">
+        UPDATE trips
+        SET status = 'TRAVELING'
+        WHERE status = 'PLANNING'
+          AND start_date &lt;= #{today}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
