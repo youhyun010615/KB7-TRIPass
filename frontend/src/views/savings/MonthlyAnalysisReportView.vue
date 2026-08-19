@@ -121,70 +121,80 @@ function goMissions() {
     query: { from: 'analysis', yearMonth: yearMonth.value },
   });
 }
+
+function goCategoryDetail(categoryCode) {
+  router.push({
+    name: 'MonthlyAnalysisCategoryDetail',
+    params: { yearMonth: yearMonth.value, categoryCode },
+  });
+}
 </script>
 
 <template>
   <main class="analysis-report-view">
-    <header class="report-header">
-      <button type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
-      <div>
-        <small>TRIPASS AI REPORT</small>
-        <h1>
-          {{ analysisMonthLabel }} AI 분석 리포트
-          <img class="header-ai-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
-        </h1>
-      </div>
-      <button
-        type="button"
-        class="close-icon"
-        aria-label="리포트 닫기"
-        :disabled="analysisStore.updatingStatus"
-        @click="closeReport"
-      >
-        ×
-      </button>
-    </header>
-
-    <section v-if="analysisStore.loading" class="report-state" role="status">
-      <span class="report-spinner" />
-      <b>AI 분석 리포트를 불러오고 있어요</b>
-      <small>지난달 소비와 저축 결과를 확인하고 있습니다.</small>
-    </section>
-
-    <section v-else-if="analysisStore.notFound" class="report-state">
-      <span class="state-icon">AI</span>
-      <b>아직 생성된 리포트가 없어요</b>
-      <small>거래내역 분석이 완료되면 월간 리포트가 제공됩니다.</small>
-      <button type="button" @click="router.push('/')">홈으로 돌아가기</button>
-    </section>
-
-    <section v-else-if="!report" class="report-state error">
-      <span class="state-icon">!</span>
-      <b>리포트를 불러오지 못했어요</b>
-      <small>{{ analysisStore.errorMessage }}</small>
-      <button
-        type="button"
-        @click="loadReport"
-      >
-        다시 시도
-      </button>
-    </section>
-
-    <template v-else>
-      <p v-if="analysisStore.errorMessage" class="status-warning">
-        {{ analysisStore.errorMessage }}
-      </p>
-
-      <article class="report-paper">
-        <div class="paper-letterhead">
-          <div class="letterhead-left">
-            <strong class="letterhead-title">{{ analysisMonthLabel }} AI 분석 리포트</strong>
-            <img class="letterhead-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
-          </div>
-          <div class="letterhead-right">
-            <span class="ai-label"><img :src="aiIcon" alt="" /></span>
-          </div>
+    <div class="report-backdrop" @click="closeReport"></div>
+    <div class="report-modal">
+      <header class="report-header">
+        <button type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
+        <div>
+          <small>TRIPASS AI REPORT</small>
+          <h1>
+            {{ analysisMonthLabel }} AI 분석 리포트
+            <img class="header-ai-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+          </h1>
         </div>
+        <button
+          type="button"
+          class="close-icon"
+          aria-label="리포트 닫기"
+          :disabled="analysisStore.updatingStatus"
+          @click="closeReport"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="report-modal-body">
+      <section v-if="analysisStore.loading" class="report-state" role="status">
+        <span class="report-spinner" />
+        <b>AI 분석 리포트를 불러오고 있어요</b>
+        <small>지난달 소비와 저축 결과를 확인하고 있습니다.</small>
+      </section>
+
+      <section v-else-if="analysisStore.notFound" class="report-state">
+        <span class="state-icon">AI</span>
+        <b>아직 생성된 리포트가 없어요</b>
+        <small>거래내역 분석이 완료되면 월간 리포트가 제공됩니다.</small>
+        <button type="button" @click="router.push('/')">홈으로 돌아가기</button>
+      </section>
+
+      <section v-else-if="!report" class="report-state error">
+        <span class="state-icon">!</span>
+        <b>리포트를 불러오지 못했어요</b>
+        <small>{{ analysisStore.errorMessage }}</small>
+        <button
+          type="button"
+          @click="loadReport"
+        >
+          다시 시도
+        </button>
+      </section>
+
+      <template v-else>
+        <p v-if="analysisStore.errorMessage" class="status-warning">
+          {{ analysisStore.errorMessage }}
+        </p>
+
+        <article class="report-paper">
+          <div class="paper-letterhead">
+            <div class="letterhead-left">
+              <strong class="letterhead-title">{{ analysisMonthLabel }} AI 분석 리포트</strong>
+              <img class="letterhead-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+            </div>
+            <div class="letterhead-right">
+              <span class="ai-label"><img :src="aiIcon" alt="" /></span>
+            </div>
+          </div>
 
       <section class="paper-section saving-section">
         <div class="section-title">
@@ -294,6 +304,10 @@ function goMissions() {
           <li
             v-for="recommendation in recommendations"
             :key="recommendation.categoryCode"
+            role="button"
+            tabindex="0"
+            @click="goCategoryDetail(recommendation.categoryCode)"
+            @keydown.enter="goCategoryDetail(recommendation.categoryCode)"
           >
             <b>{{ recommendation.rank }}</b>
             <span
@@ -312,6 +326,7 @@ function goMissions() {
               <strong>{{ recommendation.categoryName }}</strong>
               <p>{{ recommendation.recommendationReason }}</p>
             </div>
+            <span class="detail-chevron" aria-hidden="true">›</span>
           </li>
         </ol>
 
@@ -324,28 +339,65 @@ function goMissions() {
         </button>
       </section>
       </article>
-    </template>
+      </template>
+      </div>
+    </div>
   </main>
 </template>
 
 <style scoped>
 .analysis-report-view {
-  min-height: 100vh;
-  padding-bottom: 38px;
-  background: #f3f6ff;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   color: #17213a;
 }
+.report-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 18, 38, 0.5);
+  animation: report-backdrop-enter 0.3s ease both;
+}
+.report-modal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 390px;
+  max-height: 92vh;
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background: #f3f6ff;
+  animation: report-modal-enter 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.report-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 30px;
+  -webkit-overflow-scrolling: touch;
+}
+@keyframes report-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes report-modal-enter {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 .report-header {
-  position: sticky;
-  top: 0;
+  flex: none;
   z-index: 10;
   display: grid;
   grid-template-columns: 40px 1fr 40px;
   align-items: center;
   padding: 18px 14px 13px;
   border-bottom: 1px solid #e0e8f5;
-  background: #f3f6fff2;
-  backdrop-filter: blur(14px);
+  border-radius: 24px 24px 0 0;
+  background: #f3f6ff;
 }
 .report-header > button {
   display: grid;
@@ -669,12 +721,27 @@ function goMissions() {
 }
 .recommendation-list li {
   display: grid;
-  grid-template-columns: 24px 38px 1fr;
+  grid-template-columns: 24px 38px 1fr 12px;
   align-items: center;
   gap: 9px;
   padding: 12px;
   border: 1px solid #e3eaf5;
   border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.recommendation-list li:active {
+  background: #f2f6ff;
+}
+.recommendation-list .detail-chevron {
+  display: block;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  color: #b7c3dc;
+  font-size: 15px;
+  font-weight: 700;
 }
 .recommendation-list li > b {
   display: grid;
