@@ -7,6 +7,8 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
+import aiIcon from '@/assets/icons/ai.svg';
+import aiReportIcon from '@/assets/icons/ai_report.svg';
 
 const route = useRoute();
 const router = useRouter();
@@ -145,9 +147,16 @@ function goMissions() {
 
     <template v-else>
       <section class="report-hero">
-        <div class="hero-route"><i /><span>✈</span><i /></div>
+        <span class="hero-ai-scan" aria-hidden="true">
+          <img class="hero-ai-badge" :src="aiIcon" alt="" />
+          <span class="hero-ai-ping"></span>
+          <span class="hero-ai-ping delay"></span>
+        </span>
         <small>{{ report.analysisYearMonth }}</small>
-        <h2>{{ analysisMonthLabel }} AI 분석 리포트</h2>
+        <h2>
+          {{ analysisMonthLabel }} AI 분석 리포트
+          <img class="hero-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+        </h2>
         <p>여행을 더 자주 떠날 수 있도록 지난달 금융 습관을 정리했어요.</p>
         <span class="viewed-badge">AI 분석 완료</span>
       </section>
@@ -255,11 +264,11 @@ function goMissions() {
             <small>AI COACHING</small>
             <h3>이번 달 절약 포인트</h3>
           </div>
-          <span class="ai-label">AI</span>
+          <span class="ai-label"><img :src="aiIcon" alt="" /></span>
         </div>
 
         <div class="coaching-summary">
-          <span>✦</span>
+          <span class="sparkle">✦</span>
           <p>{{ report.coachingSummary }}</p>
         </div>
 
@@ -355,7 +364,7 @@ function goMissions() {
   position: relative;
   overflow: hidden;
   margin: 14px;
-  padding: 26px 20px 22px;
+  padding: 20px 20px 18px;
   border-radius: 25px;
   background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
   color: #fff;
@@ -372,17 +381,6 @@ function goMissions() {
   border-radius: 50%;
   content: '';
 }
-.hero-route {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 18px;
-  color: #ffd35e;
-}
-.hero-route i {
-  flex: 1;
-  border-top: 1px dashed #ffffff55;
-}
 .report-hero > small {
   color: #b9d1ff;
   font-size: 9px;
@@ -390,10 +388,49 @@ function goMissions() {
   letter-spacing: 0.13em;
 }
 .report-hero h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin-top: 5px;
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 950;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.05em;
+}
+.hero-report-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
+}
+.hero-ai-scan {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+.hero-ai-badge {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  animation: hero-ai-badge-pulse 1.6s ease-in-out infinite;
+}
+.hero-ai-ping {
+  position: absolute;
+  inset: -6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+  animation: hero-ai-ping 1.8s ease-out infinite;
+}
+.hero-ai-ping.delay {
+  animation-delay: 0.9s;
 }
 .report-hero p {
   max-width: 270px;
@@ -607,8 +644,17 @@ function goMissions() {
   width: 30px;
   height: 30px;
   place-items: center;
+  border-radius: 10px;
   background: #173f8d !important;
   color: #fff;
+  box-shadow: 0 0 0 0 rgba(23, 63, 141, 0.35);
+  animation: ai-label-pulse 2s ease-in-out infinite;
+}
+.ai-label img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 .coaching-summary {
   display: flex;
@@ -619,8 +665,9 @@ function goMissions() {
   background: linear-gradient(135deg, #173f8d, #286ce0);
   color: #fff;
 }
-.coaching-summary > span {
+.coaching-summary > .sparkle {
   color: #ffd35e;
+  animation: sparkle-twinkle 1.8s ease-in-out infinite;
 }
 .coaching-summary p {
   color: #eef4ff;
@@ -794,9 +841,54 @@ function goMissions() {
     transform: translateY(0);
   }
 }
+@keyframes hero-ai-badge-pulse {
+  0%,
+  100% {
+    transform: scale(0.9);
+    filter: brightness(0) invert(1) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.75));
+  }
+}
+@keyframes hero-ai-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+@keyframes ai-label-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(23, 63, 141, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(23, 63, 141, 0);
+  }
+}
+@keyframes sparkle-twinkle {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.85) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(90deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .report-hero,
-  .report-section {
+  .report-section,
+  .hero-ai-badge,
+  .hero-ai-ping,
+  .ai-label,
+  .sparkle {
     animation: none;
   }
 }
