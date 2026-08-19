@@ -54,20 +54,23 @@ onMounted(() => {
   travel.loadActiveGoal();
 });
 
-// 여행 미등록 시 전체 통화, 등록 시 여행지 국가의 통화만 표시한다.
+// 여행 미등록 시 전체 국가, 등록 시 여행에 등록된 국가만 표시한다.
+// /exchange-rates/countries는 항상 전체 국가를 내려주므로 필터링은 FE 책임이다.
+// currencyCode가 아닌 countryId로 걸러야 같은 EUR이라도 등록한 국가(예: 프랑스)만
+// 보이고, 국가를 추가/삭제하면 그대로 반영된다.
 const displayCurrencies = computed(() => {
   if (travel.selectedPlans.length === 0) {
     return exchange.currencies;
   }
 
-  const codes = new Set(
+  const countryIds = new Set(
     travel.selectedPlans
-      .map((plan) => plan.currencyCode)
-      .filter(Boolean),
+      .map((plan) => plan.countryId)
+      .filter((id) => id != null),
   );
 
-  const filtered = exchange.currencies.filter((c) => codes.has(c.code));
-  // 여행지 통화가 환율 데이터에 하나도 없으면 전체 통화로 대체 표시한다.
+  const filtered = exchange.currencies.filter((c) => countryIds.has(c.countryId));
+  // 등록한 국가가 환율 데이터에 하나도 없으면 전체 국가로 대체 표시한다.
   return filtered.length > 0 ? filtered : exchange.currencies;
 });
 
