@@ -649,4 +649,23 @@ router.beforeResolve(async (to) => {
   }
 });
 
+// 배포로 JS 청크 해시가 바뀐 뒤, 이전 배포 시점에 열려 있던 탭에서 라우트를 이동하면
+// 동적 import가 존재하지 않는 예전 청크 파일을 요청해 실패하면서 화면이 비어 보이는 문제가 있다.
+// 이 경우 한 번만 새로고침해 최신 청크를 다시 받아오도록 한다(무한 새로고침 방지를 위해 세션당 1회로 제한).
+const CHUNK_LOAD_ERROR_PATTERN =
+  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i;
+const CHUNK_RELOAD_FLAG = 'tripass-chunk-reload';
+
+router.onError((error, to) => {
+  if (!CHUNK_LOAD_ERROR_PATTERN.test(error?.message || '')) return;
+  if (sessionStorage.getItem(CHUNK_RELOAD_FLAG)) return;
+
+  sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1');
+  window.location.href = to?.fullPath || window.location.href;
+});
+
+router.afterEach(() => {
+  sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
+});
+
 export default router;
