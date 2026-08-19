@@ -147,13 +147,29 @@ function goBack() {
   <main class="analysis-report-view">
     <div class="report-backdrop" @click="goBack"></div>
     <div class="report-modal">
-      <header class="report-header">
+      <header v-if="!data" class="report-header">
         <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
         <div>
           <small>TRIPASS AI REPORT</small>
           <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName || meta.icon }} 상세 분석</h1>
         </div>
         <span></span>
+      </header>
+      <header v-else class="hero-header">
+        <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
+        <span
+          class="category-icon-glyph"
+          :style="{ background: `${meta.color}18` }"
+        >
+          <span v-if="meta.iconSrc" v-html="coloredIcon"></span>
+          <template v-else>{{ meta.icon }}</template>
+        </span>
+        <div>
+          <b>{{ monthLabel(displayYearMonth) }} {{ categoryName }} 상세 분석</b>
+          <small>{{ categoryName }} 지출</small>
+          <strong>{{ formatCurrency(data.currentMonthSpending) }}</strong>
+          <em v-if="data.spendingRank">이번 달 소비 {{ data.spendingRank }}위</em>
+        </div>
       </header>
 
       <div class="report-modal-body">
@@ -177,21 +193,6 @@ function goBack() {
 
     <template v-else-if="data">
       <article class="report-paper">
-      <section class="hero-card">
-        <span
-          class="category-icon-glyph"
-          :style="{ background: `${meta.color}18` }"
-        >
-          <span v-if="meta.iconSrc" v-html="coloredIcon"></span>
-          <template v-else>{{ meta.icon }}</template>
-        </span>
-        <div>
-          <small>{{ monthLabel(displayYearMonth) }} {{ categoryName }} 지출</small>
-          <b>{{ formatCurrency(data.currentMonthSpending) }}</b>
-          <em v-if="data.spendingRank">이번 달 소비 {{ data.spendingRank }}위</em>
-        </div>
-      </section>
-
       <section class="paper-section">
         <h3>이번 달 요약</h3>
         <dl class="summary-grid">
@@ -466,13 +467,28 @@ function goBack() {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.hero-card {
+.hero-header {
   display: flex;
+  flex: none;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 20px;
+  gap: 14px;
+  padding: 14px 16px 22px;
+  border-radius: 24px 24px 0 0;
   background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
   color: #fff;
+}
+.hero-header > button {
+  display: grid;
+  flex: 0 0 100%;
+  width: 36px;
+  height: 36px;
+  margin-bottom: -4px;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
 }
 .category-icon-glyph {
   display: grid;
@@ -486,19 +502,25 @@ function goBack() {
   width: 22px;
   height: 22px;
 }
-.hero-card small {
+.hero-header b {
   display: block;
+  font-size: 16px;
+  font-weight: 900;
+}
+.hero-header small {
+  display: block;
+  margin-top: 3px;
   color: #d7e4ff;
   font-size: 10.5px;
   font-weight: 700;
 }
-.hero-card b {
+.hero-header strong {
   display: block;
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 21px;
   font-weight: 900;
 }
-.hero-card em {
+.hero-header em {
   display: block;
   margin-top: 4px;
   color: #d7e4ff;

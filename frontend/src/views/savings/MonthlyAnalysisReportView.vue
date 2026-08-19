@@ -416,7 +416,7 @@ function goCategoryDetail(categoryCode) {
   gap: 5px;
   margin-top: 2px;
   color: #173f8d;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 950;
 }
 .header-ai-icon {
@@ -457,7 +457,7 @@ function goCategoryDetail(categoryCode) {
 .section-title h3 {
   margin-top: 3px;
   color: #173f8d;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 950;
 }
 .section-title > span {
@@ -480,9 +480,6 @@ function goCategoryDetail(categoryCode) {
   align-items: center;
   gap: 10px;
   margin-top: 14px;
-  padding: 13px;
-  border-radius: 14px;
-  background: #eef4ff;
 }
 .saving-message > span,
 .saving-unavailable > span {
