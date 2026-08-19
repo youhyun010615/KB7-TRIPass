@@ -616,6 +616,13 @@ async function switchMode(mode) {
               </RouterLink>
             </div>
 
+            <!-- 헤더와 사진 섹션 사이 절취선(탑승권 펀칭 구멍) -->
+            <div class="ticket-cutline ticket-cutline-top">
+              <div class="ticket-notch ticket-notch-left" />
+              <div class="ticket-dashed-line" />
+              <div class="ticket-notch ticket-notch-right" />
+            </div>
+
             <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
             <div
               class="relative"
@@ -1337,13 +1344,16 @@ async function switchMode(mode) {
 .ticket-cutline-bottom {
   margin-top: 14px;
 }
+.ticket-cutline-top {
+  margin-top: 0;
+}
 .ticket-notch {
   position: absolute;
   top: 50%;
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #f4f5f9;
+  background: #eef2f8;
   transform: translateY(-50%);
 }
 .ticket-notch-left {

@@ -1,7 +1,9 @@
 import api from '@/api';
 
+// 통화 단위(EUR 하나로 뭉뚱그려짐) 대신 국가 단위로 환율을 내려주는 신규 API.
+// 응답 각 항목에 countryId/countryName/flagUrl이 포함돼 EUR을 쓰는 국가들도 각각 구분된다.
 export const fetchExchangeRates = async () => {
-  const response = await api.get('/exchange-rates');
+  const response = await api.get('/exchange-rates/countries');
   return response.data.data;
 };
 

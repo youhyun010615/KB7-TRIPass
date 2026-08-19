@@ -50,6 +50,9 @@ function loadState() {
 export const useExchangeStore = defineStore('exchange', () => {
   const saved = loadState();
   const selectedCode = ref(saved?.selectedCode || 'EUR');
+  // EUR처럼 여러 국가가 같은 통화를 쓰는 경우 selectedCode만으로는 국가를 구분할 수 없어
+  // 국가 단위 API로 선택한 국가를 함께 기억해 정확히 같은 항목을 다시 찾는다.
+  const selectedCountryId = ref(saved?.selectedCountryId ?? null);
   const period = ref(saved?.period || '1w');
   const currentTab = ref(saved?.currentTab || 'rate');
   const krwAmount = ref(saved?.krwAmount || 100_000);
@@ -60,12 +63,19 @@ export const useExchangeStore = defineStore('exchange', () => {
   const lastUpdateDate = ref('');
 
   const selectedBankId = ref(saved?.selectedBankId || 'kb-gangnam');
-  const selectedCurrency = computed(
-    () =>
+  const selectedCurrency = computed(() => {
+    if (selectedCountryId.value != null) {
+      const byCountry = currencies.value.find(
+        (item) => item.countryId === selectedCountryId.value,
+      );
+      if (byCountry) return byCountry;
+    }
+    return (
       currencies.value.find((item) => item.code === selectedCode.value) ||
       currencies.value[0] ||
-      {},
-  );
+      {}
+    );
+  });
   const selectedBank = computed(
     () => banks.find((item) => item.id === selectedBankId.value) || banks[0],
   );
@@ -148,7 +158,9 @@ export const useExchangeStore = defineStore('exchange', () => {
       const data = await fetchExchangeRates();
       let maxDate = '';
 
-      // API 응답 데이터를 스토어의 currencies 구조에 맞게 매핑하고 flagClass 추가
+      // API 응답 데이터를 스토어의 currencies 구조에 맞게 매핑한다.
+      // /exchange-rates/countries는 국가 단위로 내려오므로 EUR처럼 여러 국가가
+      // 같은 통화를 쓰는 경우에도 국가별로 항목이 따로 생긴다.
       currencies.value = data.map((item) => {
         let cleanCode = (item.currencyCode || '')
           .replace(/\(100\)/g, '')
@@ -161,11 +173,15 @@ export const useExchangeStore = defineStore('exchange', () => {
         }
 
         return {
+          countryId: item.countryId,
+          countryName: item.countryName,
+          flagUrl: item.flagUrl,
           code: cleanCode,
           name: item.currencyName,
           rate: item.dealBaseRate * unit,
           change: (item.changeAmount || 0) * unit,
           unit: unit,
+          // flagUrl이 없는 예외 상황을 대비한 폴백(구 하드코딩 매핑)
           flagClass: flagClassMap[cleanCode] || 'fi fi-un',
           symbol: currencySymbols[cleanCode] || cleanCode,
         };
@@ -186,6 +202,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   watch(
     [
       selectedCode,
+      selectedCountryId,
       period,
       currentTab,
       krwAmount,
@@ -197,6 +214,7 @@ export const useExchangeStore = defineStore('exchange', () => {
         STORAGE_KEY,
         JSON.stringify({
           selectedCode: selectedCode.value,
+          selectedCountryId: selectedCountryId.value,
           period: period.value,
           currentTab: currentTab.value,
           krwAmount: krwAmount.value,
@@ -210,6 +228,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   return {
     currencies,
     selectedCode,
+    selectedCountryId,
     period,
     currentTab,
     krwAmount,
