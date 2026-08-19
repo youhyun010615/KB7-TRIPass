@@ -3,6 +3,30 @@ import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'tripass-asset-management-v2'
 
+// 은행별 고유 브랜드 컬러/뱃지. organizationCode는 CODEF 연동 기관 코드(supported_institutions 기준)와 맞춘다.
+export const BANK_PRESENTATION = {
+  'KB국민은행': { name: 'KB국민은행', code: '0004', symbol: 'KB', color: '#ffbc00', text: '#5a3d00' },
+  '신한은행': { name: '신한은행', code: '0088', symbol: '신한', color: '#0046ff', text: '#ffffff' },
+  '우리은행': { name: '우리은행', code: '0020', symbol: '우리', color: '#0067ac', text: '#ffffff' },
+  'KEB하나은행': { name: 'KEB하나은행', code: '0081', symbol: '하나', color: '#00857c', text: '#ffffff' },
+  '하나은행': { name: 'KEB하나은행', code: '0081', symbol: '하나', color: '#00857c', text: '#ffffff' },
+  'NH농협은행': { name: 'NH농협은행', code: '0011', symbol: 'NH', color: '#00a651', text: '#ffffff' },
+  '농협은행': { name: 'NH농협은행', code: '0011', symbol: 'NH', color: '#00a651', text: '#ffffff' },
+  'IBK기업은행': { name: 'IBK기업은행', code: '0003', symbol: 'IBK', color: '#0072bc', text: '#ffffff' },
+  '기업은행': { name: 'IBK기업은행', code: '0003', symbol: 'IBK', color: '#0072bc', text: '#ffffff' },
+  'K뱅크': { name: 'K뱅크', code: '0089', symbol: 'K', color: '#ff4200', text: '#ffffff' },
+  '대구은행': { name: '대구은행', code: '0031', symbol: '대구', color: '#0a5eb3', text: '#ffffff' },
+  '카카오뱅크': { name: '카카오뱅크', code: null, symbol: '카오', color: '#fee500', text: '#3c1e1e' },
+}
+const DEFAULT_BANK_PRESENTATION = { name: '연동 계좌', code: null, symbol: '계', color: '#e8f0fe', text: '#1a56db' }
+
+export function bankPresentationByName(bankName) {
+  return BANK_PRESENTATION[bankName] || DEFAULT_BANK_PRESENTATION
+}
+export function bankPresentationByCode(organizationCode) {
+  return Object.values(BANK_PRESENTATION).find((item) => item.code === organizationCode) || DEFAULT_BANK_PRESENTATION
+}
+
 export const PREPAID_SCOPE_META = {
   ALL: { name: '전체', flag: '🌍' },
   COMMON: { name: '공통', flag: '🌐', description: '모든 국가에 공통으로 적용되는 항목' },
@@ -14,9 +38,9 @@ export const PREPAID_SCOPE_META = {
 }
 
 const accountSeed = [
-  { id: 1, bank: 'KB국민은행', name: 'KB국민은행 여행통장', number: '****4821', balance: 5_200_000, type: '급여계좌', symbol: '국', tone: '#fff5d8', accent: '#a56b00', primary: true },
-  { id: 2, bank: '신한은행', name: '신한은행 통장', number: '****5678', balance: 3_000_000, type: '적금', symbol: '신', tone: '#e3f7f2', accent: '#10a88d' },
-  { id: 3, bank: '카카오뱅크', name: '카카오뱅크 입출금통장', number: '****9012', balance: 4_250_000, type: '입출금', symbol: '카', tone: '#fff5d8', accent: '#7c5a00' },
+  { id: 1, bank: 'KB국민은행', name: 'KB국민은행 여행통장', number: '****4821', balance: 5_200_000, type: '급여계좌', primary: true },
+  { id: 2, bank: '신한은행', name: '신한은행 통장', number: '****5678', balance: 3_000_000, type: '적금' },
+  { id: 3, bank: '카카오뱅크', name: '카카오뱅크 입출금통장', number: '****9012', balance: 4_250_000, type: '입출금' },
 ]
 
 const transactionSeed = [
