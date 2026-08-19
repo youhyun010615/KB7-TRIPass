@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTravelModeStore } from '@/stores/travelMode';
-import { useTravelStore } from '@/stores/travel';
+import { useTravelStore, countryPresentation as globalCountryPresentation } from '@/stores/travel';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import foodIcon from '@/assets/icons/food.svg';
 import cafeIcon from '@/assets/icons/cafe.svg';
@@ -37,6 +37,9 @@ const destinations = computed(() => {
       ? `fi fi-${countryFlagMap[c.countryName]}`
       : '🌍',
     theme: getCountryColor(c.countryName),
+    image: overallAssets.find((a) => a.country === c.countryName)?.image
+      || globalCountryPresentation[c.countryName]?.image
+      || '',
   }));
   return [all, ...apiCountries];
 });
@@ -142,7 +145,8 @@ function getCategoryIcon(name) {
 function getCountryColor(countryName) {
   if (countryName === '홍콩') return '#ffb800'; // 요청하신 노란색
   const asset = overallAssets.find((a) => a.country === countryName);
-  return asset ? asset.theme : '#9aa4b3'; // 기본색
+  if (asset) return asset.theme;
+  return globalCountryPresentation[countryName]?.accent || '#9aa4b3'; // 기본색
 }
 
 // 여행자금 체크를 위한 데이터 가공

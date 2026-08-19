@@ -105,6 +105,7 @@ const dashboardCategories = computed(() => {
       const amount = Number(item.spent || 0)
       return {
         code: item.id,
+        categoryCode: code,
         name: item.name,
         icon: meta.icon,
         iconSrc: meta.iconSrc,
@@ -139,6 +140,7 @@ const fundHistoryMonths = computed(() => {
         const amount = Number(item.spent || 0)
         return {
           code: item.id,
+          categoryCode: code,
           name: item.name,
           icon: meta.icon,
           iconSrc: meta.iconSrc,
@@ -473,8 +475,15 @@ function closeSelectionFlow() {
         </div>
         <div class="fund-check-list">
           <div v-for="category in dashboardCategories" :key="category.code" class="fund-check-row">
-            <span class="fund-check-icon">
-              <img v-if="category.iconSrc" :src="category.iconSrc" alt="" />
+            <span
+              class="fund-check-icon"
+              :style="{ background: `${metaOf(category.categoryCode).color}18` }"
+            >
+              <span
+                v-if="metaOf(category.categoryCode).iconRaw"
+                class="category-icon-glyph"
+                v-html="coloredCategoryIcon(category.categoryCode)"
+              ></span>
               <template v-else>{{ category.icon }}</template>
             </span>
             <span class="fund-check-name">{{ category.name }}</span>
@@ -708,8 +717,15 @@ function closeSelectionFlow() {
           </div>
           <div class="fund-check-list">
             <div v-for="category in selectedFundMonth.categories" :key="category.code" class="fund-check-row">
-              <span class="fund-check-icon">
-                <img v-if="category.iconSrc" :src="category.iconSrc" alt="" />
+              <span
+                class="fund-check-icon"
+                :style="{ background: `${metaOf(category.categoryCode).color}18` }"
+              >
+                <span
+                  v-if="metaOf(category.categoryCode).iconRaw"
+                  class="category-icon-glyph"
+                  v-html="coloredCategoryIcon(category.categoryCode)"
+                ></span>
                 <template v-else>{{ category.icon }}</template>
               </span>
               <span class="fund-check-name">{{ category.name }}</span>
@@ -773,8 +789,7 @@ function closeSelectionFlow() {
 .fund-check-row-heading>span:last-child{font-size:11px;font-weight:700;color:#98a2b3}
 .fund-check-list{display:flex;flex-direction:column;gap:13px}
 .fund-check-row{display:flex;align-items:center;gap:10px}
-.fund-check-icon{display:grid;width:20px;height:20px;flex-shrink:0;place-items:center;font-size:14px}
-.fund-check-icon img{width:16px;height:16px}
+.fund-check-icon{display:grid;width:32px;height:32px;flex-shrink:0;place-items:center;border-radius:11px;font-size:15px}
 .fund-check-name{width:42px;flex-shrink:0;font-size:12.5px;font-weight:700;color:#10192b}
 .fund-check-bar{flex:1;height:6px;border-radius:99px;background:#edf0f6;overflow:hidden}
 .fund-check-bar>div{height:100%;border-radius:inherit;background:linear-gradient(90deg,#0b2a6b,#2f70d9);transform-origin:left;animation:fund-bar-grow .9s cubic-bezier(.22,1,.36,1) both}

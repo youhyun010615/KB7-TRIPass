@@ -5,7 +5,7 @@ import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
 import { useSavingReadinessStore } from '@/stores/savingReadiness';
-import { useTravelStore } from '@/stores/travel';
+import { useTravelStore, countryPresentation as globalCountryPresentation } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { getAccounts } from '@/api/asset';
 import { getCards } from '@/api/card';
@@ -185,12 +185,37 @@ const isHomePending = computed(
       !travelStore.homeError &&
       (!travelStore.initialized || travelStore.hasTravelGoal)),
 );
+// 위 countryPresentation에 없는 국가는 stores/travel.js의 공용 국가 정보(accent, image)로 대체한다.
+function hexToRgba(hex, alpha) {
+  const clean = (hex || '').replace('#', '');
+  const num = parseInt(clean, 16);
+  if (Number.isNaN(num)) return `rgba(23,63,141,${alpha})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function fallbackPresentation(country) {
+  const shared = globalCountryPresentation[country.countryName];
+  if (!shared) return defaultPresentation;
+  const accent = shared.accent || defaultPresentation.headerBg;
+  return {
+    flag: shared.flag,
+    code: shared.code,
+    image: shared.image || '',
+    headerBg: accent,
+    progressBg: hexToRgba(accent, 0.84),
+    barColor: `linear-gradient(90deg, ${accent} 0%, ${accent}99 100%)`,
+    desc: `${country.countryName}에서의 여행을 준비하고 있어요.`,
+  };
+}
+
 const countries = computed(() =>
   [...(homeDashboard.value?.countries || [])]
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map((country) => {
       const presentation =
-        countryPresentation[country.countryName] || defaultPresentation;
+        countryPresentation[country.countryName] || fallbackPresentation(country);
       return {
         ...country,
         ...presentation,
@@ -289,6 +314,9 @@ const exchangeCardStyle = computed(() => ({
     selectedCountry.value.code === 'CH'
       ? 'rgba(255,255,255,.16)'
       : 'rgba(94,160,255,.22)',
+  '--exchange-photo': selectedCountry.value.image
+    ? `url(${selectedCountry.value.image})`
+    : 'none',
 }));
 
 const ticketSavingCopy = computed(() => {
@@ -2137,11 +2165,14 @@ async function switchMode(mode) {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 22px;
-  background: linear-gradient(
-    135deg,
-    var(--exchange-primary),
-    color-mix(in srgb, var(--exchange-primary) 76%, #2f72df)
-  );
+  background:
+    linear-gradient(135deg, rgba(10, 20, 45, .32), rgba(10, 20, 45, .58)),
+    var(--exchange-photo) center/cover no-repeat,
+    linear-gradient(
+      135deg,
+      var(--exchange-primary),
+      color-mix(in srgb, var(--exchange-primary) 76%, #2f72df)
+    );
   color: #fff;
   box-shadow: 0 14px 30px
     color-mix(in srgb, var(--exchange-primary) 25%, transparent);

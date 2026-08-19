@@ -13,50 +13,80 @@ import {
   fetchBudgetCheck,
 } from '@/api/travel';
 
-const countryPresentation = {
-  아랍에미리트: { code: 'AE', city: '두바이', flag: '🇦🇪', accent: '#0f766e' },
-  오스트리아: { code: 'AT', city: '빈', flag: '🇦🇹', accent: '#8c1d3f' },
-  호주: { code: 'AU', city: '시드니', flag: '🇦🇺', accent: '#1565c0' },
-  벨기에: { code: 'BE', city: '브뤼셀', flag: '🇧🇪', accent: '#f0ad1f' },
-  바레인: { code: 'BH', city: '마나마', flag: '🇧🇭', accent: '#c62828' },
+import imageAE from '@/assets/countries/AE.webp';
+import imageAT from '@/assets/countries/AT.jpeg';
+import imageAU from '@/assets/countries/AU.jpeg';
+import imageBH from '@/assets/countries/BH.jpeg';
+import imageBN from '@/assets/countries/BN.jpeg';
+import imageCA from '@/assets/countries/CA.avif';
+import imageCN from '@/assets/countries/CN.avif';
+import imageDK from '@/assets/countries/DK.jpeg';
+import imageES from '@/assets/countries/ES.jpeg';
+import imageFI from '@/assets/countries/FI.jpeg';
+import imageGB from '@/assets/countries/GB.jpeg';
+import imageGR from '@/assets/countries/GR.jpeg';
+import imageGU from '@/assets/countries/GU.webp';
+import imageID from '@/assets/countries/ID.webp';
+import imageIE from '@/assets/countries/IE.jpeg';
+import imageIT from '@/assets/countries/IT.jpeg';
+import imageKW from '@/assets/countries/KW.avif';
+import imageMY from '@/assets/countries/MY.jpeg';
+import imageNL from '@/assets/countries/NL.jpeg';
+import imageNO from '@/assets/countries/NO.jpeg';
+import imageNZ from '@/assets/countries/NZ.jpeg';
+import imagePT from '@/assets/countries/PT.jpg';
+import imageSA from '@/assets/countries/SA.jpeg';
+import imageSE from '@/assets/countries/SE.jpeg';
+import imageSG from '@/assets/countries/SG.jpeg';
+import imageTH from '@/assets/countries/TH.avif';
+import imageUS from '@/assets/countries/US.jpeg';
+
+export const countryPresentation = {
+  아랍에미리트: { code: 'AE', city: '두바이', flag: '🇦🇪', accent: '#00732f', image: imageAE },
+  오스트리아: { code: 'AT', city: '빈', flag: '🇦🇹', accent: '#ed2939', image: imageAT },
+  호주: { code: 'AU', city: '시드니', flag: '🇦🇺', accent: '#00008b', image: imageAU },
+  벨기에: { code: 'BE', city: '브뤼셀', flag: '🇧🇪', accent: '#2d2926' },
+  바레인: { code: 'BH', city: '마나마', flag: '🇧🇭', accent: '#ce1126', image: imageBH },
   브루나이: {
     code: 'BN',
     city: '반다르스리브가완',
     flag: '🇧🇳',
-    accent: '#f2b705',
+    accent: '#f7e017',
+    image: imageBN,
   },
-  캐나다: { code: 'CA', city: '밴쿠버', flag: '🇨🇦', accent: '#e53935' },
+  캐나다: { code: 'CA', city: '토론토', flag: '🇨🇦', accent: '#ff0000', image: imageCA },
   스위스: { code: 'CH', city: '인터라켄', flag: '🇨🇭', accent: '#c8173c' },
-  중국: { code: 'CN', city: '상하이', flag: '🇨🇳', accent: '#d32f2f' },
-  덴마크: { code: 'DK', city: '코펜하겐', flag: '🇩🇰', accent: '#b71c1c' },
-  스페인: { code: 'ES', city: '마드리드', flag: '🇪🇸', accent: '#c8102e' },
-  핀란드: { code: 'FI', city: '헬싱키', flag: '🇫🇮', accent: '#003580' },
+  중국: { code: 'CN', city: '베이징', flag: '🇨🇳', accent: '#de2910', image: imageCN },
+  덴마크: { code: 'DK', city: '코펜하겐', flag: '🇩🇰', accent: '#c8102e', image: imageDK },
+  스페인: { code: 'ES', city: '마드리드', flag: '🇪🇸', accent: '#c60b1e', image: imageES },
+  핀란드: { code: 'FI', city: '헬싱키', flag: '🇫🇮', accent: '#003580', image: imageFI },
   프랑스: { code: 'FR', city: '파리', flag: '🇫🇷', accent: '#0066ff' },
   독일: { code: 'DE', city: '베를린', flag: '🇩🇪', accent: '#151515' },
-  영국: { code: 'GB', city: '런던', flag: '🇬🇧', accent: '#1e3a8a' },
-  그리스: { code: 'GR', city: '아테네', flag: '🇬🇷', accent: '#0d5eaf' },
-  괌: { code: 'GU', city: '하갓냐', flag: '🇬🇺', accent: '#0e7c61' },
+  영국: { code: 'GB', city: '런던', flag: '🇬🇧', accent: '#1e3a8a', image: imageGB },
+  그리스: { code: 'GR', city: '아테네', flag: '🇬🇷', accent: '#0d5eaf', image: imageGR },
+  괌: { code: 'GU', city: '괌', flag: '🇬🇺', accent: '#003f87', image: imageGU },
   홍콩: { code: 'HK', city: '홍콩', flag: '🇭🇰', accent: '#b8202e' },
-  인도네시아: { code: 'ID', city: '발리', flag: '🇮🇩', accent: '#c62828' },
-  아일랜드: { code: 'IE', city: '더블린', flag: '🇮🇪', accent: '#169b62' },
-  이탈리아: { code: 'IT', city: '로마', flag: '🇮🇹', accent: '#2e7d32' },
+  인도네시아: { code: 'ID', city: '발리', flag: '🇮🇩', accent: '#c62828', image: imageID },
+  아일랜드: { code: 'IE', city: '더블린', flag: '🇮🇪', accent: '#169b62', image: imageIE },
+  이탈리아: { code: 'IT', city: '로마', flag: '🇮🇹', accent: '#008c45', image: imageIT },
   일본: { code: 'JP', city: '도쿄', flag: '🇯🇵', accent: '#ef4b91' },
-  쿠웨이트: { code: 'KW', city: '쿠웨이트시티', flag: '🇰🇼', accent: '#00897b' },
+  쿠웨이트: { code: 'KW', city: '쿠웨이트시티', flag: '🇰🇼', accent: '#00897b', image: imageKW },
   말레이시아: {
     code: 'MY',
     city: '쿠알라룸푸르',
     flag: '🇲🇾',
     accent: '#1565c0',
+    image: imageMY,
   },
-  네덜란드: { code: 'NL', city: '암스테르담', flag: '🇳🇱', accent: '#e8580c' },
-  노르웨이: { code: 'NO', city: '오슬로', flag: '🇳🇴', accent: '#c62828' },
-  뉴질랜드: { code: 'NZ', city: '오클랜드', flag: '🇳🇿', accent: '#1565c0' },
-  포르투갈: { code: 'PT', city: '리스본', flag: '🇵🇹', accent: '#046a38' },
-  사우디아라비아: { code: 'SA', city: '리야드', flag: '🇸🇦', accent: '#15803d' },
-  스웨덴: { code: 'SE', city: '스톡홀름', flag: '🇸🇪', accent: '#1e40af' },
-  싱가포르: { code: 'SG', city: '싱가포르', flag: '🇸🇬', accent: '#dc2626' },
-  태국: { code: 'TH', city: '방콕', flag: '🇹🇭', accent: '#2563eb' },
-  미국: { code: 'US', city: '뉴욕', flag: '🇺🇸', accent: '#1d4ed8' },
+  네덜란드: { code: 'NL', city: '암스테르담', flag: '🇳🇱', accent: '#ae1c28', image: imageNL },
+  노르웨이: { code: 'NO', city: '오슬로', flag: '🇳🇴', accent: '#c62828', image: imageNO },
+  뉴질랜드: { code: 'NZ', city: '오클랜드', flag: '🇳🇿', accent: '#1565c0', image: imageNZ },
+  포르투갈: { code: 'PT', city: '리스본', flag: '🇵🇹', accent: '#006600', image: imagePT },
+  사우디아라비아: { code: 'SA', city: '리야드', flag: '🇸🇦', accent: '#15803d', image: imageSA },
+  스웨덴: { code: 'SE', city: '스톡홀름', flag: '🇸🇪', accent: '#1e40af', image: imageSE },
+  싱가포르: { code: 'SG', city: '싱가포르', flag: '🇸🇬', accent: '#dc2626', image: imageSG },
+  태국: { code: 'TH', city: '방콕', flag: '🇹🇭', accent: '#2563eb', image: imageTH },
+  미국: { code: 'US', city: '뉴욕', flag: '🇺🇸', accent: '#1d4ed8', image: imageUS },
 };
 
 const accountSeed = [
@@ -122,6 +152,8 @@ function decorateCountry(country) {
     city: presentation.city || country.countryName,
     flag: presentation.flag || '✈️',
     accent: presentation.accent || '#2469e8',
+    image: presentation.image || null,
+    selectable: country.selectable !== false,
   };
 }
 
@@ -311,7 +343,13 @@ export const useTravelStore = defineStore('travel', () => {
     countryLoading.value = true;
     try {
       const result = await fetchTripCountries(keyword);
-      countries.value = (result || []).map(decorateCountry);
+      // 선택 가능한 국가를 먼저, 그 안에서는 가나다순으로 정렬한다.
+      countries.value = (result || [])
+        .map(decorateCountry)
+        .sort((a, b) => {
+          if (a.selectable !== b.selectable) return a.selectable ? -1 : 1;
+          return (a.name || '').localeCompare(b.name || '', 'ko-KR');
+        });
       return countries.value;
     } catch (error) {
       errorMessage.value = apiErrorMessage(

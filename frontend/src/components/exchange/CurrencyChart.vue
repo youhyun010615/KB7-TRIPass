@@ -59,7 +59,7 @@ const chartOptions = {
     intersect: false,
   },
   plugins: {
-    legend: { display: true },
+    legend: { display: true, position: 'top', align: 'end' },
     tooltip: {
       enabled: true,
       callbacks: {
@@ -144,6 +144,10 @@ watch(() => props.currency, fetchHistory, { immediate: true });
 
 <template v-if="props.currency">
   <section class="chart">
+    <small v-if="lastUpdateDate" class="update-info">
+      {{ lastUpdateDate }} 고시 기준
+      <span class="update-note">· 매일 오전 11시 갱신</span>
+    </small>
     <div class="chart-head">
       <h2>환율 추이</h2>
       <nav>
@@ -163,14 +167,10 @@ watch(() => props.currency, fetchHistory, { immediate: true });
         {{ format(safeCurrency.rate) }}<small>원</small></strong
       >
       <p class="change-row" :class="{ up: safeCurrency.change > 0, down: safeCurrency.change <= 0 }">
+        <small>전일 대비</small>
         <span class="arrow">{{ safeCurrency.change > 0 ? '▲' : '▼' }}</span>
         {{ format(Math.abs(safeCurrency.change)) }}원
-        <small>전일 대비</small>
       </p>
-      <small v-if="lastUpdateDate" class="update-info">
-        {{ lastUpdateDate }} 고시 기준
-        <span class="update-note">· 매일 오전 11시 갱신</span>
-      </small>
     </div>
     <div class="chart-container" style="height: 148px">
       <Line :data="chartData" :options="chartOptions" />
@@ -237,8 +237,8 @@ nav .active {
   gap: 0;
 }
 .update-info {
-  align-self: flex-end;
-  margin-top: 7px;
+  display: block;
+  margin-bottom: 8px;
   color: #9aa6b8;
   font-size: 9px;
   font-weight: 500;
@@ -262,7 +262,6 @@ nav .active {
   line-height: 1.25;
 }
 .chart .change-row small {
-  margin-left: 3px;
   color: #9aa6b8;
   font-size: 8.5px;
   font-weight: 600;

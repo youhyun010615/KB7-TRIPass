@@ -58,6 +58,9 @@ const currentTab = computed({
 
 onMounted(() => {
   exchange.updateExchangeRates();
+  // 여행 계획이 아직 로드되지 않은 상태로 환율 탭에 바로 들어오면
+  // travel.selectedPlans가 비어 있어 등록 국가 필터링이 되지 않는 문제를 방지한다.
+  travel.loadActiveGoal();
 });
 
 // 여행 미등록 시 전체 통화, 등록 시 여행지 국가의 통화만 표시한다.
@@ -77,12 +80,28 @@ const displayCurrencies = computed(() => {
   return filtered.length > 0 ? filtered : exchange.currencies;
 });
 
+// 여러 국가가 같은 통화(예: EUR)를 쓰는 경우, 등록한 여행 국가가 있으면
+// '유럽연합' 같은 통화 기준 이름 대신 실제 등록 국가명(예: 프랑스)을 우선 보여준다.
+const travelCountryNameByCurrency = computed(() => {
+  const map = {};
+  for (const plan of travel.selectedPlans) {
+    if (plan.currencyCode && !map[plan.currencyCode]) {
+      map[plan.currencyCode] = plan.name;
+    }
+  }
+  return map;
+});
+
+function countryNameFor(code) {
+  return travelCountryNameByCurrency.value[code] || currencyCountryNames[code];
+}
+
 const filteredCurrencies = computed(() => {
   const keyword = currencySearch.value.trim().toLocaleLowerCase('ko-KR');
   return displayCurrencies.value
     .map((currency) => ({
       ...currency,
-      countryName: currencyCountryNames[currency.code] || currency.name || currency.code,
+      countryName: countryNameFor(currency.code) || currency.name || currency.code,
     }))
     .filter((currency) =>
       !keyword || [currency.countryName, currency.code, currency.name, currency.symbol]
@@ -210,7 +229,7 @@ watch(
             >
               <span class="fi currency-country-flag" :class="exchange.selectedCurrency?.flagClass" aria-hidden="true"></span>
               <span class="currency-select-info">
-                <span class="currency-country-name">{{ currencyCountryNames[exchange.selectedCode] || exchange.selectedCurrency?.name }}</span>
+                <span class="currency-country-name">{{ countryNameFor(exchange.selectedCode) || exchange.selectedCurrency?.name }}</span>
                 <span class="currency-country-unit">{{ exchange.selectedCurrency?.name }} · {{ exchange.selectedCode }}</span>
               </span>
               <svg class="currency-select-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
