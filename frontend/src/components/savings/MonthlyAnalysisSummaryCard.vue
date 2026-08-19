@@ -17,7 +17,7 @@ const categoryMeta = {
   CAFE: { icon: '☕', iconSrc: cafeIcon, color: '#3b82f6' },
   LIVING: { icon: '🧺', color: '#13a184' },
   SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, color: '#f59e0b' },
-  HOBBY: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
+  LEISURE: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
   TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, color: '#0ea5e9' },
   OTHER: { icon: '•••', color: '#64748b' },
 };

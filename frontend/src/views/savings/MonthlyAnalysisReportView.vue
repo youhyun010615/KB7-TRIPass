@@ -9,6 +9,11 @@ import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
 import aiIcon from '@/assets/icons/ai.svg';
 import aiReportIcon from '@/assets/icons/ai_report.svg';
+import foodIconRaw from '@/assets/icons/food.svg?raw';
+import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
+import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
+import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
+import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,12 +22,12 @@ const analysisStore = useMonthlyAnalysisStore();
 const yearMonth = computed(() => String(route.params.yearMonth || ''));
 const report = computed(() => analysisStore.report);
 const categoryMeta = {
-  FOOD: { icon: '🍽', iconSrc: foodIcon, color: '#2457aa' },
-  CAFE: { icon: '☕', iconSrc: cafeIcon, color: '#3b82f6' },
+  FOOD: { icon: '🍽', iconSrc: foodIcon, iconRaw: foodIconRaw, color: '#2457aa' },
+  CAFE: { icon: '☕', iconSrc: cafeIcon, iconRaw: cafeIconRaw, color: '#3b82f6' },
   LIVING: { icon: '🧺', color: '#13a184' },
-  SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, color: '#f59e0b' },
-  HOBBY: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
-  TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, color: '#0ea5e9' },
+  SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, iconRaw: shoppingIconRaw, color: '#f59e0b' },
+  LEISURE: { icon: '🎮', iconSrc: leisureIcon, iconRaw: leisureIconRaw, color: '#8b5cf6' },
+  TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, iconRaw: taxiIconRaw, color: '#0ea5e9' },
   OTHER: { icon: '•••', color: '#64748b' },
 };
 
@@ -76,6 +81,26 @@ function metaOf(categoryCode) {
   return categoryMeta[categoryCode] || categoryMeta.OTHER;
 }
 
+// 카테고리 아이콘 색을 해당 카테고리 배경색보다 조금 더 진하게 만든다.
+function darken(hex, amount = 0.3) {
+  const clean = (hex || '').replace('#', '');
+  const num = parseInt(clean, 16);
+  if (Number.isNaN(num)) return hex;
+
+  const r = Math.max(0, Math.round(((num >> 16) & 255) * (1 - amount)));
+  const g = Math.max(0, Math.round(((num >> 8) & 255) * (1 - amount)));
+  const b = Math.max(0, Math.round((num & 255) * (1 - amount)));
+
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// 카테고리 SVG 아이콘의 black 채우기/선 색을 카테고리 색보다 진하게 바꿔 넣는다.
+function coloredCategoryIcon(categoryCode) {
+  const meta = metaOf(categoryCode);
+  if (!meta.iconRaw) return '';
+  return meta.iconRaw.replaceAll('black', darken(meta.color));
+}
+
 function goBack() {
   if (window.history.length > 1) {
     router.back();
@@ -107,7 +132,10 @@ function goMissions() {
       <button type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
       <div>
         <small>TRIPASS AI REPORT</small>
-        <h1>월간 소비 분석</h1>
+        <h1>
+          {{ analysisMonthLabel }} AI 분석 리포트
+          <img class="header-ai-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+        </h1>
       </div>
       <button
         type="button"
@@ -146,26 +174,22 @@ function goMissions() {
     </section>
 
     <template v-else>
-      <section class="report-hero">
-        <span class="hero-ai-scan" aria-hidden="true">
-          <img class="hero-ai-badge" :src="aiIcon" alt="" />
-          <span class="hero-ai-ping"></span>
-          <span class="hero-ai-ping delay"></span>
-        </span>
-        <small>{{ report.analysisYearMonth }}</small>
-        <h2>
-          {{ analysisMonthLabel }} AI 분석 리포트
-          <img class="hero-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
-        </h2>
-        <p>여행을 더 자주 떠날 수 있도록 지난달 금융 습관을 정리했어요.</p>
-        <span class="viewed-badge">AI 분석 완료</span>
-      </section>
-
       <p v-if="analysisStore.errorMessage" class="status-warning">
         {{ analysisStore.errorMessage }}
       </p>
 
-      <section class="report-section saving-section">
+      <article class="report-paper">
+        <div class="paper-letterhead">
+          <div class="letterhead-left">
+            <strong class="letterhead-title">{{ analysisMonthLabel }} AI 분석 리포트</strong>
+            <img class="letterhead-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+          </div>
+          <div class="letterhead-right">
+            <span class="ai-label"><img :src="aiIcon" alt="" /></span>
+          </div>
+        </div>
+
+      <section class="paper-section saving-section">
         <div class="section-title">
           <div>
             <small>SAVING RESULT</small>
@@ -210,7 +234,7 @@ function goMissions() {
         </dl>
       </section>
 
-      <section class="report-section spending-section">
+      <section class="paper-section spending-section">
         <div class="section-title">
           <div>
             <small>SPENDING INSIGHT</small>
@@ -235,7 +259,11 @@ function goMissions() {
                 color: metaOf(category.categoryCode).color,
               }"
             >
-              <img v-if="metaOf(category.categoryCode).iconSrc" :src="metaOf(category.categoryCode).iconSrc" alt="" />
+              <span
+                v-if="metaOf(category.categoryCode).iconSrc"
+                class="category-icon-glyph"
+                v-html="coloredCategoryIcon(category.categoryCode)"
+              ></span>
               <template v-else>{{ metaOf(category.categoryCode).icon }}</template>
             </span>
             <div class="category-detail">
@@ -248,7 +276,6 @@ function goMissions() {
                 <span
                   :style="{
                     width: `${Math.min(100, Number(category.ratio) || 0)}%`,
-                    background: metaOf(category.categoryCode).color,
                   }"
                 />
               </i>
@@ -258,13 +285,12 @@ function goMissions() {
         </div>
       </section>
 
-      <section class="report-section coaching-section">
+      <section class="paper-section coaching-section">
         <div class="section-title">
           <div>
             <small>AI COACHING</small>
             <h3>이번 달 절약 포인트</h3>
           </div>
-          <span class="ai-label"><img :src="aiIcon" alt="" /></span>
         </div>
 
         <div class="coaching-summary">
@@ -283,7 +309,11 @@ function goMissions() {
                 background: `${metaOf(recommendation.categoryCode).color}18`,
               }"
             >
-              <img v-if="metaOf(recommendation.categoryCode).iconSrc" :src="metaOf(recommendation.categoryCode).iconSrc" alt="" />
+              <span
+                v-if="metaOf(recommendation.categoryCode).iconSrc"
+                class="category-icon-glyph"
+                v-html="coloredCategoryIcon(recommendation.categoryCode)"
+              ></span>
               <template v-else>{{ metaOf(recommendation.categoryCode).icon }}</template>
             </span>
             <div>
@@ -294,6 +324,7 @@ function goMissions() {
         </ol>
 
         <p class="mission-guide">
+          <span class="sparkle" aria-hidden="true">✦</span>
           {{ targetMonthLabel }}에는 카테고리별 절감률을 선택해 나만의 미션을
           시작할 수 있어요.
         </p>
@@ -301,15 +332,7 @@ function goMissions() {
           추천 미션 보러 가기 <span>›</span>
         </button>
       </section>
-
-      <button
-        type="button"
-        class="close-report-button"
-        :disabled="analysisStore.updatingStatus"
-        @click="closeReport"
-      >
-        {{ analysisStore.updatingStatus ? '처리 중...' : '이번 리포트 닫기' }}
-      </button>
+      </article>
     </template>
   </main>
 </template>
@@ -353,25 +376,44 @@ function goMissions() {
   letter-spacing: 0.16em;
 }
 .report-header h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   margin-top: 2px;
-  font-size: 17px;
+  color: #173f8d;
+  font-size: 15px;
   font-weight: 950;
+}
+.header-ai-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  filter: invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%);
 }
 .report-header .close-icon {
   font-size: 23px;
 }
-.report-hero {
-  position: relative;
+.report-paper {
   overflow: hidden;
   margin: 14px;
-  padding: 20px 20px 18px;
   border-radius: 25px;
-  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
-  color: #fff;
-  box-shadow: 0 15px 30px rgba(23, 63, 141, 0.24);
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(23, 63, 141, 0.16);
   animation: report-enter 0.48s ease both;
 }
-.report-hero::after {
+.paper-letterhead {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
+  color: #fff;
+}
+.paper-letterhead::after {
   position: absolute;
   right: -52px;
   bottom: -65px;
@@ -380,90 +422,59 @@ function goMissions() {
   border: 32px solid #ffffff0d;
   border-radius: 50%;
   content: '';
+  pointer-events: none;
 }
-.report-hero > small {
-  color: #b9d1ff;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.13em;
-}
-.report-hero h2 {
+.letterhead-left {
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
+  min-width: 0;
   align-items: center;
   gap: 6px;
-  margin-top: 5px;
-  font-size: 19px;
-  font-weight: 950;
-  letter-spacing: -0.05em;
 }
-.hero-report-icon {
-  width: 16px;
-  height: 16px;
+.letterhead-title {
+  overflow: hidden;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+.letterhead-report-icon {
+  width: 12px;
+  height: 12px;
+  flex: none;
   object-fit: contain;
   filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
 }
-.hero-ai-scan {
-  position: absolute;
-  top: 20px;
-  right: 22px;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-}
-.hero-ai-badge {
+.letterhead-right {
   position: relative;
   z-index: 1;
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
-  animation: hero-ai-badge-pulse 1.6s ease-in-out infinite;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
 }
-.hero-ai-ping {
-  position: absolute;
-  inset: -6px;
-  border: 1.5px solid rgba(255, 255, 255, 0.65);
-  border-radius: 50%;
-  animation: hero-ai-ping 1.8s ease-out infinite;
+.letterhead-right .ai-label {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.16) !important;
+  animation: ai-label-pulse-light 2s ease-in-out infinite;
 }
-.hero-ai-ping.delay {
-  animation-delay: 0.9s;
+.letterhead-right .ai-label img {
+  width: 18px;
+  height: 18px;
+  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
 }
-.report-hero p {
-  max-width: 270px;
-  margin-top: 8px;
-  color: #d3e1ff;
-  font-size: 12.5px;
-  line-height: 1.55;
+.paper-section {
+  padding: 20px;
 }
-.viewed-badge {
-  display: inline-flex;
-  margin-top: 16px;
-  padding: 6px 9px;
-  border: 1px solid #ffffff25;
-  border-radius: 999px;
-  background: #ffffff12;
-  color: #ffd35e;
-  font-size: 10px;
-  font-weight: 900;
-}
-.report-section {
-  margin: 12px 14px 0;
-  padding: 18px;
-  border: 1px solid #dce6f5;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 9px 24px rgba(34, 62, 112, 0.08);
-  animation: report-enter 0.48s ease both;
-}
-.spending-section {
-  animation-delay: 0.08s;
-}
-.coaching-section {
-  animation-delay: 0.16s;
+.paper-section + .paper-section {
+  border-top: 1px solid #eef1f8;
 }
 .section-title {
   display: flex;
@@ -597,9 +608,15 @@ function goMissions() {
   border-radius: 12px;
   font-size: 16px;
 }
-.category-icon img {
+.category-icon-glyph {
+  display: block;
   width: 18px;
   height: 18px;
+}
+.category-icon-glyph :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .category-detail > div {
   display: flex;
@@ -632,6 +649,7 @@ function goMissions() {
   display: block;
   height: 100%;
   border-radius: inherit;
+  background: linear-gradient(90deg, #0b2a6b, #2f70d9);
   transition: width 0.7s ease;
 }
 .category-item > b {
@@ -658,19 +676,15 @@ function goMissions() {
 }
 .coaching-summary {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-top: 14px;
-  padding: 14px;
-  border-radius: 15px;
-  background: linear-gradient(135deg, #173f8d, #286ce0);
-  color: #fff;
 }
 .coaching-summary > .sparkle {
-  color: #ffd35e;
+  color: #f0a93c;
   animation: sparkle-twinkle 1.8s ease-in-out infinite;
 }
 .coaching-summary p {
-  color: #eef4ff;
+  color: #536887;
   font-size: 11.5px;
   line-height: 1.6;
 }
@@ -705,10 +719,6 @@ function goMissions() {
   place-items: center;
   border-radius: 12px;
 }
-.recommendation-list li > span img {
-  width: 18px;
-  height: 18px;
-}
 .recommendation-list strong {
   color: #26334d;
   font-size: 13px;
@@ -721,30 +731,33 @@ function goMissions() {
 }
 .mission-guide {
   margin-top: 14px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #fff7e7;
-  color: #9a6813;
-  font-size: 10.5px;
+  color: #78869f;
+  font-size: 10px;
   line-height: 1.5;
+  word-break: keep-all;
+}
+.mission-guide .sparkle {
+  margin-right: 3px;
+  color: #f0a93c;
+  animation: sparkle-twinkle 1.8s ease-in-out infinite;
 }
 .mission-button {
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   margin-top: 11px;
-  padding: 15px;
-  border-radius: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
   background: #173f8d;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   animation: mission-button-pulse 2.4s ease-out infinite;
 }
 .mission-button span {
-  font-size: 18px;
+  font-size: 15px;
 }
 @keyframes mission-button-pulse {
   0% {
@@ -759,14 +772,6 @@ function goMissions() {
   .mission-button {
     animation: none;
   }
-}
-.close-report-button {
-  display: block;
-  margin: 17px auto 0;
-  padding: 10px 14px;
-  color: #7b8da9;
-  font-size: 11px;
-  text-decoration: underline;
 }
 .report-state {
   display: flex;
@@ -841,27 +846,6 @@ function goMissions() {
     transform: translateY(0);
   }
 }
-@keyframes hero-ai-badge-pulse {
-  0%,
-  100% {
-    transform: scale(0.9);
-    filter: brightness(0) invert(1) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
-  }
-  50% {
-    transform: scale(1.08);
-    filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.75));
-  }
-}
-@keyframes hero-ai-ping {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.1);
-    opacity: 0;
-  }
-}
 @keyframes ai-label-pulse {
   0%,
   100% {
@@ -869,6 +853,15 @@ function goMissions() {
   }
   50% {
     box-shadow: 0 0 0 6px rgba(23, 63, 141, 0);
+  }
+}
+@keyframes ai-label-pulse-light {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
   }
 }
 @keyframes sparkle-twinkle {
@@ -883,10 +876,7 @@ function goMissions() {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .report-hero,
-  .report-section,
-  .hero-ai-badge,
-  .hero-ai-ping,
+  .report-paper,
   .ai-label,
   .sparkle {
     animation: none;

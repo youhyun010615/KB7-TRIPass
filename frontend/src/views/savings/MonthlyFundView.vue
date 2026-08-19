@@ -32,6 +32,9 @@ const selectedCode = computed({
 })
 const selectedCountry = computed(() => countryThemes.find((item) => item.code === selectedCode.value) || countryThemes[0])
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
+const sortedCategorySummaries = computed(() =>
+  [...fund.categorySummaries].sort((a, b) => b.spent - a.spent),
+)
 </script>
 
 <template>
@@ -62,7 +65,7 @@ const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
       <section class="card category-card">
         <h2>카테고리별 자금 현황</h2>
         <button
-          v-for="item in fund.categorySummaries"
+          v-for="item in sortedCategorySummaries"
           :key="item.id"
           class="category-row"
           @click="router.push(`/savings/monthly/categories/${item.id}`)"

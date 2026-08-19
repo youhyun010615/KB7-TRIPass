@@ -70,6 +70,35 @@ export const useMonthlyFundStore = defineStore('monthlyFund', () => {
 
   const categorySummaries = computed(() => categories.map((item) => categorySummary(item.id)))
 
+  // 지난달 이전 자금 체크는 실제 월별 데이터가 없어 카테고리·월 조합으로 고정된 값을 만들어 보여준다.
+  function seededRatio(categoryId, monthsAgo) {
+    const seedStr = `${categoryId}-${monthsAgo}`
+    let seed = 0
+    for (let i = 0; i < seedStr.length; i += 1) {
+      seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0
+    }
+    return 0.35 + ((seed % 1000) / 1000) * 0.55
+  }
+
+  function categorySummaryForMonth(categoryId, monthsAgo = 0) {
+    if (monthsAgo <= 0) return categorySummary(categoryId)
+    const category = getCategory(categoryId)
+    if (!category) return null
+    const target = Number(category.target || 0)
+    const percent = Math.round(seededRatio(categoryId, monthsAgo) * 100)
+    const spent = Math.round((target * percent) / 100)
+    return {
+      ...category,
+      spent,
+      remaining: Math.max(0, target - spent),
+      percent: Math.min(100, percent),
+    }
+  }
+
+  function categorySummariesForMonth(monthsAgo = 0) {
+    return categories.map((item) => categorySummaryForMonth(item.id, monthsAgo))
+  }
+
   function updateCategoryTarget(categoryId, value) {
     const category = getCategory(categoryId)
     if (!category) return
@@ -124,6 +153,8 @@ export const useMonthlyFundStore = defineStore('monthlyFund', () => {
     prepaidExpenses,
     categoryTargetTotal,
     categorySummaries,
+    categorySummaryForMonth,
+    categorySummariesForMonth,
     availableFunds,
     freeFunds,
     prepaidTotal,

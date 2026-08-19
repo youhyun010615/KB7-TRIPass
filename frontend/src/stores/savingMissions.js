@@ -71,12 +71,27 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
         : [];
     }),
   );
+  // 추천 카테고리 중 이미 진행 중인 미션의 목표 절감액 합계.
+  // (진행 중 미션은 selectedRates에 담기지 않으므로 실제 진행 중인 절감률로 옵션을 찾아 합산한다.)
+  const startedSelectedSavingAmount = computed(() => {
+    const startedMissionsByCategory = new Map(
+      (missions.value?.missions || []).map((mission) => [String(mission.categoryId), mission]),
+    );
+    return options.value.reduce((sum, category) => {
+      const startedMission = startedMissionsByCategory.get(String(category.categoryId));
+      if (!startedMission) return sum;
+      const matchedOption = category.options?.find(
+        (option) => Number(option.reductionRate) === Number(startedMission.reductionRate),
+      );
+      return sum + Number(matchedOption?.monthlyReductionTarget || 0);
+    }, 0);
+  });
   const expectedSavingAmount = computed(() =>
     selectedOptions.value.reduce(
       (sum, item) =>
         sum + Number(item.selectedOption.monthlyReductionTarget || 0),
       0,
-    ),
+    ) + startedSelectedSavingAmount.value,
   );
   const newExpectedSavingAmount = computed(() =>
     selectedOptions.value
@@ -84,7 +99,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
       .reduce(
         (sum, item) => sum + Number(item.selectedOption.monthlyReductionTarget || 0),
         0,
-      ),
+      ) + startedSelectedSavingAmount.value,
   );
 
   function applySelections(savedSelections = []) {

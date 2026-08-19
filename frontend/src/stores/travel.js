@@ -15,7 +15,9 @@ import {
 
 const countryPresentation = {
   아랍에미리트: { code: 'AE', city: '두바이', flag: '🇦🇪', accent: '#0f766e' },
+  오스트리아: { code: 'AT', city: '빈', flag: '🇦🇹', accent: '#8c1d3f' },
   호주: { code: 'AU', city: '시드니', flag: '🇦🇺', accent: '#1565c0' },
+  벨기에: { code: 'BE', city: '브뤼셀', flag: '🇧🇪', accent: '#f0ad1f' },
   바레인: { code: 'BH', city: '마나마', flag: '🇧🇭', accent: '#c62828' },
   브루나이: {
     code: 'BN',
@@ -27,11 +29,17 @@ const countryPresentation = {
   스위스: { code: 'CH', city: '인터라켄', flag: '🇨🇭', accent: '#c8173c' },
   중국: { code: 'CN', city: '상하이', flag: '🇨🇳', accent: '#d32f2f' },
   덴마크: { code: 'DK', city: '코펜하겐', flag: '🇩🇰', accent: '#b71c1c' },
+  스페인: { code: 'ES', city: '마드리드', flag: '🇪🇸', accent: '#c8102e' },
+  핀란드: { code: 'FI', city: '헬싱키', flag: '🇫🇮', accent: '#003580' },
   프랑스: { code: 'FR', city: '파리', flag: '🇫🇷', accent: '#0066ff' },
   독일: { code: 'DE', city: '베를린', flag: '🇩🇪', accent: '#151515' },
   영국: { code: 'GB', city: '런던', flag: '🇬🇧', accent: '#1e3a8a' },
+  그리스: { code: 'GR', city: '아테네', flag: '🇬🇷', accent: '#0d5eaf' },
+  괌: { code: 'GU', city: '하갓냐', flag: '🇬🇺', accent: '#0e7c61' },
   홍콩: { code: 'HK', city: '홍콩', flag: '🇭🇰', accent: '#b8202e' },
   인도네시아: { code: 'ID', city: '발리', flag: '🇮🇩', accent: '#c62828' },
+  아일랜드: { code: 'IE', city: '더블린', flag: '🇮🇪', accent: '#169b62' },
+  이탈리아: { code: 'IT', city: '로마', flag: '🇮🇹', accent: '#2e7d32' },
   일본: { code: 'JP', city: '도쿄', flag: '🇯🇵', accent: '#ef4b91' },
   쿠웨이트: { code: 'KW', city: '쿠웨이트시티', flag: '🇰🇼', accent: '#00897b' },
   말레이시아: {
@@ -40,8 +48,10 @@ const countryPresentation = {
     flag: '🇲🇾',
     accent: '#1565c0',
   },
+  네덜란드: { code: 'NL', city: '암스테르담', flag: '🇳🇱', accent: '#e8580c' },
   노르웨이: { code: 'NO', city: '오슬로', flag: '🇳🇴', accent: '#c62828' },
   뉴질랜드: { code: 'NZ', city: '오클랜드', flag: '🇳🇿', accent: '#1565c0' },
+  포르투갈: { code: 'PT', city: '리스본', flag: '🇵🇹', accent: '#046a38' },
   사우디아라비아: { code: 'SA', city: '리야드', flag: '🇸🇦', accent: '#15803d' },
   스웨덴: { code: 'SE', city: '스톡홀름', flag: '🇸🇪', accent: '#1e40af' },
   싱가포르: { code: 'SG', city: '싱가포르', flag: '🇸🇬', accent: '#dc2626' },
@@ -193,6 +203,17 @@ export const useTravelStore = defineStore('travel', () => {
     스위스: { code: 'ch', class: 'fi fi-ch', emoji: '🇨🇭' },
     일본: { code: 'jp', class: 'fi fi-jp', emoji: '🇯🇵' },
     홍콩: { code: 'hk', class: 'fi fi-hk', emoji: '🇭🇰' },
+    이탈리아: { code: 'it', class: 'fi fi-it', emoji: '🇮🇹' },
+    스페인: { code: 'es', class: 'fi fi-es', emoji: '🇪🇸' },
+    네덜란드: { code: 'nl', class: 'fi fi-nl', emoji: '🇳🇱' },
+    벨기에: { code: 'be', class: 'fi fi-be', emoji: '🇧🇪' },
+    오스트리아: { code: 'at', class: 'fi fi-at', emoji: '🇦🇹' },
+    포르투갈: { code: 'pt', class: 'fi fi-pt', emoji: '🇵🇹' },
+    그리스: { code: 'gr', class: 'fi fi-gr', emoji: '🇬🇷' },
+    아일랜드: { code: 'ie', class: 'fi fi-ie', emoji: '🇮🇪' },
+    핀란드: { code: 'fi', class: 'fi fi-fi', emoji: '🇫🇮' },
+    중국: { code: 'cn', class: 'fi fi-cn', emoji: '🇨🇳' },
+    괌: { code: 'gu', class: 'fi fi-gu', emoji: '🇬🇺' },
   };
 
   const aggregatedBudget = computed(() => {
