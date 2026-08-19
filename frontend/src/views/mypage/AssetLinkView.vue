@@ -5,6 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { deleteAccount, getAccounts } from '@/api/asset'
 import { deleteCard } from '@/api/card'
 import { useCardStore } from '@/stores/cardStore'
+import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
 
 const router = useRouter()
 const cardStore = useCardStore()
@@ -54,19 +55,23 @@ function cardTypeLabel(type) {
   return type === 'CHECK' ? '체크카드' : '신용카드'
 }
 
-function accountMark(account) {
-  const name = account.accountName ?? ''
-  if (name.includes('국민') || name.includes('KB')) return '국'
-  if (name.includes('신한')) return '신'
-  if (name.includes('카카오')) return '카'
-  return name.charAt(0) || '통'
-}
+// 계좌의 organizationCode(CODEF 연동 기관 코드)를 우선으로, 없으면 계좌명으로 은행을 추정해
+// 은행 고유 컬러/심볼을 찾는다.
+function resolveBankMeta(account) {
+  const byCode = bankPresentationByCode(account.organizationCode)
+  if (byCode.code) return byCode
 
-function accountTone(account) {
   const name = account.accountName ?? ''
-  if (name.includes('신한')) return 'mint'
-  if (name.includes('카카오')) return 'yellow'
-  return 'navy'
+  if (name.includes('국민') || name.includes('KB')) return bankPresentationByName('KB국민은행')
+  if (name.includes('신한')) return bankPresentationByName('신한은행')
+  if (name.includes('우리')) return bankPresentationByName('우리은행')
+  if (name.includes('하나')) return bankPresentationByName('하나은행')
+  if (name.includes('농협')) return bankPresentationByName('NH농협은행')
+  if (name.includes('기업')) return bankPresentationByName('IBK기업은행')
+  if (name.includes('K뱅크') || name.includes('케이뱅크')) return bankPresentationByName('K뱅크')
+  if (name.includes('대구')) return bankPresentationByName('대구은행')
+  if (name.includes('카카오')) return bankPresentationByName('카카오뱅크')
+  return byCode
 }
 
 function isDeleting(key) {
@@ -148,15 +153,22 @@ async function removeCard(card) {
       <section class="asset-section">
         <div class="section-title"><div><h2>내 통장</h2><small>좌우로 밀어 계좌를 확인하세요</small></div><span>{{ accounts.length }}개</span></div>
         <div class="account-carousel">
-          <article v-for="account in accounts" :key="account.id" class="account-slide" :class="accountTone(account)" @click="router.push(`/asset/accounts/${account.id}?isReal=true`)">
+          <article
+            v-for="account in accounts"
+            :key="account.id"
+            class="account-slide"
+            :style="{ '--bank-color': resolveBankMeta(account).color }"
+            @click="router.push(`/asset/accounts/${account.id}?isReal=true`)"
+          >
             <div class="account-slide-top">
               <div class="account-identity">
-                <span class="account-logo">{{ accountMark(account) }}</span>
+                <span class="account-logo" :style="{ color: resolveBankMeta(account).text }">{{ resolveBankMeta(account).symbol }}</span>
                 <div><strong>{{ account.accountName }}</strong><small>{{ accountCaption(account) }}</small></div>
               </div>
               <button type="button" class="delete-button" :disabled="isDeleting(`account-${account.id}`)" @click.stop="removeAccount(account)">{{ isDeleting(`account-${account.id}`) ? '처리 중' : '연동 해제' }}</button>
             </div>
             <div class="account-slide-balance"><small>현재 잔액</small><b>{{ formatWon(account.balance) }}</b></div>
+            <div class="account-slide-bank"><i></i>{{ resolveBankMeta(account).name }}</div>
           </article>
           <button type="button" class="account-slide account-add-slide" @click="router.push('/profile/financial?step=2&from=asset')">
             <span>＋</span>
@@ -195,11 +207,10 @@ async function removeCard(card) {
 <style scoped>
 .asset-link-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:0 0 105px;background:#f4f6fc;color:#10192d}.page-header{display:grid;grid-template-columns:38px 1fr;align-items:center;height:97px;padding:35px 25px 0;background:#fff;border-bottom:1px solid #e5e8ef}.page-header button{border:0;background:transparent;color:#10192d;font-size:34px;line-height:1;text-align:left}.page-header h1{margin:0;font-size:18px;font-weight:900}.content{padding:15px 20px 30px}.state-message{padding:120px 20px;text-align:center;color:#94a3b8;font-size:13px}.error-message{margin:0 0 12px;padding:11px 13px;border-radius:10px;background:#ffebee;color:#c62828;font-size:10px;text-align:center}.summary-card{min-height:126px;padding:22px;border-radius:17px;background:linear-gradient(120deg,#173681,#245ac6);color:#fff;box-shadow:0 10px 22px rgba(23,54,129,.14)}.summary-card small{display:block;color:#e8b24b;font-size:11px;font-weight:900}.summary-card strong{display:block;margin-top:15px;font-size:29px;font-weight:900;letter-spacing:-1px}.summary-card p{margin:10px 0 0;color:#c1cce4;font-size:11px;font-weight:700}.asset-section{margin-top:20px}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.section-title h2{margin:0;font-size:15px;font-weight:900}.section-title span{color:#9ba8bd;font-size:12px;font-weight:800}.asset-card{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:74px;margin-bottom:10px;padding:13px 14px;border-radius:16px;background:#fff;box-shadow:0 7px 20px rgba(24,42,75,.055);cursor:pointer}.account-logo{display:grid;width:42px;height:42px;place-items:center;border-radius:12px;color:#fff;font-size:15px;font-weight:900}.account-logo.navy{background:#17377e}.account-logo.mint{background:#18b89e}.account-logo.yellow{background:#ffb715;color:#10192d}.asset-info{min-width:0;padding-right:4px}.asset-info strong,.asset-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.asset-info strong{font-size:13px;font-weight:900}.asset-info small{margin-top:5px;color:#9aa7bb;font-size:10px}.asset-value{align-self:start;padding-top:4px;padding-right:0}.asset-value strong{font-size:13px;white-space:nowrap}.delete-button{position:absolute;right:14px;bottom:12px;padding:4px 9px;border:1px solid #dce3ed;border-radius:14px;background:#fff;color:#9aa7bb;font-size:9px;font-weight:800}.delete-button:disabled{opacity:.55}.add-button{width:100%;height:49px;border:1.5px dashed #c7d7f3;border-radius:15px;background:#fff;color:#2f75ef;font-size:12px;font-weight:900}.empty-card{margin:0 0 10px;padding:25px 15px;border-radius:16px;background:#fff;color:#9aa7bb;text-align:center;font-size:11px}.card-section{margin-top:22px}.card-row{grid-template-columns:58px minmax(0,1fr);min-height:74px;padding-right:70px}.card-visual{position:relative;display:block;width:58px;height:42px;border-radius:9px;background:linear-gradient(135deg,#153477,#0f2862)}.card-visual i{position:absolute;left:9px;bottom:7px;width:16px;height:11px;border-radius:3px;background:linear-gradient(135deg,#ffd84a,#eaa814)}.card-row .delete-button{top:26px;bottom:auto}.unlink-note{display:flex;gap:9px;margin-top:22px;padding:14px;border-radius:14px;background:#fff4df;color:#a66c20}.unlink-note>span{display:grid;width:18px;height:18px;flex:0 0 auto;place-items:center;border-radius:50%;background:#eab44d;color:#fff;font-size:10px;font-weight:900}.unlink-note p{margin:0;font-size:9px;line-height:1.55}.unlink-note strong{font-weight:900}
 /* 자산관리 리뉴얼 */
-.asset-link-page{background:#f2f5fa}.page-header{height:100px;padding:38px 20px 0;background:#f2f5fa;border-bottom:0}.page-header>button{color:#13213b;font-size:32px}.page-header small{display:block;color:#2f6fea;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.12em}.page-header h1{margin-top:2px;font-size:18px;font-weight:800}.content{padding:12px 18px 30px}.summary-card{position:relative;min-height:138px;padding:21px;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#102e70 0%,#2459be 100%);box-shadow:0 14px 30px rgba(22,56,128,.2)}.summary-card::after{content:'';position:absolute;right:-38px;top:-55px;width:145px;height:145px;border-radius:50%;background:rgba(255,255,255,.08)}.summary-heading{display:flex;align-items:center;justify-content:space-between}.summary-heading small{color:#dbe7ff;font-size:10px;font-weight:700}.summary-heading span{padding:5px 8px;border-radius:99px;background:rgba(255,255,255,.12);color:#dbe7ff;font-size:8px}.summary-card>strong{margin-top:18px;font-size:27px;font-weight:800}.summary-card>p{margin-top:9px;color:#bfceed;font-size:10px;font-weight:600}.asset-section{margin-top:24px}.section-title{align-items:flex-end;margin:0 2px 11px}.section-title h2{font-size:15px;font-weight:800}.section-title div>small{display:block;margin-top:3px;color:#97a4b7;font-size:8.5px}.section-title>span{color:#8190a7;font-size:10px;font-weight:700}.account-carousel{display:flex;gap:12px;margin:0 -18px;padding:0 18px 8px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:18px;scrollbar-width:none}.account-carousel::-webkit-scrollbar{display:none}.account-slide{position:relative;flex:0 0 285px;min-height:166px;padding:17px;border-radius:21px;color:#fff;overflow:hidden;scroll-snap-align:start;cursor:pointer;box-shadow:0 10px 22px rgba(20,45,99,.15)}.account-slide::after{content:'';position:absolute;right:-38px;bottom:-64px;width:145px;height:145px;border:1px solid rgba(255,255,255,.13);border-radius:50%}.account-slide.navy{background:linear-gradient(145deg,#17387f,#0c255a)}.account-slide.mint{background:linear-gradient(145deg,#148c82,#075d59)}.account-slide.yellow{background:linear-gradient(145deg,#d99d13,#a56b00)}.account-slide-top{display:flex;align-items:center;justify-content:space-between}.account-slide .account-logo{display:grid;width:34px;height:34px;place-items:center;border-radius:11px;background:rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:900}.account-slide .delete-button{position:relative;right:auto;bottom:auto;z-index:2;padding:5px 8px;border:1px solid rgba(255,255,255,.2);border-radius:99px;background:rgba(255,255,255,.09);color:#dbe5f8;font-size:8px;font-weight:700}.account-slide-info{margin-top:16px}.account-slide-info small,.account-slide-info strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-slide-info small{color:rgba(255,255,255,.6);font-size:8.5px}.account-slide-info strong{margin-top:4px;font-size:13px}.account-slide-balance{margin-top:15px}.account-slide-balance small{display:block;color:rgba(255,255,255,.62);font-size:8px}.account-slide-balance b{display:block;margin-top:3px;font-size:19px;letter-spacing:-.04em}.add-button{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;height:auto;margin-top:5px;padding:9px 13px;border:1px solid #dce5f2;border-radius:16px;background:#fff;color:#1c5cca;text-align:left;box-shadow:0 5px 14px rgba(25,49,86,.035)}.add-button>span{display:grid;width:30px;height:30px;place-items:center;border-radius:10px;background:#eaf2ff;font-size:16px}.add-button b,.add-button small{display:block}.add-button b{font-size:11px}.add-button small{margin-top:2px;color:#99a5b7;font-size:8px}.empty-card{border:1px dashed #d4deec;font-size:10px}.card-section{margin-top:24px}.card-section .asset-card{min-height:70px;margin-bottom:9px;padding:12px 66px 12px 12px;border:1px solid #e8edf4;border-radius:17px;box-shadow:0 6px 18px rgba(24,42,75,.04)}.card-section .asset-info strong{font-size:12px;font-weight:800}.card-section .asset-info small{font-size:8.5px}.card-visual{width:52px;height:36px;border-radius:8px}.card-row .delete-button{right:12px;top:24px;bottom:auto}.unlink-note{padding:13px}.unlink-note p{font-size:8.5px}
-.account-slide.navy{background:linear-gradient(145deg,#315caa,#1d427f)}
-.account-slide.mint{background:linear-gradient(145deg,#278f87,#166a66)}
-.account-slide.yellow{background:linear-gradient(145deg,#c8952f,#98691b)}
+.asset-link-page{background:#f2f5fa}.page-header{height:100px;padding:38px 20px 0;background:#f2f5fa;border-bottom:0}.page-header>button{color:#13213b;font-size:32px}.page-header small{display:block;color:#2f6fea;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.12em}.page-header h1{margin-top:2px;font-size:18px;font-weight:800}.content{padding:12px 18px 30px}.summary-card{position:relative;min-height:138px;padding:21px;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#102e70 0%,#2459be 100%);box-shadow:0 14px 30px rgba(22,56,128,.2)}.summary-card::after{content:'';position:absolute;right:-38px;top:-55px;width:145px;height:145px;border-radius:50%;background:rgba(255,255,255,.08)}.summary-heading{display:flex;align-items:center;justify-content:space-between}.summary-heading small{color:#dbe7ff;font-size:10px;font-weight:700}.summary-heading span{padding:5px 8px;border-radius:99px;background:rgba(255,255,255,.12);color:#dbe7ff;font-size:8px}.summary-card>strong{margin-top:18px;font-size:27px;font-weight:800}.summary-card>p{margin-top:9px;color:#bfceed;font-size:10px;font-weight:600}.asset-section{margin-top:24px}.section-title{align-items:flex-end;margin:0 2px 11px}.section-title h2{font-size:15px;font-weight:800}.section-title div>small{display:block;margin-top:3px;color:#97a4b7;font-size:8.5px}.section-title>span{color:#8190a7;font-size:10px;font-weight:700}.account-carousel{display:flex;gap:12px;margin:0 -18px;padding:0 18px 8px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:18px;scrollbar-width:none}.account-carousel::-webkit-scrollbar{display:none}.account-slide{position:relative;flex:0 0 285px;min-height:166px;padding:17px;border-radius:21px;color:#fff;overflow:hidden;scroll-snap-align:start;cursor:pointer;box-shadow:0 10px 22px rgba(20,45,99,.15);background:linear-gradient(145deg,color-mix(in srgb,var(--bank-color,#17387f) 88%,black 4%),color-mix(in srgb,var(--bank-color,#17387f) 40%,black 60%))}.account-slide::after{content:'';position:absolute;right:-38px;bottom:-64px;width:145px;height:145px;border:1px solid rgba(255,255,255,.13);border-radius:50%}.account-slide-top{display:flex;align-items:center;justify-content:space-between}.account-slide .account-logo{display:grid;width:34px;height:34px;place-items:center;border-radius:11px;background:rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:900}.account-slide .delete-button{position:relative;right:auto;bottom:auto;z-index:2;padding:5px 8px;border:1px solid rgba(255,255,255,.2);border-radius:99px;background:rgba(255,255,255,.09);color:#dbe5f8;font-size:8px;font-weight:700}.account-slide-info{margin-top:16px}.account-slide-info small,.account-slide-info strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-slide-info small{color:rgba(255,255,255,.6);font-size:8.5px}.account-slide-info strong{margin-top:4px;font-size:13px}.account-slide-balance{margin-top:15px}.account-slide-balance small{display:block;color:rgba(255,255,255,.62);font-size:8px}.account-slide-balance b{display:block;margin-top:3px;font-size:19px;letter-spacing:-.04em}.add-button{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;height:auto;margin-top:5px;padding:9px 13px;border:1px solid #dce5f2;border-radius:16px;background:#fff;color:#1c5cca;text-align:left;box-shadow:0 5px 14px rgba(25,49,86,.035)}.add-button>span{display:grid;width:30px;height:30px;place-items:center;border-radius:10px;background:#eaf2ff;font-size:16px}.add-button b,.add-button small{display:block}.add-button b{font-size:11px}.add-button small{margin-top:2px;color:#99a5b7;font-size:8px}.empty-card{border:1px dashed #d4deec;font-size:10px}.card-section{margin-top:24px}.card-section .asset-card{min-height:70px;margin-bottom:9px;padding:12px 66px 12px 12px;border:1px solid #e8edf4;border-radius:17px;box-shadow:0 6px 18px rgba(24,42,75,.04)}.card-section .asset-info strong{font-size:12px;font-weight:800}.card-section .asset-info small{font-size:8.5px}.card-visual{width:52px;height:36px;border-radius:8px}.card-row .delete-button{right:12px;top:24px;bottom:auto}.unlink-note{padding:13px}.unlink-note p{font-size:8.5px}
 .account-slide-top{gap:9px}
+.account-slide-bank{display:flex;align-items:center;gap:5px;margin-top:10px;color:rgba(255,255,255,.78);font-size:8px;font-weight:800}
+.account-slide-bank i{display:block;width:5px;height:5px;border-radius:50%;background:#fff}
 .account-identity{display:flex;align-items:center;gap:9px;min-width:0}
 .account-identity>div{min-width:0}
 .account-identity strong,.account-identity small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
