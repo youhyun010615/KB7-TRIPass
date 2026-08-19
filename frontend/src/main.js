@@ -35,18 +35,26 @@ async function initializeApp() {
     }
   }
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('/firebase-messaging-sw.js')
-      .then((registration) => {
-        console.log(
-          'Service Worker registered with scope:',
-          registration.scope,
+  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    const registerServiceWorker = async () => {
+      try {
+        const registration = await navigator.serviceWorker.register(
+          '/firebase-messaging-sw.js',
+          { scope: '/' },
         );
-      })
-      .catch((error) => {
+
+        // 새 서비스 워커를 빠르게 감지하되 현재 화면의 작업을 방해하지 않는다.
+        registration.update().catch(() => {});
+      } catch (error) {
         console.error('Service Worker registration failed:', error);
-      });
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      registerServiceWorker();
+    } else {
+      window.addEventListener('load', registerServiceWorker, { once: true });
+    }
   }
 
   // 로그인 복구가 끝난 다음 라우터를 등록하고 화면을 실행한다.
