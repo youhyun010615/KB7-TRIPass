@@ -382,31 +382,31 @@ function goBack() {
 .hero-amount-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin: 14px 14px 0;
-  padding: 16px 18px;
-  border-radius: 20px;
+  padding: 12px 14px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
   color: #fff;
 }
 .hero-amount-icon {
   display: grid;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 9px;
   background: rgba(255, 255, 255, 0.16);
-  font-size: 17px;
+  font-size: 14px;
 }
 .hero-amount-label {
   flex: 1;
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
 }
 .hero-amount-value {
   flex: none;
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 900;
 }
 .hero-rank-badge {
