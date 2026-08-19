@@ -60,6 +60,7 @@ const savingDifference = computed(() =>
 async function loadReport() {
   const loadedReport = await analysisStore.loadAnalysis(yearMonth.value, {
     force: true,
+    generateIfMissing: true,
   });
   if (loadedReport?.reportStatus === 'PENDING') {
     try {

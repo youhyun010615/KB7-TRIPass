@@ -7,6 +7,29 @@ import {
   fetchSavingMissions,
   saveMissionSelections,
 } from '@/api/savingMissions';
+import {
+  fetchMonthlyAnalysis,
+  generateMonthlyAnalysis,
+} from '@/api/monthlyAnalysis';
+
+function isAnalysisNotFound(error) {
+  return (
+    error.response?.status === 404 ||
+    error.response?.data?.code === 'MONTHLY_ANALYSIS_NOT_FOUND'
+  );
+}
+
+// 해당 월 분석 리포트가 없으면(404) 카드 거래 데이터를 집계해 새로 생성한다.
+// mission-options/mission-selections는 분석 리포트가 있어야 조회되므로
+// 이 단계를 먼저 거쳐야 한다.
+async function ensureAnalysisExists(yearMonth) {
+  try {
+    await fetchMonthlyAnalysis(yearMonth);
+  } catch (error) {
+    if (!isAnalysisNotFound(error)) throw error;
+    await generateMonthlyAnalysis(yearMonth);
+  }
+}
 
 function previousYearMonth(baseDate = new Date()) {
   const previousMonth = new Date(
@@ -133,6 +156,7 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
     // 지난달 소비 분석/추천 데이터는 계좌 연동 직후처럼 아직 쌓이지 않았을 수 있어
     // 실패하더라도 위에서 이미 불러온 미션 현황(메인 대시보드)은 그대로 보여준다.
     try {
+      await ensureAnalysisExists(yearMonth);
       const [optionData, selectionData] = await Promise.all([
         fetchMissionOptions(yearMonth),
         fetchMissionSelections(yearMonth),
