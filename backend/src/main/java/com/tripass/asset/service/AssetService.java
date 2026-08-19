@@ -573,6 +573,8 @@ public class AssetService {
 
             assetMapper.updateCardLastSyncedAt(cardId);
 
+            assetMapper.assignTripCountryToCardTransactions(userId);
+
             tryAutoGenerateAnalysis(userId);
 
             return saved;

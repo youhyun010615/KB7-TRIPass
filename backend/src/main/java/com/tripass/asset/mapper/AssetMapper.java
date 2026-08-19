@@ -136,4 +136,6 @@ public interface AssetMapper {
 
     List<Long> findUserIdsWithLinkedAssets();
 
+    int assignTripCountryToCardTransactions(@org.apache.ibatis.annotations.Param("userId") Long userId);
+
 }

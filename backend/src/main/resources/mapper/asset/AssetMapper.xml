@@ -433,4 +433,33 @@
         ) linked_users
     </select>
 
+    <!-- 여행 중인 사용자의 해외 카드 거래에 trip_id / trip_country_id 일괄 할당.
+         날짜가 겹치는 국가가 있으면 display_order가 높은(후순위) 국가로 배정한다. -->
+    <update id="assignTripCountryToCardTransactions">
+        UPDATE transactions t
+        JOIN cards c ON t.card_id = c.id AND c.user_id = #{userId}
+        JOIN trips tr ON tr.user_id = c.user_id
+                     AND tr.status = 'TRAVELING'
+                     AND tr.is_deleted = 0
+        SET t.trip_id = tr.id,
+            t.trip_country_id = (
+                SELECT tc.id
+                FROM trip_countries tc
+                WHERE tc.trip_id = tr.id
+                  AND t.transaction_date BETWEEN tc.arrival_date AND tc.departure_date
+                ORDER BY tc.display_order DESC
+                LIMIT 1
+            )
+        WHERE t.trip_id IS NULL
+          AND t.trip_country_id IS NULL
+          AND t.is_deleted = 0
+          AND t.merchant_type LIKE '해외%'
+          AND t.transaction_date BETWEEN tr.start_date AND tr.end_date
+          AND EXISTS (
+              SELECT 1 FROM trip_countries tc2
+              WHERE tc2.trip_id = tr.id
+                AND t.transaction_date BETWEEN tc2.arrival_date AND tc2.departure_date
+          )
+    </update>
+
 </mapper>
