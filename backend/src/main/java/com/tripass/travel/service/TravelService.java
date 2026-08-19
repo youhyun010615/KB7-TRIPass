@@ -551,6 +551,9 @@ public class TravelService {
             if (!travelMapper.existsCountryById(country.getCountryId())) {
                 throw new TravelException(TravelErrorCode.COUNTRY_NOT_FOUND);
             }
+            if (!travelMapper.existsBudgetBaselineByCountryId(country.getCountryId())) {
+                throw new TravelException(TravelErrorCode.COUNTRY_BUDGET_BASELINE_NOT_FOUND);
+            }
             if (!country.getArrivalDate().isBefore(country.getDepartureDate())) {
                 throw new TravelException(TravelErrorCode.INVALID_TRIP_DATE_RANGE);
             }

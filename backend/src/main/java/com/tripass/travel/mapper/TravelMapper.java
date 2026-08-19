@@ -48,6 +48,8 @@ public interface TravelMapper {
 
     boolean existsCountryById(@Param("countryId") Long countryId);
 
+    boolean existsBudgetBaselineByCountryId(@Param("countryId") Long countryId);
+
     String findTripStatus(@Param("tripId") Long tripId);
 
     void updateTripGoal(TripGoalCommandDto command);

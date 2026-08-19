@@ -15,4 +15,5 @@ public class TripCountryCatalogResponseDto {
     private String currencyCode;
     private String currencyName;
     private String flagUrl;
+    private boolean selectable;
 }

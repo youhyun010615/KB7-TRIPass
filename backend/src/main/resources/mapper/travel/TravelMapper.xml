@@ -303,7 +303,8 @@
                c.country_name,
                cur.currency_code,
                cur.currency_name,
-               MAX(c.flag_url) AS flag_url
+               MAX(c.flag_url) AS flag_url,
+               CASE WHEN MAX(cb.id) IS NOT NULL THEN TRUE ELSE FALSE END AS selectable
         FROM countries c
                  INNER JOIN currencies cur ON cur.id = c.currency_id
                  LEFT JOIN country_budget_baselines cb ON cb.country_id = c.id
@@ -315,12 +316,15 @@
             </if>
         </where>
         GROUP BY c.country_name, cur.currency_code, cur.currency_name
-        HAVING MAX(cb.id) IS NOT NULL
-        ORDER BY c.country_name ASC
+        ORDER BY selectable DESC, c.country_name ASC
     </select>
 
     <select id="existsCountryById" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM countries WHERE id = #{countryId})
+    </select>
+
+    <select id="existsBudgetBaselineByCountryId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM country_budget_baselines WHERE country_id = #{countryId})
     </select>
 
     <select id="findTripStatus" resultType="string">
