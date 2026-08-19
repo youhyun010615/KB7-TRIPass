@@ -51,6 +51,9 @@ const countries = computed(() => tripStatus.value?.countries || []);
 
 // 국가 목록 캐싱 (필터링되지 않은 전체 목록)
 const persistentCountries = ref([]);
+// 최초 진입 시 여행 정보를 불러오는 동안 "등록된 여행이 없어요" 빈 화면이
+// 잠깐 깜빡이며 보이지 않도록 로딩이 끝날 때까지는 아무 것도 그리지 않는다.
+const isInitialLoading = ref(true);
 
 // ISO 2자리 국가코드를 유니코드 국기 이모지로 변환 (텍스트로 그대로 표시 가능)
 function flagEmoji(iso2) {
@@ -61,9 +64,32 @@ function flagEmoji(iso2) {
 
 // 국가 선택 목록 (API 연동) — 캐러셀 슬라이드마다 독립적으로 렌더링할 수 있도록
 // 국가별 목표/지출 금액도 함께 들고 있는다.
+// 두 'YYYY-MM-DD' 문자열 사이의 일수 차이
+function daysBetween(startStr, endStr) {
+  if (!startStr || !endStr) return 0;
+  const [sy, sm, sd] = startStr.split('-').map(Number);
+  const [ey, em, ed] = endStr.split('-').map(Number);
+  const start = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
+  return Math.round((end - start) / (1000 * 60 * 60 * 24));
+}
+
 const destinations = computed(() => {
   const totalTargetBudget = persistentCountries.value.reduce((sum, c) => sum + c.targetBudget, 0);
   const totalSpentAmount = persistentCountries.value.reduce((sum, c) => sum + c.spentAmount, 0);
+
+  // 여행 전체 시작일(가장 이른 입국일)을 기준으로 국가별 일차 구간(예: 스위스 7~10일차)을 구한다.
+  const datedCountries = persistentCountries.value.filter((c) => c.arrivalDate && c.departureDate);
+  const overallStart = datedCountries.reduce(
+    (min, c) => (min === null || c.arrivalDate < min ? c.arrivalDate : min),
+    null,
+  );
+  const overallEnd = datedCountries.reduce(
+    (max, c) => (max === null || c.departureDate > max ? c.departureDate : max),
+    null,
+  );
+  const overallTotalDays = overallStart && overallEnd ? daysBetween(overallStart, overallEnd) + 1 : 1;
+
   const all = {
     code: 'all',
     name: '전체',
@@ -73,6 +99,8 @@ const destinations = computed(() => {
     barColor: travelDefaultPresentation.barColor,
     targetBudget: totalTargetBudget,
     spentAmount: totalSpentAmount,
+    dayRangeStart: 1,
+    dayRangeEnd: overallTotalDays,
   };
   const apiCountries = persistentCountries.value.map((c) => {
     const presentation = getCountryPresentation(c.countryName);
@@ -90,9 +118,14 @@ const destinations = computed(() => {
         || '',
       targetBudget: c.targetBudget,
       spentAmount: c.spentAmount,
+      arrivalDate: c.arrivalDate,
+      departureDate: c.departureDate,
+      dayRangeStart: overallStart ? daysBetween(overallStart, c.arrivalDate) + 1 : 1,
+      dayRangeEnd: overallStart ? daysBetween(overallStart, c.departureDate) + 1 : 1,
     };
   });
-  return [all, ...apiCountries];
+  // 캐러셀 순서: 국가별 카드 먼저, "전체" 보딩패스는 맨 뒤로
+  return [...apiCountries, all];
 });
 
 // 날짜 계산
@@ -114,12 +147,6 @@ const endDate = computed(() => {
   return new Date(year, month - 1, day);
 });
 
-const dday = computed(() => {
-  if (!endDate.value) return 0;
-  const diff = endDate.value - today.value;
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-});
-
 const currentDay = computed(() => {
   if (!startDate.value) return 0;
 
@@ -135,6 +162,16 @@ const totalTripDays = computed(() => {
   const diff = endDate.value - startDate.value;
   return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
 });
+
+// 여행 기간이 이미 끝난 국가는 currentDay가 totalTripDays를 넘어서면서
+// 진행률 바/핀이 100%를 넘어 튀어나가지 않도록 0~100 사이로 고정한다.
+const tripProgressPercent = computed(() =>
+  Math.min(100, Math.max(0, (currentDay.value / totalTripDays.value) * 100)),
+);
+
+// 점이 노선 양 끝(국가명/D+N 텍스트)에 바짝 붙지 않도록 실제 표시 위치는
+// 4~90% 범위 안쪽으로만 이동시킨다 (선 자체의 길이/위치는 그대로 둔다).
+const routePinPosition = computed(() => 4 + (tripProgressPercent.value / 100) * 86);
 
 // 카테고리 아이콘 매핑
 const categoryIcons = {
@@ -285,21 +322,45 @@ const isReturnPeriod = computed(() => {
   return today >= startCheckDate && today <= endCheckDate;
 });
 
-onMounted(async () => {
-  await nextTick();
-  restoreCountryPosition();
-  await travelStore.loadActiveGoal();
-  if (tripId.value) {
-    // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
-    const status = await travelStore.loadTripStatus(tripId.value, null);
-    persistentCountries.value = status?.countries || [];
+// 오늘 날짜(YYYY-MM-DD)가 arrivalDate~departureDate 범위에 포함되는 국가를 찾는다.
+// 해당하는 국가가 없으면(모두 지났거나 아직 시작 전) 첫 번째 국가로 대체한다.
+function todayDateString() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
-    if (selectedCountryId.value !== 'all') {
-      await loadData();
+function findTodayCountryCode(countries) {
+  if (!countries.length) return 'all';
+  const todayStr = todayDateString();
+  const match = countries.find(
+    (c) => c.arrivalDate && c.departureDate && c.arrivalDate <= todayStr && todayStr <= c.departureDate,
+  );
+  return (match || countries[0]).tripCountryId.toString();
+}
+
+onMounted(async () => {
+  try {
+    await nextTick();
+    restoreCountryPosition();
+    await travelStore.loadActiveGoal();
+    if (tripId.value) {
+      // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
+      const status = await travelStore.loadTripStatus(tripId.value, null);
+      persistentCountries.value = status?.countries || [];
+      selectedCountryId.value = findTodayCountryCode(persistentCountries.value);
+
+      if (selectedCountryId.value !== 'all') {
+        await loadData();
+      }
     }
+  } finally {
+    isInitialLoading.value = false;
+    await nextTick();
+    restoreCountryPosition();
   }
-  await nextTick();
-  restoreCountryPosition();
 });
 
 onBeforeUnmount(() => {
@@ -316,8 +377,14 @@ const countryCarousel = ref(null);
 // 동일하게, DOM을 다시 그리게 만들어 진행률 박스의 진입 애니메이션을 매번 재생시킨다.
 const countryAnimationKey = ref(0);
 
+// restoreCountryPosition()이 코드로 scrollLeft를 바꾸는 동안에는 그 이동을
+// "사용자가 스와이프했다"고 오인해 selectedCountryId를 되돌리지 않도록 막는다.
+// (새로고침 직후 국가가 아니라 "전체" 카드가 보이던 문제의 원인)
+let suppressScrollHandling = false;
+
 // 좌우 스와이프로 국가 전환 (저축모드 홈과 동일한 방식)
 function handleCountryScroll(event) {
+  if (suppressScrollHandling) return;
   const carousel = event.currentTarget;
   if (!carousel?.clientWidth) return;
 
@@ -341,7 +408,14 @@ function restoreCountryPosition() {
 
   const savedIndex = destinations.value.findIndex((item) => item.code === selectedCountryId.value);
   const idx = savedIndex >= 0 ? savedIndex : 0;
+  suppressScrollHandling = true;
   carousel.scrollLeft = idx * carousel.clientWidth;
+  // 스크롤 스냅이 완전히 안정된 뒤에(2프레임 정도) 핸들러를 다시 켠다.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      suppressScrollHandling = false;
+    });
+  });
 }
 
 // 툴팁 상태 관리
@@ -564,7 +638,10 @@ async function switchMode(mode) {
     </div>
     <div :style="{ height: travelHeaderHeight + 'px' }" aria-hidden="true" />
 
-    <template v-if="!tripId">
+    <template v-if="isInitialLoading">
+      <div class="ticket-skeleton" aria-hidden="true" />
+    </template>
+    <template v-else-if="!tripId">
       <article class="empty-trip-ticket">
         <span class="empty-trip-orbit" aria-hidden="true"></span>
         <div class="empty-trip-band">
@@ -627,21 +704,30 @@ async function switchMode(mode) {
           <div class="perforation"><i /><span /><i /></div>
           <div class="ticket-main">
             <div class="trip-line">
-              <b>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</b
-              ><strong>D-{{ dday }}</strong>
-            </div>
-            <div class="trip-progress">
-              <small>{{ currentDay }}일차</small>
-              <div>
-                <i
-                  :style="{
-                    width: `${(currentDay / totalTripDays) * 100}%`,
-                  }"
-                />
+              <div class="trip-destination">
+                <p class="trip-label">DESTINATION</p>
+                <p class="trip-country-name">
+                  <span v-if="item.code !== 'all'" class="trip-country-flag">{{ item.flag }}</span
+                  ><span>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</span>
+                </p>
               </div>
-              <small>{{ totalTripDays }}일차</small>
+              <div class="destination-route" aria-hidden="true">
+                <i class="route-line"></i>
+                <span
+                  class="route-pin"
+                  :style="{ left: `${routePinPosition}%` }"
+                >
+                  <i class="route-pin-pulse"></i>
+                  <i class="route-pin-dot"></i>
+                </span>
+              </div>
+              <div class="trip-departure">
+                <p class="trip-label">TRIP DAY</p>
+                <p class="trip-day-count">D+{{ currentDay }}</p>
+              </div>
             </div>
             <p class="trip-description">여행 남은 자산을 한눈에 확인해요 ✨</p>
+            <p class="trip-day-range">{{ item.dayRangeStart }}일차 ~ {{ item.dayRangeEnd }}일차</p>
             <div class="ticket-photo-space" />
 
             <div class="travel-summary-content">
@@ -695,19 +781,19 @@ async function switchMode(mode) {
               </div>
               <template v-if="item.code === 'all'">
                 <div class="fund-label">
-                  <span>여행 자금 진행률</span><b>{{ fundPercent(item) }}%</b>
+                  <span>예산 사용률</span><b>{{ fundPercent(item) }}%</b>
                 </div>
                 <div class="fund-track">
                   <i :style="{ width: `${fundPercent(item)}%` }" />
                 </div>
                 <div class="fund-meta">
-                  <span>목표 {{ formatWon(item.targetBudget) }}</span
-                  ><span>현재 지출 {{ formatWon(item.spentAmount) }}</span>
+                  <span>BUDGET {{ formatWon(item.targetBudget) }}</span
+                  ><span>SPENT {{ formatWon(item.spentAmount) }}</span>
                 </div>
               </template>
               <div v-else class="fund-progress-box">
                 <div class="fund-progress-head">
-                  <span>여행 자금 진행률</span><strong>{{ fundPercent(item) }}%</strong>
+                  <span>예산 사용률</span><strong>{{ fundPercent(item) }}%</strong>
                 </div>
                 <div class="fund-progress-track">
                   <i :style="{ width: `${fundPercent(item)}%` }" />
@@ -715,11 +801,11 @@ async function switchMode(mode) {
                 <div class="fund-progress-meta">
                   <div>
                     <b>{{ formatWon(item.spentAmount) }}</b>
-                    <small>지출</small>
+                    <small>SPENT</small>
                   </div>
                   <div class="align-right">
                     <b>{{ formatWon(item.targetBudget) }}</b>
-                    <small>목표</small>
+                    <small>BUDGET</small>
                   </div>
                 </div>
               </div>
@@ -919,6 +1005,21 @@ async function switchMode(mode) {
   background: #f4f5f9;
   color: #10192d;
 }
+.ticket-skeleton {
+  margin: 18px 16px 0;
+  height: 420px;
+  border-radius: 21px;
+  background: linear-gradient(90deg, #e4e7ee 25%, #f2f4f8 50%, #e4e7ee 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket-skeleton { animation: none; }
+}
 .empty-trip-ticket {
   position: relative;
   margin: 18px 16px 0;
@@ -1031,6 +1132,7 @@ async function switchMode(mode) {
   .country-slide.active .ticket,
   .fund-progress-box,
   .fund-progress-track i::after,
+  .route-pin-pulse,
   .card { animation: none; }
   .country-slide { transition: none; }
 }
@@ -1363,35 +1465,8 @@ async function switchMode(mode) {
 }
 .trip-line {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-.trip-line b {
-  font-size: 14px;
-}
-.trip-line strong {
-  font-size: 24px;
-}
-.trip-progress {
-  display: grid;
-  grid-template-columns: 42px 1fr 42px;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  color: #d8e5ff;
-  font-size: 10px;
-}
-.trip-progress small:last-child {
-  text-align: right;
-}
-.trip-progress div {
-  height: 3px;
-  background: #ffffff80;
-}
-.trip-progress i {
-  display: block;
-  height: 4px;
-  background: #ffb800;
+  gap: 8px;
 }
 .ticket-label {
   margin-top: 18px;
@@ -1901,38 +1976,6 @@ async function switchMode(mode) {
     linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
     var(--photo) center/cover;
 }
-.trip-line {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: end;
-  gap: 8px;
-}
-.trip-line > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.trip-line small {
-  color: #ffffff80;
-  font-size: 7px;
-  letter-spacing: 0.12em;
-}
-.trip-line b {
-  font-size: 15px;
-}
-.departure {
-  text-align: right;
-}
-.flight-route {
-  display: flex;
-  align-items: center;
-  color: #ffd829;
-  font-size: 16px;
-}
-.flight-route i {
-  width: 100%;
-  border-top: 1px dashed #ffffff80;
-}
 .trip-description {
   height: 16px;
   margin-top: 9px;
@@ -2012,21 +2055,94 @@ async function switchMode(mode) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
-.trip-line b {
-  font-size: 14px;
+.trip-destination {
+  flex: none;
+  min-width: 0;
 }
-.trip-line strong {
-  font-size: 22px;
+.trip-departure {
+  flex: none;
 }
-.trip-progress {
-  grid-template-columns: 42px 1fr 42px;
-  margin-top: 7px;
-  font-size: 9px;
+.trip-departure {
+  text-align: right;
+}
+.trip-label {
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.trip-country-name {
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.trip-country-flag {
+  margin-right: 6px;
+}
+.trip-day-count {
+  color: #ffd466;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+.destination-route {
+  position: relative;
+  flex: 1;
+  height: 20px;
+  margin-top: 14px;
+}
+.route-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(255, 255, 255, 0.4);
+}
+.route-pin {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.route-pin-dot {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fde047;
+  box-shadow: 0 0 0 2px rgba(9, 27, 66, 0.55);
+}
+.route-pin-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(253, 224, 71, 0.35);
+  animation: route-pin-ping 1.8s ease-out infinite;
+}
+@keyframes route-pin-ping {
+  0% { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.trip-day-range {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 600;
 }
 .trip-description {
-  margin-top: 7px;
-  font-size: 9px;
+  height: auto;
+  margin-top: 12px;
+  overflow: visible;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  white-space: normal;
 }
 .ticket-photo-space {
   height: 34px;

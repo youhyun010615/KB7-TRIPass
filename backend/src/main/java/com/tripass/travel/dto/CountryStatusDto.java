@@ -2,6 +2,8 @@ package com.tripass.travel.dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @Builder
@@ -14,4 +16,6 @@ public class CountryStatusDto {
     private Long spentAmount;
     private Long totalDays;
     private Long passedDays;
+    private LocalDate arrivalDate;
+    private LocalDate departureDate;
 }

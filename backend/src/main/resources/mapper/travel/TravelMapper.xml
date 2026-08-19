@@ -19,6 +19,8 @@
             <result property="spentAmount" column="spent_amount"/>
             <result property="totalDays" column="total_days"/>
             <result property="passedDays" column="passed_days"/>
+            <result property="arrivalDate" column="arrival_date"/>
+            <result property="departureDate" column="departure_date"/>
         </collection>
     </resultMap>
 
@@ -47,6 +49,8 @@
             c.country_name,
             tc.target_budget,
             COALESCE(SUM(tr.amount), 0) AS spent_amount,
+            tc.arrival_date,
+            tc.departure_date,
             DATEDIFF(tc.departure_date, tc.arrival_date) + 1 AS total_days,
             CASE
                 WHEN CURRENT_DATE <![CDATA[<]]> tc.arrival_date THEN 0
