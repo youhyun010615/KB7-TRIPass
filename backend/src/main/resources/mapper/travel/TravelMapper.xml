@@ -549,4 +549,12 @@
         ORDER BY t.transaction_date DESC
     </select>
 
+    <update id="updateEndedTrips">
+        UPDATE trips
+        SET status = 'ENDED'
+        WHERE status = 'TRAVELING'
+          AND end_date &lt; #{today}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
