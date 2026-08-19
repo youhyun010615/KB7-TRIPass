@@ -7,6 +7,7 @@ import { deleteCard } from '@/api/card'
 import { useCardStore } from '@/stores/cardStore'
 import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
+import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
 
 const router = useRouter()
 const cardStore = useCardStore()
@@ -97,9 +98,16 @@ function resolveCardMeta(card) {
 // 지갑 > 내 트래블카드에서 쓰는 실제 카드사 상품 이미지가 있으면 그걸 그대로 보여준다.
 // 은행만 보고 매칭하면 같은 은행의 다른 카드(예: KB QA 체크카드)까지 트래블카드 사진이
 // 붙어버리므로, 카드명에 '트래블' 키워드가 있는 진짜 트래블카드 상품에만 적용한다.
-function travelCardImage(card) {
-  if (!(card.cardName ?? '').includes('트래블')) return null
-  return getTravelCardImage(resolveCardMeta(card).name)
+// 매칭되는 트래블카드 상품이 없으면, KB 체크카드에 한해 KB국민카드 공식 상품 이미지로 대체한다.
+function cardVisualImage(card) {
+  if ((card.cardName ?? '').includes('트래블')) {
+    const travelImage = getTravelCardImage(resolveCardMeta(card).name)
+    if (travelImage) return travelImage
+  }
+  if (resolveCardMeta(card).name === 'KB국민은행' && card.cardType === 'CHECK') {
+    return kbCheckGenericImage
+  }
+  return null
 }
 
 function isDeleting(key) {
@@ -218,10 +226,10 @@ async function removeCard(card) {
           >
             <div
               class="card-visual-big"
-              :class="{ 'is-photo': travelCardImage(card) }"
+              :class="{ 'is-photo': cardVisualImage(card) }"
               @click="router.push(`/mypage/cards/${card.id}/transactions`)"
             >
-              <img v-if="travelCardImage(card)" :src="travelCardImage(card)" alt="" class="card-visual-photo" />
+              <img v-if="cardVisualImage(card)" :src="cardVisualImage(card)" alt="" class="card-visual-photo" />
               <template v-else>
                 <div class="card-visual-top">
                   <span>{{ resolveCardMeta(card).name }}</span>
@@ -305,7 +313,7 @@ async function removeCard(card) {
 .card-visual-big::after{content:'';position:absolute;right:-40px;bottom:-46px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
 .card-visual-big.is-photo{padding:0;background:#e7edf9;box-shadow:0 10px 22px rgba(16,25,43,.14)}
 .card-visual-big.is-photo::after{display:none}
-.card-visual-photo{display:block;width:100%;height:100%;object-fit:cover}
+.card-visual-photo{display:block;width:100%;height:100%;object-fit:contain}
 .card-visual-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
 .card-visual-top>span{font-size:11px;font-weight:900;letter-spacing:-.02em}
 .card-visual-top>b{padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.18);font-size:8px;font-weight:800;white-space:nowrap}
