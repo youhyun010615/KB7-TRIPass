@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import { useExchangeStore } from '@/stores/exchange';
+import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const exchange = useExchangeStore();
+const travel = useTravelStore();
 const query = ref('');
 const openedCurrencyCode = ref(null);
 
@@ -14,6 +16,7 @@ onMounted(() => {
   if (exchange.currencies.length === 0) {
     exchange.updateExchangeRates();
   }
+  travel.loadActiveGoal();
 });
 
 const format = (value) =>
@@ -22,11 +25,27 @@ const format = (value) =>
     maximumFractionDigits: 2,
   });
 
+// 여행 미등록 시 전체 국가, 등록 시 여행에 등록된 국가만 표시한다(환율 탭과 동일한 규칙).
+const displayCurrencies = computed(() => {
+  if (travel.selectedPlans.length === 0) {
+    return exchange.currencies;
+  }
+
+  const countryIds = new Set(
+    travel.selectedPlans
+      .map((plan) => plan.countryId)
+      .filter((id) => id != null),
+  );
+
+  const filtered = exchange.currencies.filter((c) => countryIds.has(c.countryId));
+  return filtered.length > 0 ? filtered : exchange.currencies;
+});
+
 const filteredCurrencies = computed(() => {
   const keyword = query.value.trim().toLocaleLowerCase('ko-KR');
-  if (!keyword) return exchange.currencies;
+  if (!keyword) return displayCurrencies.value;
 
-  return exchange.currencies.filter((item) => {
+  return displayCurrencies.value.filter((item) => {
     // 각 필드를 소문자로 변환하여 검색어와 매칭 (OR 조건)
     const code = (item.code || '').toLocaleLowerCase('ko-KR');
     const name = (item.name || '').toLocaleLowerCase('ko-KR');
@@ -61,11 +80,11 @@ function toggleCurrency(item) {
         </button>
         <div>
           <h1>주요 통화</h1>
-          <div v-if="exchange.lastUpdateDate" class="update-info">
+          <small v-if="exchange.lastUpdateDate" class="update-info">
             {{ exchange.lastUpdateDate }} 고시 기준
-          </div>
+          </small>
         </div>
-        <div></div>
+        <span aria-hidden="true"></span>
       </header>
 
       <label class="search">
@@ -154,7 +173,7 @@ function toggleCurrency(item) {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #e7ecf4;
+  background: #eef2f8;
   color: #10192d;
 }
 
@@ -163,32 +182,40 @@ function toggleCurrency(item) {
   min-height: 100vh;
   margin: auto;
   padding: 52px 18px 100px;
-  background: #f7f5ef;
+  background: #eef2f8;
 }
 
 header {
   display: grid;
-  grid-template-columns: 30px 1fr 30px;
+  grid-template-columns: 36px 1fr 36px;
   align-items: center;
 }
 
 header button {
-  font-size: 26px;
-  text-align: left;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 
 header h1 {
   text-align: center;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 900;
-  margin-bottom: 2px;
+  letter-spacing: -0.03em;
 }
 
 .update-info {
+  display: block;
+  margin-top: 2px;
   text-align: center;
-  font-size: 10px;
-  color: #64748b;
-  font-weight: normal;
+  font-size: 9px;
+  color: #7186aa;
+  font-weight: 700;
 }
 
 .search {
@@ -196,18 +223,20 @@ header h1 {
   grid-template-columns: 20px 1fr 24px;
   align-items: center;
   gap: 7px;
+  height: 46px;
   margin-top: 20px;
-  padding: 11px 12px;
-  border: 1px solid #dce3ed;
+  padding: 0 14px;
+  border: 1px solid #d7e1f0;
   border-radius: 13px;
   background: #fff;
-  color: #8290a3;
+  color: #7186aa;
 }
 
 .search input {
   min-width: 0;
   background: transparent;
-  font-size: 10px;
+  color: #10192d;
+  font-size: 11px;
   outline: none;
 }
 
@@ -217,9 +246,9 @@ header h1 {
 }
 
 .result-count {
-  margin: 14px 3px 8px;
-  color: #8290a3;
-  font-size: 9px;
+  margin: 16px 3px 9px;
+  color: #7186aa;
+  font-size: 9.5px;
   font-weight: 800;
 }
 
@@ -233,11 +262,11 @@ header h1 {
   grid-template-columns: 32px 1fr auto 10px;
   align-items: center;
   gap: 10px;
-  padding: 13px 14px;
-  border: 1px solid #dfe5ed;
-  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid #e7edf9;
+  border-radius: 16px;
   background: #fff;
-  box-shadow: 0 4px 11px #172d550a;
+  box-shadow: 0 8px 20px rgba(16, 25, 43, 0.05);
   text-align: left;
 }
 
@@ -263,12 +292,16 @@ header h1 {
 }
 
 .identity b {
-  font-size: 11px;
+  color: #173f8d;
+  font-size: 11.5px;
+  font-weight: 800;
 }
 
 .identity b small {
   margin-left: 2px;
+  color: #7186aa;
   font-size: 8px;
+  font-weight: 700;
 }
 
 .rate {
@@ -276,17 +309,19 @@ header h1 {
 }
 
 .rate strong {
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 800;
 }
 
 .rate small {
   margin-top: 4px;
-  color: #0b9e74;
+  color: #3972d8;
   font-size: 8px;
+  font-weight: 700;
 }
 
 .rate small.up {
-  color: #e45b55;
+  color: #ed5555;
 }
 
 .currency-list i {
@@ -300,37 +335,34 @@ header h1 {
 }
 
 .empty {
-  margin-top: 45px;
-  padding: 35px 15px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 15px;
+  margin-top: 28px;
+  padding: 34px 24px;
+  border: 1px solid #d5e2f8;
+  border-radius: 24px;
   background: #fff;
   text-align: center;
+  box-shadow: 0 10px 30px rgba(30, 64, 112, 0.04);
 }
 
 .empty b {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .empty p {
   margin-top: 7px;
-  color: #94a3b8;
-  font-size: 9px;
+  color: #73829d;
+  font-size: 10px;
+  line-height: 1.6;
 }
 
 .empty button {
-  margin-top: 14px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  background: #173f8d;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #245ec4;
   color: #fff;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 900;
-}
-
-.shell :deep(.fixed) {
-  display: flex;
-  gap: 0;
-  margin: 0;
 }
 </style>
