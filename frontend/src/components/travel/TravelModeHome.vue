@@ -197,8 +197,29 @@ const travelDefaultPresentation = {
   barColor: 'linear-gradient(90deg,#64d8cb,#fff0b3)',
 };
 
+// 저축모드 홈의 hexToRgba/fallbackPresentation과 동일한 로직 — 위 5개국 외의 나머지 국가는
+// 공용 국가 정보(stores/travel.js countryPresentation)의 accent 색상으로 대체한다.
+function hexToRgba(hex, alpha) {
+  const clean = (hex || '').replace('#', '');
+  const num = parseInt(clean, 16);
+  if (Number.isNaN(num)) return `rgba(23,63,141,${alpha})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function getCountryPresentation(countryName) {
-  return travelCountryPresentation[countryName] || travelDefaultPresentation;
+  if (travelCountryPresentation[countryName]) {
+    return travelCountryPresentation[countryName];
+  }
+  const accent = globalCountryPresentation[countryName]?.accent;
+  if (!accent) return travelDefaultPresentation;
+  return {
+    headerBg: accent,
+    progressBg: hexToRgba(accent, 0.84),
+    barColor: `linear-gradient(90deg, ${accent} 0%, ${accent}99 100%)`,
+  };
 }
 
 // 국가별 색상 매핑 헬퍼 (저축모드와 동일한 headerBg 사용)
