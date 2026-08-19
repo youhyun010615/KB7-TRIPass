@@ -69,22 +69,29 @@ const destinations = computed(() => {
     name: '전체',
     flag: '🌍',
     theme: '#17485b',
+    progressBg: travelDefaultPresentation.progressBg,
+    barColor: travelDefaultPresentation.barColor,
     targetBudget: totalTargetBudget,
     spentAmount: totalSpentAmount,
   };
-  const apiCountries = persistentCountries.value.map((c) => ({
-    code: c.tripCountryId.toString(),
-    name: c.countryName,
-    flag: countryFlagMap[c.countryName]
-      ? flagEmoji(countryFlagMap[c.countryName])
-      : '🌍',
-    theme: getCountryColor(c.countryName),
-    image: overallAssets.find((a) => a.country === c.countryName)?.image
-      || globalCountryPresentation[c.countryName]?.image
-      || '',
-    targetBudget: c.targetBudget,
-    spentAmount: c.spentAmount,
-  }));
+  const apiCountries = persistentCountries.value.map((c) => {
+    const presentation = getCountryPresentation(c.countryName);
+    return {
+      code: c.tripCountryId.toString(),
+      name: c.countryName,
+      flag: countryFlagMap[c.countryName]
+        ? flagEmoji(countryFlagMap[c.countryName])
+        : '🌍',
+      theme: presentation.headerBg,
+      progressBg: presentation.progressBg,
+      barColor: presentation.barColor,
+      image: overallAssets.find((a) => a.country === c.countryName)?.image
+        || globalCountryPresentation[c.countryName]?.image
+        || '',
+      targetBudget: c.targetBudget,
+      spentAmount: c.spentAmount,
+    };
+  });
   return [all, ...apiCountries];
 });
 
@@ -154,12 +161,49 @@ function getCategoryIcon(name) {
   };
 }
 
-// 국가별 색상 매핑 헬퍼
+// 국가별 색상 팔레트 — 저축모드 홈(SavingsModeHome.vue)의 countryPresentation과 동일한 값
+// (저축모드 파일은 건드리지 않는다는 원칙 때문에 값만 그대로 복제해서 사용한다)
+const travelCountryPresentation = {
+  프랑스: {
+    headerBg: '#1a2d6e',
+    progressBg: 'rgba(0,35,149,0.80)',
+    barColor: 'linear-gradient(90deg,#002395 0%,#EDEDED 50%,#ED2939 100%)',
+  },
+  스위스: {
+    headerBg: '#7a0d1e',
+    progressBg: 'rgba(122,13,30,0.82)',
+    barColor: 'linear-gradient(90deg,#FF0000 0%,#FFFFFF 60%,#FF0000 100%)',
+  },
+  독일: {
+    headerBg: '#111111',
+    progressBg: 'rgba(17,17,17,0.85)',
+    barColor: 'linear-gradient(90deg,#000000 0%,#DD0000 50%,#FFCE00 100%)',
+  },
+  일본: {
+    headerBg: '#c2185b',
+    progressBg: 'rgba(194,24,91,0.82)',
+    barColor:
+      'linear-gradient(90deg,#FFFFFF 0%,#BC002D 35%,#BC002D 65%,#FFFFFF 100%)',
+  },
+  홍콩: {
+    headerBg: '#b8202e',
+    progressBg: 'rgba(184,32,46,0.84)',
+    barColor: 'linear-gradient(90deg,#DE2910 0%,#FFDE00 100%)',
+  },
+};
+const travelDefaultPresentation = {
+  headerBg: '#173f8d',
+  progressBg: 'rgba(23,63,141,0.84)',
+  barColor: 'linear-gradient(90deg,#64d8cb,#fff0b3)',
+};
+
+function getCountryPresentation(countryName) {
+  return travelCountryPresentation[countryName] || travelDefaultPresentation;
+}
+
+// 국가별 색상 매핑 헬퍼 (저축모드와 동일한 headerBg 사용)
 function getCountryColor(countryName) {
-  if (countryName === '홍콩') return '#ffb800'; // 요청하신 노란색
-  const asset = overallAssets.find((a) => a.country === countryName);
-  if (asset) return asset.theme;
-  return globalCountryPresentation[countryName]?.accent || '#9aa4b3'; // 기본색
+  return getCountryPresentation(countryName).headerBg;
 }
 
 // 여행자금 체크를 위한 데이터 가공
@@ -536,6 +580,8 @@ async function switchMode(mode) {
           ]"
           :style="{
             '--theme': item.theme,
+            '--progress-bg': item.progressBg,
+            '--bar': item.barColor,
             '--photo': `url(${item.image})`,
           }"
         >
@@ -548,7 +594,7 @@ async function switchMode(mode) {
           <div class="perforation"><i /><span /><i /></div>
           <div class="ticket-main">
             <div class="trip-line">
-              <b>{{ tripInfo?.tripName || '여행' }}</b
+              <b>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</b
               ><strong>D-{{ dday }}</strong>
             </div>
             <div class="trip-progress">
@@ -1279,7 +1325,7 @@ async function switchMode(mode) {
   min-height: 312px;
   padding: 20px;
   background:
-    linear-gradient(180deg, #091b4270, #071733b8),
+    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
     var(--photo) center/cover;
 }
 .combined .ticket-main {
@@ -1420,7 +1466,7 @@ async function switchMode(mode) {
   display: block;
   height: 100%;
   border-radius: 99px;
-  background: linear-gradient(90deg, #73c8e7, #fff1cc 55%, #ef5b54);
+  background: var(--bar);
 }
 .fund-meta {
   display: flex;
@@ -1433,7 +1479,7 @@ async function switchMode(mode) {
   margin-top: 16px;
   padding: 16px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--theme) 82%, black 6%);
+  background: var(--progress-bg);
   animation: home-fade-up 0.45s 0.25s ease both;
 }
 .fund-progress-head {
@@ -1461,7 +1507,7 @@ async function switchMode(mode) {
   height: 100%;
   overflow: hidden;
   border-radius: 99px;
-  background: linear-gradient(90deg, #73c8e7, #fff1cc 55%, #ef5b54);
+  background: var(--bar);
   transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .fund-progress-track i::after {
@@ -1822,7 +1868,7 @@ async function switchMode(mode) {
 .ticket-main {
   min-height: 335px;
   background:
-    linear-gradient(180deg, #091b4260, #071733bf),
+    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
     var(--photo) center/cover;
 }
 .trip-line {
@@ -2023,35 +2069,6 @@ async function switchMode(mode) {
   margin-top: 7px;
   font-size: 9px;
 }
-.country-all .fund-track i {
-  background: linear-gradient(90deg, #79d3d8 0%, #f8d56b 55%, #f29a55 100%);
-}
-.country-FR .fund-progress-track i {
-  background: linear-gradient(90deg, #002395 0%, #f4f4f4 52%, #ed2939 100%);
-}
-.country-CH .fund-progress-track i {
-  background: linear-gradient(90deg, #ff0000 0%, #fff 58%, #ff0000 100%);
-}
-.country-DE .fund-progress-track i {
-  background: linear-gradient(90deg, #111 0%, #dd0000 52%, #ffce00 100%);
-}
-.country-JP .fund-progress-track i {
-  background: linear-gradient(90deg, #fff 0%, #bc002d 48%, #fff 100%);
-}
-.country-HK .fund-progress-track i {
-  background: linear-gradient(90deg, #de2910 0%, #ffde00 100%);
-}
-.country-all .fund-progress-track i {
-  background: linear-gradient(
-    90deg,
-    #002395 0%,
-    #f4f4f4 30%,
-    #ed2939 48%,
-    #ff0000 66%,
-    #fff 82%,
-    #ff0000 100%
-  );
-}
 .stub-action {
   display: flex;
   align-items: center;
@@ -2140,9 +2157,6 @@ async function switchMode(mode) {
 .country-assets > div.country-asset-card small {
   font-size: 7px;
   white-space: nowrap;
-}
-.country-all .fund-progress-track i {
-  background: linear-gradient(90deg, #79d3d8 0%, #f8d56b 55%, #f29a55 100%);
 }
 .summary-title-wrapper {
   display: flex;
