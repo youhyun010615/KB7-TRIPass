@@ -199,8 +199,8 @@ function goCategoryDetail(categoryCode) {
             <small>{{ savingResult.resultMessage }}</small>
           </div>
         </div>
-        <div v-else class="saving-unavailable">
-          <span>i</span>
+        <div v-else class="saving-empty">
+          <span aria-hidden="true">📊</span>
           <b>{{ savingResult?.resultMessage || '이번 달 저축 목표가 설정되지 않아 결과를 계산할 수 없어요.' }}</b>
         </div>
 
@@ -221,13 +221,13 @@ function goCategoryDetail(categoryCode) {
       </section>
 
       <section class="paper-section spending-section">
-        <div class="section-title">
-          <div>
+        <div class="spending-title">
+          <div class="spending-title-top">
             <small>SPENDING INSIGHT</small>
-            <h3>{{ analysisMonthLabel }} 소비</h3>
-          </div>
-          <div class="total-spending">
             <small>총지출</small>
+          </div>
+          <div class="spending-title-bottom">
+            <h3>{{ analysisMonthLabel }} 소비</h3>
             <b>{{ formatCurrency(report.totalSpending) }}</b>
           </div>
         </div>
@@ -278,6 +278,7 @@ function goCategoryDetail(categoryCode) {
             <h3>이번 달 절약 포인트</h3>
           </div>
         </div>
+        <p class="coaching-hint">각 카테고리를 클릭하면 AI가 분석한 상세 내용을 확인할 수 있어요.</p>
 
         <ol class="recommendation-list">
           <li
@@ -311,7 +312,7 @@ function goCategoryDetail(categoryCode) {
 
         <p class="mission-guide">
           <span class="sparkle" aria-hidden="true">✦</span>
-          카테고리별 절감률을 선택해 나만의 미션을 시작할 수 있어요.
+          카테고리별 절감률을 선택해 나만의 미션을 시작해요.
         </p>
         <button type="button" class="mission-button" @click="goMissions">
           추천 미션 보러 가기 <span>›</span>
@@ -438,13 +439,15 @@ function goCategoryDetail(categoryCode) {
   justify-content: space-between;
   gap: 10px;
 }
-.section-title small {
+.section-title small,
+.spending-title small {
   color: #f06a2a;
   font-size: 9px;
   font-weight: 950;
   letter-spacing: 0.12em;
 }
-.section-title h3 {
+.section-title h3,
+.spending-title h3 {
   margin-top: 3px;
   color: #173f8d;
   font-size: 15px;
@@ -464,15 +467,13 @@ function goCategoryDetail(categoryCode) {
   background: #fff0f0;
   color: #ef5050;
 }
-.saving-message,
-.saving-unavailable {
+.saving-message {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 14px;
 }
-.saving-message > span,
-.saving-unavailable > span {
+.saving-message > span {
   display: grid;
   flex: 0 0 32px;
   height: 32px;
@@ -495,10 +496,25 @@ function goCategoryDetail(categoryCode) {
   color: #7186aa;
   font-size: 10.5px;
 }
-.saving-unavailable b {
-  color: #173f8d;
-  font-size: 12px;
-  font-weight: 800;
+.saving-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 22px 16px;
+  border: 1px dashed #d7deea;
+  border-radius: 14px;
+  text-align: center;
+}
+.saving-empty span {
+  font-size: 20px;
+  opacity: 0.7;
+}
+.saving-empty b {
+  color: #7186aa;
+  font-size: 11.5px;
+  font-weight: 700;
   line-height: 1.5;
 }
 .saving-metrics {
@@ -526,18 +542,23 @@ function goCategoryDetail(categoryCode) {
   font-size: 13px;
   font-weight: 900;
 }
-.total-spending {
+.spending-title-top,
+.spending-title-bottom {
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  justify-content: space-between;
+  gap: 10px;
 }
-.total-spending small {
-  color: #8a9bb6;
-  font-size: 9.5px;
+.spending-title-bottom {
+  margin-top: 3px;
 }
-.total-spending b {
+.spending-title-bottom h3 {
+  margin-top: 0;
+}
+.spending-title-bottom b {
   color: #17213a;
   font-size: 16px;
+  font-weight: 900;
 }
 .category-list {
   display: grid;
@@ -570,22 +591,32 @@ function goCategoryDetail(categoryCode) {
 }
 .category-detail > div {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 5px;
+  overflow: hidden;
 }
 .category-detail b {
+  overflow: hidden;
+  min-width: 0;
   color: #26334d;
   font-size: 13px;
   font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .category-detail small {
+  flex: none;
   color: #9aa8bb;
   font-size: 9.5px;
+  white-space: nowrap;
 }
 .category-detail strong {
+  flex: none;
   margin-left: auto;
   color: #536887;
   font-size: 11px;
+  white-space: nowrap;
 }
 .category-detail > i {
   display: block;
@@ -679,6 +710,13 @@ function goCategoryDetail(categoryCode) {
   color: #7186aa;
   font-size: 9.5px;
   line-height: 1.45;
+}
+.coaching-hint {
+  margin-top: 4px;
+  color: #9aa8bb;
+  font-size: 9.5px;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 .mission-guide {
   margin-top: 14px;
