@@ -138,10 +138,8 @@ function toggleCurrency(item) {
           >
             <span :class="item.flagClass" class="list-flag"></span>
             <span class="identity">
-              <b>
-                {{ item.countryName || item.name }} {{ item.code }}
-                <small v-if="item.unit > 1">{{ item.unit }}</small>
-              </b>
+              <b>{{ item.countryName || item.name }}</b>
+              <em>{{ item.code }}<small v-if="item.unit > 1"> {{ item.unit }}</small></em>
             </span>
             <span class="rate">
               <strong>{{ format(item.rate) }}원</strong>
@@ -286,18 +284,27 @@ header h1 {
 }
 
 .identity b,
+.identity em,
 .rate strong,
 .rate small {
   display: block;
 }
 
 .identity b {
-  color: #173f8d;
+  color: #10192d;
   font-size: 11.5px;
   font-weight: 800;
 }
 
-.identity b small {
+.identity em {
+  margin-top: 3px;
+  color: #173f8d;
+  font-size: 9px;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.identity em small {
   margin-left: 2px;
   color: #7186aa;
   font-size: 8px;

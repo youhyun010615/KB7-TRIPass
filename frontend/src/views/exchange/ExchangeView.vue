@@ -236,7 +236,6 @@ watch(
                 <img v-if="currency.flagUrl" class="currency-country-flag-img" :src="currency.flagUrl" alt="" />
                 <span v-else class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
                 <span class="currency-country-name">{{ currency.countryName }}</span>
-                <span class="currency-country-unit">{{ currency.name }}</span>
                 <b>{{ currency.code }}</b>
                 <span class="currency-country-check" aria-hidden="true">✓</span>
               </button>
@@ -564,7 +563,7 @@ header h1 {
 }
 .currency-country-list button {
   display: grid;
-  grid-template-columns: 22px minmax(66px, auto) minmax(0, 1fr) 34px 16px;
+  grid-template-columns: 22px minmax(66px, auto) minmax(0, 1fr) 16px;
   align-items: center;
   gap: 8px;
   min-height: 46px;
