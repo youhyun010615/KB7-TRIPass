@@ -305,6 +305,9 @@ const selectedCountryId = computed({
 });
 const assetsCarousel = ref(null);
 const countryCarousel = ref(null);
+// 스와이프로 국가가 바뀔 때마다 값을 올려서 활성 티켓의 :key를 바꾼다 — 저축모드 홈과
+// 동일하게, DOM을 다시 그리게 만들어 진행률 박스의 진입 애니메이션을 매번 재생시킨다.
+const countryAnimationKey = ref(0);
 
 // 좌우 스와이프로 국가 전환 (저축모드 홈과 동일한 방식)
 function handleCountryScroll(event) {
@@ -321,6 +324,7 @@ function handleCountryScroll(event) {
   const nextCode = destinations.value[idx]?.code;
   if (!nextCode || nextCode === selectedCountryId.value) return;
   selectedCountryId.value = nextCode;
+  countryAnimationKey.value += 1;
   loadData();
 }
 
@@ -594,6 +598,7 @@ async function switchMode(mode) {
         :class="{ active: selected.code === item.code }"
       >
         <div
+          :key="`${item.code}-${item.code === selected.code ? countryAnimationKey : 0}`"
           class="ticket"
           :class="[
             { combined: item.code === 'all' },
