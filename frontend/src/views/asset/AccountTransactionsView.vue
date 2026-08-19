@@ -2,12 +2,27 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
-import { useAssetStore } from '@/stores/asset'
+import { useAssetStore, bankPresentationByName } from '@/stores/asset'
 import api from '@/api'
 
 const route = useRoute()
 const router = useRouter()
 const asset = useAssetStore()
+
+// 계좌명에서 은행을 추정해 브랜드 컬러/심볼을 찾는다(목업/실계좌 공통).
+function resolveBankMeta(name) {
+  const value = name ?? ''
+  if (value.includes('국민') || value.includes('KB')) return bankPresentationByName('KB국민은행')
+  if (value.includes('신한')) return bankPresentationByName('신한은행')
+  if (value.includes('우리')) return bankPresentationByName('우리은행')
+  if (value.includes('하나')) return bankPresentationByName('하나은행')
+  if (value.includes('농협')) return bankPresentationByName('NH농협은행')
+  if (value.includes('기업')) return bankPresentationByName('IBK기업은행')
+  if (value.includes('K뱅크') || value.includes('케이뱅크')) return bankPresentationByName('K뱅크')
+  if (value.includes('대구')) return bankPresentationByName('대구은행')
+  if (value.includes('카카오')) return bankPresentationByName('카카오뱅크')
+  return bankPresentationByName(null)
+}
 const isReal = route.query.isReal === 'true'
 const filter = ref('all')
 
@@ -167,7 +182,7 @@ const groups = computed(() => {
 
     <section class="account-overview">
       <div class="account-identity">
-        <span class="bank-mark">국</span>
+        <span class="bank-mark" :style="{ background: resolveBankMeta(account.name).color, color: resolveBankMeta(account.name).text }">{{ resolveBankMeta(account.name).symbol }}</span>
         <div><strong>{{ account.name }}</strong><small>{{ maskedAccountNumber(account.number) }} · {{ account.type }}</small></div>
       </div>
       <div class="balance-block"><small>현재 잔액</small><strong>{{ Number(account.balance ?? 0).toLocaleString('ko-KR') }}<em>원</em></strong></div>
@@ -191,33 +206,49 @@ const groups = computed(() => {
 </template>
 
 <style scoped>
-.account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:48px 20px 30px;background:#f4f6fc;color:#10192d}header{display:grid;grid-template-columns:30px 1fr;align-items:center;margin-bottom:17px}header button{font-size:26px;text-align:left}h1{font-size:17px;font-weight:900}.section-header{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.section-header span{font-size:13px;font-weight:900;color:#10192d}.header-actions{display:flex;align-items:center;gap:6px}.sync-action{padding:8px 11px;border-radius:9px;background:#172f6b;color:#fff;font-size:10px;font-weight:800}.sync-action:disabled{opacity:.6}.cal-btn{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#172f6b;color:#fff;font-size:unset}.sync-message{margin:10px 0 0;padding:9px 12px;border-radius:9px;background:#e8f1ff;color:#1a56db;font-size:10px;text-align:center}.sync-message.error{background:#ffebee;color:#c62828}.travel-recognized{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 16px;border-radius:11px;background:#172f6b;color:#fff}.travel-recognized small{font-size:9px;color:#ffcf28}.travel-recognized b{font-size:13px;font-weight:900}.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;font-size:9px}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}.date-filter>button{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#172f6b;color:#fff}.tabs{display:grid;grid-template-columns:repeat(3,1fr);margin:12px 0 16px;text-align:center}.tabs button{padding:11px 0;border-bottom:2px solid #dce3ee;color:#b0bac9;font-size:11px;font-weight:900}.tabs button.active{border-color:#3475f4;color:#3475f4}
-.account-page{padding:0 0 34px;background:#f3f5f8;color:#171c26}
-.account-header{display:grid;grid-template-columns:34px 1fr;align-items:center;height:92px;margin:0;padding:38px 20px 0;background:#fff;border-bottom:1px solid #edf0f4}
-.account-header button{font-size:31px;color:#171c26}
-.account-header h1{font-size:18px;font-weight:700}
-.account-overview{padding:23px 22px 20px;background:#fff}
+.account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:0 0 34px;background:#eef2f8;color:#10192d}
+.account-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;height:92px;margin:0;padding:38px 20px 0;background:#eef2f8}
+.account-header button{width:36px;height:36px;border-radius:12px;background:#fff;color:#193d82;font-size:24px;font-weight:700;box-shadow:0 5px 16px rgba(36,72,117,.07)}
+.account-header h1{font-size:17px;font-weight:900;letter-spacing:-.03em;text-align:center}
+.account-overview{margin:0 20px;padding:20px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
 .account-identity{display:flex;align-items:center;gap:10px}
-.bank-mark{display:grid;width:38px;height:38px;place-items:center;border-radius:12px;background:#e8eef8;color:#111827;font-size:14px;font-weight:900}
-.account-identity>div{min-width:0}.account-identity strong,.account-identity small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.account-identity strong{font-size:14px;font-weight:800}.account-identity small{margin-top:4px;color:#8b94a3;font-size:9px}
-.balance-block{margin-top:26px;text-align:right}.balance-block small{display:block;color:#7f8998;font-size:10px}.balance-block strong{display:block;margin-top:5px;font-size:29px;font-weight:700;letter-spacing:-.045em}.balance-block em{margin-left:2px;font-size:15px;font-style:normal;font-weight:600}
-.overview-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:6px;color:#818a98;font-size:10px}.overview-meta b{color:#5f6876;font-size:10px}
-.quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px 20px;background:#fff;border-top:1px solid #f0f2f5}
-.quick-actions button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px;border-radius:11px;background:#eef1f5;color:#333b47;font-size:11px;font-weight:700}.quick-actions button:disabled{opacity:.55}.quick-actions span{font-size:15px;color:#224f97}
-.history-panel{margin-top:10px;padding:20px 18px 28px;background:#fff;border-radius:18px 18px 0 0}
-.history-title{display:flex;align-items:flex-end;justify-content:space-between}.history-title small{display:block;color:#3970cc;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}.history-title h2{margin-top:3px;font-size:17px;font-weight:800}.history-title>span{color:#8c97a7;font-size:10px;font-weight:700}
-.date-filter{margin-top:15px;padding:10px 12px;border-color:#e5e9ef;border-radius:12px;background:#f7f8fa}.date-filter label span{color:#8a94a3;font-size:8px}.date-filter input{color:#29313d;font-size:10px;font-weight:700}.date-filter i{color:#9aa3af}
-.tabs{gap:6px;margin:12px 0 15px;padding:4px;border-radius:12px;background:#f0f2f5}.tabs button{padding:8px 0;border:0;border-radius:9px;color:#8a94a3;font-size:10px;font-weight:700}.tabs button.active{border:0;background:#fff;color:#173f7d;box-shadow:0 3px 8px rgba(29,50,82,.08)}
-.sync-message{margin:10px 20px 0}
+.bank-mark{display:grid;width:38px;height:38px;place-items:center;border-radius:12px;font-size:14px;font-weight:900}
+.account-identity>div{min-width:0}
+.account-identity strong,.account-identity small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-identity strong{color:#10192d;font-size:14px;font-weight:800}
+.account-identity small{margin-top:4px;color:#94a3b8;font-size:9px}
+.balance-block{margin-top:22px;text-align:right}
+.balance-block small{display:block;color:#94a3b8;font-size:10px}
+.balance-block strong{display:block;margin-top:5px;color:#10192d;font-size:27px;font-weight:800;letter-spacing:-.045em}
+.balance-block em{margin-left:2px;font-size:14px;font-style:normal;font-weight:700}
+.overview-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e7edf9;color:#7186aa;font-size:10px}
+.overview-meta b{color:#173f8d;font-size:10px;font-weight:800}
+.quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 20px 0}
+.quick-actions button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px;border-radius:13px;background:#fff;color:#173f8d;font-size:11px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04)}
+.quick-actions button:disabled{opacity:.55}
+.quick-actions span{color:#286ce0;font-size:15px}
+.sync-message{margin:10px 20px 0;padding:9px 12px;border-radius:9px;background:#eaf2ff;color:#173f8d;font-size:10px;text-align:center}
+.sync-message.error{background:#ffebee;color:#c62828}
+.history-panel{margin:16px 20px 0;padding:20px 18px 4px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
+.history-title{display:flex;align-items:flex-end;justify-content:space-between}
+.history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}
+.history-title h2{margin-top:3px;color:#10192d;font-size:16px;font-weight:900}
+.history-title>span{color:#94a3b8;font-size:10px;font-weight:700}
+.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin-top:15px;padding:10px 12px;border:1px solid #e7edf9;border-radius:12px;background:#f7f9fd}
+.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}
+.date-filter input{width:100%;color:#10192d;font-size:9px;font-weight:700}
+.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 15px;padding:4px;border-radius:12px;background:#f4f7fb;text-align:center}
+.tabs button{padding:8px 0;border-radius:9px;color:#7186aa;font-size:10px;font-weight:700}
+.tabs button.active{background:#fff;color:#173f8d;box-shadow:0 3px 8px rgba(29,50,82,.08)}
 .history-panel :deep(.transaction-groups section){margin:0 0 20px}
-.history-panel :deep(.transaction-groups h3){margin:0;padding:12px 2px 9px;border-bottom:1px solid #e7eaee;color:#313944;font-size:11px;font-weight:800}
-.history-panel :deep(.transaction-groups section.without-icons button){grid-template-columns:minmax(0,1fr) auto;gap:10px;margin:0;padding:14px 2px;border:0;border-bottom:1px solid #edf0f3;border-radius:0;box-shadow:none}
+.history-panel :deep(.transaction-groups h3){margin:0;padding:12px 2px 9px;border-bottom:1px solid #eef1f6;color:#7186aa;font-size:11px;font-weight:800}
+.history-panel :deep(.transaction-groups section.without-icons button){grid-template-columns:minmax(0,1fr) auto;gap:10px;margin:0;padding:14px 2px;border:0;border-bottom:1px solid #eef1f6;border-radius:0;box-shadow:none}
 .history-panel :deep(.transaction-groups .dot){display:none}
-.history-panel :deep(.transaction-groups span b){font-size:12px;font-weight:700}
-.history-panel :deep(.transaction-groups span small){max-width:190px;margin-top:5px;color:#9099a7;font-size:8.5px}
+.history-panel :deep(.transaction-groups span b){color:#10192d;font-size:12px;font-weight:700}
+.history-panel :deep(.transaction-groups span small){max-width:190px;margin-top:5px;color:#94a3b8;font-size:8.5px}
 .history-panel :deep(.transaction-groups strong){font-size:12px;font-weight:800}
-.history-panel :deep(.transaction-groups time){margin-top:5px;font-size:8.5px}
-.history-panel :deep(.transaction-groups .deposit){color:#2169db}
-.history-panel :deep(.transaction-groups .withdrawal){color:#202631}
+.history-panel :deep(.transaction-groups time){margin-top:5px;color:#94a3b8;font-size:8.5px}
+.history-panel :deep(.transaction-groups .deposit){color:#173f8d}
+.history-panel :deep(.transaction-groups .withdrawal){color:#e8484f}
 </style>
