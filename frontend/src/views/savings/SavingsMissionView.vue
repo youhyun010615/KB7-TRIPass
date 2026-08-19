@@ -817,7 +817,7 @@ function closeSelectionFlow() {
 .fund-check-row:nth-child(5) .fund-check-bar>div{animation-delay:.36s}
 .fund-check-amount{flex-shrink:0;font-family:'Space Mono',monospace;font-size:11px;color:#5a6478;white-space:nowrap}
 .fund-check-ratio{flex-shrink:0;width:30px;text-align:right;font-family:'Space Mono',monospace;font-size:12px;font-weight:800;color:#98a2b3}
-.fund-modal-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,18,36,.5);animation:fund-modal-fade .2s ease both}
+.fund-modal-overlay{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:390px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,18,36,.5);animation:fund-modal-fade .2s ease both}
 .fund-modal{position:relative;width:100%;max-width:460px;max-height:86vh;overflow:hidden;display:flex;flex-direction:column;padding:22px 0 26px;border-radius:26px;background:#eaf4ff;animation:fund-modal-rise .24s cubic-bezier(.22,1,.36,1) both}
 .fund-modal-close{flex:none;width:30px;height:30px;background:transparent;color:#173f8d;font-size:21px;font-weight:400;box-shadow:none}
 .fund-check-total-block--stacked{display:flex;align-items:baseline;gap:6px;margin-top:10px;text-align:left}
