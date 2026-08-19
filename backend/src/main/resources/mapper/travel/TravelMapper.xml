@@ -122,8 +122,8 @@
             cs.pre_expense_total,
             cs.travel_expense_total,
             cats.category_name,
-            cats.amount AS category_amount,
-            cats.percentage AS category_percentage
+            cats.amount,
+            cats.percentage
         FROM CountryStats cs
                  LEFT JOIN CategoryStats cats ON cs.trip_country_id = cats.trip_country_id
     </select>
