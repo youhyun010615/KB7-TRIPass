@@ -351,14 +351,15 @@ function goCategoryDetail(categoryCode) {
   inset: 0;
   z-index: 50;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 28px 16px;
   color: #17213a;
 }
 .report-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(9, 18, 38, 0.5);
+  background: rgba(9, 18, 38, 0.55);
   animation: report-backdrop-enter 0.3s ease both;
 }
 .report-modal {
@@ -367,12 +368,13 @@ function goCategoryDetail(categoryCode) {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 390px;
-  max-height: 92vh;
+  max-width: 358px;
+  max-height: 100%;
   overflow: hidden;
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   background: #f3f6ff;
-  animation: report-modal-enter 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  box-shadow: 0 24px 60px rgba(9, 18, 38, 0.35);
+  animation: report-modal-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .report-modal-body {
   overflow-y: auto;
@@ -385,8 +387,8 @@ function goCategoryDetail(categoryCode) {
   to { opacity: 1; }
 }
 @keyframes report-modal-enter {
-  from { transform: translateY(24px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: scale(0.94) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
 }
 .report-header {
   flex: none;
