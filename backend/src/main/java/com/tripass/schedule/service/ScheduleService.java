@@ -202,9 +202,9 @@ public class ScheduleService {
     private ScheduleListResponseDto toListResponse(
             ScheduleListRowDto row
     ) {
-        ZoneId zoneId = ZoneId.of(
-                row.getTimeZone()
-        );
+        ZoneId zoneId = row.getTimeZone() != null
+                ? ZoneId.of(row.getTimeZone())
+                : ZoneId.of("Asia/Seoul");
 
         return ScheduleListResponseDto.builder()
                 .id(row.getId())
@@ -245,9 +245,9 @@ public class ScheduleService {
     private ScheduleDetailResponseDto toDetailResponse(
             ScheduleDetailRowDto row
     ) {
-        ZoneId zoneId = ZoneId.of(
-                row.getTimeZone()
-        );
+        ZoneId zoneId = row.getTimeZone() != null
+                ? ZoneId.of(row.getTimeZone())
+                : ZoneId.of("Asia/Seoul");
 
         return ScheduleDetailResponseDto.builder()
                 .id(row.getId())
