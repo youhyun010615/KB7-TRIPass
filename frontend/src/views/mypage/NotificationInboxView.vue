@@ -241,16 +241,12 @@ function open(item) {
   background: #ff6b35;
 }
 .go-btn {
-  margin-top: auto;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: #eaf2ff;
   color: #173f8d;
   font-size: 10px;
   font-weight: 800;
 }
 .go-btn:active {
-  background: #dce9ff;
+  opacity: 0.6;
 }
 .list p {
   padding: 55px;
