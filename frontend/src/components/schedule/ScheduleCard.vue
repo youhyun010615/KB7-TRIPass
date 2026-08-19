@@ -8,20 +8,156 @@ const store = useTravelScheduleStore()
 const item = computed(() => store.normalizeSchedule(props.schedule))
 const country = computed(() => store.countries.find(entry => entry.code === item.value.countryCode))
 const paymentLabel = computed(() => ({ prepaid: '사전결제 완료', onsite: '현장결제 필요', undecided: '미정' })[item.value.paymentStatus] || '미정')
+const hasAmount = computed(() => Number(item.value.amount) > 0)
 </script>
 
 <template>
-  <article class="schedule-card" :class="[`status-${item.paymentStatus}`, { compact }]">
-    <div class="schedule-time"><time>{{ item.time }}</time><span>{{ country?.flag }}</span></div>
-    <div class="schedule-copy">
-      <h4>{{ item.title }}</h4>
-      <strong>{{ item.currency }} {{ Number(item.amount || 0).toLocaleString() }}</strong>
-      <p><b>{{ item.placeName || '장소 미정' }}</b><small>{{ item.placeAddress || '주소 미정' }}</small></p>
+  <article
+    class="schedule-card"
+    :class="[`status-${item.paymentStatus}`, { compact }]"
+    role="button"
+    tabindex="0"
+    @click="emit('detail', item.id)"
+    @keydown.enter="emit('detail', item.id)"
+  >
+    <div class="schedule-time">
+      <time>{{ item.time }}</time>
+      <span v-if="country" class="schedule-country">
+        <span class="schedule-flag">{{ country.flag }}</span>{{ country.name }}
+      </span>
     </div>
-    <div class="schedule-side"><em>{{ paymentLabel }}</em><button type="button" @click.stop="emit('detail', item.id)">상세 정보 <span>›</span></button></div>
+    <div class="schedule-copy">
+      <div class="schedule-title-row">
+        <h4>{{ item.title }}</h4>
+        <em>{{ paymentLabel }}</em>
+      </div>
+      <p class="schedule-place">{{ item.placeName || '장소 미정' }}</p>
+      <p class="schedule-meta">
+        {{ item.placeAddress || '주소 미정' }}<template v-if="hasAmount">
+          <span class="dot">·</span>{{ item.currency }} {{ Number(item.amount).toLocaleString() }}</template>
+      </p>
+    </div>
+    <span class="schedule-chevron" aria-hidden="true">›</span>
   </article>
 </template>
 
 <style scoped>
-.schedule-card{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:12px;width:100%;padding:14px;border:1px solid #dce7f4;border-radius:16px;background:#f8fbff;color:#10192d;text-align:left}.schedule-time{display:flex;flex-direction:column;align-items:center;gap:7px}.schedule-time time{width:52px;padding:9px 3px;border-radius:10px;background:#e7f1ff;color:#195fc7;text-align:center;font-size:12px;font-weight:900}.schedule-time span{font-size:18px}.schedule-copy{min-width:0}.schedule-copy h4{overflow:hidden;font-size:13px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.schedule-copy>strong{display:block;margin-top:5px;color:#1d64ca;font-size:11px}.schedule-copy p{margin-top:8px}.schedule-copy p>*{display:block}.schedule-copy p b{font-size:10px}.schedule-copy p small{overflow:hidden;margin-top:3px;color:#7e8b9e;font-size:9px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.schedule-side{display:flex;min-width:74px;flex-direction:column;align-items:flex-end;justify-content:space-between}.schedule-side em{padding:6px 8px;border-radius:10px;background:#e6f1ff;color:#2472dd;font-size:8px;font-style:normal;font-weight:800;white-space:nowrap}.schedule-side button{color:#335f9e;font-size:9px;font-weight:800}.schedule-side button span{font-size:15px}.status-onsite{border-color:#f5c8c2;background:#fff6f4}.status-onsite .schedule-side em{background:#fff0ee;color:#db6258}.status-undecided{border-color:#e0e4ea;background:#fafafa}.status-undecided .schedule-side em{background:#eceff3;color:#657184}.compact{border-color:#ffffff2b;background:#ffffff18;color:#fff}.compact .schedule-time time{background:#ffffff20;color:#fff}.compact .schedule-copy>strong,.compact .schedule-side button{color:#dceaff}.compact .schedule-copy p small{color:#c6d8f4}.compact .schedule-side em{background:#fff;color:#2167ca}
+.schedule-card {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8f9fc;
+  box-shadow: 0 2px 7px rgba(16, 25, 43, .04);
+  color: #10192d;
+  text-align: left;
+}
+.schedule-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  align-self: start;
+}
+.schedule-time time {
+  padding: 9px 4px;
+  width: 100%;
+  border-radius: 11px;
+  background: #eef2ff;
+  color: #173f8d;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.schedule-country {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #7e8b9e;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+.schedule-flag {
+  font-size: 14px;
+}
+.schedule-copy {
+  min-width: 0;
+}
+.schedule-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.schedule-copy h4 {
+  min-width: 0;
+  color: #10192d;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.schedule-title-row em {
+  flex: none;
+  margin-top: 1px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #173f8d;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.schedule-place {
+  overflow: hidden;
+  margin-top: 6px;
+  color: #3d4a63;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.schedule-meta {
+  overflow: hidden;
+  margin-top: 3px;
+  color: #8a97ab;
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.schedule-meta .dot {
+  margin: 0 5px;
+}
+.schedule-chevron {
+  align-self: center;
+  color: #c2cadb;
+  font-size: 20px;
+  font-weight: 700;
+}
+.status-onsite { background: #fff6f4; }
+.status-onsite .schedule-title-row em { background: #fff0ee; color: #db6258; }
+.status-undecided { background: #fafafa; }
+.status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
+.compact {
+  background: #ffffff18;
+  box-shadow: none;
+  color: #fff;
+}
+.compact .schedule-time time { background: #ffffff20; color: #fff; }
+.compact .schedule-country { color: #c6d8f4; }
+.compact .schedule-copy h4 { color: #fff; }
+.compact .schedule-place { color: #dceaff; }
+.compact .schedule-meta { color: #b7cdf2; }
+.compact .schedule-title-row em { background: #fff; color: #173f8d; }
+.compact .schedule-chevron { color: #ffffffa0; }
 </style>

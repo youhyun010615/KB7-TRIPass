@@ -426,6 +426,12 @@ function formatWon(value) {
   return `${Number(value || 0).toLocaleString('ko-KR')}원`;
 }
 
+function fundPercent(item) {
+  return item.targetBudget > 0
+    ? Math.round((item.spentAmount / item.targetBudget) * 100)
+    : 0;
+}
+
 // 데이터 로드
 const loadData = async () => {
   console.log('선택된 국가 ID:', selectedCountryId.value);
@@ -608,16 +614,35 @@ async function switchMode(mode) {
                   ><b>{{ formatWon(asset.targetBudget - asset.spentAmount) }}</b>
                 </div>
               </div>
-              <div class="fund-label">
-                <span>여행 자금 진행률</span
-                ><b>{{ item.targetBudget > 0 ? Math.round((item.spentAmount / item.targetBudget) * 100) : 0 }}%</b>
-              </div>
-              <div class="fund-track">
-                <i :style="{ width: `${item.targetBudget > 0 ? Math.round((item.spentAmount / item.targetBudget) * 100) : 0}%` }" />
-              </div>
-              <div class="fund-meta">
-                <span>목표 {{ formatWon(item.targetBudget) }}</span
-                ><span>현재 지출 {{ formatWon(item.spentAmount) }}</span>
+              <template v-if="item.code === 'all'">
+                <div class="fund-label">
+                  <span>여행 자금 진행률</span><b>{{ fundPercent(item) }}%</b>
+                </div>
+                <div class="fund-track">
+                  <i :style="{ width: `${fundPercent(item)}%` }" />
+                </div>
+                <div class="fund-meta">
+                  <span>목표 {{ formatWon(item.targetBudget) }}</span
+                  ><span>현재 지출 {{ formatWon(item.spentAmount) }}</span>
+                </div>
+              </template>
+              <div v-else class="fund-progress-box">
+                <div class="fund-progress-head">
+                  <span>여행 자금 진행률</span><strong>{{ fundPercent(item) }}%</strong>
+                </div>
+                <div class="fund-progress-track">
+                  <i :style="{ width: `${fundPercent(item)}%` }" />
+                </div>
+                <div class="fund-progress-meta">
+                  <div>
+                    <b>{{ formatWon(item.spentAmount) }}</b>
+                    <small>지출</small>
+                  </div>
+                  <div class="align-right">
+                    <b>{{ formatWon(item.targetBudget) }}</b>
+                    <small>목표</small>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -906,9 +931,32 @@ async function switchMode(mode) {
   0% { box-shadow: 0 0 0 0 rgba(255, 212, 102, .3); }
   70%, 100% { box-shadow: 0 0 0 12px rgba(255, 212, 102, 0); }
 }
+/* ── 저축모드 홈과 동일한 진입 애니메이션 세트 ── */
+@keyframes home-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes home-card-reveal {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ticket-card-enter {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes progress-shine {
+  60%, 100% { transform: translateX(100%); }
+}
 @media (prefers-reduced-motion: reduce) {
   .empty-trip-badge,
-  .empty-map-pin { animation: none; }
+  .empty-map-pin,
+  .country-carousel,
+  .country-carousel-meta,
+  .country-slide.active .ticket,
+  .fund-progress-box,
+  .fund-progress-track i::after,
+  .card { animation: none; }
+  .country-slide { transition: none; }
 }
 .empty-trip-tear { position: relative; height: 18px; }
 .empty-trip-notch {
@@ -1065,10 +1113,10 @@ async function switchMode(mode) {
   position: relative;
   margin: 0;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 21px;
   background: var(--theme);
   color: #fff;
-  box-shadow: 0 8px 18px #2037652b;
+  box-shadow: 0 16px 32px rgba(17, 35, 70, 0.19);
 }
 /* ── 저축모드 홈과 동일한 공통 헤더 + 스와이프 캐러셀 ── */
 .savings-home-header {
@@ -1144,6 +1192,7 @@ async function switchMode(mode) {
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   touch-action: pan-x pan-y;
+  animation: home-card-reveal 0.56s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .country-carousel::-webkit-scrollbar {
   display: none;
@@ -1153,14 +1202,17 @@ async function switchMode(mode) {
   min-width: 0;
   padding: 0 1px 4px;
   opacity: 0.56;
-  transform: scale(0.965);
+  transform: translateY(5px) scale(0.965);
   transition: opacity 0.34s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
   scroll-snap-align: center;
   scroll-snap-stop: always;
 }
 .country-slide.active {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(0) scale(1);
+}
+.country-slide.active .ticket {
+  animation: ticket-card-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .country-carousel-meta {
   display: flex;
@@ -1171,6 +1223,7 @@ async function switchMode(mode) {
   color: #71809a;
   font-size: 9px;
   font-weight: 700;
+  animation: home-fade-up 0.42s 0.2s ease both;
 }
 .country-carousel-dots {
   display: flex;
@@ -1376,6 +1429,70 @@ async function switchMode(mode) {
   color: #d6e1f2;
   font-size: 9px;
 }
+.fund-progress-box {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme) 82%, black 6%);
+  animation: home-fade-up 0.45s 0.25s ease both;
+}
+.fund-progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.fund-progress-head strong {
+  color: #ffd466;
+  font-size: 14px;
+  font-weight: 800;
+}
+.fund-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.fund-progress-track i {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #73c8e7, #fff1cc 55%, #ef5b54);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fund-progress-track i::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(90deg, transparent, #ffffff99, transparent);
+  transform: translateX(-100%);
+  animation: progress-shine 1.8s 0.5s ease-in-out infinite;
+}
+.fund-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.fund-progress-meta b {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.fund-progress-meta small {
+  display: block;
+  margin-top: 1px;
+  color: #ffffffa6;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+.fund-progress-meta .align-right {
+  text-align: right;
+}
 .ticket-stub {
   display: flex;
   width: 100%;
@@ -1386,6 +1503,10 @@ async function switchMode(mode) {
   color: var(--theme);
   font-size: 12px;
   font-weight: 900;
+  transition: transform 0.2s ease;
+}
+.ticket-stub:active {
+  transform: scale(0.98);
 }
 .ticket-stub b {
   color: #263a5b;
@@ -1396,11 +1517,17 @@ async function switchMode(mode) {
   width: calc(100% - 32px);
   margin: 12px 16px 0;
   padding: 16px;
-  border: 1px solid #dfe5ee;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 4px 12px #1425480d;
+  box-shadow: 0 4px 14px rgba(16, 25, 43, 0.06);
   text-align: left;
+  animation: home-card-reveal 0.56s 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.card:nth-of-type(2) {
+  animation-delay: 0.38s;
+}
+.card:nth-of-type(3) {
+  animation-delay: 0.52s;
 }
 .card-title {
   display: flex;
@@ -1693,7 +1820,6 @@ async function switchMode(mode) {
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .ticket-main {
-  height: 335px;
   min-height: 335px;
   background:
     linear-gradient(180deg, #091b4260, #071733bf),
@@ -1741,10 +1867,8 @@ async function switchMode(mode) {
   text-overflow: ellipsis;
 }
 .ticket-main {
-  height: 320px;
   min-height: 320px;
   padding: 20px;
-  overflow: hidden;
 }
 .ticket-photo-space {
   height: 36px;
@@ -1758,27 +1882,6 @@ async function switchMode(mode) {
 }
 .travel-summary-panel .trip-progress {
   margin-top: 0;
-}
-.summary-title {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 9px;
-}
-.summary-title > span {
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-}
-.summary-title > strong {
-  color: #fff;
-  font-size: 18px;
-  white-space: nowrap;
-}
-.summary-title > strong small {
-  color: #8cebbf;
-  font-size: 8px;
 }
 .travel-summary-panel .country-assets {
   margin-top: 8px;
@@ -1920,22 +2023,25 @@ async function switchMode(mode) {
   margin-top: 7px;
   font-size: 9px;
 }
-.country-FR .fund-track i {
+.country-all .fund-track i {
+  background: linear-gradient(90deg, #79d3d8 0%, #f8d56b 55%, #f29a55 100%);
+}
+.country-FR .fund-progress-track i {
   background: linear-gradient(90deg, #002395 0%, #f4f4f4 52%, #ed2939 100%);
 }
-.country-CH .fund-track i {
+.country-CH .fund-progress-track i {
   background: linear-gradient(90deg, #ff0000 0%, #fff 58%, #ff0000 100%);
 }
-.country-DE .fund-track i {
+.country-DE .fund-progress-track i {
   background: linear-gradient(90deg, #111 0%, #dd0000 52%, #ffce00 100%);
 }
-.country-JP .fund-track i {
+.country-JP .fund-progress-track i {
   background: linear-gradient(90deg, #fff 0%, #bc002d 48%, #fff 100%);
 }
-.country-HK .fund-track i {
+.country-HK .fund-progress-track i {
   background: linear-gradient(90deg, #de2910 0%, #ffde00 100%);
 }
-.country-all .fund-track i {
+.country-all .fund-progress-track i {
   background: linear-gradient(
     90deg,
     #002395 0%,
@@ -2035,7 +2141,7 @@ async function switchMode(mode) {
   font-size: 7px;
   white-space: nowrap;
 }
-.country-all .fund-track i {
+.country-all .fund-progress-track i {
   background: linear-gradient(90deg, #79d3d8 0%, #f8d56b 55%, #f29a55 100%);
 }
 .summary-title-wrapper {

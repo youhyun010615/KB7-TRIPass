@@ -58,7 +58,8 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
       <span />
     </header>
     <section class="period-card">
-      <span>▣</span><b>{{ store.travelStart }} ~ {{ store.travelEnd }}</b
+      <span class="period-icon">🗓️</span
+      ><b>{{ store.travelStart }} ~ {{ store.travelEnd }}</b
       ><em>{{ travelDays }}일</em>
     </section>
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
@@ -90,8 +91,12 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
       <div class="barcode">||||||||||||||||||||</div>
     </section>
     <section v-else class="empty-ticket">
-      <span>▣</span><b>등록된 오늘 일정이 없어요</b
-      ><small>새로운 여행 일정을 추가해 보세요.</small>
+      <span class="empty-ticket-badge">
+        <span class="empty-ticket-pulse" aria-hidden="true" />
+        <span aria-hidden="true">✈️</span>
+      </span>
+      <b>등록된 오늘 일정이 없어요</b>
+      <small>새로운 여행 일정을 추가해 보세요.</small>
     </section>
 
     <section class="upcoming-card">
@@ -113,9 +118,11 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
             @detail="openDetail"
           />
         </div>
-        <p v-if="!upcomingGroups.length" class="empty">
-          다가오는 여행 일정이 없어요.
-        </p>
+        <div v-if="!upcomingGroups.length" class="empty-state">
+          <span aria-hidden="true">🧭</span>
+          <b>다가오는 여행 일정이 없어요</b>
+          <small>새 일정을 추가하면 이곳에 표시돼요.</small>
+        </div>
       </div>
     </section>
 
@@ -129,7 +136,8 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
         })
       "
     >
-      <span>＋</span>새 여행 일정 추가하기
+      <span class="add-button-icon" aria-hidden="true">+</span>
+      <span class="add-button-label">새 여행 일정 추가하기</span>
     </button>
     <BottomNav />
 
@@ -178,7 +186,7 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 .schedule-page {
   min-height: 100vh;
   padding: 0 20px 150px;
-  background: #f8f6f1;
+  background: #f4f5f9;
   color: #10192d;
 }
 .page-header {
@@ -191,35 +199,39 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 .page-header button {
   font-size: 28px;
   text-align: left;
+  color: #10192d;
 }
 .page-header h1 {
   text-align: center;
-  font-size: 21px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 .period-card {
   display: grid;
-  grid-template-columns: 30px 1fr auto;
+  grid-template-columns: 22px 1fr auto;
   align-items: center;
-  padding: 14px 16px;
-  border: 1px solid #dce4ef;
-  border-radius: 14px;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 16px;
   background: #fff;
-  box-shadow: 0 3px 10px #1525470c;
+  box-shadow: 0 4px 14px rgba(16, 25, 43, 0.06);
 }
-.period-card span {
-  color: #2474e8;
-  font-size: 18px;
+.period-icon {
+  font-size: 17px;
 }
 .period-card b {
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 .period-card em {
   padding: 7px 13px;
-  border-radius: 13px;
-  background: #eaf3ff;
-  color: #246dd7;
-  font-size: 11px;
+  border-radius: 99px;
+  background: #eef2ff;
+  color: #173f8d;
+  font-size: 12px;
+  font-weight: 700;
   font-style: normal;
 }
 .today-ticket {
@@ -228,9 +240,9 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   margin-top: 18px;
   overflow: hidden;
   border-radius: 22px;
-  background: linear-gradient(135deg, #0c337f, #1c61ca);
+  background: linear-gradient(135deg, #103779, #1553a2);
   color: #fff;
-  box-shadow: 0 8px 18px #173f8d24;
+  box-shadow: 0 10px 22px rgba(16, 41, 92, 0.22);
   text-align: left;
 }
 .ticket-head {
@@ -239,11 +251,13 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   padding: 18px 22px 15px;
 }
 .ticket-head b {
-  font-size: 20px;
+  font-size: 19px;
+  font-weight: 700;
 }
 .ticket-head small {
   color: #ffffff99;
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 500;
 }
 .cut {
   display: grid;
@@ -255,7 +269,7 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #f8f6f1;
+  background: #f4f5f9;
 }
 .cut i:first-child {
   transform: translateX(-10px);
@@ -267,20 +281,22 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   border-top: 1px dashed #ffffff80;
 }
 .today-ticket > p {
-  padding: 18px 22px 8px;
+  padding: 16px 22px 10px;
   color: #dbe8ff;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 .today-ticket :deep(.schedule-card) {
   width: calc(100% - 36px);
   margin: 10px 18px;
 }
 .all-link {
-  padding: 12px 22px 4px;
+  padding: 14px 22px 4px;
   text-align: right;
   color: #e1ecff;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 700;
 }
 .all-link span {
   font-size: 18px;
@@ -302,24 +318,51 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   justify-content: center;
   margin-top: 18px;
   border-radius: 22px;
-  background: #174596;
+  background: linear-gradient(135deg, #103779, #1553a2);
   color: #fff;
+  box-shadow: 0 10px 22px rgba(16, 41, 92, 0.22);
+}
+.empty-ticket-badge {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 19px;
+}
+.empty-ticket-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(255, 212, 102, 0.32);
+  animation: schedule-beacon 2.4s ease-out infinite;
+}
+@keyframes schedule-beacon {
+  0% { box-shadow: 0 0 0 0 rgba(255, 212, 102, 0.32); }
+  70%, 100% { box-shadow: 0 0 0 12px rgba(255, 212, 102, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .empty-ticket-pulse { animation: none; }
 }
 .empty-ticket b {
-  margin-top: 10px;
-  font-size: 13px;
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 700;
 }
 .empty-ticket small {
-  margin-top: 5px;
+  margin-top: 6px;
   color: #d7e4fb;
-  font-size: 9px;
+  font-size: 13px;
+  font-weight: 500;
 }
 .upcoming-card {
   margin-top: 18px;
   padding: 20px;
-  border: 1px solid #dce4ee;
   border-radius: 22px;
   background: #fff;
+  box-shadow: 0 4px 14px rgba(16, 25, 43, 0.06);
 }
 .section-title {
   display: flex;
@@ -328,11 +371,12 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 }
 .section-title h2 {
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
 }
 .section-title span {
   color: #94a3b8;
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 500;
 }
 .upcoming-list {
   max-height: 560px;
@@ -342,12 +386,13 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   scrollbar-color: #c7d3e4 transparent;
 }
 .date-group h3 {
-  margin: 24px 4px 11px;
-  color: #286ee0;
-  font-size: 14px;
+  margin: 26px 4px 12px;
+  color: #245ec4;
+  font-size: 15px;
+  font-weight: 700;
 }
 .date-group:first-child h3 {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 .date-group :deep(.schedule-card) {
   margin-top: 10px;
@@ -356,7 +401,29 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   padding: 40px;
   text-align: center;
   color: #94a3b8;
-  font-size: 10px;
+  font-size: 13px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 44px 20px;
+  text-align: center;
+}
+.empty-state span {
+  font-size: 28px;
+}
+.empty-state b {
+  margin-top: 4px;
+  color: #26334d;
+  font-size: 16px;
+  font-weight: 700;
+}
+.empty-state small {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.4;
 }
 .add-button {
   position: fixed;
@@ -364,18 +431,33 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   bottom: 78px;
   left: max(calc((100vw - 390px) / 2 + 20px), 20px);
   z-index: 40;
+  display: flex;
   height: 56px;
-  border-radius: 15px;
-  background: #18489f;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 28px;
+  background: #173f8d;
   color: #fff;
-  font-size: 14px;
-  font-weight: 900;
-  box-shadow: 0 8px 18px #173f8d2e;
+  box-shadow: 0 10px 22px rgba(23, 63, 141, 0.3);
 }
-.add-button span {
-  float: left;
-  margin-left: 16px;
-  font-size: 20px;
+.add-button:active {
+  transform: scale(0.98);
+}
+.add-button-icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1;
+}
+.add-button-label {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 .modal-wrap {
   position: fixed;
@@ -396,7 +478,7 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   max-height: 82vh;
   padding: 20px;
   border-radius: 24px 24px 0 0;
-  background: #f8f6f1;
+  background: #f4f5f9;
   box-shadow: 0 -10px 35px #1018272e;
 }
 .today-modal > header {
@@ -407,12 +489,13 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 }
 .today-modal small {
   color: #276ed6;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
 }
 .today-modal h2 {
   margin-top: 4px;
   font-size: 21px;
+  font-weight: 700;
 }
 .today-modal header > button {
   font-size: 28px;
