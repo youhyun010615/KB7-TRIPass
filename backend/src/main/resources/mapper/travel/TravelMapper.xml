@@ -315,6 +315,7 @@
             </if>
         </where>
         GROUP BY c.country_name, cur.currency_code, cur.currency_name
+        HAVING MAX(cb.id) IS NOT NULL
         ORDER BY c.country_name ASC
     </select>
 
