@@ -62,18 +62,17 @@ function monthLabel(value) {
 }
 
 const categoryName = computed(() => data.value?.categoryName || '');
+const displayYearMonth = computed(() => data.value?.analysisYearMonth || yearMonth.value);
 
-const changeRate = computed(() => {
-  const rate = data.value?.previousMonthChange;
+function changeOf(rate) {
   return rate === null || rate === undefined ? null : Number(rate);
-});
+}
 
-const isAboveThreeMonthAverage = computed(() => {
-  const current = Number(data.value?.spendingAmount || 0);
-  const average = Number(data.value?.threeMonthAverageAmount || 0);
-  if (!average) return false;
-  return current >= average * 1.2;
-});
+const changeRate = computed(() => changeOf(data.value?.previousMonthChange));
+const threeMonthChangeRate = computed(() => changeOf(data.value?.threeMonthAverageChange));
+const isAboveThreeMonthAverage = computed(
+  () => threeMonthChangeRate.value !== null && threeMonthChangeRate.value >= 20,
+);
 
 const insights = computed(() => {
   const list = data.value?.analysisInsights || [];
@@ -91,11 +90,11 @@ function insightIcon(text) {
 
 const monthlyTrend = computed(() => data.value?.monthlyTrend || []);
 const monthlyTrendMax = computed(() =>
-  Math.max(1, ...monthlyTrend.value.map((row) => Number(row.amount) || 0)),
+  Math.max(1, ...monthlyTrend.value.map((row) => Number(row.spending) || 0)),
 );
 const monthlyTrendAverage = computed(() => {
   if (!monthlyTrend.value.length) return 0;
-  const sum = monthlyTrend.value.reduce((acc, row) => acc + (Number(row.amount) || 0), 0);
+  const sum = monthlyTrend.value.reduce((acc, row) => acc + (Number(row.spending) || 0), 0);
   return sum / monthlyTrend.value.length;
 });
 const monthlyTrendAveragePosition = computed(() => {
@@ -105,10 +104,15 @@ const monthlyTrendAveragePosition = computed(() => {
 
 const weeklyBreakdown = computed(() => data.value?.weeklyBreakdown || []);
 const weeklyBreakdownMax = computed(() =>
-  Math.max(1, ...weeklyBreakdown.value.map((row) => Number(row.amount) || 0)),
+  Math.max(1, ...weeklyBreakdown.value.map((row) => Number(row.spending) || 0)),
 );
 
 const topMerchants = computed(() => data.value?.topMerchants || []);
+
+function formatPeakDay(value) {
+  if (!value) return '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.replaceAll('-', '.') : value;
+}
 
 async function load() {
   loading.value = true;
@@ -143,7 +147,7 @@ function goBack() {
   <main class="category-detail-view">
     <header>
       <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
-      <h1>{{ monthLabel(yearMonth) }} {{ categoryName || meta.icon }} 상세 분석</h1>
+      <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName || meta.icon }} 상세 분석</h1>
       <span></span>
     </header>
 
@@ -175,8 +179,8 @@ function goBack() {
           <template v-else>{{ meta.icon }}</template>
         </span>
         <div>
-          <small>{{ monthLabel(yearMonth) }} {{ categoryName }} 지출</small>
-          <b>{{ formatCurrency(data.spendingAmount) }}</b>
+          <small>{{ monthLabel(displayYearMonth) }} {{ categoryName }} 지출</small>
+          <b>{{ formatCurrency(data.currentMonthSpending) }}</b>
           <em v-if="data.spendingRank">이번 달 소비 {{ data.spendingRank }}위</em>
         </div>
       </section>
@@ -188,9 +192,9 @@ function goBack() {
             <dt>거래 건수</dt>
             <dd>{{ data.transactionCount ?? 0 }}건</dd>
           </div>
-          <div>
-            <dt>건당 평균</dt>
-            <dd>{{ formatCurrency(data.averageAmount) }}</dd>
+          <div v-if="data.spendingRatio != null">
+            <dt>전체 지출 비중</dt>
+            <dd>{{ Number(data.spendingRatio).toFixed(1) }}%</dd>
           </div>
           <div v-if="data.weeklyAverage != null">
             <dt>주 평균</dt>
@@ -201,6 +205,10 @@ function goBack() {
             <dd>{{ formatCurrency(data.dailyAverage) }}</dd>
           </div>
         </dl>
+        <p v-if="data.peakSpendingDay" class="peak-day-note">
+          가장 많이 지출한 날은 <b>{{ formatPeakDay(data.peakSpendingDay) }}</b>이에요
+          <template v-if="data.peakSpendingDayCount">({{ data.peakSpendingDayCount }}건)</template>
+        </p>
       </section>
 
       <section class="paper-section">
@@ -208,7 +216,7 @@ function goBack() {
         <div class="compare-row">
           <div>
             <small>지난달</small>
-            <b>{{ formatCurrency(data.previousMonthAmount) }}</b>
+            <b>{{ formatCurrency(data.previousMonthSpending) }}</b>
           </div>
           <span
             v-if="changeRate !== null"
@@ -217,18 +225,27 @@ function goBack() {
             {{ changeRate >= 0 ? '▲' : '▼' }} {{ Math.abs(changeRate).toFixed(1) }}%
           </span>
         </div>
-        <div v-if="data.threeMonthAverageAmount != null" class="compare-row">
+        <div v-if="data.threeMonthAverage != null" class="compare-row">
           <div>
             <small>최근 3개월 평균</small>
-            <b>{{ formatCurrency(data.threeMonthAverageAmount) }}</b>
+            <b>{{ formatCurrency(data.threeMonthAverage) }}</b>
           </div>
           <span v-if="isAboveThreeMonthAverage" class="change-badge up">평균보다 많이 썼어요</span>
         </div>
+        <div v-if="data.projectedMonthSpending != null" class="compare-row">
+          <div>
+            <small>이번 달 예상 지출</small>
+            <b>{{ formatCurrency(data.projectedMonthSpending) }}</b>
+          </div>
+        </div>
       </section>
 
-      <section v-if="insights.length" class="paper-section">
+      <section v-if="data.recommendationReason || insights.length" class="paper-section">
         <h3>AI 인사이트</h3>
-        <ul class="insight-list">
+        <p v-if="data.recommendationReason" class="recommendation-callout">
+          <span aria-hidden="true">✦</span>{{ data.recommendationReason }}
+        </p>
+        <ul v-if="insights.length" class="insight-list">
           <li v-for="(insight, index) in insights" :key="index">
             <span>{{ insight.icon }}</span>
             <p>{{ insight.text }}</p>
@@ -249,7 +266,7 @@ function goBack() {
             <div
               class="trend-bar-fill"
               :class="{ current: index === monthlyTrend.length - 1 }"
-              :style="{ height: `${Math.max(6, ((Number(row.amount) || 0) / monthlyTrendMax) * 100)}%` }"
+              :style="{ height: `${Math.max(6, ((Number(row.spending) || 0) / monthlyTrendMax) * 100)}%` }"
             ></div>
             <small>{{ monthLabel(row.yearMonth) }}</small>
           </div>
@@ -259,15 +276,15 @@ function goBack() {
       <section v-if="weeklyBreakdown.length" class="paper-section">
         <h3>주차별 지출</h3>
         <div class="weekly-list">
-          <div v-for="row in weeklyBreakdown" :key="row.weekLabel" class="weekly-row">
-            <small>{{ row.weekLabel }}</small>
+          <div v-for="row in weeklyBreakdown" :key="row.week" class="weekly-row">
+            <small>{{ row.week }}주차</small>
             <div class="weekly-bar-track">
               <div
                 class="weekly-bar-fill"
-                :style="{ width: `${Math.max(6, ((Number(row.amount) || 0) / weeklyBreakdownMax) * 100)}%` }"
+                :style="{ width: `${Math.max(6, ((Number(row.spending) || 0) / weeklyBreakdownMax) * 100)}%` }"
               ></div>
             </div>
-            <b>{{ formatCurrency(row.amount) }}</b>
+            <b>{{ formatCurrency(row.spending) }}</b>
           </div>
         </div>
       </section>
@@ -283,7 +300,7 @@ function goBack() {
             <b>{{ index + 1 }}</b>
             <span>{{ merchant.merchantName }}</span>
             <div>
-              <strong>{{ formatCurrency(merchant.amount) }}</strong>
+              <strong>{{ formatCurrency(merchant.totalAmount) }}</strong>
               <small>{{ merchant.transactionCount }}건</small>
             </div>
           </li>
@@ -447,6 +464,18 @@ function goBack() {
   font-size: 13px;
   font-weight: 800;
 }
+.peak-day-note {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eef1f6;
+  color: #64748b;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+.peak-day-note b {
+  color: #173f8d;
+  font-weight: 800;
+}
 .compare-row {
   display: flex;
   align-items: center;
@@ -482,6 +511,24 @@ function goBack() {
 .change-badge.down {
   background: #e3f6ea;
   color: #1c9a67;
+}
+.recommendation-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #eaf2ff;
+  color: #173f8d;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.recommendation-callout span {
+  flex: none;
+  color: #f0a93c;
+  font-size: 13px;
 }
 .insight-list {
   display: grid;
