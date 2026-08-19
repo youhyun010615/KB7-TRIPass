@@ -1,1 +1,6 @@
 @import 'tailwindcss';
+
+body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}

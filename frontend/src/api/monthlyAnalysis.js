@@ -23,3 +23,11 @@ export async function markMonthlyAnalysisViewed(yearMonth) {
 export async function closeMonthlyAnalysis(yearMonth) {
   await api.patch(`/saving/analyses/${yearMonth}/close`);
 }
+
+/** 리포트의 특정 카테고리에 대한 상세 AI 분석 데이터를 조회한다. */
+export async function fetchCategoryAnalysis(yearMonth, categoryCode) {
+  const response = await api.get(
+    `/saving/analyses/${yearMonth}/categories/${categoryCode}`,
+  );
+  return unwrap(response);
+}

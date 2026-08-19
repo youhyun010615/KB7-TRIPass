@@ -39,7 +39,7 @@ export const useMypageStore = defineStore('mypage', () => {
           time: timeStr,
           read: item.isRead !== undefined ? item.isRead : item.read
         };
-      })
+      }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     } catch (error) {
       console.error('알림 목록 조회 실패', error)
     }

@@ -31,13 +31,6 @@ function open(item) {
       <h1>알림</h1>
       <button @click="store.markAllRead">전체 읽음</button>
     </header>
-    <section class="ticket">
-      <small>TRIPASS NOTIFICATION</small>
-      <h2>놓치면 안 되는 소식</h2>
-      <div>
-        <b>{{ store.unreadCount }}건</b><span>읽지 않은 알림</span>
-      </div>
-    </section>
     <div class="title">
       <h2>최근 알림</h2>
     </div>
@@ -90,14 +83,15 @@ function open(item) {
   padding-bottom: 16px;
 }
 .page > header button:first-child {
+  display: grid;
   width: 36px;
   height: 36px;
+  place-items: center;
   border-radius: 12px;
   background: #fff;
   color: #193d82;
   font-size: 24px;
   font-weight: 700;
-  text-align: left;
   box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 .page > header button:last-child {
@@ -112,59 +106,6 @@ function open(item) {
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.03em;
-}
-.ticket {
-  position: relative;
-  overflow: hidden;
-  padding: 21px;
-  border-radius: 22px;
-  background: linear-gradient(145deg, #0c2d72 0%, #174ca7 62%, #2f70d9 100%);
-  color: #fff;
-  box-shadow: 0 13px 30px rgba(22, 63, 141, 0.17);
-}
-.ticket::after {
-  content: '';
-  position: absolute;
-  top: -58px;
-  right: -46px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  pointer-events: none;
-}
-.ticket small {
-  position: relative;
-  z-index: 1;
-  color: #ffc36b;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-.ticket h2 {
-  position: relative;
-  z-index: 1;
-  margin-top: 8px;
-  font-size: 18px;
-  font-weight: 900;
-}
-.ticket div {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: end;
-  gap: 8px;
-  margin-top: 18px;
-}
-.ticket b {
-  color: #ffd466;
-  font-size: 23px;
-  font-weight: 900;
-}
-.ticket span {
-  padding-bottom: 3px;
-  color: #cbdcff;
-  font-size: 9px;
 }
 .title {
   display: flex;

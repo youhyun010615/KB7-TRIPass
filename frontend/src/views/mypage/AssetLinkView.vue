@@ -6,6 +6,9 @@ import { deleteAccount, getAccounts } from '@/api/asset'
 import { deleteCard } from '@/api/card'
 import { useCardStore } from '@/stores/cardStore'
 import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
+import { getTravelCardImage } from '@/utils/travelCard'
+import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
+import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
 
 const router = useRouter()
 const cardStore = useCardStore()
@@ -72,6 +75,44 @@ function resolveBankMeta(account) {
   if (name.includes('대구')) return bankPresentationByName('대구은행')
   if (name.includes('카카오')) return bankPresentationByName('카카오뱅크')
   return byCode
+}
+
+// 카드의 organizationCode(CODEF 연동 기관 코드)를 우선으로, 없으면 카드명으로 카드사를 추정해
+// 계좌와 동일한 브랜드 컬러/심볼을 찾는다.
+function resolveCardMeta(card) {
+  const byCode = bankPresentationByCode(card.organizationCode)
+  if (byCode.code) return byCode
+
+  const name = card.cardName ?? ''
+  if (name.includes('국민') || name.includes('KB')) return bankPresentationByName('KB국민은행')
+  if (name.includes('신한')) return bankPresentationByName('신한은행')
+  if (name.includes('우리')) return bankPresentationByName('우리은행')
+  if (name.includes('하나')) return bankPresentationByName('하나은행')
+  if (name.includes('농협')) return bankPresentationByName('NH농협은행')
+  if (name.includes('기업')) return bankPresentationByName('IBK기업은행')
+  if (name.includes('K뱅크') || name.includes('케이뱅크')) return bankPresentationByName('K뱅크')
+  if (name.includes('대구')) return bankPresentationByName('대구은행')
+  if (name.includes('카카오')) return bankPresentationByName('카카오뱅크')
+  return byCode
+}
+
+// 지갑 > 내 트래블카드에서 쓰는 실제 카드사 상품 이미지가 있으면 그걸 그대로 보여준다.
+// 은행만 보고 매칭하면 같은 은행의 다른 카드(예: KB QA 체크카드)까지 트래블카드 사진이
+// 붙어버리므로, 카드명에 '트래블' 키워드가 있는 진짜 트래블카드 상품에만 적용한다.
+// organizationCode는 계좌용 코드 체계라 카드에는 안 맞을 수 있어(bank-code 매칭 실패 대비),
+// 카드명 자체에서 은행을 먼저 찾고 안 되면 KB 트래블카드로 폴백한다.
+// 매칭되는 트래블카드 상품이 없으면, KB 체크카드에 한해 KB국민카드 공식 상품 이미지로 대체한다.
+function cardVisualImage(card) {
+  const name = card.cardName ?? ''
+  const isKb = resolveCardMeta(card).name === 'KB국민은행' || name.includes('KB') || name.includes('국민')
+
+  if (name.includes('트래블')) {
+    return getTravelCardImage(name) || getTravelCardImage(resolveCardMeta(card).name) || kbTravelersImage
+  }
+  if (isKb && card.cardType === 'CHECK') {
+    return kbCheckGenericImage
+  }
+  return null
 }
 
 function isDeleting(key) {
@@ -179,19 +220,49 @@ async function removeCard(card) {
       </section>
 
       <section class="asset-section card-section">
-        <div class="section-title"><h2>카드</h2><span>{{ cardStore.cards.length }}장</span></div>
+        <div class="section-title"><div><h2>내 카드</h2><small>좌우로 밀어 카드를 확인하세요</small></div><span>{{ cardStore.cards.length }}장</span></div>
         <p v-if="cardStore.cards.length === 0" class="empty-card">연동된 카드가 없어요.</p>
-        <article v-for="card in cardStore.cards" :key="card.id" class="asset-card card-row" @click="router.push(`/mypage/cards/${card.id}/transactions`)">
-          <span class="card-visual"><i></i></span>
-          <div class="asset-info">
-            <strong>{{ card.cardName }}</strong>
-            <small>{{ cardTypeLabel(card.cardType) }} · {{ card.maskedCardNumber || '카드번호 비공개' }}</small>
-          </div>
-          <button type="button" class="delete-button" :disabled="isDeleting(`card-${card.id}`)" @click.stop="removeCard(card)">
-            {{ isDeleting(`card-${card.id}`) ? '처리 중' : '삭제' }}
+        <div v-else class="card-carousel">
+          <article
+            v-for="card in cardStore.cards"
+            :key="card.id"
+            class="card-slide"
+            :style="{ '--card-color': resolveCardMeta(card).color, '--card-text': resolveCardMeta(card).text }"
+          >
+            <div
+              class="card-visual-big"
+              :class="{ 'is-photo': cardVisualImage(card) }"
+              @click="router.push(`/mypage/cards/${card.id}/transactions`)"
+            >
+              <img v-if="cardVisualImage(card)" :src="cardVisualImage(card)" alt="" class="card-visual-photo" />
+              <template v-else>
+                <div class="card-visual-top">
+                  <span>{{ resolveCardMeta(card).name }}</span>
+                  <b>{{ cardTypeLabel(card.cardType) }}</b>
+                </div>
+                <div class="card-visual-chip"></div>
+                <div class="card-visual-number">{{ card.maskedCardNumber || '카드번호 비공개' }}</div>
+              </template>
+            </div>
+            <div class="card-info-panel">
+              <div>
+                <strong>{{ card.cardName }}</strong>
+                <dl>
+                  <div><dt>카드사</dt><dd>{{ resolveCardMeta(card).name }}</dd></div>
+                  <div><dt>카드번호</dt><dd>{{ card.maskedCardNumber || '비공개' }}</dd></div>
+                </dl>
+              </div>
+              <button type="button" class="delete-button" :disabled="isDeleting(`card-${card.id}`)" @click.stop="removeCard(card)">
+                {{ isDeleting(`card-${card.id}`) ? '처리 중' : '연동 해제' }}
+              </button>
+            </div>
+          </article>
+          <button type="button" class="card-slide card-add-slide" @click="router.push('/profile/financial?step=9&from=asset')">
+            <span>＋</span>
+            <strong>카드 추가하기</strong>
+            <small>소비 내역을 함께 관리해요</small>
           </button>
-        </article>
-        <button type="button" class="add-button" @click="router.push('/profile/financial?step=9&from=asset')"><span>＋</span><div><b>카드 추가하기</b><small>소비 내역을 함께 관리해요</small></div></button>
+        </div>
       </section>
 
       <aside class="unlink-note">
@@ -240,4 +311,28 @@ async function removeCard(card) {
 .summary-counts small{color:#64758e;font-size:9px;font-weight:600}
 .summary-counts b{color:#174a99;font-size:11px;font-weight:800;white-space:nowrap}
 .summary-counts i{width:1px;height:20px;background:#b8c9e2}
+.card-carousel{display:flex;gap:12px;margin:0 -18px;padding:0 18px 8px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:18px;scrollbar-width:none}
+.card-carousel::-webkit-scrollbar{display:none}
+.card-slide{position:relative;flex:0 0 168px;display:flex;flex-direction:column;gap:10px;scroll-snap-align:start}
+.card-visual-big{position:relative;overflow:hidden;height:266px;padding:16px;border-radius:16px;background:linear-gradient(160deg,var(--card-color,#173f8d) 0%,color-mix(in srgb,var(--card-color,#173f8d) 55%,#0b1d3f) 100%);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(16,25,43,.18)}
+.card-visual-big::after{content:'';position:absolute;right:-40px;bottom:-46px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
+.card-visual-big.is-photo{padding:0;background:#e7edf9;box-shadow:0 10px 22px rgba(16,25,43,.14)}
+.card-visual-big.is-photo::after{display:none}
+.card-visual-photo{display:block;width:100%;height:100%;object-fit:cover}
+.card-visual-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.card-visual-top>span{font-size:11px;font-weight:900;letter-spacing:-.02em}
+.card-visual-top>b{padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.18);font-size:8px;font-weight:800;white-space:nowrap}
+.card-visual-chip{position:relative;z-index:1;width:30px;height:22px;margin-top:34px;border-radius:5px;background:linear-gradient(135deg,#ffe9a8,#d8ac4c)}
+.card-visual-number{position:relative;z-index:1;margin-top:auto;padding-top:20px;font-size:11px;font-weight:700;letter-spacing:.03em}
+.card-info-panel{position:relative;padding:13px 14px 42px;border:1px solid #e7edf9;border-radius:16px;background:#fff;box-shadow:0 6px 16px rgba(16,25,43,.05)}
+.card-info-panel strong{display:block;overflow:hidden;color:#10192b;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}
+.card-info-panel dl{display:grid;gap:6px;margin-top:9px}
+.card-info-panel dl>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-info-panel dt{flex:none;color:#94a3b8;font-size:8.5px;white-space:nowrap}
+.card-info-panel dd{overflow:hidden;color:#48566e;font-size:9.5px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.card-info-panel .delete-button{position:absolute;right:12px;bottom:12px;top:auto}
+.card-add-slide{display:flex;flex-direction:column;align-items:center;justify-content:center;height:380px;border:1.5px dashed #b9c9df;border-radius:16px;background:#f8fbff;color:#1d4f9f;text-align:center}
+.card-add-slide>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
+.card-add-slide>strong{margin-top:11px;font-size:12px;font-weight:800}
+.card-add-slide>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
 </style>

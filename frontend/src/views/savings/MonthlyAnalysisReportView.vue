@@ -7,8 +7,6 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
-import aiIcon from '@/assets/icons/ai.svg';
-import aiReportIcon from '@/assets/icons/ai_report.svg';
 import foodIconRaw from '@/assets/icons/food.svg?raw';
 import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
 import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
@@ -98,14 +96,6 @@ function coloredCategoryIcon(categoryCode) {
   return meta.iconRaw.replaceAll('black', darken(meta.color));
 }
 
-function goBack() {
-  if (window.history.length > 1) {
-    router.back();
-    return;
-  }
-  router.push('/');
-}
-
 async function closeReport() {
   try {
     await analysisStore.closeReport();
@@ -121,71 +111,70 @@ function goMissions() {
     query: { from: 'analysis', yearMonth: yearMonth.value },
   });
 }
+
+function goCategoryDetail(categoryCode) {
+  router.push({
+    name: 'MonthlyAnalysisCategoryDetail',
+    params: { yearMonth: yearMonth.value, categoryCode },
+  });
+}
 </script>
 
 <template>
   <main class="analysis-report-view">
-    <header class="report-header">
-      <button type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
-      <div>
-        <small>TRIPASS AI REPORT</small>
-        <h1>
-          {{ analysisMonthLabel }} AI 분석 리포트
-          <img class="header-ai-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
-        </h1>
-      </div>
-      <button
-        type="button"
-        class="close-icon"
-        aria-label="리포트 닫기"
-        :disabled="analysisStore.updatingStatus"
-        @click="closeReport"
-      >
-        ×
-      </button>
-    </header>
-
-    <section v-if="analysisStore.loading" class="report-state" role="status">
-      <span class="report-spinner" />
-      <b>AI 분석 리포트를 불러오고 있어요</b>
-      <small>지난달 소비와 저축 결과를 확인하고 있습니다.</small>
-    </section>
-
-    <section v-else-if="analysisStore.notFound" class="report-state">
-      <span class="state-icon">AI</span>
-      <b>아직 생성된 리포트가 없어요</b>
-      <small>거래내역 분석이 완료되면 월간 리포트가 제공됩니다.</small>
-      <button type="button" @click="router.push('/')">홈으로 돌아가기</button>
-    </section>
-
-    <section v-else-if="!report" class="report-state error">
-      <span class="state-icon">!</span>
-      <b>리포트를 불러오지 못했어요</b>
-      <small>{{ analysisStore.errorMessage }}</small>
-      <button
-        type="button"
-        @click="loadReport"
-      >
-        다시 시도
-      </button>
-    </section>
-
-    <template v-else>
-      <p v-if="analysisStore.errorMessage" class="status-warning">
-        {{ analysisStore.errorMessage }}
-      </p>
-
-      <article class="report-paper">
-        <div class="paper-letterhead">
-          <div class="letterhead-left">
-            <strong class="letterhead-title">{{ analysisMonthLabel }} AI 분석 리포트</strong>
-            <img class="letterhead-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
+    <div class="report-backdrop" @click="closeReport"></div>
+    <div class="report-modal">
+      <header class="report-header">
+        <span class="drag-handle" aria-hidden="true"></span>
+        <div class="report-header-row">
+          <div>
+            <small>TRIPASS AI REPORT</small>
+            <h1>{{ analysisMonthLabel }} AI 분석 리포트</h1>
           </div>
-          <div class="letterhead-right">
-            <span class="ai-label"><img :src="aiIcon" alt="" /></span>
-          </div>
+          <button
+            type="button"
+            class="close-icon"
+            aria-label="리포트 닫기"
+            :disabled="analysisStore.updatingStatus"
+            @click="closeReport"
+          >
+            ×
+          </button>
         </div>
+      </header>
 
+      <div class="report-modal-body">
+      <section v-if="analysisStore.loading" class="report-state" role="status">
+        <span class="report-spinner" />
+        <b>AI 분석 리포트를 불러오고 있어요</b>
+        <small>지난달 소비와 저축 결과를 확인하고 있습니다.</small>
+      </section>
+
+      <section v-else-if="analysisStore.notFound" class="report-state">
+        <span class="state-icon">AI</span>
+        <b>아직 생성된 리포트가 없어요</b>
+        <small>거래내역 분석이 완료되면 월간 리포트가 제공됩니다.</small>
+        <button type="button" @click="router.push('/')">홈으로 돌아가기</button>
+      </section>
+
+      <section v-else-if="!report" class="report-state error">
+        <span class="state-icon">!</span>
+        <b>리포트를 불러오지 못했어요</b>
+        <small>{{ analysisStore.errorMessage }}</small>
+        <button
+          type="button"
+          @click="loadReport"
+        >
+          다시 시도
+        </button>
+      </section>
+
+      <template v-else>
+        <p v-if="analysisStore.errorMessage" class="status-warning">
+          {{ analysisStore.errorMessage }}
+        </p>
+
+        <article class="report-paper">
       <section class="paper-section saving-section">
         <div class="section-title">
           <div>
@@ -210,8 +199,8 @@ function goMissions() {
             <small>{{ savingResult.resultMessage }}</small>
           </div>
         </div>
-        <div v-else class="saving-unavailable">
-          <span>i</span>
+        <div v-else class="saving-empty">
+          <span aria-hidden="true">📊</span>
           <b>{{ savingResult?.resultMessage || '이번 달 저축 목표가 설정되지 않아 결과를 계산할 수 없어요.' }}</b>
         </div>
 
@@ -232,13 +221,13 @@ function goMissions() {
       </section>
 
       <section class="paper-section spending-section">
-        <div class="section-title">
-          <div>
+        <div class="spending-title">
+          <div class="spending-title-top">
             <small>SPENDING INSIGHT</small>
-            <h3>{{ analysisMonthLabel }} 소비</h3>
-          </div>
-          <div class="total-spending">
             <small>총지출</small>
+          </div>
+          <div class="spending-title-bottom">
+            <h3>{{ analysisMonthLabel }} 소비</h3>
             <b>{{ formatCurrency(report.totalSpending) }}</b>
           </div>
         </div>
@@ -289,11 +278,16 @@ function goMissions() {
             <h3>이번 달 절약 포인트</h3>
           </div>
         </div>
+        <p class="coaching-hint">각 카테고리를 클릭하면 AI가 분석한 상세 내용을 확인할 수 있어요.</p>
 
         <ol class="recommendation-list">
           <li
             v-for="recommendation in recommendations"
             :key="recommendation.categoryCode"
+            role="button"
+            tabindex="0"
+            @click="goCategoryDetail(recommendation.categoryCode)"
+            @keydown.enter="goCategoryDetail(recommendation.categoryCode)"
           >
             <b>{{ recommendation.rank }}</b>
             <span
@@ -312,78 +306,118 @@ function goMissions() {
               <strong>{{ recommendation.categoryName }}</strong>
               <p>{{ recommendation.recommendationReason }}</p>
             </div>
+            <span class="detail-chevron" aria-hidden="true">›</span>
           </li>
         </ol>
 
         <p class="mission-guide">
           <span class="sparkle" aria-hidden="true">✦</span>
-          카테고리별 절감률을 선택해 나만의 미션을 시작할 수 있어요.
+          카테고리별 절감률을 선택해 나만의 미션을 시작해요.
         </p>
         <button type="button" class="mission-button" @click="goMissions">
           추천 미션 보러 가기 <span>›</span>
         </button>
       </section>
       </article>
-    </template>
+      </template>
+      </div>
+    </div>
   </main>
 </template>
 
 <style scoped>
 .analysis-report-view {
-  min-height: 100vh;
-  padding-bottom: 38px;
-  background: #f3f6ff;
-  color: #17213a;
-}
-.report-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  padding: 18px 14px 13px;
-  border-bottom: 1px solid #e0e8f5;
-  background: #f3f6fff2;
-  backdrop-filter: blur(14px);
-}
-.report-header > button {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border-radius: 12px;
-  color: #173f8d;
-  font-size: 28px;
-  line-height: 1;
-}
-.report-header > div {
-  text-align: center;
-}
-.report-header small {
-  color: #f06a2a;
-  font-size: 7px;
-  font-weight: 950;
-  letter-spacing: 0.16em;
-}
-.report-header h1 {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  margin-top: 2px;
-  color: #173f8d;
-  font-size: 15px;
-  font-weight: 950;
+  padding: 28px 16px;
+  color: #17213a;
 }
-.header-ai-icon {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-  filter: invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%);
+.report-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 18, 38, 0.55);
+  animation: report-backdrop-enter 0.3s ease both;
+}
+.report-modal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 358px;
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #f3f6ff;
+  box-shadow: 0 24px 60px rgba(9, 18, 38, 0.35);
+  animation: report-modal-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.report-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 30px;
+  -webkit-overflow-scrolling: touch;
+}
+@keyframes report-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes report-modal-enter {
+  from { transform: scale(0.94) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.report-header {
+  flex: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px 18px;
+  border-bottom: 1px solid #e0e8f5;
+  border-radius: 24px 24px 0 0;
+  background: #f3f6ff;
+}
+.drag-handle {
+  align-self: center;
+  width: 36px;
+  height: 4px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: #d7deea;
+}
+.report-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.report-header small {
+  color: #f06a2a;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+}
+.report-header h1 {
+  margin-top: 4px;
+  color: #17213a;
+  font-size: 20px;
+  font-weight: 900;
 }
 .report-header .close-icon {
-  font-size: 23px;
+  display: grid;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef1f6;
+  color: #1a2338;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
 .report-paper {
   overflow: hidden;
@@ -392,74 +426,6 @@ function goMissions() {
   background: #fff;
   box-shadow: 0 12px 30px rgba(23, 63, 141, 0.16);
   animation: report-enter 0.48s ease both;
-}
-.paper-letterhead {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
-  color: #fff;
-}
-.paper-letterhead::after {
-  position: absolute;
-  right: -52px;
-  bottom: -65px;
-  width: 170px;
-  height: 170px;
-  border: 32px solid #ffffff0d;
-  border-radius: 50%;
-  content: '';
-  pointer-events: none;
-}
-.letterhead-left {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-}
-.letterhead-title {
-  overflow: hidden;
-  color: #fff;
-  font-size: 12.5px;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.02em;
-}
-.letterhead-report-icon {
-  width: 12px;
-  height: 12px;
-  flex: none;
-  object-fit: contain;
-  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
-}
-.letterhead-right {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-}
-.letterhead-right .ai-label {
-  position: relative;
-  z-index: 1;
-  flex: none;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.16) !important;
-  animation: ai-label-pulse-light 2s ease-in-out infinite;
-}
-.letterhead-right .ai-label img {
-  width: 18px;
-  height: 18px;
-  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
 }
 .paper-section {
   padding: 20px;
@@ -473,16 +439,18 @@ function goMissions() {
   justify-content: space-between;
   gap: 10px;
 }
-.section-title small {
+.section-title small,
+.spending-title small {
   color: #f06a2a;
   font-size: 9px;
   font-weight: 950;
   letter-spacing: 0.12em;
 }
-.section-title h3 {
+.section-title h3,
+.spending-title h3 {
   margin-top: 3px;
   color: #173f8d;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 950;
 }
 .section-title > span {
@@ -499,18 +467,13 @@ function goMissions() {
   background: #fff0f0;
   color: #ef5050;
 }
-.saving-message,
-.saving-unavailable {
+.saving-message {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 14px;
-  padding: 13px;
-  border-radius: 14px;
-  background: #eef4ff;
 }
-.saving-message > span,
-.saving-unavailable > span {
+.saving-message > span {
   display: grid;
   flex: 0 0 32px;
   height: 32px;
@@ -533,10 +496,25 @@ function goMissions() {
   color: #7186aa;
   font-size: 10.5px;
 }
-.saving-unavailable b {
-  color: #173f8d;
-  font-size: 12px;
-  font-weight: 800;
+.saving-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 22px 16px;
+  border: 1px dashed #d7deea;
+  border-radius: 14px;
+  text-align: center;
+}
+.saving-empty span {
+  font-size: 20px;
+  opacity: 0.7;
+}
+.saving-empty b {
+  color: #7186aa;
+  font-size: 11.5px;
+  font-weight: 700;
   line-height: 1.5;
 }
 .saving-metrics {
@@ -564,18 +542,23 @@ function goMissions() {
   font-size: 13px;
   font-weight: 900;
 }
-.total-spending {
+.spending-title-top,
+.spending-title-bottom {
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  justify-content: space-between;
+  gap: 10px;
 }
-.total-spending small {
-  color: #8a9bb6;
-  font-size: 9.5px;
+.spending-title-bottom {
+  margin-top: 3px;
 }
-.total-spending b {
+.spending-title-bottom h3 {
+  margin-top: 0;
+}
+.spending-title-bottom b {
   color: #17213a;
   font-size: 16px;
+  font-weight: 900;
 }
 .category-list {
   display: grid;
@@ -608,22 +591,32 @@ function goMissions() {
 }
 .category-detail > div {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 5px;
+  overflow: hidden;
 }
 .category-detail b {
+  overflow: hidden;
+  min-width: 0;
   color: #26334d;
   font-size: 13px;
   font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .category-detail small {
+  flex: none;
   color: #9aa8bb;
   font-size: 9.5px;
+  white-space: nowrap;
 }
 .category-detail strong {
+  flex: none;
   margin-left: auto;
   color: #536887;
   font-size: 11px;
+  white-space: nowrap;
 }
 .category-detail > i {
   display: block;
@@ -669,12 +662,27 @@ function goMissions() {
 }
 .recommendation-list li {
   display: grid;
-  grid-template-columns: 24px 38px 1fr;
+  grid-template-columns: 24px 38px 1fr 12px;
   align-items: center;
   gap: 9px;
   padding: 12px;
   border: 1px solid #e3eaf5;
   border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.recommendation-list li:active {
+  background: #f2f6ff;
+}
+.recommendation-list .detail-chevron {
+  display: block;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  color: #b7c3dc;
+  font-size: 15px;
+  font-weight: 700;
 }
 .recommendation-list li > b {
   display: grid;
@@ -702,6 +710,13 @@ function goMissions() {
   color: #7186aa;
   font-size: 9.5px;
   line-height: 1.45;
+}
+.coaching-hint {
+  margin-top: 4px;
+  color: #9aa8bb;
+  font-size: 9.5px;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 .mission-guide {
   margin-top: 14px;
@@ -828,15 +843,6 @@ function goMissions() {
   }
   50% {
     box-shadow: 0 0 0 6px rgba(23, 63, 141, 0);
-  }
-}
-@keyframes ai-label-pulse-light {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
   }
 }
 @keyframes sparkle-twinkle {

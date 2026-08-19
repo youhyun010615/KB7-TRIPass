@@ -95,6 +95,11 @@ async function handleNavigation(item) {
         <rect x="3" y="4" width="18" height="18" rx="2" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8"/>
         <path d="M16 2V6M8 2V6M3 10H21" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
+      <!-- asset (여행자금 체크 - 지출 분포 파이 차트) -->
+      <svg v-if="item.icon === 'asset'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M22 12A10 10 0 0 0 12 2V12H22Z" :fill="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'"/>
+      </svg>
       <!-- receipt (영수증) -->
       <svg v-if="item.icon === 'receipt'" width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M5 2H19C19.55 2 20 2.45 20 3V22L17.5 20.5L15 22L12.5 20.5L10 22L7.5 20.5L5 22V3C5 2.45 5.45 2 6 2Z"
