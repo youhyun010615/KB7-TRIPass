@@ -40,7 +40,6 @@ function open(item) {
     </section>
     <div class="title">
       <h2>최근 알림</h2>
-      <button @click="router.push('/mypage/notification')">알림 설정 ›</button>
     </div>
     <section class="list">
       <div
@@ -79,58 +78,90 @@ function open(item) {
 .page {
   min-height: 100vh;
   padding: 0 20px 105px;
-  background: #f8f6f1;
+  background: #eef2f8;
   color: #10192d;
 }
 .page > header {
   display: grid;
   height: 90px;
-  grid-template-columns: 50px 1fr 65px;
+  grid-template-columns: 36px 1fr 36px;
   align-items: end;
   padding-bottom: 16px;
 }
 .page > header button:first-child {
-  font-size: 28px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 24px;
+  font-weight: 700;
   text-align: left;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 .page > header button:last-child {
-  color: #176ff2;
+  color: #286ce0;
   font-size: 10px;
+  font-weight: 800;
   text-align: right;
 }
 .page h1 {
   text-align: center;
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 900;
+  letter-spacing: -0.03em;
 }
 .ticket {
+  position: relative;
   overflow: hidden;
   padding: 21px;
-  border-radius: 21px;
-  background: linear-gradient(135deg, #15367e, #205eba);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #0c2d72 0%, #174ca7 62%, #2f70d9 100%);
   color: #fff;
+  box-shadow: 0 13px 30px rgba(22, 63, 141, 0.17);
+}
+.ticket::after {
+  content: '';
+  position: absolute;
+  top: -58px;
+  right: -46px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
 }
 .ticket small {
-  color: #b9d0f5;
-  font-size: 8px;
-  letter-spacing: 1px;
+  position: relative;
+  z-index: 1;
+  color: #ffc36b;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
 }
 .ticket h2 {
-  margin-top: 12px;
-  font-size: 20px;
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 900;
 }
 .ticket div {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: end;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 .ticket b {
-  font-size: 25px;
+  color: #ffd466;
+  font-size: 23px;
+  font-weight: 900;
 }
 .ticket span {
   padding-bottom: 3px;
-  color: #c9d8ef;
+  color: #cbdcff;
   font-size: 9px;
 }
 .title {
@@ -142,25 +173,22 @@ function open(item) {
   font-size: 16px;
   font-weight: 900;
 }
-.title button {
-  color: #176ff2;
-  font-size: 9px;
-}
 .list {
   overflow: hidden;
-  border: 1px solid #e0e5ec;
+  border: 1px solid #e7edf9;
   border-radius: 20px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(16, 25, 43, 0.05);
 }
 .item {
   position: relative;
   display: grid;
   width: 100%;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 42px 1fr auto;
   gap: 11px;
   padding: 15px;
-  border-bottom: 1px solid #edf0f3;
-  background: #f7faff;
+  border-bottom: 1px solid #eef1f6;
+  background: #f4f8ff;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -169,11 +197,11 @@ function open(item) {
 }
 .item i {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   place-items: center;
-  border-radius: 14px;
-  color: #176ff2;
+  border-radius: 13px;
+  color: #173f8d;
   font-style: normal;
   font-weight: 900;
 }
@@ -181,16 +209,17 @@ function open(item) {
   display: block;
 }
 .content small {
-  color: #8996a9;
+  color: #94a3b8;
   font-size: 8px;
 }
 .content b {
   margin-top: 5px;
+  color: #10192d;
   font-size: 12px;
 }
 .content em {
   margin-top: 5px;
-  color: #758399;
+  color: #73829d;
   font-size: 9px;
   font-style: normal;
   line-height: 1.45;
@@ -211,13 +240,13 @@ function open(item) {
   margin-top: auto;
   padding: 4px 8px;
   border-radius: 8px;
-  background: #f1f5f9;
-  color: #176ff2;
+  background: #eaf2ff;
+  color: #173f8d;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
 }
 .go-btn:active {
-  background: #e2e8f0;
+  background: #dce9ff;
 }
 .list p {
   padding: 55px;
