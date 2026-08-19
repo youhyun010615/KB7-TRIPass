@@ -2,16 +2,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { fetchCategoryAnalysis } from '@/api/monthlyAnalysis';
-import foodIcon from '@/assets/icons/food.svg';
-import cafeIcon from '@/assets/icons/cafe.svg';
-import shoppingIcon from '@/assets/icons/shopping-cart.svg';
-import taxiIcon from '@/assets/icons/taxi.svg';
-import leisureIcon from '@/assets/icons/hobby_drink.svg';
-import foodIconRaw from '@/assets/icons/food.svg?raw';
-import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
-import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
-import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
-import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
 
 const route = useRoute();
 const router = useRouter();
@@ -23,33 +13,6 @@ const loading = ref(false);
 const notFound = ref(false);
 const errorMessage = ref('');
 const data = ref(null);
-
-const categoryMeta = {
-  FOOD: { icon: '🍽', iconSrc: foodIcon, iconRaw: foodIconRaw, color: '#2457aa' },
-  CAFE: { icon: '☕', iconSrc: cafeIcon, iconRaw: cafeIconRaw, color: '#3b82f6' },
-  LIVING: { icon: '🧺', color: '#13a184' },
-  SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, iconRaw: shoppingIconRaw, color: '#f59e0b' },
-  LEISURE: { icon: '🎮', iconSrc: leisureIcon, iconRaw: leisureIconRaw, color: '#8b5cf6' },
-  TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, iconRaw: taxiIconRaw, color: '#0ea5e9' },
-  OTHER: { icon: '•••', color: '#64748b' },
-};
-
-const meta = computed(() => categoryMeta[categoryCode.value] || categoryMeta.OTHER);
-
-function darken(hex, amount = 0.3) {
-  const clean = (hex || '').replace('#', '');
-  const num = parseInt(clean, 16);
-  if (Number.isNaN(num)) return hex;
-  const r = Math.max(0, Math.round(((num >> 16) & 255) * (1 - amount)));
-  const g = Math.max(0, Math.round(((num >> 8) & 255) * (1 - amount)));
-  const b = Math.max(0, Math.round((num & 255) * (1 - amount)));
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
-const coloredIcon = computed(() => {
-  if (!meta.value.iconRaw) return '';
-  return meta.value.iconRaw.replaceAll('black', darken(meta.value.color));
-});
 
 function formatCurrency(value, absolute = false) {
   const number = Number(value) || 0;
@@ -153,29 +116,13 @@ function goBack() {
   <main class="analysis-report-view">
     <div class="report-backdrop" @click="goBack"></div>
     <div class="report-modal">
-      <header v-if="!data" class="report-header">
+      <header class="report-header">
         <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
         <div>
           <small>TRIPASS AI REPORT</small>
-          <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName || meta.icon }} 상세 분석</h1>
+          <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName }} 상세 분석</h1>
         </div>
         <span></span>
-      </header>
-      <header v-else class="hero-header">
-        <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
-        <span
-          class="category-icon-glyph"
-          :style="{ background: `${meta.color}18` }"
-        >
-          <span v-if="meta.iconSrc" v-html="coloredIcon"></span>
-          <template v-else>{{ meta.icon }}</template>
-        </span>
-        <div>
-          <b>{{ monthLabel(displayYearMonth) }} {{ categoryName }} 상세 분석</b>
-          <small>{{ categoryName }} 지출</small>
-          <strong>{{ formatCurrency(data.currentMonthSpending) }}</strong>
-          <em v-if="data.spendingRank">이번 달 소비 {{ data.spendingRank }}위</em>
-        </div>
       </header>
 
       <div class="report-modal-body">
@@ -199,6 +146,12 @@ function goBack() {
 
     <template v-else-if="data">
       <article class="report-paper">
+      <section class="paper-section hero-amount-section">
+        <small>{{ categoryName }} 지출</small>
+        <strong>{{ formatCurrency(data.currentMonthSpending) }}</strong>
+        <em v-if="data.spendingRank">이번 달 소비 {{ data.spendingRank }}위</em>
+      </section>
+
       <section class="paper-section">
         <h3>이번 달 요약</h3>
         <dl class="summary-grid">
@@ -470,63 +423,26 @@ function goBack() {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.hero-header {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px 22px;
-  border-radius: 24px 24px 0 0;
-  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
-  color: #fff;
+.hero-amount-section {
+  text-align: center;
 }
-.hero-header > button {
-  display: grid;
-  flex: 0 0 100%;
-  width: 36px;
-  height: 36px;
-  margin-bottom: -4px;
-  place-items: center;
-  border-radius: 12px;
-  color: #fff;
-  font-size: 28px;
-  line-height: 1;
-}
-.category-icon-glyph {
-  display: grid;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border-radius: 14px;
-}
-.category-icon-glyph :deep(svg) {
-  width: 22px;
-  height: 22px;
-}
-.hero-header b {
+.hero-amount-section small {
   display: block;
-  font-size: 16px;
-  font-weight: 900;
-}
-.hero-header small {
-  display: block;
-  margin-top: 3px;
-  color: #d7e4ff;
+  color: #7186aa;
   font-size: 10.5px;
   font-weight: 700;
 }
-.hero-header strong {
+.hero-amount-section strong {
   display: block;
   margin-top: 6px;
-  font-size: 21px;
+  color: #173f8d;
+  font-size: 26px;
   font-weight: 900;
 }
-.hero-header em {
+.hero-amount-section em {
   display: block;
-  margin-top: 4px;
-  color: #d7e4ff;
+  margin-top: 6px;
+  color: #7186aa;
   font-size: 10px;
   font-style: normal;
 }
