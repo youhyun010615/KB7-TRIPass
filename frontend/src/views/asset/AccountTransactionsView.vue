@@ -123,9 +123,6 @@ function maskedAccountNumber(number) {
 }
 
 const accountTransactions = computed(() => isReal ? [] : asset.transactionsByAccount(account.value?.id))
-const travelRecognizedAmount = computed(() => accountTransactions.value
-  .filter((item) => item.country || item.category === '여행비')
-  .reduce((sum, item) => sum + Math.abs(Math.min(0, item.amount)), 0))
 
 const groups = computed(() => {
   if (isReal) {
@@ -185,8 +182,7 @@ const groups = computed(() => {
         <span class="bank-mark" :style="{ background: resolveBankMeta(account.name).color, color: resolveBankMeta(account.name).text }">{{ resolveBankMeta(account.name).symbol }}</span>
         <div><strong>{{ account.name }}</strong><small>{{ maskedAccountNumber(account.number) }} · {{ account.type }}</small></div>
       </div>
-      <div class="balance-block"><small>현재 잔액</small><strong>{{ Number(account.balance ?? 0).toLocaleString('ko-KR') }}<em>원</em></strong></div>
-      <div class="overview-meta"><span>여행 자금 인정 금액</span><b>{{ travelRecognizedAmount.toLocaleString('ko-KR') }}원</b></div>
+      <div class="balance-block"><strong>{{ Number(account.balance ?? 0).toLocaleString('ko-KR') }}<em>원</em></strong></div>
     </section>
 
     <div class="quick-actions">
@@ -218,11 +214,8 @@ const groups = computed(() => {
 .account-identity strong{color:#10192d;font-size:14px;font-weight:800}
 .account-identity small{margin-top:4px;color:#94a3b8;font-size:9px}
 .balance-block{margin-top:22px;text-align:right}
-.balance-block small{display:block;color:#94a3b8;font-size:10px}
-.balance-block strong{display:block;margin-top:5px;color:#10192d;font-size:27px;font-weight:800;letter-spacing:-.045em}
-.balance-block em{margin-left:2px;font-size:14px;font-style:normal;font-weight:700}
-.overview-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e7edf9;color:#7186aa;font-size:10px}
-.overview-meta b{color:#173f8d;font-size:10px;font-weight:800}
+.balance-block strong{display:block;color:#10192d;font-size:19px;font-weight:800;letter-spacing:-.03em}
+.balance-block em{margin-left:2px;font-size:11px;font-style:normal;font-weight:700}
 .quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 20px 0}
 .quick-actions button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px;border-radius:13px;background:#fff;color:#173f8d;font-size:11px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04)}
 .quick-actions button:disabled{opacity:.55}

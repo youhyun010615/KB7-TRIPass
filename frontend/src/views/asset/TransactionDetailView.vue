@@ -187,13 +187,10 @@ const rows = computed(() => {
 .detail-page > header button {
   width: 36px;
   height: 36px;
-  border-radius: 12px;
-  background: #fff;
   color: #193d82;
   font-size: 24px;
   font-weight: 700;
   text-align: left;
-  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 .detail-page > header h1 {
   text-align: center;
