@@ -30,7 +30,7 @@ const filteredCurrencies = computed(() => {
     // 각 필드를 소문자로 변환하여 검색어와 매칭 (OR 조건)
     const code = (item.code || '').toLocaleLowerCase('ko-KR');
     const name = (item.name || '').toLocaleLowerCase('ko-KR');
-    const country = (item.country || '').toLocaleLowerCase('ko-KR');
+    const country = (item.countryName || '').toLocaleLowerCase('ko-KR');
 
     return (
       code.includes(keyword) ||
@@ -41,11 +41,13 @@ const filteredCurrencies = computed(() => {
 });
 
 function toggleCurrency(item) {
-  if (openedCurrencyCode.value === item.code) {
+  const key = item.countryId ?? item.code;
+  if (openedCurrencyCode.value === key) {
     openedCurrencyCode.value = null;
   } else {
     exchange.selectedCode = item.code;
-    openedCurrencyCode.value = item.code;
+    exchange.selectedCountryId = item.countryId ?? null;
+    openedCurrencyCode.value = key;
   }
 }
 </script>
@@ -109,7 +111,7 @@ function toggleCurrency(item) {
       </p>
 
       <section v-if="filteredCurrencies.length" class="currency-list">
-        <div v-for="item in filteredCurrencies" :key="item.code" class="currency-item-wrapper">
+        <div v-for="item in filteredCurrencies" :key="item.countryId ?? item.code" class="currency-item-wrapper">
           <button
             type="button"
             class="currency-btn"
@@ -117,11 +119,10 @@ function toggleCurrency(item) {
           >
             <span :class="item.flagClass" class="list-flag"></span>
             <span class="identity">
-              <b>
-                {{ item.code }}
-                <small v-if="item.unit > 1"> {{ item.unit }}</small>
-              </b>
-              <em>{{ item.name }}</em>
+              <b>{{ item.countryName || item.name }}</b>
+              <em>
+                {{ item.code }}<small v-if="item.unit > 1"> {{ item.unit }}</small>, {{ item.name }}
+              </em>
             </span>
             <span class="rate">
               <strong>{{ format(item.rate) }}원</strong>
@@ -130,10 +131,10 @@ function toggleCurrency(item) {
                 {{ format(Math.abs(item.change)) }}
               </small>
             </span>
-            <i :class="{ rotated: openedCurrencyCode === item.code }">›</i>
+            <i :class="{ rotated: openedCurrencyCode === (item.countryId ?? item.code) }">›</i>
           </button>
           
-          <div v-if="openedCurrencyCode === item.code" class="currency-chart-wrapper">
+          <div v-if="openedCurrencyCode === (item.countryId ?? item.code)" class="currency-chart-wrapper">
             <CurrencyChart :currency="item" />
           </div>
         </div>
