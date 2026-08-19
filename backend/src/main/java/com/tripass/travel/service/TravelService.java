@@ -298,6 +298,14 @@ public class TravelService {
                         .min(BigDecimal.valueOf(100));
         int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
         BigDecimal monthlySavingTarget = defaultZero(travelMapper.findMonthlySavingAmountByTripId(trip.getTripId()));
+        BigDecimal currentMonthSaving = defaultZero(travelMapper.findCurrentMonthWalletSaving(currentUserId));
+        BigDecimal currentMonthRemaining = monthlySavingTarget.subtract(currentMonthSaving).max(BigDecimal.ZERO);
+        int currentMonthSavingPercent = monthlySavingTarget.signum() == 0
+                ? 0
+                : currentMonthSaving.multiply(BigDecimal.valueOf(100))
+                        .divide(monthlySavingTarget, 0, RoundingMode.DOWN)
+                        .min(BigDecimal.valueOf(100))
+                        .intValue();
 
         List<TripHomeCountryResponseDto> countries = trip.getCountries().stream()
                 .map(country -> TripHomeCountryResponseDto.builder()
@@ -327,6 +335,9 @@ public class TravelService {
                 .savingProgressPercent(progressPercent)
                 .remainingMonths(remainingMonths)
                 .monthlySavingTarget(monthlySavingTarget)
+                .currentMonthSaving(currentMonthSaving)
+                .currentMonthRemaining(currentMonthRemaining)
+                .currentMonthSavingPercent(currentMonthSavingPercent)
                 .countries(countries)
                 .build();
     }

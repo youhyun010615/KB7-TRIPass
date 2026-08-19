@@ -476,9 +476,25 @@
     </insert>
 
     <select id="findTripWalletBalanceByUserId" resultType="java.math.BigDecimal">
-        SELECT balance
-        FROM trip_wallets
+        SELECT COALESCE(balance_amount, 0)
+        FROM wallet
         WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+    </select>
+
+    <select id="findCurrentMonthWalletSaving" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN wl.direction = 'IN' THEN wl.amount
+                WHEN wl.direction = 'OUT' THEN -wl.amount
+                ELSE 0
+            END
+        ), 0)
+        FROM wallet_ledger wl
+                 JOIN wallet w ON wl.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+          AND w.status = 'ACTIVE'
+          AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m')
     </select>
 
     <select id="findPrepaidExpenseTotalByTripId" resultType="java.math.BigDecimal">

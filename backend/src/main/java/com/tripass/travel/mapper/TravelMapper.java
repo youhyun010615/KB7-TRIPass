@@ -77,6 +77,8 @@ public interface TravelMapper {
 
     BigDecimal findTripWalletBalanceByUserId(@Param("userId") Long userId);
 
+    BigDecimal findCurrentMonthWalletSaving(@Param("userId") Long userId);
+
     BigDecimal findPrepaidExpenseTotalByTripId(@Param("tripId") Long tripId);
 
     BigDecimal findMonthlySavingAmountByTripId(@Param("tripId") Long tripId);

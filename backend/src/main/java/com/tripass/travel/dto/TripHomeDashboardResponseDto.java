@@ -27,5 +27,8 @@ public class TripHomeDashboardResponseDto {
     private BigDecimal savingProgressPercent;
     private Integer remainingMonths;
     private BigDecimal monthlySavingTarget;
+    private BigDecimal currentMonthSaving;
+    private BigDecimal currentMonthRemaining;
+    private Integer currentMonthSavingPercent;
     private List<TripHomeCountryResponseDto> countries;
 }
