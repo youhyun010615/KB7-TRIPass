@@ -230,28 +230,35 @@ function getCountryColor(countryName) {
 // 여행자금 체크를 위한 데이터 가공
 const categorySummary = computed(() => tripStatus.value?.categorySummary || []);
 
+// 거래가 없는 국가/기간이라도 카테고리 표 자체는 항상 노출한다 — 응답에 없는
+// 카테고리는 0원으로 채운다.
+const CATEGORY_ORDER = ['식비', '교통', '쇼핑', '카페', '관광', '숙박', '기타'];
+
 const maxCategoryTotal = computed(() => {
   return Math.max(...categorySummary.value.map((c) => c.totalAmount), 1);
 });
 
 const categoryList = computed(() => {
-  return categorySummary.value.map((cat) => {
-    const total = cat.totalAmount;
+  const byName = new Map(categorySummary.value.map((cat) => [cat.categoryName, cat]));
+
+  return CATEGORY_ORDER.map((name) => {
+    const cat = byName.get(name);
+    const total = cat?.totalAmount || 0;
     // 이제 바의 전체 길이를 maxCategoryTotal 대비로 설정 (비례적 표현)
     const barWidthPercent = (total / maxCategoryTotal.value) * 100;
 
-    const details = cat.countryDetails.map((d) => ({
+    const details = (cat?.countryDetails || []).map((d) => ({
       ...d,
       // 세그먼트 폭은 해당 카테고리 전체 폭 내에서의 비율
       percent: total > 0 ? (d.amount / total) * 100 : 0,
     }));
 
     return {
-      name: cat.categoryName,
-      total: cat.totalAmount,
+      name,
+      total,
       barWidth: barWidthPercent,
-      details: details,
-      icon: getCategoryIcon(cat.categoryName),
+      details,
+      icon: getCategoryIcon(name),
     };
   });
 });
@@ -768,10 +775,7 @@ async function switchMode(mode) {
           >
         </div>
       </div>
-      <div v-if="categoryList.length === 0" class="empty-msg">
-        여행 자금 체크 내역이 없어요.
-      </div>
-      <div v-else v-for="cat in categoryList" :key="cat.name" class="budget-row">
+      <div v-for="cat in categoryList" :key="cat.name" class="budget-row">
         <span class="category"
           ><i>
             <img v-if="cat.icon.iconSrc" :src="cat.icon.iconSrc" alt="" />
