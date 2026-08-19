@@ -75,4 +75,6 @@ public interface ExchangeRateMapper {
 
     // 관심 환율 알림 조회 (단건)
     ExchangeRateAlertUpdateResponseDto getAlertById(@Param("id") Long id);
+
+    List<CountryExchangeRateDto> getLatestRatesByCountry();
 }

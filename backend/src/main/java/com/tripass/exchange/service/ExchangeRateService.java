@@ -92,6 +92,10 @@ public class ExchangeRateService {
         return exchangeRateMapper.getLatestRates();
     }
 
+    public List<CountryExchangeRateDto> getLatestRatesByCountry() {
+        return exchangeRateMapper.getLatestRatesByCountry();
+    }
+
     public List<ExchangeRateAlert> findAllActiveAlerts() {
         return exchangeRateMapper.findAllActiveAlerts();
     }

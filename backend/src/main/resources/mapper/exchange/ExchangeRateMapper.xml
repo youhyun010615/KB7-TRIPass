@@ -173,4 +173,28 @@
         INNER JOIN currencies c ON era.currency_id = c.id
         WHERE era.id = #{id} AND era.is_deleted = 0
     </select>
+
+    <select id="getLatestRatesByCountry" resultType="com.tripass.exchange.dto.CountryExchangeRateDto">
+        SELECT
+            co.id AS countryId,
+            co.country_name AS countryName,
+            co.flag_url AS flagUrl,
+            cur.currency_code AS currencyCode,
+            cur.currency_name AS currencyName,
+            er.deal_base_rate AS dealBaseRate,
+            er.prev_rate AS prevRate,
+            (er.deal_base_rate - IFNULL(er.prev_rate, er.deal_base_rate)) AS changeAmount,
+            er.rate_date AS rateDate
+        FROM countries co
+        INNER JOIN currencies cur ON co.currency_id = cur.id
+        INNER JOIN exchange_rates er ON er.target_currency_id = cur.id
+            AND er.rate_date = (SELECT MAX(rate_date) FROM exchange_rates)
+        ORDER BY
+            CASE
+                WHEN cur.currency_code IN ('JPY', 'EUR', 'CHF', 'THB', 'USD') THEN 0
+                WHEN cur.currency_code IN ('GBP', 'CAD', 'AUD', 'CNH', 'HKD') THEN 1
+                ELSE 2
+            END,
+            co.country_name ASC
+    </select>
 </mapper>

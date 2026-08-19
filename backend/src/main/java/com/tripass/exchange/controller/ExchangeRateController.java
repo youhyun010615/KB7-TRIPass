@@ -32,6 +32,11 @@ public class ExchangeRateController {
         return ApiResponse.success("환율 정보 조회 성공", exchangeRateService.getLatestRates());
     }
 
+    @GetMapping("/countries")
+    public ApiResponse<List<CountryExchangeRateDto>> getLatestRatesByCountry() {
+        return ApiResponse.success("국가별 환율 정보 조회 성공", exchangeRateService.getLatestRatesByCountry());
+    }
+
     @GetMapping("/convert")
     public ApiResponse<ExchangeRateConvertResponseDto> convert(
             @RequestParam String fromCurrency,
