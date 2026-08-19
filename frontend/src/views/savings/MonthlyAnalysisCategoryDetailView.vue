@@ -144,13 +144,19 @@ function goBack() {
 </script>
 
 <template>
-  <main class="category-detail-view">
-    <header>
-      <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
-      <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName || meta.icon }} 상세 분석</h1>
-      <span></span>
-    </header>
+  <main class="analysis-report-view">
+    <div class="report-backdrop" @click="goBack"></div>
+    <div class="report-modal">
+      <header class="report-header">
+        <button type="button" aria-label="리포트로 돌아가기" @click="goBack">‹</button>
+        <div>
+          <small>TRIPASS AI REPORT</small>
+          <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName || meta.icon }} 상세 분석</h1>
+        </div>
+        <span></span>
+      </header>
 
+      <div class="report-modal-body">
     <section v-if="loading" class="state-box" role="status">
       <span class="spinner" />
       <b>AI가 소비 내역을 분석하고 있어요</b>
@@ -170,6 +176,7 @@ function goBack() {
     </section>
 
     <template v-else-if="data">
+      <article class="report-paper">
       <section class="hero-card">
         <span
           class="category-icon-glyph"
@@ -211,9 +218,12 @@ function goBack() {
         </p>
       </section>
 
-      <section class="paper-section">
+      <section
+        v-if="data.previousMonthSpending != null || data.threeMonthAverage != null || data.projectedMonthSpending != null"
+        class="paper-section"
+      >
         <h3>비교 분석</h3>
-        <div class="compare-row">
+        <div v-if="data.previousMonthSpending != null" class="compare-row">
           <div>
             <small>지난달</small>
             <b>{{ formatCurrency(data.previousMonthSpending) }}</b>
@@ -276,8 +286,8 @@ function goBack() {
       <section v-if="weeklyBreakdown.length" class="paper-section">
         <h3>주차별 지출</h3>
         <div class="weekly-list">
-          <div v-for="row in weeklyBreakdown" :key="row.week" class="weekly-row">
-            <small>{{ row.week }}주차</small>
+          <div v-for="(row, index) in weeklyBreakdown" :key="row.week ?? index" class="weekly-row">
+            <small>{{ row.week ?? index + 1 }}주차</small>
             <div class="weekly-bar-track">
               <div
                 class="weekly-bar-fill"
@@ -307,42 +317,103 @@ function goBack() {
         </ol>
         <p v-else class="empty-note">가맹점 정보가 없습니다.</p>
       </section>
+      </article>
     </template>
+      </div>
+    </div>
   </main>
 </template>
 
 <style scoped>
-.category-detail-view {
-  width: min(100%, 390px);
-  min-height: 100vh;
-  margin: 0 auto;
-  padding: 48px 16px 60px;
-  background: #eef2f8;
+.analysis-report-view {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
   color: #17213a;
 }
-.category-detail-view > header {
-  display: grid;
-  grid-template-columns: 36px 1fr 36px;
-  align-items: center;
-  margin-bottom: 16px;
+.report-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 18, 38, 0.55);
+  animation: report-backdrop-enter 0.3s ease both;
 }
-.category-detail-view > header button {
+.report-modal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 358px;
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #f3f6ff;
+  box-shadow: 0 24px 60px rgba(9, 18, 38, 0.35);
+  animation: report-modal-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.report-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 30px;
+  -webkit-overflow-scrolling: touch;
+}
+@keyframes report-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes report-modal-enter {
+  from { transform: scale(0.94) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.report-header {
+  flex: none;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  padding: 18px 14px 13px;
+  border-bottom: 1px solid #e0e8f5;
+  border-radius: 24px 24px 0 0;
+  background: #f3f6ff;
+}
+.report-header > button {
+  display: grid;
   width: 36px;
   height: 36px;
+  place-items: center;
+  border-radius: 12px;
   color: #173f8d;
-  font-size: 26px;
-  font-weight: 700;
-  text-align: left;
+  font-size: 28px;
+  line-height: 1;
 }
-.category-detail-view > header h1 {
-  overflow: hidden;
+.report-header > div {
   text-align: center;
-  color: #17213a;
-  font-size: 15px;
-  font-weight: 900;
+}
+.report-header small {
+  color: #f06a2a;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+.report-header h1 {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #173f8d;
+  font-size: 14px;
+  font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
-  letter-spacing: -0.02em;
+}
+.report-paper {
+  overflow: hidden;
+  margin: 14px;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(23, 63, 141, 0.16);
 }
 .state-box {
   display: flex;
@@ -399,11 +470,9 @@ function goBack() {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 18px;
-  border-radius: 20px;
+  padding: 20px;
   background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
   color: #fff;
-  box-shadow: 0 12px 26px rgba(23, 63, 141, 0.2);
 }
 .category-icon-glyph {
   display: grid;
@@ -437,11 +506,10 @@ function goBack() {
   font-style: normal;
 }
 .paper-section {
-  margin-top: 12px;
-  padding: 16px;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 8px 22px rgba(16, 25, 43, 0.05);
+  padding: 20px;
+}
+.paper-section + .paper-section {
+  border-top: 1px solid #eef1f8;
 }
 .paper-section h3 {
   margin-bottom: 12px;
