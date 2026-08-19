@@ -555,7 +555,7 @@ async function switchMode(mode) {
           </div>
           <b>맞춤 저축 미션을 시작해 보세요!</b>
           <small>연결된 금융 데이터를 분석해 줄이기 좋은 소비와 절약 목표를 추천해 드려요.</small>
-          <button type="button" @click="openRecommendedMissions">추천 미션 보러가기</button>
+          <button type="button" @click="openRecommendedMissions">이달의 리포트 보러가기</button>
         </div>
       </section>
     </template>
@@ -863,7 +863,7 @@ async function switchMode(mode) {
           </div>
           <b>맞춤 저축 미션을 시작해 보세요!</b>
           <small>연결된 금융 데이터를 분석해 줄이기 좋은 소비와 절약 목표를 추천해 드려요.</small>
-          <button type="button" @click="openRecommendedMissions">추천 미션 보러가기</button>
+          <button type="button" @click="openRecommendedMissions">이달의 리포트 보러가기</button>
         </div>
       </section>
 
