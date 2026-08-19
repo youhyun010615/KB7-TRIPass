@@ -7,7 +7,6 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
-import aiIcon from '@/assets/icons/ai.svg';
 import aiReportIcon from '@/assets/icons/ai_report.svg';
 import foodIconRaw from '@/assets/icons/food.svg?raw';
 import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
@@ -186,16 +185,6 @@ function goCategoryDetail(categoryCode) {
         </p>
 
         <article class="report-paper">
-          <div class="paper-letterhead">
-            <div class="letterhead-left">
-              <strong class="letterhead-title">{{ analysisMonthLabel }} AI 분석 리포트</strong>
-              <img class="letterhead-report-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
-            </div>
-            <div class="letterhead-right">
-              <span class="ai-label"><img :src="aiIcon" alt="" /></span>
-            </div>
-          </div>
-
       <section class="paper-section saving-section">
         <div class="section-title">
           <div>
@@ -446,74 +435,6 @@ function goCategoryDetail(categoryCode) {
   background: #fff;
   box-shadow: 0 12px 30px rgba(23, 63, 141, 0.16);
   animation: report-enter 0.48s ease both;
-}
-.paper-letterhead {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
-  color: #fff;
-}
-.paper-letterhead::after {
-  position: absolute;
-  right: -52px;
-  bottom: -65px;
-  width: 170px;
-  height: 170px;
-  border: 32px solid #ffffff0d;
-  border-radius: 50%;
-  content: '';
-  pointer-events: none;
-}
-.letterhead-left {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-}
-.letterhead-title {
-  overflow: hidden;
-  color: #fff;
-  font-size: 12.5px;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.02em;
-}
-.letterhead-report-icon {
-  width: 12px;
-  height: 12px;
-  flex: none;
-  object-fit: contain;
-  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
-}
-.letterhead-right {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-}
-.letterhead-right .ai-label {
-  position: relative;
-  z-index: 1;
-  flex: none;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.16) !important;
-  animation: ai-label-pulse-light 2s ease-in-out infinite;
-}
-.letterhead-right .ai-label img {
-  width: 18px;
-  height: 18px;
-  filter: invert(76%) sepia(59%) saturate(551%) hue-rotate(357deg) brightness(103%) contrast(101%);
 }
 .paper-section {
   padding: 20px;
@@ -897,15 +818,6 @@ function goCategoryDetail(categoryCode) {
   }
   50% {
     box-shadow: 0 0 0 6px rgba(23, 63, 141, 0);
-  }
-}
-@keyframes ai-label-pulse-light {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
   }
 }
 @keyframes sparkle-twinkle {
