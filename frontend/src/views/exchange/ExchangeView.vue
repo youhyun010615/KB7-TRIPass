@@ -15,15 +15,6 @@ const travel = useTravelStore();
 const currencySearch = ref('');
 const countryDropdownOpen = ref(false);
 
-const currencyCountryNames = {
-  AED: '아랍에미리트', AUD: '호주', BHD: '바레인', BND: '브루나이',
-  CAD: '캐나다', CHF: '스위스', CNH: '중국', DKK: '덴마크',
-  EUR: '유럽연합', GBP: '영국', HKD: '홍콩', IDR: '인도네시아',
-  JPY: '일본', KWD: '쿠웨이트', MYR: '말레이시아', NOK: '노르웨이',
-  NZD: '뉴질랜드', SAR: '사우디아라비아', SEK: '스웨덴',
-  SGD: '싱가포르', THB: '태국', USD: '미국',
-};
-
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
 const exchangeHeaderEl = ref(null);
 const exchangeHeaderHeight = ref(0);
@@ -80,28 +71,13 @@ const displayCurrencies = computed(() => {
   return filtered.length > 0 ? filtered : exchange.currencies;
 });
 
-// 여러 국가가 같은 통화(예: EUR)를 쓰는 경우, 등록한 여행 국가가 있으면
-// '유럽연합' 같은 통화 기준 이름 대신 실제 등록 국가명(예: 프랑스)을 우선 보여준다.
-const travelCountryNameByCurrency = computed(() => {
-  const map = {};
-  for (const plan of travel.selectedPlans) {
-    if (plan.currencyCode && !map[plan.currencyCode]) {
-      map[plan.currencyCode] = plan.name;
-    }
-  }
-  return map;
-});
-
-function countryNameFor(code) {
-  return travelCountryNameByCurrency.value[code] || currencyCountryNames[code];
-}
-
 const filteredCurrencies = computed(() => {
   const keyword = currencySearch.value.trim().toLocaleLowerCase('ko-KR');
   return displayCurrencies.value
     .map((currency) => ({
       ...currency,
-      countryName: countryNameFor(currency.code) || currency.name || currency.code,
+      // /exchange-rates/countries가 국가 단위로 내려주므로 countryName을 그대로 쓴다.
+      countryName: currency.countryName || currency.name || currency.code,
     }))
     .filter((currency) =>
       !keyword || [currency.countryName, currency.code, currency.name, currency.symbol]
@@ -115,11 +91,14 @@ watch(
   displayCurrencies,
   (newList) => {
     if (newList && newList.length > 0) {
-      const isSelectedValid = newList.some(
-        (c) => c.code === exchange.selectedCode,
+      const isSelectedValid = newList.some((c) =>
+        exchange.selectedCountryId != null
+          ? c.countryId === exchange.selectedCountryId
+          : c.code === exchange.selectedCode,
       );
       if (!isSelectedValid) {
         exchange.selectedCode = newList[0].code;
+        exchange.selectedCountryId = newList[0].countryId ?? null;
       }
     }
   },
@@ -227,9 +206,15 @@ watch(
               :aria-expanded="countryDropdownOpen || !!currencySearch"
               @click="countryDropdownOpen = !countryDropdownOpen"
             >
-              <span class="fi currency-country-flag" :class="exchange.selectedCurrency?.flagClass" aria-hidden="true"></span>
+              <img
+                v-if="exchange.selectedCurrency?.flagUrl"
+                class="currency-country-flag-img"
+                :src="exchange.selectedCurrency.flagUrl"
+                alt=""
+              />
+              <span v-else class="fi currency-country-flag" :class="exchange.selectedCurrency?.flagClass" aria-hidden="true"></span>
               <span class="currency-select-info">
-                <span class="currency-country-name">{{ countryNameFor(exchange.selectedCode) || exchange.selectedCurrency?.name }}</span>
+                <span class="currency-country-name">{{ exchange.selectedCurrency?.countryName || exchange.selectedCurrency?.name }}</span>
                 <span class="currency-country-unit">{{ exchange.selectedCurrency?.name }} · {{ exchange.selectedCode }}</span>
               </span>
               <svg class="currency-select-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -240,12 +225,13 @@ watch(
             <div v-if="countryDropdownOpen || currencySearch" class="currency-country-list" aria-label="지원 국가 목록">
               <button
                 v-for="currency in filteredCurrencies"
-                :key="currency.code"
+                :key="currency.countryId ?? currency.code"
                 type="button"
-                :class="{ active: exchange.selectedCode === currency.code }"
-                @click="exchange.selectedCode = currency.code; countryDropdownOpen = false; currencySearch = ''"
+                :class="{ active: exchange.selectedCurrency?.countryId != null ? exchange.selectedCurrency.countryId === currency.countryId : exchange.selectedCode === currency.code }"
+                @click="exchange.selectedCode = currency.code; exchange.selectedCountryId = currency.countryId ?? null; countryDropdownOpen = false; currencySearch = ''"
               >
-                <span class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
+                <img v-if="currency.flagUrl" class="currency-country-flag-img" :src="currency.flagUrl" alt="" />
+                <span v-else class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
                 <span class="currency-country-name">{{ currency.countryName }}</span>
                 <span class="currency-country-unit">{{ currency.name }}</span>
                 <b>{{ currency.code }}</b>
@@ -591,6 +577,13 @@ header h1 {
   height: 14px;
   border-radius: 2px;
   background-size: cover;
+}
+.currency-country-flag-img {
+  width: 19px;
+  height: 14px;
+  border-radius: 2px;
+  object-fit: cover;
+  flex: none;
 }
 .currency-country-name {
   font-size: 12px;
