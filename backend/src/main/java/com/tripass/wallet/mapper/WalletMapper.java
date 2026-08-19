@@ -182,4 +182,18 @@ public interface WalletMapper {
     int insertAutoSavingLog(WalletAutoSavingLog log);
 
     List<WalletAutoSavingLogResponseDto> findAutoSavingLogsByWalletId(@Param("walletId") Long walletId);
+
+    java.math.BigDecimal findAccountBalance(
+            @Param("userId") Long userId,
+            @Param("accountId") Long accountId
+    );
+
+    void insertAccountTransaction(
+            @Param("accountId") Long accountId,
+            @Param("transactionType") String transactionType,
+            @Param("amount") java.math.BigDecimal amount,
+            @Param("balanceAfter") java.math.BigDecimal balanceAfter,
+            @Param("merchantName") String merchantName,
+            @Param("externalKey") String externalKey
+    );
 }

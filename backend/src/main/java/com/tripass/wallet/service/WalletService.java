@@ -175,6 +175,12 @@ public class WalletService {
         validateLinkedAccount(wallet.getId(), request.getSourceAccountId());
         decreaseAccountBalance(userId, request.getSourceAccountId(), request.getAmount());
 
+        BigDecimal accountBalanceAfter = walletMapper.findAccountBalance(userId, request.getSourceAccountId());
+        walletMapper.insertAccountTransaction(
+                request.getSourceAccountId(), "WITHDRAWAL", request.getAmount(),
+                accountBalanceAfter, "TRIPASS 월렛 충전",
+                "WALLET_CHARGE_" + request.getIdempotencyKey());
+
         BigDecimal nextBalance =
                 wallet.getBalanceAmount().add(request.getAmount());
 
@@ -222,6 +228,13 @@ public class WalletService {
         String memo;
         if (request.getTargetAccountId() != null) {
             increaseAccountBalance(userId, request.getTargetAccountId(), request.getAmount());
+
+            BigDecimal accountBalanceAfter = walletMapper.findAccountBalance(userId, request.getTargetAccountId());
+            walletMapper.insertAccountTransaction(
+                    request.getTargetAccountId(), "DEPOSIT", request.getAmount(),
+                    accountBalanceAfter, "TRIPASS 월렛 출금",
+                    "WALLET_WITHDRAW_" + request.getIdempotencyKey());
+
             targetId = request.getTargetAccountId();
             targetType = WalletTargetType.ACCOUNT;
             memo = "등록 계좌로 월렛 출금";
@@ -421,6 +434,14 @@ public class WalletService {
 
         decreaseAccountBalance(wallet.getUserId(), primaryAccount.getAccountId(), rule.getAmount());
 
+        String autoSavingIdempotencyKey = buildAutoSavingIdempotencyKey(rule.getId(), baseDate);
+        BigDecimal accountBalanceAfter = walletMapper.findAccountBalance(
+                wallet.getUserId(), primaryAccount.getAccountId());
+        walletMapper.insertAccountTransaction(
+                primaryAccount.getAccountId(), "WITHDRAWAL", rule.getAmount(),
+                accountBalanceAfter, "TRIPASS 월렛 자동 저축",
+                "WALLET_AUTO_" + autoSavingIdempotencyKey);
+
         BigDecimal nextBalance = wallet.getBalanceAmount().add(rule.getAmount());
         updateWalletBalance(wallet, nextBalance);
 
@@ -436,7 +457,7 @@ public class WalletService {
                 primaryAccount.getAccountId(),
                 WalletTargetType.WALLET,
                 wallet.getId(),
-                buildAutoSavingIdempotencyKey(rule.getId(), baseDate),
+                autoSavingIdempotencyKey,
                 "월 목표 자동 송금"
         );
 

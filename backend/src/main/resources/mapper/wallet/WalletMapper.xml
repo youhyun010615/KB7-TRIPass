@@ -600,6 +600,24 @@
           AND is_active = TRUE
     </update>
 
+    <select id="findAccountBalance" resultType="java.math.BigDecimal">
+        SELECT balance
+        FROM accounts
+        WHERE id = #{accountId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = TRUE
+    </select>
+
+    <insert id="insertAccountTransaction">
+        INSERT INTO transactions
+            (account_id, transaction_date, transaction_time, transaction_type,
+             transaction_region, amount, balance_after, merchant_name, external_key)
+        VALUES
+            (#{accountId}, CURDATE(), CURTIME(), #{transactionType},
+             'DOMESTIC', #{amount}, #{balanceAfter}, #{merchantName}, #{externalKey})
+    </insert>
+
     <update id="updateWalletBalance">
         UPDATE wallet
         SET balance_amount = #{balanceAmount},
