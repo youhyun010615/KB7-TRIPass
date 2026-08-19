@@ -7,9 +7,11 @@ import CurrencyChart from '@/components/exchange/CurrencyChart.vue';
 import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
 import { useExchangeStore } from '@/stores/exchange';
+import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const exchange = useExchangeStore();
+const travel = useTravelStore();
 const currencySearch = ref('');
 const countryDropdownOpen = ref(false);
 
@@ -58,9 +60,26 @@ onMounted(() => {
   exchange.updateExchangeRates();
 });
 
+// 여행 미등록 시 전체 통화, 등록 시 여행지 국가의 통화만 표시한다.
+const displayCurrencies = computed(() => {
+  if (travel.selectedPlans.length === 0) {
+    return exchange.currencies;
+  }
+
+  const codes = new Set(
+    travel.selectedPlans
+      .map((plan) => plan.currencyCode)
+      .filter(Boolean),
+  );
+
+  const filtered = exchange.currencies.filter((c) => codes.has(c.code));
+  // 여행지 통화가 환율 데이터에 하나도 없으면 전체 통화로 대체 표시한다.
+  return filtered.length > 0 ? filtered : exchange.currencies;
+});
+
 const filteredCurrencies = computed(() => {
   const keyword = currencySearch.value.trim().toLocaleLowerCase('ko-KR');
-  return exchange.currencies
+  return displayCurrencies.value
     .map((currency) => ({
       ...currency,
       countryName: currencyCountryNames[currency.code] || currency.name || currency.code,
@@ -74,7 +93,7 @@ const filteredCurrencies = computed(() => {
 });
 
 watch(
-  () => exchange.currencies,
+  displayCurrencies,
   (newList) => {
     if (newList && newList.length > 0) {
       const isSelectedValid = newList.some(

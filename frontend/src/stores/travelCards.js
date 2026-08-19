@@ -46,6 +46,22 @@ function getErrorMessage(
     )
 }
 
+function dedupeCards(cardList) {
+    const seenKeys = new Set()
+
+    return cardList.filter((card) => {
+        const key = `${card.cardCompany || ''}__${card.cardName || ''}`
+
+        if (seenKeys.has(key)) {
+            return false
+        }
+
+        seenKeys.add(key)
+
+        return true
+    })
+}
+
 function areSameCardIds(leftIds, rightIds) {
     return (
         leftIds.length === rightIds.length &&
@@ -146,7 +162,9 @@ export const useTravelCardsStore = defineStore(
                     return null
                 }
 
-                cards.value = response
+                // 백엔드 목록에 동일 카드가 중복 포함되는 경우를 방지하기 위해
+                // 카드사+카드명 기준으로 화면에는 한 번만 표시한다.
+                cards.value = dedupeCards(response)
 
                 return cards.value
             } catch (error) {

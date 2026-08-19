@@ -39,15 +39,6 @@ export const flagClassMap = {
   USD: 'fi fi-us', // 미국 달러
 };
 
-// 국가 코드에 따른 통화 코드 매핑 (공통 계약)
-export const countryToCurrency = {
-  FR: 'EUR',
-  CH: 'CHF',
-  DE: 'EUR',
-  JP: 'JPY',
-  HK: 'HKD',
-};
-
 function loadState() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');

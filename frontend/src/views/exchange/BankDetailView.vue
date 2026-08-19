@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import CurrencyTabNav from '@/components/exchange/CurrencyTabNav.vue';
-import { useExchangeStore, countryToCurrency } from '@/stores/exchange';
+import { useExchangeStore } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
 import { fetchBankDetail, fetchExchangeEstimate } from '@/api/exchange';
 
@@ -21,7 +21,7 @@ const availableCurrencies = computed(() => {
   const codes = new Set([
     ...exchange.interestedCurrencyCodes,
     ...exchange.alerts.map((a) => a.currencyCode),
-    ...travel.selectedPlans.map((p) => countryToCurrency[p.code] || 'USD'),
+    ...travel.selectedPlans.map((p) => p.currencyCode).filter(Boolean),
   ]);
 
   // 만약 등록된 정보가 비어있다면 대중적인 3대 통화 우선 배치

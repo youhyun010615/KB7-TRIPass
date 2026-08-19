@@ -17,6 +17,20 @@ const hasActiveFilters = computed(() => Boolean(
     travelCardsStore.transitCard !== null,
 ))
 
+const PAGE_SIZE = 6
+const currentPage = ref(1)
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(travelCardsStore.cards.length / PAGE_SIZE)),
+)
+const pagedCards = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return travelCardsStore.cards.slice(start, start + PAGE_SIZE)
+})
+
+function goToPage(page) {
+  currentPage.value = Math.min(Math.max(1, page), totalPages.value)
+}
+
 const currencyOptions = [
   { code: '', name: '전체 통화' },
   { code: 'USD', name: '미국 달러' },
@@ -123,6 +137,7 @@ function getErrorMessage() {
 async function loadCards() {
   try {
     await travelCardsStore.loadCards()
+    currentPage.value = 1
   } catch {
     // 오류 내용은 Store의 errorMessage로 표시합니다.
   }
@@ -333,10 +348,10 @@ onBeforeUnmount(() => {
 
       <section
           v-else
-          class="card-carousel"
+          class="card-grid"
       >
         <article
-            v-for="card in travelCardsStore.cards"
+            v-for="card in pagedCards"
             :key="card.id"
             class="card-tile"
         >
@@ -406,7 +421,37 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </section>
-      <p class="carousel-hint">오른쪽으로 스크롤하면서 카드를 확인해보세요 ›</p>
+
+      <nav v-if="!travelCardsStore.listLoading && !travelCardsStore.errorMessage && totalPages > 1" class="pagination">
+        <button
+            type="button"
+            class="pagination-arrow"
+            aria-label="이전 페이지"
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+        >
+          ‹
+        </button>
+        <button
+            v-for="page in totalPages"
+            :key="page"
+            type="button"
+            class="pagination-page"
+            :class="{ active: currentPage === page }"
+            @click="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+        <button
+            type="button"
+            class="pagination-arrow"
+            aria-label="다음 페이지"
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+        >
+          ›
+        </button>
+      </nav>
 
       <button
           v-if="travelCardsStore.comparedCardCount"
@@ -476,13 +521,15 @@ onBeforeUnmount(() => {
 
 .list-actions{display:flex;align-items:center;gap:7px}.list-actions .reset-button{color:#2d6bc8;font-size:9px;font-weight:700}.list-compare-button{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #d2def0;border-radius:10px;background:#fff;color:#173f8d;font-size:9px;font-weight:900;box-shadow:0 4px 12px #253f6b0d}.list-compare-button b{display:grid;width:18px;height:18px;place-items:center;border-radius:6px;background:#ffce61;color:#143674;font-size:8px}
 
-.card-carousel{display:flex;gap:14px;margin-top:2px;padding:4px 2px 10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
-.card-carousel::-webkit-scrollbar{display:none}
-.carousel-hint{margin:2px 2px 0;color:#9aa7bb;font-size:9.5px;font-weight:600;text-align:right}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:2px;padding:4px 2px 10px}
+
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
+.pagination-arrow{display:grid;width:30px;height:30px;place-items:center;border:1px solid #d9e3f1;border-radius:10px;background:#fff;color:#173f8d;font-size:16px}
+.pagination-arrow:disabled{opacity:.4}
+.pagination-page{display:grid;width:30px;height:30px;place-items:center;border-radius:10px;background:transparent;color:#66748c;font-size:12px;font-weight:700}
+.pagination-page.active{background:#173f8d;color:#fff;font-weight:900}
 
 .card-tile {
-  flex: 0 0 172px;
-  scroll-snap-align: start;
   overflow: hidden;
   border: 1px solid #e1e6ed;
   border-radius: 22px;
