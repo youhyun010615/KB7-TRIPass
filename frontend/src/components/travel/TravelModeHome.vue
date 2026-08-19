@@ -55,6 +55,8 @@ const countries = computed(() => tripStatus.value?.countries || []);
 
 // 국가 목록 캐싱 (필터링되지 않은 전체 목록)
 const persistentCountries = ref([]);
+// 외화 계산기에서 선택된 국가 코드
+const calculatorCountryCode = ref(null);
 // 최초 진입 시 여행 정보를 불러오는 동안 "등록된 여행이 없어요" 빈 화면이
 // 잠깐 깜빡이며 보이지 않도록 로딩이 끝날 때까지는 아무 것도 그리지 않는다.
 const isInitialLoading = ref(true);
