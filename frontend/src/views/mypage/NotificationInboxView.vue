@@ -84,8 +84,9 @@ function open(item) {
 .page > header {
   display: grid;
   height: 90px;
-  grid-template-columns: 36px 1fr 36px;
+  grid-template-columns: 36px 1fr auto;
   align-items: end;
+  gap: 8px;
   padding-bottom: 16px;
 }
 .page > header button:first-child {
@@ -104,6 +105,7 @@ function open(item) {
   font-size: 10px;
   font-weight: 800;
   text-align: right;
+  white-space: nowrap;
 }
 .page h1 {
   text-align: center;
@@ -226,11 +228,13 @@ function open(item) {
 }
 .actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
 }
 .dot {
+  position: absolute;
+  top: 14px;
+  right: 14px;
   width: 7px;
   height: 7px;
   border-radius: 50%;
