@@ -219,6 +219,13 @@ const targetMonthLabel = computed(() => monthLabel(missionStore.targetYearMonth)
 
 onMounted(async () => {
   await loadFinancialSourcesAndMissions()
+  // 리포트/홈의 '추천 미션 보러가기'는 쿼리로 바로 선택 화면(showSelection)을 띄우는데,
+  // 이미 진행 중인 미션이 있는 상태에서는 store의 addingMissions 플래그가 없으면
+  // toggleCategory/selectRate가 조용히 무시돼 카테고리를 선택할 수 없었다.
+  // 대시보드의 '추천 미션 추가하기' 버튼과 동일하게 addingMissions를 켜서 맞춰준다.
+  if (showSelection.value && missionStore.hasStartedMissions && !missionStore.addingMissions) {
+    missionStore.beginAddingMissions()
+  }
 })
 
 async function loadFinancialSourcesAndMissions() {
