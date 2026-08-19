@@ -86,6 +86,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/savings/analyses/:yearMonth/categories/:categoryCode',
+      name: 'MonthlyAnalysisCategoryDetail',
+      component: () =>
+        import('@/views/savings/MonthlyAnalysisCategoryDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/wallet',
       name: 'TripWallet',
       component: () => import('@/views/wallet/TripWalletView.vue'),
