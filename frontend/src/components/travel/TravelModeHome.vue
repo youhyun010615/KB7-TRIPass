@@ -7,6 +7,7 @@ import {
   countryPresentation as globalCountryPresentation,
   getTravelCountryColors,
 } from '@/stores/travel';
+import { useExchangeStore } from '@/stores/exchange';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import foodIcon from '@/assets/icons/food.svg';
 import cafeIcon from '@/assets/icons/cafe.svg';
@@ -21,6 +22,7 @@ const props = defineProps({
 const router = useRouter();
 const travelMode = useTravelModeStore();
 const travelStore = useTravelStore();
+const exchangeStore = useExchangeStore();
 
 // 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
 // position:sticky가 동작하지 않는다. 대신 position:fixed로 고정하고,
@@ -110,6 +112,10 @@ const destinations = computed(() => {
   };
   const apiCountries = persistentCountries.value.map((c) => {
     const presentation = getCountryPresentation(c.countryName);
+    // 외화 계산기용 환율 — 같은 국가명을 쓰는 환율 스토어 항목에서 그대로 가져온다.
+    const currencyInfo = exchangeStore.currencies.find(
+      (item) => item.countryName === c.countryName,
+    );
     return {
       code: c.tripCountryId.toString(),
       name: c.countryName,
@@ -128,6 +134,8 @@ const destinations = computed(() => {
       departureDate: c.departureDate,
       dayRangeStart: overallStart ? daysBetween(overallStart, c.arrivalDate) + 1 : 1,
       dayRangeEnd: overallStart ? daysBetween(overallStart, c.departureDate) + 1 : 1,
+      currency: currencyInfo?.code || '',
+      rate: currencyInfo?.rate || 0,
     };
   });
   // 캐러셀 순서: 국가별 카드 먼저, "전체" 보딩패스는 맨 뒤로
@@ -294,6 +302,9 @@ onMounted(async () => {
   try {
     await nextTick();
     restoreCountryPosition();
+    if (!exchangeStore.currencies.length) {
+      exchangeStore.updateExchangeRates().catch(() => {});
+    }
     await travelStore.loadActiveGoal();
     if (tripId.value) {
       // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
@@ -510,8 +521,8 @@ const selectedRecent = computed(() => {
 });
 const calculatorDestination = computed(() =>
   selected.value.code === 'all'
-    ? (destinations.find((item) => item.code === calculatorCountryCode.value) ??
-      destinations[1])
+    ? (destinations.value.find((item) => item.code === calculatorCountryCode.value) ??
+      destinations.value[0])
     : selected.value,
 );
 const convertedAmount = computed(() =>
@@ -716,7 +727,7 @@ async function switchMode(mode) {
                 aria-label="국가별 남은 여행 자산"
               >
                 <div
-                  v-for="asset in destinations.slice(1)"
+                  v-for="asset in destinations.slice(0, -1)"
                   :key="asset.code"
                   class="country-asset-card"
                   :style="{
@@ -910,7 +921,7 @@ async function switchMode(mode) {
       </div>
       <div v-if="selected.code === 'all'" class="calculator-currencies">
         <button
-          v-for="item in destinations.slice(1)"
+          v-for="item in destinations.slice(0, -1)"
           :key="item.code"
           type="button"
           :class="{ active: calculatorDestination.code === item.code }"
