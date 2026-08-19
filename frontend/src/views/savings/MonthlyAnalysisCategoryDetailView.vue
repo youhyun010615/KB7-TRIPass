@@ -14,6 +14,17 @@ const notFound = ref(false);
 const errorMessage = ref('');
 const data = ref(null);
 
+const categoryIcons = {
+  FOOD: '🍽',
+  CAFE: '☕',
+  LIVING: '🧺',
+  SHOPPING: '🛍',
+  LEISURE: '🎮',
+  TRANSPORT: '🚌',
+  OTHER: '•••',
+};
+const categoryIcon = computed(() => categoryIcons[categoryCode.value] || categoryIcons.OTHER);
+
 function formatCurrency(value, absolute = false) {
   const number = Number(value) || 0;
   return `${(absolute ? Math.abs(number) : number).toLocaleString('ko-KR')}원`;
@@ -122,7 +133,6 @@ function goBack() {
           <small>TRIPASS AI REPORT</small>
           <h1>{{ monthLabel(displayYearMonth) }} {{ categoryName }} 상세 분석</h1>
         </div>
-        <span></span>
       </header>
 
       <div class="report-modal-body">
@@ -145,12 +155,14 @@ function goBack() {
     </section>
 
     <template v-else-if="data">
-      <article class="report-paper">
-      <section class="paper-section hero-amount-section">
-        <small>{{ categoryName }} 지출</small>
-        <strong>{{ formatCurrency(data.currentMonthSpending) }}</strong>
-        <em v-if="data.spendingRank">이번 달 소비 {{ data.spendingRank }}위</em>
+      <section class="hero-amount-card">
+        <span class="hero-amount-icon" aria-hidden="true">{{ categoryIcon }}</span>
+        <span class="hero-amount-label">{{ categoryName }} 지출</span>
+        <strong class="hero-amount-value">{{ formatCurrency(data.currentMonthSpending) }}</strong>
       </section>
+      <span v-if="data.spendingRank" class="hero-rank-badge">이번 달 소비 {{ data.spendingRank }}위</span>
+
+      <article class="report-paper">
 
       <section class="paper-section">
         <h3>이번 달 요약</h3>
@@ -210,7 +222,7 @@ function goBack() {
       <section v-if="data.recommendationReason || insights.length" class="paper-section">
         <h3>AI 인사이트</h3>
         <p v-if="data.recommendationReason" class="recommendation-callout">
-          <span aria-hidden="true">✦</span>{{ data.recommendationReason }}
+          <span aria-hidden="true">✨</span>{{ data.recommendationReason }}
         </p>
         <ul v-if="insights.length" class="insight-list">
           <li v-for="(insight, index) in insights" :key="index">
@@ -329,41 +341,83 @@ function goBack() {
 .report-header {
   flex: none;
   z-index: 10;
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  padding: 18px 14px 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 20px 14px;
   border-bottom: 1px solid #e0e8f5;
   border-radius: 24px 24px 0 0;
   background: #f3f6ff;
 }
 .report-header > button {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
+  margin-left: -6px;
   place-items: center;
-  border-radius: 12px;
-  color: #173f8d;
-  font-size: 28px;
+  border-radius: 10px;
+  color: #17213a;
+  font-size: 24px;
   line-height: 1;
 }
 .report-header > div {
-  text-align: center;
+  text-align: left;
 }
 .report-header small {
   color: #f06a2a;
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 950;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
 }
 .report-header h1 {
-  margin-top: 2px;
+  margin-top: 3px;
   overflow: hidden;
-  color: #173f8d;
-  font-size: 14px;
-  font-weight: 950;
+  color: #17213a;
+  font-size: 17px;
+  font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.hero-amount-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 14px 0;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
+  color: #fff;
+}
+.hero-amount-icon {
+  display: grid;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 17px;
+}
+.hero-amount-label {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.hero-amount-value {
+  flex: none;
+  font-size: 19px;
+  font-weight: 900;
+}
+.hero-rank-badge {
+  display: inline-block;
+  margin: 10px 0 0 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #173f8d;
+  font-size: 10.5px;
+  font-weight: 800;
 }
 .report-paper {
   overflow: hidden;
@@ -422,29 +476,6 @@ function goBack() {
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-.hero-amount-section {
-  text-align: center;
-}
-.hero-amount-section small {
-  display: block;
-  color: #7186aa;
-  font-size: 10.5px;
-  font-weight: 700;
-}
-.hero-amount-section strong {
-  display: block;
-  margin-top: 6px;
-  color: #173f8d;
-  font-size: 26px;
-  font-weight: 900;
-}
-.hero-amount-section em {
-  display: block;
-  margin-top: 6px;
-  color: #7186aa;
-  font-size: 10px;
-  font-style: normal;
 }
 .paper-section {
   padding: 20px;
@@ -526,15 +557,14 @@ function goBack() {
   margin-bottom: 12px;
   padding: 12px;
   border-radius: 12px;
-  background: #eaf2ff;
-  color: #173f8d;
+  background: linear-gradient(135deg, #173f8d 0%, #286ce0 100%);
+  color: #fff;
   font-size: 11.5px;
   font-weight: 700;
   line-height: 1.5;
 }
 .recommendation-callout span {
   flex: none;
-  color: #f0a93c;
   font-size: 13px;
 }
 .insight-list {
