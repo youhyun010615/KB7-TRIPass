@@ -9,6 +9,7 @@ import {
 } from '@/api/exchange';
 import currencyUnits from '@/assets/currencyUnits.json';
 import currencySymbols from '@/assets/currencySymbols.json';
+import { countryPresentation } from '@/stores/travel';
 
 const STORAGE_KEY = 'tripass-exchange';
 const currencies = ref([]); // 빈 배열로 초기화
@@ -172,6 +173,12 @@ export const useExchangeStore = defineStore('exchange', () => {
           maxDate = item.rateDate;
         }
 
+        // BE의 flagUrl(countries.flag_url)이 아직 비어 있는 국가가 많아,
+        // 통화 단위 폴백(flagClassMap) 대신 국가명 기준 ISO 코드로 국기를 우선 매칭한다.
+        // 이렇게 해야 EUR을 쓰는 국가들이 전부 유럽연합 국기 하나로 뭉뚱그려지지 않는다.
+        const countryCode = countryPresentation[item.countryName]?.code;
+        const countryFlagClass = countryCode ? `fi fi-${countryCode.toLowerCase()}` : null;
+
         return {
           countryId: item.countryId,
           countryName: item.countryName,
@@ -181,8 +188,7 @@ export const useExchangeStore = defineStore('exchange', () => {
           rate: item.dealBaseRate * unit,
           change: (item.changeAmount || 0) * unit,
           unit: unit,
-          // flagUrl이 없는 예외 상황을 대비한 폴백(구 하드코딩 매핑)
-          flagClass: flagClassMap[cleanCode] || 'fi fi-un',
+          flagClass: countryFlagClass || flagClassMap[cleanCode] || 'fi fi-un',
           symbol: currencySymbols[cleanCode] || cleanCode,
         };
       });
