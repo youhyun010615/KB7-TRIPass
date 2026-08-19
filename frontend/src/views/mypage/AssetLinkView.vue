@@ -95,7 +95,10 @@ function resolveCardMeta(card) {
 }
 
 // 지갑 > 내 트래블카드에서 쓰는 실제 카드사 상품 이미지가 있으면 그걸 그대로 보여준다.
+// 은행만 보고 매칭하면 같은 은행의 다른 카드(예: KB QA 체크카드)까지 트래블카드 사진이
+// 붙어버리므로, 카드명에 '트래블' 키워드가 있는 진짜 트래블카드 상품에만 적용한다.
 function travelCardImage(card) {
+  if (!(card.cardName ?? '').includes('트래블')) return null
   return getTravelCardImage(resolveCardMeta(card).name)
 }
 
