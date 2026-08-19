@@ -398,9 +398,15 @@ onBeforeUnmount(() => {
           </button>
 
           <div class="card-tile-footer">
-            <div>
-              <small>외화보유한도</small>
-              <strong>{{ card.foreignCurrencyHoldingLimit || '카드별 확인' }}</strong>
+            <div class="fee-info">
+              <div>
+                <small>환전 수수료</small>
+                <strong>{{ card.exchangeFee || '카드별 확인' }}</strong>
+              </div>
+              <div>
+                <small>해외 결제 수수료</small>
+                <strong>{{ card.paymentFee || '카드별 확인' }}</strong>
+              </div>
             </div>
 
             <button
@@ -616,7 +622,7 @@ onBeforeUnmount(() => {
   background: #fbfcfe;
 }
 
-.card-tile-footer>div{display:flex;flex-direction:column;gap:3px}.card-tile-footer>div small{color:#8a97aa;font-size:8px;white-space:nowrap}.card-tile-footer>div strong{color:#173c82;font-size:10px;line-height:1.3;word-break:keep-all}
+.fee-info{display:flex;flex-direction:column;gap:8px}.fee-info>div{display:flex;flex-direction:column;gap:3px}.fee-info>div small{color:#8a97aa;font-size:8px;white-space:nowrap}.fee-info>div strong{color:#173c82;font-size:10px;line-height:1.3;word-break:keep-all}
 
 .comparison-toggle {
   width: 100%;

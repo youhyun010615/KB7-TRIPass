@@ -299,6 +299,17 @@ const countryFlagMap = {
   독일: 'de',
   일본: 'jp',
   홍콩: 'hk',
+  이탈리아: 'it',
+  스페인: 'es',
+  네덜란드: 'nl',
+  벨기에: 'be',
+  오스트리아: 'at',
+  포르투갈: 'pt',
+  그리스: 'gr',
+  아일랜드: 'ie',
+  핀란드: 'fi',
+  중국: 'cn',
+  괌: 'gu',
 };
 
 const selectedSchedules = computed(() => {
