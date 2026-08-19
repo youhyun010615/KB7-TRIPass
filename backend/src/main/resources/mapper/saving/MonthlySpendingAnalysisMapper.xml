@@ -188,4 +188,82 @@
           AND report_status IN ('PENDING', 'VIEWED')
     </update>
 
+    <select id="findCategoryAnalysisHistory" resultType="MonthlyCategoryAnalysisDto">
+        SELECT mca.id, mca.monthly_spending_analysis_id, mca.category_id,
+               sc.category_code, sc.category_name,
+               mca.spending_amount, mca.spending_ratio, mca.transaction_count,
+               mca.weekly_average, mca.daily_average, mca.previous_month_change, mca.spending_rank,
+               mca.mission_period_spending, mca.mission_transaction_count,
+               mca.recommendation_reason,
+               msa.analysis_year_month
+        FROM monthly_category_analyses mca
+                 JOIN spending_categories sc ON mca.category_id = sc.id
+                 JOIN monthly_spending_analyses msa ON mca.monthly_spending_analysis_id = msa.id
+        WHERE msa.user_id = #{userId}
+          AND mca.category_id = #{categoryId}
+        ORDER BY msa.analysis_year_month DESC
+        LIMIT #{months}
+    </select>
+
+    <select id="findWeeklyBreakdown" resultType="java.util.HashMap">
+        SELECT CEIL(DAY(t.transaction_date) / 7.0) AS week_number,
+               SUM(t.amount) AS spending,
+               COUNT(*) AS transaction_count
+        FROM transactions t
+                 LEFT JOIN accounts a ON t.account_id = a.id
+                 LEFT JOIN cards c ON t.card_id = c.id
+        WHERE (
+            (a.user_id = #{userId} AND a.is_deleted = 0)
+            OR (c.user_id = #{userId} AND c.is_deleted = 0)
+        )
+          AND t.transaction_type = 'WITHDRAWAL'
+          AND t.category_id = #{categoryId}
+          AND t.is_deleted = 0
+          AND t.transaction_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY week_number
+        ORDER BY week_number
+    </select>
+
+    <select id="findTopMerchants" resultType="java.util.HashMap">
+        SELECT t.merchant_name,
+               SUM(t.amount) AS total_amount,
+               COUNT(*) AS transaction_count
+        FROM transactions t
+                 LEFT JOIN accounts a ON t.account_id = a.id
+                 LEFT JOIN cards c ON t.card_id = c.id
+        WHERE (
+            (a.user_id = #{userId} AND a.is_deleted = 0)
+            OR (c.user_id = #{userId} AND c.is_deleted = 0)
+        )
+          AND t.transaction_type = 'WITHDRAWAL'
+          AND t.category_id = #{categoryId}
+          AND t.is_deleted = 0
+          AND t.transaction_date BETWEEN #{startDate} AND #{endDate}
+          AND t.merchant_name IS NOT NULL
+          AND t.merchant_name != ''
+        GROUP BY t.merchant_name
+        ORDER BY total_amount DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findPeakSpendingDay" resultType="java.util.HashMap">
+        SELECT DAYOFWEEK(t.transaction_date) AS day_of_week,
+               COUNT(*) AS transaction_count,
+               SUM(t.amount) AS total_amount
+        FROM transactions t
+                 LEFT JOIN accounts a ON t.account_id = a.id
+                 LEFT JOIN cards c ON t.card_id = c.id
+        WHERE (
+            (a.user_id = #{userId} AND a.is_deleted = 0)
+            OR (c.user_id = #{userId} AND c.is_deleted = 0)
+        )
+          AND t.transaction_type = 'WITHDRAWAL'
+          AND t.category_id = #{categoryId}
+          AND t.is_deleted = 0
+          AND t.transaction_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY day_of_week
+        ORDER BY total_amount DESC
+        LIMIT 1
+    </select>
+
 </mapper>

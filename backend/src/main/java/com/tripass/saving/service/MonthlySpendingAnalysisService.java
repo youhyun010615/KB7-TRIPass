@@ -15,6 +15,7 @@ import com.tripass.saving.analysis.SavingResultCalculator;
 import com.tripass.saving.analysis.ScoredCandidate;
 import com.tripass.saving.analysis.TopCategorySelector;
 import com.tripass.saving.classification.ConsumptionCategoryCode;
+import com.tripass.saving.dto.MissionDetailResponseDto;
 import com.tripass.saving.dto.MonthlyAnalysisResponseDto;
 import com.tripass.saving.dto.MonthlyCategoryAnalysisDto;
 import com.tripass.saving.dto.MonthlySpendingAnalysisDto;
@@ -96,6 +97,213 @@ public class MonthlySpendingAnalysisService {
     public void markReportClosed(Long userId, YearMonth analysisYearMonth) {
         ensureAnalysisExists(userId, analysisYearMonth);
         mapper.markReportClosed(userId, analysisYearMonth.toString());
+    }
+
+    public MissionDetailResponseDto getMissionDetail(Long userId, YearMonth analysisYearMonth, String categoryCode) {
+        Long categoryId = mapper.findCategoryIdByCode(categoryCode);
+        if (categoryId == null) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "CATEGORY_NOT_FOUND",
+                    "소비 카테고리를 찾을 수 없습니다: " + categoryCode);
+        }
+
+        ensureAnalysisExists(userId, analysisYearMonth);
+
+        List<MonthlyCategoryAnalysisDto> history = mapper.findCategoryAnalysisHistory(userId, categoryId, 4);
+        MonthlyCategoryAnalysisDto current = history.stream()
+                .filter(h -> analysisYearMonth.toString().equals(h.getAnalysisYearMonth()))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "CATEGORY_ANALYSIS_NOT_FOUND",
+                        "해당 카테고리의 분석 데이터를 찾을 수 없습니다."));
+
+        List<MonthlyCategoryAnalysisDto> sortedHistory = history.stream()
+                .sorted((a, b) -> a.getAnalysisYearMonth().compareTo(b.getAnalysisYearMonth()))
+                .toList();
+
+        List<MissionDetailResponseDto.MonthlyTrendItem> monthlyTrend = sortedHistory.stream()
+                .map(h -> new MissionDetailResponseDto.MonthlyTrendItem(
+                        h.getAnalysisYearMonth(), h.getSpendingAmount(), h.getTransactionCount()))
+                .toList();
+
+        // 전월 실제 금액
+        YearMonth prevMonth = analysisYearMonth.minusMonths(1);
+        BigDecimal previousMonthSpending = history.stream()
+                .filter(h -> prevMonth.toString().equals(h.getAnalysisYearMonth()))
+                .map(MonthlyCategoryAnalysisDto::getSpendingAmount)
+                .findFirst().orElse(null);
+
+        // 3개월 평균 (현재 달 제외)
+        List<MonthlyCategoryAnalysisDto> pastMonths = history.stream()
+                .filter(h -> !analysisYearMonth.toString().equals(h.getAnalysisYearMonth()))
+                .toList();
+        BigDecimal threeMonthAverage = null;
+        BigDecimal threeMonthAverageChange = null;
+        if (!pastMonths.isEmpty()) {
+            BigDecimal sum = pastMonths.stream()
+                    .map(MonthlyCategoryAnalysisDto::getSpendingAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            threeMonthAverage = sum.divide(BigDecimal.valueOf(pastMonths.size()), 0, java.math.RoundingMode.HALF_UP);
+            if (threeMonthAverage.compareTo(BigDecimal.ZERO) > 0) {
+                threeMonthAverageChange = current.getSpendingAmount()
+                        .subtract(threeMonthAverage)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(threeMonthAverage, 1, java.math.RoundingMode.HALF_UP);
+            }
+        }
+
+        // 월말 예상 지출
+        LocalDate today = LocalDate.now();
+        LocalDate periodStart = analysisYearMonth.atDay(1);
+        LocalDate periodEnd = analysisYearMonth.atEndOfMonth();
+        BigDecimal projectedMonthSpending = null;
+        if (current.getDailyAverage() != null && current.getDailyAverage().compareTo(BigDecimal.ZERO) > 0) {
+            int totalDays = periodEnd.getDayOfMonth();
+            projectedMonthSpending = current.getDailyAverage().multiply(BigDecimal.valueOf(totalDays))
+                    .setScale(0, java.math.RoundingMode.HALF_UP);
+        }
+
+        // 주차별 지출
+        List<Map<String, Object>> weeklyRows = mapper.findWeeklyBreakdown(userId, categoryId, periodStart, periodEnd);
+        List<MissionDetailResponseDto.WeeklyBreakdownItem> weeklyBreakdown = weeklyRows.stream()
+                .map(row -> new MissionDetailResponseDto.WeeklyBreakdownItem(
+                        ((Number) row.get("week_number")).intValue(),
+                        new BigDecimal(row.get("spending").toString()),
+                        ((Number) row.get("transaction_count")).intValue()))
+                .toList();
+
+        // 가맹점 TOP 5
+        List<Map<String, Object>> merchantRows = mapper.findTopMerchants(userId, categoryId, periodStart, periodEnd, 5);
+        List<MissionDetailResponseDto.TopMerchantItem> topMerchants = merchantRows.stream()
+                .map(row -> new MissionDetailResponseDto.TopMerchantItem(
+                        (String) row.get("merchant_name"),
+                        new BigDecimal(row.get("total_amount").toString()),
+                        ((Number) row.get("transaction_count")).intValue()))
+                .toList();
+
+        // 가장 많이 쓴 요일
+        Map<String, Object> peakDay = mapper.findPeakSpendingDay(userId, categoryId, periodStart, periodEnd);
+        String peakSpendingDay = null;
+        Integer peakSpendingDayCount = null;
+        if (peakDay != null && peakDay.get("day_of_week") != null) {
+            peakSpendingDay = toDayName(((Number) peakDay.get("day_of_week")).intValue());
+            peakSpendingDayCount = ((Number) peakDay.get("transaction_count")).intValue();
+        }
+
+        // 자동 인사이트 생성
+        List<String> insights = buildInsights(
+                current, previousMonthSpending, threeMonthAverage, threeMonthAverageChange,
+                peakSpendingDay, peakSpendingDayCount, topMerchants, weeklyBreakdown);
+
+        return new MissionDetailResponseDto(
+                current.getCategoryCode(),
+                current.getCategoryName(),
+                analysisYearMonth.toString(),
+                current.getSpendingAmount(),
+                current.getTransactionCount(),
+                current.getSpendingRatio(),
+                current.getSpendingRank(),
+                current.getWeeklyAverage(),
+                current.getDailyAverage(),
+                previousMonthSpending,
+                current.getPreviousMonthChange(),
+                threeMonthAverage,
+                threeMonthAverageChange,
+                projectedMonthSpending,
+                peakSpendingDay,
+                peakSpendingDayCount,
+                current.getRecommendationReason(),
+                insights,
+                monthlyTrend,
+                weeklyBreakdown,
+                topMerchants
+        );
+    }
+
+    private String toDayName(int dayOfWeek) {
+        return switch (dayOfWeek) {
+            case 1 -> "일요일";
+            case 2 -> "월요일";
+            case 3 -> "화요일";
+            case 4 -> "수요일";
+            case 5 -> "목요일";
+            case 6 -> "금요일";
+            case 7 -> "토요일";
+            default -> null;
+        };
+    }
+
+    private List<String> buildInsights(
+            MonthlyCategoryAnalysisDto current,
+            BigDecimal previousMonthSpending,
+            BigDecimal threeMonthAverage,
+            BigDecimal threeMonthAverageChange,
+            String peakSpendingDay,
+            Integer peakSpendingDayCount,
+            List<MissionDetailResponseDto.TopMerchantItem> topMerchants,
+            List<MissionDetailResponseDto.WeeklyBreakdownItem> weeklyBreakdown
+    ) {
+        List<String> insights = new ArrayList<>();
+        String name = current.getCategoryName();
+
+        if (previousMonthSpending != null && current.getPreviousMonthChange() != null) {
+            BigDecimal change = current.getPreviousMonthChange();
+            if (change.compareTo(BigDecimal.ZERO) > 0) {
+                insights.add(String.format("지난달(%s원)보다 %s%% 더 지출했어요",
+                        formatAmount(previousMonthSpending), change.abs().toPlainString()));
+            } else if (change.compareTo(BigDecimal.ZERO) < 0) {
+                insights.add(String.format("지난달(%s원)보다 %s%% 줄었어요",
+                        formatAmount(previousMonthSpending), change.abs().toPlainString()));
+            }
+        }
+
+        if (threeMonthAverage != null && threeMonthAverageChange != null) {
+            if (threeMonthAverageChange.compareTo(BigDecimal.valueOf(10)) > 0) {
+                insights.add(String.format("최근 3개월 평균(%s원) 대비 %s%% 증가, 지출 관리가 필요해요",
+                        formatAmount(threeMonthAverage), threeMonthAverageChange.toPlainString()));
+            } else if (threeMonthAverageChange.compareTo(BigDecimal.valueOf(-10)) < 0) {
+                insights.add(String.format("최근 3개월 평균(%s원) 대비 %s%% 감소, 잘 절약하고 있어요!",
+                        formatAmount(threeMonthAverage), threeMonthAverageChange.abs().toPlainString()));
+            }
+        }
+
+        if (peakSpendingDay != null && peakSpendingDayCount != null && peakSpendingDayCount >= 3) {
+            insights.add(String.format("%s에 %s 지출이 집중돼요 (%d건)",
+                    peakSpendingDay, name, peakSpendingDayCount));
+        }
+
+        if (!topMerchants.isEmpty()) {
+            MissionDetailResponseDto.TopMerchantItem top = topMerchants.get(0);
+            if (current.getSpendingAmount().compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal topRatio = top.totalAmount()
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(current.getSpendingAmount(), 0, java.math.RoundingMode.HALF_UP);
+                if (topRatio.compareTo(BigDecimal.valueOf(30)) >= 0) {
+                    insights.add(String.format("'%s'에서만 전체 %s 지출의 %s%%를 사용했어요",
+                            top.merchantName(), name, topRatio.toPlainString()));
+                }
+            }
+        }
+
+        if (weeklyBreakdown.size() >= 2) {
+            MissionDetailResponseDto.WeeklyBreakdownItem maxWeek = weeklyBreakdown.stream()
+                    .max((a, b) -> a.spending().compareTo(b.spending())).orElse(null);
+            MissionDetailResponseDto.WeeklyBreakdownItem minWeek = weeklyBreakdown.stream()
+                    .filter(w -> w.spending().compareTo(BigDecimal.ZERO) > 0)
+                    .min((a, b) -> a.spending().compareTo(b.spending())).orElse(null);
+            if (maxWeek != null && minWeek != null && !maxWeek.week().equals(minWeek.week())) {
+                BigDecimal diff = maxWeek.spending().subtract(minWeek.spending());
+                if (diff.compareTo(BigDecimal.ZERO) > 0) {
+                    insights.add(String.format("%d주차에 가장 많이 지출했고, %d주차에 가장 적게 썼어요",
+                            maxWeek.week(), minWeek.week()));
+                }
+            }
+        }
+
+        return insights;
+    }
+
+    private String formatAmount(BigDecimal amount) {
+        if (amount == null) return "0";
+        return String.format("%,d", amount.longValue());
     }
 
     /**

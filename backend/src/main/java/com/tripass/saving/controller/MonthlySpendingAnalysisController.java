@@ -2,6 +2,7 @@ package com.tripass.saving.controller;
 
 import com.tripass.common.exception.CustomException;
 import com.tripass.common.response.ApiResponse;
+import com.tripass.saving.dto.MissionDetailResponseDto;
 import com.tripass.saving.dto.MonthlyAnalysisResponseDto;
 import com.tripass.saving.service.MonthlySpendingAnalysisService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.YearMonth;
@@ -64,6 +66,18 @@ public class MonthlySpendingAnalysisController {
         MonthlyAnalysisResponseDto data =
                 monthlySpendingAnalysisService.getMonthlyAnalysis(userId, parseYearMonth(yearMonth));
         return ResponseEntity.ok(ApiResponse.success("월간 분석 리포트 조회 성공", data));
+    }
+
+    @GetMapping("/{yearMonth}/categories/{categoryCode}")
+    public ResponseEntity<ApiResponse<MissionDetailResponseDto>> getMissionDetail(
+            @PathVariable String yearMonth,
+            @PathVariable String categoryCode,
+            Authentication authentication
+    ) {
+        Long userId = getAuthenticatedUserId(authentication);
+        MissionDetailResponseDto data =
+                monthlySpendingAnalysisService.getMissionDetail(userId, parseYearMonth(yearMonth), categoryCode);
+        return ResponseEntity.ok(ApiResponse.success("카테고리 상세 분석 조회 성공", data));
     }
 
     /** 리포트를 확인 처리한다(PENDING -> VIEWED). 이미 VIEWED/CLOSED면 상태를 유지한다. */

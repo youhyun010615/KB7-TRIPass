@@ -21,6 +21,7 @@ public class MonthlyCategoryAnalysisDto {
     private Long categoryId;
     private String categoryCode; // JOIN 조회 전용
     private String categoryName; // JOIN 조회 전용
+    private String analysisYearMonth; // 이력 조회용
 
     private BigDecimal spendingAmount;      // 1일~말일 지출액(소비순위 표시용)
     private BigDecimal spendingRatio;       // 전체 지출 대비 비율(%)

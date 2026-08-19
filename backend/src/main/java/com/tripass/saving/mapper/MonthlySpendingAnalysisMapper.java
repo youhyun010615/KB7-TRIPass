@@ -91,4 +91,32 @@ public interface MonthlySpendingAnalysisMapper {
     int markReportViewed(@Param("userId") Long userId, @Param("analysisYearMonth") String analysisYearMonth);
 
     int markReportClosed(@Param("userId") Long userId, @Param("analysisYearMonth") String analysisYearMonth);
+
+    List<MonthlyCategoryAnalysisDto> findCategoryAnalysisHistory(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("months") int months
+    );
+
+    List<java.util.Map<String, Object>> findWeeklyBreakdown(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    List<java.util.Map<String, Object>> findTopMerchants(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("limit") int limit
+    );
+
+    java.util.Map<String, Object> findPeakSpendingDay(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }
