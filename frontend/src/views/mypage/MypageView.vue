@@ -372,7 +372,8 @@ const notificationRows = [
   left: 50%;
   z-index: 60;
   width: 100%;
-  background: #f4f5f9;
+  max-width: 390px;
+  background: #eef2f8;
   transform: translateX(-50%);
 }
 .mypage-header-eyebrow {
