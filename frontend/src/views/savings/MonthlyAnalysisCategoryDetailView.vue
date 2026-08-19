@@ -73,6 +73,12 @@ const threeMonthChangeRate = computed(() => changeOf(data.value?.threeMonthAvera
 const isAboveThreeMonthAverage = computed(
   () => threeMonthChangeRate.value !== null && threeMonthChangeRate.value >= 20,
 );
+const hasComparisonData = computed(
+  () =>
+    data.value?.previousMonthSpending != null ||
+    data.value?.threeMonthAverage != null ||
+    data.value?.projectedMonthSpending != null,
+);
 
 const insights = computed(() => {
   const list = data.value?.analysisInsights || [];
@@ -219,36 +225,33 @@ function goBack() {
         </p>
       </section>
 
-      <section
-        v-if="data.previousMonthSpending != null || data.threeMonthAverage != null || data.projectedMonthSpending != null"
-        class="paper-section"
-      >
+      <section v-if="hasComparisonData" class="paper-section">
         <h3>비교 분석</h3>
-        <div v-if="data.previousMonthSpending != null" class="compare-row">
-          <div>
-            <small>지난달</small>
-            <b>{{ formatCurrency(data.previousMonthSpending) }}</b>
+        <dl class="compare-grid">
+          <div v-if="data.previousMonthSpending != null">
+            <dt>지난달</dt>
+            <dd>
+              {{ formatCurrency(data.previousMonthSpending) }}
+              <span
+                v-if="changeRate !== null"
+                :class="['change-badge', changeRate >= 0 ? 'up' : 'down']"
+              >
+                {{ changeRate >= 0 ? '▲' : '▼' }} {{ Math.abs(changeRate).toFixed(1) }}%
+              </span>
+            </dd>
           </div>
-          <span
-            v-if="changeRate !== null"
-            :class="['change-badge', changeRate >= 0 ? 'up' : 'down']"
-          >
-            {{ changeRate >= 0 ? '▲' : '▼' }} {{ Math.abs(changeRate).toFixed(1) }}%
-          </span>
-        </div>
-        <div v-if="data.threeMonthAverage != null" class="compare-row">
-          <div>
-            <small>최근 3개월 평균</small>
-            <b>{{ formatCurrency(data.threeMonthAverage) }}</b>
+          <div v-if="data.threeMonthAverage != null">
+            <dt>최근 3개월 평균</dt>
+            <dd>
+              {{ formatCurrency(data.threeMonthAverage) }}
+              <span v-if="isAboveThreeMonthAverage" class="change-badge up">▲ 평균 이상</span>
+            </dd>
           </div>
-          <span v-if="isAboveThreeMonthAverage" class="change-badge up">평균보다 많이 썼어요</span>
-        </div>
-        <div v-if="data.projectedMonthSpending != null" class="compare-row">
-          <div>
-            <small>이번 달 예상 지출</small>
-            <b>{{ formatCurrency(data.projectedMonthSpending) }}</b>
+          <div v-if="data.projectedMonthSpending != null">
+            <dt>이번 달 예상 지출</dt>
+            <dd>{{ formatCurrency(data.projectedMonthSpending) }}</dd>
           </div>
-        </div>
+        </dl>
       </section>
 
       <section v-if="data.recommendationReason || insights.length" class="paper-section">
@@ -566,31 +569,29 @@ function goBack() {
   color: #173f8d;
   font-weight: 800;
 }
-.compare-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
 }
-.compare-row + .compare-row {
-  border-top: 1px solid #eef1f6;
-}
-.compare-row small {
-  display: block;
+.compare-grid dt {
   color: #8a9bb6;
   font-size: 9.5px;
 }
-.compare-row b {
-  display: block;
-  margin-top: 2px;
+.compare-grid dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
   color: #17213a;
   font-size: 13px;
   font-weight: 800;
 }
 .change-badge {
-  padding: 5px 9px;
+  padding: 3px 7px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   white-space: nowrap;
 }
