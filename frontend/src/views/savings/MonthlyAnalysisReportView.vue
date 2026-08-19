@@ -7,7 +7,6 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
-import aiReportIcon from '@/assets/icons/ai_report.svg';
 import foodIconRaw from '@/assets/icons/food.svg?raw';
 import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
 import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
@@ -97,14 +96,6 @@ function coloredCategoryIcon(categoryCode) {
   return meta.iconRaw.replaceAll('black', darken(meta.color));
 }
 
-function goBack() {
-  if (window.history.length > 1) {
-    router.back();
-    return;
-  }
-  router.push('/');
-}
-
 async function closeReport() {
   try {
     await analysisStore.closeReport();
@@ -134,23 +125,22 @@ function goCategoryDetail(categoryCode) {
     <div class="report-backdrop" @click="closeReport"></div>
     <div class="report-modal">
       <header class="report-header">
-        <button type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
-        <div>
-          <small>TRIPASS AI REPORT</small>
-          <h1>
-            {{ analysisMonthLabel }} AI 분석 리포트
-            <img class="header-ai-icon" :src="aiReportIcon" alt="" aria-hidden="true" />
-          </h1>
+        <span class="drag-handle" aria-hidden="true"></span>
+        <div class="report-header-row">
+          <div>
+            <small>TRIPASS AI REPORT</small>
+            <h1>{{ analysisMonthLabel }} AI 분석 리포트</h1>
+          </div>
+          <button
+            type="button"
+            class="close-icon"
+            aria-label="리포트 닫기"
+            :disabled="analysisStore.updatingStatus"
+            @click="closeReport"
+          >
+            ×
+          </button>
         </div>
-        <button
-          type="button"
-          class="close-icon"
-          aria-label="리포트 닫기"
-          :disabled="analysisStore.updatingStatus"
-          @click="closeReport"
-        >
-          ×
-        </button>
       </header>
 
       <div class="report-modal-body">
@@ -382,51 +372,51 @@ function goCategoryDetail(categoryCode) {
 .report-header {
   flex: none;
   z-index: 10;
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  padding: 18px 14px 13px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px 18px;
   border-bottom: 1px solid #e0e8f5;
   border-radius: 24px 24px 0 0;
   background: #f3f6ff;
 }
-.report-header > button {
-  display: grid;
+.drag-handle {
+  align-self: center;
   width: 36px;
-  height: 36px;
-  place-items: center;
-  border-radius: 12px;
-  color: #173f8d;
-  font-size: 28px;
-  line-height: 1;
+  height: 4px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: #d7deea;
 }
-.report-header > div {
-  text-align: center;
+.report-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 .report-header small {
   color: #f06a2a;
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 950;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
 }
 .report-header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin-top: 2px;
-  color: #173f8d;
-  font-size: 18px;
-  font-weight: 950;
-}
-.header-ai-icon {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-  filter: invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%);
+  margin-top: 4px;
+  color: #17213a;
+  font-size: 20px;
+  font-weight: 900;
 }
 .report-header .close-icon {
-  font-size: 23px;
+  display: grid;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef1f6;
+  color: #1a2338;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
 .report-paper {
   overflow: hidden;
