@@ -53,7 +53,7 @@ function switchMode(mode) {
 </template>
 
 <style scoped>
-.app-home-shell { position: relative; width: min(100%, 390px); margin: 0 auto; overflow-x: hidden; background: #f3f6ff; }
+.app-home-shell { position: relative; width: min(100%, 390px); margin: 0 auto; overflow-x: hidden; background: #eef2f8; }
 .mode-flight-loader { position: fixed; top: 0; bottom: 0; left: 50%; width: min(100vw,390px); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateX(-50%); background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
 .mode-flight-loader strong { margin-top: 22px; font-size: 18px; }
 .mode-flight-loader small { margin-top: 7px; color: #dbeafe; font-size: 11px; }

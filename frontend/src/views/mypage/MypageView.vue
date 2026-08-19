@@ -129,7 +129,7 @@ const notificationRows = [
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #F4F5F9">
+  <div class="min-h-screen pb-20 flex flex-col" style="background: #eef2f8">
 
     <!-- 헤더 -->
     <div ref="mypageHeaderEl" class="mypage-header-fixed">

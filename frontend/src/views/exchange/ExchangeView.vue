@@ -302,7 +302,7 @@ watch(
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f3f5fa;
+  background: #eef2f8;
   color: #10192d;
 }
 .shell {
@@ -310,7 +310,7 @@ watch(
   min-height: 100vh;
   margin: auto;
   padding: 0 20px 100px;
-  background: #f3f5fa;
+  background: #eef2f8;
 }
 .exchange-header-fixed {
   position: fixed;
@@ -320,7 +320,7 @@ watch(
   width: 100%;
   max-width: 390px;
   padding: 42px 20px 8px;
-  background: #f3f5fa;
+  background: #eef2f8;
   transform: translateX(-50%);
 }
 .exchange-header-top {
