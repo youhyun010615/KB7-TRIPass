@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
-import { useTravelStore } from '@/stores/travel'
+import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const travelStore = useTravelStore()
@@ -19,19 +19,35 @@ function startNewTrip() {
 const loading = ref(true)
 const upcomingTrips = ref([])
 const pastTrips = ref([])
-const visitedCountryFlags = ref([])
+const visitedCountryCodes = ref([])
 const visitedCountryCount = ref(0)
 
 function splitCountryNames(joined) {
   return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
 }
 
-function flagOf(countryName) {
-  return travelStore.countryFlagMap[countryName]?.emoji ?? '🌍'
+function countryCodeOf(countryName) {
+  return countryPresentation[countryName]?.code || ''
 }
 
-function statusLabel(status) {
-  return status === 'TRAVELING' ? '여행 중' : '준비 중'
+function daysUntilStart(trip) {
+  if (trip.report?.daysUntilTrip !== null && trip.report?.daysUntilTrip !== undefined) {
+    const reportDays = Number(trip.report.daysUntilTrip)
+    if (Number.isFinite(reportDays)) return reportDays
+  }
+  if (!trip.startDate) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const startDate = new Date(`${trip.startDate}T00:00:00`)
+  return Math.ceil((startDate - today) / 86400000)
+}
+
+function isTraveling(trip) {
+  return trip.status === 'TRAVELING' || (trip.status !== 'ENDED' && daysUntilStart(trip) !== null && daysUntilStart(trip) <= 0)
+}
+
+function statusLabel(trip) {
+  return isTraveling(trip) ? '여행 중' : '준비 중'
 }
 
 function formatDateRange(startDate, endDate) {
@@ -63,7 +79,7 @@ onMounted(async () => {
       splitCountryNames(t.countryNames).forEach((name) => uniqueCountries.add(name)),
     )
     visitedCountryCount.value = uniqueCountries.size
-    visitedCountryFlags.value = [...uniqueCountries].slice(0, 4).map(flagOf)
+    visitedCountryCodes.value = [...uniqueCountries].slice(0, 4).map(countryCodeOf).filter(Boolean)
 
     const upcomingBase = trips
       .filter((t) => t.status !== 'ENDED')
@@ -130,7 +146,7 @@ onMounted(async () => {
         <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
         <p class="relative text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">TRAVEL RECORD</p>
         <div class="relative flex items-center gap-1 mt-2 text-lg">
-          <span v-for="(flag, i) in visitedCountryFlags" :key="i">{{ flag }}</span>
+          <span v-for="(code, i) in visitedCountryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline travel-record-flag"></span>
         </div>
         <div class="relative flex mt-3">
           <div class="flex-1">
@@ -166,15 +182,17 @@ onMounted(async () => {
         >
           <div class="px-[18px] pt-[18px] pb-4">
             <div class="flex items-center gap-2.5">
-              <span class="text-[19px] leading-none flex-shrink-0 whitespace-nowrap">{{ splitCountryNames(trip.countryNames).map(flagOf).join('') }}</span>
+              <span class="travel-list-flags flex-shrink-0 whitespace-nowrap">
+                <span v-for="countryName in splitCountryNames(trip.countryNames)" :key="countryName" :class="flagIconClass(countryCodeOf(countryName))" class="fi-inline travel-list-flag"></span>
+              </span>
               <div class="flex-1 min-w-0">
                 <p class="text-[15.5px] font-black text-gray-900 truncate">{{ trip.tripName }}</p>
                 <p class="font-mono text-[11.5px] font-bold text-gray-400 mt-1">{{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일</p>
               </div>
               <span
                 class="flex-shrink-0 text-[10.5px] font-bold px-2.5 py-[5px] rounded-full"
-                :style="trip.status === 'TRAVELING' ? 'background:#E5F8F2; color:#0FAE96' : 'background:#EAF1FF; color:#0B2A6B'"
-              >{{ statusLabel(trip.status) }}</span>
+                :style="isTraveling(trip) ? 'background:#E5F8F2; color:#0FAE96' : 'background:#EAF1FF; color:#0B2A6B'"
+              >{{ statusLabel(trip) }}</span>
             </div>
 
             <div v-if="trip.report" class="mt-4">
@@ -223,7 +241,7 @@ onMounted(async () => {
             style="border-color:#F1F3F8"
             @click="router.push(`/mypage/travel/${trip.tripId}`)"
           >
-            <span class="text-[19px] leading-none flex-shrink-0">{{ flagOf(splitCountryNames(trip.countryNames)[0]) }}</span>
+            <span :class="flagIconClass(countryCodeOf(splitCountryNames(trip.countryNames)[0]))" class="fi-inline travel-list-flag flex-shrink-0"></span>
             <div class="flex-1 min-w-0">
               <p class="text-[14.5px] font-extrabold text-gray-900 truncate">{{ trip.tripName }}</p>
               <p class="font-mono text-[11px] font-bold text-gray-400 mt-1">{{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일</p>
@@ -248,3 +266,9 @@ onMounted(async () => {
     <BottomNav />
   </div>
 </template>
+
+<style scoped>
+.travel-record-flag{width:25px;height:17px;border-radius:3px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.travel-list-flags{display:flex;gap:3px}
+.travel-list-flag{width:27px;height:18px;border-radius:3px;background-size:cover;box-shadow:0 1px 3px rgba(15,23,42,.18)}
+</style>

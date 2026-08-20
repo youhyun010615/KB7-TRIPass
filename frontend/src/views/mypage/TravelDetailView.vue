@@ -5,11 +5,10 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { getReceipts } from '@/api/receipt'
-import { useTravelStore } from '@/stores/travel'
+import { countryPresentation, flagIconClass } from '@/stores/travel'
 
 const router = useRouter()
 const route = useRoute()
-const travelStore = useTravelStore()
 
 const loading = ref(true)
 const trip = ref(null)
@@ -20,14 +19,35 @@ function splitCountryNames(joined) {
   return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
 }
 
-function flagOf(countryName) {
-  return travelStore.countryFlagMap[countryName]?.emoji ?? '🌍'
+function countryCodeOf(countryName) {
+  return countryPresentation[countryName]?.code || ''
 }
 
 const isEnded = computed(() => trip.value?.status === 'ENDED')
-const isTraveling = computed(() => trip.value?.status === 'TRAVELING')
-const countryFlags = computed(() => splitCountryNames(trip.value?.countryNames).map(flagOf))
+const countryCodes = computed(() => splitCountryNames(trip.value?.countryNames).map(countryCodeOf).filter(Boolean))
 const countryLabel = computed(() => splitCountryNames(trip.value?.countryNames).join(' · '))
+const daysUntilStart = computed(() => {
+  if (report.value?.daysUntilTrip !== null && report.value?.daysUntilTrip !== undefined) {
+    const reportDays = Number(report.value.daysUntilTrip)
+    if (Number.isFinite(reportDays)) return reportDays
+  }
+  if (!trip.value?.startDate) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const startDate = new Date(`${trip.value.startDate}T00:00:00`)
+  return Math.ceil((startDate - today) / 86400000)
+})
+const isTraveling = computed(() =>
+  trip.value?.status === 'TRAVELING' || (!isEnded.value && daysUntilStart.value !== null && daysUntilStart.value <= 0),
+)
+const tripStatusLabel = computed(() => {
+  if (isEnded.value) return '여행 완료'
+  return isTraveling.value ? '여행 중' : '준비 중'
+})
+const dDayLabel = computed(() => {
+  if (daysUntilStart.value === null) return 'D-'
+  return daysUntilStart.value <= 0 ? 'D-0' : `D-${daysUntilStart.value}`
+})
 
 function formatDateRange(startDate, endDate) {
   const fmt = (d) => (d ? d.replaceAll('-', '.') : '')
@@ -128,12 +148,14 @@ onMounted(async () => {
 
         <div class="relative flex items-center justify-between">
           <p class="text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">{{ isEnded ? 'TRIP COMPLETED' : isTraveling ? 'NOW TRAVELING' : 'MY TRIP ARCHIVE' }}</p>
-          <span class="text-[10.5px] font-bold" :style="isEnded ? 'color:#FFD466' : 'color:rgba(255,255,255,0.75)'">{{ isEnded ? '여행 완료' : isTraveling ? '여행 중' : '준비 중' }}</span>
+          <span class="text-[10.5px] font-bold" :style="isEnded ? 'color:#FFD466' : (isTraveling ? 'color:#6FE3C1' : 'color:rgba(255,255,255,0.55)')">{{ tripStatusLabel }}</span>
         </div>
 
-        <div class="relative flex items-center gap-2 mt-3 text-lg">
-          <span v-for="(flag, i) in countryFlags" :key="i">{{ flag }}</span>
-          <span class="text-[15px] font-extrabold">{{ countryLabel }}</span>
+        <div class="relative mt-3">
+          <span class="block text-[15px] font-extrabold">{{ countryLabel }}</span>
+          <div class="trip-detail-flags mt-2">
+            <span v-for="(code, i) in countryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline trip-detail-flag"></span>
+          </div>
         </div>
         <p class="relative font-mono text-[12px] font-bold mt-1.5" style="color: rgba(255,255,255,0.6)">
           {{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일
@@ -143,8 +165,8 @@ onMounted(async () => {
           <div class="relative flex items-end justify-between mt-4">
             <div />
             <div class="text-right">
-              <p class="font-mono text-[26px] font-bold" style="color:#FFD466">D-{{ report?.daysUntilTrip ?? '-' }}</p>
               <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.55)">출국까지</p>
+              <p class="font-mono text-[26px] font-bold mt-1" style="color:#FFD466">{{ dDayLabel }}</p>
             </div>
           </div>
           <div class="relative mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
@@ -247,6 +269,11 @@ onMounted(async () => {
     <BottomNav />
   </div>
 </template>
+
+<style scoped>
+.trip-detail-flags{display:flex;align-items:center;gap:5px}
+.trip-detail-flag{width:29px;height:19px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.24)}
+</style>
 
 <style scoped>
 .menu-tile {
