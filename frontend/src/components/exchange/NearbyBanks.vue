@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useExchangeStore } from '@/stores/exchange';
 import { fetchNearbyBanks, fetchExchangeEstimate } from '@/api/exchange';
+import kbBankLogo from '@/assets/brand/kb-bank-logo.svg';
 
 const router = useRouter();
 const exchange = useExchangeStore();
@@ -558,7 +559,7 @@ function goToDetail(bank) {
         :class="{ selected: exchange.selectedBankId === bank.id }"
         @click="selectBank(bank)"
       >
-        <i>KB</i>
+        <span class="bank-logo"><img :src="kbBankLogo" alt="KB국민은행" /></span>
         <div>
           <b class="branch-name">{{ bank.branchName }}</b>
           <div class="bank-info">
@@ -725,7 +726,9 @@ function goToDetail(bank) {
   flex-shrink: 0;
 }
 .title h2 {
-  font-size: 12px;
+  color: #173f8d;
+  font-size: 15px;
+  font-weight: 900;
 }
 .title span {
   color: #718097;
@@ -755,20 +758,24 @@ function goToDetail(bank) {
   border-color: #8ebaf4;
   background: #f0f6ff;
 }
-.list i {
+.bank-logo {
   display: grid;
   width: 32px;
   height: 32px;
   place-items: center;
-  border-radius: 9px;
-  background: #fff4d2;
-  color: #c98400;
-  font-size: 8px;
-  font-style: normal;
-  font-weight: 900;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(91, 72, 0, .14);
+}
+.bank-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .list-item b.branch-name {
-  font-size: 11px;
+  color: #16233b;
+  font-size: 14px;
+  font-weight: 900;
 }
 .bank-info {
   display: flex;
