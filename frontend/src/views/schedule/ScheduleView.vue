@@ -366,8 +366,9 @@ function showPastSchedules() {
 }
 .calendar-strip {
   display: flex;
-  gap: 9px;
-  padding: 0 2px 5px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px 3px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -376,11 +377,15 @@ function showPastSchedules() {
 .calendar-strip::-webkit-scrollbar { display: none; }
 .calendar-strip button {
   display: grid;
-  flex: 0 0 42px;
-  min-height: 54px;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 44px;
+  min-height: 0;
+  padding: 4px 0 3px;
+  grid-template-rows: 11px 17px 3px;
   place-items: center;
   align-content: center;
-  gap: 2px;
+  gap: 0;
   border: 1px solid #edf1f7;
   border-radius: 13px;
   background: #fff;
@@ -400,7 +405,7 @@ function showPastSchedules() {
 }
 .calendar-strip button > span {
   display: flex;
-  min-height: 3px;
+  height: 3px;
   align-items: center;
   gap: 2px;
 }
