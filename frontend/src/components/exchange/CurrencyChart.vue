@@ -218,8 +218,8 @@ nav .active {
 }
 .chart h2 {
   color: #173f8d;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
 }
 .chart strong {
   display: block;
