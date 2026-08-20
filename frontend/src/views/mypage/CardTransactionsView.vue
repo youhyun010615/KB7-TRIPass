@@ -3,6 +3,10 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
 import { useCardStore } from '@/stores/cardStore'
+import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
+import { getTravelCardImage } from '@/utils/travelCard'
+import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
+import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +18,41 @@ const syncing = ref(false)
 const syncMessage = ref('')
 
 const card = computed(() => cardStore.cards.find((item) => item.id === cardId))
+
+function resolveCardMeta(value = {}) {
+  const byCode = bankPresentationByCode(value.organizationCode)
+  if (byCode.code) return byCode
+
+  const name = value.cardName ?? ''
+  if (name.includes('국민') || name.includes('KB')) return bankPresentationByName('KB국민은행')
+  if (name.includes('신한')) return bankPresentationByName('신한은행')
+  if (name.includes('우리')) return bankPresentationByName('우리은행')
+  if (name.includes('하나')) return bankPresentationByName('하나은행')
+  if (name.includes('농협')) return bankPresentationByName('NH농협은행')
+  if (name.includes('기업')) return bankPresentationByName('IBK기업은행')
+  if (name.includes('카카오')) return bankPresentationByName('카카오뱅크')
+  return byCode
+}
+
+const cardImage = computed(() => {
+  const value = card.value
+  if (!value) return null
+  const name = value.cardName ?? ''
+  const isKb = resolveCardMeta(value).name === 'KB국민은행' || name.includes('KB') || name.includes('국민')
+  if (name.includes('트래블')) return getTravelCardImage(name) || getTravelCardImage(resolveCardMeta(value).name) || kbTravelersImage
+  if (isKb && value.cardType === 'CHECK') return kbCheckGenericImage
+  return value.cardImageUrl || value.imageUrl || null
+})
+
+function maskedCardNumber(number) {
+  const value = String(number ?? '').trim()
+  if (!value) return '카드번호 비공개'
+  if (/[•*]/.test(value)) return value
+  const digits = value.replace(/\D/g, '')
+  return digits ? `•••• •••• •••• ${digits.slice(-4)}` : '카드번호 비공개'
+}
+
+const transactionCount = computed(() => groups.value.reduce((sum, group) => sum + group.items.length, 0))
 
 function toLocalDateStr(date) {
   const year = date.getFullYear()
@@ -148,39 +187,68 @@ function openTransaction(item) {
 
 <template>
   <main class="card-page">
-    <header>
+    <header class="card-header">
       <button type="button" aria-label="뒤로 가기" @click="router.back()">‹</button>
-      <h1>{{ card?.cardName ?? '카드 거래내역' }}</h1>
-      <span aria-hidden="true"></span>
+      <h1>거래내역 조회</h1>
     </header>
 
-    <section class="card-ticket">
-      <i class="notch left"></i><i class="notch right"></i>
-      <small>▰　{{ cardTypeLabel(card?.cardType) }}</small>
-      <strong>{{ card?.cardName ?? '연동 카드' }}</strong>
-      <p>{{ card?.maskedCardNumber || '카드번호 비공개' }}</p>
-      <span class="barcode">||||||||</span>
+    <section class="card-overview">
+      <div class="card-preview" :class="{ 'has-photo': cardImage }" :style="{ '--card-color': resolveCardMeta(card).color, '--card-text': resolveCardMeta(card).text }">
+        <img v-if="cardImage" :src="cardImage" :alt="`${card?.cardName ?? '연동 카드'} 카드 이미지`" />
+        <template v-else>
+          <span>{{ resolveCardMeta(card).name || 'TRIPASS CARD' }}</span>
+          <i></i>
+          <b>••••　{{ String(card?.maskedCardNumber ?? '').replace(/\D/g, '').slice(-4) || '0000' }}</b>
+        </template>
+      </div>
+      <div class="card-identity">
+        <small>{{ resolveCardMeta(card).name || '연동 카드' }}</small>
+        <strong>{{ card?.cardName ?? '연동 카드' }}</strong>
+        <p>{{ maskedCardNumber(card?.maskedCardNumber) }} · {{ cardTypeLabel(card?.cardType) }}</p>
+      </div>
     </section>
 
-    <section class="date-filter">
-      <label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label>
-      <i>~</i>
-      <label><span>종료일</span><input v-model="endDate" type="date" :min="startDate" :max="toLocalDateStr(now)"></label>
-    </section>
+    <div class="quick-actions">
+      <button type="button" :disabled="syncing" @click="syncTransactions()"><span>↻</span>{{ syncing ? '동기화 중' : '최신 내역 불러오기' }}</button>
+    </div>
 
     <p v-if="syncMessage" class="sync-message" :class="{ error: syncMessage.includes('실패') || syncMessage.includes('오류') }">{{ syncMessage }}</p>
 
-    <div class="section-header">
-      <span>카드내역</span>
-      <button type="button" class="sync-btn" :disabled="syncing" @click="syncTransactions()">
-        {{ syncing ? '동기화 중' : '↻ 최신 내역' }}
-      </button>
-    </div>
-
-    <TransactionGroups :groups="groups" :show-icons="true" :loading="loading || syncing" @select="openTransaction" />
+    <section class="history-panel">
+      <div class="history-title"><div><small>CARD HISTORY</small><h2>카드내역</h2></div><span>{{ transactionCount }}건</span></div>
+      <section class="date-filter">
+        <label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label>
+        <i>–</i>
+        <label><span>종료일</span><input v-model="endDate" type="date" :min="startDate" :max="toLocalDateStr(now)"></label>
+      </section>
+      <TransactionGroups :groups="groups" :show-icons="false" :loading="loading || syncing" @select="openTransaction" />
+    </section>
   </main>
 </template>
 
 <style scoped>
-.card-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:14px 20px 30px;background:#f4f6fc;color:#10192d}header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;margin-bottom:17px}header button{display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#fff;color:#193d82;font-size:24px;font-weight:700;box-shadow:0 5px 16px rgba(36,72,117,.07)}h1{margin:0;font-size:17px;font-weight:900;text-align:center}.card-ticket{position:relative;min-height:130px;padding:20px;border-radius:17px;background:linear-gradient(115deg,#102b70,#0e62b9);color:white;box-shadow:0 10px 20px #173d8925}.card-ticket small{display:block;color:#ffcf28;font-size:11px;font-weight:900}.card-ticket strong{display:block;margin-top:12px;overflow:hidden;font-size:22px;letter-spacing:-1px;text-overflow:ellipsis;white-space:nowrap}.card-ticket p{position:absolute;left:20px;bottom:16px;margin:0;color:#ffffffa6;font-size:10px}.barcode{position:absolute;right:16px;bottom:10px;color:#ffffffbf;font-size:12px;letter-spacing:-2px}.notch{position:absolute;top:76px;width:14px;height:14px;border-radius:50%;background:#f4f6fc}.notch.left{left:-7px}.notch.right{right:-7px}.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;border:0;background:transparent;font-size:9px}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}.section-header{display:flex;justify-content:space-between;align-items:center;margin:12px 0}.section-header>span{font-size:13px;font-weight:900}.sync-btn{padding:8px 11px;border:0;border-radius:9px;background:#172f6b;color:#fff;font-size:10px;font-weight:800}.sync-btn:disabled{opacity:.6}.sync-message{margin:10px 0 0;padding:9px 12px;border-radius:9px;background:#e8f1ff;color:#1a56db;font-size:10px;text-align:center}.sync-message.error{background:#ffebee;color:#c62828}
+.card-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:0 0 34px;background:#eef2f8;color:#10192d}
+.card-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;height:68px;padding:14px 20px 0}
+.card-header button{display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#fff;color:#193d82;font-size:24px;font-weight:700;box-shadow:0 5px 16px rgba(36,72,117,.07)}
+.card-header h1{margin:0;font-size:17px;font-weight:900;letter-spacing:-.03em;text-align:center}
+.card-overview{display:grid;grid-template-columns:118px minmax(0,1fr);align-items:center;gap:16px;margin:0 20px;padding:18px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
+.card-preview{position:relative;aspect-ratio:1.586/1;overflow:hidden;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--card-color,#173f8d),#102b70);color:var(--card-text,#fff);box-shadow:0 8px 18px rgba(16,43,112,.18)}
+.card-preview.has-photo{padding:0;background:#eef2f8}
+.card-preview img{width:100%;height:100%;object-fit:cover}
+.card-preview span{display:block;overflow:hidden;font-size:7px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+.card-preview i{display:block;width:20px;height:14px;margin-top:13px;border-radius:4px;background:linear-gradient(135deg,#f6db8a,#c6a651)}
+.card-preview b{position:absolute;right:10px;bottom:9px;font-size:6.5px;letter-spacing:.04em}
+.card-identity{min-width:0}
+.card-identity small,.card-identity strong,.card-identity p{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-identity small{color:#286ce0;font-size:8px;font-weight:800}
+.card-identity strong{margin-top:5px;color:#10192d;font-size:14px;font-weight:800}
+.card-identity p{margin:6px 0 0;color:#94a3b8;font-size:8px}
+.quick-actions{margin:12px 20px 0}
+.quick-actions button{display:flex;width:100%;min-height:42px;align-items:center;justify-content:center;gap:6px;border-radius:13px;background:#fff;color:#173f8d;font-size:11px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04)}
+.quick-actions button:disabled{opacity:.55}.quick-actions span{color:#286ce0;font-size:15px}
+.sync-message{margin:10px 20px 0;padding:9px 12px;border-radius:9px;background:#eaf2ff;color:#173f8d;font-size:10px;text-align:center}.sync-message.error{background:#ffebee;color:#c62828}
+.history-panel{margin:16px 20px 0;padding:20px 18px 4px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
+.history-title{display:flex;align-items:flex-end;justify-content:space-between}.history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}.history-title h2{margin:3px 0 0;color:#10192d;font-size:16px;font-weight:900}.history-title>span{color:#94a3b8;font-size:10px;font-weight:700}
+.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin:15px 0;padding:10px 12px;border:1px solid #e7edf9;border-radius:12px;background:#f7f9fd}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;border:0;background:transparent;color:#10192d;font-size:9px;font-weight:700}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}
+.history-panel :deep(.transaction-groups section){margin:0 0 20px}.history-panel :deep(.transaction-groups h3){margin:0;padding:12px 2px 9px;border-bottom:1px solid #eef1f6;color:#7186aa;font-size:11px;font-weight:800}.history-panel :deep(.transaction-groups section.without-icons button){grid-template-columns:minmax(0,1fr) auto;gap:10px;margin:0;padding:14px 2px;border:0;border-bottom:1px solid #eef1f6;border-radius:0;box-shadow:none}.history-panel :deep(.transaction-groups .dot){display:none}.history-panel :deep(.transaction-groups span b){color:#10192d;font-size:12px;font-weight:700}.history-panel :deep(.transaction-groups span small){max-width:190px;margin-top:5px;color:#94a3b8;font-size:8.5px}.history-panel :deep(.transaction-groups strong){font-size:12px;font-weight:800}.history-panel :deep(.transaction-groups time){margin-top:5px;color:#94a3b8;font-size:8.5px}.history-panel :deep(.transaction-groups .withdrawal){color:#e8484f}
 </style>
