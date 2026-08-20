@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import tripassAppIcon from '@/assets/brand/tripass-app-icon.png'
+import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent.png'
 
 const router = useRouter()
 
@@ -150,9 +151,12 @@ function onTouchEnd() {
                   <div class="brand-logo-stage">
                     <span class="brand-logo-halo" aria-hidden="true"></span>
                     <span class="brand-app-icon-wrap">
-                      <img class="brand-app-icon" :src="tripassAppIcon" alt="TRIPASS" />
-                      <i class="brand-plane-motion" aria-hidden="true"></i>
+                      <img class="brand-app-icon" :src="tripassTransparentSymbol" alt="TRIPASS" />
                     </span>
+                    <span class="logo-takeoff-route" aria-hidden="true"></span>
+                    <svg class="logo-takeoff-plane" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
+                    </svg>
                     <strong class="brand-name">TRIPASS</strong>
                   </div>
                 </div>
@@ -1178,16 +1182,16 @@ function onTouchEnd() {
   z-index: 2;
   width: 94px;
   height: 94px;
-  border-radius: 23px;
-  box-shadow: 0 20px 36px rgba(2, 17, 55, 0.38);
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(2, 17, 55, 0.32));
 }
 
 .brand-app-icon-wrap {
   position: relative;
   z-index: 2;
   display: block;
-  width: 94px;
-  height: 94px;
+  width: 112px;
+  height: 112px;
 }
 
 .brand-app-icon-wrap .brand-app-icon {
@@ -1195,34 +1199,43 @@ function onTouchEnd() {
   height: 100%;
 }
 
-.brand-plane-motion {
+.logo-takeoff-route {
   position: absolute;
-  top: 22px;
-  right: 15px;
-  z-index: 3;
-  width: 32px;
-  height: 2px;
-  border-radius: 99px;
+  top: 70px;
+  left: calc(50% + 24px);
+  z-index: 1;
+  width: 230px;
+  height: 100px;
+  overflow: hidden;
   opacity: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 212, 94, 0.95), #fff);
-  transform: rotate(-39deg);
-  transform-origin: right center;
-  filter: drop-shadow(0 0 5px rgba(255, 212, 94, 0.72));
+  border-top: 2px dashed rgba(255, 212, 94, 0.72);
+  border-radius: 50% 0 0;
+  transform: rotate(-23deg) scaleX(0);
+  transform-origin: left top;
 }
 
-.brand-plane-motion::before,
-.brand-plane-motion::after {
+.logo-takeoff-route::after {
   position: absolute;
-  right: 3px;
-  width: 20px;
+  top: -1px;
+  left: 0;
+  width: 100%;
   height: 1px;
-  border-radius: inherit;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.78));
+  background: linear-gradient(90deg, rgba(255, 212, 94, 0.85), transparent 72%);
   content: '';
 }
 
-.brand-plane-motion::before { top: -5px; }
-.brand-plane-motion::after { top: 5px; width: 13px; }
+.logo-takeoff-plane {
+  position: fixed;
+  top: 48%;
+  left: 50%;
+  z-index: 8;
+  width: 27px;
+  height: 27px;
+  opacity: 0;
+  color: #fff;
+  filter: drop-shadow(0 5px 8px rgba(2, 17, 55, 0.4));
+  pointer-events: none;
+}
 
 .brand-name,
 .ready-logo-lockup strong {
@@ -1240,8 +1253,12 @@ function onTouchEnd() {
     app-icon-float 3.6s ease-in-out 850ms infinite;
 }
 
-.slide.is-active .brand-plane-motion {
-  animation: logo-plane-streak 2.4s ease-in-out 600ms infinite;
+.slide.is-active .logo-takeoff-route {
+  animation: logo-route-draw 3.4s cubic-bezier(0.22, 1, 0.36, 1) 700ms infinite;
+}
+
+.slide.is-active .logo-takeoff-plane {
+  animation: logo-plane-takeoff 3.4s cubic-bezier(0.22, 1, 0.36, 1) 700ms infinite;
 }
 
 .saving-visual {
@@ -1581,11 +1598,19 @@ function onTouchEnd() {
   50% { transform: translateY(-6px); }
 }
 
-@keyframes logo-plane-streak {
-  0%, 20% { opacity: 0; transform: translate(-18px, 15px) rotate(-39deg) scaleX(0.2); }
-  38% { opacity: 0.95; }
-  64% { opacity: 0.32; transform: translate(8px, -8px) rotate(-39deg) scaleX(1); }
-  78%, 100% { opacity: 0; transform: translate(15px, -15px) rotate(-39deg) scaleX(0.35); }
+@keyframes logo-route-draw {
+  0%, 15% { opacity: 0; transform: rotate(-23deg) scaleX(0); }
+  30% { opacity: 0.9; }
+  62% { opacity: 0.7; transform: rotate(-23deg) scaleX(1); }
+  82%, 100% { opacity: 0; transform: rotate(-23deg) scaleX(1); }
+}
+
+@keyframes logo-plane-takeoff {
+  0%, 13% { opacity: 0; transform: translate(-16px, 18px) rotate(45deg) scale(0.7); }
+  22% { opacity: 1; }
+  58% { opacity: 1; transform: translate(95px, -74px) rotate(45deg) scale(1); }
+  82% { opacity: 0; transform: translate(56vw, -38vh) rotate(48deg) scale(0.82); }
+  100% { opacity: 0; transform: translate(56vw, -38vh) rotate(48deg) scale(0.82); }
 }
 
 @keyframes ai-orbit { to { transform: rotate(360deg); } }
@@ -1602,7 +1627,7 @@ function onTouchEnd() {
   .slide-eyebrow + .visual-stage { min-height: 190px; }
   .brand-logo-stage { height: 150px; }
   .brand-app-icon { width: 82px; height: 82px; }
-  .brand-app-icon-wrap { width: 82px; height: 82px; }
+  .brand-app-icon-wrap { width: 98px; height: 98px; }
   .saving-visual { gap: 8px; }
   .monthly-saving-card { padding: 15px 17px 14px; }
   .saving-goal-card, .budget-usage-card { padding: 13px 16px; }
@@ -1617,7 +1642,8 @@ function onTouchEnd() {
   .route-plane svg,
   .slide.is-active .brand-logo,
   .slide.is-active .brand-app-icon,
-  .slide.is-active .brand-plane-motion,
+  .slide.is-active .logo-takeoff-route,
+  .slide.is-active .logo-takeoff-plane,
   .slide.is-active .brand-logo-halo,
   .slide.is-active .brand-flight-path span,
   .slide.is-active .brand-flight-path b,
