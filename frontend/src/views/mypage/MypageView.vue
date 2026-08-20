@@ -251,12 +251,17 @@ const notificationRows = [
 
 <style scoped>
 .mypage-page {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 390px;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  transform: translateX(-50%);
 }
 .mypage-scroll {
   flex: 1;
@@ -363,6 +368,7 @@ const notificationRows = [
   z-index: 60;
   width: 100%;
   flex: none;
+  padding-top: env(safe-area-inset-top, 0px);
   background: #eef2f8;
 }
 .mypage-header-eyebrow {
