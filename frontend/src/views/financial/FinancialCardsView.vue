@@ -55,7 +55,11 @@ const currencyOptions = [
   { code: 'SEK', name: '스웨덴 크로나' },
   { code: 'DKK', name: '덴마크 크로네' },
   { code: 'NOK', name: '노르웨이 크로네' },
-]
+].sort((left, right) => {
+  if (!left.code) return -1
+  if (!right.code) return 1
+  return left.name.localeCompare(right.name, 'ko-KR')
+})
 
 const companyColors = {
   KB국민카드: '#e4ad00',
