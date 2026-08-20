@@ -5,6 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import { useSavingMissionsStore } from '@/stores/savingMissions'
 import { useMonthlyFundStore } from '@/stores/monthlyFund'
+import { useTravelStore } from '@/stores/travel'
 import { getAccounts } from '@/api/asset'
 import { getCards } from '@/api/card'
 import foodIcon from '@/assets/icons/food.svg'
@@ -24,6 +25,8 @@ const route = useRoute()
 const router = useRouter()
 const missionStore = useSavingMissionsStore()
 const monthlyFundStore = useMonthlyFundStore()
+const travelStore = useTravelStore()
+const isTraveling = computed(() => travelStore.lifecycle?.lifecycle === 'TRAVELING')
 const linkedAccountCount = ref(0)
 const linkedCardCount = ref(0)
 const financialSourcesLoading = ref(true)
@@ -218,6 +221,7 @@ const analysisMonthLabel = computed(() => monthLabel(missionStore.analysisYearMo
 const targetMonthLabel = computed(() => monthLabel(missionStore.targetYearMonth))
 
 onMounted(async () => {
+  await travelStore.loadLifecycle()
   await loadFinancialSourcesAndMissions()
   // 리포트/홈의 '추천 미션 보러가기'는 쿼리로 바로 선택 화면(showSelection)을 띄우는데,
   // 이미 진행 중인 미션이 있는 상태에서는 store의 addingMissions 플래그가 없으면
@@ -415,7 +419,14 @@ function closeSelectionFlow() {
 
       <div :class="{ 'report-modal-body': showSelectionFlow }">
 
-    <section v-if="financialSourcesLoading" class="state-card loading-card">
+    <section v-if="isTraveling" class="state-card travel-mission-lock">
+      <span>✈</span>
+      <h2>현재 여행 중이어서<br>진행할 수 있는 미션이 없어요</h2>
+      <p>완료한 미션은 마이페이지의 여행 관리에서 확인할 수 있어요.</p>
+      <button type="button" @click="router.push(`/mypage/travel/${travelStore.lifecycle?.tripId}`)">완료 미션 보기</button>
+    </section>
+
+    <section v-else-if="financialSourcesLoading" class="state-card loading-card">
       <span class="loading-plane">✈</span>
       <h2>AI 미션을 준비하고 있어요</h2>
       <p>지난달 소비 분석과 저장된 미션을 확인하고 있어요.</p>

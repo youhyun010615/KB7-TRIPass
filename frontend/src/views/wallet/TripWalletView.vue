@@ -364,13 +364,32 @@ async function confirmUnlinkTravelCard() {
           <strong>{{ wallet.balance.toLocaleString('ko-KR') }}</strong>
           <span>원</span>
         </div>
-        <p class="emergency">비상금: {{ money(wallet.emergencyAmount) }}</p>
+        <p class="emergency">여행 중에는 목표 자금 → 비상금 → 추가 최우기 순으로 사용해요.</p>
         <div class="wallet-actions">
           <button type="button" @click="openTransfer('charge')">채우기</button>
           <button type="button" @click="openTransfer('withdraw')">빼기</button>
           <button type="button" class="history-button" @click="router.push('/wallet/ledgers')">내역</button>
         </div>
       </div>
+    </section>
+
+    <section class="wallet-status white-card">
+      <div class="section-title">
+        <div><small>TRAVEL FUND</small><h2>월렛 현황</h2></div>
+        <span v-if="wallet.overTargetSpentAmount > 0">목표 초과 지출 {{ money(wallet.overTargetSpentAmount) }}</span>
+      </div>
+      <div class="wallet-status-list">
+        <article>
+          <i class="goal">1</i><div><b>목표 금액</b><small>여행 시작 시 확정한 기준 금액</small></div><strong>{{ money(wallet.goalAvailableAmount) }}</strong>
+        </article>
+        <article>
+          <i class="reserve">2</i><div><b>비상금</b><small>목표를 초과해 모은 여유 자금</small></div><strong>{{ money(wallet.emergencyAmount) }}</strong>
+        </article>
+        <article>
+          <i class="charge">3</i><div><b>다른 계좌에서 추가</b><small>비상금 소진 후 최운 금액</small></div><strong>{{ money(wallet.externalChargeAmount) }}</strong>
+        </article>
+      </div>
+      <p class="wallet-status-note">환전은 월렛 내 자금 이동이며 지출로 계산하지 않아요.</p>
     </section>
 
     <section class="saving-card white-card">
@@ -827,4 +846,5 @@ async function confirmUnlinkTravelCard() {
 .wallet-actions button:first-child,
 .wallet-actions button:nth-child(2){background:#fff;box-shadow:0 4px 10px rgba(35,73,136,.1)}
 .wallet-actions .history-button{background:transparent;color:#4c6385}
+.wallet-status{padding:21px 18px}.wallet-status .section-title{display:flex;align-items:flex-end;justify-content:space-between}.wallet-status .section-title small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.wallet-status .section-title h2{font-size:20px}.wallet-status .section-title>span{max-width:132px;padding:6px 8px;border-radius:999px;background:#fff0ed;color:#e2513c;font-size:9px;font-weight:800;text-align:center}.wallet-status-list{display:grid;gap:10px;margin-top:17px}.wallet-status-list article{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:13px;border-radius:15px;background:#f7f9fd}.wallet-status-list i{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#eaf1ff;color:#245fbf;font-size:11px;font-style:normal;font-weight:900}.wallet-status-list i.reserve{background:#fff5d8;color:#bc8400}.wallet-status-list i.charge{background:#e6f7f3;color:#087f6a}.wallet-status-list div{display:grid;gap:2px}.wallet-status-list b{font-size:12px}.wallet-status-list small{font-size:9px;color:#8b98aa}.wallet-status-list strong{font-size:12px;color:#173f8d}.wallet-status-note{margin-top:13px;padding:10px 12px;border-radius:11px;background:#eef4ff;color:#607393;font-size:9px;line-height:1.45}
 </style>

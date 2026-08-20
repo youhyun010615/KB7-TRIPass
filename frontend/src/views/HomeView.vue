@@ -1,13 +1,17 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTravelModeStore } from '@/stores/travelMode'
 import BottomNav from '@/components/common/BottomNav.vue'
 import SavingsModeHome from '@/components/savings/SavingsModeHome.vue'
 import TravelModeHome from '@/components/travel/TravelModeHome.vue'
+import TravelEndingView from '@/views/travel/TravelEndingView.vue'
+import { useTravelStore } from '@/stores/travel'
 
 const authStore = useAuthStore()
 const travelModeStore = useTravelModeStore()
+const travelStore = useTravelStore()
+const lifecycleReady = ref(false)
 const isModeSwitching = ref(false)
 const nextMode = ref('travel')
 const userName = computed(() => authStore.user?.name ?? '권유현')
@@ -26,10 +30,18 @@ function switchMode(mode) {
     isModeSwitching.value = false
   }, 1000)
 }
+
+onMounted(async () => {
+  await travelStore.loadLifecycle()
+  if (travelStore.lifecycle?.lifecycle === 'TRAVELING') travelModeStore.setMode('travel')
+  if (travelStore.lifecycle?.lifecycle === 'REVIEW') travelModeStore.setMode('savings')
+  lifecycleReady.value = true
+})
 </script>
 
 <template>
-  <main class="app-home-shell min-h-screen pb-20">
+  <TravelEndingView v-if="lifecycleReady && travelStore.lifecycle?.endingReviewRequired" />
+  <main v-else class="app-home-shell min-h-screen pb-20">
     <SavingsModeHome
       v-if="travelModeStore.isSavingsMode"
       :on-switch-mode="switchMode"

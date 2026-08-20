@@ -20,7 +20,7 @@ const savingsNavItems = [
 const travelNavItems = [
   { name: '홈', path: '/', icon: 'home' },
   { name: '여행일정', path: '/schedule', icon: 'schedule' },
-  { name: '여행자금 체크', path: '/travel/funds', icon: 'asset' },
+  { name: '월렛', path: '/wallet', icon: 'wallet' },
   { name: '영수증', path: '/trips', icon: 'receipt', action: 'receipt' },
   { name: '마이페이지', path: '/mypage', icon: 'mypage' },
 ]

@@ -11,6 +11,9 @@ import {
   generateTripBudget,
   updateTripGoal,
   fetchBudgetCheck,
+  fetchCurrentTripLifecycle,
+  archiveTrip as archiveTripApi,
+  acknowledgeTripStartReport,
 } from '@/api/travel';
 
 import imageAE from '@/assets/countries/AE.webp';
@@ -297,6 +300,8 @@ export const useTravelStore = defineStore('travel', () => {
   const statusLoading = ref(false);
   const budgetCheckData = ref(null);
   const budgetLoading = ref(false);
+  const lifecycle = ref(null);
+  const lifecycleLoading = ref(false);
 
   const countryFlagMap = {
     프랑스: { code: 'fr', class: 'fi fi-fr', emoji: '🇫🇷' },
@@ -704,6 +709,36 @@ export const useTravelStore = defineStore('travel', () => {
     }
   }
 
+  async function loadLifecycle() {
+    lifecycleLoading.value = true;
+    try {
+      lifecycle.value = await fetchCurrentTripLifecycle();
+      return lifecycle.value;
+    } catch {
+      lifecycle.value = { lifecycle: 'NONE' };
+      return lifecycle.value;
+    } finally {
+      lifecycleLoading.value = false;
+    }
+  }
+
+  async function archiveCurrentTrip() {
+    if (!lifecycle.value?.tripId) return false;
+    await archiveTripApi(lifecycle.value.tripId);
+    initialized.value = false;
+    activeTrip.value = null;
+    tripId.value = null;
+    homeDashboard.value = null;
+    lifecycle.value = { lifecycle: 'ARCHIVED' };
+    return true;
+  }
+
+  async function acknowledgeStartReport() {
+    if (!lifecycle.value?.tripId || lifecycle.value.startReportAcknowledged) return;
+    await acknowledgeTripStartReport(lifecycle.value.tripId);
+    lifecycle.value = { ...lifecycle.value, startReportAcknowledged: true };
+  }
+
   async function loadHomeDashboard({ force = false } = {}) {
     if (homeDashboard.value && !force) return homeDashboard.value;
     homeLoading.value = true;
@@ -825,6 +860,8 @@ export const useTravelStore = defineStore('travel', () => {
     errorMessage,
     tripStatus,
     statusLoading,
+    lifecycle,
+    lifecycleLoading,
     totalTargetAmount,
     prepaidExpenseTotal,
     monthlySavingTarget,
@@ -840,6 +877,9 @@ export const useTravelStore = defineStore('travel', () => {
     countryFlagMap,
     loadCountries,
     loadActiveGoal,
+    loadLifecycle,
+    archiveCurrentTrip,
+    acknowledgeStartReport,
     loadHomeDashboard,
     loadTripStatus,
     loadBudgetCheck,

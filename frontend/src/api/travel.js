@@ -29,6 +29,21 @@ export async function fetchActiveTripGoal() {
   return unwrap(response);
 }
 
+export async function fetchCurrentTripLifecycle() {
+  const response = await api.get('/trips/current-lifecycle');
+  return unwrap(response);
+}
+
+export async function archiveTrip(tripId) {
+  const response = await api.post(`/trips/${tripId}/archive`);
+  return unwrap(response);
+}
+
+export async function acknowledgeTripStartReport(tripId) {
+  const response = await api.post(`/trips/${tripId}/start-report/acknowledge`);
+  return unwrap(response);
+}
+
 export async function fetchActiveTripHome() {
   const response = await api.get('/trips/active/home');
   return unwrap(response);
@@ -85,4 +100,3 @@ export async function fetchBudgetCheck(tripId) {
   const response = await api.get(`/trips/${tripId}/budget-check`);
   return unwrap(response);
 }
-

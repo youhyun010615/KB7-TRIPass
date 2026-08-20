@@ -25,6 +25,7 @@ function flagOf(countryName) {
 }
 
 const isEnded = computed(() => trip.value?.status === 'ENDED')
+const isTraveling = computed(() => trip.value?.status === 'TRAVELING')
 const countryFlags = computed(() => splitCountryNames(trip.value?.countryNames).map(flagOf))
 const countryLabel = computed(() => splitCountryNames(trip.value?.countryNames).join(' · '))
 
@@ -55,7 +56,8 @@ const menuItems = computed(() => {
   const tripId = trip.value?.tripId
   if (isEnded.value) {
     return [
-      { label: '여행 리포트', desc: '예산과 지출 분석', icon: 'report', path: `/mypage/reports/post-trip?tripId=${tripId}` },
+      { label: '여행 저축 리포트', desc: '여행을 위해 모은 기록', icon: 'report', path: `/mypage/reports/pre-trip?tripId=${tripId}` },
+      { label: '여행 리포트', desc: '예산과 실제 지출 분석', icon: 'report', path: `/mypage/reports/post-trip?tripId=${tripId}` },
       { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}` },
       { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/schedule?tripId=${tripId}` },
       { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${tripId}/receipts` },
@@ -63,7 +65,8 @@ const menuItems = computed(() => {
     ]
   }
   return [
-    { label: '여행 리포트', desc: '예산과 지출 분석', icon: 'report', path: `/mypage/reports/pre-trip?tripId=${tripId}`, badge: '준비 중' },
+    { label: '여행 저축 리포트', desc: '여행을 위해 모은 기록', icon: 'report', path: `/mypage/reports/pre-trip?tripId=${tripId}`, badge: isTraveling.value ? '열람 가능' : '준비 중' },
+    { label: '여행 리포트', desc: '예산과 실제 지출 분석', icon: 'report', path: `/mypage/reports/post-trip?tripId=${tripId}`, badge: isTraveling.value ? '집계 중' : '준비 중' },
     { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}`, badge: `${report.value?.checklistCompleted ?? 0}/${report.value?.checklistTotal ?? 0}` },
     { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/schedule?tripId=${tripId}`, badge: `${report.value?.scheduleCount ?? 0}개` },
     { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${tripId}/receipts`, badge: `${receipts.value.length}장` },
@@ -124,8 +127,8 @@ onMounted(async () => {
         <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
 
         <div class="relative flex items-center justify-between">
-          <p class="text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">{{ isEnded ? 'TRIP COMPLETED' : 'MY TRIP ARCHIVE' }}</p>
-          <span class="text-[10.5px] font-bold" :style="isEnded ? 'color:#FFD466' : 'color:rgba(255,255,255,0.55)'">{{ isEnded ? '여행 완료' : '준비 중' }}</span>
+          <p class="text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">{{ isEnded ? 'TRIP COMPLETED' : isTraveling ? 'NOW TRAVELING' : 'MY TRIP ARCHIVE' }}</p>
+          <span class="text-[10.5px] font-bold" :style="isEnded ? 'color:#FFD466' : 'color:rgba(255,255,255,0.75)'">{{ isEnded ? '여행 완료' : isTraveling ? '여행 중' : '준비 중' }}</span>
         </div>
 
         <div class="relative flex items-center gap-2 mt-3 text-lg">

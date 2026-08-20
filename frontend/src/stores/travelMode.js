@@ -17,16 +17,19 @@ export const useTravelModeStore = defineStore('travelMode', () => {
 
   // 개발·시연 환경에서는 여행 준비/여행 모드를 자유롭게 오가며 화면을 검증한다.
   // 운영 전환 시 false로 변경하면 등록한 여행 기간에만 진입한다.
-  const demoMode = ref(true);
+  const demoMode = ref(false);
   const travelStartDate = ref('2026-08-15');
   const travelEndDate = ref('2026-08-29');
 
   const isTravelMode = computed(() => mode.value === 'travel');
   const isSavingsMode = computed(() => mode.value === 'savings');
   const isWithinTravelPeriod = computed(() => {
+    const travelStore = useTravelStore();
     const today = new Date();
-    const start = new Date(`${travelStartDate.value}T00:00:00`);
-    const end = new Date(`${travelEndDate.value}T23:59:59`);
+    const startValue = travelStore.activeTrip?.startDate || travelStartDate.value;
+    const endValue = travelStore.activeTrip?.endDate || travelEndDate.value;
+    const start = new Date(`${startValue}T00:00:00`);
+    const end = new Date(`${endValue}T23:59:59`);
     return today >= start && today <= end;
   });
   const canEnterTravelMode = computed(

@@ -266,6 +266,9 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
   const balance = ref(Number(saved?.balance ?? 0))
   const targetAmount = ref(toPositiveNumber(saved?.targetAmount, DEFAULT_TARGET_AMOUNT))
   const emergencyAmount = ref(Number(saved?.emergencyAmount ?? 0))
+  const goalAvailableAmount = ref(Number(saved?.goalAvailableAmount ?? 0))
+  const externalChargeAmount = ref(Number(saved?.externalChargeAmount ?? 0))
+  const overTargetSpentAmount = ref(Number(saved?.overTargetSpentAmount ?? 0))
   const apiSavingRate = ref(saved?.apiSavingRate ?? null)
   const linkedAccount = ref(saved?.linkedAccount ?? '')
   const linkedAccounts = ref(saved?.linkedAccounts ?? [])
@@ -303,6 +306,9 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     balance.value = toNumber(data?.balanceAmount)
     targetAmount.value = toPositiveNumber(data?.targetAmount, DEFAULT_TARGET_AMOUNT)
     emergencyAmount.value = toNumber(data?.emergencyAmount)
+    goalAvailableAmount.value = toNumber(data?.goalAvailableAmount ?? Math.min(balance.value, targetAmount.value))
+    externalChargeAmount.value = toNumber(data?.externalChargeAmount)
+    overTargetSpentAmount.value = toNumber(data?.overTargetSpentAmount)
     apiSavingRate.value = data?.savingRate ?? null
     linkedAccount.value = primaryAccount
       ? `${primaryAccount.bankName ?? ''} ${primaryAccount.maskedAccountNumber ?? ''}`.trim()
@@ -644,6 +650,9 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     balance,
     targetAmount,
     emergencyAmount,
+    goalAvailableAmount,
+    externalChargeAmount,
+    overTargetSpentAmount,
     linkedAccount,
     linkedAccounts,
     accountOptions,

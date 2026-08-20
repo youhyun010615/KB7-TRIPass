@@ -70,6 +70,22 @@ const calculatorCountryCode = ref(null);
 // 최초 진입 시 여행 정보를 불러오는 동안 "등록된 여행이 없어요" 빈 화면이
 // 잠깐 깜빡이며 보이지 않도록 로딩이 끝날 때까지는 아무 것도 그리지 않는다.
 const isInitialLoading = ref(true);
+const showStartReportModal = ref(false);
+
+function startReportSeenKey(id) {
+  return `tripStartReportSeen:${id}`;
+}
+
+async function closeStartReportModal() {
+  if (tripId.value) localStorage.setItem(startReportSeenKey(tripId.value), 'true');
+  showStartReportModal.value = false;
+  await travelStore.acknowledgeStartReport().catch(() => {});
+}
+
+async function openStartSavingReport() {
+  await closeStartReportModal();
+  router.push(`/mypage/reports/pre-trip?tripId=${tripId.value}`);
+}
 
 // ISO 2자리 국가코드를 유니코드 국기 이모지로 변환 (텍스트로 그대로 표시 가능)
 function flagEmoji(iso2) {
@@ -390,6 +406,11 @@ onMounted(async () => {
       if (selectedCountryId.value !== 'all') {
         await loadData();
       }
+
+      const lifecycle = travelStore.lifecycle || await travelStore.loadLifecycle();
+      showStartReportModal.value = lifecycle?.startReportAvailable === true
+        && lifecycle?.startReportAcknowledged !== true
+        && localStorage.getItem(startReportSeenKey(tripId.value)) !== 'true';
     }
   } finally {
     isInitialLoading.value = false;
@@ -701,6 +722,19 @@ async function switchMode(mode) {
 
 <template>
   <section class="travel-home">
+    <Transition name="start-report-fade">
+      <div v-if="showStartReportModal" class="start-report-backdrop" role="dialog" aria-modal="true">
+        <article class="start-report-modal">
+          <span class="start-report-label">YOUR SAVING JOURNEY</span>
+          <div class="start-report-plane" aria-hidden="true">✈</div>
+          <h2>기다리던 여행이 시작되었어요!</h2>
+          <p>여행을 위해 차곡차곡 저축한 기록을<br>확인해 보세요.</p>
+          <button type="button" class="start-report-primary" @click="openStartSavingReport">여행 저축 리포트 보기</button>
+          <button type="button" class="start-report-secondary" @click="closeStartReportModal">여행 시작하기</button>
+          <small>마이페이지 → 여행 관리 → 해당 여행 → 여행 저축 리포트에서 다시 볼 수 있어요.</small>
+        </article>
+      </div>
+    </Transition>
     <div ref="travelHeaderEl" class="savings-home-header">
       <div class="savings-header-row">
         <div class="mode-switch-control">
@@ -2669,4 +2703,15 @@ async function switchMode(mode) {
   color: #8c98a9;
   font-size: 11px;
 }
+.start-report-backdrop{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:24px;background:#07183fb8;backdrop-filter:blur(7px)}
+.start-report-modal{width:min(100%,342px);padding:30px 22px 22px;border-radius:26px;background:linear-gradient(160deg,#fff 0%,#edf4ff 100%);text-align:center;box-shadow:0 28px 70px #06153680}
+.start-report-label{font-size:9px;font-weight:900;letter-spacing:.16em;color:#2f6fed}
+.start-report-plane{width:68px;height:68px;margin:17px auto 13px;display:grid;place-items:center;border-radius:50%;background:#17499c;color:#ffd466;font-size:29px;box-shadow:0 12px 24px #17499c3d}
+.start-report-modal h2{font-size:20px;font-weight:950;color:#10192b}
+.start-report-modal p{margin:9px 0 20px;font-size:13px;line-height:1.7;color:#637087}
+.start-report-modal button{width:100%;height:49px;border-radius:15px;font-size:13px;font-weight:900}
+.start-report-primary{border:0;background:#17499c;color:#fff}
+.start-report-secondary{margin-top:8px;border:1px solid #ccd8ea;background:#fff;color:#24426f}
+.start-report-modal small{display:block;margin-top:14px;font-size:9px;line-height:1.5;color:#8995a8}
+.start-report-fade-enter-active,.start-report-fade-leave-active{transition:opacity .2s ease}.start-report-fade-enter-from,.start-report-fade-leave-to{opacity:0}
 </style>
