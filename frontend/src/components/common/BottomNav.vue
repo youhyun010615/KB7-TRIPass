@@ -12,7 +12,7 @@ import {
 
 import ExchangeRateIcon from '@/components/common/ExchangeRateIcon.vue'
 import { useTravelModeStore } from '@/stores/travelMode'
-import { getTravelCountryColors, useTravelStore } from '@/stores/travel'
+import { useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const route = useRoute()
@@ -54,47 +54,6 @@ const travelNavItems = [
 const navItems = computed(() =>
   travelModeStore.isTravelMode ? travelNavItems : savingsNavItems,
 )
-
-const tripCountries = computed(() => {
-  const dashboardCountries = travelStore.homeDashboard?.countries || []
-  if (dashboardCountries.length) return dashboardCountries
-  return travelStore.activeTrip?.countries || []
-})
-
-const selectedTripCountry = computed(() => {
-  const selectedId = travelModeStore.isTravelMode
-    ? travelModeStore.selectedDestination
-    : travelStore.homeSelectedCountryId
-
-  if (selectedId == null || selectedId === 'all') return null
-  return tripCountries.value.find(
-    country => String(country.tripCountryId) === String(selectedId),
-  ) ?? null
-})
-
-function colorLuminance(hex) {
-  const clean = String(hex || '').replace('#', '')
-  if (!/^[0-9a-f]{6}$/i.test(clean)) return 0
-  const [red, green, blue] = [0, 2, 4].map(
-    offset => Number.parseInt(clean.slice(offset, offset + 2), 16) / 255,
-  )
-  return (red * 0.2126) + (green * 0.7152) + (blue * 0.0722)
-}
-
-const navCountryName = computed(() => selectedTripCountry.value?.countryName || '')
-const navTheme = computed(() => {
-  const base = getTravelCountryColors(navCountryName.value).headerBg || '#174b9c'
-  const isLight = colorLuminance(base) > 0.62
-  return {
-    active: base,
-    activeIcon: isLight ? '#17315f' : '#ffffff',
-  }
-})
-const navThemeStyle = computed(() => ({
-  '--nav-icon-color': '#8d9bb1',
-  '--nav-active-icon-color': navTheme.value.activeIcon,
-  '--nav-orb-color': navTheme.value.active,
-}))
 
 function isActive(path) {
   if (path === '/') return route.path === '/'
@@ -254,7 +213,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <nav class="bottom-nav" :style="navThemeStyle" aria-label="주요 메뉴">
+  <nav class="bottom-nav" aria-label="주요 메뉴">
     <div class="nav-shell">
       <svg
           class="nav-background"
@@ -295,6 +254,7 @@ onBeforeUnmount(() => {
         <span class="nav-icon" :style="navIconStyle(index)">
           <component :is="item.icon" :size="26" :stroke-width="2" />
         </span>
+        <span class="nav-label">{{ item.name }}</span>
       </button>
     </div>
   </nav>
@@ -356,13 +316,12 @@ onBeforeUnmount(() => {
   transform: translateX(-50%) translateY(var(--orb-y)) scale(var(--orb-scale));
   border: 6px solid #fff;
   border-radius: 50%;
-  background-color: var(--nav-orb-color);
-  color: var(--nav-active-icon-color);
+  background-color: #174b9c;
+  color: #fff;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, .14),
     0 8px 17px rgba(35, 55, 90, .24);
   will-change: opacity, transform;
-  transition: background-color .72s cubic-bezier(.22, .82, .2, 1), color .5s ease;
 }
 .nav-item {
   position: relative;
@@ -373,8 +332,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--nav-icon-color);
-  transition: color .5s ease;
+  gap: 1px;
+  color: #8d9bb1;
+  transition: color .25s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .nav-icon {
@@ -385,6 +345,18 @@ onBeforeUnmount(() => {
   opacity: var(--icon-opacity);
   transform: translateY(var(--icon-press-y)) scale(var(--icon-scale));
   will-change: opacity, transform;
+}
+.nav-label {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-item.active {
+  color: #174b9c;
 }
 .nav-item:active:not(.active) .nav-icon {
   transform: scale(.86);
