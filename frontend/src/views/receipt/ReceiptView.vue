@@ -724,14 +724,16 @@ onMounted(loadPage)
               @click="openReceipt(item.id)"
           >
             <span class="category-icon">
-              <Users v-if="item.splitCount > 1" :size="20" :stroke-width="2.2" />
-              <ReceiptText v-else :size="20" :stroke-width="2.2" />
+              <ReceiptText :size="20" :stroke-width="2.2" />
             </span>
 
             <div class="receipt-info">
               <div class="merchant-line">
                 <b>{{ item.merchant }}</b>
-                <span v-if="item.splitCount > 1">공동결제 {{ item.splitCount }}명</span>
+                <span v-if="item.splitCount > 1">
+                  <Users :size="11" :stroke-width="2.4" />
+                  공동결제 {{ item.splitCount }}명
+                </span>
               </div>
               <small>
                 {{ item.countryName }}
@@ -1945,7 +1947,10 @@ onMounted(loadPage)
 .merchant-line b { min-width: 0; }
 
 .merchant-line > span {
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  gap: 3px;
   padding: 4px 7px;
   border-radius: 999px;
   background: #fff0ae;
