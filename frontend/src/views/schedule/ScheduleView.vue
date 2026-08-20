@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
@@ -27,6 +27,11 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => window.clearInterval(scheduleClockTimer));
+
+onActivated(async () => {
+  await positionTimelineAtNext();
+  positionCalendarAtToday();
+});
 
 function scheduleTimestamp(item) {
   const timestamp = new Date(`${item.date}T${item.time || '00:00'}:00`).getTime();
@@ -70,6 +75,11 @@ const selectedDateGroup = computed(() =>
   timelineGroups.value.find((group) => group.date === selectedCalendarDate.value),
 );
 const selectedDateItems = computed(() => selectedDateGroup.value?.items || []);
+const nextUpcomingSchedule = computed(() =>
+  store.sortedSchedules.find(
+    (item) => item.date !== selectedCalendarDate.value && !isScheduleCompleted(item),
+  ),
+);
 const upcomingTimelineGroups = computed(() =>
   timelineGroups.value
     .filter((group) => group.date !== selectedCalendarDate.value)
@@ -158,8 +168,13 @@ async function positionTimelineAtNext() {
   if (!list) return;
 
   await nextTick();
-  const nextAnchor = list.querySelector('[data-next-anchor="true"]');
-  list.scrollTop = nextAnchor ? Math.max(0, nextAnchor.offsetTop - 10) : 0;
+  await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  const nextGroup = list.querySelector('[data-next-group="true"]');
+  list.scrollTop = nextGroup ? Math.max(0, nextGroup.offsetTop - 2) : 0;
+}
+
+function groupHasNextSchedule(group) {
+  return group.items.some((item) => item.id === nextUpcomingSchedule.value?.id);
 }
 
 function positionCalendarAtToday() {
@@ -294,6 +309,7 @@ function showPastSchedules() {
           class="date-group"
           :class="{ completed: group.isCompleted }"
           :data-date="group.date"
+          :data-next-group="groupHasNextSchedule(group) ? 'true' : null"
         >
           <h3>
             {{ dateLabel(group.date) }}
