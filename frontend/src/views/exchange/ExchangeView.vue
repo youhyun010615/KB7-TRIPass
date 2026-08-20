@@ -367,9 +367,9 @@ header h1 {
   min-width: 0;
   min-height: 58px;
   padding: 9px 12px;
-  border: 0;
+  border: 1px solid #bcd2ff;
   border-radius: 14px;
-  background: #fff;
+  background: linear-gradient(150deg, #eff5ff 0%, #e6f0ff 100%);
   box-shadow: 0 8px 22px rgba(23, 43, 77, .055);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -377,7 +377,7 @@ header h1 {
 }
 .action-card-btn:active {
   transform: scale(0.98);
-  background: #f8fafc;
+  background: #e3eeff;
 }
 .icon-circle {
   display: flex;
@@ -393,12 +393,12 @@ header h1 {
   height: 18px;
 }
 .icon-circle.primary {
-  background: #eaf1ff;
-  color: #2f6fea;
+  background: #d8e7ff;
+  color: #173f8d;
 }
 .icon-circle.secondary {
-  background: #fff3d9;
-  color: #d89000;
+  background: #d8e7ff;
+  color: #173f8d;
 }
 .btn-text {
   display: flex;
@@ -408,7 +408,7 @@ header h1 {
 .btn-text strong {
   font-size: 12px;
   font-weight: 800;
-  color: #10192d;
+  color: #173f8d;
   white-space: nowrap;
 }
 .btn-text p {
