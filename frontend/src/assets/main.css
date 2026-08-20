@@ -1,15 +1,26 @@
 @import 'tailwindcss';
 
 html {
-  touch-action: pan-x pan-y;
   overscroll-behavior: none;
+  /* 데스크톱에서 스크롤바가 고정 헤더 위까지 두껍게 걸쳐 보이지 않도록 얇고 옅게. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 63, 141, 0.25) transparent;
 }
 
 body {
   word-break: keep-all;
   overflow-wrap: break-word;
-  touch-action: pan-x pan-y;
   overscroll-behavior: none;
+}
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(23, 63, 141, 0.25);
+  border-radius: 999px;
 }
 
 /* 국기 유니코드 이모지 대신 flag-icons 라이브러리를 쓸 때 공통으로 붙이는 크기 규칙.
