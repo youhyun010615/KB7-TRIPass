@@ -5,7 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
-import { useTravelStore } from '@/stores/travel';
+import { flagIconClass, useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const store = useTravelScheduleStore();
@@ -224,12 +224,12 @@ function showPastSchedules() {
       <div class="trip-route">
         <div>
           <small>{{ firstCountry?.name }}</small>
-          <strong>{{ firstCountry?.flag }} {{ firstCountry?.code }}</strong>
+          <strong><span v-if="firstCountry" :class="flagIconClass(firstCountry.code)" class="fi-inline route-flag" /> {{ firstCountry?.code }}</strong>
         </div>
         <span class="route-flight"><i :style="{ left: `${tripProgress}%` }">✈</i></span>
         <div class="route-end">
           <small>{{ lastCountry?.name }}</small>
-          <strong>{{ lastCountry?.code }} {{ lastCountry?.flag }}</strong>
+          <strong>{{ lastCountry?.code }} <span v-if="lastCountry" :class="flagIconClass(lastCountry.code)" class="fi-inline route-flag" /></strong>
         </div>
       </div>
       <p>{{ store.travelStart }} — {{ store.travelEnd }} · {{ travel.tripName || '나의 여행' }}</p>
@@ -836,4 +836,5 @@ function showPastSchedules() {
   width: calc(100% - 36px);
   margin: 10px 18px;
 }
+.route-flag{display:inline-block;width:27px;height:18px;border-radius:3px;background-size:cover;box-shadow:0 2px 5px rgba(0,0,0,.22);vertical-align:middle}
 </style>

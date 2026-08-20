@@ -23,6 +23,7 @@ import {
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
+import { flagIconClass } from '@/stores/travel'
 
 import {
   getReceiptDates,
@@ -79,7 +80,7 @@ const countryCodeFallback = {
   베트남: 'VN', 싱가포르: 'SG', 대만: 'TW', 중국: 'CN',
 }
 
-function flagEmoji(country) {
+function countryIsoCode(country) {
   const code = String(
       country?.countryCode ||
       country?.code ||
@@ -87,15 +88,11 @@ function flagEmoji(country) {
       countryCodeFallback[country?.countryName] ||
       '',
   ).toUpperCase()
-
-  if (!/^[A-Z]{2}$/.test(code)) return '🌍'
-  return [...code]
-      .map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0)))
-      .join('')
+  return /^[A-Z]{2}$/.test(code) ? code : 'UN'
 }
 
 const tripCountryFlags = computed(() =>
-    (trip.value?.countries || []).slice(0, 3).map(flagEmoji),
+    (trip.value?.countries || []).slice(0, 3).map(country => flagIconClass(countryIsoCode(country))),
 )
 
 const countries = computed(() => {
@@ -584,7 +581,7 @@ onMounted(loadPage)
           <h2>
             {{ tripTitle }}
             <span class="trip-country-flags" aria-label="여행 국가">
-              <i v-for="(flag, index) in tripCountryFlags" :key="`${flag}-${index}`">{{ flag }}</i>
+              <i v-for="(flag, index) in tripCountryFlags" :key="`${flag}-${index}`" :class="flag" />
             </span>
           </h2>
           <small>{{ formatTripDateRange() }}</small>
@@ -2089,7 +2086,11 @@ onMounted(loadPage)
 
 .trip-country-flags { display: inline-flex; align-items: center; gap: 3px; }
 .trip-country-flags i {
-  font-size: 14px;
+  display: block;
+  width: 25px;
+  height: 17px;
+  border-radius: 3px;
+  background-size: cover;
   font-style: normal;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .18));
 }

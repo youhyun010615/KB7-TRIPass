@@ -2412,8 +2412,13 @@ async function switchMode(mode) {
   line-height: 1.15;
 }
 .trip-country-flag {
+  display: inline-block;
+  width: 28px;
+  height: 19px;
   margin-right: 6px;
-  font-size: 20px;
+  border-radius: 3px;
+  background-size: cover;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .18);
 }
 .trip-day-count {
   color: #ffd466;

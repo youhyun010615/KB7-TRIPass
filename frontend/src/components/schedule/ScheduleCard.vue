@@ -60,7 +60,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   text-align: left;
   touch-action: pan-y;
 }
-.schedule-flag-wrap{display:grid;width:32px;height:32px;place-items:center;align-self:start;overflow:hidden;border-radius:50%;background:#eaf1ff;box-shadow:0 2px 7px rgba(11,42,107,.12)}.schedule-flag{width:32px;height:32px;border-radius:50%;background-size:cover}.schedule-flag-fallback{font-size:16px}
+.schedule-flag-wrap{display:grid;width:34px;height:26px;place-items:center;align-self:start;overflow:hidden;border-radius:6px;background:#fff;box-shadow:0 2px 7px rgba(11,42,107,.16)}.schedule-flag{width:34px;height:23px;border-radius:4px;background-size:cover}.schedule-flag-fallback{font-size:16px}
 .schedule-copy {
   min-width: 0;
 }
