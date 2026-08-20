@@ -73,6 +73,19 @@ const indicatorStyle = computed(() => ({
   '--orb-scale': orbScale.value,
   '--orb-y': `${orbOffsetY.value}px`,
 }))
+
+function navIconStyle(index) {
+  const distance = Math.abs(index - indicatorPosition.value)
+  const influence = Math.max(0, 1 - (distance / 0.82))
+  const opacity = Math.max(0, 1 - (influence * 1.35))
+
+  return {
+    '--icon-opacity': opacity,
+    '--icon-scale': 1 - (influence * 0.24),
+    '--icon-press-y': `${influence * 15}px`,
+  }
+}
+
 const navSurfacePath = computed(() => {
   const center = ((indicatorPosition.value + 0.5) / navItems.value.length) * 390
   const depth = 29 + pressAmount.value * 6
@@ -233,7 +246,7 @@ onBeforeUnmount(() => {
       </span>
 
       <button
-          v-for="item in navItems"
+          v-for="(item, index) in navItems"
           :key="item.name"
           type="button"
           class="nav-item"
@@ -241,7 +254,7 @@ onBeforeUnmount(() => {
           :aria-current="isActive(item.path) ? 'page' : undefined"
           @click="handleNavigation(item)"
       >
-        <span class="nav-icon">
+        <span class="nav-icon" :style="navIconStyle(index)">
           <component :is="item.icon" :size="26" :stroke-width="2" />
         </span>
       </button>
@@ -270,7 +283,7 @@ onBeforeUnmount(() => {
   height: calc(70px + env(safe-area-inset-bottom));
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  padding: 7px 6px max(4px, env(safe-area-inset-bottom));
+  padding: 0 6px max(0px, env(safe-area-inset-bottom));
   pointer-events: auto;
 }
 .nav-background {
@@ -322,7 +335,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, .7);
-  transform: translateY(8px);
   -webkit-tap-highlight-color: transparent;
 }
 .nav-icon {
@@ -330,11 +342,9 @@ onBeforeUnmount(() => {
   width: 32px;
   height: 29px;
   place-items: center;
-  transition: opacity .2s ease, transform .25s ease;
-}
-.nav-item.active .nav-icon {
-  opacity: 0;
-  transform: translateY(-9px) scale(.72);
+  opacity: var(--icon-opacity);
+  transform: translateY(var(--icon-press-y)) scale(var(--icon-scale));
+  will-change: opacity, transform;
 }
 .nav-item:active:not(.active) .nav-icon {
   transform: scale(.86);
