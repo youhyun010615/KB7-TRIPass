@@ -58,6 +58,7 @@ const totalReceiptCount = ref(0)
 
 const selectedCountryId = ref(null)
 const dateFilterEnabled = ref(false)
+const dateFilterOpen = ref(false)
 const receiptSortOrder = ref('latest')
 const startDate = ref('')
 const endDate = ref('')
@@ -421,7 +422,7 @@ async function loadPage() {
 }
 
 function showDateFilter() {
-  dateFilterEnabled.value = true
+  dateFilterOpen.value = true
   startDate.value ||= availableReceiptDates.value.at(-1) || ''
   endDate.value ||= availableReceiptDates.value[0] || ''
   dateFilterError.value = ''
@@ -444,7 +445,9 @@ async function applyDateFilter() {
   }
 
   dateFilterError.value = ''
+  dateFilterEnabled.value = true
   await loadPage()
+  dateFilterOpen.value = false
 }
 
 async function resetDateFilter() {
@@ -453,6 +456,7 @@ async function resetDateFilter() {
   endDate.value = ''
   dateFilterError.value = ''
   await loadPage()
+  dateFilterOpen.value = false
 }
 
 function openSettlements() {
@@ -621,15 +625,23 @@ onMounted(loadPage)
             type="button"
             class="calendar-filter-button"
             :class="{ active: dateFilterEnabled }"
-            :aria-label="dateFilterEnabled ? '날짜 필터 닫기' : '날짜 필터 열기'"
-            @click="dateFilterEnabled ? resetDateFilter() : showDateFilter()"
+            aria-label="날짜 필터 열기"
+            @click="showDateFilter"
         >
           <CalendarRange :size="18" :stroke-width="2" />
         </button>
       </div>
 
-      <div v-if="dateFilterEnabled" class="period-filter">
-        <div v-if="dateFilterEnabled" class="date-range-fields">
+      <div v-if="dateFilterOpen" class="date-filter-overlay" @click.self="dateFilterOpen = false">
+        <section class="date-filter-popup" role="dialog" aria-modal="true" aria-labelledby="date-filter-title">
+          <header>
+            <div>
+              <small>DATE FILTER</small>
+              <h3 id="date-filter-title">조회 기간 선택</h3>
+            </div>
+            <button type="button" aria-label="날짜 필터 닫기" @click="dateFilterOpen = false">×</button>
+          </header>
+          <div class="date-range-fields">
           <label>
             <small>시작일</small>
             <select v-model="startDate">
@@ -659,12 +671,16 @@ onMounted(loadPage)
               </option>
             </select>
           </label>
-          <button type="button" :disabled="loading" @click="applyDateFilter">조회</button>
-        </div>
-        <small v-if="dateFilterEnabled && !availableReceiptDates.length" class="no-receipt-dates">
-          선택할 수 있는 영수증 등록일이 없어요.
-        </small>
-        <p v-if="dateFilterError">{{ dateFilterError }}</p>
+          </div>
+          <small v-if="!availableReceiptDates.length" class="no-receipt-dates">
+            선택할 수 있는 영수증 등록일이 없어요.
+          </small>
+          <p v-if="dateFilterError" class="date-filter-error">{{ dateFilterError }}</p>
+          <footer>
+            <button type="button" :disabled="loading" @click="resetDateFilter">초기화</button>
+            <button type="button" :disabled="loading || !availableReceiptDates.length" @click="applyDateFilter">적용</button>
+          </footer>
+        </section>
       </div>
     </section>
 
@@ -2185,6 +2201,129 @@ onMounted(loadPage)
   border-color: #2f6fed;
   background: #eef4ff;
   color: #2f6fed;
+}
+
+.date-filter-overlay {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(10, 26, 54, .42);
+  backdrop-filter: blur(3px);
+  inset: 0;
+}
+
+.date-filter-popup {
+  width: min(100%, 320px);
+  padding: 18px;
+  border: 1px solid rgba(207, 220, 240, .9);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(12, 36, 78, .24);
+  animation: date-filter-popup-in .2s ease-out;
+}
+
+.date-filter-popup > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.date-filter-popup > header small {
+  display: block;
+  margin-bottom: 4px;
+  color: #2f6fed;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.date-filter-popup > header h3 {
+  color: #11203a;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.date-filter-popup > header > button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1f4f9;
+  color: #68768a;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.date-filter-popup .date-range-fields {
+  grid-template-columns: 1fr 12px 1fr;
+  gap: 7px;
+  margin-top: 17px;
+}
+
+.date-filter-popup .date-range-fields label small {
+  margin-bottom: 6px;
+  color: #6d7d94;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.date-filter-popup .date-range-fields select {
+  height: 44px;
+  padding: 0 9px;
+  border-color: #d7e0ed;
+  border-radius: 11px;
+  background: #f8faff;
+  color: #1d2b42;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.date-filter-popup .date-range-fields > i {
+  padding-bottom: 15px;
+  font-size: 10px;
+}
+
+.date-filter-popup .no-receipt-dates,
+.date-filter-popup .date-filter-error {
+  display: block;
+  margin-top: 9px;
+  font-size: 9px;
+}
+
+.date-filter-popup .date-filter-error { color: #e25555; }
+
+.date-filter-popup > footer {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 8px;
+  margin-top: 17px;
+}
+
+.date-filter-popup > footer button {
+  height: 44px;
+  border-radius: 12px;
+  background: #edf2f9;
+  color: #66758b;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.date-filter-popup > footer button:last-child {
+  background: #173f8d;
+  color: #fff;
+}
+
+.date-filter-popup > footer button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+@keyframes date-filter-popup-in {
+  from { opacity: 0; transform: translateY(8px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .filter-section .period-filter {
