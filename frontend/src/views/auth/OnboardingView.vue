@@ -18,13 +18,13 @@ const slides = [
     key: 'saving',
     eyebrow: 'BEFORE THE TRIP',
     title: ['목표를 정하면,', 'AI가 저축 계획을 제안해요'],
-    description: '여행 예산과 월 저축 목표를 계산하고\n실제 소비 패턴에서 아낄 항목을 찾아드려요.',
+    description: '',
   },
   {
     key: 'spending',
     eyebrow: 'ON THE TRIP · AFTER',
-    title: ['여행 자금을 계획대로 쓰고,', '소비를 돌아봐요'],
-    description: '여행 중 지출을 간편하게 관리하고\n여행 후 리포트로 다음 계획까지 연결해요.',
+    title: ['여행 자금을 계획대로 쓰고,', '여행 후 소비를 돌아봐요'],
+    description: '',
   },
   {
     key: 'ready',
@@ -105,6 +105,7 @@ function onTouchEnd() {
 <template>
   <main
     class="onboarding"
+    :class="{ 'has-compact-brand': current > 0 }"
     @touchstart.passive="onTouchStart"
     @touchmove.passive="onTouchMove"
     @touchend="onTouchEnd"
@@ -132,7 +133,7 @@ function onTouchEnd() {
       <span class="route-caption route-caption-right">{{ isLast ? 'READY' : 'GOAL' }}</span>
     </section>
 
-    <div class="moving-brand" :class="{ 'is-compact': current > 0 }" aria-label="TRIPASS">
+    <div v-if="current > 0" class="moving-brand is-compact" aria-label="TRIPASS">
       <div class="moving-brand-inner">
         <span class="brand-logo-halo" aria-hidden="true"></span>
         <span class="brand-app-icon-wrap">
@@ -163,7 +164,17 @@ function onTouchEnd() {
           <div class="visual-stage">
               <div class="visual-content">
                 <div v-if="slide.key === 'journey'" class="brand-visual">
-                  <div class="brand-logo-spacer" aria-hidden="true"></div>
+                  <div class="brand-logo-stage">
+                    <span class="brand-logo-halo" aria-hidden="true"></span>
+                    <span class="brand-app-icon-wrap">
+                      <img class="brand-app-icon" :src="tripassTransparentSymbol" alt="TRIPASS" />
+                    </span>
+                    <span class="logo-takeoff-route" aria-hidden="true"></span>
+                    <svg class="logo-takeoff-plane" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
+                    </svg>
+                    <strong class="brand-name">TRIPASS</strong>
+                  </div>
                   <h1 class="journey-tagline">여행을 준비하는<br />가장 똑똑한 금융 습관</h1>
                   <div class="journey-feature-strip" aria-label="TRIPASS 주요 기능">
                     <div><span>₩</span><strong>저축 목표</strong></div>
@@ -179,36 +190,46 @@ function onTouchEnd() {
                     <div class="monthly-saving-head">
                       <div class="monthly-saving-title">
                         <span class="monthly-coin">₩</span>
-                        <strong>이번 달 여행 저축</strong>
+                        <strong>여행 저축 목표</strong>
                       </div>
-                      <div class="mini-ai-report" aria-label="AI 리포트 작성 중">
-                        <span class="mini-ai-badge">AI</span>
-                        <div><b>AI REPORT</b><i></i><i></i></div>
+                      <div class="coin-saving-animation" aria-label="저축 중">
+                        <i>₩</i><i>₩</i><i>₩</i>
+                        <small>TRIP WALLET</small>
                       </div>
                     </div>
-                    <strong class="monthly-saving-amount">300,000원</strong>
+                    <div class="monthly-saving-rate"><strong>30%</strong></div>
                     <div class="monthly-saving-track" aria-hidden="true"><span></span></div>
-                    <div class="monthly-saving-row">
-                      <span>✓ 월 저축 목표</span><strong>+200,000원</strong>
+                    <div class="monthly-saving-progress-meta">
+                      <div><span>현재 금액</span><strong>300,000원</strong></div>
+                      <div><span>총 목표 금액</span><strong>1,000,000원</strong></div>
                     </div>
-                    <div class="monthly-saving-row">
-                      <span>✓ AI 절약 미션</span><strong>+100,000원</strong>
+                    <div class="monthly-saving-row saving-target-row">
+                      <span><i></i>월 저축 목표</span><strong>+200,000원</strong>
                     </div>
+                    <div class="monthly-saving-row saving-mission-row">
+                      <span><i></i>AI 절약 미션</span><strong>+100,000원</strong>
+                    </div>
+                  </div>
+                  <div class="mini-ai-report saving-floating-ai" aria-label="AI 미션 추천 중">
+                    <span class="mini-ai-badge">AI</span>
+                    <span><b>AI MISSION</b><i></i><i></i></span>
                   </div>
                 </div>
 
                 <div v-else-if="slide.key === 'spending'" class="spending-visual">
                   <div class="budget-usage-card">
-                    <div class="budget-usage-head"><span>여행 예산 사용률</span><strong>68%</strong></div>
-                    <div class="budget-amount"><strong>2,040,000원</strong><span>/ 3,000,000원</span></div>
-                    <div class="budget-track" aria-hidden="true"><span></span></div>
-                    <div class="budget-rows">
-                      <span>여행 자금 <strong>1,800,000원</strong></span>
-                      <span>비상금 <strong>240,000원</strong></span>
+                    <div class="budget-ring" aria-label="여행 예산 사용률 68%">
+                      <svg viewBox="0 0 100 100" aria-hidden="true">
+                        <circle class="budget-ring-base" cx="50" cy="50" r="40" />
+                        <circle class="budget-ring-progress" cx="50" cy="50" r="40" />
+                      </svg>
+                      <div><strong>68%</strong><span>사용률</span></div>
                     </div>
-                  </div>
-                  <div class="rollover-pill">
-                    <span>남은 자금</span><strong>960,000원</strong><b>→ 다음 여행</b>
+                    <div class="budget-summary">
+                      <span class="budget-summary-label">이번 여행 지출</span>
+                      <div class="budget-amount"><strong>2,040,000원</strong><span>/ 3,000,000원 예산</span></div>
+                      <div class="budget-status"><i></i><span>계획 범위 내 사용 중</span></div>
+                    </div>
                   </div>
                 </div>
 
@@ -217,16 +238,35 @@ function onTouchEnd() {
                     <span></span><span></span><span></span>
                     <span></span><span></span><span></span>
                   </div>
+                  <svg class="ready-flight-plane" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
+                  </svg>
                   <div class="ready-logo-lockup">
-                    <img :src="tripassTransparentSymbol" alt="TRIPASS" />
-                    <strong>TRIPASS</strong>
+                    <span class="ready-symbol-wrap">
+                      <img :src="tripassTransparentSymbol" alt="TRIPASS" />
+                    </span>
+                    <strong>TRIPASS를 시작해볼까요?</strong>
                   </div>
                 </div>
               </div>
           </div>
 
-          <div class="copy-block">
-            <h1 v-if="slide.title.length">
+          <div class="copy-block" :class="{ 'ready-copy': slide.key === 'ready' }">
+            <h1 v-if="slide.key === 'spending'" class="spending-copy-title">
+              여행 자금을 계획대로 쓰고,<br />
+              <span class="spending-report-title">
+                여행 후 소비를 돌아봐요
+                <span class="report-writing-icon" aria-hidden="true">
+                  <svg viewBox="0 0 48 54" fill="none">
+                    <path d="M8 2h23l9 9v37a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4Z" fill="rgba(255,255,255,.96)" />
+                    <path d="M31 2v9h9" stroke="#8DBAFF" stroke-width="2" />
+                    <path d="M12 20h20M12 28h24M12 36h16" class="report-writing-line" stroke="#2B68D4" stroke-width="3" stroke-linecap="round" />
+                  </svg>
+                  <b><img :src="aiIcon" alt="" /></b>
+                </span>
+              </span>
+            </h1>
+            <h1 v-else-if="slide.key !== 'ready' && slide.title.length">
               <template v-for="(line, lineIndex) in slide.title" :key="line">
                 {{ line }}<br v-if="lineIndex < slide.title.length - 1" />
               </template>
@@ -238,6 +278,15 @@ function onTouchEnd() {
     </section>
 
     <footer class="onboarding-footer">
+      <div v-if="isLast" class="final-actions ready-inline-actions">
+        <button type="button" class="primary-button" @click="goToSignup">
+          TRIPASS 시작하기
+        </button>
+        <button type="button" class="login-button" @click="goToLogin">
+          이미 계정이 있어요 · 로그인
+        </button>
+      </div>
+
       <div class="page-indicator" aria-label="온보딩 페이지 선택">
         <button
           v-for="(slide, index) in slides"
@@ -252,14 +301,6 @@ function onTouchEnd() {
       <button v-if="!isLast" type="button" class="primary-button" @click="next">
         다음
       </button>
-      <div v-else class="final-actions">
-        <button type="button" class="primary-button" @click="goToSignup">
-          TRIPASS 시작하기
-        </button>
-        <button type="button" class="login-button" @click="goToLogin">
-          이미 계정이 있어요 · 로그인
-        </button>
-      </div>
     </footer>
   </main>
 </template>
@@ -325,6 +366,11 @@ function onTouchEnd() {
   padding: max(56px, calc(env(safe-area-inset-top) + 16px)) 24px 0;
 }
 
+.onboarding.has-compact-brand .onboarding-header {
+  padding-top: max(88px, calc(env(safe-area-inset-top) + 54px));
+  transition: padding-top 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .step-label,
 .eyebrow,
 .brand-subtitle {
@@ -338,6 +384,10 @@ function onTouchEnd() {
 }
 
 .skip-button {
+  position: absolute;
+  top: max(16px, calc(env(safe-area-inset-top) + 4px));
+  right: 24px;
+  z-index: 10;
   padding: 6px 0 6px 12px;
   border: 0;
   color: rgba(255, 255, 255, 0.5);
@@ -349,7 +399,7 @@ function onTouchEnd() {
 .flight-route {
   position: relative;
   height: 56px;
-  margin: 26px 28px 0;
+  margin: 9px 28px 0;
 }
 
 .route-line {
@@ -447,10 +497,11 @@ function onTouchEnd() {
 }
 
 .moving-brand.is-compact {
-  top: max(148px, calc(env(safe-area-inset-top) + 102px));
+  top: max(16px, calc(env(safe-area-inset-top) + 4px));
   left: 24px;
   width: 142px;
   transform: translate(0, 0);
+  animation: compact-brand-arrive 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .moving-brand.is-compact .moving-brand-inner {
@@ -501,7 +552,8 @@ function onTouchEnd() {
   flex: 0 0 100%;
   flex-direction: column;
   align-items: center;
-  padding: 0 30px 6px;
+  justify-content: center;
+  padding: 10px 30px;
   opacity: 0.46;
   transform: scale(0.965);
   transition: opacity 260ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -941,6 +993,26 @@ function onTouchEnd() {
 .slide.is-active .cruise-wind span:nth-child(5) { animation-delay: 1.45s; animation-duration: 2.15s; }
 .slide.is-active .cruise-wind span:nth-child(6) { animation-delay: 2.65s; animation-duration: 3s; }
 
+.ready-flight-plane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  opacity: 0;
+  color: var(--yellow);
+  filter: drop-shadow(0 6px 10px rgba(2, 17, 55, 0.48));
+  offset-path: path('M -54 116 C 38 110 82 96 128 76 C 202 44 272 20 374 -18');
+  offset-distance: 0%;
+  offset-rotate: auto 90deg;
+  will-change: offset-distance, opacity, transform;
+}
+
+.slide.is-active .ready-flight-plane {
+  animation: ready-plane-flight 3.1s cubic-bezier(0.42, 0, 0.2, 1) infinite;
+}
+
 .takeoff-trails {
   position: absolute;
   top: 40px;
@@ -1079,7 +1151,7 @@ function onTouchEnd() {
 .final-actions {
   opacity: 0;
   transform: translateY(18px);
-  animation: final-actions-arrive 480ms cubic-bezier(0.22, 1, 0.36, 1) 820ms both;
+  animation: final-actions-arrive 420ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
 }
 
 .primary-button:active,
@@ -1156,6 +1228,32 @@ function onTouchEnd() {
 @keyframes saving-fill-up {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
+}
+
+@keyframes saving-progress-flow {
+  0% { background-position: 110% 0; box-shadow: 0 0 7px rgba(255, 212, 94, 0.28); }
+  50% { box-shadow: 0 0 14px rgba(255, 212, 94, 0.58); }
+  100% { background-position: -110% 0; box-shadow: 0 0 7px rgba(255, 212, 94, 0.28); }
+}
+
+@keyframes progress-shine {
+  60%, 100% { transform: translateX(100%); }
+}
+
+@keyframes saving-coin-drop {
+  0% { opacity: 0; transform: translate(-50%, -10px) scale(0.72) rotate(-12deg); }
+  18%, 68% { opacity: 1; }
+  82%, 100% { opacity: 0; transform: translate(-50%, 25px) scale(0.9) rotate(12deg); }
+}
+
+@keyframes saving-bank-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 212, 94, 0); }
+  50% { transform: scale(1.04); box-shadow: 0 0 12px rgba(255, 212, 94, 0.22); }
+}
+
+@keyframes floating-ai-arrive {
+  from { opacity: 0; transform: translate(10px, 8px) scale(0.58) rotate(5deg); }
+  to { opacity: 1; transform: translate(0, 0) scale(0.72) rotate(-2deg); }
 }
 
 @keyframes amount-confirm {
@@ -1328,6 +1426,16 @@ function onTouchEnd() {
   letter-spacing: 0.14em;
 }
 
+.ready-inline-actions {
+  width: 100%;
+  margin: 0 0 12px;
+}
+
+.ready-inline-actions .primary-button,
+.ready-inline-actions .login-button {
+  height: 48px;
+}
+
 .brand-name {
   color: #fff;
   text-shadow: 0 8px 20px rgba(2, 17, 55, 0.22);
@@ -1364,7 +1472,7 @@ function onTouchEnd() {
   align-items: flex-start;
   justify-content: center;
   gap: 9px;
-  margin-top: 15px;
+  margin-top: 21px;
 }
 
 .journey-tagline {
@@ -1459,7 +1567,13 @@ function onTouchEnd() {
 }
 
 .monthly-saving-head { justify-content: space-between; gap: 10px; }
-.monthly-saving-title { gap: 10px; color: rgba(255, 255, 255, 0.68); font-size: 11px; }
+.monthly-saving-title { gap: 10px; color: rgba(255, 255, 255, 0.88); font-size: 13px; }
+
+.monthly-saving-title strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
 .monthly-coin {
   display: grid;
@@ -1474,8 +1588,8 @@ function onTouchEnd() {
 }
 
 .mini-ai-report {
-  gap: 6px;
-  padding: 5px 7px;
+  gap: 7px;
+  padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 10px;
   background: rgba(7, 31, 88, 0.28);
@@ -1484,14 +1598,14 @@ function onTouchEnd() {
 .mini-ai-badge {
   position: relative;
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 29px;
+  height: 29px;
   place-items: center;
   border-radius: 9px;
   color: #1b64d6;
   background: #fff;
   font-family: 'Space Mono', monospace;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 900;
 }
 
@@ -1503,8 +1617,8 @@ function onTouchEnd() {
   content: '';
 }
 
-.mini-ai-report > div { width: 43px; }
-.mini-ai-report b { display: block; color: var(--yellow); font-family: 'Space Mono', monospace; font-size: 6px; letter-spacing: 0.04em; }
+.mini-ai-report > :last-child { width: 48px; }
+.mini-ai-report b { display: block; color: var(--yellow); font-family: 'Space Mono', monospace; font-size: 7px; letter-spacing: 0.04em; }
 .mini-ai-report i {
   display: block;
   width: 100%;
@@ -1517,6 +1631,80 @@ function onTouchEnd() {
 }
 .mini-ai-report i:last-child { width: 62%; }
 
+.saving-floating-ai {
+  position: absolute;
+  right: 14px;
+  bottom: -13px;
+  z-index: 4;
+  width: max-content;
+  margin: 0;
+  padding: 6px 10px;
+  transform: scale(0.72) rotate(-2deg);
+  transform-origin: right center;
+  box-shadow: 0 8px 18px rgba(2, 17, 55, 0.2);
+}
+
+.slide.is-active .saving-floating-ai {
+  animation: floating-ai-arrive 620ms cubic-bezier(0.22, 1, 0.36, 1) 620ms both;
+}
+
+.coin-saving-animation {
+  position: relative;
+  width: 54px;
+  height: 42px;
+}
+
+.coin-saving-animation::after {
+  position: absolute;
+  right: 9px;
+  bottom: 4px;
+  left: 9px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 212, 94, 0.72);
+  box-shadow: 0 0 12px rgba(255, 212, 94, 0.5);
+  content: '';
+}
+
+.coin-saving-animation small {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  left: -8px;
+  color: rgba(255, 255, 255, 0.66);
+  font-family: 'Space Mono', monospace;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.coin-saving-animation > i {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid rgba(255, 239, 166, 0.9);
+  border-radius: 50%;
+  opacity: 0;
+  color: #173d88;
+  background: var(--yellow);
+  box-shadow: 0 4px 8px rgba(2, 17, 55, 0.25);
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.slide.is-active .coin-saving-animation > i { animation: saving-coin-drop 1.65s ease-in infinite; }
+.slide.is-active .coin-saving-animation > i:nth-child(2) { animation-delay: 0.48s; }
+.slide.is-active .coin-saving-animation > i:nth-child(3) { animation-delay: 0.96s; }
+.slide.is-active .coin-saving-animation::after { animation: saving-bank-pulse 1.65s ease-in-out infinite; }
+
 .monthly-saving-amount {
   display: block;
   margin-top: 15px;
@@ -1525,22 +1713,76 @@ function onTouchEnd() {
   letter-spacing: -0.05em;
 }
 
+.monthly-saving-rate {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 13px;
+}
+
+.monthly-saving-rate span {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.monthly-saving-rate strong {
+  color: var(--yellow);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+}
+
 .monthly-saving-track {
+  position: relative;
   height: 5px;
-  margin: 14px 0 10px;
+  margin: 5px 0 10px;
   overflow: hidden;
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.17);
 }
 
 .monthly-saving-track span {
+  position: relative;
   display: block;
-  width: 65%;
+  width: 30%;
   height: 100%;
   border-radius: inherit;
-  background: var(--yellow);
+  background: linear-gradient(90deg, #ffd45e 0%, #fff1b0 45%, #ffd45e 100%);
+  background-size: 220% 100%;
+  box-shadow: 0 0 10px rgba(255, 212, 94, 0.35);
   transform: scaleX(0);
   transform-origin: left;
+}
+
+.monthly-saving-progress-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 9px 0 5px;
+}
+
+.monthly-saving-progress-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.monthly-saving-progress-meta div:last-child {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.monthly-saving-progress-meta span {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.monthly-saving-progress-meta strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
 }
 
 .monthly-saving-row {
@@ -1553,9 +1795,46 @@ function onTouchEnd() {
   font-weight: 700;
 }
 
+.monthly-saving-progress-meta + .monthly-saving-row {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.28);
+}
+
+.monthly-saving-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monthly-saving-row span i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 8px rgba(255, 212, 94, 0.55);
+}
+
+.monthly-saving-row.saving-target-row span {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.monthly-saving-row.saving-mission-row span {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.monthly-saving-row.saving-mission-row span i {
+  background: #8dbaff;
+  box-shadow: 0 0 8px rgba(141, 186, 255, 0.5);
+}
+
 .monthly-saving-row strong { color: var(--yellow); font-family: 'Space Mono', monospace; font-size: 11px; }
 
-.slide.is-active .monthly-saving-track span { animation: saving-fill-up 850ms cubic-bezier(0.22, 1, 0.36, 1) 480ms both; }
+.slide.is-active .monthly-saving-track span {
+  animation:
+    saving-fill-up 850ms cubic-bezier(0.22, 1, 0.36, 1) 480ms both,
+    saving-progress-flow 1.8s linear 1.35s infinite;
+}
 .slide.is-active .mini-ai-badge::after { animation: ai-orbit 3s linear infinite; }
 .slide.is-active .mini-ai-report i { animation: report-write 650ms ease-out both; }
 .slide.is-active .mini-ai-report i:first-of-type { animation-delay: 620ms; }
@@ -1707,6 +1986,123 @@ function onTouchEnd() {
 .slide.is-active .saving-goal-track span,
 .slide.is-active .budget-track span { animation: saving-fill-up 900ms cubic-bezier(0.22, 1, 0.36, 1) 620ms both; }
 
+.budget-usage-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 17px 18px;
+  border-color: rgba(157, 196, 255, 0.34);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 212, 94, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(66, 111, 203, 0.46), rgba(11, 43, 108, 0.26));
+}
+
+.budget-ring {
+  position: relative;
+  width: 105px;
+  height: 105px;
+  flex: 0 0 auto;
+}
+
+.budget-ring svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.budget-ring circle {
+  fill: none;
+  stroke-width: 10;
+}
+
+.budget-ring-base { stroke: rgba(141, 186, 255, 0.3); }
+
+.budget-ring-progress {
+  stroke: var(--yellow);
+  stroke-linecap: round;
+  stroke-dasharray: 251.33;
+  stroke-dashoffset: 251.33;
+  filter: drop-shadow(0 0 5px rgba(255, 212, 94, 0.32));
+}
+
+.budget-ring > div {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.budget-ring strong {
+  color: var(--yellow);
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+}
+
+.budget-ring span {
+  margin-top: 1px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.budget-summary {
+  min-width: 0;
+  flex: 1;
+}
+
+.budget-summary-label {
+  display: block;
+  margin-bottom: 7px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.budget-summary .budget-amount {
+  display: block;
+  margin: 0;
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.budget-summary .budget-amount strong,
+.budget-summary .budget-amount span { display: block; }
+.budget-summary .budget-amount strong { white-space: nowrap; font-size: 17px; }
+.budget-summary .budget-amount span { margin-top: 3px; font-size: 8px; }
+
+.budget-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 6px 9px;
+  border: 1px solid rgba(132, 232, 198, 0.22);
+  border-radius: 99px;
+  background: rgba(53, 193, 153, 0.1);
+}
+
+.budget-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7fe1c1;
+  box-shadow: 0 0 7px rgba(127, 225, 193, 0.62);
+}
+
+.budget-status span {
+  color: #c8f5e6;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.slide.is-active .budget-ring-progress {
+  animation: budget-ring-fill 1.15s cubic-bezier(0.22, 1, 0.36, 1) 520ms forwards;
+}
+
 .spending-visual {
   min-height: 214px;
   gap: 13px;
@@ -1740,6 +2136,67 @@ function onTouchEnd() {
   font-weight: 800;
 }
 
+.spending-report-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.report-writing-icon {
+  position: relative;
+  display: inline-grid;
+  width: 43px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  vertical-align: middle;
+  filter: drop-shadow(0 8px 14px rgba(2, 17, 55, 0.28));
+}
+
+.report-writing-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.report-writing-icon b {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid rgba(255, 212, 94, 0.9);
+  border-radius: 50%;
+  background: #fff8dc;
+  box-shadow: 0 0 0 4px rgba(255, 212, 94, 0.11), 0 4px 10px rgba(2, 17, 55, 0.24);
+}
+
+.report-writing-icon b img {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+
+.report-writing-line {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+}
+
+.slide.is-active .report-writing-icon {
+  animation: report-icon-arrive 650ms cubic-bezier(0.22, 1, 0.36, 1) 520ms both;
+}
+
+.slide.is-active .report-writing-icon b {
+  animation: ai-report-pulse 1.8s ease-in-out 1.15s infinite;
+}
+
+.slide.is-active .report-writing-line {
+  animation: report-line-writing 1.7s ease-in-out 900ms infinite;
+}
+
 .ready-logo-lockup {
   position: relative;
   z-index: 2;
@@ -1749,16 +2206,84 @@ function onTouchEnd() {
   gap: 12px;
 }
 
+.ready-logo-lockup strong {
+  position: relative;
+  font-family: inherit;
+  font-size: 21px;
+  line-height: 1.4;
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+
+.ready-logo-lockup strong::after {
+  position: absolute;
+  right: 8%;
+  bottom: -7px;
+  left: 8%;
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  content: '';
+  transform: scaleX(0);
+  transform-origin: center;
+}
+
+.slide.is-active .ready-logo-lockup strong {
+  animation: none;
+}
+
+.slide.is-active .ready-logo-lockup strong::after {
+  animation: ready-title-underline 1.7s ease-in-out 120ms infinite;
+}
+
+.ready-symbol-wrap {
+  display: block;
+  width: 112px;
+  height: 112px;
+}
+
+.slide.is-active .ready-symbol-wrap {
+  animation: none;
+}
+
 .ready-logo-lockup img {
-  width: 88px;
-  height: 88px;
-  border-radius: 22px;
-  box-shadow: 0 20px 36px rgba(2, 17, 55, 0.38);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+  filter: drop-shadow(0 18px 24px rgba(2, 17, 55, 0.32));
 }
 
 .slide.is-active .ready-logo-lockup {
-  animation: app-icon-arrive 720ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
-    app-icon-float 3.6s ease-in-out 850ms infinite;
+  animation: none;
+}
+
+.ready-copy h1 {
+  position: relative;
+  display: inline-block;
+  padding: 0 4px 8px;
+  color: #fff;
+  text-shadow: 0 8px 24px rgba(2, 17, 55, 0.35);
+}
+
+.ready-copy h1::after {
+  position: absolute;
+  right: 7%;
+  bottom: 0;
+  left: 7%;
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  content: '';
+  transform: scaleX(0);
+}
+
+.slide.is-active .ready-copy h1 {
+  animation: ready-title-emphasis 1.9s cubic-bezier(0.22, 1, 0.36, 1) 260ms both;
+}
+
+.slide.is-active .ready-copy h1::after {
+  animation: ready-title-underline 1.7s ease-in-out 650ms infinite;
 }
 
 .copy-block h1 { margin-top: 4px; }
@@ -1769,9 +2294,69 @@ function onTouchEnd() {
   to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
+@keyframes compact-brand-arrive {
+  from {
+    opacity: 0;
+    transform: translate(clamp(108px, 31vw, 148px), clamp(112px, 18vh, 158px)) scale(2.35);
+    filter: blur(4px);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-3px, 2px) scale(1.05);
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
 @keyframes app-icon-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
+}
+
+@keyframes ready-plane-flight {
+  0%, 7% {
+    opacity: 0;
+    offset-distance: 0%;
+    transform: scale(0.72);
+  }
+  14% { opacity: 1; }
+  48% {
+    opacity: 1;
+    offset-distance: 50%;
+    transform: scale(1.08);
+  }
+  88% { opacity: 1; }
+  96%, 100% {
+    opacity: 0;
+    offset-distance: 100%;
+    transform: scale(0.76);
+  }
+}
+
+@keyframes ready-title-emphasis {
+  0% { opacity: 0; transform: translateY(18px) scale(0.88); filter: blur(5px); }
+  62% { opacity: 1; transform: translateY(-3px) scale(1.055); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes ready-logo-shrink {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 1; transform: translateY(-5px) scale(0.74); }
+}
+
+@keyframes ready-title-grow {
+  0% { opacity: 0.2; transform: translateY(8px) scale(0.78); filter: blur(3px); }
+  72% { opacity: 1; transform: translateY(0) scale(1.04); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes ready-title-underline {
+  0%, 100% { opacity: 0.35; transform: scaleX(0.38); }
+  50% { opacity: 1; transform: scaleX(1); box-shadow: 0 0 12px rgba(255, 212, 94, 0.58); }
 }
 
 @keyframes logo-route-draw {
@@ -1821,6 +2406,28 @@ function onTouchEnd() {
   to { opacity: 1; transform: scaleX(1); }
 }
 
+@keyframes report-icon-arrive {
+  from { opacity: 0; transform: translateY(10px) rotate(-7deg) scale(0.72); }
+  to { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+@keyframes ai-report-pulse {
+  0% { transform: rotate(-8deg) translateY(0) scale(0.92); box-shadow: 0 0 0 2px rgba(255, 212, 94, 0.08); }
+  45% { transform: rotate(7deg) translateY(-4px) scale(1.12); box-shadow: 0 0 0 7px rgba(255, 212, 94, 0.12), 0 0 15px rgba(255, 212, 94, 0.48); }
+  100% { transform: rotate(-8deg) translateY(0) scale(0.92); box-shadow: 0 0 0 2px rgba(255, 212, 94, 0.08); }
+}
+
+@keyframes budget-ring-fill {
+  from { stroke-dashoffset: 251.33; }
+  to { stroke-dashoffset: 80.43; }
+}
+
+@keyframes report-line-writing {
+  0%, 12% { opacity: 0.35; stroke-dashoffset: 26; }
+  58%, 82% { opacity: 1; stroke-dashoffset: 0; }
+  100% { opacity: 0.35; stroke-dashoffset: -26; }
+}
+
 @media (max-height: 760px) {
   .onboarding-header { padding-top: 28px; }
   .flight-route { margin-top: 18px; }
@@ -1859,6 +2466,9 @@ function onTouchEnd() {
   .slide.is-active .monthly-saving-track span,
   .slide.is-active .mini-ai-badge::after,
   .slide.is-active .mini-ai-report i,
+  .slide.is-active .saving-floating-ai,
+  .slide.is-active .coin-saving-animation > i,
+  .slide.is-active .coin-saving-animation::after,
   .slide.is-active .coin-icon,
   .slide.is-active .deposit-stream span,
   .slide.is-active .saving-fill span,
@@ -1870,6 +2480,12 @@ function onTouchEnd() {
   .slide.is-active .rollover-flight b,
   .slide.is-active .takeoff-trails span,
   .slide.is-active .cruise-wind span,
+  .slide.is-active .ready-flight-plane,
+  .slide.is-active .ready-symbol-wrap,
+  .slide.is-active .ready-logo-lockup strong,
+  .slide.is-active .ready-logo-lockup strong::after,
+  .slide.is-active .ready-copy h1,
+  .slide.is-active .ready-copy h1::after,
   .slide.is-active .ready-plane-ring,
   .slide.is-active .ready-plane-ring svg,
   .final-actions,
