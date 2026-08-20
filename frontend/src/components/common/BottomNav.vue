@@ -99,7 +99,11 @@ const navSurfacePath = computed(() => {
     `C ${(center + 31).toFixed(2)} ${depth.toFixed(2)} ${(center + 25).toFixed(2)} 0 ${right.toFixed(2)} 0`,
     'H 366',
     'Q 390 0 390 22',
-    'V 78 H 0 Z',
+    'V 56',
+    'Q 390 78 368 78',
+    'H 22',
+    'Q 0 78 0 56',
+    'Z',
   ].join(' ')
 })
 
@@ -283,7 +287,7 @@ onBeforeUnmount(() => {
   height: calc(64px + env(safe-area-inset-bottom));
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  padding: 0 6px max(0px, env(safe-area-inset-bottom));
+  padding: 0 6px;
   pointer-events: auto;
 }
 .nav-background {
