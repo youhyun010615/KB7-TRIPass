@@ -2500,6 +2500,157 @@ onBeforeUnmount(() => {
   opacity: 0.55;
 }
 
+/* Receipt detail — travel receipt concept */
+.result-page {
+  min-height: 100dvh;
+  padding: 0 16px 108px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(47, 111, 237, .07), transparent 260px),
+    #f4f7fc;
+}
+
+.result-page > .page-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 72px;
+  align-items: center;
+  padding: 0;
+  background: rgba(244, 247, 252, .94);
+  backdrop-filter: blur(14px);
+}
+
+.result-page > .page-header h1 { font-size: 18px; }
+.result-page > .page-header button:first-child {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+}
+
+.translation-toggle {
+  gap: 5px;
+  margin: 6px 0 15px;
+  padding: 5px;
+  border-radius: 16px;
+  background: #e8edf6;
+}
+
+.translation-toggle button {
+  height: 42px;
+  border: 0;
+  border-radius: 12px !important;
+  color: #8b98ad;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.translation-toggle .active {
+  background: #173f8d;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(23, 63, 141, .2);
+}
+
+.result-page .tripass-receipt-document {
+  margin: 0 0 26px;
+  padding: 0 19px 24px;
+  border-color: #eee7d6;
+  border-radius: 22px 22px 7px 7px;
+  background: #fffaf0;
+  box-shadow: 0 15px 34px rgba(45, 54, 74, .1);
+}
+
+.result-page .tripass-receipt-document::after {
+  background: radial-gradient(circle at 7px 0, #fffaf0 6.5px, transparent 7px) 0 0 / 14px 11px repeat-x;
+}
+
+.result-page .receipt-paper-heading {
+  padding: 18px 1px 16px;
+  border-color: #d8cfba;
+}
+
+.result-page .receipt-paper-heading span { color: #173f8d; font-size: 8px; }
+.result-page .receipt-paper-heading b { font-size: 14px; }
+
+.result-page .tripass-receipt-document .field { margin-top: 16px; }
+.result-page .tripass-receipt-document .field > span {
+  margin-bottom: 7px;
+  color: #93a0b5;
+  font-size: 9px;
+  text-align: center;
+}
+
+.result-page .tripass-receipt-document .readonly-trip,
+.result-page .tripass-receipt-document .readonly-value {
+  height: 48px;
+  justify-content: center;
+  border-radius: 13px;
+  background: rgba(35, 53, 82, .055);
+  color: #17243a;
+  font-size: 11px;
+}
+
+.result-page .tripass-receipt-document .merchant-value {
+  height: 58px;
+  font-size: 17px;
+}
+
+.result-page .tripass-receipt-document .result-items-heading {
+  border-color: #d8cfba;
+}
+
+.result-page .tripass-receipt-document .receipt-item {
+  border-color: #ddd5c3;
+}
+
+.result-page .tripass-receipt-document .item-name-area b { font-size: 12px; }
+.result-page .tripass-receipt-document .receipt-item > strong { font-size: 11px; }
+.result-page .tripass-receipt-document .total { border-color: #d8cfba; }
+.result-page .tripass-receipt-document .total > span { font-size: 9px; }
+.result-page .tripass-receipt-document .total strong { color: #173f8d; font-size: 17px; }
+
+.original-button,
+.shared-payment-summary,
+.memo-card {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+.original-button {
+  height: 52px;
+  margin-top: 0;
+  padding: 0 14px;
+  border-radius: 16px;
+  color: #53647e;
+  font-size: 11px;
+}
+
+.shared-payment-summary,
+.memo-card {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 20px;
+}
+
+.memo-card > span {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.memo-card p { min-height: 72px; border: 0; background: #f6f8fc; }
+
+.result-page > .actions {
+  position: fixed;
+  right: max(calc((100vw - 390px) / 2 + 16px), 16px);
+  bottom: 0;
+  left: max(calc((100vw - 390px) / 2 + 16px), 16px);
+  z-index: 40;
+  margin: 0;
+  padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+}
+
+.result-page > .actions button { height: 54px; border-radius: 15px; }
+
 @media (max-width: 360px) {
   .receipt-information-edit {
     grid-template-columns: 1fr;

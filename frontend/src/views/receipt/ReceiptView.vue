@@ -526,47 +526,6 @@ onMounted(loadPage)
     </div>
     <div class="receipt-header-spacer" aria-hidden="true" />
 
-    <section class="receipt-paper">
-      <div class="paper-topline">
-        <span>TRIPASS</span>
-        <span>RECEIPT NO. {{ String(tripId || 0).padStart(4, '0') }}</span>
-      </div>
-
-      <div class="paper-brand">
-        <span class="paper-brand-icon"><ReceiptText :size="24" :stroke-width="2.2" /></span>
-        <div>
-          <small>MY RECEIPT VAULT</small>
-          <h2>{{ tripTitle }}</h2>
-        </div>
-      </div>
-
-      <dl class="paper-trip-info">
-        <div>
-          <dt>TRIP DATE</dt>
-          <dd>{{ formatTripDateRange() }}</dd>
-        </div>
-        <div>
-          <dt>STATUS</dt>
-          <dd><Check :size="12" :stroke-width="3" /> 보관 중</dd>
-        </div>
-      </dl>
-
-      <div class="paper-divider"><span>RECEIPT SUMMARY</span></div>
-
-      <div class="paper-total">
-        <div>
-          <small>보관된 영수증</small>
-          <strong>{{ totalReceiptCount }}<em>장</em></strong>
-        </div>
-        <span class="stored-stamp">
-          <Check :size="17" :stroke-width="3" />
-          <span><b>보관 완료</b><small>안전하게 저장했어요</small></span>
-        </span>
-      </div>
-
-      <p class="paper-footer">THANK YOU FOR TRAVELING WITH TRIPASS</p>
-    </section>
-
     <nav class="vault-tabs" aria-label="영수증 보관함 메뉴">
       <button
           type="button"
@@ -590,6 +549,29 @@ onMounted(loadPage)
     />
 
     <template v-else>
+    <section class="trip-receipt-summary">
+      <div class="trip-summary-heading">
+        <span class="trip-summary-icon"><ReceiptText :size="22" :stroke-width="2.2" /></span>
+        <div>
+          <small>{{ formatTripDateRange() }}</small>
+          <h2>{{ tripTitle }}</h2>
+        </div>
+      </div>
+      <div class="trip-summary-metrics">
+        <div>
+          <span>총 결제 금액</span>
+          <strong v-if="currencySummaries.length">
+            {{ currencySummaries[0].currencyCode }} {{ formatAmount(currencySummaries[0].totalAmount) }}
+          </strong>
+          <strong v-else>0</strong>
+        </div>
+        <div>
+          <span>보관된 영수증</span>
+          <strong>{{ totalReceiptCount }}<em>장</em></strong>
+        </div>
+      </div>
+    </section>
+
     <section class="filter-section">
       <div class="section-heading">
         <div>
@@ -672,36 +654,11 @@ onMounted(loadPage)
       </div>
     </section>
 
-    <section
-        v-if="
-          !loading &&
-          !errorMessage &&
-          currencySummaries.length
-        "
-        class="summary-section"
-    >
-      <div class="summary-title">
-        <div>
-          <small>SELECTED AREA</small>
-          <strong>{{ selectedCountryName }} 지출</strong>
-        </div>
-        <ReceiptText :size="22" />
-      </div>
-
-      <div class="currency-summary-list">
-        <div
-            v-for="summary in currencySummaries"
-            :key="summary.currencyCode"
-            class="currency-summary"
-        >
-          <small>{{ summary.currencyCode }}</small>
-          <strong>{{ formatAmount(summary.totalAmount) }}</strong>
-          <span>총 결제 금액</span>
-        </div>
-      </div>
-    </section>
-
     <section class="receipt-list">
+      <div class="receipt-list-topline">
+        <b>TRIPASS RECEIPT</b>
+        <span>RECEIPT NO. {{ String(tripId || 0).padStart(4, '0') }}</span>
+      </div>
       <div class="title">
         <div>
           <small>RECEIPT HISTORY</small>
@@ -804,6 +761,7 @@ onMounted(loadPage)
           </small>
         </div>
       </template>
+      <p class="receipt-list-footer"><span>TRIPASS</span> THANK YOU FOR TRAVELING WITH TRIPASS</p>
     </section>
 
     <div class="receipt-actions">
@@ -2047,5 +2005,168 @@ onMounted(loadPage)
   .receipt-actions { grid-template-columns: 1fr 1.2fr; }
   .date-group > button { grid-template-columns: 40px minmax(0, 1fr) auto 14px; gap: 8px; }
   .date-group > button > .category-icon { width: 39px; height: 39px; }
+}
+
+/* Receipt archive — compact paper layout */
+.receipt-header-spacer { height: 86px; }
+
+.vault-tabs {
+  margin-top: 4px;
+  border: 0;
+  border-radius: 18px;
+  background: #e8edf6;
+}
+
+.vault-tabs button { height: 44px; font-size: 12px; }
+
+.trip-receipt-summary {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #e2e8f2;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(30, 64, 125, .08);
+}
+
+.trip-summary-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trip-summary-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  border-radius: 15px;
+  background: #eaf1ff;
+  color: #2f6fed;
+}
+
+.trip-summary-heading small {
+  color: #687892;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .03em;
+}
+
+.trip-summary-heading h2 {
+  margin-top: 4px;
+  color: #10192b;
+  font-size: 17px;
+  font-weight: 950;
+  letter-spacing: -.035em;
+}
+
+.trip-summary-metrics {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.trip-summary-metrics > div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 13px;
+  border-radius: 14px;
+  background: #f5f7fb;
+}
+
+.trip-summary-metrics span {
+  color: #8795aa;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.trip-summary-metrics strong {
+  overflow: hidden;
+  color: #153b81;
+  font-size: 14px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-summary-metrics em {
+  margin-left: 2px;
+  color: #66758c;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.filter-section {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 19px;
+}
+
+.section-heading small { display: none; }
+.section-heading h2 { margin: 0; font-size: 13px; }
+.country-chips { margin-top: 11px; }
+.country-chips button { height: 36px; font-size: 10px; }
+
+.receipt-list {
+  position: relative;
+  overflow: hidden;
+  margin-top: 12px;
+  padding: 0 16px 18px;
+  border-radius: 22px 22px 8px 8px;
+}
+
+.receipt-list::after {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  left: -1px;
+  height: 8px;
+  background: radial-gradient(circle at 7px 0, #f4f7fc 6px, transparent 6.5px) 0 0 / 14px 8px repeat-x;
+  content: '';
+}
+
+.receipt-list-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -16px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #123b83, #2059b2);
+  color: #cfe0ff;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.receipt-list-topline b { color: #ffd466; font-size: 9px; }
+.receipt-list .title { padding-top: 17px; }
+.receipt-list .title h2 { font-size: 16px; }
+.receipt-list .title span { font-size: 9px; }
+
+.receipt-list-footer {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 2px;
+  padding-top: 13px;
+  border-top: 1px dashed #d6deea;
+  color: #b2bdcc;
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: .12em;
+  text-align: center;
+}
+
+.receipt-list-footer span { color: #9ba9bc; font-size: 7px; }
+
+.date-group h3 { font-size: 10px; }
+.date-group > button { padding: 13px 0; }
+.date-group .receipt-info b { font-size: 12px; }
+.date-group .receipt-payment strong { font-size: 11px; }
+
+@media (max-width: 350px) {
+  .trip-summary-metrics { grid-template-columns: 1fr 1fr; }
+  .trip-summary-metrics strong { font-size: 12px; }
 }
 </style>
