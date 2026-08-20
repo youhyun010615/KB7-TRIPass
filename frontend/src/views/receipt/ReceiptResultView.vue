@@ -2618,14 +2618,16 @@ onBeforeUnmount(() => {
 /* 상단 결제 정보도 하단 품목 영역과 같은 영수증 톤으로 연결 */
 .result-page .tripass-receipt-document.tripass-receipt-document .readonly-trip,
 .result-page .tripass-receipt-document.tripass-receipt-document .readonly-value {
-  border: 1px solid #e5decd;
-  background: #f7f3e9;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+  border: 1px solid rgba(23, 63, 141, .3);
+  background: rgba(255, 255, 255, .76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    0 4px 12px rgba(23, 63, 141, .045);
 }
 
 .result-page .tripass-receipt-document.tripass-receipt-document .merchant-value {
-  border-color: #ddd4bf;
-  background: #f2ede1;
+  border-color: rgba(23, 63, 141, .38);
+  background: rgba(255, 255, 255, .86);
 }
 
 .result-page .tripass-receipt-document .currency-field {
