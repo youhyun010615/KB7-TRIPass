@@ -5,6 +5,7 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
+import livingIcon from '@/assets/icons/home-dollar.svg';
 
 const props = defineProps({
   report: { type: Object, required: true },
@@ -15,7 +16,7 @@ defineEmits(['open']);
 const categoryMeta = {
   FOOD: { icon: '🍽', iconSrc: foodIcon, color: '#2457aa' },
   CAFE: { icon: '☕', iconSrc: cafeIcon, color: '#3b82f6' },
-  LIVING: { icon: '🧺', color: '#13a184' },
+  LIVING: { icon: '🏠', iconSrc: livingIcon, color: '#13a184' },
   SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, color: '#f59e0b' },
   LEISURE: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
   TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, color: '#0ea5e9' },

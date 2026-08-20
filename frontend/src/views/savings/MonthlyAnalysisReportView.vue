@@ -7,11 +7,13 @@ import cafeIcon from '@/assets/icons/cafe.svg';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
+import livingIcon from '@/assets/icons/home-dollar.svg';
 import foodIconRaw from '@/assets/icons/food.svg?raw';
 import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
 import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
 import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
 import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
+import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,7 +24,7 @@ const report = computed(() => analysisStore.report);
 const categoryMeta = {
   FOOD: { icon: '🍽', iconSrc: foodIcon, iconRaw: foodIconRaw, color: '#2457aa' },
   CAFE: { icon: '☕', iconSrc: cafeIcon, iconRaw: cafeIconRaw, color: '#3b82f6' },
-  LIVING: { icon: '🧺', color: '#13a184' },
+  LIVING: { icon: '🏠', iconSrc: livingIcon, iconRaw: livingIconRaw, color: '#13a184' },
   SHOPPING: { icon: '🛍', iconSrc: shoppingIcon, iconRaw: shoppingIconRaw, color: '#f59e0b' },
   LEISURE: { icon: '🎮', iconSrc: leisureIcon, iconRaw: leisureIconRaw, color: '#8b5cf6' },
   TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, iconRaw: taxiIconRaw, color: '#0ea5e9' },

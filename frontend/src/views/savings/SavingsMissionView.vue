@@ -13,6 +13,7 @@ import cafeIcon from '@/assets/icons/cafe.svg'
 import shoppingIcon from '@/assets/icons/shopping-cart.svg'
 import taxiIcon from '@/assets/icons/taxi.svg'
 import leisureIcon from '@/assets/icons/hobby_drink.svg'
+import livingIcon from '@/assets/icons/home-dollar.svg'
 import aiIcon from '@/assets/icons/ai.svg'
 import aiReportIcon from '@/assets/icons/ai_report.svg'
 import foodIconRaw from '@/assets/icons/food.svg?raw'
@@ -20,6 +21,7 @@ import cafeIconRaw from '@/assets/icons/cafe.svg?raw'
 import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw'
 import taxiIconRaw from '@/assets/icons/taxi.svg?raw'
 import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw'
+import livingIconRaw from '@/assets/icons/home-dollar.svg?raw'
 
 const route = useRoute()
 const router = useRouter()
@@ -192,10 +194,10 @@ const categoryMeta = {
   FOOD: { icon: '🍴', iconSrc: foodIcon, iconRaw: foodIconRaw, color: '#ff7548', soft: '#fff0e9' },
   CAFE: { icon: '☕', iconSrc: cafeIcon, iconRaw: cafeIconRaw, color: '#d88b22', soft: '#fff5dc' },
   SHOPPING: { icon: '🛍️', iconSrc: shoppingIcon, iconRaw: shoppingIconRaw, color: '#8e63d4', soft: '#f4edff' },
-  LIVING: { icon: '🏠', color: '#19a88b', soft: '#e5f8f2' },
+  LIVING: { icon: '🏠', iconSrc: livingIcon, iconRaw: livingIconRaw, color: '#19a88b', soft: '#e5f8f2' },
   TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, iconRaw: taxiIconRaw, color: '#3478e5', soft: '#eaf2ff' },
   LEISURE: { icon: '🎮', iconSrc: leisureIcon, iconRaw: leisureIconRaw, color: '#e25283', soft: '#ffedf3' },
-  OTHER: { icon: '📦', color: '#718096', soft: '#edf2f7' },
+  OTHER: { icon: '•••', color: '#718096', soft: '#edf2f7' },
 }
 
 // 카테고리 SVG 아이콘의 black 채우기/선 색을 카테고리 색보다 진하게 바꿔 넣는다.
