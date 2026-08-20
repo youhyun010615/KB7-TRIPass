@@ -250,6 +250,7 @@ function showPastSchedules() {
           :key="item.id"
           :schedule="item"
           :completed="isScheduleCompleted(item)"
+          today
           @detail="openDetail"
         />
       </div>
@@ -375,11 +376,11 @@ function showPastSchedules() {
 .calendar-strip::-webkit-scrollbar { display: none; }
 .calendar-strip button {
   display: grid;
-  flex: 0 0 46px;
-  min-height: 68px;
+  flex: 0 0 42px;
+  min-height: 54px;
   place-items: center;
   align-content: center;
-  gap: 3px;
+  gap: 2px;
   border: 1px solid #edf1f7;
   border-radius: 13px;
   background: #fff;
@@ -394,12 +395,12 @@ function showPastSchedules() {
 }
 .calendar-strip button strong {
   font-family:'Space Mono',ui-monospace,monospace;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
 }
 .calendar-strip button > span {
   display: flex;
-  min-height: 4px;
+  min-height: 3px;
   align-items: center;
   gap: 2px;
 }
@@ -687,7 +688,7 @@ function showPastSchedules() {
   box-shadow: 0 0 0 1px #bcd1f1;
   content: '';
 }
-.date-group.completed h3::before { background: #aeb8c7; }
+.date-group.completed h3::before { background: #21a474;box-shadow:0 0 0 1px #8ed8bb; }
 .date-group h3 span {
   padding: 4px 7px;
   border-radius: 7px;
@@ -697,8 +698,9 @@ function showPastSchedules() {
   font-weight: 800;
 }
 .date-group.completed h3 {
-  color: #8b97a9;
+  color: #18845f;
 }
+.date-group.completed h3 span{background:#e3f7ee;color:#18845f}
 .date-group :deep(.schedule-card) {
   margin-top: 9px;
   border-left: 0;

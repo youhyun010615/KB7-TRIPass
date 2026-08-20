@@ -7,6 +7,7 @@ const props = defineProps({
   schedule: { type: Object, required: true },
   compact: { type: Boolean, default: false },
   completed: { type: Boolean, default: false },
+  today: { type: Boolean, default: false },
 })
 const emit = defineEmits(['detail'])
 const store = useTravelScheduleStore()
@@ -19,7 +20,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 <template>
   <article
     class="schedule-card"
-    :class="[`status-${item.paymentStatus}`, { compact, 'is-completed': completed }]"
+    :class="[`status-${item.paymentStatus}`, { compact, 'is-completed': completed, 'is-today': today }]"
     role="button"
     tabindex="0"
     @click="emit('detail', item.id)"
@@ -32,9 +33,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
     <div class="schedule-copy">
       <div class="schedule-title-row">
         <h4>{{ item.title }}</h4>
-        <em :class="{ 'completion-badge': completed }">
-          {{ completed ? '완료' : paymentLabel }}
-        </em>
+        <em v-if="!completed">{{ paymentLabel }}</em>
       </div>
       <p class="schedule-meta">
         {{ item.time }}<template v-if="hasAmount"><span class="dot">·</span>{{ item.currency }} {{ Number(item.amount).toLocaleString() }}</template>
@@ -124,15 +123,12 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 .status-undecided { background: #fff; }
 .status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
 .is-completed {
-  border-color: #dfe5ee;
-  background: #fff;
+  border-color: #b9ead4;
+  background: #f0fbf6;
 }
 .is-completed .schedule-flag-wrap{filter:grayscale(.25)}
-.is-completed .schedule-title-row .completion-badge,
-.compact.is-completed .schedule-title-row .completion-badge {
-  background: #e8f7ef;
-  color: #16815d;
-}
+.is-today{border-color:#ffd978;background:#fffaf0;box-shadow:0 7px 20px rgba(198,139,0,.09)}
+.is-today.is-completed{border-color:#b9ead4;background:#f0fbf6}
 .compact {
   border: 1px solid rgba(255, 255, 255, 0.72);
   background: rgba(255, 255, 255, 0.96);
