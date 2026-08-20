@@ -629,7 +629,9 @@ aside {
   font-size: 11px;
 }
 .info h2 {
+  color: #173f8d;
   font-size: 15px;
+  font-weight: 900;
 }
 .info div {
   display: flex;
