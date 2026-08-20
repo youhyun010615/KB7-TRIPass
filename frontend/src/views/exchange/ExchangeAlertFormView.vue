@@ -94,8 +94,9 @@ onMounted(async () => {
   <main class="page">
     <div class="shell">
       <header>
-        <button @click="router.back()">‹</button>
+        <button type="button" aria-label="이전 화면" @click="router.back()">‹</button>
         <h1>환율 알림 {{ isEditMode ? '수정' : '설정' }}</h1>
+        <span aria-hidden="true"></span>
       </header>
       <section class="current">
         <small>현재 주요 환율</small
@@ -118,11 +119,18 @@ onMounted(async () => {
           @click="isModalOpen = !isModalOpen"
         >
           <span :class="currency?.flagClass" class="flag-icon"></span>
-          {{ currency?.symbol }} · {{ currency?.name }}
+          <span class="currency-identity">
+            <b>{{ currency?.countryName }}</b>
+            <em>{{ currency?.name }} <small>{{ currency?.symbol }}</small></em>
+          </span>
+          <i class="chevron" :class="{ open: isModalOpen }">›</i>
         </button>
         <button v-else type="button" class="currency-selector" disabled>
           <span :class="currency?.flagClass" class="flag-icon"></span>
-          {{ currency?.symbol }} · {{ currency?.name }}
+          <span class="currency-identity">
+            <b>{{ currency?.countryName }}</b>
+            <em>{{ currency?.name }} <small>{{ currency?.symbol }}</small></em>
+          </span>
         </button>
 
         <!-- 커스텀 드롭다운 목록 -->
@@ -133,7 +141,10 @@ onMounted(async () => {
             @click.stop.prevent="selectCurrency(c.code)"
           >
             <span :class="c.flagClass" class="flag-icon"></span>
-            {{ c.symbol }} · {{ c.name }}
+            <span class="currency-identity">
+              <b>{{ c.countryName }}</b>
+              <em>{{ c.name }} <small>{{ c.symbol }}</small></em>
+            </span>
           </li>
         </ul>
       </label>
@@ -167,7 +178,7 @@ onMounted(async () => {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #e7ecf4;
+  background: #eef2f8;
   color: #10192d;
 }
 .shell {
@@ -175,33 +186,40 @@ onMounted(async () => {
   min-height: 100vh;
   margin: auto;
   padding: 52px 18px 30px;
-  background: #f7f5ef;
+  background: #eef2f8;
 }
 header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
   align-items: center;
   margin-bottom: 18px;
 }
 header button {
-  width: 28px;
-  font-size: 25px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 22px;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 header h1 {
-  flex: 1;
-  padding-right: 28px;
   text-align: center;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 900;
+  letter-spacing: -0.03em;
 }
 .current,
 label,
 .result {
   display: block;
   margin-top: 12px;
-  padding: 15px;
-  border: 1px solid #e1e6ed;
-  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #e7edf9;
+  border-radius: 16px;
   background: #fff;
+  box-shadow: 0 8px 20px rgba(16, 25, 43, 0.05);
 }
 .current {
   position: relative;
@@ -240,20 +258,58 @@ label {
   margin-top: 8px;
   padding: 12px;
   border: 1px solid #e2e7ed;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   color: #10192d;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 900;
+  gap: 10px;
   cursor: pointer;
+}
+.currency-selector:disabled {
+  opacity: 0.75;
+  cursor: default;
 }
 .flag-icon {
   display: block;
-  width: 20px;
-  height: 15px;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 19px;
+  background-size: cover;
+  background-position: 50%;
+  border-radius: 3px;
+}
+.currency-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+.currency-identity b {
+  font-size: 13px;
+  font-weight: 800;
+  color: #10192d;
+}
+.currency-identity em {
+  font-size: 10.5px;
+  font-weight: 700;
+  font-style: normal;
+  color: #7186aa;
+}
+.currency-identity em small {
+  margin-left: 2px;
+  font-size: 10px;
+}
+.chevron {
+  margin-left: auto;
+  color: #9aa7b7;
+  font-size: 16px;
+  font-style: normal;
+  transition: transform 0.2s;
+}
+.chevron.open {
+  transform: rotate(90deg);
 }
 .custom-dropdown {
   position: absolute;
@@ -264,21 +320,18 @@ label {
   padding: 0;
   list-style: none;
   background: #fff;
-  border: 1px solid #e2e7ed;
-  border-radius: 10px;
-  max-height: 200px;
+  border: 1px solid #e7edf9;
+  border-radius: 14px;
+  max-height: 240px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 28px rgba(16, 25, 43, 0.12);
 }
 .custom-dropdown li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #10192d;
   cursor: pointer;
   border-bottom: 1px solid #f0f2f5;
 }
