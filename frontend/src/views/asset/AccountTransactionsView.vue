@@ -129,10 +129,10 @@ const groups = computed(() => {
     return realTransactions.value.reduce((result, t) => {
       const [y, mo, d] = Array.isArray(t.transactionDate) ? t.transactionDate : t.transactionDate.split('-').map(Number)
       const date = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      const jsDate = new Date(y, mo - 1, d)
-      const label = `${date.replaceAll('-', '.')} (${DAYS[jsDate.getDay()]})`
-      const [h = 0, m = 0] = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00').split(':').map(Number)
-      const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      const timeParts = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00:00').split(':').map(Number)
+      const [h = 0, m = 0, s = 0] = timeParts
+      const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      const monthKey = `${y}-${String(mo).padStart(2, '0')}`
       const amount = t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount)
       const isCardPayment = Boolean(t.cardId)
       const item = {
@@ -144,16 +144,16 @@ const groups = computed(() => {
           : (realAccount.value.name || route.query.name || ''),
         amount,
         time,
-        dateLabel: label,
+        transactionDateText: `${String(mo).padStart(2, '0')}.${String(d).padStart(2, '0')} ${time}`,
         balanceAfter: Number(t.balanceAfter ?? 0),
         memo: t.memo ?? '',
         isReal: true,
         sourceType: isCardPayment ? 'CARD' : 'ACCOUNT',
         isCardPayment,
       }
-      const group = result.find((g) => g.date === date)
+      const group = result.find((g) => g.date === monthKey)
       if (group) group.items.push(item)
-      else result.push({ date, label, items: [item] })
+      else result.push({ date: monthKey, label: `${y}.${String(mo).padStart(2, '0')}`, items: [item] })
       return result
     }, [])
   }
@@ -165,9 +165,12 @@ const groups = computed(() => {
       return true
     })
     .reduce((result, item) => {
-      const group = result.find((entry) => entry.date === item.date)
-      if (group) group.items.push(item)
-      else result.push({ date: item.date, label: item.dateLabel, items: [item] })
+      const [year, month, day] = item.date.split('-')
+      const monthKey = `${year}-${month}`
+      const transaction = { ...item, transactionDateText: `${month}.${day} ${item.time ?? ''}`.trim() }
+      const group = result.find((entry) => entry.date === monthKey)
+      if (group) group.items.push(transaction)
+      else result.push({ date: monthKey, label: `${year}.${month}`, items: [transaction] })
       return result
     }, [])
 })
@@ -194,9 +197,14 @@ const groups = computed(() => {
 
     <section class="history-panel">
       <div class="history-title"><div><small>ACCOUNT HISTORY</small><h2>거래내역</h2></div><span>{{ groups.reduce((sum, group) => sum + group.items.length, 0) }}건</span></div>
-      <section class="date-filter"><label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label><i>–</i><label><span>종료일</span><input v-model="endDate" type="date" :min="startDate"></label></section>
+      <section class="date-filter">
+        <span class="calendar-mark">▦</span>
+        <label aria-label="시작일"><input v-model="startDate" type="date" :max="endDate"></label>
+        <i>~</i>
+        <label aria-label="종료일"><input v-model="endDate" type="date" :min="startDate"></label>
+      </section>
     <div class="tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" type="button" @click="filter = tab.id">{{ tab.label }}</button></div>
-    <TransactionGroups :groups="groups" :show-icons="false" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
+    <TransactionGroups :groups="groups" :show-icons="false" :bank-layout="true" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
     </section>
   </main>
 </template>
@@ -227,10 +235,11 @@ const groups = computed(() => {
 .history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}
 .history-title h2{margin-top:3px;color:#10192d;font-size:16px;font-weight:900}
 .history-title>span{color:#94a3b8;font-size:10px;font-weight:700}
-.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin-top:15px;padding:10px 12px;border:1px solid #e7edf9;border-radius:12px;background:#f7f9fd}
-.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}
-.date-filter input{width:100%;color:#10192d;font-size:9px;font-weight:700}
-.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}
+.date-filter{display:grid;grid-template-columns:20px minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:5px;margin-top:15px;padding:11px 4px 9px;border-bottom:1.5px solid #667085;background:#fff}
+.calendar-mark{display:grid;width:19px;height:19px;place-items:center;color:#173f8d;font-size:12px}
+.date-filter label{min-width:0}
+.date-filter input{width:100%;min-width:0;border:0;background:transparent;color:#202938;font-size:9px;font-weight:800;outline:0}
+.date-filter i{color:#667085;font-size:10px;font-style:normal}
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 15px;padding:4px;border-radius:12px;background:#f4f7fb;text-align:center}
 .tabs button{padding:8px 0;border-radius:9px;color:#7186aa;font-size:10px;font-weight:700}
 .tabs button.active{background:#fff;color:#173f8d;box-shadow:0 3px 8px rgba(29,50,82,.08)}
