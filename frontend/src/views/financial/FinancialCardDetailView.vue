@@ -437,7 +437,7 @@ watch(
   width: min(100%, 430px);
   min-height: 100vh;
   margin: auto;
-  padding: 42px 18px 118px;
+  padding: 14px 18px 118px;
   background: linear-gradient(180deg, #f4f7ff 0%, #edf3fc 100%);
 }
 

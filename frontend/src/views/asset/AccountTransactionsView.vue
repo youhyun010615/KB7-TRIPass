@@ -203,7 +203,7 @@ const groups = computed(() => {
 
 <style scoped>
 .account-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:0 0 34px;background:#eef2f8;color:#10192d}
-.account-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;height:92px;margin:0;padding:38px 20px 0;background:#eef2f8}
+.account-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;height:68px;margin:0;padding:14px 20px 0;background:#eef2f8}
 .account-header button{width:36px;height:36px;border-radius:12px;background:#fff;color:#193d82;font-size:24px;font-weight:700;box-shadow:0 5px 16px rgba(36,72,117,.07)}
 .account-header h1{font-size:17px;font-weight:900;letter-spacing:-.03em;text-align:center}
 .account-overview{margin:0 20px;padding:20px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}

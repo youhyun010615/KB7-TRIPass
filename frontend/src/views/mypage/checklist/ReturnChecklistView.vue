@@ -186,7 +186,7 @@ const handleDelete = async (event, itemId) => {
 /* Header */
 .page header {
   display: grid;
-  height: 92px;
+  height: 67px;
   grid-template-columns: 38px 1fr 38px;
   align-items: end;
   padding-bottom: 17px;

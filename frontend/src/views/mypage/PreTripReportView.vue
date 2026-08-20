@@ -138,7 +138,7 @@ const budgetSegments = computed(() => {
 
 <style scoped>
 .page { min-height: 100vh; padding: 0 16px 96px; background: #f8f6f1; color: #111a2d; }
-.page > header { display: grid; height: 88px; grid-template-columns: 35px 1fr 35px; align-items: end; padding-bottom: 16px; }
+.page > header { display: grid; height: 63px; grid-template-columns: 35px 1fr 35px; align-items: end; padding-bottom: 16px; }
 .page > header button { font-size: 29px; text-align: left; }
 .page > header h1 { text-align: center; font-size: 15px; font-weight: 900; }
 .loading { padding: 40px 0; color: #8290a3; font-size: 11px; text-align: center; }

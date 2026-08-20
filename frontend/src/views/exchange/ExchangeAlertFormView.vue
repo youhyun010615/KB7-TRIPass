@@ -185,7 +185,7 @@ onMounted(async () => {
   width: min(100%, 390px);
   min-height: 100vh;
   margin: auto;
-  padding: 52px 18px 30px;
+  padding: 14px 18px 30px;
   background: #eef2f8;
 }
 header {

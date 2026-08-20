@@ -219,7 +219,7 @@ function formatJoinedDate(value) {
   >
     <!-- 헤더 -->
     <header
-        class="flex items-center px-5 pb-4 pt-14"
+        class="flex items-center px-5 pb-4 pt-3.5"
     >
       <button
           type="button"

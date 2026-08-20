@@ -207,7 +207,7 @@ const rows = computed(() =>
   width: min(100%, 390px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 48px 20px 105px;
+  padding: 14px 20px 105px;
   background: #f8f6f1;
   color: #10192d;
 }

@@ -42,7 +42,7 @@ onMounted(() => {
 
 <style scoped>
 .goal-page { min-height: 100vh; padding: 0 18px 92px; color: #111827; background: #f4f7ff; }
-.page-header { height: 76px; display: grid; grid-template-columns: 38px 1fr 48px; align-items: end; padding-bottom: 14px; }
+.page-header { height: 56px; display: grid; grid-template-columns: 38px 1fr 48px; align-items: end; padding-bottom: 14px; }
 .page-header h1 { font-size: 17px; font-weight: 800; text-align:center; }
 .page-header button { border: 0; background: none; text-align: left; font-size: 24px; }
 .empty-ticket { position:relative; overflow:hidden; margin-top:22px; padding:24px 20px 21px; border-radius:24px; color:#fff; text-align:center; background:linear-gradient(145deg,#173b86,#29499d); box-shadow:0 14px 25px rgba(31,59,130,.2); }

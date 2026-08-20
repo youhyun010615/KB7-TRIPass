@@ -297,7 +297,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: 32px 1fr 32px;
   align-items: end;
-  height: 78px;
+  height: 59px;
   padding-bottom: 13px;
 }
 .form-page > header button {

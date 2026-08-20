@@ -575,7 +575,7 @@ onBeforeUnmount(() => {
 
 .capture-page > header {
   display: grid;
-  height: 88px;
+  height: 59px;
   grid-template-columns:42px 1fr 50px;
   align-items: end;
   padding-bottom: 16px

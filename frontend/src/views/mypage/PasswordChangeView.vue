@@ -122,7 +122,7 @@ async function submitPasswordChange() {
   >
     <!-- 헤더 -->
     <header
-        class="flex items-center border-b border-[#E2E7F0] bg-white px-5 pb-4 pt-14"
+        class="flex items-center border-b border-[#E2E7F0] bg-white px-5 pb-4 pt-3.5"
     >
       <button
           type="button"

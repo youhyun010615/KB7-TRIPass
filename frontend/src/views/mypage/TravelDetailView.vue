@@ -103,7 +103,7 @@ onMounted(async () => {
   <div class="min-h-screen pb-20 flex flex-col" style="background: #F4F5F9">
 
     <!-- 헤더 -->
-    <div class="flex items-center gap-3 px-5 pt-14 pb-3">
+    <div class="flex items-center gap-3 px-5 pt-3.5 pb-3">
       <button type="button" class="p-1" @click="router.back()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <path d="M15 6l-6 6 6 6" stroke="#10192B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>

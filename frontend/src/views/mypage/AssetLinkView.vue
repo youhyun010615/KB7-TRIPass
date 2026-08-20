@@ -294,7 +294,7 @@ async function removeCard(card) {
 .account-add-slide>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
 .account-add-slide>strong{margin-top:11px;font-size:12px;font-weight:800}
 .account-add-slide>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
-.page-header{height:92px;padding-top:34px}
+.page-header{height:72px;padding-top:14px}
 .page-header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.03em}
 .summary-card{min-height:auto;padding:20px;border:1px solid #bfd2f1;border-radius:22px;background:linear-gradient(135deg,#dce9fb 0%,#c8daf6 100%);color:#10192d;box-shadow:0 11px 25px rgba(35,73,136,.12)}
 .summary-card::before{content:'';position:absolute;left:-34px;bottom:-62px;width:132px;height:132px;border:1px solid rgba(36,91,179,.14);border-radius:50%}

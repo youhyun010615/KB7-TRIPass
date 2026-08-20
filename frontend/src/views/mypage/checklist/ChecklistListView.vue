@@ -155,7 +155,7 @@ const returnProgress = computed(() => ({
 }
 .checklist-page > header {
   display: grid;
-  height: 94px;
+  height: 68px;
   grid-template-columns: 40px 1fr 40px;
   align-items: end;
   padding-bottom: 18px;

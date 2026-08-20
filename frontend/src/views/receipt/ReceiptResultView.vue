@@ -1538,7 +1538,7 @@ onBeforeUnmount(() => {
 
 .result-page > header {
   display: grid;
-  height: 88px;
+  height: 63px;
   grid-template-columns:50px 1fr 50px;
   align-items: end;
   padding-bottom: 16px

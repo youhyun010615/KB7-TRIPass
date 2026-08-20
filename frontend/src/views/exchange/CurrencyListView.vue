@@ -161,7 +161,7 @@ function toggleCurrency(item) {
   width: min(100%, 390px);
   min-height: 100vh;
   margin: auto;
-  padding: 52px 18px 100px;
+  padding: 14px 18px 100px;
   background: #eef2f8;
 }
 

@@ -76,7 +76,7 @@ function open(item) {
 }
 .page > header {
   display: grid;
-  height: 90px;
+  height: 66px;
   grid-template-columns: 36px 1fr auto;
   align-items: end;
   gap: 8px;

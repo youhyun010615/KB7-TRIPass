@@ -129,7 +129,7 @@ const dateLabel = (value) =>
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  padding: 48px 16px 30px;
+  padding: 14px 16px 30px;
   background: #f8f6f1;
   color: #151f33;
 }

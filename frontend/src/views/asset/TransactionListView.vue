@@ -208,7 +208,7 @@ const totalCount = computed(() =>
   width: min(100%, 390px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 48px 20px 100px;
+  padding: 14px 20px 100px;
   background: #f4f6fc;
   color: #10192d;
 }

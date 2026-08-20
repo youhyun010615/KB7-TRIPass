@@ -655,7 +655,7 @@ onMounted(loadPage)
 
 .receipt-page > header {
   display: grid;
-  height: 88px;
+  height: 66px;
   grid-template-columns:36px 1fr 36px;
   align-items: end;
   padding-bottom: 17px

@@ -1048,7 +1048,7 @@ onBeforeUnmount(removeImage)
 
 .page-header {
   display: grid;
-  height: 94px;
+  height: 67px;
   grid-template-columns: 48px 1fr 48px;
   align-items: end;
   padding: 0 20px 18px;

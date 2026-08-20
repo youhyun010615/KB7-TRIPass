@@ -189,7 +189,7 @@ const ctaLabel = computed(() => {
 <style scoped>
 .page { min-height: 100vh; padding: 0 16px 120px; background: #f7f4ee; color: #111827; }
 
-.header { display: grid; grid-template-columns: 40px 1fr 40px; align-items: end; height: 76px; padding-bottom: 14px; }
+.header { display: grid; grid-template-columns: 40px 1fr 40px; align-items: end; height: 54px; padding-bottom: 14px; }
 .back { border: 0; background: none; font-size: 26px; line-height: 1; }
 .header h1 { font-size: 17px; font-weight: 800; text-align: center; }
 
