@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
 import { getAccounts } from '@/api/asset'
@@ -13,33 +13,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const cardStore = useCardStore()
 const mypageStore = useMypageStore()
-
-// 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
-const mypageHeaderEl = ref(null)
-const mypageHeaderHeight = ref(0)
-let mypageHeaderResizeObserver = null
-
-function syncMypageHeaderHeight() {
-  if (mypageHeaderEl.value) {
-    mypageHeaderHeight.value = mypageHeaderEl.value.offsetHeight
-  }
-}
-
-watch(mypageHeaderEl, (el) => {
-  mypageHeaderResizeObserver?.disconnect()
-  mypageHeaderResizeObserver = null
-  if (!el) return
-
-  syncMypageHeaderHeight()
-  if (window.ResizeObserver) {
-    mypageHeaderResizeObserver = new ResizeObserver(syncMypageHeaderHeight)
-    mypageHeaderResizeObserver.observe(el)
-  }
-})
-
-onBeforeUnmount(() => {
-  mypageHeaderResizeObserver?.disconnect()
-})
 
 const isLoggingOut = ref(false)
 const accounts = ref([])
@@ -132,7 +105,7 @@ const notificationRows = [
   <div class="mypage-scroll min-h-screen pb-20 flex flex-col" style="background: #eef2f8">
 
     <!-- 헤더 -->
-    <div ref="mypageHeaderEl" class="mypage-header-fixed">
+    <div class="mypage-header-fixed">
       <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 14px">
         <div>
           <p class="mypage-header-eyebrow">
@@ -143,8 +116,6 @@ const notificationRows = [
         <NotificationBell />
       </div>
     </div>
-    <div :style="{ height: mypageHeaderHeight + 'px' }" aria-hidden="true" />
-
     <div class="px-4 flex flex-col gap-[22px]">
 
       <!-- 멤버 패스 카드 -->
@@ -379,14 +350,12 @@ const notificationRows = [
 .member-link b { color: #ffd466; font-size: 11px; font-weight: 800; }
 .member-link i { color: #ffd466; font-size: 18px; font-style: normal; line-height: 1; }
 .mypage-header-fixed {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 50%;
   z-index: 60;
   width: 100%;
-  max-width: 390px;
+  flex: none;
   background: #eef2f8;
-  transform: translateX(-50%);
 }
 .mypage-header-eyebrow {
   display: flex;
