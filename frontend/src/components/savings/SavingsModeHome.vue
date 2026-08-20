@@ -1845,7 +1845,7 @@ async function switchMode(mode) {
 .country-slide {
   flex: 0 0 100%;
   min-width: 0;
-  padding: 0 1px 4px;
+  padding: 0 1px;
   opacity: 0.56;
   transform: translateY(5px) scale(0.965);
   transition:
