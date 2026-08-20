@@ -1357,10 +1357,10 @@ async function switchMode(mode) {
   transform: translateY(-50%);
 }
 .ticket-notch-left {
-  left: -12px;
+  left: 2px;
 }
 .ticket-notch-right {
-  right: -12px;
+  right: 2px;
 }
 .ticket-dashed-line {
   width: calc(100% - 34px);
