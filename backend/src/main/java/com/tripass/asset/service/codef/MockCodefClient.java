@@ -15,7 +15,15 @@ import java.util.Map;
  * <ul>
  *   <li>{@code tripassqa} / {@code Mock1234!} — 저축 모드 QA용 (국내 소비 분석·미션)</li>
  *   <li>{@code tripasstravel} / {@code Mock1234!} — 여행 모드 QA용 (저축 이력 + 유럽 여행 지출: 프랑스→독일→스위스)</li>
+ *   <li>{@code demoprep} / {@code Mock1234!} — 시연 계정: 여행 전(준비중), 도쿄 여행 D-8</li>
+ *   <li>{@code demotravel} / {@code Mock1234!} — 시연 계정: 여행 중, 프랑스(종료)→독일(진행중)→스위스(예정)</li>
+ *   <li>{@code demodone} / {@code Mock1234!} — 시연 계정: 여행 후, 방콕 2주 여행 종료</li>
  * </ul>
+ *
+ * <p>demoprep/demotravel/demodone은 TriPass 시연 영상 촬영용으로 추가된 계정으로, DB에 이미
+ * 완성된 시나리오 데이터(trips/schedules/receipts/transactions 등)가 시드되어 있다. 이 Mock
+ * 페르소나는 "계좌 재연동" 등 CODEF 로그인 플로우를 라이브로 시연할 때 자격증명이 통과하도록
+ * 최소한의 응답만 제공하며, DB 시드 데이터와 완전히 동일하지는 않다.</p>
  */
 public class MockCodefClient implements CodefClient {
 
@@ -26,6 +34,15 @@ public class MockCodefClient implements CodefClient {
     public static final String TRAVEL_CONNECTED_ID = "MOCK-CONNECTED-TRIPASS-TRAVEL";
     public static final String BANK_ORGANIZATION = "0004";
     public static final String CARD_ORGANIZATION = "0301";
+
+    // ===== 시연 데모 계정 (demoprep / demotravel / demodone) =====
+    public static final String DEMO_PREP_LOGIN_ID = "demoprep";
+    public static final String DEMO_TRAVEL_LOGIN_ID = "demotravel";
+    public static final String DEMO_DONE_LOGIN_ID = "demodone";
+    public static final String DEMO_PASSWORD = "Mock1234!";
+    public static final String DEMO_PREP_CONNECTED_ID = "MOCK-CONNECTED-DEMO-PREP";
+    public static final String DEMO_TRAVEL_CONNECTED_ID = "MOCK-CONNECTED-DEMO-TRAVEL";
+    public static final String DEMO_DONE_CONNECTED_ID = "MOCK-CONNECTED-DEMO-DONE";
 
     private static final String ACCESS_TOKEN = "mock-codef-access-token";
 
@@ -112,6 +129,15 @@ public class MockCodefClient implements CodefClient {
         if (TRAVEL_LOGIN_ID.equals(loginId) && PASSWORD.equals(password)) {
             return success(Map.of("connectedId", TRAVEL_CONNECTED_ID));
         }
+        if (DEMO_PREP_LOGIN_ID.equals(loginId) && DEMO_PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", DEMO_PREP_CONNECTED_ID));
+        }
+        if (DEMO_TRAVEL_LOGIN_ID.equals(loginId) && DEMO_PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", DEMO_TRAVEL_CONNECTED_ID));
+        }
+        if (DEMO_DONE_LOGIN_ID.equals(loginId) && DEMO_PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", DEMO_DONE_CONNECTED_ID));
+        }
 
         return failure("CF-01002", "Mock 금융기관 아이디 또는 비밀번호가 올바르지 않습니다.");
     }
@@ -153,6 +179,39 @@ public class MockCodefClient implements CodefClient {
                             "resAccountBalance", "8520000",
                             "resWithdrawableAmount", "8520000"
                     )
+            ));
+            return success(data);
+        }
+
+        if (DEMO_PREP_CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf("resAccount", "44401230001111", "resAccountName", "KB국민은행 급여통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "13295000", "resWithdrawableAmount", "13295000"),
+                    mapOf("resAccount", "44401230002222", "resAccountName", "KB국민은행 여행저축통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "780000", "resWithdrawableAmount", "780000")
+            ));
+            return success(data);
+        }
+
+        if (DEMO_TRAVEL_CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf("resAccount", "44402230001111", "resAccountName", "KB국민은행 여행통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "320000", "resWithdrawableAmount", "320000"),
+                    mapOf("resAccount", "44402230002222", "resAccountName", "KB국민은행 생활비통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "1580000", "resWithdrawableAmount", "1580000")
+            ));
+            return success(data);
+        }
+
+        if (DEMO_DONE_CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf("resAccount", "44403230001111", "resAccountName", "KB국민은행 여행통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "1150000", "resWithdrawableAmount", "1150000"),
+                    mapOf("resAccount", "44403230002222", "resAccountName", "KB국민은행 급여통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "3020000", "resWithdrawableAmount", "3020000")
             ));
             return success(data);
         }
@@ -200,6 +259,27 @@ public class MockCodefClient implements CodefClient {
             ));
         }
 
+        if (DEMO_PREP_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(mapOf(
+                    "resCardName", "KB Star 체크카드", "resCardNo", "5412-****-****-3301",
+                    "resCardType", "02", "resPaymentAccount", "44401230001111"
+            )));
+        }
+
+        if (DEMO_TRAVEL_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(mapOf(
+                    "resCardName", "KB 트래블러스 체크카드", "resCardNo", "5412-****-****-8801",
+                    "resCardType", "02", "resPaymentAccount", "44402230001111"
+            )));
+        }
+
+        if (DEMO_DONE_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(mapOf(
+                    "resCardName", "KB 트래블러스 체크카드", "resCardNo", "5412-****-****-7701",
+                    "resCardType", "02", "resPaymentAccount", "44403230001111"
+            )));
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
     }
 
@@ -224,6 +304,14 @@ public class MockCodefClient implements CodefClient {
             return success(Map.of("resTrHistoryList", transactions));
         }
 
+        // 데모 계정 3종은 거래내역이 이미 DB에 시연용으로 시드되어 있으므로,
+        // 여기서는 재연동/동기화 버튼이 에러 없이 동작하도록 빈 목록만 반환한다.
+        if (DEMO_PREP_CONNECTED_ID.equals(connectedId)
+                || DEMO_TRAVEL_CONNECTED_ID.equals(connectedId)
+                || DEMO_DONE_CONNECTED_ID.equals(connectedId)) {
+            return success(Map.of("resTrHistoryList", List.of()));
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
@@ -238,6 +326,13 @@ public class MockCodefClient implements CodefClient {
                 default -> List.of();
             };
             return success(filterByDate(source, body, "resUsedDate"));
+        }
+
+        // 데모 계정 3종: 카드 거래내역도 DB에 이미 시드되어 있으므로 빈 목록 반환.
+        if (DEMO_PREP_CONNECTED_ID.equals(connectedId)
+                || DEMO_TRAVEL_CONNECTED_ID.equals(connectedId)
+                || DEMO_DONE_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of());
         }
 
         if (TRAVEL_CONNECTED_ID.equals(connectedId)) {
