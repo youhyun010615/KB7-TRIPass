@@ -10,6 +10,8 @@
         <result property="balanceAmount" column="balance_amount"/>
         <result property="totalLinkedAccountBalance" column="total_linked_account_balance"/>
         <result property="targetAmount" column="target_amount"/>
+        <result property="externalChargeAmount" column="external_charge_amount"/>
+        <result property="overTargetSpentAmount" column="over_target_spent_amount"/>
 
         <association property="primaryAccount"
                      javaType="WalletPrimaryAccountResponseDto">
@@ -109,6 +111,50 @@
                     t.id DESC
                 LIMIT 1
             ), 0) AS target_amount,
+            COALESCE((
+                SELECT SUM(wl.amount)
+                FROM wallet_ledger wl
+                WHERE wl.wallet_id = w.id
+                  AND wl.direction = 'IN'
+                  AND wl.transaction_type = 'CHARGE'
+                  AND wl.transfer_method = 'MANUAL'
+                  AND wl.created_at &gt;= COALESCE((
+                      SELECT active_trip.start_date
+                      FROM trips active_trip
+                      WHERE active_trip.user_id = w.user_id
+                        AND active_trip.status IN ('TRAVELING', 'ENDED')
+                        AND active_trip.is_deleted = 0
+                      ORDER BY active_trip.start_date DESC, active_trip.id DESC
+                      LIMIT 1
+                  ), CURRENT_DATE)
+            ), 0) AS external_charge_amount,
+            GREATEST(COALESCE((
+                SELECT SUM(tx.amount)
+                FROM transactions tx
+                INNER JOIN trips active_trip ON active_trip.id = tx.trip_id
+                WHERE active_trip.user_id = w.user_id
+                  AND active_trip.status IN ('TRAVELING', 'ENDED')
+                  AND active_trip.is_deleted = 0
+                  AND active_trip.id = (
+                      SELECT latest_trip.id
+                      FROM trips latest_trip
+                      WHERE latest_trip.user_id = w.user_id
+                        AND latest_trip.status IN ('TRAVELING', 'ENDED')
+                        AND latest_trip.is_deleted = 0
+                      ORDER BY latest_trip.start_date DESC, latest_trip.id DESC
+                      LIMIT 1
+                  )
+                  AND tx.transaction_type = 'WITHDRAWAL'
+                  AND tx.is_deleted = 0
+            ), 0) - COALESCE((
+                SELECT t.total_target_amount
+                FROM trips t
+                WHERE t.user_id = w.user_id
+                  AND t.is_deleted = 0
+                  AND t.status IN ('TRAVELING', 'ENDED')
+                ORDER BY t.start_date DESC, t.id DESC
+                LIMIT 1
+            ), 0), 0) AS over_target_spent_amount,
             a.id AS account_id,
             a.account_name AS account_name,
             COALESCE(si.institution_name, cci.organization_name, '연동 계좌') AS bank_name,

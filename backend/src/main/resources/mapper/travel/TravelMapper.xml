@@ -282,6 +282,39 @@
         LIMIT 1
     </select>
 
+    <select id="selectLatestTripByUserId" resultType="Trip">
+        SELECT id, user_id, trip_name, status, start_date, end_date,
+               total_target_amount, is_deleted, deleted_at, created_at, updated_at,
+               start_report_viewed_at
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+        ORDER BY
+            CASE WHEN status IN ('TRAVELING', 'PLANNING') THEN 0 ELSE 1 END,
+            end_date DESC,
+            id DESC
+        LIMIT 1
+    </select>
+
+    <update id="archiveTrip">
+        UPDATE trips
+        SET status = 'ARCHIVED'
+        WHERE id = #{tripId}
+          AND user_id = #{userId}
+          AND (status = 'ENDED' OR end_date &lt; CURRENT_DATE)
+          AND is_deleted = 0
+    </update>
+
+    <update id="acknowledgeStartReport">
+        UPDATE trips
+        SET start_report_viewed_at = COALESCE(start_report_viewed_at, CURRENT_TIMESTAMP)
+        WHERE id = #{tripId}
+          AND user_id = #{userId}
+          AND start_date &lt;= CURRENT_DATE
+          AND end_date &gt;= CURRENT_DATE
+          AND is_deleted = 0
+    </update>
+
     <select id="findTripsByUserId" resultType="TripListItemResponseDto">
         SELECT t.id AS tripId,
                t.trip_name,

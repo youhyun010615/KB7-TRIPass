@@ -29,6 +29,53 @@ public class TravelService {
     private final ScheduleService scheduleService;
     private final ChecklistService checklistService;
 
+    public TripLifecycleResponseDto getCurrentLifecycle(Long currentUserId) {
+        Trip trip = travelMapper.selectLatestTripByUserId(currentUserId);
+        if (trip == null) {
+            return TripLifecycleResponseDto.builder()
+                    .lifecycle("NONE")
+                    .build();
+        }
+
+        LocalDate today = LocalDate.now();
+        String lifecycle;
+        if ("ARCHIVED".equals(trip.getStatus())) lifecycle = "ARCHIVED";
+        else if (today.isBefore(trip.getStartDate())) lifecycle = "PREPARING";
+        else if (!today.isAfter(trip.getEndDate())) lifecycle = "TRAVELING";
+        else lifecycle = "REVIEW";
+
+        return TripLifecycleResponseDto.builder()
+                .tripId(trip.getId())
+                .tripName(trip.getTripName())
+                .status(trip.getStatus())
+                .lifecycle(lifecycle)
+                .startDate(trip.getStartDate())
+                .endDate(trip.getEndDate())
+                .travelModeAvailable("TRAVELING".equals(lifecycle))
+                .missionAvailable("PREPARING".equals(lifecycle))
+                .startReportAvailable("TRAVELING".equals(lifecycle))
+                .startReportAcknowledged(trip.getStartReportViewedAt() != null)
+                .endingReviewRequired("REVIEW".equals(lifecycle))
+                .build();
+    }
+
+    @Transactional
+    public void archiveTrip(Long tripId, Long currentUserId) {
+        validateTripOwner(tripId, currentUserId);
+        if (travelMapper.archiveTrip(tripId, currentUserId) == 0) {
+            throw new TravelException(TravelErrorCode.TRIP_NOT_ARCHIVABLE);
+        }
+        travelMapper.updateUserCurrentViewMode(currentUserId, "SAVING");
+    }
+
+    @Transactional
+    public void acknowledgeStartReport(Long tripId, Long currentUserId) {
+        validateTripOwner(tripId, currentUserId);
+        if (travelMapper.acknowledgeStartReport(tripId, currentUserId) == 0) {
+            throw new TravelException(TravelErrorCode.INVALID_TRIP_PERIOD);
+        }
+    }
+
 
     /**
      * 여행 상세 거래 내역 조회 (필터링 가능)

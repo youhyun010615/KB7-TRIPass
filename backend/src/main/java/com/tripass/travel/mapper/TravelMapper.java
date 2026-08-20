@@ -25,6 +25,12 @@ public interface TravelMapper {
 
     Trip selectTripById(@Param("tripId") Long tripId);
 
+    Trip selectLatestTripByUserId(@Param("userId") Long userId);
+
+    int archiveTrip(@Param("tripId") Long tripId, @Param("userId") Long userId);
+
+    int acknowledgeStartReport(@Param("tripId") Long tripId, @Param("userId") Long userId);
+
     // 유저의 current_view_mode 상태 변경
     int updateUserCurrentViewMode(@Param("userId") Long userId, @Param("currentViewMode") String currentViewMode);
 

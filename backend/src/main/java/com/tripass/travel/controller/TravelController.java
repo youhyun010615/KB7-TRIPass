@@ -38,6 +38,29 @@ public class TravelController {
         return ResponseEntity.ok(ApiResponse.success("여행 대시보드 조회 성공", data));
     }
 
+    @GetMapping("/current-lifecycle")
+    public ResponseEntity<ApiResponse<TripLifecycleResponseDto>> getCurrentLifecycle(
+            Authentication authentication) {
+        TripLifecycleResponseDto data = travelService.getCurrentLifecycle(getAuthenticatedUserId(authentication));
+        return ResponseEntity.ok(ApiResponse.success("여행 라이프사이클 조회 성공", data));
+    }
+
+    @PostMapping("/{id}/archive")
+    public ResponseEntity<ApiResponse<Void>> archiveTrip(
+            @PathVariable("id") Long tripId,
+            Authentication authentication) {
+        travelService.archiveTrip(tripId, getAuthenticatedUserId(authentication));
+        return ResponseEntity.ok(ApiResponse.success("여행을 지난 여행으로 보관했습니다.", null));
+    }
+
+    @PostMapping("/{id}/start-report/acknowledge")
+    public ResponseEntity<ApiResponse<Void>> acknowledgeStartReport(
+            @PathVariable("id") Long tripId,
+            Authentication authentication) {
+        travelService.acknowledgeStartReport(tripId, getAuthenticatedUserId(authentication));
+        return ResponseEntity.ok(ApiResponse.success("여행 시작 리포트를 확인했습니다.", null));
+    }
+
     /**
      * 2. 여행 자금 체크 조회
      */

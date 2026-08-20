@@ -26,6 +26,7 @@ public class Trip {
     private LocalDateTime deletedAt;     // 삭제 일시
     private LocalDateTime createdAt;     // 생성 일시
     private LocalDateTime updatedAt;     // 수정 일시
+    private LocalDateTime startReportViewedAt; // 여행 시작 저축 리포트 팝업 확인 시각
 
     /**
      * 비즈니스 로직: 여행 상태(Status) 변경

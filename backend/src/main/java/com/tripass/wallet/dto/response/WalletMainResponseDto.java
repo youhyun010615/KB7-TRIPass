@@ -23,6 +23,9 @@ public class WalletMainResponseDto {
     private BigDecimal totalLinkedAccountBalance;
     private BigDecimal targetAmount;
     private BigDecimal emergencyAmount;
+    private BigDecimal goalAvailableAmount;
+    private BigDecimal externalChargeAmount;
+    private BigDecimal overTargetSpentAmount;
     private Integer savingRate;
     private WalletPrimaryAccountResponseDto primaryAccount;
     private List<WalletMonthlySavingResponseDto> monthlySavings;

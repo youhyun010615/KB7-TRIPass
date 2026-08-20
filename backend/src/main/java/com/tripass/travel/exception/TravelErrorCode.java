@@ -19,6 +19,7 @@ public enum TravelErrorCode {
     INVALID_TRIP_COUNTRY_ORDER(HttpStatus.BAD_REQUEST, "INVALID_TRIP_COUNTRY_ORDER", "여행 국가 방문 순서와 일정이 올바르지 않습니다."),
     TRIP_ALREADY_EXISTS(HttpStatus.CONFLICT, "TRIP_ALREADY_EXISTS", "진행 중인 여행 목표가 이미 있습니다. 기존 여행 계획을 수정해 주세요."),
     TRIP_NOT_EDITABLE(HttpStatus.CONFLICT, "TRIP_NOT_EDITABLE", "여행 시작 후에는 여행 목표를 수정할 수 없습니다."),
+    TRIP_NOT_ARCHIVABLE(HttpStatus.CONFLICT, "TRIP_NOT_ARCHIVABLE", "종료된 여행만 지난 여행으로 보관할 수 있습니다."),
     BUDGET_NOT_READY(HttpStatus.CONFLICT, "BUDGET_NOT_READY", "AI 예산 추천을 먼저 생성해 주세요."),
     AI_BUDGET_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI_BUDGET_UNAVAILABLE", "AI 여행 예산 추천을 지금 생성할 수 없습니다."),
     INVALID_BUDGET_AMOUNT(HttpStatus.BAD_REQUEST, "INVALID_BUDGET_AMOUNT", "예산 금액은 0 이상 1억 원 이하여야 합니다."),

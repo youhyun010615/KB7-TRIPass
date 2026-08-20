@@ -48,11 +48,16 @@ public class WalletService {
         BigDecimal balanceAmount = defaultZero(response.getBalanceAmount());
         BigDecimal totalLinkedAccountBalance = defaultZero(response.getTotalLinkedAccountBalance());
         BigDecimal targetAmount = defaultTargetAmount(response.getTargetAmount());
-        BigDecimal emergencyAmount = balanceAmount.subtract(targetAmount);
+        BigDecimal externalChargeAmount = defaultZero(response.getExternalChargeAmount());
+        BigDecimal baseWalletAmount = balanceAmount.subtract(externalChargeAmount).max(BigDecimal.ZERO);
+        BigDecimal emergencyAmount = baseWalletAmount.subtract(targetAmount);
 
         response.setBalanceAmount(balanceAmount);
         response.setTotalLinkedAccountBalance(totalLinkedAccountBalance);
         response.setTargetAmount(targetAmount);
+        response.setGoalAvailableAmount(baseWalletAmount.min(targetAmount));
+        response.setExternalChargeAmount(externalChargeAmount.min(balanceAmount));
+        response.setOverTargetSpentAmount(defaultZero(response.getOverTargetSpentAmount()));
         response.setEmergencyAmount(emergencyAmount.compareTo(BigDecimal.ZERO) > 0 ? emergencyAmount : BigDecimal.ZERO);
         response.setSavingRate(calculateSavingRate(balanceAmount, targetAmount));
         response.setMonthlySavings(walletMapper.findMonthlySavings(userId, response.getWalletId()));
