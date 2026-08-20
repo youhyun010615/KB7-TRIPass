@@ -5,9 +5,11 @@ import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
+import { useTravelStore } from '@/stores/travel';
 
 const router = useRouter();
 const store = useTravelScheduleStore();
+const travel = useTravelStore();
 const timelineList = ref(null);
 const currentTimestamp = ref(Date.now());
 const selectedCalendarDate = ref('');
@@ -112,6 +114,25 @@ const travelDays = computed(() =>
     ) + 1,
   ),
 );
+const tripCountries = computed(() => {
+  const codes = store.configuredPeriods.map((period) => period.code);
+  return codes.map((code) => store.countries.find((country) => country.code === code)).filter(Boolean);
+});
+const firstCountry = computed(() => tripCountries.value[0] || store.countries[0]);
+const lastCountry = computed(() => tripCountries.value.at(-1) || firstCountry.value);
+const tripProgress = computed(() => {
+  const start = new Date(`${store.travelStart}T00:00:00`).getTime();
+  const end = new Date(`${store.travelEnd}T00:00:00`).getTime();
+  const now = new Date(`${store.today}T00:00:00`).getTime();
+  if (![start, end, now].every(Number.isFinite) || end <= start) return 0;
+  return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
+});
+const tripStateLabel = computed(() => {
+  if (tripProgress.value <= 0) return '여행 예정';
+  if (tripProgress.value >= 100) return '여행 완료';
+  const elapsed = Math.max(1, Math.floor((new Date(`${store.today}T00:00:00`) - new Date(`${store.travelStart}T00:00:00`)) / 86_400_000) + 1);
+  return `여행 중 · D+${elapsed}`;
+});
 const openDetail = (id) => router.push(`/schedule/${id}`);
 
 function positionTimelineAtNext() {
@@ -152,6 +173,30 @@ function showPastSchedules() {
       </header>
     </div>
     <div class="schedule-header-spacer" aria-hidden="true" />
+
+    <section class="trip-timeline-pass">
+      <div class="trip-pass-head">
+        <small>TRIP TIMELINE · TRIPASS</small>
+        <em>{{ tripStateLabel }}</em>
+      </div>
+      <div class="trip-route">
+        <div>
+          <small>{{ firstCountry?.name }}</small>
+          <strong>{{ firstCountry?.flag }} {{ firstCountry?.code }}</strong>
+        </div>
+        <span class="route-flight"><i :style="{ left: `${tripProgress}%` }">✈</i></span>
+        <div class="route-end">
+          <small>{{ lastCountry?.name }}</small>
+          <strong>{{ lastCountry?.code }} {{ lastCountry?.flag }}</strong>
+        </div>
+      </div>
+      <p>{{ store.travelStart }} — {{ store.travelEnd }} · {{ travel.tripName || '나의 여행' }}</p>
+      <div class="trip-progress">
+        <span><i :style="{ width: `${tripProgress}%` }" /></span>
+        <small>DAY 1</small><small>DAY {{ travelDays }}</small>
+      </div>
+    </section>
+
     <section class="calendar-card">
       <div class="calendar-heading">
         <div>
@@ -182,44 +227,11 @@ function showPastSchedules() {
     </section>
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
 
-    <section
-      v-if="nextSchedule"
-      class="today-ticket"
-    >
-      <div class="ticket-head">
-        <div>
-          <span class="today-eyebrow"><i /> NEXT SCHEDULE</span>
-          <b>곧 시작할 일정</b>
-        </div>
-        <time>{{ dateLabel(nextSchedule.date) }}</time>
-      </div>
-      <div class="cut"><i /><span /><i /></div>
-      <div class="today-summary">
-        <strong>현재 시간과 가장 가까운 일정이에요</strong>
-        <small>시간과 이동 동선을 미리 확인해 보세요.</small>
-      </div>
-      <div class="today-preview-list">
-        <ScheduleCard
-          :schedule="nextSchedule"
-          compact
-          @detail="openDetail"
-        />
-      </div>
-    </section>
-    <section v-else class="empty-ticket">
-      <span class="empty-ticket-badge">
-        <span class="empty-ticket-pulse" aria-hidden="true" />
-        <span aria-hidden="true">✈️</span>
-      </span>
-      <b>남아 있는 여행 일정이 없어요</b>
-      <small>아래에서 완료된 일정을 다시 확인할 수 있어요.</small>
-    </section>
-
     <section class="upcoming-card">
       <div class="section-title">
         <div>
-          <h2>여행 일정</h2>
-          <p>다음 일정부터 보이며 위로 스크롤하면 완료 일정도 볼 수 있어요</p>
+          <h2>{{ nextSchedule ? '여행 일정' : '지난 일정' }}</h2>
+          <p>날짜를 선택하면 해당 일정으로 바로 이동해요</p>
         </div>
         <button
           v-if="completedScheduleCount"
@@ -252,9 +264,9 @@ function showPastSchedules() {
           />
         </div>
         <div v-if="!timelineGroups.length" class="empty-state">
-          <span aria-hidden="true">🧭</span>
-          <b>등록된 여행 일정이 없어요</b>
-          <small>새 일정을 추가하면 이곳에 표시돼요.</small>
+          <span class="empty-calendar-icon" aria-hidden="true">＋</span>
+          <b>아직 등록된 일정이 없어요</b>
+          <small>첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.</small>
         </div>
       </div>
     </section>
@@ -285,6 +297,7 @@ function showPastSchedules() {
 }
 .schedule-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 20px;background:#f4f5f9;transform:translateX(-50%)}
 .schedule-header{display:flex;align-items:flex-start;justify-content:space-between}.header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.schedule-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.schedule-header-spacer{height:82px}
+.trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:14px 16px 15px;border-radius:18px;background:linear-gradient(155deg,#0b2a6b 0%,#123c94 60%,#17459f 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24)}.trip-pass-head{display:flex;align-items:center;justify-content:space-between}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-pass-head em{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.16);font-size:9px;font-style:normal;font-weight:800}.trip-route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:13px}.trip-route>div{min-width:70px}.trip-route small{display:block;color:rgba(255,255,255,.55);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em}.trip-route strong{display:block;margin-top:3px;font-size:18px;font-weight:800}.route-end{text-align:right}.route-flight{position:relative;height:2px;border-radius:99px;background:rgba(255,255,255,.22)}.route-flight i{position:absolute;top:50%;font-size:15px;font-style:normal;transform:translate(-50%,-55%);transition:left .5s ease}.trip-timeline-pass>p{margin-top:10px;color:rgba(255,255,255,.65);font-size:11px}.trip-progress{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}.trip-progress>span{grid-column:1/-1;height:2px;border-radius:99px;background:rgba(255,255,255,.22)}.trip-progress>span i{display:block;height:100%;border-radius:inherit;background:#ffd466;transition:width .6s ease}.trip-progress small{margin-top:5px;color:rgba(255,255,255,.5);font-family:'Space Mono',monospace;font-size:8px}.trip-progress small:last-child{text-align:right}
 .calendar-card {
   overflow: hidden;
   padding: 17px 0 14px;
@@ -540,8 +553,8 @@ function showPastSchedules() {
   font-weight: 500;
 }
 .upcoming-card {
-  margin-top: 18px;
-  padding: 20px;
+  margin-top: 14px;
+  padding: 18px;
   border: 1px solid #e7edf9;
   border-radius: 22px;
   background: linear-gradient(165deg, #fff 0%, #f8faff 100%);
@@ -680,6 +693,7 @@ function showPastSchedules() {
 .empty-state span {
   font-size: 28px;
 }
+.empty-state .empty-calendar-icon{display:grid;width:58px;height:58px;place-items:center;border-radius:50%;background:#eaf1ff;color:#0b2a6b;font-size:26px;font-weight:500;animation:empty-calendar-float 2.4s ease-in-out infinite}@keyframes empty-calendar-float{0%,100%{transform:translateY(0);box-shadow:0 0 0 0 rgba(47,111,237,.14)}50%{transform:translateY(-5px);box-shadow:0 0 0 10px rgba(47,111,237,0)}}
 .empty-state b {
   margin-top: 4px;
   color: #26334d;
@@ -702,8 +716,8 @@ function showPastSchedules() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 28px;
-  background: #173f8d;
+  border-radius: 14px;
+  background: #0b2a6b;
   color: #fff;
   box-shadow: 0 10px 22px rgba(23, 63, 141, 0.3);
 }
