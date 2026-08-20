@@ -60,14 +60,18 @@ async function handleNavigation(item) {
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[390px] h-16 bg-white border-t border-gray-100 flex items-center">
-    <button
-      v-for="item in navItems"
-      :key="item.name"
-      class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
-      :class="isActive(item.path) ? 'text-[#3B5BDB]' : 'text-gray-400'"
-      @click="handleNavigation(item)"
-    >
+  <nav class="bottom-nav" aria-label="주요 메뉴">
+    <div class="nav-surface">
+      <button
+        v-for="item in navItems"
+        :key="item.name"
+        type="button"
+        class="nav-item"
+        :class="{ active: isActive(item.path) }"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
+        @click="handleNavigation(item)"
+      >
+      <span class="nav-icon">
       <!-- home -->
       <svg v-if="item.icon === 'home'" width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M3 9L12 3L21 9V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9Z"
@@ -117,7 +121,132 @@ async function handleNavigation(item) {
         <path d="M4 20C4 17.24 7.58 15 12 15C16.42 15 20 17.24 20 20"
           :stroke="isActive(item.path) ? '#3B5BDB' : '#9CA3AF'" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
-      <span class="text-[10px] font-medium">{{ item.name }}</span>
-    </button>
+      </span>
+      <span class="nav-label">{{ item.name }}</span>
+      </button>
+    </div>
   </nav>
 </template>
+
+<style scoped>
+.bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 50;
+  width: 100%;
+  max-width: 390px;
+  height: 74px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.nav-surface {
+  position: absolute;
+  inset: 10px 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  padding: 0 6px env(safe-area-inset-bottom, 0);
+  border-top: 1px solid #e8eef7;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 -9px 24px rgba(23, 63, 141, .08);
+  pointer-events: auto;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.nav-item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #98a2b3;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 34px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  transition:
+    width .34s cubic-bezier(.2, .8, .2, 1),
+    height .34s cubic-bezier(.2, .8, .2, 1),
+    transform .34s cubic-bezier(.2, .8, .2, 1),
+    background-color .25s ease,
+    box-shadow .34s ease;
+}
+.nav-icon::before {
+  position: absolute;
+  z-index: -1;
+  inset: -7px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  content: '';
+  transition: .34s cubic-bezier(.2, .8, .2, 1);
+}
+.nav-label {
+  overflow: hidden;
+  max-width: 100%;
+  color: #98a2b3;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color .25s ease, transform .34s cubic-bezier(.2, .8, .2, 1);
+}
+.nav-item.active .nav-icon {
+  width: 46px;
+  height: 46px;
+  transform: translateY(-17px);
+  background: linear-gradient(145deg, #123b86, #2869cf);
+  box-shadow: 0 9px 20px rgba(28, 83, 172, .32);
+}
+.nav-item.active .nav-icon::before {
+  inset: -6px;
+  border-color: #e1ebfb;
+  background: #fff;
+  box-shadow: 0 -2px 0 #f3f6fb;
+}
+.nav-item.active .nav-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.nav-item.active .nav-icon :deep([stroke]) {
+  stroke: #fff;
+}
+.nav-item.active .nav-icon :deep([fill]:not([fill="none"])) {
+  fill: #fff;
+}
+.nav-item.active .nav-label {
+  color: #17499c;
+  font-weight: 850;
+  transform: translateY(-7px);
+}
+.nav-item:active .nav-icon {
+  transform: scale(.92);
+}
+.nav-item.active:active .nav-icon {
+  transform: translateY(-17px) scale(.92);
+}
+.nav-item:focus-visible {
+  outline: none;
+}
+.nav-item:focus-visible .nav-icon {
+  box-shadow: 0 0 0 3px #bfd4f7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-icon,
+  .nav-icon::before,
+  .nav-label {
+    transition: none;
+  }
+}
+</style>
