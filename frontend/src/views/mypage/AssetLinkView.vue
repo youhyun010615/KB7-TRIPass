@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { deleteAccount, getAccounts } from '@/api/asset'
@@ -16,9 +16,6 @@ const accounts = ref([])
 const loading = ref(true)
 const deletingKeys = ref(new Set())
 const errorMessage = ref('')
-const cardCarousel = ref(null)
-const activeCardIndex = ref(0)
-let cardScrollTimer = null
 
 const totalBalance = computed(() => accounts.value.reduce(
   (total, account) => total + Number(account.balance ?? 0),
@@ -39,40 +36,7 @@ async function loadAssets() {
   }
 }
 
-onMounted(async () => {
-  await loadAssets()
-  await nextTick()
-  updateActiveCard()
-})
-
-onBeforeUnmount(() => {
-  if (cardScrollTimer) window.clearTimeout(cardScrollTimer)
-})
-
-function updateActiveCard() {
-  const carousel = cardCarousel.value
-  if (!carousel) return
-
-  const carouselCenter = carousel.scrollLeft + carousel.clientWidth / 2
-  let closestIndex = 0
-  let closestDistance = Number.POSITIVE_INFINITY
-
-  Array.from(carousel.children).forEach((slide, index) => {
-    const slideCenter = slide.offsetLeft + slide.offsetWidth / 2
-    const distance = Math.abs(slideCenter - carouselCenter)
-    if (distance < closestDistance) {
-      closestDistance = distance
-      closestIndex = index
-    }
-  })
-
-  activeCardIndex.value = closestIndex
-}
-
-function handleCardScroll() {
-  if (cardScrollTimer) window.clearTimeout(cardScrollTimer)
-  cardScrollTimer = window.setTimeout(updateActiveCard, 110)
-}
+onMounted(loadAssets)
 
 function formatWon(amount) {
   return `${Number(amount ?? 0).toLocaleString('ko-KR')}원`
@@ -258,12 +222,11 @@ async function removeCard(card) {
 
       <section class="asset-section card-section">
         <div class="section-title"><div><h2>내 카드</h2><small>좌우로 밀어 카드를 확인하세요</small></div><span>{{ cardStore.cards.length }}장</span></div>
-        <div ref="cardCarousel" class="card-carousel" @scroll.passive="handleCardScroll">
+        <div class="card-carousel">
           <article
-            v-for="(card, index) in cardStore.cards"
+            v-for="card in cardStore.cards"
             :key="card.id"
             class="card-slide"
-            :class="{ active: activeCardIndex === index }"
             :style="{ '--card-color': resolveCardMeta(card).color, '--card-text': resolveCardMeta(card).text }"
           >
             <div
@@ -294,7 +257,7 @@ async function removeCard(card) {
               </button>
             </div>
           </article>
-          <button type="button" class="card-slide card-add-slide" :class="{ active: activeCardIndex === cardStore.cards.length }" @click="router.push('/profile/financial?step=9&from=asset')">
+          <button type="button" class="card-slide card-add-slide" @click="router.push('/profile/financial?step=9&from=asset')">
             <span>＋</span>
             <strong>카드 추가하기</strong>
             <small>소비 내역을 함께 관리해요</small>
@@ -348,11 +311,9 @@ async function removeCard(card) {
 .summary-counts small{color:#64758e;font-size:9px;font-weight:600}
 .summary-counts b{color:#174a99;font-size:11px;font-weight:800;white-space:nowrap}
 .summary-counts i{width:1px;height:20px;background:#b8c9e2}
-.card-carousel{display:flex;align-items:flex-start;margin:0 -18px;padding:12px 86px 18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:86px;scrollbar-width:none}
+.card-carousel{display:flex;gap:12px;margin:0 -18px;padding:0 18px 8px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:18px;scrollbar-width:none}
 .card-carousel::-webkit-scrollbar{display:none}
-.card-slide{position:relative;z-index:1;flex:0 0 178px;display:flex;flex-direction:column;gap:10px;scroll-snap-align:center;scroll-snap-stop:always;opacity:.68;transform:scale(.9) translateY(8px);transform-origin:center top;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .25s,filter .25s;filter:saturate(.75)}
-.card-slide+.card-slide{margin-left:-45px}
-.card-slide.active{z-index:5;opacity:1;transform:scale(1.045) translateY(-3px);filter:saturate(1) drop-shadow(0 14px 14px rgba(16,43,112,.16))}
+.card-slide{position:relative;flex:0 0 168px;display:flex;flex-direction:column;gap:10px;scroll-snap-align:start}
 .card-visual-big{position:relative;overflow:hidden;height:266px;padding:16px;border-radius:16px;background:linear-gradient(160deg,var(--card-color,#173f8d) 0%,color-mix(in srgb,var(--card-color,#173f8d) 55%,#0b1d3f) 100%);color:#fff;cursor:pointer;box-shadow:0 10px 22px rgba(16,25,43,.18)}
 .card-visual-big::after{content:'';position:absolute;right:-40px;bottom:-46px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
 .card-visual-big.is-photo{padding:0;background:#e7edf9;box-shadow:0 10px 22px rgba(16,25,43,.14)}
@@ -363,15 +324,14 @@ async function removeCard(card) {
 .card-visual-top>b{padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.18);font-size:8px;font-weight:800;white-space:nowrap}
 .card-visual-chip{position:relative;z-index:1;width:30px;height:22px;margin-top:34px;border-radius:5px;background:linear-gradient(135deg,#ffe9a8,#d8ac4c)}
 .card-visual-number{position:relative;z-index:1;margin-top:auto;padding-top:20px;font-size:11px;font-weight:700;letter-spacing:.03em}
-.card-info-panel{position:relative;padding:13px 14px 42px;border:1px solid #e7edf9;border-radius:16px;background:#fff;box-shadow:0 6px 16px rgba(16,25,43,.05);opacity:0;transform:translateY(-7px);transition:opacity .22s .06s,transform .28s .04s;pointer-events:none}
-.card-slide.active .card-info-panel{opacity:1;transform:translateY(0);pointer-events:auto}
+.card-info-panel{position:relative;padding:13px 14px 42px;border:1px solid #e7edf9;border-radius:16px;background:#fff;box-shadow:0 6px 16px rgba(16,25,43,.05)}
 .card-info-panel strong{display:block;overflow:hidden;color:#10192b;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}
 .card-info-panel dl{display:grid;gap:6px;margin-top:9px}
 .card-info-panel dl>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .card-info-panel dt{flex:none;color:#94a3b8;font-size:8.5px;white-space:nowrap}
 .card-info-panel dd{overflow:hidden;color:#48566e;font-size:9.5px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
 .card-info-panel .delete-button{position:absolute;right:12px;bottom:12px;top:auto}
-.card-add-slide{display:flex;flex-direction:column;align-items:center;justify-content:center;height:266px;border:1.5px dashed #b9c9df;border-radius:16px;background:#f8fbff;color:#1d4f9f;text-align:center}
+.card-add-slide{display:flex;flex-direction:column;align-items:center;justify-content:center;height:380px;border:1.5px dashed #b9c9df;border-radius:16px;background:#f8fbff;color:#1d4f9f;text-align:center}
 .card-add-slide>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
 .card-add-slide>strong{margin-top:11px;font-size:12px;font-weight:800}
 .card-add-slide>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
