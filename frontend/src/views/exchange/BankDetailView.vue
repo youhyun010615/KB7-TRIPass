@@ -280,12 +280,6 @@ const copyToClipboard = (text) => {
               }}{{ format(computedEstimatedAmount) }}</strong
             >
           </div>
-          <dl>
-            <div>
-              <dt>살 때 환율</dt>
-              <dd>{{ format(estimate.buyRate) }}원</dd>
-            </div>
-          </dl>
           <p>↗ 환율 우대 {{ estimate.buyFeeRate }}%</p>
         </section>
         <section class="info">
@@ -561,9 +555,9 @@ aside {
 }
 .applied-rate {
   margin-top: 16px;
-  color: #8795aa !important;
-  font-size: 9.5px !important;
-  font-weight: 600;
+  color: #245fc6 !important;
+  font-size: 10px !important;
+  font-weight: 900;
   letter-spacing: -.015em;
 }
 .amount-input {
@@ -598,29 +592,6 @@ aside {
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -.03em;
-}
-.estimate dl {
-  display: grid;
-  grid-template-columns: 1fr;
-  margin-top: 12px;
-  padding: 11px 12px;
-  border-radius: 12px;
-  background: #f5f8fc;
-}
-.estimate dl > div {
-  text-align: center;
-}
-.estimate dl > div + div {
-  border-left: 1px solid #e7ebf0;
-}
-.estimate dt {
-  color: #8c97a7;
-  font-size: 11px;
-}
-.estimate dd {
-  margin-top: 5px;
-  font-size: 13px;
-  font-weight: 700;
 }
 .estimate p {
   margin-top: 14px;
