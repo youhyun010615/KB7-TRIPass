@@ -20,9 +20,14 @@ const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
 const indicatorStorageKey = 'tripass-bottom-nav-index'
 const initialIndicatorIndex = Number(window.sessionStorage.getItem(indicatorStorageKey))
-const displayedIndex = ref(Number.isInteger(initialIndicatorIndex) ? initialIndicatorIndex : 0)
+const indicatorPosition = ref(
+  Number.isInteger(initialIndicatorIndex)
+    ? Math.min(4, Math.max(0, initialIndicatorIndex))
+    : 0,
+)
+const pressAmount = ref(0)
 const indicatorMoving = ref(false)
-let indicatorTimer = null
+let indicatorAnimationFrame = null
 let firstFrame = null
 let secondFrame = null
 
@@ -57,17 +62,59 @@ const activeIndex = computed(() => {
 })
 const activeItem = computed(() => navItems.value[activeIndex.value])
 const indicatorStyle = computed(() => ({
-  left: `${((displayedIndex.value + 0.5) / navItems.value.length) * 100}%`,
+  left: `${((indicatorPosition.value + 0.5) / navItems.value.length) * 100}%`,
+  '--press-y': `${pressAmount.value * 5}px`,
 }))
+const navSurfacePath = computed(() => {
+  const center = ((indicatorPosition.value + 0.5) / navItems.value.length) * 390
+  const depth = 30 + pressAmount.value * 6
+  const left = center - 34
+  const right = center + 34
+  return [
+    'M 0 24',
+    'Q 0 0 24 0',
+    `H ${left.toFixed(2)}`,
+    `C ${(center - 23).toFixed(2)} 0 ${(center - 27).toFixed(2)} ${depth.toFixed(2)} ${center.toFixed(2)} ${depth.toFixed(2)}`,
+    `C ${(center + 27).toFixed(2)} ${depth.toFixed(2)} ${(center + 23).toFixed(2)} 0 ${right.toFixed(2)} 0`,
+    'H 366',
+    'Q 390 0 390 24',
+    'V 90 H 0 Z',
+  ].join(' ')
+})
 
 function moveIndicator(index) {
-  window.clearTimeout(indicatorTimer)
-  indicatorMoving.value = displayedIndex.value !== index
-  displayedIndex.value = index
-  indicatorTimer = window.setTimeout(() => {
+  window.cancelAnimationFrame(indicatorAnimationFrame)
+  const from = indicatorPosition.value
+  const distance = index - from
+  if (Math.abs(distance) < 0.001) {
+    indicatorPosition.value = index
+    pressAmount.value = 0
+    indicatorMoving.value = false
+    return
+  }
+
+  const startedAt = window.performance.now()
+  const duration = 520
+  indicatorMoving.value = true
+
+  const animate = (now) => {
+    const progress = Math.min(1, (now - startedAt) / duration)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    indicatorPosition.value = from + distance * eased
+    pressAmount.value = Math.sin(Math.PI * progress)
+
+    if (progress < 1) {
+      indicatorAnimationFrame = window.requestAnimationFrame(animate)
+      return
+    }
+
+    indicatorPosition.value = index
+    pressAmount.value = 0
     indicatorMoving.value = false
     window.sessionStorage.setItem(indicatorStorageKey, String(index))
-  }, 500)
+  }
+
+  indicatorAnimationFrame = window.requestAnimationFrame(animate)
 }
 
 async function openReceipt() {
@@ -97,7 +144,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  window.clearTimeout(indicatorTimer)
+  window.cancelAnimationFrame(indicatorAnimationFrame)
   window.cancelAnimationFrame(firstFrame)
   window.cancelAnimationFrame(secondFrame)
 })
@@ -106,13 +153,28 @@ onBeforeUnmount(() => {
 <template>
   <nav class="bottom-nav" aria-label="주요 메뉴">
     <div class="nav-shell">
+      <svg
+          class="nav-background"
+          viewBox="0 0 390 90"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="tripass-nav-blue" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#0c2f73" />
+            <stop offset="0.55" stop-color="#174b9c" />
+            <stop offset="1" stop-color="#1e5eb8" />
+          </linearGradient>
+        </defs>
+        <path :d="navSurfacePath" fill="url(#tripass-nav-blue)" />
+      </svg>
+
       <span
           class="moving-notch"
           :class="{ moving: indicatorMoving }"
           :style="indicatorStyle"
           aria-hidden="true"
       >
-        <span class="notch-halo" />
         <span class="active-orb">
           <Transition name="icon-swap" mode="out-in">
             <component
@@ -151,52 +213,52 @@ onBeforeUnmount(() => {
   z-index: 50;
   width: 100%;
   max-width: 390px;
-  height: 98px;
+  height: calc(112px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   pointer-events: none;
 }
 .nav-shell {
   position: absolute;
   right: 0;
-  bottom: max(10px, env(safe-area-inset-bottom));
+  bottom: 0;
   left: 0;
   display: grid;
-  height: 68px;
+  height: calc(82px + env(safe-area-inset-bottom));
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  padding: 5px 7px max(4px, env(safe-area-inset-bottom));
-  border-radius: 25px;
-  background: linear-gradient(105deg, #0c2f73 0%, #174b9c 55%, #1e5eb8 100%);
-  box-shadow: 0 -8px 24px rgba(12, 47, 115, .22);
+  padding: 12px 7px max(4px, env(safe-area-inset-bottom));
   pointer-events: auto;
+}
+.nav-background {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 -8px 14px rgba(12, 47, 115, .2));
 }
 .moving-notch {
   position: absolute;
-  top: -30px;
+  top: -28px;
   z-index: 2;
-  width: 66px;
-  height: 66px;
+  width: 60px;
+  height: 60px;
   transform: translateX(-50%);
-  transition: left .46s cubic-bezier(.22, .82, .2, 1);
   pointer-events: none;
-}
-.notch-halo {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 3px 0 rgba(223, 232, 246, .9);
 }
 .active-orb {
   position: absolute;
-  top: 7px;
+  top: 0;
   left: 50%;
   z-index: 2;
   display: grid;
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   place-items: center;
-  transform: translateX(-50%);
+  box-sizing: border-box;
+  transform: translateX(-50%) translateY(var(--press-y));
+  border: 6px solid #fff;
   border-radius: 50%;
   background: linear-gradient(145deg, #0c2f73, #1e5eb8);
   color: #ffd45c;
@@ -204,33 +266,18 @@ onBeforeUnmount(() => {
     inset 0 0 0 1px rgba(255, 255, 255, .14),
     0 8px 17px rgba(8, 34, 84, .3);
 }
-.moving-notch.moving .notch-halo {
-  animation: notch-press .5s cubic-bezier(.22, .82, .2, 1);
-}
-.moving-notch.moving .active-orb {
-  animation: orb-travel .5s cubic-bezier(.22, .82, .2, 1);
-}
-@keyframes notch-press {
-  0%, 100% { transform: scale(1); }
-  45% { transform: scaleX(.9) scaleY(1.1); }
-  70% { transform: scaleX(1.04) scaleY(.97); }
-}
-@keyframes orb-travel {
-  0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
-  45% { transform: translateX(-50%) translateY(5px) scale(.91); }
-  72% { transform: translateX(-50%) translateY(-2px) scale(1.03); }
-}
 .nav-item {
   position: relative;
   z-index: 3;
   display: flex;
   min-width: 0;
-  height: 58px;
+  height: 66px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   color: rgba(255, 255, 255, .7);
+  transform: translateY(8px);
   -webkit-tap-highlight-color: transparent;
 }
 .nav-icon {
@@ -258,7 +305,7 @@ onBeforeUnmount(() => {
 .nav-item.active .nav-label {
   color: #fff;
   font-weight: 900;
-  transform: translateY(8px);
+  transform: translateY(10px);
 }
 .nav-item:active:not(.active) .nav-icon {
   transform: scale(.86);
@@ -280,16 +327,11 @@ onBeforeUnmount(() => {
 .icon-swap-enter-from { opacity: 0; transform: scale(.55) rotate(-15deg); }
 .icon-swap-leave-to { opacity: 0; transform: scale(.55) rotate(15deg); }
 @media (prefers-reduced-motion: reduce) {
-  .moving-notch,
   .nav-icon,
   .nav-label,
   .icon-swap-enter-active,
   .icon-swap-leave-active {
     transition: none;
-  }
-  .moving-notch.moving .notch-halo,
-  .moving-notch.moving .active-orb {
-    animation: none;
   }
 }
 </style>
