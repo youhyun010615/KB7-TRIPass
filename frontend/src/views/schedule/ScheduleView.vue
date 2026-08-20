@@ -11,6 +11,7 @@ const router = useRouter();
 const store = useTravelScheduleStore();
 const travel = useTravelStore();
 const timelineList = ref(null);
+const calendarStrip = ref(null);
 const currentTimestamp = ref(Date.now());
 const selectedCalendarDate = ref('');
 let scheduleClockTimer = null;
@@ -22,6 +23,7 @@ onMounted(async () => {
   await store.loadSchedules().catch(() => {});
   await nextTick();
   positionTimelineAtNext();
+  positionCalendarAtToday();
 });
 
 onBeforeUnmount(() => window.clearInterval(scheduleClockTimer));
@@ -69,7 +71,12 @@ const selectedDateGroup = computed(() =>
 );
 const selectedDateItems = computed(() => selectedDateGroup.value?.items || []);
 const upcomingTimelineGroups = computed(() =>
-  timelineGroups.value.filter((group) => group.date !== selectedCalendarDate.value),
+  timelineGroups.value
+    .filter((group) => group.date !== selectedCalendarDate.value)
+    .sort((a, b) => {
+      if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+      return a.date.localeCompare(b.date);
+    }),
 );
 const scheduleCountByDate = computed(() => {
   const counts = new Map();
@@ -149,13 +156,23 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 
 function positionTimelineAtNext() {
   const list = timelineList.value;
-  selectedCalendarDate.value = nextSchedule.value?.date || '';
-  if (!list || !completedScheduleCount.value) return;
+  const todayExists = travelDates.value.some((date) => date.date === store.today);
+  selectedCalendarDate.value = todayExists ? store.today : (nextSchedule.value?.date || '');
+  if (!list) return;
 
   const nextAnchor = list.querySelector('[data-next-anchor="true"]');
-  list.scrollTop = nextAnchor
-    ? Math.max(0, nextAnchor.offsetTop - 10)
-    : list.scrollHeight;
+  list.scrollTop = nextAnchor ? Math.max(0, nextAnchor.offsetTop - 10) : 0;
+}
+
+function positionCalendarAtToday() {
+  const list = calendarStrip.value;
+  if (!list) return;
+  const targetDate = travelDates.value.some((date) => date.date === store.today)
+    ? store.today
+    : selectedCalendarDate.value;
+  const target = list.querySelector(`[data-calendar-date="${targetDate}"]`);
+  if (!target) return;
+  list.scrollLeft = Math.max(0, target.offsetLeft - list.offsetLeft - 2);
 }
 
 function focusTimelineDate(date) {
@@ -217,16 +234,18 @@ function showPastSchedules() {
         </div>
         <em>{{ travelDays }}일</em>
       </div>
-      <div class="calendar-strip" aria-label="여행 날짜별 일정">
+      <div ref="calendarStrip" class="calendar-strip" aria-label="여행 날짜별 일정">
         <button
           v-for="date in travelDates"
           :key="date.date"
           type="button"
           :class="{
             active: selectedCalendarDate === date.date,
+            today: store.today === date.date,
             completed: date.completed,
             empty: !date.count,
           }"
+          :data-calendar-date="date.date"
           @click="focusTimelineDate(date.date)"
         >
           <small>{{ date.weekday }}</small>
@@ -379,10 +398,10 @@ function showPastSchedules() {
   display: grid;
   flex: 0 0 40px;
   width: 40px;
-  height: 44px;
+  height: 52px;
   min-height: 0;
-  padding: 4px 0 3px;
-  grid-template-rows: 11px 17px 3px;
+  padding: 6px 0 5px;
+  grid-template-rows: 12px 19px 3px;
   place-items: center;
   align-content: center;
   gap: 0;
@@ -417,6 +436,14 @@ function showPastSchedules() {
 }
 .calendar-strip button.completed { opacity: .55; }
 .calendar-strip button.empty { color: #98a2b3; }
+.calendar-strip button.today {
+  opacity:1;
+  border-color: #f2c64d;
+  background: #fff8df;
+  box-shadow: 0 5px 13px rgba(206, 153, 20, .14);
+}
+.calendar-strip button.today small { color:#a56d00; }
+.calendar-strip button.today i { background:#e9aa12; }
 .calendar-strip button.active {
   border-color: #1d58b8;
   background: #0b2a6b;
@@ -426,6 +453,11 @@ function showPastSchedules() {
 }
 .calendar-strip button.active small { color: #d7e6ff; }
 .calendar-strip button.active i { background: #ffd462; }
+.calendar-strip button.today.active {
+  border-color:#ffd462;
+  background:#0b2a6b;
+  box-shadow:0 7px 15px rgba(30,88,181,.25),0 0 0 2px rgba(255,212,98,.42);
+}
 .today-ticket {
   position: relative;
   display: block;
