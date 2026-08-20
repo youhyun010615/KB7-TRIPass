@@ -102,7 +102,7 @@ const notificationRows = [
 </script>
 
 <template>
-  <div class="mypage-scroll min-h-screen pb-20 flex flex-col" style="background: #eef2f8">
+  <div class="mypage-page" style="background: #eef2f8">
 
     <!-- 헤더 -->
     <div class="mypage-header-fixed">
@@ -116,7 +116,8 @@ const notificationRows = [
         <NotificationBell />
       </div>
     </div>
-    <div class="px-4 flex flex-col gap-[22px]">
+    <div class="mypage-scroll pb-20">
+      <div class="px-4 flex flex-col gap-[22px]">
 
       <!-- 멤버 패스 카드 -->
       <section class="member-card">
@@ -241,6 +242,7 @@ const notificationRows = [
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10m4-4 3-3-3-3m3 3H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         {{ isLoggingOut ? '로그아웃 중...' : '로그아웃' }}
       </button>
+      </div>
     </div>
 
     <BottomNav />
@@ -248,9 +250,16 @@ const notificationRows = [
 </template>
 
 <style scoped>
-.mypage-scroll {
+.mypage-page {
   position: absolute;
   inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.mypage-scroll {
+  flex: 1;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -350,8 +359,7 @@ const notificationRows = [
 .member-link b { color: #ffd466; font-size: 11px; font-weight: 800; }
 .member-link i { color: #ffd466; font-size: 18px; font-style: normal; line-height: 1; }
 .mypage-header-fixed {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 60;
   width: 100%;
   flex: none;
