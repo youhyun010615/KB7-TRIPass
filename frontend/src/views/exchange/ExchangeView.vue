@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
@@ -13,33 +13,6 @@ const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
 const countryDropdownOpen = ref(false);
-
-// 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
-const exchangeHeaderEl = ref(null);
-const exchangeHeaderHeight = ref(0);
-let exchangeHeaderResizeObserver = null;
-
-function syncExchangeHeaderHeight() {
-  if (exchangeHeaderEl.value) {
-    exchangeHeaderHeight.value = exchangeHeaderEl.value.offsetHeight;
-  }
-}
-
-watch(exchangeHeaderEl, (el) => {
-  exchangeHeaderResizeObserver?.disconnect();
-  exchangeHeaderResizeObserver = null;
-  if (!el) return;
-
-  syncExchangeHeaderHeight();
-  if (window.ResizeObserver) {
-    exchangeHeaderResizeObserver = new ResizeObserver(syncExchangeHeaderHeight);
-    exchangeHeaderResizeObserver.observe(el);
-  }
-});
-
-onBeforeUnmount(() => {
-  exchangeHeaderResizeObserver?.disconnect();
-});
 
 const currentTab = computed({
   get: () => exchange.currentTab,
@@ -106,7 +79,7 @@ watch(
 <template>
   <main class="page">
     <div class="shell">
-      <div ref="exchangeHeaderEl" class="exchange-header-fixed">
+      <div class="exchange-header">
         <header>
           <div class="exchange-header-top">
             <div>
@@ -119,7 +92,6 @@ watch(
           </div>
         </header>
       </div>
-      <div :style="{ height: exchangeHeaderHeight + 'px' }" aria-hidden="true" />
 
       <nav class="main-tabs">
         <button
@@ -270,16 +242,9 @@ watch(
   padding: 0 20px 100px;
   background: #eef2f8;
 }
-.exchange-header-fixed {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  z-index: 60;
-  width: 100%;
-  max-width: 390px;
-  padding: 14px 20px 8px;
+.exchange-header {
+  padding: 14px 0 8px;
   background: #eef2f8;
-  transform: translateX(-50%);
 }
 .exchange-header-top {
   display: flex;
