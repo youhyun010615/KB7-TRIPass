@@ -570,54 +570,44 @@ const countryFlagMap = {
   괌: 'gu',
 };
 
-const selectedSchedules = computed(() => {
-  const apiSchedules = tripStatus.value?.upcomingSchedules || [];
-  return apiSchedules.map((s) => {
-    const d = new Date(s.dateTime);
-    // location 또는 title에서 국가명 추출 (예시)
-    const countryName = Object.keys(countryFlagMap).find(
-      (name) => s.location.includes(name) || s.title.includes(name),
-    );
-
-    return {
-      title: s.title,
-      date: `${d.getMonth() + 1}.${d.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][d.getDay()]})`,
-      time: `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`,
-      flagClass: countryFlagMap[countryName]
-        ? `fi fi-${countryFlagMap[countryName]}`
-        : 'fi fi-xx',
-      status: s.location,
-      warning: false,
-    };
-  });
-});
-
-// 최근 지출 내역 (API 연동)
-const recentTransactions = computed(
-  () => tripStatus.value?.recentTransactionsByCountry || {},
-);
-
-const selectedRecent = computed(() => {
-  let transactions = [];
-
-  if (selected.value.code === 'all') {
-    // 모든 나라의 거래 내역을 합침
-    transactions = Object.values(recentTransactions.value).flat();
-  } else {
-    // 선택된 나라의 거래 내역만 가져옴
-    transactions = recentTransactions.value[selected.value.name] || [];
+function parseScheduleDateTime(dateTime) {
+  if (Array.isArray(dateTime)) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = dateTime;
+    return new Date(year, month - 1, day, hour, minute, second);
   }
 
-  // 날짜 기준 내림차순 정렬 및 상위 5개 추출
-  return transactions
-    .sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate))
-    .slice(0, 5)
-    .map((t) => {
+  return new Date(dateTime);
+}
+
+const selectedSchedules = computed(() => {
+  const apiSchedules = tripStatus.value?.upcomingSchedules || [];
+  const now = Date.now();
+
+  return apiSchedules
+    .map((schedule) => ({
+      schedule,
+      date: parseScheduleDateTime(schedule.dateTime),
+    }))
+    .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getTime() >= now)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, 3)
+    .map(({ schedule, date }) => {
+      const title = schedule.title || '';
+      const location = schedule.location || '';
+      const countryName = Object.keys(countryFlagMap).find(
+        (name) => location.includes(name) || title.includes(name),
+      );
+
       return {
-        icon: getCategoryIcon(t.category), // 카테고리별 아이콘 재활용
-        place: `${t.description}`, // 예: "일본 택시"
-        meta: `${t.category} · ${new Date(t.transactionDate).toLocaleDateString()}`,
-        amount: `-${formatWon(t.amount)}(${t.originalAmount.toLocaleString()}${t.currency})`,
+        id: schedule.id ?? `${schedule.dateTime}-${title}-${location}`,
+        title,
+        date: `${date.getMonth() + 1}.${date.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})`,
+        time: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`,
+        flagClass: countryFlagMap[countryName]
+          ? `fi fi-${countryFlagMap[countryName]}`
+          : 'fi fi-xx',
+        status: location,
+        warning: false,
       };
     });
 });
@@ -986,7 +976,7 @@ async function switchMode(mode) {
     </article>
     <article
       v-reveal
-      class="card reveal-card"
+      class="card schedule-card reveal-card"
       style="--card-delay: 70ms"
     >
       <div class="card-title">
@@ -1001,7 +991,7 @@ async function switchMode(mode) {
       <button
         v-else
         v-for="(item, index) in selectedSchedules"
-        :key="item.title"
+        :key="item.id"
         class="schedule-row"
         :style="{ '--row-delay': `${index * 48}ms` }"
         type="button"
@@ -1015,40 +1005,6 @@ async function switchMode(mode) {
           ><small>{{ item.time }}</small></span
         >
         <em :class="{ warning: item.warning }">{{ item.status }}</em>
-      </button>
-    </article>
-
-    <article
-      v-reveal
-      class="card recent-card reveal-card"
-      style="--card-delay: 140ms"
-    >
-      <div class="card-title">
-        <h2>최근 지출 내역</h2>
-        <button type="button" @click="router.push('/asset/transactions')">
-          전체 거래내역
-        </button>
-      </div>
-      <div v-if="selectedRecent.length === 0" class="empty-msg">
-        최근 지출 내역이 없어요.
-      </div>
-      <button
-        v-else
-        v-for="(item, index) in selectedRecent"
-        :key="item.place"
-        class="recent-row"
-        :style="{ '--row-delay': `${index * 48}ms` }"
-        type="button"
-        @click="router.push('/asset/transactions')"
-      >
-        <i>
-          <img v-if="item.icon.iconSrc" :src="item.icon.iconSrc" alt="" />
-          <template v-else>{{ item.icon.icon }}</template>
-        </i>
-        <span
-          ><b>{{ item.place }}</b
-          ><small>{{ item.meta }}</small></span
-        ><strong> {{ item.amount }}</strong>
       </button>
     </article>
     </div>
@@ -1248,8 +1204,7 @@ async function switchMode(mode) {
   .route-pin-pulse,
   .card,
   .reveal-card.is-visible .budget-row,
-  .reveal-card.is-visible .schedule-row,
-  .reveal-card.is-visible .recent-row { animation: none; }
+  .reveal-card.is-visible .schedule-row { animation: none; }
   .reveal-card,
   .reveal-card.is-visible { opacity: 1; transform: none; }
   .country-slide { transition: none; }
@@ -1800,8 +1755,7 @@ async function switchMode(mode) {
     cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .reveal-card.is-visible .budget-row,
-.reveal-card.is-visible .schedule-row,
-.reveal-card.is-visible .recent-row {
+.reveal-card.is-visible .schedule-row {
   animation: home-row-reveal 0.42s
     calc(var(--card-delay, 0ms) + 160ms + var(--row-delay, 0ms))
     cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -1814,8 +1768,7 @@ async function switchMode(mode) {
     animation: none;
   }
   .reveal-card.is-visible .budget-row,
-  .reveal-card.is-visible .schedule-row,
-  .reveal-card.is-visible .recent-row {
+  .reveal-card.is-visible .schedule-row {
     animation: none;
   }
 }
@@ -2018,39 +1971,8 @@ async function switchMode(mode) {
   background: #fff0ef;
   color: #db6258;
 }
-.recent-card {
+.schedule-card {
   margin-bottom: 12px;
-}
-.recent-row {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 30px 1fr auto;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 0;
-  border-top: 1px solid #edf0f4;
-  text-align: left;
-}
-.recent-row > i {
-  display: grid;
-  place-items: center;
-  font-style: normal;
-}
-.recent-row > i img {
-  width: 16px;
-  height: 16px;
-}
-.recent-row span > * {
-  display: block;
-}
-.recent-row b,
-.recent-row strong {
-  font-size: 10px;
-}
-.recent-row small {
-  margin-top: 3px;
-  color: #8c98a9;
-  font-size: 8px;
 }
 .quick-calculator {
   position: fixed;
