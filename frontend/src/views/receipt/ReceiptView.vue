@@ -455,27 +455,45 @@ onMounted(loadPage)
       <span />
     </header>
 
-    <section class="vault-ticket">
-      <div class="vault-ticket-head">
-        <span>TRIPASS RECEIPT PASS</span>
-        <span>NO. {{ String(tripId || 0).padStart(4, '0') }}</span>
+    <section class="receipt-paper">
+      <div class="paper-topline">
+        <span>TRIPASS</span>
+        <span>RECEIPT NO. {{ String(tripId || 0).padStart(4, '0') }}</span>
       </div>
-      <div class="vault-ticket-body">
-        <span class="vault-icon"><ReceiptText :size="25" /></span>
+
+      <div class="paper-brand">
+        <span class="paper-brand-icon"><ReceiptText :size="24" :stroke-width="2.2" /></span>
         <div>
-          <small>MY TRIP</small>
+          <small>MY RECEIPT VAULT</small>
           <h2>{{ tripTitle }}</h2>
-          <p>{{ formatTripDateRange() }}</p>
         </div>
       </div>
-      <div class="vault-ticket-foot">
+
+      <dl class="paper-trip-info">
         <div>
-          <small>ARCHIVED</small>
-          <b>{{ receipts.length }}<em>장</em></b>
+          <dt>TRIP DATE</dt>
+          <dd>{{ formatTripDateRange() }}</dd>
         </div>
-        <span class="vault-complete"><Check :size="13" :stroke-width="3" /> 안전하게 보관 중</span>
-        <i aria-hidden="true"><span v-for="index in 22" :key="index" /></i>
+        <div>
+          <dt>STATUS</dt>
+          <dd><Check :size="12" :stroke-width="3" /> 보관 중</dd>
+        </div>
+      </dl>
+
+      <div class="paper-divider"><span>RECEIPT SUMMARY</span></div>
+
+      <div class="paper-total">
+        <div>
+          <small>보관된 영수증</small>
+          <strong>{{ receipts.length }}<em>장</em></strong>
+        </div>
+        <span class="stored-stamp">
+          <Check :size="17" :stroke-width="3" />
+          <span><b>보관 완료</b><small>안전하게 저장했어요</small></span>
+        </span>
       </div>
+
+      <p class="paper-footer">THANK YOU FOR TRAVELING WITH TRIPASS</p>
     </section>
 
     <section class="filter-section">
@@ -1331,6 +1349,182 @@ onMounted(loadPage)
   box-shadow: 0 5px 13px rgba(47, 111, 237, 0.2);
 }
 
+.receipt-paper {
+  position: relative;
+  margin-bottom: 7px;
+  padding: 0 20px 17px;
+  border: 1px solid #e0e7f1;
+  border-radius: 22px 22px 7px 7px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)),
+    repeating-linear-gradient(0deg, #fff 0, #fff 3px, #f4f6f9 4px);
+  box-shadow: 0 16px 34px rgba(37, 61, 105, 0.12);
+}
+
+.receipt-paper::after {
+  position: absolute;
+  right: -1px;
+  bottom: -8px;
+  left: -1px;
+  height: 9px;
+  background: radial-gradient(circle at 8px 0, #fff 7px, transparent 7.5px) 0 0 / 16px 9px repeat-x;
+  content: '';
+}
+
+.paper-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -20px;
+  padding: 13px 18px;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(135deg, #103579, #205bb9);
+  color: #cfe0ff;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.paper-topline span:first-child {
+  color: #ffd466;
+  font-size: 10px;
+}
+
+.paper-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0 15px;
+}
+
+.paper-brand-icon {
+  display: grid;
+  width: 47px;
+  height: 47px;
+  place-items: center;
+  border-radius: 15px;
+  background: #eaf2ff;
+  color: #205cb9;
+}
+
+.paper-brand small,
+.paper-total > div > small {
+  color: #8d9bb0;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.paper-brand h2 {
+  margin-top: 3px;
+  color: #10192b;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.paper-trip-info {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 13px;
+  border-radius: 13px;
+  background: #f6f8fc;
+}
+
+.paper-trip-info div { min-width: 0; }
+
+.paper-trip-info dt {
+  color: #9aa6b8;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.paper-trip-info dd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #334158;
+  font-size: 9px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paper-trip-info div:last-child dd { color: #168374; }
+
+.paper-divider {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 16px 0 12px;
+  color: #a0adbf;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.paper-divider::before,
+.paper-divider::after {
+  flex: 1;
+  border-top: 1px dashed #cad4e1;
+  content: '';
+}
+
+.paper-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.paper-total > div { display: grid; }
+
+.paper-total strong {
+  margin-top: 1px;
+  color: #123b83;
+  font-size: 29px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.paper-total strong em {
+  margin-left: 3px;
+  color: #67778f;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.stored-stamp {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 11px;
+  border: 1px solid #c7d9f5;
+  border-radius: 12px;
+  background: #f0f6ff;
+  color: #245fb9;
+}
+
+.stored-stamp > span { display: grid; }
+.stored-stamp b { font-size: 9px; font-weight: 950; }
+.stored-stamp small { margin-top: 1px; color: #8296b4; font-size: 7px; }
+
+.paper-footer {
+  margin: 15px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid #edf0f4;
+  color: #a7b1c0;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
 .summary-section {
   margin: 12px 0 0;
   padding: 17px;
@@ -1524,6 +1718,10 @@ onMounted(loadPage)
 
 @media (max-width: 350px) {
   .vault-complete { display: none; }
+  .paper-trip-info { grid-template-columns: 1fr; }
+  .paper-total { align-items: end; }
+  .stored-stamp { padding: 8px; }
+  .stored-stamp small { display: none; }
   .receipt-actions { grid-template-columns: 1fr 1.2fr; }
   .date-group > button { grid-template-columns: 40px minmax(0, 1fr) auto 14px; gap: 8px; }
   .date-group > button > .category-icon { width: 39px; height: 39px; }
