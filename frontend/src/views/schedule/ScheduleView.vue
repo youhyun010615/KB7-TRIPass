@@ -313,7 +313,6 @@ function showPastSchedules() {
           </p>
           <h3>
             {{ dateLabel(group.date) }}
-            <span v-if="group.isCompleted">완료된 일정</span>
           </h3>
           <ScheduleCard
             v-for="item in group.items"
@@ -742,14 +741,6 @@ function showPastSchedules() {
 }
 .date-group.completed::before { background:#aeb7c4; }
 .date-group.completed h3::before { background:#667085;box-shadow:0 0 0 2px #d5d9df,0 0 0 4px #f4f5f9; }
-.date-group h3 span {
-  padding: 4px 7px;
-  border-radius: 7px;
-  background: #eef1f5;
-  color: #8b97a9;
-  font-size: 8px;
-  font-weight: 800;
-}
 .date-group.completed h3 {
   color: #8b97a9;
 }

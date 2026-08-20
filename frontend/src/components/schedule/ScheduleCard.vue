@@ -34,11 +34,13 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
       <div class="schedule-title-row">
         <h4>{{ item.title }}</h4>
         <em v-if="!completed">{{ paymentLabel }}</em>
+        <em v-else-if="today" class="completed-badge completed-badge-top">완료된 일정</em>
       </div>
       <p class="schedule-meta">
         {{ item.time }}<template v-if="hasAmount"><span class="dot">·</span>{{ item.currency }} {{ Number(item.amount).toLocaleString() }}</template>
       </p>
       <p class="schedule-place">{{ item.placeName || '장소 미정' }}</p>
+      <em v-if="completed && !today" class="completed-badge completed-badge-bottom">완료된 일정</em>
     </div>
   </article>
 </template>
@@ -88,6 +90,22 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   font-style: normal;
   font-weight: 700;
   white-space: nowrap;
+}
+.schedule-title-row .completed-badge,
+.completed-badge {
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: #dfe4eb;
+  color: #687486;
+  font-size: 8.5px;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.completed-badge-bottom {
+  display: block;
+  width: max-content;
+  margin: 5px 0 0 auto;
 }
 .schedule-place {
   overflow: hidden;
