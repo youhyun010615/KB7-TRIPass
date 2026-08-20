@@ -34,8 +34,10 @@ const exchangeStore = useExchangeStore();
 // 실제 렌더 높이를 측정해 뒤에 그만큼의 여백을 확보한다. (저축모드 홈과 동일한 방식)
 const travelHeaderEl = ref(null);
 const travelHeaderHeight = ref(0);
+const scheduleNow = ref(Date.now());
 let travelHeaderResizeObserver = null;
 let lowerCardRevealObserver = null;
+let scheduleClockTimer = null;
 
 function syncTravelHeaderHeight() {
   if (travelHeaderEl.value) {
@@ -368,6 +370,10 @@ function findTodayCountryCode(countries) {
 }
 
 onMounted(async () => {
+  scheduleClockTimer = window.setInterval(() => {
+    scheduleNow.value = Date.now();
+  }, 60_000);
+
   try {
     await nextTick();
     restoreCountryPosition();
@@ -395,6 +401,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   travelHeaderResizeObserver?.disconnect();
   lowerCardRevealObserver?.disconnect();
+  window.clearInterval(scheduleClockTimer);
 });
 
 const selectedCountryId = computed({
@@ -582,12 +589,7 @@ function parseScheduleDateTime(dateTime) {
 
 const selectedSchedules = computed(() => {
   const apiSchedules = tripStatus.value?.upcomingSchedules || [];
-  const now = new Date();
-  const todayStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
+  const now = new Date(scheduleNow.value);
   const tomorrowStart = new Date(
     now.getFullYear(),
     now.getMonth(),
@@ -599,7 +601,7 @@ const selectedSchedules = computed(() => {
       schedule,
       date: parseScheduleDateTime(schedule.dateTime),
     }))
-    .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getTime() >= todayStart)
+    .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getTime() >= now.getTime())
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .map((item) => ({
       ...item,
@@ -611,7 +613,7 @@ const selectedSchedules = computed(() => {
     ...schedules.filter((item) => !item.isToday),
   ]
     .slice(0, 3)
-    .map(({ schedule, date, isToday }) => {
+    .map(({ schedule, date, isToday }, index) => {
       const title = schedule.title || '';
       const location = schedule.location || '';
       const countryName = Object.keys(countryFlagMap).find(
@@ -631,12 +633,10 @@ const selectedSchedules = computed(() => {
         status: location,
         warning: false,
         isToday,
+        isNext: index === 0,
       };
     });
 });
-const hasTodaySchedules = computed(() =>
-  selectedSchedules.value.some((item) => item.isToday),
-);
 const calculatorDestination = computed(() =>
   selected.value.code === 'all'
     ? (destinations.value.find((item) => item.code === calculatorCountryCode.value) ??
@@ -1007,24 +1007,22 @@ async function switchMode(mode) {
     >
       <div class="card-title schedule-card-title">
         <div>
-          <h2>{{ hasTodaySchedules ? '오늘 여행 일정' : '다가오는 여행 일정' }}</h2>
-          <p>
-            {{ hasTodaySchedules ? '오늘 일정을 먼저 확인하세요' : '현재와 가까운 일정부터 확인하세요' }}
-          </p>
+          <h2>여행 일정</h2>
+          <p>다음 일정 예정</p>
         </div>
         <button type="button" @click="router.push('/schedule')">
           전체 보기 <span aria-hidden="true">›</span>
         </button>
       </div>
       <div v-if="selectedSchedules.length === 0" class="empty-msg">
-        다가오는 여행 일정이 없어요.
+        예정된 여행 일정이 없어요.
       </div>
       <button
         v-else
         v-for="(item, index) in selectedSchedules"
         :key="item.id"
         class="schedule-row"
-        :class="{ 'is-today': item.isToday }"
+        :class="{ 'is-next': item.isNext }"
         :style="{ '--row-delay': `${index * 48}ms` }"
         type="button"
         @click="router.push('/schedule')"
@@ -2038,18 +2036,18 @@ async function switchMode(mode) {
   border-color: #cfddf6;
   box-shadow: 0 2px 7px rgba(26, 52, 96, 0.06);
 }
-.schedule-row.is-today {
+.schedule-row.is-next {
   border-color: #cbdcff;
   background: linear-gradient(135deg, #f4f8ff 0%, #fff 72%);
   box-shadow: 0 5px 14px rgba(40, 104, 207, 0.09);
 }
-.schedule-row.is-today .schedule-marker {
+.schedule-row.is-next .schedule-marker {
   background: linear-gradient(145deg, #173f8d, #2868cf);
 }
-.schedule-row.is-today .schedule-marker::after {
+.schedule-row.is-next .schedule-marker::after {
   background: #ffd45f;
 }
-.schedule-row.is-today .schedule-meta b {
+.schedule-row.is-next .schedule-meta b {
   padding: 2px 7px;
   border-radius: 6px;
   background: #173f8d;

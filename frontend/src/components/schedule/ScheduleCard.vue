@@ -3,7 +3,11 @@ import { computed } from 'vue'
 import { useTravelScheduleStore } from '@/stores/travelSchedule'
 import { flagIconClass } from '@/stores/travel'
 
-const props = defineProps({ schedule: { type: Object, required: true }, compact: { type: Boolean, default: false } })
+const props = defineProps({
+  schedule: { type: Object, required: true },
+  compact: { type: Boolean, default: false },
+  completed: { type: Boolean, default: false },
+})
 const emit = defineEmits(['detail'])
 const store = useTravelScheduleStore()
 const item = computed(() => store.normalizeSchedule(props.schedule))
@@ -15,7 +19,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 <template>
   <article
     class="schedule-card"
-    :class="[`status-${item.paymentStatus}`, { compact }]"
+    :class="[`status-${item.paymentStatus}`, { compact, 'is-completed': completed }]"
     role="button"
     tabindex="0"
     @click="emit('detail', item.id)"
@@ -30,7 +34,9 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
     <div class="schedule-copy">
       <div class="schedule-title-row">
         <h4>{{ item.title }}</h4>
-        <em>{{ paymentLabel }}</em>
+        <em :class="{ 'completion-badge': completed }">
+          {{ completed ? '✓ 일정 완료' : paymentLabel }}
+        </em>
       </div>
       <p class="schedule-place">{{ item.placeName || '장소 미정' }}</p>
       <p class="schedule-meta">
@@ -50,9 +56,10 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   gap: 14px;
   width: 100%;
   padding: 16px;
+  border: 1px solid #edf0f5;
   border-radius: 16px;
-  background: #f8f9fc;
-  box-shadow: 0 2px 7px rgba(16, 25, 43, .04);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(16, 25, 43, .055);
   color: #10192d;
   text-align: left;
 }
@@ -145,10 +152,23 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   font-size: 20px;
   font-weight: 700;
 }
-.status-onsite { background: #fff6f4; }
+.status-onsite { background: #fff; }
 .status-onsite .schedule-title-row em { background: #fff0ee; color: #db6258; }
-.status-undecided { background: #fafafa; }
+.status-undecided { background: #fff; }
 .status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
+.is-completed {
+  border-color: #dfe5ee;
+  background: #fff;
+}
+.is-completed .schedule-time time {
+  background: #eef1f5;
+  color: #667085;
+}
+.is-completed .schedule-title-row .completion-badge,
+.compact.is-completed .schedule-title-row .completion-badge {
+  background: #e8f7ef;
+  color: #16815d;
+}
 .compact {
   border: 1px solid rgba(255, 255, 255, 0.72);
   background: rgba(255, 255, 255, 0.96);

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
@@ -7,41 +7,57 @@ import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
 const router = useRouter();
 const store = useTravelScheduleStore();
-const todayModalOpen = ref(false);
 const timelineList = ref(null);
+const currentTimestamp = ref(Date.now());
+let scheduleClockTimer = null;
 
 onMounted(async () => {
+  scheduleClockTimer = window.setInterval(() => {
+    currentTimestamp.value = Date.now();
+  }, 60_000);
   await store.loadSchedules().catch(() => {});
   await nextTick();
-  positionTimelineAtUpcoming();
+  positionTimelineAtNext();
 });
-const todaySchedules = computed(() =>
-  store.sortedSchedules.filter(
-    (item) => item.date === store.todayFor(item.timeZone),
-  ),
+
+onBeforeUnmount(() => window.clearInterval(scheduleClockTimer));
+
+function scheduleTimestamp(item) {
+  const timestamp = new Date(`${item.date}T${item.time || '00:00'}:00`).getTime();
+  return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
+}
+
+function isScheduleCompleted(item) {
+  return Boolean(
+      item.completed ||
+      item.scheduleStatus === 'DONE' ||
+      scheduleTimestamp(item) < currentTimestamp.value,
+  );
+}
+
+const nextSchedule = computed(() =>
+  store.sortedSchedules.find((item) => !isScheduleCompleted(item)),
 );
-const upcomingSchedules = computed(() =>
-  store.sortedSchedules.filter(
-    (item) => item.date > store.todayFor(item.timeZone),
-  ),
+const completedScheduleCount = computed(() =>
+  store.sortedSchedules.filter(isScheduleCompleted).length,
 );
-const pastSchedules = computed(() =>
-  store.sortedSchedules.filter(
-    (item) => item.date < store.todayFor(item.timeZone),
-  ),
+watch(
+  () => nextSchedule.value?.id,
+  async () => {
+    await nextTick();
+    positionTimelineAtNext();
+  },
 );
 const timelineGroups = computed(() => {
   const groups = new Map();
-  [...pastSchedules.value, ...upcomingSchedules.value].forEach((item) => {
+  store.sortedSchedules.forEach((item) => {
     if (!groups.has(item.date)) groups.set(item.date, []);
     groups.get(item.date).push(item);
   });
   return [...groups.entries()].map(([date, items]) => ({
     date,
     items,
-    isPast: items.every(
-      (item) => item.date < store.todayFor(item.timeZone),
-    ),
+    isCompleted: items.every(isScheduleCompleted),
   }));
 });
 const dateLabel = (date) =>
@@ -63,13 +79,13 @@ const travelDays = computed(() =>
 );
 const openDetail = (id) => router.push(`/schedule/${id}`);
 
-function positionTimelineAtUpcoming() {
+function positionTimelineAtNext() {
   const list = timelineList.value;
-  if (!list || !pastSchedules.value.length) return;
+  if (!list || !completedScheduleCount.value) return;
 
-  const upcomingAnchor = list.querySelector('[data-upcoming-anchor="true"]');
-  list.scrollTop = upcomingAnchor
-    ? Math.max(0, upcomingAnchor.offsetTop - 10)
+  const nextAnchor = list.querySelector('[data-next-anchor="true"]');
+  list.scrollTop = nextAnchor
+    ? Math.max(0, nextAnchor.offsetTop - 10)
     : list.scrollHeight;
 }
 
@@ -93,82 +109,76 @@ function showPastSchedules() {
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
 
     <section
-      v-if="todaySchedules.length"
+      v-if="nextSchedule"
       class="today-ticket"
-      role="button"
-      tabindex="0"
-      @click="todayModalOpen = true"
-      @keydown.enter="todayModalOpen = true"
     >
       <div class="ticket-head">
         <div>
-          <span class="today-eyebrow"><i /> TODAY</span>
-          <b>오늘의 여행 일정</b>
+          <span class="today-eyebrow"><i /> NEXT SCHEDULE</span>
+          <b>다음 일정은 이 일정이에요</b>
         </div>
-        <time>{{ store.today.replaceAll('-', '.') }}</time>
+        <time>{{ dateLabel(nextSchedule.date) }}</time>
       </div>
       <div class="cut"><i /><span /><i /></div>
       <div class="today-summary">
-        <strong>{{ todaySchedules.length }}개의 일정이 기다리고 있어요</strong>
-        <small>가장 가까운 일정부터 확인해 보세요.</small>
+        <strong>현재 시각을 기준으로 가장 가까운 일정입니다</strong>
+        <small>일정을 선택하면 장소와 결제 정보를 확인할 수 있어요.</small>
       </div>
       <div class="today-preview-list">
         <ScheduleCard
-          v-for="item in todaySchedules"
-          :key="item.id"
-          :schedule="item"
+          :schedule="nextSchedule"
           compact
           @detail="openDetail"
         />
       </div>
-      <div class="all-link">오늘 일정 전체 보기 <span>›</span></div>
     </section>
     <section v-else class="empty-ticket">
       <span class="empty-ticket-badge">
         <span class="empty-ticket-pulse" aria-hidden="true" />
         <span aria-hidden="true">✈️</span>
       </span>
-      <b>등록된 오늘 일정이 없어요</b>
-      <small>새로운 여행 일정을 추가해 보세요.</small>
+      <b>남아 있는 여행 일정이 없어요</b>
+      <small>아래에서 완료된 일정을 다시 확인할 수 있어요.</small>
     </section>
 
     <section class="upcoming-card">
       <div class="section-title">
         <div>
-          <h2>다가오는 여행 일정</h2>
-          <p v-if="pastSchedules.length">위로 스크롤하면 지난 일정도 볼 수 있어요</p>
+          <h2>여행 일정</h2>
+          <p>다음 일정부터 보이며 위로 스크롤하면 완료 일정도 볼 수 있어요</p>
         </div>
         <button
-          v-if="pastSchedules.length"
+          v-if="completedScheduleCount"
           type="button"
           @click="showPastSchedules"
         >
-          지난 {{ pastSchedules.length }}건 <span aria-hidden="true">↑</span>
+          완료 {{ completedScheduleCount }}건 <span aria-hidden="true">↑</span>
         </button>
-        <span v-else>총 {{ upcomingSchedules.length }}건</span>
+        <span v-else>총 {{ store.sortedSchedules.length }}건</span>
       </div>
       <div ref="timelineList" class="upcoming-list">
         <div
           v-for="group in timelineGroups"
           :key="group.date"
           class="date-group"
-          :class="{ past: group.isPast }"
-          :data-upcoming-anchor="group.isPast ? null : 'true'"
+          :class="{ completed: group.isCompleted }"
         >
           <h3>
             {{ dateLabel(group.date) }}
-            <span v-if="group.isPast">지난 일정</span>
+            <span v-if="group.isCompleted">완료된 일정</span>
           </h3>
           <ScheduleCard
             v-for="item in group.items"
             :key="item.id"
             :schedule="item"
+            :completed="isScheduleCompleted(item)"
+            :data-next-anchor="item.id === nextSchedule?.id ? 'true' : null"
             @detail="openDetail"
           />
         </div>
         <div v-if="!timelineGroups.length" class="empty-state">
           <span aria-hidden="true">🧭</span>
-          <b>다가오는 여행 일정이 없어요</b>
+          <b>등록된 여행 일정이 없어요</b>
           <small>새 일정을 추가하면 이곳에 표시돼요.</small>
         </div>
       </div>
@@ -188,45 +198,6 @@ function showPastSchedules() {
       <span class="add-button-label">새 여행 일정 추가하기</span>
     </button>
     <BottomNav />
-
-    <Teleport to="body"
-      ><Transition name="modal"
-        ><div
-          v-if="todayModalOpen"
-          class="modal-wrap"
-          role="dialog"
-          aria-modal="true"
-          aria-label="오늘 일정 전체 보기"
-        >
-          <button
-            class="modal-backdrop"
-            aria-label="닫기"
-            @click="todayModalOpen = false"
-          />
-          <section class="today-modal">
-            <header>
-              <div>
-                <small>{{ store.today.replaceAll('-', '.') }}</small>
-                <h2>오늘 일정 전체</h2>
-              </div>
-              <button
-                type="button"
-                aria-label="닫기"
-                @click="todayModalOpen = false"
-              >
-                ×
-              </button>
-            </header>
-            <div class="modal-list">
-              <ScheduleCard
-                v-for="item in todaySchedules"
-                :key="item.id"
-                :schedule="item"
-                @detail="openDetail"
-              />
-            </div>
-          </section></div></Transition
-    ></Teleport>
   </main>
 </template>
 
@@ -350,6 +321,7 @@ function showPastSchedules() {
   font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
   font-weight: 700;
+  white-space: nowrap;
 }
 .cut {
   display: grid;
@@ -393,17 +365,6 @@ function showPastSchedules() {
 .today-ticket :deep(.schedule-card) {
   width: calc(100% - 36px);
   margin: 12px 18px 8px;
-}
-.all-link {
-  padding: 11px 22px 18px;
-  text-align: right;
-  color: #dce9ff;
-  font-size: 11px;
-  font-weight: 800;
-}
-.all-link span {
-  color: #ffd761;
-  font-size: 17px;
 }
 .empty-ticket {
   display: flex;
@@ -531,14 +492,8 @@ function showPastSchedules() {
   font-size: 8px;
   font-weight: 800;
 }
-.date-group.past h3 {
+.date-group.completed h3 {
   color: #8b97a9;
-}
-.date-group.past :deep(.schedule-card) {
-  border: 1px solid #edf0f4;
-  background: #f6f7f9;
-  box-shadow: none;
-  opacity: 0.82;
 }
 .date-group :deep(.schedule-card) {
   margin-top: 9px;
@@ -605,78 +560,11 @@ function showPastSchedules() {
   font-weight: 700;
   letter-spacing: -0.01em;
 }
-.modal-wrap {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-.modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: #10182780;
-}
-.today-modal {
-  position: relative;
-  width: min(100%, 430px);
-  max-height: 82vh;
-  padding: 20px;
-  border-radius: 24px 24px 0 0;
-  background: #f4f5f9;
-  box-shadow: 0 -10px 35px #1018272e;
-}
-.today-modal > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 2px 16px;
-}
-.today-modal small {
-  color: #276ed6;
-  font-size: 12px;
-  font-weight: 700;
-}
-.today-modal h2 {
-  margin-top: 4px;
-  font-size: 21px;
-  font-weight: 700;
-}
-.today-modal header > button {
-  font-size: 28px;
-  color: #657184;
-}
-.modal-list {
-  display: grid;
-  gap: 10px;
-  max-height: 64vh;
-  overflow: auto;
-  padding-bottom: 20px;
-}
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
 .today-preview-list {
-  max-height: 224px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: #ffffff70 transparent;
+  padding-bottom: 12px;
 }
 .today-preview-list :deep(.schedule-card) {
   width: calc(100% - 36px);
   margin: 10px 18px;
-}
-.modal-list {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: #9eabc0 transparent;
 }
 </style>
