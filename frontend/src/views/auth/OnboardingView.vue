@@ -132,6 +132,20 @@ function onTouchEnd() {
       <span class="route-caption route-caption-right">{{ isLast ? 'READY' : 'GOAL' }}</span>
     </section>
 
+    <div class="moving-brand" :class="{ 'is-compact': current > 0 }" aria-label="TRIPASS">
+      <div class="moving-brand-inner">
+        <span class="brand-logo-halo" aria-hidden="true"></span>
+        <span class="brand-app-icon-wrap">
+          <img class="brand-app-icon" :src="tripassTransparentSymbol" alt="" />
+        </span>
+        <span class="logo-takeoff-route" aria-hidden="true"></span>
+        <svg class="logo-takeoff-plane" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
+        </svg>
+        <strong class="brand-name">TRIPASS</strong>
+      </div>
+    </div>
+
     <section class="slides-window">
       <div
         class="slides-track"
@@ -149,17 +163,7 @@ function onTouchEnd() {
           <div class="visual-stage">
               <div class="visual-content">
                 <div v-if="slide.key === 'journey'" class="brand-visual">
-                  <div class="brand-logo-stage">
-                    <span class="brand-logo-halo" aria-hidden="true"></span>
-                    <span class="brand-app-icon-wrap">
-                      <img class="brand-app-icon" :src="tripassTransparentSymbol" alt="TRIPASS" />
-                    </span>
-                    <span class="logo-takeoff-route" aria-hidden="true"></span>
-                    <svg class="logo-takeoff-plane" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
-                    </svg>
-                    <strong class="brand-name">TRIPASS</strong>
-                  </div>
+                  <div class="brand-logo-spacer" aria-hidden="true"></div>
                   <h1 class="journey-tagline">여행을 준비하는<br />가장 똑똑한 금융 습관</h1>
                   <div class="journey-feature-strip" aria-label="TRIPASS 주요 기능">
                     <div><span>₩</span><strong>저축 목표</strong></div>
@@ -416,6 +420,65 @@ function onTouchEnd() {
 .route-caption-left { left: -3px; }
 .route-caption-right { right: -5px; }
 
+.moving-brand {
+  position: absolute;
+  top: clamp(222px, 29vh, 282px);
+  left: 50%;
+  z-index: 8;
+  width: 330px;
+  transform: translate(-50%, -50%);
+  transform-origin: top left;
+  transition:
+    top 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.moving-brand-inner {
+  position: relative;
+  display: flex;
+  height: 158px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+}
+
+.moving-brand.is-compact {
+  top: max(148px, calc(env(safe-area-inset-top) + 102px));
+  left: 24px;
+  width: 142px;
+  transform: translate(0, 0);
+}
+
+.moving-brand.is-compact .moving-brand-inner {
+  height: 40px;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.moving-brand.is-compact .brand-app-icon-wrap {
+  width: 36px;
+  height: 36px;
+  transition: width 680ms cubic-bezier(0.22, 1, 0.36, 1), height 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.moving-brand.is-compact .brand-name {
+  font-size: 14px;
+  letter-spacing: 0.09em;
+  transition: font-size 680ms cubic-bezier(0.22, 1, 0.36, 1), letter-spacing 680ms ease;
+}
+
+.moving-brand.is-compact .brand-logo-halo,
+.moving-brand.is-compact .logo-takeoff-route,
+.moving-brand.is-compact .logo-takeoff-plane {
+  opacity: 0;
+  animation: none;
+}
+
 .slides-window {
   flex: 1;
   overflow: hidden;
@@ -486,6 +549,11 @@ function onTouchEnd() {
   width: min(100%, 330px);
   height: 122px;
   place-items: center;
+}
+
+.brand-logo-spacer {
+  width: 100%;
+  height: 158px;
 }
 
 .brand-logo-halo {
@@ -1268,6 +1336,19 @@ function onTouchEnd() {
 .slide.is-active .brand-app-icon {
   animation: app-icon-arrive 680ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
     app-icon-float 3.6s ease-in-out 850ms infinite;
+}
+
+.moving-brand:not(.is-compact) .brand-app-icon {
+  animation: app-icon-arrive 680ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
+    app-icon-float 3.6s ease-in-out 850ms infinite;
+}
+
+.moving-brand:not(.is-compact) .brand-logo-halo {
+  animation: brand-halo 2.8s ease-out 520ms infinite;
+}
+
+.moving-brand:not(.is-compact) .logo-takeoff-plane {
+  animation: logo-plane-on-curve 2.8s cubic-bezier(0.42, 0, 0.2, 1) 650ms infinite;
 }
 
 .slide.is-active .logo-takeoff-route {
