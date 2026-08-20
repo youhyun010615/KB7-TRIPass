@@ -23,6 +23,7 @@ let cardPointerStart = 0
 let cardWasDragged = false
 
 const activeCard = computed(() => cardStore.cards[activeCardIndex.value] ?? null)
+const cardDeckLength = computed(() => cardStore.cards.length + 1)
 
 function cardDeckStyle(index) {
   const step = 98
@@ -42,7 +43,7 @@ function cardDeckStyle(index) {
 }
 
 function startCardDrag(event) {
-  if (!cardStore.cards.length) return
+  if (cardDeckLength.value <= 1) return
   cardPointerStart = event.clientX
   cardDragOffset.value = 0
   cardWasDragged = false
@@ -54,7 +55,7 @@ function moveCardDrag(event) {
   if (!isCardDragging.value) return
   const rawOffset = event.clientX - cardPointerStart
   const atFirst = activeCardIndex.value === 0 && rawOffset > 0
-  const atLast = activeCardIndex.value === cardStore.cards.length - 1 && rawOffset < 0
+  const atLast = activeCardIndex.value === cardDeckLength.value - 1 && rawOffset < 0
   cardDragOffset.value = (atFirst || atLast) ? rawOffset * .32 : rawOffset
   if (Math.abs(rawOffset) > 5) cardWasDragged = true
 }
@@ -67,7 +68,7 @@ function endCardDrag(event) {
     ? Math.max(1, Math.round(Math.abs(cardDragOffset.value) / step))
     : 0
   const direction = cardDragOffset.value < 0 ? 1 : -1
-  activeCardIndex.value = Math.max(0, Math.min(cardStore.cards.length - 1, activeCardIndex.value + direction * movedCards))
+  activeCardIndex.value = Math.max(0, Math.min(cardDeckLength.value - 1, activeCardIndex.value + direction * movedCards))
   isCardDragging.value = false
   cardDragOffset.value = 0
 }
@@ -82,6 +83,19 @@ function selectDeckCard(index, card) {
     return
   }
   router.push(`/mypage/cards/${card.id}/transactions`)
+}
+
+function selectAddCard() {
+  if (cardWasDragged) {
+    cardWasDragged = false
+    return
+  }
+  const addIndex = cardStore.cards.length
+  if (activeCardIndex.value !== addIndex) {
+    activeCardIndex.value = addIndex
+    return
+  }
+  router.push('/profile/financial?step=9&from=asset')
 }
 
 const totalBalance = computed(() => accounts.value.reduce(
@@ -291,7 +305,6 @@ async function removeCard(card) {
       <section class="asset-section card-section">
         <div class="section-title"><div><h2>내 카드</h2><small>좌우로 밀어 카드를 확인하세요</small></div><span>{{ cardStore.cards.length }}장</span></div>
         <div
-          v-if="cardStore.cards.length"
           class="card-deck"
           :class="{ dragging: isCardDragging }"
           @pointerdown="startCardDrag"
@@ -323,6 +336,17 @@ async function removeCard(card) {
               </template>
             </div>
           </button>
+          <button
+            type="button"
+            class="card-deck-item card-deck-add"
+            :class="{ active: activeCardIndex === cardStore.cards.length }"
+            :style="cardDeckStyle(cardStore.cards.length)"
+            @click="selectAddCard"
+          >
+            <span>＋</span>
+            <strong>카드 추가하기</strong>
+            <small>소비 내역을 함께 관리해요</small>
+          </button>
         </div>
 
         <Transition name="card-detail" mode="out-in">
@@ -341,11 +365,6 @@ async function removeCard(card) {
             </div>
           </div>
         </Transition>
-
-        <button type="button" class="card-add-button" @click="router.push('/profile/financial?step=9&from=asset')">
-            <span>＋</span>
-            <span><strong>카드 추가하기</strong><small>소비 내역을 함께 관리해요</small></span>
-        </button>
       </section>
 
       <aside class="unlink-note">
@@ -423,14 +442,13 @@ async function removeCard(card) {
 .card-deck-item{position:absolute;top:7px;left:50%;width:168px;padding:0;border:0;background:transparent;transform-style:preserve-3d;will-change:transform,opacity;-webkit-tap-highlight-color:transparent}
 .card-deck-item:not(.active) .card-visual-big{box-shadow:0 7px 15px rgba(16,25,43,.11)}
 .card-deck-item.active .card-visual-big{box-shadow:0 17px 31px rgba(16,43,112,.24)}
+.card-deck-add{top:7px;display:flex;height:266px;flex-direction:column;align-items:center;justify-content:center;border:1.5px dashed #b9c9df;border-radius:16px;background:#f8fbff;color:#1d4f9f;text-align:center;box-shadow:0 8px 18px rgba(25,49,86,.06)}
+.card-deck-add>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
+.card-deck-add>strong{margin-top:11px;font-size:12px;font-weight:800}
+.card-deck-add>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
 .active-card-info{width:168px;margin:2px auto 0;transform-origin:center top}
 .active-card-info>.card-info-panel{width:100%;min-height:0;padding:13px 14px 42px;border-radius:16px}
 .card-detail-enter-active,.card-detail-leave-active{transition:opacity .18s ease,transform .32s cubic-bezier(.16,1,.3,1)}
 .card-detail-enter-from{opacity:0;transform:translateY(8px) scale(.94)}
 .card-detail-leave-to{opacity:0;transform:translateY(-3px) scale(.97)}
-.card-add-button{display:flex;align-items:center;gap:10px;width:100%;margin-top:11px;padding:10px 13px;border:1px dashed #b9c9df;border-radius:15px;background:#f8fbff;color:#1d4f9f;text-align:left}
-.card-add-button>span:first-child{display:grid;width:34px;height:34px;flex:none;place-items:center;border-radius:11px;background:#e5efff;color:#2865ca;font-size:18px}
-.card-add-button strong,.card-add-button small{display:block}
-.card-add-button strong{font-size:11px;font-weight:800}
-.card-add-button small{margin-top:3px;color:#8c9bb0;font-size:8px}
 </style>
