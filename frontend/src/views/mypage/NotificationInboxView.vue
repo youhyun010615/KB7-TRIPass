@@ -3,6 +3,7 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useMypageStore } from '@/stores/mypage';
+import alertIcon from '@/assets/icons/alert.svg';
 const router = useRouter(),
   store = useMypageStore();
 const meta = {
@@ -62,7 +63,18 @@ function open(item) {
           </button>
         </div>
       </div>
-      <p v-if="!store.notifications.length">새로운 알림이 없어요.</p>
+      <div v-if="!store.notifications.length" class="empty">
+        <div class="alert-visual" aria-hidden="true">
+          <span class="pulse-ring pulse-ring-one"></span>
+          <span class="pulse-ring pulse-ring-two"></span>
+          <span class="icon-bubble">
+            <img :src="alertIcon" alt="" />
+            <i></i>
+          </span>
+        </div>
+        <strong>새로운 알림이 없어요</strong>
+        <p>새로운 소식이 도착하면<br />이곳에서 바로 알려드릴게요.</p>
+      </div>
     </section>
     <BottomNav />
   </main>
@@ -189,10 +201,80 @@ function open(item) {
 .go-btn:active {
   opacity: 0.6;
 }
-.list p {
-  padding: 55px;
+.empty {
+  padding: 42px 22px 38px;
   text-align: center;
-  color: #94a3b8;
-  font-size: 11px;
+}
+.empty strong {
+  display: block;
+  margin-top: 24px;
+  color: #122342;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.empty p {
+  margin-top: 10px;
+  color: #7788a4;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.7;
+  letter-spacing: -0.025em;
+}
+.alert-visual {
+  position: relative;
+  display: grid;
+  width: 94px;
+  height: 94px;
+  margin: 0 auto;
+  place-items: center;
+}
+.icon-bubble {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 66px;
+  height: 66px;
+  place-items: center;
+  animation: bell-float 2.4s ease-in-out infinite;
+}
+.icon-bubble img {
+  width: 30px;
+  height: 30px;
+  filter: invert(23%) sepia(77%) saturate(1471%) hue-rotate(196deg)
+    brightness(86%) contrast(91%);
+}
+.icon-bubble i {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ffd45f;
+}
+.pulse-ring {
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(49, 104, 203, 0.28);
+  border-radius: 50%;
+  animation: alert-pulse 2.4s ease-out infinite;
+}
+.pulse-ring-two {
+  animation-delay: 1.2s;
+}
+@keyframes bell-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(3deg); }
+}
+@keyframes alert-pulse {
+  0% { opacity: 0; transform: scale(0.72); }
+  25% { opacity: 0.8; }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-bubble,
+  .pulse-ring { animation: none; }
 }
 </style>
