@@ -134,7 +134,7 @@ const rawGroups = computed(() => {
       const timeParts = Array.isArray(t.transactionTime) ? t.transactionTime : (t.transactionTime ?? '00:00:00').split(':').map(Number)
       const [h = 0, m = 0, s = 0] = timeParts
       const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-      const monthKey = `${y}-${String(mo).padStart(2, '0')}`
+      const dateKey = date
       const amount = t.transactionType === 'DEPOSIT' ? Number(t.amount) : -Number(t.amount)
       const isCardPayment = Boolean(t.cardId)
       const item = {
@@ -147,16 +147,16 @@ const rawGroups = computed(() => {
         amount,
         time,
         transactionDate: date,
-        transactionDateText: `${String(mo).padStart(2, '0')}.${String(d).padStart(2, '0')} ${time}`,
+        transactionDateText: time,
         balanceAfter: Number(t.balanceAfter ?? 0),
         memo: t.memo ?? '',
         isReal: true,
         sourceType: isCardPayment ? 'CARD' : 'ACCOUNT',
         isCardPayment,
       }
-      const group = result.find((g) => g.date === monthKey)
+      const group = result.find((g) => g.date === dateKey)
       if (group) group.items.push(item)
-      else result.push({ date: monthKey, label: `${y}.${String(mo).padStart(2, '0')}`, items: [item] })
+      else result.push({ date: dateKey, label: `${y}.${String(mo).padStart(2, '0')}.${String(d).padStart(2, '0')} ${DAYS[new Date(y, mo - 1, d).getDay()]}요일`, items: [item] })
       return result
     }, [])
   }
@@ -169,11 +169,11 @@ const rawGroups = computed(() => {
     })
     .reduce((result, item) => {
       const [year, month, day] = item.date.split('-')
-      const monthKey = `${year}-${month}`
-      const transaction = { ...item, transactionDateText: `${month}.${day} ${item.time ?? ''}`.trim() }
-      const group = result.find((entry) => entry.date === monthKey)
+      const dateKey = item.date
+      const transaction = { ...item, transactionDate: item.date, transactionDateText: item.time ?? '' }
+      const group = result.find((entry) => entry.date === dateKey)
       if (group) group.items.push(transaction)
-      else result.push({ date: monthKey, label: `${year}.${month}`, items: [transaction] })
+      else result.push({ date: dateKey, label: `${year}.${month}.${day} ${DAYS[new Date(Number(year), Number(month) - 1, Number(day)).getDay()]}요일`, items: [transaction] })
       return result
     }, [])
 })
@@ -218,8 +218,8 @@ function applyFilters(value) {
     <p v-if="syncMessage" class="sync-message" :class="{ error: syncMessage.includes('실패') || syncMessage.includes('오류') }">{{ syncMessage }}</p>
 
     <section class="history-panel">
-      <div class="history-title"><div><small>ACCOUNT HISTORY</small><h2>거래내역</h2></div><span>{{ groups.reduce((sum, group) => sum + group.items.length, 0) }}건</span></div>
-      <TransactionFilterSheet :start-date="startDate" :end-date="endDate" :period="period" :type="filter" :sort="sort" :supports-type="true" @apply="applyFilters" />
+      <div class="history-title"><div><small>ACCOUNT HISTORY</small><h2>거래내역</h2></div></div>
+      <TransactionFilterSheet :start-date="startDate" :end-date="endDate" :period="period" :type="filter" :sort="sort" :count="groups.reduce((sum, group) => sum + group.items.length, 0)" :supports-type="true" @apply="applyFilters" />
     <TransactionGroups :groups="groups" :show-icons="false" :bank-layout="true" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
     </section>
   </main>

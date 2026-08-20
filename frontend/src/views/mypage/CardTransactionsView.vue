@@ -82,6 +82,7 @@ const startDate = ref(initialSyncStartDate)
 const endDate = ref(toLocalDateStr(now))
 const period = ref('3개월')
 const sort = ref('latest')
+const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 function monthlyRanges(from, to) {
   const ranges = []
@@ -112,7 +113,6 @@ const rawGroups = computed(() => cardStore.cardTransactions.reduce((result, tran
   if (!year || !month || !day) return result
 
   const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  const monthKey = `${year}-${String(month).padStart(2, '0')}`
   const [hour = 0, minute = 0, second = 0] = parseTime(transaction.transactionTime)
   const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
   const item = {
@@ -123,7 +123,7 @@ const rawGroups = computed(() => cardStore.cardTransactions.reduce((result, tran
     amount: -Math.abs(Number(transaction.amount)),
     time,
     transactionDate: date,
-    transactionDateText: `${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')} ${time}`,
+    transactionDateText: time,
     balanceAfter: null,
     memo: transaction.memo ?? '',
     merchantType: transaction.merchantType ?? '',
@@ -131,9 +131,9 @@ const rawGroups = computed(() => cardStore.cardTransactions.reduce((result, tran
     sourceType: 'CARD',
   }
 
-  const group = result.find((entry) => entry.date === monthKey)
+  const group = result.find((entry) => entry.date === date)
   if (group) group.items.push(item)
-  else result.push({ date: monthKey, label: `${year}.${String(month).padStart(2, '0')}`, items: [item] })
+  else result.push({ date, label: `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')} ${DAYS[new Date(year, month - 1, day).getDay()]}요일`, items: [item] })
   return result
 }, []))
 
@@ -243,10 +243,9 @@ function openTransaction(item) {
         <div><small>CARD HISTORY</small><h2>카드내역</h2></div>
         <div class="history-tools">
           <button type="button" :disabled="syncing" @click="syncTransactions()"><span>↻</span>{{ syncing ? '동기화 중' : '최신 내역' }}</button>
-          <strong>{{ transactionCount }}건</strong>
         </div>
       </div>
-      <TransactionFilterSheet :start-date="startDate" :end-date="endDate" :period="period" :sort="sort" @apply="applyFilters" />
+      <TransactionFilterSheet :start-date="startDate" :end-date="endDate" :period="period" :sort="sort" :count="transactionCount" @apply="applyFilters" />
       <TransactionGroups :groups="groups" :show-icons="false" :bank-layout="true" :loading="loading || syncing" @select="openTransaction" />
     </section>
   </main>
