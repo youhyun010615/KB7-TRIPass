@@ -16,7 +16,6 @@ import {
   getReceiptImage,
   updateReceipt,
 } from '@/api/receipt'
-import ReceiptPaperHeader from '@/components/receipt/ReceiptPaperHeader.vue'
 const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
@@ -1041,17 +1040,18 @@ onBeforeUnmount(() => {
 
       <!-- 영수증 인식 결과 -->
       <section class="receipt-paper tripass-receipt-document">
-        <ReceiptPaperHeader
-            :mode-label="editing
-            ? (isOcrResult ? 'OCR RECEIPT' : 'EDIT RECEIPT')
-            : 'SAVED RECEIPT'"
-            :reference="receiptId || 'OCR'"
-        />
+        <div class="receipt-paper-heading">
+          <span>TRIPASS</span>
+          <b>여행 영수증</b>
+          <small>NO. {{ receiptId || 'NEW' }}</small>
+        </div>
 
         <!-- 상호명 -->
-        <template v-if="editing">
+        <label class="field merchant-field">
+          <span>상호명</span>
+
           <input
-              v-if="translated"
+              v-if="editing && translated"
               v-model.trim="
               form.merchantTranslatedName
             "
@@ -1062,7 +1062,7 @@ onBeforeUnmount(() => {
           >
 
           <input
-              v-else
+              v-else-if="editing"
               v-model.trim="
               form.merchantOriginalName
             "
@@ -1071,18 +1071,24 @@ onBeforeUnmount(() => {
               maxlength="255"
               placeholder="원문 상호명"
           >
-        </template>
 
-        <h2 v-else>
-          {{ displayedMerchantName }}
-        </h2>
+          <div v-else class="readonly-value merchant-value">
+            {{ displayedMerchantName }}
+          </div>
+        </label>
+
+        <label class="field trip-field">
+          <span>여행</span>
+          <div class="readonly-trip">
+            ✈️ {{ trip?.tripName || '여행 정보 확인 중' }}
+          </div>
+        </label>
 
         <!-- 국가·날짜·시간 -->
-        <div
-            v-if="editing"
-            class="receipt-information-edit"
-        >
+        <label class="field country-field">
+          <span>국가</span>
           <select
+              v-if="editing"
               v-model.number="form.countryId"
               aria-label="결제 국가"
           >
@@ -1100,29 +1106,51 @@ onBeforeUnmount(() => {
             </option>
           </select>
 
-          <input
-              v-model="form.paymentDate"
-              type="date"
-              aria-label="결제 날짜"
-          >
+          <div v-else class="readonly-value">
+            {{ selectedCountryName }}
+          </div>
+        </label>
 
-          <input
-              v-model="form.paymentTime"
-              type="time"
-              aria-label="결제 시간"
-          >
+        <div class="field-grid datetime-field">
+          <label class="field">
+            <span>결제 날짜</span>
+            <input v-if="editing" v-model="form.paymentDate" type="date">
+            <div v-else class="readonly-value">
+              {{ form.paymentDate || '날짜 미지정' }}
+            </div>
+          </label>
+
+          <label class="field">
+            <span>결제 시간</span>
+            <input v-if="editing" v-model="form.paymentTime" type="time">
+            <div v-else class="readonly-value">
+              {{ form.paymentTime || '시간 미지정' }}
+            </div>
+          </label>
         </div>
 
-        <small
-            v-else
-            class="receipt-information"
-        >
-          {{ selectedCountryName }}
-          ·
-          {{ form.paymentDate || '날짜 미지정' }}
-          ·
-          {{ form.paymentTime || '시간 미지정' }}
-        </small>
+        <label class="field currency-field">
+          <span>통화 코드</span>
+          <input
+              v-if="editing"
+              v-model="form.currencyCode"
+              type="text"
+              maxlength="3"
+              placeholder="예: EUR"
+              @input="normalizeCurrencyCode"
+          >
+          <div v-else class="readonly-value">
+            {{ form.currencyCode || '통화 미지정' }}
+          </div>
+        </label>
+
+        <div class="items-heading result-items-heading">
+          <div>
+            <b>결제 품목</b>
+            <small>영수증에 기록된 결제 항목이에요.</small>
+          </div>
+          <strong>{{ form.items.length }}개 품목</strong>
+        </div>
 
         <div class="dash" />
 
@@ -1246,14 +1274,7 @@ onBeforeUnmount(() => {
 
           <strong>
             <template v-if="editing">
-              <input
-                  v-model="form.currencyCode"
-                  class="currency-input"
-                  type="text"
-                  maxlength="3"
-                  placeholder="EUR"
-                  @input="normalizeCurrencyCode"
-              >
+              <span class="total-currency">{{ form.currencyCode || '통화' }}</span>
 
               <input
                   v-model="form.totalAmount"

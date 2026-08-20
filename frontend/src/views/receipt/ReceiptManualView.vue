@@ -10,7 +10,6 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { createReceipt } from '@/api/receipt'
 import { fetchTripGoal } from '@/api/travel'
-import ReceiptPaperHeader from '@/components/receipt/ReceiptPaperHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -609,10 +608,11 @@ onBeforeUnmount(removeImage)
 
     <form @submit.prevent="saveReceipt">
       <section class="receipt-form-card tripass-receipt-document">
-        <ReceiptPaperHeader
-            mode-label="MANUAL RECEIPT"
-            reference="NEW"
-        />
+        <div class="receipt-paper-heading">
+          <span>TRIPASS</span>
+          <b>여행 영수증</b>
+          <small>NO. NEW</small>
+        </div>
 
         <!-- 선택적인 영수증 이미지 첨부 -->
         <div class="image-section">

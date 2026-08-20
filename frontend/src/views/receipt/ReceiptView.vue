@@ -1912,14 +1912,15 @@ onMounted(loadPage)
 .date-group > button.shared {
   margin: 4px 0;
   padding: 12px 9px;
-  border: 1px solid #cfe0fb;
+  border: 1px solid #f0cf58;
   border-radius: 15px;
-  background: linear-gradient(135deg, #f8fbff, #eef5ff);
+  background: linear-gradient(100deg, #fff8b8, #fffbe0 62%, #fff4a3);
+  box-shadow: inset 0 -7px 0 rgba(255, 224, 74, .2);
 }
 
 .date-group > button.shared > .category-icon {
-  background: #dfeaff;
-  color: #2f6fed;
+  background: #fff1a8;
+  color: #ad7600;
 }
 
 .merchant-line {
@@ -1935,8 +1936,8 @@ onMounted(loadPage)
   flex: none;
   padding: 3px 6px;
   border-radius: 999px;
-  background: #dce9ff;
-  color: #2466c6;
+  background: #ffe57a;
+  color: #855c00;
   font-size: 6px;
   font-weight: 900;
 }
