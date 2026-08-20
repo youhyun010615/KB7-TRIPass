@@ -9,6 +9,21 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router'
+import {
+  Camera,
+  CarFront,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleEllipsis,
+  Coffee,
+  Hotel,
+  Landmark,
+  PenLine,
+  ReceiptText,
+  ShoppingCart,
+  Utensils,
+} from '@lucide/vue'
 
 import BottomNav from '@/components/common/BottomNav.vue'
 
@@ -43,28 +58,6 @@ const tripTitle = computed(() =>
     trip.value?.tripName ||
     '여행 정보 확인 중',
 )
-
-const tripDateRange = computed(() => {
-  const startDate =
-      trip.value?.startDate
-
-  const endDate =
-      trip.value?.endDate
-
-  if (!startDate && !endDate) {
-    return ''
-  }
-
-  if (!startDate) {
-    return endDate
-  }
-
-  if (!endDate) {
-    return startDate
-  }
-
-  return `${startDate} ~ ${endDate}`
-})
 
 const countries = computed(() => {
   const tripCountries =
@@ -177,6 +170,44 @@ const selectedCountryName = computed(() => {
       '선택 국가'
   )
 })
+
+const categoryStyles = {
+  식비: { icon: Utensils, color: '#ee6044', soft: '#fff0eb' },
+  교통: { icon: CarFront, color: '#2f6fed', soft: '#eaf2ff' },
+  쇼핑: { icon: ShoppingCart, color: '#7754c5', soft: '#f2edff' },
+  카페: { icon: Coffee, color: '#b57417', soft: '#fff5e6' },
+  관광: { icon: Landmark, color: '#e64e7b', soft: '#ffedf3' },
+  숙박: { icon: Hotel, color: '#188f83', soft: '#e8f7f5' },
+  기타: { icon: CircleEllipsis, color: '#64748b', soft: '#eef2f7' },
+}
+
+function categoryStyle(categoryName) {
+  return categoryStyles[categoryName] || categoryStyles.기타
+}
+
+function formatTripDateRange() {
+  const start = trip.value?.startDate
+  const end = trip.value?.endDate
+  if (!start && !end) return '여행 일정을 확인하고 있어요'
+
+  const format = (value, includeYear = false) => {
+    if (!value) return ''
+    const [year, month, day] = String(value).split('-')
+    return includeYear ? `${year}. ${month}. ${day}` : `${month}. ${day}`
+  }
+
+  if (!start) return format(end, true)
+  if (!end) return format(start, true)
+  return `${format(start, true)} — ${format(end)}`
+}
+
+function formatGroupDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return value
+  const [year, month, day] = String(value).split('-').map(Number)
+  const week = ['일', '월', '화', '수', '목', '금', '토']
+  const dayOfWeek = week[new Date(year, month - 1, day).getDay()]
+  return `${month}.${String(day).padStart(2, '0')} (${dayOfWeek})`
+}
 
 function separatePaymentDateTime(value) {
   if (!value) {
@@ -413,51 +444,61 @@ onMounted(loadPage)
 
 <template>
   <main class="receipt-page">
-    <header>
-      <button
-          type="button"
-          aria-label="뒤로 가기"
-          @click="router.back()"
-      >
-        ‹
+    <header class="page-header">
+      <button type="button" aria-label="뒤로 가기" @click="router.back()">
+        <ChevronLeft :size="24" :stroke-width="2.4" />
       </button>
-
-      <h1>영수증 보관함</h1>
-
+      <div>
+        <small>TRIP RECORD</small>
+        <h1>영수증 보관함</h1>
+      </div>
       <span />
     </header>
 
     <section class="vault-ticket">
-      <small>TRIPASS RECEIPT VAULT</small>
-
-      <h2>{{ tripTitle }}</h2>
-
-      <p>{{ tripDateRange }}</p>
-
-      <div>
-        <b>{{ receipts.length }}건</b>
-        <span>보관 완료</span>
+      <div class="vault-ticket-head">
+        <span>TRIPASS RECEIPT PASS</span>
+        <span>NO. {{ String(tripId || 0).padStart(4, '0') }}</span>
       </div>
-
-      <i>||||||||||||||||||||</i>
+      <div class="vault-ticket-body">
+        <span class="vault-icon"><ReceiptText :size="25" /></span>
+        <div>
+          <small>MY TRIP</small>
+          <h2>{{ tripTitle }}</h2>
+          <p>{{ formatTripDateRange() }}</p>
+        </div>
+      </div>
+      <div class="vault-ticket-foot">
+        <div>
+          <small>ARCHIVED</small>
+          <b>{{ receipts.length }}<em>장</em></b>
+        </div>
+        <span class="vault-complete"><Check :size="13" :stroke-width="3" /> 안전하게 보관 중</span>
+        <i aria-hidden="true"><span v-for="index in 22" :key="index" /></i>
+      </div>
     </section>
 
-    <section class="filter-row">
-      <b>국가 선택</b>
-
-      <select
-          v-model="selectedCountryId"
-          aria-label="영수증 조회 국가 선택"
-          :disabled="loading"
-      >
-        <option
+    <section class="filter-section">
+      <div class="section-heading">
+        <div>
+          <small>COUNTRY FILTER</small>
+          <h2>어디에서 사용했나요?</h2>
+        </div>
+        <span>{{ filteredReceipts.length }}장</span>
+      </div>
+      <div class="country-chips" role="group" aria-label="영수증 조회 국가 선택">
+        <button
             v-for="country in countries"
             :key="country.countryId ?? 'all'"
-            :value="country.countryId"
+            type="button"
+            :class="{ active: selectedCountryId === country.countryId }"
+            :disabled="loading"
+            @click="selectedCountryId = country.countryId"
         >
+          <Check v-if="selectedCountryId === country.countryId" :size="12" :stroke-width="3" />
           {{ country.countryName }}
-        </option>
-      </select>
+        </button>
+      </div>
     </section>
 
     <section
@@ -470,15 +511,10 @@ onMounted(loadPage)
     >
       <div class="summary-title">
         <div>
-          <small>선택 범위</small>
-          <strong>
-            {{ selectedCountryName }}
-          </strong>
+          <small>SELECTED AREA</small>
+          <strong>{{ selectedCountryName }} 지출</strong>
         </div>
-
-        <span>
-          {{ filteredReceipts.length }}건
-        </span>
+        <ReceiptText :size="22" />
       </div>
 
       <div class="currency-summary-list">
@@ -487,29 +523,20 @@ onMounted(loadPage)
             :key="summary.currencyCode"
             class="currency-summary"
         >
-          <small>
-            지출 합계
-          </small>
-
-          <strong>
-            {{ summary.currencyCode }}
-            {{
-              formatAmount(
-                  summary.totalAmount,
-              )
-            }}
-          </strong>
+          <small>{{ summary.currencyCode }}</small>
+          <strong>{{ formatAmount(summary.totalAmount) }}</strong>
+          <span>총 결제 금액</span>
         </div>
       </div>
     </section>
 
     <section class="receipt-list">
       <div class="title">
-        <h2>최근 영수증</h2>
-
-        <span>
-          최신 결제순
-        </span>
+        <div>
+          <small>RECEIPT HISTORY</small>
+          <h2>보관된 영수증</h2>
+        </div>
+        <span>최신 결제순</span>
       </div>
 
       <div
@@ -546,7 +573,7 @@ onMounted(loadPage)
             :key="group.date"
             class="date-group"
         >
-          <h3>{{ group.date }}</h3>
+          <h3><span>{{ formatGroupDate(group.date) }}</span><i /></h3>
 
           <button
               v-for="item in group.items"
@@ -554,19 +581,23 @@ onMounted(loadPage)
               type="button"
               @click="openReceipt(item.id)"
           >
-            <span>🧾</span>
+            <span
+                class="category-icon"
+                :style="{
+                  color: categoryStyle(item.categoryName).color,
+                  background: categoryStyle(item.categoryName).soft,
+                }"
+            >
+              <component :is="categoryStyle(item.categoryName).icon" :size="20" :stroke-width="2.2" />
+            </span>
 
-            <div>
+            <div class="receipt-info">
               <b>{{ item.merchant }}</b>
-
               <small>
                 {{ item.countryName }}
-                ·
+                <i>·</i>
                 {{ item.categoryName }}
-                ·
-                {{ item.time }}
               </small>
-
               <i
                   v-if="
                     item.splitCount > 1 &&
@@ -583,20 +614,11 @@ onMounted(loadPage)
                 }}
               </i>
             </div>
-
-            <strong>
-              {{
-                item.currencySymbol ||
-                item.currencyCode
-              }}
-              {{
-                formatAmount(
-                    item.totalAmount,
-                )
-              }}
-            </strong>
-
-            <em>›</em>
+            <div class="receipt-payment">
+              <strong>{{ item.currencySymbol || item.currencyCode }} {{ formatAmount(item.totalAmount) }}</strong>
+              <small>{{ item.time }}</small>
+            </div>
+            <ChevronRight class="row-chevron" :size="18" />
           </button>
         </div>
 
@@ -628,7 +650,8 @@ onMounted(loadPage)
           :disabled="loading || !tripId"
           @click="openManualEntry"
       >
-        + 영수증 수기입력
+        <PenLine :size="18" />
+        <span>직접 입력</span>
       </button>
 
       <button
@@ -637,7 +660,8 @@ onMounted(loadPage)
           :disabled="loading || !tripId"
           @click="openCapture"
       >
-        + 영수증 촬영
+        <Camera :size="19" />
+        <span>영수증 촬영</span>
       </button>
     </div>
 
@@ -1045,5 +1069,463 @@ onMounted(loadPage)
 .receipt-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+/* TRIPASS receipt vault renewal */
+.receipt-page {
+  min-height: 100vh;
+  padding: 0 18px 164px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(47, 111, 237, 0.08), transparent 260px),
+    #f4f7fc;
+  color: #10192b;
+}
+
+.receipt-page > .page-header {
+  display: grid;
+  height: 82px;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.receipt-page > .page-header button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  color: #173f8d;
+  box-shadow: 0 7px 20px rgba(26, 63, 132, 0.09);
+}
+
+.receipt-page > .page-header > div { text-align: center; }
+
+.page-header small,
+.section-heading small,
+.title small,
+.summary-title small {
+  color: #2f6fed;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.receipt-page > .page-header h1 {
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.vault-ticket {
+  position: relative;
+  overflow: hidden;
+  padding: 17px 18px 18px;
+  border-radius: 25px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.14) 0 66px, transparent 67px),
+    linear-gradient(145deg, #0c2d72 0%, #174ca7 58%, #2876d8 100%);
+  color: #fff;
+  box-shadow: 0 18px 38px rgba(23, 73, 156, 0.24);
+}
+
+.vault-ticket::before,
+.vault-ticket::after {
+  top: 91px;
+  width: 20px;
+  height: 20px;
+  background: #f4f7fc;
+}
+
+.vault-ticket::before { left: -10px; }
+.vault-ticket::after { right: -10px; }
+
+.vault-ticket .vault-ticket-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #bfd3f7;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.vault-ticket .vault-ticket-body {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 82px;
+  padding: 15px 0 12px;
+  margin: 0;
+  border-top: 0;
+  border-bottom: 1px dashed rgba(210, 226, 255, 0.52);
+}
+
+.vault-ticket .vault-ticket-body > div {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.vault-icon {
+  display: grid;
+  flex: 0 0 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffd466;
+}
+
+.vault-ticket-body small,
+.vault-ticket-foot small {
+  color: #98baf0;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.vault-ticket h2 {
+  margin-top: 3px;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.vault-ticket-body p {
+  margin-top: 5px;
+  color: #cbdcf7;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.vault-ticket .vault-ticket-foot {
+  position: relative;
+  display: flex;
+  min-height: 54px;
+  align-items: end;
+  justify-content: space-between;
+  padding-top: 13px;
+  border: 0;
+}
+
+.vault-ticket .vault-ticket-foot > div {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.vault-ticket .vault-ticket-foot b {
+  margin-top: 1px;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.vault-ticket .vault-ticket-foot b em {
+  margin-left: 2px;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.vault-complete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 76px;
+  padding: 0;
+  color: #dce9ff;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.vault-ticket-foot > i {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  display: flex;
+  gap: 2px;
+  height: 28px;
+  font-style: normal;
+}
+
+.vault-ticket-foot > i span { width: 2px; background: rgba(255, 255, 255, 0.9); }
+.vault-ticket-foot > i span:nth-child(3n) { width: 1px; }
+
+.filter-section,
+.summary-section,
+.receipt-list {
+  border: 1px solid #e2e9f4;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 28px rgba(30, 64, 125, 0.07);
+}
+
+.filter-section {
+  margin-top: 18px;
+  padding: 17px;
+  border-radius: 21px;
+}
+
+.section-heading,
+.summary-title,
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-heading h2,
+.title h2 {
+  margin-top: 3px;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.section-heading > span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #2f6fed;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.country-chips {
+  display: flex;
+  overflow-x: auto;
+  gap: 7px;
+  margin: 14px -2px -2px;
+  padding: 2px;
+  scrollbar-width: none;
+}
+
+.country-chips::-webkit-scrollbar { display: none; }
+
+.country-chips button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 13px;
+  border: 1px solid #dce5f2;
+  border-radius: 999px;
+  background: #f8faff;
+  color: #687891;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.country-chips button.active {
+  border-color: #2f6fed;
+  background: #2f6fed;
+  color: #fff;
+  box-shadow: 0 5px 13px rgba(47, 111, 237, 0.2);
+}
+
+.summary-section {
+  margin: 12px 0 0;
+  padding: 17px;
+  border-radius: 21px;
+}
+
+.summary-title strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.summary-title > svg { color: #a8b8d0; }
+
+.currency-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.currency-summary {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  padding: 12px 13px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f3f7ff, #edf3fe);
+}
+
+.currency-summary small { color: #2f6fed; font-size: 8px; font-weight: 900; }
+
+.currency-summary strong {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #173f8d;
+  font-size: 17px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+}
+
+.currency-summary span { margin-top: 2px; color: #8b99ae; font-size: 8px; }
+
+.receipt-list {
+  margin-top: 12px;
+  padding: 18px 16px 10px;
+  border-radius: 23px;
+}
+
+.title span { color: #98a5b8; font-size: 8px; font-weight: 800; }
+
+.date-group { animation: receipt-group-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.date-group:nth-of-type(2) { animation-delay: 0.06s; }
+.date-group:nth-of-type(3) { animation-delay: 0.12s; }
+
+@keyframes receipt-group-enter {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+.date-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 1px 7px;
+  color: #2f6fed;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.date-group h3 > i {
+  display: block;
+  flex: 1;
+  height: 1px;
+  margin: 0;
+  background: #e8edf5;
+}
+
+.date-group > button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 44px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+}
+
+.date-group > button > .category-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+}
+
+.receipt-info { min-width: 0; }
+
+.date-group .receipt-info b {
+  display: block;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-group .receipt-info small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: #8795aa;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.date-group .receipt-info small i { color: #c0cad8; font-style: normal; }
+
+.date-group .receipt-info > i {
+  display: block;
+  margin-top: 4px;
+  color: #2f6fed;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.receipt-payment { display: grid; justify-items: end; white-space: nowrap; }
+.date-group .receipt-payment strong { color: #17243a; font-size: 10px; font-weight: 950; }
+.date-group .receipt-payment small { margin-top: 4px; color: #9aa6b7; font-size: 8px; }
+.row-chevron { color: #a9b6c9; }
+.date-group > button:active { transform: scale(0.985); }
+
+.empty { text-align: center; }
+
+.empty span {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border-radius: 17px;
+  background: #eef4ff;
+  color: #2e70dc;
+  font-size: 24px;
+}
+
+.empty b { margin-top: 12px; font-size: 12px; }
+.empty small { margin-top: 6px; color: #8b98a9; font-size: 8px; }
+
+.receipt-actions {
+  position: fixed;
+  right: max(calc((100vw - 390px) / 2 + 18px), 18px);
+  bottom: 78px;
+  left: max(calc((100vw - 390px) / 2 + 18px), 18px);
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 0.85fr 1.35fr;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid rgba(213, 224, 240, 0.9);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 34px rgba(23, 63, 141, 0.19);
+  backdrop-filter: blur(14px);
+}
+
+.receipt-actions button {
+  display: flex;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: none;
+}
+
+.manual-button { border: 0; background: #edf3ff; color: #17499c; }
+
+.scan-button {
+  background: linear-gradient(135deg, #17499c, #2f6fed);
+  color: #fff;
+  box-shadow: 0 7px 17px rgba(47, 111, 237, 0.25) !important;
+}
+
+.country-chips button:disabled,
+.receipt-actions button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+@media (max-width: 350px) {
+  .vault-complete { display: none; }
+  .receipt-actions { grid-template-columns: 1fr 1.2fr; }
+  .date-group > button { grid-template-columns: 40px minmax(0, 1fr) auto 14px; gap: 8px; }
+  .date-group > button > .category-icon { width: 39px; height: 39px; }
 }
 </style>
