@@ -481,7 +481,6 @@ function closeSelectionFlow() {
         <div class="mission-savings-amount">
           <strong>{{ formatAmount(missionStore.missions?.totalRewardAmount) }}</strong>
           <span class="mission-savings-unit">원</span>
-          <span class="mission-savings-caption">미션으로 모은 저축액</span>
         </div>
         <div class="mission-savings-divider"></div>
         <div class="mission-savings-foot">
@@ -826,7 +825,6 @@ function closeSelectionFlow() {
 .mission-savings-amount{display:flex;align-items:baseline;gap:8px;margin-top:8px}
 .mission-savings-amount strong{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;letter-spacing:-.035em}
 .mission-savings-amount .mission-savings-unit{margin-left:-2px;font-size:13px;font-weight:600;color:#fff}
-.mission-savings-amount .mission-savings-caption{font-size:12px;font-weight:700;color:rgba(255,255,255,.65)}
 .mission-savings-divider{height:1px;background:rgba(255,255,255,.16);margin:14px 0}
 .mission-savings-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .mission-savings-foot span{font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
