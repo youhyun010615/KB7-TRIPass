@@ -647,9 +647,9 @@ async function switchMode(mode) {
                       Destination
                     </p>
                     <p
-                      class="text-white text-[26px] font-extrabold leading-none flex items-center gap-2"
+                      class="text-white text-[22px] font-extrabold leading-none flex items-center gap-2"
                     >
-                      <span :class="flagIconClass(country.code)" class="fi-inline" style="font-size: 20px" />
+                      <span :class="flagIconClass(country.code)" class="fi-inline" style="font-size: 17px" />
                       {{ country.name }}
                     </p>
                   </div>
@@ -664,7 +664,7 @@ async function switchMode(mode) {
                       Departure
                     </p>
                     <p
-                      class="text-[26px] font-extrabold leading-none"
+                      class="text-[22px] font-extrabold leading-none"
                       style="color: #ffd466"
                     >
                       D-{{ daysUntilDeparture }}
@@ -739,7 +739,7 @@ async function switchMode(mode) {
                 :style="`background:${country.headerBg}`"
               >
                 <button
-                  class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
+                  class="ticket-stub w-full px-5 flex items-center justify-start gap-1 active:bg-gray-50"
                   @click="goWallet"
                 >
                   <span class="text-[13px] font-bold text-white">송금하기</span>
@@ -2271,9 +2271,10 @@ async function switchMode(mode) {
   flex: 0 0 42px;
   height: 42px;
   place-items: center;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.12);
   font-size: 23px;
   backdrop-filter: blur(8px);
 }
@@ -2595,7 +2596,7 @@ async function switchMode(mode) {
 .exchange-country-mark > span {
   flex: 0 0 32px;
   height: 32px;
-  background: #fff;
+  background-color: #fff;
   font-size: 15px;
 }
 .exchange-country-mark small {
