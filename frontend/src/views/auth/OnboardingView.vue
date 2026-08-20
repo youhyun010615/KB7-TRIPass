@@ -15,8 +15,8 @@ const slides = [
   {
     key: 'saving',
     eyebrow: 'BEFORE THE TRIP',
-    title: ['여행 계획을 설정하면,', 'AI가 제안해요'],
-    description: '소비 패턴을 분석해 맞춤 저축 계획과\n여행 리포트를 준비해요.',
+    title: ['목표를 정하면,', 'AI가 저축 계획을 제안해요'],
+    description: '여행 예산과 월 저축 목표를 계산하고\n실제 소비 패턴에서 아낄 항목을 찾아드려요.',
   },
   {
     key: 'spending',
@@ -149,30 +149,34 @@ function onTouchEnd() {
                 <div v-if="slide.key === 'journey'" class="brand-visual">
                   <div class="brand-logo-stage">
                     <span class="brand-logo-halo" aria-hidden="true"></span>
-                    <img class="brand-app-icon" :src="tripassAppIcon" alt="TRIPASS" />
+                    <span class="brand-app-icon-wrap">
+                      <img class="brand-app-icon" :src="tripassAppIcon" alt="TRIPASS" />
+                      <i class="brand-plane-motion" aria-hidden="true"></i>
+                    </span>
                     <strong class="brand-name">TRIPASS</strong>
                   </div>
                 </div>
 
                 <div v-else-if="slide.key === 'saving'" class="saving-visual">
-                  <div class="ai-report-animation" aria-label="AI가 여행 저축 리포트를 작성하고 있어요">
-                    <div class="ai-orbit" aria-hidden="true">
-                      <span>AI</span>
-                      <i></i>
+                  <div class="monthly-saving-card">
+                    <div class="monthly-saving-head">
+                      <div class="monthly-saving-title">
+                        <span class="monthly-coin">₩</span>
+                        <strong>이번 달 여행 저축</strong>
+                      </div>
+                      <div class="mini-ai-report" aria-label="AI 리포트 작성 중">
+                        <span class="mini-ai-badge">AI</span>
+                        <div><b>AI REPORT</b><i></i><i></i></div>
+                      </div>
                     </div>
-                    <div class="ai-report-sheet">
-                      <div class="ai-report-head"><b>AI REPORT</b><span>작성 중</span></div>
-                      <i></i><i></i><i></i>
+                    <strong class="monthly-saving-amount">300,000원</strong>
+                    <div class="monthly-saving-track" aria-hidden="true"><span></span></div>
+                    <div class="monthly-saving-row">
+                      <span>✓ 월 저축 목표</span><strong>+200,000원</strong>
                     </div>
-                  </div>
-                  <div class="saving-goal-card">
-                    <div class="saving-goal-head">
-                      <span>여행 저축 목표 달성률</span><strong>65%</strong>
+                    <div class="monthly-saving-row">
+                      <span>✓ AI 절약 미션</span><strong>+100,000원</strong>
                     </div>
-                    <div class="saving-goal-amount">
-                      <strong>1,950,000원</strong><span>/ 3,000,000원</span>
-                    </div>
-                    <div class="saving-goal-track" aria-hidden="true"><span></span></div>
                   </div>
                 </div>
 
@@ -1178,6 +1182,48 @@ function onTouchEnd() {
   box-shadow: 0 20px 36px rgba(2, 17, 55, 0.38);
 }
 
+.brand-app-icon-wrap {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 94px;
+  height: 94px;
+}
+
+.brand-app-icon-wrap .brand-app-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.brand-plane-motion {
+  position: absolute;
+  top: 22px;
+  right: 15px;
+  z-index: 3;
+  width: 32px;
+  height: 2px;
+  border-radius: 99px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 212, 94, 0.95), #fff);
+  transform: rotate(-39deg);
+  transform-origin: right center;
+  filter: drop-shadow(0 0 5px rgba(255, 212, 94, 0.72));
+}
+
+.brand-plane-motion::before,
+.brand-plane-motion::after {
+  position: absolute;
+  right: 3px;
+  width: 20px;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.78));
+  content: '';
+}
+
+.brand-plane-motion::before { top: -5px; }
+.brand-plane-motion::after { top: 5px; width: 13px; }
+
 .brand-name,
 .ready-logo-lockup strong {
   position: relative;
@@ -1194,9 +1240,133 @@ function onTouchEnd() {
     app-icon-float 3.6s ease-in-out 850ms infinite;
 }
 
+.slide.is-active .brand-plane-motion {
+  animation: logo-plane-streak 2.4s ease-in-out 600ms infinite;
+}
+
 .saving-visual {
   gap: 12px;
 }
+
+.monthly-saving-card {
+  width: min(100%, 310px);
+  padding: 19px 20px 17px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(74, 122, 216, 0.42), rgba(255, 255, 255, 0.07));
+  box-shadow: 0 18px 34px rgba(3, 20, 62, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.monthly-saving-head,
+.monthly-saving-title,
+.mini-ai-report {
+  display: flex;
+  align-items: center;
+}
+
+.monthly-saving-head { justify-content: space-between; gap: 10px; }
+.monthly-saving-title { gap: 10px; color: rgba(255, 255, 255, 0.68); font-size: 11px; }
+
+.monthly-coin {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--yellow);
+  background: rgba(255, 255, 255, 0.13);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mini-ai-report {
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(7, 31, 88, 0.28);
+}
+
+.mini-ai-badge {
+  position: relative;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 9px;
+  color: #1b64d6;
+  background: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.mini-ai-badge::after {
+  position: absolute;
+  inset: -3px;
+  border: 1px dashed rgba(255, 212, 94, 0.8);
+  border-radius: 50%;
+  content: '';
+}
+
+.mini-ai-report > div { width: 43px; }
+.mini-ai-report b { display: block; color: var(--yellow); font-family: 'Space Mono', monospace; font-size: 6px; letter-spacing: 0.04em; }
+.mini-ai-report i {
+  display: block;
+  width: 100%;
+  height: 2px;
+  margin-top: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.42);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.mini-ai-report i:last-child { width: 62%; }
+
+.monthly-saving-amount {
+  display: block;
+  margin-top: 15px;
+  font-family: 'Space Mono', monospace;
+  font-size: 25px;
+  letter-spacing: -0.05em;
+}
+
+.monthly-saving-track {
+  height: 5px;
+  margin: 14px 0 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.monthly-saving-track span {
+  display: block;
+  width: 65%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--yellow);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.monthly-saving-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 7px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.monthly-saving-row strong { color: var(--yellow); font-family: 'Space Mono', monospace; font-size: 11px; }
+
+.slide.is-active .monthly-saving-track span { animation: saving-fill-up 850ms cubic-bezier(0.22, 1, 0.36, 1) 480ms both; }
+.slide.is-active .mini-ai-badge::after { animation: ai-orbit 3s linear infinite; }
+.slide.is-active .mini-ai-report i { animation: report-write 650ms ease-out both; }
+.slide.is-active .mini-ai-report i:first-of-type { animation-delay: 620ms; }
+.slide.is-active .mini-ai-report i:last-of-type { animation-delay: 820ms; }
 
 .ai-report-animation {
   display: flex;
@@ -1411,6 +1581,13 @@ function onTouchEnd() {
   50% { transform: translateY(-6px); }
 }
 
+@keyframes logo-plane-streak {
+  0%, 20% { opacity: 0; transform: translate(-18px, 15px) rotate(-39deg) scaleX(0.2); }
+  38% { opacity: 0.95; }
+  64% { opacity: 0.32; transform: translate(8px, -8px) rotate(-39deg) scaleX(1); }
+  78%, 100% { opacity: 0; transform: translate(15px, -15px) rotate(-39deg) scaleX(0.35); }
+}
+
 @keyframes ai-orbit { to { transform: rotate(360deg); } }
 
 @keyframes report-write {
@@ -1425,7 +1602,9 @@ function onTouchEnd() {
   .slide-eyebrow + .visual-stage { min-height: 190px; }
   .brand-logo-stage { height: 150px; }
   .brand-app-icon { width: 82px; height: 82px; }
+  .brand-app-icon-wrap { width: 82px; height: 82px; }
   .saving-visual { gap: 8px; }
+  .monthly-saving-card { padding: 15px 17px 14px; }
   .saving-goal-card, .budget-usage-card { padding: 13px 16px; }
   .copy-block h1 { font-size: 21px; }
   .description { margin-top: 9px; line-height: 1.55; }
@@ -1437,12 +1616,17 @@ function onTouchEnd() {
   .ambient,
   .route-plane svg,
   .slide.is-active .brand-logo,
+  .slide.is-active .brand-app-icon,
+  .slide.is-active .brand-plane-motion,
   .slide.is-active .brand-logo-halo,
   .slide.is-active .brand-flight-path span,
   .slide.is-active .brand-flight-path b,
   .slide.is-active .visual-content,
   .slide.is-active .copy-block > *,
   .slide.is-active .saving-card,
+  .slide.is-active .monthly-saving-track span,
+  .slide.is-active .mini-ai-badge::after,
+  .slide.is-active .mini-ai-report i,
   .slide.is-active .coin-icon,
   .slide.is-active .deposit-stream span,
   .slide.is-active .saving-fill span,
