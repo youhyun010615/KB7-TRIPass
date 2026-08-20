@@ -274,14 +274,14 @@ onBeforeUnmount(() => {
   z-index: 50;
   width: 100%;
   max-width: 390px;
-  height: 98px;
+  height: 104px;
   transform: translateX(-50%);
   pointer-events: none;
 }
 .nav-shell {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: 6px;
   left: 0;
   display: grid;
   height: 64px;
