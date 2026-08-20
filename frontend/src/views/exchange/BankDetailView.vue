@@ -200,10 +200,6 @@ const copyToClipboard = (text) => {
           <button @click="router.back()">‹</button>
           <div class="header-title">
             <h1>{{ bank.branchName }}</h1>
-
-            <small v-if="distanceInfo" class="header-subtitle">
-              {{ displayDistance }} · {{ displayWalkTime }}분
-            </small>
           </div>
           <span aria-hidden="true"></span>
         </header>
@@ -296,18 +292,38 @@ const copyToClipboard = (text) => {
           <p>↗ 환율 우대 {{ estimate.buyFeeRate }}%</p>
         </section>
         <section class="info">
-          <h2>영업 정보</h2>
+          <h2>지점 정보</h2>
           <div>
-            <span>오늘 영업시간</span><b>{{ bank.businessHours }}</b>
+            <span>영업점명</span><b>{{ bank.branchName }}</b>
           </div>
           <div>
             <span>주소</span><b>{{ bank.address }}</b>
           </div>
           <div>
+            <span>영업 시간</span><b>{{ bank.businessHours }}</b>
+          </div>
+          <div>
+            <span>거리</span><b>{{ displayDistance }}</b>
+          </div>
+          <div>
+            <span>도보 시간</span><b>약 {{ displayWalkTime }}분</b>
+          </div>
+          <div>
             <span>전화</span>
-            <b class="clickable" @click="copyToClipboard(bank.telephone)">
-              {{ bank.telephone }} 📋
-            </b>
+            <span class="phone-value">
+              <b>{{ bank.telephone }}</b>
+              <button
+                type="button"
+                class="copy-button"
+                aria-label="전화번호 복사"
+                @click="copyToClipboard(bank.telephone)"
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="8" y="8" width="10" height="11" rx="2" stroke="currentColor" stroke-width="1.8" />
+                  <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </span>
           </div>
         </section>
         <aside>
@@ -622,17 +638,37 @@ aside {
 .info b {
   text-align: right;
 }
-.clickable {
-  cursor: pointer;
-  user-select: all;
-  transition: opacity 0.2s;
+.phone-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
-.clickable:hover {
-  opacity: 0.7;
+.phone-value b {
+  color: #10192d;
+}
+.copy-button {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #d9e3f2;
+  border-radius: 9px;
+  background: #edf3ff;
+  color: #275fbd;
+}
+.copy-button svg {
+  width: 15px;
+  height: 15px;
+}
+.copy-button:active {
+  opacity: .65;
 }
 aside {
-  background: #fff8e7;
-  color: #8b6413;
+  border-color: #f4c8c8;
+  background: linear-gradient(145deg, #fff3f3, #ffe9e9);
+  color: #a43b3b;
+  box-shadow: 0 10px 24px rgba(182, 55, 55, .08);
 }
 aside b {
   font-size: 13px;
