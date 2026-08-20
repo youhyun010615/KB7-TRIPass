@@ -473,7 +473,7 @@ function closeSelectionFlow() {
 
     <template v-else-if="showDashboard">
       <section class="mission-savings-card">
-        <p>MISSION SAVINGS</p>
+        <p>미션 저축액</p>
         <div class="mission-savings-amount">
           <strong>{{ formatCurrency(missionStore.missions?.totalRewardAmount) }}</strong>
           <span>미션으로 모은 저축액</span>

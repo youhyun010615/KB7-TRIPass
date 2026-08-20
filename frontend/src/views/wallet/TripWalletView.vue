@@ -883,7 +883,7 @@ async function confirmUnlinkTravelCard() {
   content:"";
   pointer-events:none;
 }
-.wallet-card-top b{color:#fff;font-size:15px;font-weight:800}
+.wallet-card-top b{color:#ffd466;font-size:11px;font-weight:800;letter-spacing:.1em}
 .wallet-card-top button{padding:6px 10px;border-radius:999px;background:#ffd66b;color:#173f8d;font-size:11px;font-weight:800}
 .wallet-balance strong,.wallet-balance span{color:#fff}
 .emergency{color:#ffe18b}
