@@ -42,8 +42,20 @@ export function createReceipt(tripId, data, file = null) {
 }
 
 // 로그인 회원의 특정 여행 영수증 목록을 조회한다.
-export function getReceipts(tripId) {
-  return api.get(`/trips/${tripId}/receipts`)
+export function getReceipts(tripId, params = {}) {
+  return api.get(`/trips/${tripId}/receipts`, { params })
+}
+
+// 여행 영수증의 참여자별 정산 요약을 조회한다.
+export function getReceiptSettlements(tripId) {
+  return api.get(`/trips/${tripId}/receipts/settlements`)
+}
+
+// 특정 공동결제 참여자에게 연결된 영수증과 총 정산 금액을 조회한다.
+export function getParticipantSettlement(tripId, participantName) {
+  return api.get(
+    `/trips/${tripId}/receipts/settlements/${encodeURIComponent(participantName)}`,
+  )
 }
 
 // 로그인 회원이 소유한 특정 여행의 영수증 상세 정보를 조회한다.

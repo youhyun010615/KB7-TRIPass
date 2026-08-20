@@ -16,9 +16,6 @@ import {
   getReceiptImage,
   updateReceipt,
 } from '@/api/receipt'
-import {
-  receiptCategories as categories,
-} from '@/constants/receiptCategories'
 const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
@@ -99,9 +96,6 @@ const initialDateTime =
 const form = reactive({
   countryId:
       draft?.countryId ?? null,
-
-  categoryId:
-      draft?.categoryId ?? 1,
 
   merchantOriginalName:
       draft?.originalMerchantName ?? '',
@@ -192,17 +186,6 @@ const selectedCountryName = computed(() => {
   return (
       selectedCountry.value?.countryName ||
       '국가 미지정'
-  )
-})
-
-const selectedCategoryName = computed(() => {
-  return (
-      categories.find(
-          category =>
-              category.id ===
-              Number(form.categoryId),
-      )?.name ||
-      '카테고리 미지정'
   )
 })
 
@@ -367,9 +350,6 @@ function applyReceiptData(data) {
   form.countryId =
       data.countryId ?? null
 
-  form.categoryId =
-      data.categoryId ?? 1
-
   form.merchantOriginalName =
       data.merchantOriginalName ?? ''
 
@@ -510,10 +490,6 @@ function validateForm() {
     return '결제 국가를 선택해 주세요.'
   }
 
-  if (!form.categoryId) {
-    return '소비 카테고리를 선택해 주세요.'
-  }
-
   if (!form.paymentDate) {
     return '결제 날짜를 입력해 주세요.'
   }
@@ -612,9 +588,6 @@ function createReceiptRequestData() {
   return {
     countryId:
         Number(form.countryId),
-
-    categoryId:
-        Number(form.categoryId),
 
     currencyCode:
         form.currencyCode
@@ -1308,28 +1281,6 @@ onBeforeUnmount(() => {
       >
         ▧ 실제 영수증 원본 사진 보기
       </button>
-
-      <!-- 원본 사진과 공동결제 사이 -->
-      <section class="category-card">
-        <span>소비 카테고리</span>
-
-        <select
-            v-if="editing"
-            v-model.number="form.categoryId"
-        >
-          <option
-              v-for="category in categories"
-              :key="category.id"
-              :value="category.id"
-          >
-            {{ category.name }}
-          </option>
-        </select>
-
-        <strong v-else>
-          {{ selectedCategoryName }}
-        </strong>
-      </section>
 
       <!-- 수정 상태에서만 공동결제 표시 -->
       <section

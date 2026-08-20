@@ -10,19 +10,15 @@ import {
   useRouter,
 } from 'vue-router'
 import {
+  CalendarRange,
   Camera,
-  CarFront,
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleEllipsis,
-  Coffee,
-  Hotel,
-  Landmark,
+  HandCoins,
   PenLine,
   ReceiptText,
-  ShoppingCart,
-  Utensils,
+  Users,
 } from '@lucide/vue'
 
 import BottomNav from '@/components/common/BottomNav.vue'
@@ -48,8 +44,13 @@ const tripId = computed(() => {
 
 const trip = ref(null)
 const receipts = ref([])
+const totalReceiptCount = ref(0)
 
 const selectedCountryId = ref(null)
+const dateFilterEnabled = ref(false)
+const startDate = ref('')
+const endDate = ref('')
+const dateFilterError = ref('')
 
 const loading = ref(false)
 const errorMessage = ref('')
@@ -171,20 +172,6 @@ const selectedCountryName = computed(() => {
   )
 })
 
-const categoryStyles = {
-  식비: { icon: Utensils, color: '#ee6044', soft: '#fff0eb' },
-  교통: { icon: CarFront, color: '#2f6fed', soft: '#eaf2ff' },
-  쇼핑: { icon: ShoppingCart, color: '#7754c5', soft: '#f2edff' },
-  카페: { icon: Coffee, color: '#b57417', soft: '#fff5e6' },
-  관광: { icon: Landmark, color: '#e64e7b', soft: '#ffedf3' },
-  숙박: { icon: Hotel, color: '#188f83', soft: '#e8f7f5' },
-  기타: { icon: CircleEllipsis, color: '#64748b', soft: '#eef2f7' },
-}
-
-function categoryStyle(categoryName) {
-  return categoryStyles[categoryName] || categoryStyles.기타
-}
-
 function formatTripDateRange() {
   const start = trip.value?.startDate
   const end = trip.value?.endDate
@@ -251,13 +238,6 @@ function mapReceipt(item) {
         item.countryName ||
         '국가 미지정',
 
-    categoryId:
-    item.categoryId,
-
-    categoryName:
-        item.categoryName ||
-        '카테고리 미지정',
-
     merchant:
         item.merchantTranslatedName ||
         item.merchantOriginalName ||
@@ -286,6 +266,9 @@ function mapReceipt(item) {
 
     splitCount:
         Number(item.splitCount) || 1,
+
+    participantNames:
+        item.participantNames || null,
 
     splitAmount:
         item.splitAmount != null &&
@@ -338,7 +321,12 @@ async function loadPage() {
       receiptResponse,
     ] = await Promise.all([
       fetchTripGoal(tripId.value),
-      getReceipts(tripId.value),
+      getReceipts(tripId.value, dateFilterEnabled.value
+        ? {
+            startDate: startDate.value || undefined,
+            endDate: endDate.value || undefined,
+          }
+        : {}),
     ])
 
     trip.value =
@@ -351,6 +339,10 @@ async function loadPage() {
         Array.isArray(receiptData)
             ? receiptData.map(mapReceipt)
             : []
+
+    if (!dateFilterEnabled.value) {
+      totalReceiptCount.value = receipts.value.length
+    }
 
     /*
      * 현재 선택한 국가가 변경된 여행 정보에 없다면
@@ -377,6 +369,36 @@ async function loadPage() {
   } finally {
     loading.value = false
   }
+}
+
+function showDateFilter() {
+  dateFilterEnabled.value = true
+  startDate.value ||= trip.value?.startDate || ''
+  endDate.value ||= trip.value?.endDate || ''
+  dateFilterError.value = ''
+}
+
+async function applyDateFilter() {
+  if (startDate.value && endDate.value && startDate.value > endDate.value) {
+    dateFilterError.value = '시작일은 종료일보다 빠르게 선택해 주세요.'
+    return
+  }
+
+  dateFilterError.value = ''
+  await loadPage()
+}
+
+async function resetDateFilter() {
+  dateFilterEnabled.value = false
+  startDate.value = ''
+  endDate.value = ''
+  dateFilterError.value = ''
+  await loadPage()
+}
+
+function openSettlements() {
+  if (!tripId.value) return
+  router.push({ name: 'ReceiptSettlements', params: { tripId: tripId.value } })
 }
 
 function openReceipt(receiptId) {
@@ -485,7 +507,7 @@ onMounted(loadPage)
       <div class="paper-total">
         <div>
           <small>보관된 영수증</small>
-          <strong>{{ receipts.length }}<em>장</em></strong>
+          <strong>{{ totalReceiptCount }}<em>장</em></strong>
         </div>
         <span class="stored-stamp">
           <Check :size="17" :stroke-width="3" />
@@ -495,6 +517,15 @@ onMounted(loadPage)
 
       <p class="paper-footer">THANK YOU FOR TRAVELING WITH TRIPASS</p>
     </section>
+
+    <nav class="vault-tabs" aria-label="영수증 보관함 메뉴">
+      <button type="button" class="active">
+        <ReceiptText :size="16" /> 영수증
+      </button>
+      <button type="button" @click="openSettlements">
+        <HandCoins :size="17" /> 정산
+      </button>
+    </nav>
 
     <section class="filter-section">
       <div class="section-heading">
@@ -516,6 +547,36 @@ onMounted(loadPage)
           <Check v-if="selectedCountryId === country.countryId" :size="12" :stroke-width="3" />
           {{ country.countryName }}
         </button>
+      </div>
+
+      <div class="period-filter">
+        <div>
+          <span><CalendarRange :size="16" /> 조회 기간</span>
+          <div class="period-toggle">
+            <button
+                type="button"
+                :class="{ active: !dateFilterEnabled }"
+                @click="resetDateFilter"
+            >
+              전체
+            </button>
+            <button
+                type="button"
+                :class="{ active: dateFilterEnabled }"
+                @click="showDateFilter"
+            >
+              날짜 범위
+            </button>
+          </div>
+        </div>
+
+        <div v-if="dateFilterEnabled" class="date-range-fields">
+          <label><small>시작일</small><input v-model="startDate" type="date" :max="endDate || undefined"></label>
+          <i>—</i>
+          <label><small>종료일</small><input v-model="endDate" type="date" :min="startDate || undefined"></label>
+          <button type="button" :disabled="loading" @click="applyDateFilter">조회</button>
+        </div>
+        <p v-if="dateFilterError">{{ dateFilterError }}</p>
       </div>
     </section>
 
@@ -597,44 +658,36 @@ onMounted(loadPage)
               v-for="item in group.items"
               :key="item.id"
               type="button"
+              :class="{ shared: item.splitCount > 1 }"
               @click="openReceipt(item.id)"
           >
-            <span
-                class="category-icon"
-                :style="{
-                  color: categoryStyle(item.categoryName).color,
-                  background: categoryStyle(item.categoryName).soft,
-                }"
-            >
-              <component :is="categoryStyle(item.categoryName).icon" :size="20" :stroke-width="2.2" />
+            <span class="category-icon">
+              <Users v-if="item.splitCount > 1" :size="20" :stroke-width="2.2" />
+              <ReceiptText v-else :size="20" :stroke-width="2.2" />
             </span>
 
             <div class="receipt-info">
-              <b>{{ item.merchant }}</b>
+              <div class="merchant-line">
+                <b>{{ item.merchant }}</b>
+                <span v-if="item.splitCount > 1">공동결제 {{ item.splitCount }}명</span>
+              </div>
               <small>
                 {{ item.countryName }}
                 <i>·</i>
-                {{ item.categoryName }}
+                {{ item.time }}
               </small>
               <i
-                  v-if="
-                    item.splitCount > 1 &&
-                    item.splitAmount != null
-                  "
+                  v-if="item.splitCount > 1"
               >
-                {{ item.splitCount }}명 공동결제
-                · 1인당
-                {{ item.currencyCode }}
-                {{
-                  formatAmount(
-                      item.splitAmount,
-                  )
-                }}
+                <template v-if="item.participantNames">함께: {{ item.participantNames }}</template>
+                <template v-else>공동결제 참여자 확인</template>
               </i>
             </div>
             <div class="receipt-payment">
               <strong>{{ item.currencySymbol || item.currencyCode }} {{ formatAmount(item.totalAmount) }}</strong>
-              <small>{{ item.time }}</small>
+              <small v-if="item.splitCount > 1 && item.splitAmount != null">
+                1인 {{ item.currencyCode }} {{ formatAmount(item.splitAmount) }}
+              </small>
             </div>
             <ChevronRight class="row-chevron" :size="18" />
           </button>
@@ -1525,6 +1578,134 @@ onMounted(loadPage)
   text-align: center;
 }
 
+.vault-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 19px;
+  padding: 5px;
+  border: 1px solid #dfe7f3;
+  border-radius: 16px;
+  background: #eaf0f9;
+}
+
+.vault-tabs button {
+  display: flex;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  color: #78879d;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.vault-tabs button.active {
+  background: #fff;
+  color: #17499c;
+  box-shadow: 0 4px 12px rgba(28, 67, 137, 0.1);
+}
+
+.period-filter {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #edf1f6;
+}
+
+.period-filter > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.period-filter > div:first-child > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #42536d;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.period-toggle {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #edf2f8;
+}
+
+.period-toggle button {
+  height: 27px;
+  padding: 0 9px;
+  border-radius: 8px;
+  color: #7f8da1;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.period-toggle button.active {
+  background: #fff;
+  color: #2f6fed;
+  box-shadow: 0 2px 7px rgba(29, 65, 126, 0.1);
+}
+
+.date-range-fields {
+  display: grid;
+  grid-template-columns: 1fr 10px 1fr auto;
+  align-items: end;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.date-range-fields label { min-width: 0; }
+
+.date-range-fields label small {
+  display: block;
+  margin-bottom: 4px;
+  color: #93a0b3;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.date-range-fields input {
+  width: 100%;
+  height: 34px;
+  min-width: 0;
+  padding: 0 5px;
+  border: 1px solid #dce4ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #2f3d53;
+  font-size: 8px;
+}
+
+.date-range-fields > i {
+  padding-bottom: 11px;
+  color: #b2bdcc;
+  font-size: 8px;
+  font-style: normal;
+  text-align: center;
+}
+
+.date-range-fields > button {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: #2f6fed;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.period-filter > p {
+  margin-top: 7px;
+  color: #e25555;
+  font-size: 8px;
+}
+
 .summary-section {
   margin: 12px 0 0;
   padding: 17px;
@@ -1659,6 +1840,43 @@ onMounted(loadPage)
 .date-group .receipt-payment small { margin-top: 4px; color: #9aa6b7; font-size: 8px; }
 .row-chevron { color: #a9b6c9; }
 .date-group > button:active { transform: scale(0.985); }
+
+.date-group > button > .category-icon {
+  background: #eef3fb;
+  color: #5f7598;
+}
+
+.date-group > button.shared {
+  margin: 4px 0;
+  padding: 12px 9px;
+  border: 1px solid #cfe0fb;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #f8fbff, #eef5ff);
+}
+
+.date-group > button.shared > .category-icon {
+  background: #dfeaff;
+  color: #2f6fed;
+}
+
+.merchant-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.merchant-line b { min-width: 0; }
+
+.merchant-line > span {
+  flex: none;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #dce9ff;
+  color: #2466c6;
+  font-size: 6px;
+  font-weight: 900;
+}
 
 .empty { text-align: center; }
 

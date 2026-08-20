@@ -11,10 +11,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { createReceipt } from '@/api/receipt'
 import { fetchTripGoal } from '@/api/travel'
 
-import {
-  receiptCategories as categories,
-} from '@/constants/receiptCategories'
-
 const route = useRoute()
 const router = useRouter()
 
@@ -57,7 +53,6 @@ function createEmptyItem(displayOrder) {
 
 const form = reactive({
   countryId: null,
-  categoryId: null,
 
   merchantOriginalName: '',
 
@@ -355,10 +350,6 @@ function validateForm() {
     return '결제 국가를 선택해 주세요.'
   }
 
-  if (!form.categoryId) {
-    return '카테고리를 선택해 주세요.'
-  }
-
   if (!form.paymentDate) {
     return '결제 날짜를 입력해 주세요.'
   }
@@ -470,9 +461,6 @@ function createRequestData() {
   return {
     countryId:
         Number(form.countryId),
-
-    categoryId:
-        Number(form.categoryId),
 
     currencyCode:
         form.currencyCode
@@ -709,52 +697,21 @@ onBeforeUnmount(removeImage)
           >
         </label>
 
-        <!-- 국가와 카테고리 -->
-        <div class="field-grid">
-          <label class="field">
-            <span>국가</span>
+        <label class="field">
+          <span>국가</span>
 
-            <select
-                v-model.number="
-                form.countryId
-              "
+          <select v-model.number="form.countryId">
+            <option :value="null">국가 선택</option>
+
+            <option
+                v-for="country in trip?.countries || []"
+                :key="country.countryId"
+                :value="country.countryId"
             >
-              <option :value="null">
-                국가 선택
-              </option>
-
-              <option
-                  v-for="country in trip?.countries || []"
-                  :key="country.countryId"
-                  :value="country.countryId"
-              >
-                {{ country.countryName }}
-              </option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>카테고리</span>
-
-            <select
-                v-model.number="
-                form.categoryId
-              "
-            >
-              <option :value="null">
-                카테고리 선택
-              </option>
-
-              <option
-                  v-for="category in categories"
-                  :key="category.id"
-                  :value="category.id"
-              >
-                {{ category.name }}
-              </option>
-            </select>
-          </label>
-        </div>
+              {{ country.countryName }}
+            </option>
+          </select>
+        </label>
 
         <!-- 결제 날짜와 시간 -->
         <div class="field-grid">

@@ -473,6 +473,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/trips/:tripId/receipts/settlements',
+      name: 'ReceiptSettlements',
+      component: () =>
+          import('@/views/receipt/ReceiptSettlementView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/settlements/:participantName',
+      name: 'ReceiptParticipantSettlement',
+      component: () =>
+          import('@/views/receipt/ReceiptSettlementView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/trips/:tripId/receipts/:receiptId',
       name: 'ReceiptDetail',
       component: () =>
