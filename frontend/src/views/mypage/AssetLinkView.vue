@@ -446,12 +446,8 @@ async function removeCard(card) {
 .card-deck-add>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
 .card-deck-add>strong{margin-top:11px;font-size:12px;font-weight:800}
 .card-deck-add>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
-.active-card-info{width:168px;margin:2px auto 0;transform-origin:center top;animation:card-info-focus .46s cubic-bezier(.16,1,.3,1) both}
+.active-card-info{width:168px;margin:2px auto 0;transform:scale(1.02);transform-origin:center top}
 .active-card-info>.card-info-panel{width:100%;min-height:0;padding:13px 14px 42px;border-radius:16px}
-.card-deck-item.active .card-visual-big{animation:card-visual-focus .48s cubic-bezier(.16,1,.3,1) both}
-@keyframes card-visual-focus{0%{filter:brightness(.96);transform:scale(.97)}65%{filter:brightness(1.03);transform:scale(1.025)}100%{filter:brightness(1);transform:scale(1)}}
-@keyframes card-info-focus{0%{opacity:0;transform:translateY(9px) scale(.92)}70%{opacity:1;transform:translateY(-2px) scale(1.035)}100%{opacity:1;transform:translateY(0) scale(1.02)}}
-.card-detail-enter-active,.card-detail-leave-active{transition:opacity .18s ease,transform .32s cubic-bezier(.16,1,.3,1)}
-.card-detail-enter-from{opacity:0;transform:translateY(8px) scale(.94)}
-.card-detail-leave-to{opacity:0;transform:translateY(-3px) scale(.97)}
+.card-detail-enter-active,.card-detail-leave-active{transition:opacity .18s ease}
+.card-detail-enter-from,.card-detail-leave-to{opacity:0}
 </style>
