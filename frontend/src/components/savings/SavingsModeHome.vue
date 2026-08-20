@@ -1358,10 +1358,10 @@ async function switchMode(mode) {
   transform: translateY(-50%);
 }
 .ticket-notch-left {
-  left: 2px;
+  left: -12px;
 }
 .ticket-notch-right {
-  right: 2px;
+  right: -12px;
 }
 .ticket-dashed-line {
   width: calc(100% - 34px);
@@ -1846,7 +1846,6 @@ async function switchMode(mode) {
 .country-slide {
   flex: 0 0 100%;
   min-width: 0;
-  padding: 0 1px;
   opacity: 0.56;
   transform: translateY(5px) scale(0.965);
   transition:
