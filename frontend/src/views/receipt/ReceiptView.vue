@@ -13,7 +13,6 @@ import {
   CalendarRange,
   Camera,
   Check,
-  ChevronLeft,
   ChevronRight,
   HandCoins,
   PenLine,
@@ -22,6 +21,7 @@ import {
 } from '@lucide/vue'
 
 import BottomNav from '@/components/common/BottomNav.vue'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
 
 import {
@@ -515,16 +515,16 @@ onMounted(loadPage)
 
 <template>
   <main class="receipt-page">
-    <header class="page-header">
-      <button type="button" aria-label="뒤로 가기" @click="router.back()">
-        <ChevronLeft :size="24" :stroke-width="2.4" />
-      </button>
-      <div>
-        <small>TRIP RECORD</small>
-        <h1>영수증 보관함</h1>
-      </div>
-      <span />
-    </header>
+    <div class="receipt-header-fixed">
+      <header class="receipt-header">
+        <div>
+          <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
+          <h1>RECEIPT</h1>
+        </div>
+        <NotificationBell />
+      </header>
+    </div>
+    <div class="receipt-header-spacer" aria-hidden="true" />
 
     <section class="receipt-paper">
       <div class="paper-topline">
@@ -1236,6 +1236,8 @@ onMounted(loadPage)
 }
 
 /* TRIPASS receipt vault renewal */
+.receipt-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 18px;background:#f4f7fc;transform:translateX(-50%)}
+.receipt-header{display:flex;align-items:flex-start;justify-content:space-between}.receipt-header .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.receipt-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.receipt-header-spacer{height:82px}
 .receipt-page {
   min-height: 100vh;
   padding: 0 18px 164px;

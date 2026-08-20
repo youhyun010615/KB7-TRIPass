@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
+import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
@@ -141,11 +142,16 @@ function showPastSchedules() {
 
 <template>
   <main class="schedule-page">
-    <header class="page-header">
-      <button type="button" @click="router.back()">‹</button>
-      <h1>여행 일정 목록</h1>
-      <span />
-    </header>
+    <div class="schedule-header-fixed">
+      <header class="schedule-header">
+        <div>
+          <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
+          <h1>SCHEDULE</h1>
+        </div>
+        <NotificationBell />
+      </header>
+    </div>
+    <div class="schedule-header-spacer" aria-hidden="true" />
     <section class="calendar-card">
       <div class="calendar-heading">
         <div>
@@ -277,24 +283,8 @@ function showPastSchedules() {
   background: #f4f5f9;
   color: #10192d;
 }
-.page-header {
-  display: grid;
-  grid-template-columns: 36px 1fr 36px;
-  align-items: end;
-  height: 92px;
-  padding-bottom: 17px;
-}
-.page-header button {
-  font-size: 28px;
-  text-align: left;
-  color: #10192d;
-}
-.page-header h1 {
-  text-align: center;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
+.schedule-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 20px;background:#f4f5f9;transform:translateX(-50%)}
+.schedule-header{display:flex;align-items:flex-start;justify-content:space-between}.header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.schedule-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.schedule-header-spacer{height:82px}
 .calendar-card {
   overflow: hidden;
   padding: 17px 0 14px;
