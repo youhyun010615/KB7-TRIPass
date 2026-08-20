@@ -1331,7 +1331,7 @@ onBeforeUnmount(() => {
           type="button"
           @click="showOriginal = true"
       >
-        ▧ 실제 영수증 원본 사진 보기
+        🖼 실제 영수증 원본 사진 보기
       </button>
 
       <section
@@ -2570,12 +2570,13 @@ onBeforeUnmount(() => {
 
 .result-page .receipt-paper-heading span { color: #173f8d; font-size: 8px; }
 .result-page .receipt-paper-heading b { font-size: 14px; }
+.result-page .receipt-paper-heading small { font-size: 10px; }
 
 .result-page .tripass-receipt-document .field { margin-top: 16px; }
 .result-page .tripass-receipt-document .field > span {
   margin-bottom: 7px;
   color: #93a0b5;
-  font-size: 9px;
+  font-size: 10.5px;
   text-align: center;
 }
 
@@ -2586,7 +2587,8 @@ onBeforeUnmount(() => {
   border-radius: 13px;
   background: rgba(35, 53, 82, .055);
   color: #17243a;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .result-page .tripass-receipt-document .merchant-value {
@@ -2598,15 +2600,26 @@ onBeforeUnmount(() => {
   border-color: #d8cfba;
 }
 
+.result-page .tripass-receipt-document .result-items-heading b { font-size: 14px; }
+.result-page .tripass-receipt-document .result-items-heading small { font-size: 11px; }
+.result-page .tripass-receipt-document .result-items-heading strong { font-size: 11.5px; }
+
 .result-page .tripass-receipt-document .receipt-item {
   border-color: #ddd5c3;
 }
 
-.result-page .tripass-receipt-document .item-name-area b { font-size: 12px; }
-.result-page .tripass-receipt-document .receipt-item > strong { font-size: 11px; }
+.result-page .tripass-receipt-document .item-name-area b { font-size: 14px; }
+.result-page .tripass-receipt-document .item-name-area small { font-size: 10.5px; }
+.result-page .tripass-receipt-document .receipt-item > strong { font-size: 14px; }
 .result-page .tripass-receipt-document .total { border-color: #d8cfba; }
-.result-page .tripass-receipt-document .total > span { font-size: 9px; }
-.result-page .tripass-receipt-document .total strong { color: #173f8d; font-size: 17px; }
+.result-page .tripass-receipt-document .total > span { color: #5a6478; font-size: 12.5px; }
+.result-page .tripass-receipt-document .total strong { color: #0b2a6b; font-size: 20px; }
+.result-page .tripass-receipt-document .split-summary { font-size: 11px; }
+.result-page .tripass-receipt-document > .receipt-document-footer {
+  margin-top: 20px;
+  color: #c7b98f;
+  font-size: 8px;
+}
 
 .original-button,
 .shared-payment-summary,
@@ -2616,40 +2629,86 @@ onBeforeUnmount(() => {
 }
 
 .original-button {
-  height: 52px;
+  height: 54px;
   margin-top: 0;
   padding: 0 14px;
-  border-radius: 16px;
-  color: #53647e;
-  font-size: 11px;
+  border-color: #e4e8f0;
+  border-radius: 14px;
+  color: #5a6478;
+  font-size: 13px;
 }
 
 .shared-payment-summary,
 .memo-card {
   margin-top: 14px;
   padding: 18px;
-  border-radius: 20px;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(16, 25, 43, .07);
+}
+
+.shared-payment-summary { display: flex; flex-direction: column; gap: 14px; }
+.shared-summary-heading small { font-size: 9.5px; }
+.shared-summary-heading h2 { margin-top: 5px; font-size: 15px; }
+.shared-summary-heading > strong {
+  padding: 5px 11px;
+  background: #eaf1ff;
+  color: #0b2a6b;
+  font-size: 11px;
+}
+.shared-summary-amount { margin-top: 0; padding: 14px 16px; background: #f6f8fc; }
+.shared-summary-amount span,
+.shared-summary-participants > span { color: #5a6478; font-size: 11.5px; }
+.shared-summary-amount b { color: #0b2a6b; font-size: 15px; }
+.shared-summary-participants { margin-top: 0; }
+.shared-summary-participants > div { margin-top: 8px; }
+.shared-summary-participants em {
+  display: grid;
+  min-width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0 10px;
+  font-size: 12.5px;
 }
 
 .memo-card > span {
   color: #17243a;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 950;
 }
 
-.memo-card p { min-height: 72px; border: 0; background: #f6f8fc; }
+.memo-card p {
+  min-height: 70px;
+  padding: 13px 14px;
+  border: 0;
+  background: #f6f8fc;
+  color: #98a2b3;
+  font-size: 12.5px;
+}
 
 .result-page > .actions {
   position: fixed;
-  right: max(calc((100vw - 390px) / 2 + 16px), 16px);
+  right: auto;
   bottom: 0;
-  left: max(calc((100vw - 390px) / 2 + 16px), 16px);
+  left: 50%;
   z-index: 40;
+  width: 100%;
+  max-width: 390px;
   margin: 0;
-  padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #eceff5;
+  background: #fff;
+  transform: translateX(-50%);
 }
 
-.result-page > .actions button { height: 54px; border-radius: 15px; }
+.result-page > .actions button {
+  height: 54px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 14px;
+}
+.result-page > .actions button:first-child { background: #fdeeee; color: #d64545; }
+.result-page > .actions button:last-child { background: #0b2a6b; }
 
 @media (max-width: 360px) {
   .receipt-information-edit {
