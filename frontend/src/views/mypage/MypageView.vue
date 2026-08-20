@@ -129,7 +129,7 @@ const notificationRows = [
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #eef2f8">
+  <div class="mypage-scroll min-h-screen pb-20 flex flex-col" style="background: #eef2f8">
 
     <!-- 헤더 -->
     <div ref="mypageHeaderEl" class="mypage-header-fixed">
@@ -277,6 +277,8 @@ const notificationRows = [
 </template>
 
 <style scoped>
+.mypage-scroll { height: 100vh; height: 100dvh; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: none; scrollbar-width: none; }
+.mypage-scroll::-webkit-scrollbar { display: none; }
 .member-card {
   position: relative;
   overflow: hidden;

@@ -41,7 +41,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.goal-page { min-height: 100vh; padding: 0 18px 92px; color: #111827; background: #f4f7ff; }
+.goal-page { height: 100vh; height: 100dvh; min-height: 0; padding: 0 18px 92px; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: none; scrollbar-width: none; color: #111827; background: #f4f7ff; }
+.goal-page::-webkit-scrollbar { display: none; }
 .page-header { height: 56px; display: grid; grid-template-columns: 36px 1fr 36px; align-items: end; padding-bottom: 14px; }
 .page-header h1 { font-size: 17px; font-weight: 800; text-align:center; }
 .page-header button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #fff; color: #193d82; font-weight: 700; box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07); font-size: 24px; }

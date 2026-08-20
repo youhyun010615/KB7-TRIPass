@@ -238,7 +238,8 @@ const ringOffset = computed(() => ringDash - ringDash * plan.securedPercent / 10
 </template>
 
 <style scoped>
-.page { min-height: 100vh; padding: 0 16px 100px; background: #f7f4ee; color: #111827; }
+.page { height: 100vh; height: 100dvh; min-height: 0; padding: 0 16px 100px; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: none; scrollbar-width: none; background: #f7f4ee; color: #111827; }
+.page::-webkit-scrollbar { display: none; }
 
 .header { display: grid; grid-template-columns: 40px 1fr 56px; align-items: end; height: 76px; padding-bottom: 14px; }
 .back { border: 0; background: none; font-size: 26px; line-height: 1; }

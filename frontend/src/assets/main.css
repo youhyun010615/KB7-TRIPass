@@ -2,7 +2,7 @@
 
 html {
   overscroll-behavior-x: none;
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: none;
   /* 데스크톱에서 스크롤바가 고정 헤더 위까지 두껍게 걸쳐 보이지 않도록 얇고 옅게. */
   scrollbar-width: thin;
   scrollbar-color: rgba(23, 63, 141, 0.25) transparent;
@@ -12,7 +12,7 @@ body {
   word-break: keep-all;
   overflow-wrap: break-word;
   overscroll-behavior-x: none;
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: none;
 }
 ::-webkit-scrollbar {
   width: 6px;
