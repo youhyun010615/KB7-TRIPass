@@ -30,7 +30,7 @@ const categoryIconImages = { 카페: cafeIcon, 식비: foodIcon, 교통비: taxi
           <b>{{ item.merchant }}<em v-if="item.isCardPayment" class="card-badge">카드결제</em></b>
           <small>{{ item.category }} | {{ item.method }}</small>
         </span>
-        <span class="amount"><strong :class="item.amount > 0 ? 'deposit' : 'withdrawal'">{{ money(item.amount) }}</strong><time v-if="bankLayout && item.balanceAfter != null">잔액 {{ Number(item.balanceAfter).toLocaleString('ko-KR') }}원</time><time v-else-if="!bankLayout">{{ item.time }}</time></span>
+        <span class="amount"><strong :class="item.amount > 0 ? 'deposit' : 'withdrawal'">{{ money(item.amount) }}</strong><time v-if="bankLayout && item.balanceAfter != null && !(item.isCardPayment && Number(item.balanceAfter) === 0)">잔액 {{ Number(item.balanceAfter).toLocaleString('ko-KR') }}원</time><time v-else-if="!bankLayout">{{ item.time }}</time></span>
       </button>
     </section>
     <p v-if="loading" class="empty">거래내역을 불러오는 중...</p>
