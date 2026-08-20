@@ -2059,12 +2059,10 @@ onMounted(loadPage)
   overflow: hidden;
   margin-top: 16px;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, .14);
+  border: 1px solid rgba(121, 161, 229, .25);
   border-radius: 22px;
-  background:
-    radial-gradient(circle at 100% 0, rgba(255, 255, 255, .12) 0 74px, transparent 75px),
-    linear-gradient(140deg, #0b2a6b 0%, #17479f 58%, #2662b8 100%);
-  box-shadow: 0 15px 32px rgba(23, 63, 141, .2);
+  background: linear-gradient(145deg, #0b2a61 0%, #123b82 58%, #174b9c 100%);
+  box-shadow: 0 12px 24px rgba(18, 48, 102, .18);
 }
 
 .trip-summary-heading {
