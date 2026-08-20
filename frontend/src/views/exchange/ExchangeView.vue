@@ -231,16 +231,27 @@ watch(
 
 <style scoped>
 .page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: #eef2f8;
   color: #10192d;
 }
 .shell {
   width: min(100%, 390px);
-  min-height: 100vh;
+  height: 100%;
   margin: auto;
   padding: 78px 20px 100px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  scrollbar-width: none;
   background: #eef2f8;
+  box-sizing: border-box;
+}
+.shell::-webkit-scrollbar {
+  display: none;
 }
 .exchange-header {
   position: fixed;
