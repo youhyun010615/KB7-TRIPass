@@ -47,6 +47,14 @@ const countryPrepaidTotal = (plan) => Number(plan.budget.airfareAmount || 0) + N
 const recommendedLocalTotal = (plan) => ['foodAmount', 'activityAmount', 'transportAmount', 'otherAmount']
   .reduce((sum, field) => sum + Number(plan.recommendedBudget[field] || 0), 0)
 const recommendedPrepaidTotal = (plan) => Number(plan.recommendedBudget.airfareAmount || 0) + Number(plan.recommendedBudget.lodgingAmount || 0)
+// 예산 입력 단계에서는 과거에 확정된 completion 값이 아니라 현재 입력 중인
+// 국가별 예산을 합산해야 각 입력 변경이 하단 총액에 즉시 반영된다.
+const liveTargetAmount = computed(() =>
+  store.selectedPlans.reduce((sum, plan) => sum + countryLocalTotal(plan), 0),
+)
+const livePrepaidExpenseTotal = computed(() =>
+  store.selectedPlans.reduce((sum, plan) => sum + countryPrepaidTotal(plan), 0),
+)
 
 onMounted(async () => {
   if (isEditMode.value) {
@@ -339,8 +347,8 @@ async function finish() {
         </section>
       </section>
       <section class="total-preview">
-        <div><span>사전 지출 총액</span><b>{{ money(store.prepaidExpenseTotal) }}</b></div>
-        <div class="goal"><span>여행 저축 목표</span><b>{{ money(store.totalTargetAmount) }}</b></div>
+        <div><span>사전 지출 총액</span><b>{{ money(livePrepaidExpenseTotal) }}</b></div>
+        <div class="goal"><span>여행 저축 목표</span><b>{{ money(liveTargetAmount) }}</b></div>
       </section>
       <p v-if="showValidation && !store.canCompleteGoal" class="collision">⚠ 현지 여행 자금은 0원보다 커야 해요.</p>
       <button class="primary-cta" :disabled="!store.canCompleteGoal || store.loading" @click="confirmBudget">
@@ -349,7 +357,7 @@ async function finish() {
     </template>
 
     <template v-else>
-      <section class="complete-guide"><span>✓</span><p>여행 목표가 완성되었어요</p><small>TRIP 월렛으로 저축을 시작해 보세요.</small></section>
+      <section class="complete-guide"><span>✓</span><p>여행 목표가 완성되었어요</p><small>TRIP Wallet으로 저축을 시작해 보세요.</small></section>
       <section class="country-summary">
         <h2>여행 국가별 목표</h2>
         <article v-for="plan in store.selectedPlans" :key="plan.countryId" :style="{ '--accent': plan.accent }">
@@ -366,7 +374,7 @@ async function finish() {
         <div><span>현재 TRIP 월렛</span><b>{{ money(store.currentWalletBalance) }}</b></div>
         <div><span>남은 저축 기간</span><b>{{ store.remainingMonths }}개월</b></div>
       </section>
-      <section class="monthly-preview"><span>매달 저축하면 돼요</span><b>{{ money(store.monthlySavingTarget) }}</b><small>백엔드가 목표 금액·월렛 잔액·남은 기간으로 계산했어요.</small></section>
+      <section class="monthly-preview"><span>매달 저축하면 돼요</span><b>{{ money(store.monthlySavingTarget) }}</b><small>목표 금액·월렛 잔액·남은 기간을 기준으로 계산했어요.</small></section>
       <button class="primary-cta" :disabled="store.homeLoading" @click="finish">
         {{ store.homeLoading ? '여행 저축 홈을 불러오고 있어요…' : 'TRIP 월렛 저축 시작하기' }}
       </button>
