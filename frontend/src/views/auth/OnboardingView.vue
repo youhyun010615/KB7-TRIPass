@@ -23,8 +23,8 @@ const slides = [
   {
     key: 'spending',
     eyebrow: 'ON THE TRIP · AFTER',
-    title: ['여행 중 지출을 관리하고', '여행 후 리포트로 다음 여행을 계획해요'],
-    description: '',
+    title: ['여행 자금을 계획대로 쓰고,', '소비를 돌아봐요'],
+    description: '여행 중 지출을 간편하게 관리하고\n여행 후 리포트로 다음 계획까지 연결해요.',
   },
   {
     key: 'ready',
