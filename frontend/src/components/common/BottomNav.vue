@@ -274,7 +274,7 @@ onBeforeUnmount(() => {
   z-index: 50;
   width: 100%;
   max-width: 390px;
-  height: calc(98px + env(safe-area-inset-bottom));
+  height: 98px;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 0;
   display: grid;
-  height: calc(64px + env(safe-area-inset-bottom));
+  height: 64px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
   padding: 0 6px;
