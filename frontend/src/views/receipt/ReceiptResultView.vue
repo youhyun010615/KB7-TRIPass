@@ -2548,12 +2548,24 @@ onBeforeUnmount(() => {
 }
 
 .result-page .tripass-receipt-document {
+  overflow: visible;
   margin: 0 0 26px;
   padding: 0 19px 24px;
   border-color: #eee7d6;
   border-radius: 22px 22px 7px 7px;
   background: #fffaf0;
   box-shadow: 0 15px 34px rgba(45, 54, 74, .1);
+}
+
+.result-page .tripass-receipt-document::before {
+  position: absolute;
+  top: -10px;
+  right: -1px;
+  left: -1px;
+  height: 11px;
+  background: radial-gradient(circle at 7px 11px, #fffaf0 6.5px, transparent 7px) 0 0 / 14px 11px repeat-x;
+  content: '';
+  pointer-events: none;
 }
 
 .result-page .tripass-receipt-document::after {
@@ -2608,6 +2620,15 @@ onBeforeUnmount(() => {
   border: 1px solid #e5decd;
   background: #f7f3e9;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+.result-page .tripass-receipt-document.tripass-receipt-document .trip-field .readonly-trip {
+  border-color: rgba(255, 255, 255, .13);
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 255, 255, .12) 0 42px, transparent 43px),
+    linear-gradient(135deg, #0b2a6b, #1d57ad 70%, #2662b8);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(23, 63, 141, .16);
 }
 
 .result-page .tripass-receipt-document.tripass-receipt-document .merchant-value {
