@@ -1,8 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import tripassAppIcon from '@/assets/brand/tripass-app-icon.png'
-import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent.png'
+import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
 
 const router = useRouter()
 
@@ -205,7 +204,7 @@ function onTouchEnd() {
                     <span></span><span></span><span></span>
                   </div>
                   <div class="ready-logo-lockup">
-                    <img :src="tripassAppIcon" alt="TRIPASS" />
+                    <img :src="tripassTransparentSymbol" alt="TRIPASS" />
                     <strong>TRIPASS</strong>
                   </div>
                 </div>
@@ -1183,6 +1182,7 @@ function onTouchEnd() {
   width: 94px;
   height: 94px;
   object-fit: contain;
+  background: transparent;
   filter: drop-shadow(0 18px 24px rgba(2, 17, 55, 0.32));
 }
 
@@ -1192,6 +1192,8 @@ function onTouchEnd() {
   display: block;
   width: 112px;
   height: 112px;
+  border-radius: 0;
+  background: transparent;
 }
 
 .brand-app-icon-wrap .brand-app-icon {
