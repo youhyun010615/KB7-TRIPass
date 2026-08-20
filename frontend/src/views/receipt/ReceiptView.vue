@@ -728,9 +728,9 @@ onMounted(loadPage)
 
         <div
             v-if="!filteredReceipts.length"
-            class="empty"
+            class="empty receipt-empty"
         >
-          <span>🧾</span>
+          <span class="empty-receipt-icon" aria-hidden="true">🧾</span>
 
           <b>
             보관된 영수증이 없어요
@@ -2188,6 +2188,47 @@ onMounted(loadPage)
 }
 
 .receipt-list-footer span { color: #9ba9bc; font-size: 7px; }
+
+.receipt-empty { min-height: 285px; }
+
+.empty-receipt-icon {
+  position: relative;
+  isolation: isolate;
+  animation: empty-receipt-float 2.6s ease-in-out infinite;
+}
+
+.empty-receipt-icon::before,
+.empty-receipt-icon::after {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgba(47, 111, 237, .22);
+  border-radius: 20px;
+  content: '';
+  inset: -1px;
+  animation: empty-receipt-pulse 2.6s ease-out infinite;
+}
+
+.empty-receipt-icon::after { animation-delay: 1.3s; }
+
+.receipt-empty b { font-size: 13px; }
+.receipt-empty small { margin-top: 8px; font-size: 9px; }
+
+@keyframes empty-receipt-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  45% { transform: translateY(-7px) rotate(1.5deg); }
+  55% { transform: translateY(-7px) rotate(-1deg); }
+}
+
+@keyframes empty-receipt-pulse {
+  0% { opacity: .7; transform: scale(.9); }
+  75%, 100% { opacity: 0; transform: scale(1.48); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-receipt-icon,
+  .empty-receipt-icon::before,
+  .empty-receipt-icon::after { animation: none; }
+}
 
 .date-group h3 { font-size: 10px; }
 .date-group > button { padding: 13px 0; }
