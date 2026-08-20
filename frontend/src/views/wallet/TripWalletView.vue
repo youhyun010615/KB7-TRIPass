@@ -153,10 +153,10 @@ function chartColorClass(item) {
   return ''
 }
 const currencyMeta = {
-  EUR: { name: '유로', flag: '🇪🇺', rate: 1486 },
-  JPY: { name: '일본 엔', flag: '🇯🇵', rate: 9.42 },
-  CHF: { name: '스위스 프랑', flag: '🇨🇭', rate: 1606 },
-  USD: { name: '미국 달러', flag: '🇺🇸', rate: 1375 },
+  EUR: { country: '유럽연합', name: '유로', flag: '🇪🇺', rate: 1486 },
+  JPY: { country: '일본', name: '엔', flag: '🇯🇵', rate: 9.42 },
+  CHF: { country: '스위스', name: '프랑', flag: '🇨🇭', rate: 1606 },
+  USD: { country: '미국', name: '달러', flag: '🇺🇸', rate: 1375 },
 }
 const normalizeCurrencyCode = value => String(value || '')
   .replace(/\(100\)/g, '')
@@ -165,6 +165,7 @@ const normalizeCurrencyCode = value => String(value || '')
 const foreignBalances = computed(() => wallet.foreignBalances.map(item => ({
   ...item,
   code: normalizeCurrencyCode(item.code || item.currencyCode),
+  countryName: item.countryName || currencyMeta[normalizeCurrencyCode(item.code || item.currencyCode)]?.country || '국가 미지정',
   name: item.name || item.currencyName || currencyMeta[normalizeCurrencyCode(item.code || item.currencyCode)]?.name || normalizeCurrencyCode(item.code || item.currencyCode),
   flag: item.flag || currencyMeta[normalizeCurrencyCode(item.code || item.currencyCode)]?.flag || '🌐',
   amount: item.amount ?? item.balanceAmount,
@@ -418,12 +419,11 @@ async function confirmUnlinkTravelCard() {
     <section v-if="isTravelWallet" class="travel-usage-card white-card">
       <div class="travel-usage-head">
         <div><small>TRAVEL FUND</small><h2>여행 자금 사용 현황</h2></div>
-        <strong>{{ travelUsagePercent }}%</strong>
       </div>
 
-      <div class="travel-budget-progress">
+      <div class="travel-budget-progress" :class="{ exceeded: travelUsagePercent > 100 }">
         <div class="travel-budget-progress-label">
-          <span>전체 여행 사용률</span><b>{{ travelUsagePercent }}%</b>
+          <span>자금 사용률</span><b>{{ travelUsagePercent }}%</b>
         </div>
         <div class="travel-budget-track">
           <i :style="{ width: `${travelUsageBarPercent}%` }" />
@@ -539,9 +539,9 @@ async function confirmUnlinkTravelCard() {
             <span v-if="flagClassMap[item.code]" :class="flagClassMap[item.code]" class="fi-inline wallet-currency-flag"></span>
             <span v-else>{{ item.flag }}</span>
           </span>
-          <b>{{ item.code }} <small>{{ item.name }}</small></b>
+          <b>{{ item.countryName }} <small>{{ item.name }}</small></b>
           <em>현재 환율 {{ Number(item.rate || 0).toLocaleString('ko-KR') }}원</em>
-          <strong>{{ item.amount.toLocaleString('ko-KR', { minimumFractionDigits: item.code === 'EUR' || item.code === 'CHF' ? 2 : 0 }) }}</strong>
+          <strong><small>{{ item.code }}</small> {{ item.amount.toLocaleString('ko-KR', { minimumFractionDigits: item.code === 'EUR' || item.code === 'CHF' ? 2 : 0 }) }}</strong>
           <small class="krw">약 {{ money(item.krwAmount) }}</small>
         </button>
       </div>
@@ -908,5 +908,6 @@ async function confirmUnlinkTravelCard() {
 .wallet-actions .history-button{background:transparent;color:#4c6385}
 .wallet-status{padding:21px 18px}.wallet-status .section-title{display:flex;align-items:flex-end;justify-content:space-between}.wallet-status .section-title small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.wallet-status .section-title h2{font-size:20px}.wallet-status .section-title>span{max-width:132px;padding:6px 8px;border-radius:999px;background:#fff0ed;color:#e2513c;font-size:9px;font-weight:800;text-align:center}.wallet-status-list{display:grid;gap:10px;margin-top:17px}.wallet-status-list article{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:13px;border-radius:15px;background:#f7f9fd}.wallet-status-list i{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#eaf1ff;color:#245fbf;font-size:11px;font-style:normal;font-weight:900}.wallet-status-list i.reserve{background:#fff5d8;color:#bc8400}.wallet-status-list i.charge{background:#e6f7f3;color:#087f6a}.wallet-status-list div{display:grid;gap:2px}.wallet-status-list b{font-size:12px}.wallet-status-list small{font-size:9px;color:#8b98aa}.wallet-status-list strong{font-size:12px;color:#173f8d}.wallet-status-note{margin-top:13px;padding:10px 12px;border-radius:11px;background:#eef4ff;color:#607393;font-size:9px;line-height:1.45}
 .travel-usage-card{padding:21px 18px}.travel-usage-head{display:flex;align-items:flex-end;justify-content:space-between}.travel-usage-head small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.travel-usage-head h2{margin-top:2px;font-size:20px;font-weight:800}.travel-usage-head>strong{color:#17499c;font-size:25px;font-weight:900}.travel-budget-progress{margin-top:17px;padding:17px 15px;border-radius:17px;background:linear-gradient(145deg,#123c84,#1c5dbd);color:#fff;box-shadow:0 10px 22px rgba(24,77,164,.17)}.travel-budget-progress-label{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800}.travel-budget-progress-label b{color:#ffd466;font-size:17px}.travel-budget-track{height:8px;margin-top:11px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}.travel-budget-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}.travel-budget-meta{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px;font-size:12px;font-weight:800}.travel-budget-meta span{display:grid;gap:2px}.travel-budget-meta span:last-child{text-align:right}.travel-budget-meta small{color:#b8cef2;font-size:8px;letter-spacing:.1em}.travel-fund-usage-list{display:grid;gap:9px;margin-top:12px}.travel-fund-usage-list article{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;padding:13px;border:1px solid #edf1f7;border-radius:15px;background:#f8faff}.travel-fund-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:12px;font-size:9px;font-weight:900}.travel-fund-icon.reserve{background:#fff3cf;color:#a96d00}.travel-fund-icon.charge{background:#e4f6f1;color:#087a69;font-size:18px}.travel-fund-usage-list div{display:grid;gap:3px}.travel-fund-usage-list b{font-size:12px}.travel-fund-usage-list small{color:#8a97aa;font-size:8.5px;line-height:1.35}.travel-fund-usage-list strong{color:#173f8d;font-size:12px;white-space:nowrap}
+.travel-usage-head h2{font-size:16px;font-weight:750;letter-spacing:-.02em}.travel-budget-progress.exceeded .travel-budget-progress-label b{color:#ff6b6b}.travel-budget-progress.exceeded .travel-budget-track i{background:linear-gradient(90deg,#ff9a8f,#ff5353)}.travel-budget-progress.exceeded .travel-budget-meta span:last-child{color:#ff7777}.currency-row>strong>small{color:#66758c;font-size:10px;font-weight:800}
 .currency-row .flag{width:32px!important;height:24px!important;align-self:center;border-radius:5px!important;background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.18)!important}.wallet-currency-flag{width:27px!important;height:18px!important;border-radius:3px!important;background-size:cover!important}
 </style>
