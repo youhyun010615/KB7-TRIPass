@@ -688,7 +688,7 @@ function showPastSchedules() {
   box-shadow: 0 0 0 1px #bcd1f1;
   content: '';
 }
-.date-group.completed h3::before { background: #21a474;box-shadow:0 0 0 1px #8ed8bb; }
+.date-group.completed h3::before { background: #aeb8c7;box-shadow:0 0 0 1px #bcd1f1; }
 .date-group h3 span {
   padding: 4px 7px;
   border-radius: 7px;
@@ -698,9 +698,8 @@ function showPastSchedules() {
   font-weight: 800;
 }
 .date-group.completed h3 {
-  color: #18845f;
+  color: #8b97a9;
 }
-.date-group.completed h3 span{background:#e3f7ee;color:#18845f}
 .date-group :deep(.schedule-card) {
   margin-top: 9px;
   border-left: 0;

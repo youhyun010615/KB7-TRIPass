@@ -123,12 +123,12 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 .status-undecided { background: #fff; }
 .status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
 .is-completed {
-  border-color: #b9ead4;
-  background: #f0fbf6;
+  border-color: #dfe5ee;
+  background: #fff;
 }
 .is-completed .schedule-flag-wrap{filter:grayscale(.25)}
 .is-today{border-color:#ffd978;background:#fffaf0;box-shadow:0 7px 20px rgba(198,139,0,.09)}
-.is-today.is-completed{border-color:#b9ead4;background:#f0fbf6}
+.is-today.is-completed{border-color:#ffd978;background:#fffaf0}
 .compact {
   border: 1px solid rgba(255, 255, 255, 0.72);
   background: rgba(255, 255, 255, 0.96);
