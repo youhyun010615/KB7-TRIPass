@@ -423,8 +423,8 @@ async function removeCard(card) {
 .card-deck-item{position:absolute;top:7px;left:50%;width:168px;padding:0;border:0;background:transparent;transform-style:preserve-3d;will-change:transform,opacity;-webkit-tap-highlight-color:transparent}
 .card-deck-item:not(.active) .card-visual-big{box-shadow:0 7px 15px rgba(16,25,43,.11)}
 .card-deck-item.active .card-visual-big{box-shadow:0 17px 31px rgba(16,43,112,.24)}
-.active-card-info{margin-top:1px;transform-origin:center top}
-.active-card-info>.card-info-panel{min-height:112px}
+.active-card-info{width:168px;margin:2px auto 0;transform-origin:center top}
+.active-card-info>.card-info-panel{width:100%;min-height:0;padding:13px 14px 42px;border-radius:16px}
 .card-detail-enter-active,.card-detail-leave-active{transition:opacity .18s ease,transform .32s cubic-bezier(.16,1,.3,1)}
 .card-detail-enter-from{opacity:0;transform:translateY(8px) scale(.94)}
 .card-detail-leave-to{opacity:0;transform:translateY(-3px) scale(.97)}
