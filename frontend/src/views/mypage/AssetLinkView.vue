@@ -361,10 +361,6 @@ async function removeCard(card) {
         </Transition>
       </section>
 
-      <aside class="unlink-note">
-        <span>!</span>
-        <p><strong>연동을 해제하면</strong> 해당 자산의 거래내역은 자산 합계와 지출 통계에서 제외돼요.</p>
-      </aside>
     </div>
 
     <BottomNav />
