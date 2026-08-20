@@ -270,7 +270,7 @@ const checklistInfo = computed(() => {
 
 const currentMonthLabel = computed(() => `${new Date().getMonth() + 1}월`);
 const monthlySavedAmount = computed(() =>
-  Number(homeDashboard.value?.monthlySavedAmount || 0),
+  Number(homeDashboard.value?.currentMonthSaving || 0),
 );
 const monthlyRemainingAmount = computed(() =>
   Math.max(0, monthlyTarget.value - monthlySavedAmount.value),
