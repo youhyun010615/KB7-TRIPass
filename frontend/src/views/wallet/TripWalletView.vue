@@ -774,7 +774,7 @@ async function confirmUnlinkTravelCard() {
 .wallet-card-top b{font-size:14px;font-weight:700;letter-spacing:.01em}
 .wallet-card-top button{font-size:10px;font-weight:500}
 .wallet-balance{gap:6px;margin-top:18px}
-.wallet-balance strong{font-size:32px;font-weight:700;letter-spacing:-.035em}
+.wallet-balance strong{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;letter-spacing:-.035em}
 .wallet-balance span{font-size:13px;font-weight:600}
 .emergency{margin-top:8px;font-size:11px;font-weight:600}
 .wallet-actions{
@@ -883,7 +883,7 @@ async function confirmUnlinkTravelCard() {
   content:"";
   pointer-events:none;
 }
-.wallet-card-top b{color:#ffd466;font-size:11px;font-weight:800;letter-spacing:.1em}
+.wallet-card-top b{color:#ffd466;font-size:13px;font-weight:800;letter-spacing:.1em}
 .wallet-card-top button{padding:6px 10px;border-radius:999px;background:#ffd66b;color:#173f8d;font-size:11px;font-weight:800}
 .wallet-balance strong,.wallet-balance span{color:#fff}
 .emergency{color:#ffe18b}
