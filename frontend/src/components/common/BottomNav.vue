@@ -25,7 +25,11 @@ const indicatorPosition = ref(
     ? Math.min(4, Math.max(0, initialIndicatorIndex))
     : 0,
 )
+const indicatorIconIndex = ref(Math.round(indicatorPosition.value))
 const pressAmount = ref(0)
+const orbOpacity = ref(1)
+const orbScale = ref(1)
+const orbOffsetY = ref(0)
 const indicatorMoving = ref(false)
 let indicatorAnimationFrame = null
 let firstFrame = null
@@ -60,10 +64,14 @@ const activeIndex = computed(() => {
   const index = navItems.value.findIndex(item => isActive(item.path))
   return index >= 0 ? index : 0
 })
-const activeItem = computed(() => navItems.value[activeIndex.value])
+const indicatorItem = computed(() =>
+  navItems.value[indicatorIconIndex.value] ?? navItems.value[activeIndex.value],
+)
 const indicatorStyle = computed(() => ({
   left: `${((indicatorPosition.value + 0.5) / navItems.value.length) * 100}%`,
-  '--press-y': `${pressAmount.value * 6}px`,
+  '--orb-opacity': orbOpacity.value,
+  '--orb-scale': orbScale.value,
+  '--orb-y': `${orbOffsetY.value}px`,
 }))
 const navSurfacePath = computed(() => {
   const center = ((indicatorPosition.value + 0.5) / navItems.value.length) * 390
@@ -88,20 +96,53 @@ function moveIndicator(index) {
   const distance = index - from
   if (Math.abs(distance) < 0.001) {
     indicatorPosition.value = index
+    indicatorIconIndex.value = index
     pressAmount.value = 0
+    orbOpacity.value = 1
+    orbScale.value = 1
+    orbOffsetY.value = 0
     indicatorMoving.value = false
     return
   }
 
   const startedAt = window.performance.now()
-  const duration = 520
+  const duration = 680
+  let iconChanged = false
   indicatorMoving.value = true
 
   const animate = (now) => {
     const progress = Math.min(1, (now - startedAt) / duration)
-    const eased = 1 - Math.pow(1 - progress, 3)
-    indicatorPosition.value = from + distance * eased
-    pressAmount.value = Math.sin(Math.PI * progress)
+    const travelProgress = Math.min(1, Math.max(0, (progress - 0.24) / 0.44))
+    const travelEase = travelProgress * travelProgress * (3 - 2 * travelProgress)
+
+    indicatorPosition.value = from + distance * travelEase
+    pressAmount.value = Math.sin(Math.PI * travelProgress)
+
+    if (progress < 0.24) {
+      const sinkProgress = progress / 0.24
+      const sinkEase = sinkProgress * sinkProgress
+      orbOpacity.value = 1 - sinkEase
+      orbScale.value = 1 - (0.28 * sinkEase)
+      orbOffsetY.value = 34 * sinkEase
+    } else if (progress < 0.68) {
+      orbOpacity.value = 0
+      orbScale.value = 0.72
+      orbOffsetY.value = 34
+      if (!iconChanged && progress >= 0.46) {
+        indicatorIconIndex.value = index
+        iconChanged = true
+      }
+    } else {
+      if (!iconChanged) {
+        indicatorIconIndex.value = index
+        iconChanged = true
+      }
+      const riseProgress = (progress - 0.68) / 0.32
+      const riseEase = 1 - Math.pow(1 - riseProgress, 3)
+      orbOpacity.value = riseProgress
+      orbScale.value = 0.72 + (0.28 * riseEase)
+      orbOffsetY.value = 34 * (1 - riseEase)
+    }
 
     if (progress < 1) {
       indicatorAnimationFrame = window.requestAnimationFrame(animate)
@@ -109,7 +150,11 @@ function moveIndicator(index) {
     }
 
     indicatorPosition.value = index
+    indicatorIconIndex.value = index
     pressAmount.value = 0
+    orbOpacity.value = 1
+    orbScale.value = 1
+    orbOffsetY.value = 0
     indicatorMoving.value = false
     window.sessionStorage.setItem(indicatorStorageKey, String(index))
   }
@@ -178,8 +223,8 @@ onBeforeUnmount(() => {
         <span class="active-orb">
           <Transition name="icon-swap" mode="out-in">
             <component
-                :is="activeItem.icon"
-                :key="activeItem.name"
+                :is="indicatorItem.icon"
+                :key="indicatorItem.name"
                 :size="30"
                 :stroke-width="2.45"
             />
@@ -257,7 +302,8 @@ onBeforeUnmount(() => {
   height: 66px;
   place-items: center;
   box-sizing: border-box;
-  transform: translateX(-50%) translateY(var(--press-y));
+  opacity: var(--orb-opacity);
+  transform: translateX(-50%) translateY(var(--orb-y)) scale(var(--orb-scale));
   border: 6px solid #fff;
   border-radius: 50%;
   background: linear-gradient(145deg, #0c2f73, #1e5eb8);
@@ -265,6 +311,7 @@ onBeforeUnmount(() => {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, .14),
     0 8px 17px rgba(8, 34, 84, .3);
+  will-change: opacity, transform;
 }
 .nav-item {
   position: relative;
