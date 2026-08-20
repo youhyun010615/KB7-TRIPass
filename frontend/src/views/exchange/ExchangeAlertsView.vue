@@ -270,10 +270,6 @@ header h1 {
   width: 66px;
   height: 66px;
   place-items: center;
-  border: 1px solid rgba(64, 116, 211, 0.16);
-  border-radius: 22px;
-  background: linear-gradient(145deg, #e4edff, #f8fbff);
-  box-shadow: 0 10px 24px rgba(45, 96, 187, 0.16);
   animation: bell-float 2.4s ease-in-out infinite;
 }
 .icon-bubble img {
@@ -288,7 +284,7 @@ header h1 {
   right: 11px;
   width: 8px;
   height: 8px;
-  border: 2px solid #f8fbff;
+  border: 2px solid #fff;
   border-radius: 50%;
   background: #ffd45f;
 }
