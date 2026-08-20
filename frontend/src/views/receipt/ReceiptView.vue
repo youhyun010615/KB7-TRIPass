@@ -24,6 +24,7 @@ import {
 import BottomNav from '@/components/common/BottomNav.vue'
 
 import {
+  getReceiptDates,
   getReceipts,
 } from '@/api/receipt'
 
@@ -50,6 +51,7 @@ const selectedCountryId = ref(null)
 const dateFilterEnabled = ref(false)
 const startDate = ref('')
 const endDate = ref('')
+const availableReceiptDates = ref([])
 const dateFilterError = ref('')
 
 const loading = ref(false)
@@ -319,6 +321,7 @@ async function loadPage() {
     const [
       tripResponse,
       receiptResponse,
+      dateResponse,
     ] = await Promise.all([
       fetchTripGoal(tripId.value),
       getReceipts(tripId.value, dateFilterEnabled.value
@@ -327,6 +330,7 @@ async function loadPage() {
             endDate: endDate.value || undefined,
           }
         : {}),
+      getReceiptDates(tripId.value),
     ])
 
     trip.value =
@@ -338,6 +342,18 @@ async function loadPage() {
     receipts.value =
         Array.isArray(receiptData)
             ? receiptData.map(mapReceipt)
+            : []
+
+    const dateData =
+        dateResponse.data?.data ??
+        dateResponse.data ??
+        []
+
+    availableReceiptDates.value =
+        Array.isArray(dateData)
+            ? dateData
+                .filter(date => /^\d{4}-\d{2}-\d{2}$/.test(String(date)))
+                .sort((first, second) => second.localeCompare(first))
             : []
 
     if (!dateFilterEnabled.value) {
@@ -373,12 +389,22 @@ async function loadPage() {
 
 function showDateFilter() {
   dateFilterEnabled.value = true
-  startDate.value ||= trip.value?.startDate || ''
-  endDate.value ||= trip.value?.endDate || ''
+  startDate.value ||= availableReceiptDates.value.at(-1) || ''
+  endDate.value ||= availableReceiptDates.value[0] || ''
   dateFilterError.value = ''
 }
 
 async function applyDateFilter() {
+  const invalidSelectedDate =
+      [startDate.value, endDate.value]
+          .filter(Boolean)
+          .some(date => !availableReceiptDates.value.includes(date))
+
+  if (invalidSelectedDate) {
+    dateFilterError.value = '영수증이 등록된 날짜만 선택할 수 있어요.'
+    return
+  }
+
   if (startDate.value && endDate.value && startDate.value > endDate.value) {
     dateFilterError.value = '시작일은 종료일보다 빠르게 선택해 주세요.'
     return
@@ -571,11 +597,40 @@ onMounted(loadPage)
         </div>
 
         <div v-if="dateFilterEnabled" class="date-range-fields">
-          <label><small>시작일</small><input v-model="startDate" type="date" :max="endDate || undefined"></label>
+          <label>
+            <small>시작일</small>
+            <select v-model="startDate">
+              <option value="">선택</option>
+              <option
+                  v-for="date in [...availableReceiptDates].reverse()"
+                  :key="`start-${date}`"
+                  :value="date"
+                  :disabled="Boolean(endDate && date > endDate)"
+              >
+                {{ formatGroupDate(date) }}
+              </option>
+            </select>
+          </label>
           <i>—</i>
-          <label><small>종료일</small><input v-model="endDate" type="date" :min="startDate || undefined"></label>
+          <label>
+            <small>종료일</small>
+            <select v-model="endDate">
+              <option value="">선택</option>
+              <option
+                  v-for="date in availableReceiptDates"
+                  :key="`end-${date}`"
+                  :value="date"
+                  :disabled="Boolean(startDate && date < startDate)"
+              >
+                {{ formatGroupDate(date) }}
+              </option>
+            </select>
+          </label>
           <button type="button" :disabled="loading" @click="applyDateFilter">조회</button>
         </div>
+        <small v-if="dateFilterEnabled && !availableReceiptDates.length" class="no-receipt-dates">
+          선택할 수 있는 영수증 등록일이 없어요.
+        </small>
         <p v-if="dateFilterError">{{ dateFilterError }}</p>
       </div>
     </section>
@@ -1670,7 +1725,8 @@ onMounted(loadPage)
   font-weight: 800;
 }
 
-.date-range-fields input {
+.date-range-fields input,
+.date-range-fields select {
   width: 100%;
   height: 34px;
   min-width: 0;
@@ -1679,6 +1735,13 @@ onMounted(loadPage)
   border-radius: 9px;
   background: #fff;
   color: #2f3d53;
+  font-size: 8px;
+}
+
+.no-receipt-dates {
+  display: block;
+  margin-top: 8px;
+  color: #8b99ad;
   font-size: 8px;
 }
 

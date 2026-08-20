@@ -149,6 +149,9 @@ const form = reactive({
           1,
       ),
 
+  splitAmount:
+      draft?.splitAmount ?? '',
+
   participants: [],
 
   memo:
@@ -206,6 +209,16 @@ const displayedMerchantName = computed(() => {
 })
 
 const splitAmount = computed(() => {
+  const savedAmount = Number(form.splitAmount)
+
+  if (
+    !editing.value &&
+    Number.isFinite(savedAmount) &&
+    savedAmount > 0
+  ) {
+    return savedAmount
+  }
+
   const amount =
       Number(form.totalAmount)
 
@@ -414,13 +427,19 @@ function applyReceiptData(data) {
           }),
       )
 
-  form.sharedPayment =
-      form.participants.length > 0
-
-  form.splitCount =
-      form.sharedPayment
+  form.splitCount = Math.max(
+      Number(data.splitCount) ||
+      (form.participants.length
           ? form.participants.length + 1
-          : 1
+          : 1),
+      1,
+  )
+
+  form.sharedPayment =
+      form.splitCount > 1
+
+  form.splitAmount =
+      data.splitAmount ?? ''
 }
 
 function startEditing() {
@@ -1294,6 +1313,40 @@ onBeforeUnmount(() => {
         ▧ 실제 영수증 원본 사진 보기
       </button>
 
+      <section
+          v-if="!editing && form.splitCount > 1"
+          class="shared-payment-summary"
+      >
+        <div class="shared-summary-heading">
+          <div>
+            <small>SHARED PAYMENT</small>
+            <h2>공동결제 정보</h2>
+          </div>
+          <strong>{{ form.splitCount }}명</strong>
+        </div>
+
+        <div class="shared-summary-amount">
+          <span>1인당 정산 금액</span>
+          <b>
+            {{ form.currencyCode }}
+            {{ splitAmount.toFixed(2) }}
+          </b>
+        </div>
+
+        <div class="shared-summary-participants">
+          <span>함께 결제한 사람</span>
+          <div>
+            <em>나</em>
+            <em
+                v-for="participant in form.participants"
+                :key="participant.id ?? participant.participantName"
+            >
+              {{ participant.participantName }}
+            </em>
+          </div>
+        </div>
+      </section>
+
       <!-- 수정 상태에서만 공동결제 표시 -->
       <section
           v-if="editing"
@@ -2156,6 +2209,88 @@ onBeforeUnmount(() => {
   padding: 16px;
   border-radius: 16px;
   background: #fff2ad;
+}
+
+.shared-payment-summary {
+  margin-top: 12px;
+  padding: 17px;
+  border: 1px solid #dce6f3;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 9px 25px rgba(32, 65, 120, .07);
+}
+
+.shared-summary-heading,
+.shared-summary-amount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shared-summary-heading small {
+  color: #2f6fed;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.shared-summary-heading h2 {
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.shared-summary-heading > strong {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #235fac;
+  font-size: 9px;
+}
+
+.shared-summary-amount {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f3f7fd;
+}
+
+.shared-summary-amount span,
+.shared-summary-participants > span {
+  color: #718099;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.shared-summary-amount b {
+  color: #17499c;
+  font-size: 13px;
+}
+
+.shared-summary-participants {
+  margin-top: 13px;
+}
+
+.shared-summary-participants > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.shared-summary-participants em {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #f5f7fb;
+  color: #43536b;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.shared-summary-participants em:first-child {
+  background: #eaf2ff;
+  color: #2464c4;
 }
 
 .shared-heading {

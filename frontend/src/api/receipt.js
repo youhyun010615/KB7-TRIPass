@@ -58,6 +58,20 @@ export function getParticipantSettlement(tripId, participantName) {
   )
 }
 
+// 공동결제 참여자의 정산 완료 상태를 변경한다.
+export function toggleReceiptSettlement(tripId, participantName, settled) {
+  return api.put(
+    `/trips/${tripId}/receipts/settlements/${encodeURIComponent(participantName)}/toggle`,
+    null,
+    { params: { settled } },
+  )
+}
+
+// 영수증이 실제로 등록된 결제 날짜 목록을 조회한다.
+export function getReceiptDates(tripId) {
+  return api.get(`/trips/${tripId}/receipts/dates`)
+}
+
 // 로그인 회원이 소유한 특정 여행의 영수증 상세 정보를 조회한다.
 export function getReceipt(tripId, receiptId) {
   return api.get(
