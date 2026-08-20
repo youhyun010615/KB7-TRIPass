@@ -405,7 +405,8 @@ async function confirmUnlinkTravelCard() {
           <strong>{{ wallet.balance.toLocaleString('ko-KR') }}</strong>
           <span>원</span>
         </div>
-        <p class="emergency">여행 중에는 목표 자금 → 비상금 → 추가 충전 순으로 사용해요.</p>
+        <p v-if="isTravelWallet" class="emergency">여행 중에는 목표 자금 → 비상금 → 추가 충전 순으로 사용해요.</p>
+        <p v-else class="emergency">비상금: {{ money(wallet.emergencyAmount) }}</p>
         <div class="wallet-actions">
           <button type="button" @click="openTransfer('charge')">채우기</button>
           <button type="button" @click="openTransfer('withdraw')">빼기</button>
@@ -446,25 +447,6 @@ async function confirmUnlinkTravelCard() {
         </article>
       </div>
       <p class="wallet-status-note">환전은 월렛 안에서 자금을 옮기는 과정이라 여행 지출에 포함하지 않아요.</p>
-    </section>
-
-    <section v-else class="wallet-status white-card">
-      <div class="section-title">
-        <div><small>TRAVEL FUND</small><h2>월렛 현황</h2></div>
-        <span v-if="wallet.overTargetSpentAmount > 0">목표 초과 지출 {{ money(wallet.overTargetSpentAmount) }}</span>
-      </div>
-      <div class="wallet-status-list">
-        <article>
-          <i class="goal">1</i><div><b>목표 금액</b><small>여행 시작 시 확정한 기준 금액</small></div><strong>{{ money(wallet.goalAvailableAmount) }}</strong>
-        </article>
-        <article>
-          <i class="reserve">2</i><div><b>비상금</b><small>목표를 초과해 모은 여유 자금</small></div><strong>{{ money(wallet.emergencyAmount) }}</strong>
-        </article>
-        <article>
-          <i class="charge">3</i><div><b>다른 계좌에서 추가</b><small>비상금 소진 후 최운 금액</small></div><strong>{{ money(wallet.externalChargeAmount) }}</strong>
-        </article>
-      </div>
-      <p class="wallet-status-note">환전은 월렛 내 자금 이동이며 지출로 계산하지 않아요.</p>
     </section>
 
     <section v-if="!isTravelWallet" class="saving-card white-card">
