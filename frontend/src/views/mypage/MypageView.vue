@@ -277,7 +277,17 @@ const notificationRows = [
 </template>
 
 <style scoped>
-.mypage-scroll { height: 100vh; height: 100dvh; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: none; scrollbar-width: none; }
+.mypage-scroll {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
 .mypage-scroll::-webkit-scrollbar { display: none; }
 .member-card {
   position: relative;
