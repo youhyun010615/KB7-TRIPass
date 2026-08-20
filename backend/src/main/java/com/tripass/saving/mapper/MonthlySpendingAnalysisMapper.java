@@ -119,4 +119,11 @@ public interface MonthlySpendingAnalysisMapper {
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+    List<java.util.Map<String, Object>> findMonthlySpendingTrend(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }

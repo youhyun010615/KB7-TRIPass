@@ -115,33 +115,37 @@ public class MonthlySpendingAnalysisService {
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "CATEGORY_ANALYSIS_NOT_FOUND",
                         "해당 카테고리의 분석 데이터를 찾을 수 없습니다."));
 
-        List<MonthlyCategoryAnalysisDto> sortedHistory = history.stream()
-                .sorted((a, b) -> a.getAnalysisYearMonth().compareTo(b.getAnalysisYearMonth()))
-                .toList();
+        LocalDate periodStart = analysisYearMonth.atDay(1);
+        LocalDate periodEnd = analysisYearMonth.atEndOfMonth();
+        LocalDate trendStart = analysisYearMonth.minusMonths(3).atDay(1);
 
-        List<MissionDetailResponseDto.MonthlyTrendItem> monthlyTrend = sortedHistory.stream()
-                .map(h -> new MissionDetailResponseDto.MonthlyTrendItem(
-                        h.getAnalysisYearMonth(), h.getSpendingAmount(), h.getTransactionCount()))
+        List<Map<String, Object>> trendRows = mapper.findMonthlySpendingTrend(userId, categoryId, trendStart, periodEnd);
+
+        List<MissionDetailResponseDto.MonthlyTrendItem> monthlyTrend = trendRows.stream()
+                .map(row -> new MissionDetailResponseDto.MonthlyTrendItem(
+                        (String) row.get("year_month"),
+                        new BigDecimal(row.get("spending").toString()),
+                        ((Number) row.get("transaction_count")).intValue()))
                 .toList();
 
         // 전월 실제 금액
         YearMonth prevMonth = analysisYearMonth.minusMonths(1);
-        BigDecimal previousMonthSpending = history.stream()
-                .filter(h -> prevMonth.toString().equals(h.getAnalysisYearMonth()))
-                .map(MonthlyCategoryAnalysisDto::getSpendingAmount)
+        BigDecimal previousMonthSpending = trendRows.stream()
+                .filter(row -> prevMonth.toString().equals(row.get("year_month")))
+                .map(row -> new BigDecimal(row.get("spending").toString()))
                 .findFirst().orElse(null);
 
         // 3개월 평균 (현재 달 제외)
-        List<MonthlyCategoryAnalysisDto> pastMonths = history.stream()
-                .filter(h -> !analysisYearMonth.toString().equals(h.getAnalysisYearMonth()))
+        List<BigDecimal> pastMonthAmounts = trendRows.stream()
+                .filter(row -> !analysisYearMonth.toString().equals(row.get("year_month")))
+                .map(row -> new BigDecimal(row.get("spending").toString()))
                 .toList();
         BigDecimal threeMonthAverage = null;
         BigDecimal threeMonthAverageChange = null;
-        if (!pastMonths.isEmpty()) {
-            BigDecimal sum = pastMonths.stream()
-                    .map(MonthlyCategoryAnalysisDto::getSpendingAmount)
+        if (!pastMonthAmounts.isEmpty()) {
+            BigDecimal sum = pastMonthAmounts.stream()
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            threeMonthAverage = sum.divide(BigDecimal.valueOf(pastMonths.size()), 0, java.math.RoundingMode.HALF_UP);
+            threeMonthAverage = sum.divide(BigDecimal.valueOf(pastMonthAmounts.size()), 0, java.math.RoundingMode.HALF_UP);
             if (threeMonthAverage.compareTo(BigDecimal.ZERO) > 0) {
                 threeMonthAverageChange = current.getSpendingAmount()
                         .subtract(threeMonthAverage)
@@ -149,11 +153,6 @@ public class MonthlySpendingAnalysisService {
                         .divide(threeMonthAverage, 1, java.math.RoundingMode.HALF_UP);
             }
         }
-
-        // 월말 예상 지출
-        LocalDate today = LocalDate.now();
-        LocalDate periodStart = analysisYearMonth.atDay(1);
-        LocalDate periodEnd = analysisYearMonth.atEndOfMonth();
         BigDecimal projectedMonthSpending = null;
         if (current.getDailyAverage() != null && current.getDailyAverage().compareTo(BigDecimal.ZERO) > 0) {
             int totalDays = periodEnd.getDayOfMonth();
