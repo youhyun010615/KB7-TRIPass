@@ -239,12 +239,19 @@ watch(
   width: min(100%, 390px);
   min-height: 100vh;
   margin: auto;
-  padding: 0 20px 100px;
+  padding: 78px 20px 100px;
   background: #eef2f8;
 }
 .exchange-header {
-  padding: 14px 0 8px;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 60;
+  width: min(100%, 390px);
+  padding: 14px 20px 8px;
   background: #eef2f8;
+  box-sizing: border-box;
+  transform: translateX(-50%);
 }
 .exchange-header-top {
   display: flex;
