@@ -221,8 +221,7 @@ async function removeCard(card) {
 
       <section class="asset-section card-section">
         <div class="section-title"><div><h2>내 카드</h2><small>좌우로 밀어 카드를 확인하세요</small></div><span>{{ cardStore.cards.length }}장</span></div>
-        <p v-if="cardStore.cards.length === 0" class="empty-card">연동된 카드가 없어요.</p>
-        <div v-else class="card-carousel">
+        <div class="card-carousel">
           <article
             v-for="card in cardStore.cards"
             :key="card.id"
