@@ -671,6 +671,8 @@ async function switchMode(mode) {
                   {{ country.desc }}
                 </p>
 
+                <span v-if="checklistInfo" class="ticket-checklist-spacer" aria-hidden="true"></span>
+
                 <!-- 체크리스트 버튼: 여행 저축 목표 박스 왼쪽 위 -->
                 <button
                   v-if="checklistInfo"
@@ -1329,6 +1331,12 @@ async function switchMode(mode) {
   flex-direction: column;
 }
 .ticket-photo-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.ticket-checklist-spacer {
+  min-height: 14px;
   flex: 1;
 }
 .ticket-stub {
@@ -1899,6 +1907,7 @@ async function switchMode(mode) {
 }
 .checklist-btn {
   display: inline-block;
+  align-self: flex-start;
   margin: 14px 0 12px;
   padding: 8px 16px;
   border-radius: 12px;
