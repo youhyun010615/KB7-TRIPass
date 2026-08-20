@@ -905,7 +905,6 @@ async function switchMode(mode) {
         </div>
         <div class="exchange-card-body">
           <div class="exchange-country-mark">
-            <span :class="flagIconClass(selectedCountry.code)" class="fi-inline" style="font-size: 22px" />
             <div>
               <small>{{ selectedCountry.name }} 여행 환율</small
               ><b>{{ exchangeUnitLabel }} <i>→</i> KRW</b>
