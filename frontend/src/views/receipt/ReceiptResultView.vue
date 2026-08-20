@@ -16,6 +16,7 @@ import {
   getReceiptImage,
   updateReceipt,
 } from '@/api/receipt'
+import ReceiptPaperHeader from '@/components/receipt/ReceiptPaperHeader.vue'
 const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
@@ -1020,7 +1021,14 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- 영수증 인식 결과 -->
-      <section class="receipt-paper">
+      <section class="receipt-paper tripass-receipt-document">
+        <ReceiptPaperHeader
+            :mode-label="editing
+            ? (isOcrResult ? 'OCR RECEIPT' : 'EDIT RECEIPT')
+            : 'SAVED RECEIPT'"
+            :reference="receiptId || 'OCR'"
+        />
+
         <!-- 상호명 -->
         <template v-if="editing">
           <input
@@ -1271,6 +1279,10 @@ onBeforeUnmount(() => {
         >
           ＋ 품목 추가
         </button>
+
+        <p class="receipt-document-footer">
+          THANK YOU FOR TRAVELING WITH TRIPASS
+        </p>
       </section>
 
       <!-- 실제 영수증 사진 -->
@@ -2346,3 +2358,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+<style src="../../assets/receipt-document.css"></style>

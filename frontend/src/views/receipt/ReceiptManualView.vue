@@ -10,6 +10,7 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { createReceipt } from '@/api/receipt'
 import { fetchTripGoal } from '@/api/travel'
+import ReceiptPaperHeader from '@/components/receipt/ReceiptPaperHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -607,7 +608,12 @@ onBeforeUnmount(removeImage)
     </header>
 
     <form @submit.prevent="saveReceipt">
-      <section class="receipt-form-card">
+      <section class="receipt-form-card tripass-receipt-document">
+        <ReceiptPaperHeader
+            mode-label="MANUAL RECEIPT"
+            reference="NEW"
+        />
+
         <!-- 선택적인 영수증 이미지 첨부 -->
         <div class="image-section">
           <input
@@ -665,7 +671,7 @@ onBeforeUnmount(removeImage)
         </div>
 
         <!-- 현재 여행 -->
-        <label class="field">
+        <label class="field trip-field">
           <span>여행</span>
 
           <div class="readonly-trip">
@@ -684,7 +690,7 @@ onBeforeUnmount(removeImage)
         </label>
 
         <!-- 상호명 -->
-        <label class="field">
+        <label class="field merchant-field">
           <span>상호명</span>
 
           <input
@@ -697,7 +703,7 @@ onBeforeUnmount(removeImage)
           >
         </label>
 
-        <label class="field">
+        <label class="field country-field">
           <span>국가</span>
 
           <select v-model.number="form.countryId">
@@ -714,7 +720,7 @@ onBeforeUnmount(removeImage)
         </label>
 
         <!-- 결제 날짜와 시간 -->
-        <div class="field-grid">
+        <div class="field-grid datetime-field">
           <label class="field">
             <span>결제 날짜</span>
 
@@ -735,7 +741,7 @@ onBeforeUnmount(removeImage)
         </div>
 
         <!-- 통화 코드 -->
-        <label class="field">
+        <label class="field currency-field">
           <span>통화 코드</span>
 
           <input
@@ -886,6 +892,10 @@ onBeforeUnmount(removeImage)
             품목 합계를 최종 결제 금액에 적용
           </button>
         </section>
+
+        <p class="receipt-document-footer">
+          THANK YOU FOR TRAVELING WITH TRIPASS
+        </p>
       </section>
 
       <!-- 공동결제 -->
@@ -1523,3 +1533,5 @@ form {
   }
 }
 </style>
+
+<style src="../../assets/receipt-document.css"></style>
