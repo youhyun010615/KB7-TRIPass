@@ -94,14 +94,29 @@ function updateKrw(event) {
 
 <style scoped>
 .calculator {
+  position: relative;
+  overflow: hidden;
   margin-top: 18px;
   padding: 18px;
-  border: 1px solid #bcd2ff;
+  border: 1px solid #a9dfcf;
   border-radius: 22px;
-  background: linear-gradient(150deg, #eff5ff 0%, #e6f0ff 100%);
-  box-shadow: 0 10px 26px rgba(23, 43, 77, .055);
+  background: linear-gradient(145deg, #effbf7 0%, #e1f5ee 100%);
+  box-shadow: 0 12px 28px rgba(17, 113, 83, .1);
+}
+.calculator::after {
+  position: absolute;
+  top: -58px;
+  right: -45px;
+  width: 145px;
+  height: 145px;
+  border-radius: 50%;
+  background: rgba(42, 160, 122, .08);
+  content: '';
+  pointer-events: none;
 }
 .calculator-heading {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -110,27 +125,30 @@ function updateKrw(event) {
 .calculator-heading small {
   display: block;
   margin-bottom: 3px;
-  color: #2f6fea;
+  color: #15916d;
   font-family: 'Space Mono', monospace;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: .12em;
 }
 .calculator h2 {
-  color: #173f8d;
+  color: #12664f;
   font-size: 15px;
   font-weight: 800;
 }
 .calculator-heading > span {
   padding: 5px 8px;
   border-radius: 999px;
-  background: #edf3ff;
-  color: #3268c5;
+  border: 1px solid #bfe7da;
+  background: rgba(255, 255, 255, .64);
+  color: #167b5e;
   font-size: 8px;
   font-weight: 700;
   white-space: nowrap;
 }
 .calculator-fields {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
   align-items: center;
@@ -141,14 +159,16 @@ function updateKrw(event) {
   display: block;
   min-width: 0;
   padding: 12px;
-  border: 1px solid #e8edf5;
-  border-radius: 14px;
-  background: #f7f9fc;
-  color: #8d99ad;
+  border: 1px solid #c8e5dc;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .76);
+  color: #6d9185;
+  box-shadow: inset 0 2px 5px rgba(28, 106, 82, .045);
 }
 .calculator label:focus-within {
-  border-color: #9bbaf1;
-  background: #f3f7ff;
+  border-color: #4eba98;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(39, 163, 124, .1), inset 0 2px 5px rgba(28, 106, 82, .04);
 }
 .field-label {
   display: block;
@@ -167,7 +187,8 @@ function updateKrw(event) {
   display: block;
   width: 100%;
   min-width: 0;
-  color: #17233a;
+  color: #123d32;
+  font-family: 'Space Mono', monospace;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: -.025em;
@@ -183,11 +204,12 @@ function updateKrw(event) {
 .calculator input.tiny,
 .calculator strong.tiny { font-size: 10px; }
 .result-field {
-  background: #f1f5fd !important;
+  background: #d9f1e8 !important;
+  border-color: #b6ddcf !important;
 }
 .calculator b {
   flex: 0 0 auto;
-  color: #53647e;
+  color: #477668;
   font-size: 8.5px;
   font-weight: 800;
 }
@@ -197,11 +219,11 @@ function updateKrw(event) {
   height: 32px;
   place-items: center;
   align-self: center;
-  border: 3px solid #fff;
+  border: 3px solid #effbf7;
   border-radius: 50%;
-  background: #173b82;
+  background: linear-gradient(145deg, #11815f, #20a078);
   color: #fff;
-  box-shadow: 0 5px 12px rgba(23, 59, 130, .22);
+  box-shadow: 0 6px 14px rgba(17, 129, 95, .24);
 }
 .convert-arrow svg {
   width: 15px;
