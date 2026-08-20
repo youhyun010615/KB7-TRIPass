@@ -601,12 +601,11 @@ async function switchMode(mode) {
               :style="`background:${country.headerBg}`"
             >
               <span
-                class="text-[10px] font-bold tracking-widest"
-                style="color: #ffd466"
+                class="text-white/70 text-[10px] font-bold tracking-widest"
                 >BOARDING PASS</span
               >
               <RouterLink
-                class="inline-flex items-center gap-[1px] whitespace-nowrap rounded-full bg-[#ffd66b] px-[10px] py-[6px] text-[11px] font-extrabold text-[#173f8d]"
+                class="text-white text-[10px] font-semibold whitespace-nowrap"
                 :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
               >
                 여행 계획 수정하기 ›
@@ -734,7 +733,7 @@ async function switchMode(mode) {
                 :style="`background:${country.headerBg}`"
               >
                 <button
-                  class="ticket-stub w-full px-5 flex items-center justify-end gap-1 active:bg-gray-50"
+                  class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
                   @click="goWallet"
                 >
                   <span class="text-[13px] font-bold text-white">송금하기</span>
