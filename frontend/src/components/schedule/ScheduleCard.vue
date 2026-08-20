@@ -150,15 +150,18 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 .status-undecided { background: #fafafa; }
 .status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
 .compact {
-  background: #ffffff18;
-  box-shadow: none;
-  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 9px 22px rgba(6, 30, 76, 0.18);
+  color: #10192d;
 }
-.compact .schedule-time time { background: #ffffff20; color: #fff; }
-.compact .schedule-country { color: #c6d8f4; }
-.compact .schedule-copy h4 { color: #fff; }
-.compact .schedule-place { color: #dceaff; }
-.compact .schedule-meta { color: #b7cdf2; }
-.compact .schedule-title-row em { background: #fff; color: #173f8d; }
-.compact .schedule-chevron { color: #ffffffa0; }
+.compact .schedule-time time { background: #e8f1ff; color: #174b9f; }
+.compact .schedule-country { color: #718096; }
+.compact .schedule-copy h4 { color: #10192d; }
+.compact .schedule-place { color: #3d4a63; }
+.compact .schedule-meta { color: #8a97ab; }
+.compact .schedule-title-row em { background: #edf4ff; color: #2868cf; }
+.compact.status-onsite .schedule-title-row em { background: #fff0ee; color: #db6258; }
+.compact.status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
+.compact .schedule-chevron { color: #91a0b7; }
 </style>

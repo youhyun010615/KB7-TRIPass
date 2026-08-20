@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
@@ -8,9 +8,12 @@ import { useTravelScheduleStore } from '@/stores/travelSchedule';
 const router = useRouter();
 const store = useTravelScheduleStore();
 const todayModalOpen = ref(false);
+const timelineList = ref(null);
 
-onMounted(() => {
-  store.loadSchedules().catch(() => {});
+onMounted(async () => {
+  await store.loadSchedules().catch(() => {});
+  await nextTick();
+  positionTimelineAtUpcoming();
 });
 const todaySchedules = computed(() =>
   store.sortedSchedules.filter(
@@ -22,13 +25,24 @@ const upcomingSchedules = computed(() =>
     (item) => item.date > store.todayFor(item.timeZone),
   ),
 );
-const upcomingGroups = computed(() => {
+const pastSchedules = computed(() =>
+  store.sortedSchedules.filter(
+    (item) => item.date < store.todayFor(item.timeZone),
+  ),
+);
+const timelineGroups = computed(() => {
   const groups = new Map();
-  upcomingSchedules.value.forEach((item) => {
+  [...pastSchedules.value, ...upcomingSchedules.value].forEach((item) => {
     if (!groups.has(item.date)) groups.set(item.date, []);
     groups.get(item.date).push(item);
   });
-  return [...groups.entries()].map(([date, items]) => ({ date, items }));
+  return [...groups.entries()].map(([date, items]) => ({
+    date,
+    items,
+    isPast: items.every(
+      (item) => item.date < store.todayFor(item.timeZone),
+    ),
+  }));
 });
 const dateLabel = (date) =>
   new Intl.DateTimeFormat('ko-KR', {
@@ -48,6 +62,20 @@ const travelDays = computed(() =>
   ),
 );
 const openDetail = (id) => router.push(`/schedule/${id}`);
+
+function positionTimelineAtUpcoming() {
+  const list = timelineList.value;
+  if (!list || !pastSchedules.value.length) return;
+
+  const upcomingAnchor = list.querySelector('[data-upcoming-anchor="true"]');
+  list.scrollTop = upcomingAnchor
+    ? Math.max(0, upcomingAnchor.offsetTop - 10)
+    : list.scrollHeight;
+}
+
+function showPastSchedules() {
+  timelineList.value?.scrollTo({ top: 0, behavior: 'smooth' });
+}
 </script>
 
 <template>
@@ -73,10 +101,17 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
       @keydown.enter="todayModalOpen = true"
     >
       <div class="ticket-head">
-        <b>오늘 일정</b><small>{{ store.today.replaceAll('-', '.') }}</small>
+        <div>
+          <span class="today-eyebrow"><i /> TODAY</span>
+          <b>오늘의 여행 일정</b>
+        </div>
+        <time>{{ store.today.replaceAll('-', '.') }}</time>
       </div>
       <div class="cut"><i /><span /><i /></div>
-      <p>오늘 일정이 {{ todaySchedules.length }}건 있어요.</p>
+      <div class="today-summary">
+        <strong>{{ todaySchedules.length }}개의 일정이 기다리고 있어요</strong>
+        <small>가장 가까운 일정부터 확인해 보세요.</small>
+      </div>
       <div class="today-preview-list">
         <ScheduleCard
           v-for="item in todaySchedules"
@@ -87,8 +122,6 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
         />
       </div>
       <div class="all-link">오늘 일정 전체 보기 <span>›</span></div>
-      <div class="cut bottom"><i /><span /><i /></div>
-      <div class="barcode">||||||||||||||||||||</div>
     </section>
     <section v-else class="empty-ticket">
       <span class="empty-ticket-badge">
@@ -101,16 +134,31 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 
     <section class="upcoming-card">
       <div class="section-title">
-        <h2>다가오는 여행 일정</h2>
-        <span>총 {{ upcomingSchedules.length }}건</span>
+        <div>
+          <h2>다가오는 여행 일정</h2>
+          <p v-if="pastSchedules.length">위로 스크롤하면 지난 일정도 볼 수 있어요</p>
+        </div>
+        <button
+          v-if="pastSchedules.length"
+          type="button"
+          @click="showPastSchedules"
+        >
+          지난 {{ pastSchedules.length }}건 <span aria-hidden="true">↑</span>
+        </button>
+        <span v-else>총 {{ upcomingSchedules.length }}건</span>
       </div>
-      <div class="upcoming-list">
+      <div ref="timelineList" class="upcoming-list">
         <div
-          v-for="group in upcomingGroups"
+          v-for="group in timelineGroups"
           :key="group.date"
           class="date-group"
+          :class="{ past: group.isPast }"
+          :data-upcoming-anchor="group.isPast ? null : 'true'"
         >
-          <h3>{{ dateLabel(group.date) }}</h3>
+          <h3>
+            {{ dateLabel(group.date) }}
+            <span v-if="group.isPast">지난 일정</span>
+          </h3>
           <ScheduleCard
             v-for="item in group.items"
             :key="item.id"
@@ -118,7 +166,7 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
             @detail="openDetail"
           />
         </div>
-        <div v-if="!upcomingGroups.length" class="empty-state">
+        <div v-if="!timelineGroups.length" class="empty-state">
           <span aria-hidden="true">🧭</span>
           <b>다가오는 여행 일정이 없어요</b>
           <small>새 일정을 추가하면 이곳에 표시돼요.</small>
@@ -235,29 +283,73 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
   font-style: normal;
 }
 .today-ticket {
+  position: relative;
   display: block;
   width: 100%;
   margin-top: 18px;
   overflow: hidden;
   border-radius: 22px;
-  background: linear-gradient(135deg, #103779, #1553a2);
+  background:
+    radial-gradient(circle at 88% 4%, rgba(88, 156, 255, 0.48), transparent 32%),
+    linear-gradient(145deg, #0e3479 0%, #1553aa 58%, #1d64c2 100%);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(16, 41, 92, 0.22);
+  box-shadow: 0 14px 30px rgba(16, 55, 121, 0.26);
   text-align: left;
 }
+.today-ticket::before,
+.today-ticket::after {
+  position: absolute;
+  top: 116px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f4f5f9;
+  content: '';
+}
+.today-ticket::before { left: -10px; }
+.today-ticket::after { right: -10px; }
 .ticket-head {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 18px 22px 15px;
+  padding: 22px 22px 18px;
+}
+.ticket-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.today-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffd761;
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+.today-eyebrow i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffd761;
+  box-shadow: 0 0 0 5px rgba(255, 215, 97, 0.14);
 }
 .ticket-head b {
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
 }
-.ticket-head small {
-  color: #ffffff99;
-  font-size: 13px;
-  font-weight: 500;
+.ticket-head time {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #dce9ff;
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
 }
 .cut {
   display: grid;
@@ -280,35 +372,38 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 .cut span {
   border-top: 1px dashed #ffffff80;
 }
-.today-ticket > p {
-  padding: 16px 22px 10px;
-  color: #dbe8ff;
+.today-summary {
+  padding: 18px 22px 5px;
+}
+.today-summary strong,
+.today-summary small {
+  display: block;
+}
+.today-summary strong {
+  color: #fff;
   font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: 800;
+}
+.today-summary small {
+  margin-top: 5px;
+  color: #bcd2f5;
+  font-size: 10px;
+  font-weight: 600;
 }
 .today-ticket :deep(.schedule-card) {
   width: calc(100% - 36px);
-  margin: 10px 18px;
+  margin: 12px 18px 8px;
 }
 .all-link {
-  padding: 14px 22px 4px;
+  padding: 11px 22px 18px;
   text-align: right;
-  color: #e1ecff;
-  font-size: 13px;
-  font-weight: 700;
+  color: #dce9ff;
+  font-size: 11px;
+  font-weight: 800;
 }
 .all-link span {
-  font-size: 18px;
-}
-.cut.bottom {
-  margin-top: 12px;
-}
-.barcode {
-  height: 34px;
-  padding: 9px 22px;
-  text-align: right;
-  letter-spacing: -1px;
+  color: #ffd761;
+  font-size: 17px;
 }
 .empty-ticket {
   display: flex;
@@ -360,42 +455,93 @@ const openDetail = (id) => router.push(`/schedule/${id}`);
 .upcoming-card {
   margin-top: 18px;
   padding: 20px;
+  border: 1px solid #e7edf9;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(16, 25, 43, 0.06);
+  background: linear-gradient(165deg, #fff 0%, #f8faff 100%);
+  box-shadow: 0 8px 22px rgba(16, 25, 43, 0.07);
 }
 .section-title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 10px;
 }
 .section-title h2 {
-  font-size: 20px;
-  font-weight: 700;
+  color: #173f8d;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
 }
-.section-title span {
+.section-title p {
+  margin-top: 5px;
+  color: #98a2b3;
+  font-size: 9px;
+  font-weight: 600;
+}
+.section-title > span {
   color: #94a3b8;
   font-size: 13px;
   font-weight: 500;
 }
+.section-title button {
+  display: flex;
+  min-height: 29px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px;
+  border-radius: 9px;
+  background: #edf4ff;
+  color: #2868cf;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.section-title button span {
+  color: #2868cf;
+  font-size: 11px;
+}
 .upcoming-list {
+  position: relative;
   max-height: 560px;
+  margin: 16px -5px 0;
+  padding: 0 5px 5px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: #c7d3e4 transparent;
 }
 .date-group h3 {
-  margin: 26px 4px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 4px 11px;
   color: #245ec4;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 900;
 }
 .date-group:first-child h3 {
-  margin-top: 18px;
+  margin-top: 2px;
+}
+.date-group h3 span {
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: #eef1f5;
+  color: #8b97a9;
+  font-size: 8px;
+  font-weight: 800;
+}
+.date-group.past h3 {
+  color: #8b97a9;
+}
+.date-group.past :deep(.schedule-card) {
+  border: 1px solid #edf0f4;
+  background: #f6f7f9;
+  box-shadow: none;
+  opacity: 0.82;
 }
 .date-group :deep(.schedule-card) {
-  margin-top: 10px;
+  margin-top: 9px;
 }
 .empty {
   padding: 40px;
