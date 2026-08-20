@@ -1,38 +1,34 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import tripassWordmark from '@/assets/brand/tripass-wordmark.png'
+import tripassAppIcon from '@/assets/brand/tripass-app-icon.png'
 
 const router = useRouter()
 
 const slides = [
   {
     key: 'journey',
-    eyebrow: 'FLIGHT MODE · MONEY',
-    title: ['모으고, 쓰고,', '돌아보는 여행의 모든 순간'],
-    description:
-      '여행 전 목표와 자금부터 여행 중 지출 관리,\n여행 후 소비까지 함께하는 여행 자금관리 서비스',
+    eyebrow: '',
+    title: ['여행을 준비하는', '가장 똑똑한 금융 습관'],
+    description: '',
   },
   {
     key: 'saving',
     eyebrow: 'BEFORE THE TRIP',
-    title: ['목표를 정하면,', 'AI가 저축 계획을 제안해요'],
-    description:
-      '여행 예산과 월 저축 목표를 계산하고\n실제 소비 패턴에서 아낄 항목을 찾아드려요.',
+    title: ['여행 계획을 설정하면,', 'AI가 제안해요'],
+    description: '소비 패턴을 분석해 맞춤 저축 계획과\n여행 리포트를 준비해요.',
   },
   {
     key: 'spending',
     eyebrow: 'ON THE TRIP · AFTER',
-    title: ['여행 자금을 계획대로 쓰고,', '소비를 돌아봐요'],
-    description:
-      '여행 중 지출을 간편하게 관리하고\n여행 후 리포트로 다음 계획까지 연결해요.',
+    title: ['여행 중 지출을 관리하고', '여행 후 리포트로 다음 여행을 계획해요'],
+    description: '',
   },
   {
     key: 'ready',
     eyebrow: 'READY FOR TAKEOFF',
-    title: ['여행 자금을 똑똑하게 관리해', '더 자주 떠나보세요'],
-    description:
-      '목표를 정하고, 필요한 금액을 모으고,\n여행에서 사용한 뒤 다음 여행을 준비해요.',
+    title: ['TRIPASS를 시작해볼까요?'],
+    description: '',
   },
 ]
 
@@ -147,63 +143,51 @@ function onTouchEnd() {
           :class="{ 'is-active': current === index }"
           :aria-hidden="current !== index"
         >
+          <p v-if="slide.key !== 'journey'" class="eyebrow slide-eyebrow">{{ slide.eyebrow }}</p>
           <div class="visual-stage">
               <div class="visual-content">
                 <div v-if="slide.key === 'journey'" class="brand-visual">
                   <div class="brand-logo-stage">
                     <span class="brand-logo-halo" aria-hidden="true"></span>
-                    <img class="brand-logo" :src="tripassWordmark" alt="TRIPASS 여행을 준비하는 가장 똑똑한 금융 습관" />
-                    <div class="brand-flight-path" aria-hidden="true">
-                      <span></span>
-                      <b>✈</b>
-                    </div>
+                    <img class="brand-app-icon" :src="tripassAppIcon" alt="TRIPASS" />
+                    <strong class="brand-name">TRIPASS</strong>
                   </div>
                 </div>
 
                 <div v-else-if="slide.key === 'saving'" class="saving-visual">
-                  <div class="deposit-stream" aria-hidden="true">
-                    <span>₩</span>
-                    <span>₩</span>
-                    <span>₩</span>
+                  <div class="ai-report-animation" aria-label="AI가 여행 저축 리포트를 작성하고 있어요">
+                    <div class="ai-orbit" aria-hidden="true">
+                      <span>AI</span>
+                      <i></i>
+                    </div>
+                    <div class="ai-report-sheet">
+                      <div class="ai-report-head"><b>AI REPORT</b><span>작성 중</span></div>
+                      <i></i><i></i><i></i>
+                    </div>
                   </div>
-                  <div class="achievement-pill">
-                    <span>✓</span>
-                    <strong>65%</strong>
-                    <small>AI 저축 미션 달성</small>
-                  </div>
-                  <div class="saving-card">
-                    <div class="saving-card-head">
-                      <span class="coin-icon">₩</span>
-                      <span>이번 달 여행 저축</span>
+                  <div class="saving-goal-card">
+                    <div class="saving-goal-head">
+                      <span>여행 저축 목표 달성률</span><strong>65%</strong>
                     </div>
-                    <strong class="saving-amount">300,000원</strong>
-                    <div class="saving-divider"></div>
-                    <div class="saving-fill" aria-hidden="true"><span></span></div>
-                    <div class="saving-row">
-                      <span>✓ 월 저축 목표</span>
-                      <strong>+200,000원</strong>
+                    <div class="saving-goal-amount">
+                      <strong>1,950,000원</strong><span>/ 3,000,000원</span>
                     </div>
-                    <div class="saving-row">
-                      <span>✓ AI 절약 미션</span>
-                      <strong>+100,000원</strong>
-                    </div>
+                    <div class="saving-goal-track" aria-hidden="true"><span></span></div>
                   </div>
                 </div>
 
                 <div v-else-if="slide.key === 'spending'" class="spending-visual">
-                  <div class="receipt-card">
-                    <span class="receipt-title">TRIPASS · 여행 중 지출</span>
-                    <span class="receipt-line line-long"></span>
-                    <span class="receipt-line"></span>
-                    <span class="receipt-line line-short"></span>
-                    <strong>CHF 280.00 사용</strong>
+                  <div class="budget-usage-card">
+                    <div class="budget-usage-head"><span>여행 예산 사용률</span><strong>68%</strong></div>
+                    <div class="budget-amount"><strong>2,040,000원</strong><span>/ 3,000,000원</span></div>
+                    <div class="budget-track" aria-hidden="true"><span></span></div>
+                    <div class="budget-rows">
+                      <span>여행 자금 <strong>1,800,000원</strong></span>
+                      <span>비상금 <strong>240,000원</strong></span>
+                    </div>
                   </div>
-                  <div class="receipt-arrow">→</div>
                   <div class="rollover-pill">
-                    여행 후 남은 자금 <strong>240,000원</strong> → 다음 여행
-                  </div>
-                  <div class="rollover-flight" aria-hidden="true">
-                    <span></span><b>✈</b><span></span>
+                    <span>남은 자금</span><strong>960,000원</strong><b>→ 다음 여행</b>
                   </div>
                 </div>
 
@@ -212,26 +196,21 @@ function onTouchEnd() {
                     <span></span><span></span><span></span>
                     <span></span><span></span><span></span>
                   </div>
-                  <div class="takeoff-trails" aria-hidden="true">
-                    <span></span><span></span><span></span>
-                  </div>
-                  <div class="ready-plane-ring">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
-                    </svg>
+                  <div class="ready-logo-lockup">
+                    <img :src="tripassAppIcon" alt="TRIPASS" />
+                    <strong>TRIPASS</strong>
                   </div>
                 </div>
               </div>
           </div>
 
           <div class="copy-block">
-            <p v-if="slide.key !== 'journey'" class="eyebrow">{{ slide.eyebrow }}</p>
-            <h1>
+            <h1 v-if="slide.title.length">
               <template v-for="(line, lineIndex) in slide.title" :key="line">
                 {{ line }}<br v-if="lineIndex < slide.title.length - 1" />
               </template>
             </h1>
-            <p class="description">{{ slide.description }}</p>
+            <p v-if="slide.description" class="description">{{ slide.description }}</p>
           </div>
         </article>
       </div>
@@ -1170,10 +1149,284 @@ function onTouchEnd() {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Refined onboarding visuals */
+.slide-eyebrow {
+  flex: 0 0 auto;
+  margin: 3px 0 8px;
+  text-align: center;
+}
+
+.slide-eyebrow + .visual-stage {
+  min-height: clamp(205px, 27vh, 242px);
+}
+
+.brand-logo-stage {
+  display: flex;
+  height: 178px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+}
+
+.brand-app-icon {
+  position: relative;
+  z-index: 2;
+  width: 94px;
+  height: 94px;
+  border-radius: 23px;
+  box-shadow: 0 20px 36px rgba(2, 17, 55, 0.38);
+}
+
+.brand-name,
+.ready-logo-lockup strong {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.slide.is-active .brand-app-icon {
+  animation: app-icon-arrive 680ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
+    app-icon-float 3.6s ease-in-out 850ms infinite;
+}
+
+.saving-visual {
+  gap: 12px;
+}
+
+.ai-report-animation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-orbit {
+  position: relative;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(140, 190, 255, 0.6);
+  border-radius: 20px;
+  color: #1977ff;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 25px rgba(2, 17, 55, 0.24);
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ai-orbit i {
+  position: absolute;
+  inset: -8px;
+  border: 1px dashed rgba(255, 212, 94, 0.72);
+  border-radius: 50%;
+}
+
+.ai-orbit i::after {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 10px rgba(255, 212, 94, 0.8);
+  content: '';
+}
+
+.ai-report-sheet {
+  width: 160px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: 0 14px 26px rgba(3, 20, 62, 0.2);
+  backdrop-filter: blur(9px);
+}
+
+.ai-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.ai-report-head b { color: var(--yellow); }
+.ai-report-head span { color: rgba(255, 255, 255, 0.58); }
+
+.ai-report-sheet > i {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.36);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.ai-report-sheet > i:nth-of-type(2) { width: 77%; }
+.ai-report-sheet > i:nth-of-type(3) { width: 48%; background: rgba(255, 212, 94, 0.62); }
+
+.saving-goal-card,
+.budget-usage-card {
+  width: min(100%, 292px);
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+  box-shadow: 0 18px 34px rgba(3, 20, 62, 0.22);
+  backdrop-filter: blur(10px);
+}
+
+.saving-goal-head,
+.budget-usage-head,
+.saving-goal-amount,
+.budget-amount {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.saving-goal-head,
+.budget-usage-head {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.saving-goal-head strong,
+.budget-usage-head strong { color: var(--yellow); font-size: 16px; }
+
+.saving-goal-amount,
+.budget-amount { margin-top: 11px; }
+.saving-goal-amount strong,
+.budget-amount strong { font-size: 18px; }
+.saving-goal-amount span,
+.budget-amount span { color: rgba(255, 255, 255, 0.5); font-size: 9px; }
+
+.saving-goal-track,
+.budget-track {
+  height: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.saving-goal-track span,
+.budget-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffd45e, #fff0a8);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.saving-goal-track span { width: 65%; }
+.budget-track span { width: 68%; }
+
+.slide.is-active .ai-orbit i { animation: ai-orbit 3s linear infinite; }
+.slide.is-active .ai-report-sheet > i { animation: report-write 720ms ease-out both; }
+.slide.is-active .ai-report-sheet > i:nth-of-type(1) { animation-delay: 480ms; }
+.slide.is-active .ai-report-sheet > i:nth-of-type(2) { animation-delay: 700ms; }
+.slide.is-active .ai-report-sheet > i:nth-of-type(3) { animation-delay: 920ms; }
+.slide.is-active .saving-goal-track span,
+.slide.is-active .budget-track span { animation: saving-fill-up 900ms cubic-bezier(0.22, 1, 0.36, 1) 620ms both; }
+
+.spending-visual {
+  min-height: 214px;
+  gap: 13px;
+}
+
+.budget-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.budget-rows span {
+  padding: 8px 9px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.58);
+  background: rgba(3, 25, 72, 0.2);
+  font-size: 8px;
+}
+
+.budget-rows strong { display: block; margin-top: 3px; color: #fff; font-size: 10px; }
+
+.spending-visual .rollover-pill {
+  margin-top: 0;
+  padding: 9px 13px;
+  font-size: 9px;
+}
+
+.spending-visual .rollover-pill b {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 800;
+}
+
+.ready-logo-lockup {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ready-logo-lockup img {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  box-shadow: 0 20px 36px rgba(2, 17, 55, 0.38);
+}
+
+.slide.is-active .ready-logo-lockup {
+  animation: app-icon-arrive 720ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
+    app-icon-float 3.6s ease-in-out 850ms infinite;
+}
+
+.copy-block h1 { margin-top: 4px; }
+
+@keyframes app-icon-arrive {
+  from { opacity: 0; transform: translateY(18px) scale(0.82); filter: blur(5px); }
+  72% { opacity: 1; transform: translateY(-3px) scale(1.04); filter: blur(0); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes app-icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes ai-orbit { to { transform: rotate(360deg); } }
+
+@keyframes report-write {
+  from { opacity: 0.25; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
 @media (max-height: 760px) {
   .onboarding-header { padding-top: 28px; }
   .flight-route { margin-top: 18px; }
   .visual-stage { min-height: 185px; }
+  .slide-eyebrow + .visual-stage { min-height: 190px; }
+  .brand-logo-stage { height: 150px; }
+  .brand-app-icon { width: 82px; height: 82px; }
+  .saving-visual { gap: 8px; }
+  .saving-goal-card, .budget-usage-card { padding: 13px 16px; }
   .copy-block h1 { font-size: 21px; }
   .description { margin-top: 9px; line-height: 1.55; }
   .onboarding-footer { padding-bottom: 15px; }
