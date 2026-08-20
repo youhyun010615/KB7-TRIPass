@@ -297,8 +297,9 @@ const notificationRows = [
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
+  text-align: right;
 }
 .member-card-head strong {
   font-size: 14px;
@@ -316,7 +317,7 @@ const notificationRows = [
   display: flex;
   align-items: center;
   gap: 11px;
-  margin-top: 19px;
+  margin-top: 8px;
 }
 .member-profile-copy { min-width: 0; }
 .member-profile-copy strong { display: block; color: #fff; font-size: 14px; font-weight: 800; line-height: 1.25; }
