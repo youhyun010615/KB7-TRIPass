@@ -618,6 +618,8 @@ function goToDetail(bank) {
 .kakao-map {
   width: 100%;
   height: 100%;
+  /* 앱 전체 핀치줌은 막혀 있지만, 지도 자체의 확대/축소 제스처는 그대로 쓸 수 있게 둔다. */
+  touch-action: auto;
   background: #dfeaec;
 }
 

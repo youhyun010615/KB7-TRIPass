@@ -1,8 +1,13 @@
 @import 'tailwindcss';
 
+html {
+  touch-action: pan-x pan-y;
+}
+
 body {
   word-break: keep-all;
   overflow-wrap: break-word;
+  touch-action: pan-x pan-y;
 }
 
 /* 국기 유니코드 이모지 대신 flag-icons 라이브러리를 쓸 때 공통으로 붙이는 크기 규칙.
