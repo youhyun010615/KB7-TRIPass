@@ -591,3 +591,6 @@ const handleDelete = async (event, itemId) => {
   font-size: 12px;
 }
 </style>
+<style scoped>
+.page{background:#f3f6fc}.pass{background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.pass:before,.pass:after{background:#f3f6fc}.pass small,.pass footer em{color:#cbd9f7}.pass .bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}nav{background:#e8edf7}nav button.active{background:#173f8d;color:#fff}.item-card{border-color:#dfe7f4;background:#fff;box-shadow:0 7px 18px rgba(23,63,141,.05)}.check-icon{border-color:#a9bfe8}.item-card.done .check-icon{border-color:#2662ea;background:#2662ea}.add-button{border-color:#bfd0f1;color:#2662ea;background:#f9fbff}
+</style>

@@ -247,3 +247,6 @@ const categorySegments = computed(() => {
 .pdf { width: 100%; margin-top: 12px; padding: 14px; border-radius: 11px; background: #174695; color: #fff; font-size: 11px; font-weight: 900; }
 .pdf:disabled { opacity: 0.6; }
 </style>
+<style scoped>
+.page{background:#f3f6fc}.summary{border-radius:20px;background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.card{border-color:#dfe7f4;border-radius:18px;box-shadow:0 7px 20px rgba(23,63,141,.05)}.summary-row,.insight-grid div{background:#f2f6ff}.insight-grid b{color:#2662ea}.pdf{background:#2662ea;box-shadow:0 10px 22px rgba(38,98,234,.2)}
+</style>

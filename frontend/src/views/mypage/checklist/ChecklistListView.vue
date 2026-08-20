@@ -341,3 +341,6 @@ aside small {
   font-size: 9px;
 }
 </style>
+<style scoped>
+.checklist-page{background:#f3f6fc}.ticket{background:linear-gradient(145deg,#2662ea 0%,#173f8d 100%);box-shadow:0 16px 34px rgba(23,63,141,.2)}.ticket::before,.ticket::after{background:#f3f6fc}.ticket>div>b,.ticket .total em{color:#ffd45e}.bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}.menu-card{border-color:#dfe7f4;box-shadow:0 8px 22px rgba(23,63,141,.06)}.menu-icon{background:#e9f0ff!important;color:#2662ea!important}aside{background:#eaf1ff;color:#173f8d}
+</style>

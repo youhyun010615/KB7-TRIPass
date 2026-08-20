@@ -49,10 +49,6 @@ const memberLabel = computed(() =>
     `${providerName.value} MEMBER`,
 )
 
-const profileInitial = computed(() =>
-    profile.value?.name?.trim()?.charAt(0) || 'T',
-)
-
 const profileRows = computed(() => {
   if (!profile.value) {
     return []
@@ -287,10 +283,8 @@ function formatJoinedDate(value) {
           class="mx-4 rounded-3xl bg-[#173E8F] px-5 py-5 text-white shadow-lg"
       >
         <div class="flex items-center gap-4">
-          <div
-              class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-[#F1D47B] bg-white/10 text-xl font-bold"
-          >
-            {{ profileInitial }}
+          <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-[#F1D47B] bg-white p-3">
+            <img src="@/assets/icons/blue_profile.svg" class="h-full w-full" alt="프로필" />
           </div>
 
           <div class="min-w-0 flex-1">
