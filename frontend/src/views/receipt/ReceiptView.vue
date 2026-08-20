@@ -1924,17 +1924,18 @@ onMounted(loadPage)
 }
 
 .date-group > button.shared {
-  margin: 4px 0;
-  padding: 12px 9px;
-  border: 1px solid #f0cf58;
-  border-radius: 15px;
-  background: linear-gradient(100deg, #fff8b8, #fffbe0 62%, #fff4a3);
-  box-shadow: inset 0 -7px 0 rgba(255, 224, 74, .2);
+  margin: 0;
+  padding: 13px 0;
+  border: 0;
+  border-bottom: 1px solid #eef2f7;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .date-group > button.shared > .category-icon {
-  background: #fff1a8;
-  color: #ad7600;
+  background: #eef3fb;
+  color: #5f7598;
 }
 
 .merchant-line {
@@ -1948,11 +1949,11 @@ onMounted(loadPage)
 
 .merchant-line > span {
   flex: none;
-  padding: 3px 6px;
+  padding: 4px 7px;
   border-radius: 999px;
-  background: #ffe57a;
-  color: #855c00;
-  font-size: 6px;
+  background: #fff0ae;
+  color: #8b6100;
+  font-size: 8px;
   font-weight: 900;
 }
 
@@ -2306,10 +2307,13 @@ onMounted(loadPage)
   .empty-receipt-icon::after { animation: none; }
 }
 
-.date-group h3 { font-size: 10px; }
+.date-group h3 { font-size: 11px; }
 .date-group > button { padding: 13px 0; }
-.date-group .receipt-info b { font-size: 12px; }
-.date-group .receipt-payment strong { font-size: 11px; }
+.date-group .receipt-info b { font-size: 13px; }
+.date-group .receipt-info small { font-size: 9px; }
+.date-group .receipt-info > i { font-size: 8px; }
+.date-group .receipt-payment strong { font-size: 12px; }
+.date-group .receipt-payment small { font-size: 9px; }
 
 @media (max-width: 350px) {
   .trip-summary-metrics { grid-template-columns: 1fr 1fr; }
