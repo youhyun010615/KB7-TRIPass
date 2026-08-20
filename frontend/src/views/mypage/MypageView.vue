@@ -151,13 +151,13 @@ const notificationRows = [
       <section class="member-card">
         <span class="member-card-glow" aria-hidden="true"></span>
         <header class="member-card-head">
+          <strong>{{ authStore.user?.name ?? '고객' }}님</strong>
           <span>TRIPASS MEMBER CARD</span>
         </header>
 
         <div class="member-profile">
           <span class="member-avatar"><img src="@/assets/icons/blue_profile.svg" alt="" /></span>
           <div>
-            <strong>{{ authStore.user?.name ?? '고객' }}님</strong>
             <small>{{ memberIdentity }}</small>
           </div>
         </div>
@@ -300,7 +300,12 @@ const notificationRows = [
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+.member-card-head strong {
+  font-size: 14px;
+  font-weight: 800;
 }
 .member-card-head span {
   color: rgba(255, 255, 255, .52);
@@ -330,8 +335,7 @@ const notificationRows = [
   box-shadow: 0 6px 13px rgba(2, 18, 50, .2);
 }
 .member-avatar img { width: 21px; height: 21px; }
-.member-profile strong { display: block; font-size: 14px; font-weight: 800; }
-.member-profile small { display: block; margin-top: 2px; color: rgba(255, 255, 255, .55); font-size: 10px; }
+.member-profile small { display: block; color: rgba(255, 255, 255, .55); font-size: 10px; }
 .member-assets { position: relative; margin-top: 19px; }
 .member-assets small { display: block; color: #ffd466; font-size: 10px; font-weight: 700; }
 .member-assets strong {
