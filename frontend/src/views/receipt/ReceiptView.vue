@@ -573,48 +573,32 @@ onMounted(loadPage)
     </section>
 
     <section class="filter-section">
-      <div class="section-heading">
-        <div>
-          <small>COUNTRY FILTER</small>
-          <h2>어디에서 사용했나요?</h2>
+      <div class="country-filter-row">
+        <div class="country-chips" role="group" aria-label="영수증 조회 국가 선택">
+          <button
+              v-for="country in countries"
+              :key="country.countryId ?? 'all'"
+              type="button"
+              :class="{ active: selectedCountryId === country.countryId }"
+              :disabled="loading"
+              @click="selectedCountryId = country.countryId"
+          >
+            <Check v-if="selectedCountryId === country.countryId" :size="12" :stroke-width="3" />
+            {{ country.countryName }}
+          </button>
         </div>
-        <span>{{ filteredReceipts.length }}장</span>
-      </div>
-      <div class="country-chips" role="group" aria-label="영수증 조회 국가 선택">
         <button
-            v-for="country in countries"
-            :key="country.countryId ?? 'all'"
             type="button"
-            :class="{ active: selectedCountryId === country.countryId }"
-            :disabled="loading"
-            @click="selectedCountryId = country.countryId"
+            class="calendar-filter-button"
+            :class="{ active: dateFilterEnabled }"
+            :aria-label="dateFilterEnabled ? '날짜 필터 닫기' : '날짜 필터 열기'"
+            @click="dateFilterEnabled ? resetDateFilter() : showDateFilter()"
         >
-          <Check v-if="selectedCountryId === country.countryId" :size="12" :stroke-width="3" />
-          {{ country.countryName }}
+          <CalendarRange :size="18" :stroke-width="2" />
         </button>
       </div>
 
-      <div class="period-filter">
-        <div>
-          <span><CalendarRange :size="16" /> 조회 기간</span>
-          <div class="period-toggle">
-            <button
-                type="button"
-                :class="{ active: !dateFilterEnabled }"
-                @click="resetDateFilter"
-            >
-              전체
-            </button>
-            <button
-                type="button"
-                :class="{ active: dateFilterEnabled }"
-                @click="showDateFilter"
-            >
-              날짜 범위
-            </button>
-          </div>
-        </div>
-
+      <div v-if="dateFilterEnabled" class="period-filter">
         <div v-if="dateFilterEnabled" class="date-range-fields">
           <label>
             <small>시작일</small>
@@ -2100,14 +2084,59 @@ onMounted(loadPage)
 
 .filter-section {
   margin-top: 12px;
-  padding: 14px;
-  border-radius: 19px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.section-heading small { display: none; }
-.section-heading h2 { margin: 0; font-size: 13px; }
-.country-chips { margin-top: 11px; }
-.country-chips button { height: 36px; font-size: 10px; }
+.country-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.country-filter-row .country-chips {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 0;
+}
+
+.country-chips button {
+  height: 38px;
+  padding: 0 15px;
+  background: #fff;
+  font-size: 11px;
+}
+
+.calendar-filter-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid #dce5f2;
+  border-radius: 50%;
+  background: #fff;
+  color: #66758d;
+  box-shadow: 0 4px 12px rgba(31, 64, 120, .05);
+}
+
+.calendar-filter-button.active {
+  border-color: #2f6fed;
+  background: #eef4ff;
+  color: #2f6fed;
+}
+
+.filter-section .period-filter {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #e2e9f4;
+  border-radius: 15px;
+  background: #fff;
+}
 
 .receipt-list {
   position: relative;
