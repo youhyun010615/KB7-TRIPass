@@ -72,20 +72,6 @@ const selectedTripCountry = computed(() => {
   ) ?? null
 })
 
-function shadeHex(hex, amount) {
-  const clean = String(hex || '').replace('#', '')
-  if (!/^[0-9a-f]{6}$/i.test(clean)) return '#174b9c'
-  const target = amount < 0 ? 0 : 255
-  const ratio = Math.abs(amount)
-  const channels = [0, 2, 4].map((offset) => {
-    const value = Number.parseInt(clean.slice(offset, offset + 2), 16)
-    return Math.round(value + ((target - value) * ratio))
-      .toString(16)
-      .padStart(2, '0')
-  })
-  return `#${channels.join('')}`
-}
-
 function colorLuminance(hex) {
   const clean = String(hex || '').replace('#', '')
   if (!/^[0-9a-f]{6}$/i.test(clean)) return 0
@@ -100,20 +86,14 @@ const navTheme = computed(() => {
   const base = getTravelCountryColors(navCountryName.value).headerBg || '#174b9c'
   const isLight = colorLuminance(base) > 0.62
   return {
-    start: shadeHex(base, -0.28),
-    middle: shadeHex(base, -0.08),
-    end: shadeHex(base, 0.14),
-    icon: isLight ? '#17315f' : 'rgba(255,255,255,.76)',
-    activeIcon: isLight ? '#17315f' : '#ffd45c',
+    active: base,
+    activeIcon: isLight ? '#17315f' : '#ffffff',
   }
 })
-const navThemeKey = computed(() =>
-  `${travelModeStore.mode}-${navCountryName.value || 'default'}`,
-)
 const navThemeStyle = computed(() => ({
-  '--nav-icon-color': navTheme.value.icon,
+  '--nav-icon-color': '#8d9bb1',
   '--nav-active-icon-color': navTheme.value.activeIcon,
-  '--nav-orb-color': navTheme.value.end,
+  '--nav-orb-color': navTheme.value.active,
 }))
 
 function isActive(path) {
@@ -282,20 +262,7 @@ onBeforeUnmount(() => {
           preserveAspectRatio="none"
           aria-hidden="true"
       >
-        <defs>
-          <linearGradient id="tripass-nav-blue" x1="0" y1="0" x2="1" y2="0">
-            <stop class="nav-color-stop" offset="0" :stop-color="navTheme.start" />
-            <stop class="nav-color-stop" offset="0.55" :stop-color="navTheme.middle" />
-            <stop class="nav-color-stop" offset="1" :stop-color="navTheme.end" />
-          </linearGradient>
-        </defs>
-        <path :d="navSurfacePath" fill="url(#tripass-nav-blue)" />
-        <path
-            :key="navThemeKey"
-            class="theme-bloom"
-            :d="navSurfacePath"
-            fill="#ffffff"
-        />
+        <path :d="navSurfacePath" fill="#ffffff" />
       </svg>
 
       <span
@@ -364,15 +331,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   overflow: visible;
-  filter: drop-shadow(0 -8px 14px rgba(12, 47, 115, .2));
-}
-.nav-color-stop {
-  transition: stop-color .72s cubic-bezier(.22, .82, .2, 1);
-}
-.theme-bloom {
-  opacity: 0;
-  pointer-events: none;
-  animation: theme-bloom .72s ease-out both;
+  filter: drop-shadow(0 -7px 14px rgba(35, 55, 90, .14));
 }
 .moving-notch {
   position: absolute;
@@ -401,7 +360,7 @@ onBeforeUnmount(() => {
   color: var(--nav-active-icon-color);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, .14),
-    0 8px 17px rgba(8, 34, 84, .3);
+    0 8px 17px rgba(35, 55, 90, .24);
   will-change: opacity, transform;
   transition: background-color .72s cubic-bezier(.22, .82, .2, 1), color .5s ease;
 }
@@ -436,7 +395,7 @@ onBeforeUnmount(() => {
 .nav-item:focus-visible::after {
   position: absolute;
   inset: 5px;
-  border: 2px solid rgba(255, 212, 92, .75);
+  border: 2px solid rgba(23, 75, 156, .5);
   border-radius: 14px;
   content: '';
 }
@@ -446,21 +405,14 @@ onBeforeUnmount(() => {
 }
 .icon-swap-enter-from { opacity: 0; transform: scale(.55) rotate(-15deg); }
 .icon-swap-leave-to { opacity: 0; transform: scale(.55) rotate(15deg); }
-@keyframes theme-bloom {
-  0% { opacity: .2; }
-  100% { opacity: 0; }
-}
 @media (prefers-reduced-motion: reduce) {
   .nav-icon,
   .icon-swap-enter-active,
   .icon-swap-leave-active {
     transition: none;
   }
-  .nav-color-stop,
-  .active-orb,
-  .theme-bloom {
+  .active-orb {
     transition: none;
-    animation: none;
   }
 }
 </style>
