@@ -1354,7 +1354,7 @@ async function switchMode(mode) {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #eef2f8;
+  background: #f4f5f9;
   transform: translateY(-50%);
 }
 .ticket-notch-left {
