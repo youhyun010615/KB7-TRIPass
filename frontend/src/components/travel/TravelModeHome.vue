@@ -111,6 +111,8 @@ const destinations = computed(() => {
     barColor: getTravelCountryColors().barColor,
     targetBudget: totalTargetBudget,
     spentAmount: totalSpentAmount,
+    arrivalDate: overallStart,
+    departureDate: overallEnd,
     dayRangeStart: 1,
     dayRangeEnd: overallTotalDays,
   };
@@ -319,6 +321,39 @@ function todayDateString() {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function tripDayDisplay(item) {
+  const arrivalDate = item.arrivalDate;
+  const departureDate = item.departureDate;
+
+  if (!arrivalDate || !departureDate) {
+    return {
+      label: 'TRIP DAY',
+      text: `D+${Math.max(1, currentDay.value)}`,
+      state: 'ongoing',
+    };
+  }
+
+  const todayStr = todayDateString();
+
+  if (todayStr > departureDate) {
+    return { label: 'TRIP STATUS', text: '여행 종료', state: 'ended' };
+  }
+
+  if (todayStr < arrivalDate) {
+    return {
+      label: 'START IN',
+      text: `D-${Math.max(1, daysBetween(todayStr, arrivalDate))}`,
+      state: 'upcoming',
+    };
+  }
+
+  return {
+    label: 'TRIP DAY',
+    text: `D+${daysBetween(arrivalDate, todayStr) + 1}`,
+    state: 'ongoing',
+  };
 }
 
 function findTodayCountryCode(countries) {
@@ -714,8 +749,13 @@ async function switchMode(mode) {
                 </span>
               </div>
               <div class="trip-departure">
-                <p class="trip-label">TRIP DAY</p>
-                <p class="trip-day-count">D+{{ currentDay }}</p>
+                <p class="trip-label">{{ tripDayDisplay(item).label }}</p>
+                <p
+                  class="trip-day-count"
+                  :class="`is-${tripDayDisplay(item).state}`"
+                >
+                  {{ tripDayDisplay(item).text }}
+                </p>
               </div>
             </div>
             <p class="trip-description">여행 남은 자산을 한눈에 확인해요 ✨</p>
@@ -2178,6 +2218,10 @@ async function switchMode(mode) {
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
+}
+.trip-day-count.is-ended {
+  font-size: 16px;
+  letter-spacing: -0.04em;
 }
 .destination-route {
   position: relative;
