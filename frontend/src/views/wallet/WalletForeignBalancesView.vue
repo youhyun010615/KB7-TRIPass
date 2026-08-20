@@ -5,6 +5,7 @@ import { ChevronLeft } from '@lucide/vue'
 import BottomNav from '@/components/common/BottomNav.vue'
 import AnimatedNumber from '@/components/common/AnimatedNumber.vue'
 import { useTripWalletStore } from '@/stores/tripWallet'
+import { flagClassMap } from '@/stores/exchange'
 
 const router = useRouter()
 const wallet = useTripWalletStore()
@@ -76,7 +77,8 @@ onMounted(async () => {
 
       <div v-if="foreignBalances.length" class="currency-list">
         <article v-for="item in foreignBalances" :key="item.code" class="currency-row">
-          <div class="flag">{{ item.flag }}</div>
+          <div v-if="flagClassMap[item.code]" :class="flagClassMap[item.code]" class="fi-inline flag"></div>
+          <div v-else class="flag">{{ item.flag }}</div>
           <div class="currency-info">
             <h3>{{ item.code }} <small>{{ item.name }}</small></h3>
             <p>현재 환율 <AnimatedNumber :value="Number(item.rate || 0)" :formatter="v => `${v.toLocaleString('ko-KR')}원`" /></p>

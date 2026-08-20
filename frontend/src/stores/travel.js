@@ -89,6 +89,13 @@ export const countryPresentation = {
   미국: { code: 'US', city: '뉴욕', flag: '🇺🇸', accent: '#1d4ed8', image: imageUS },
 };
 
+// 유니코드 국기 이모지는 OS/브라우저에 따라 깨져 보이는 경우가 있어(윈도우 등),
+// 환율 탭 '모든 국가보기'에서 쓰는 flag-icons 라이브러리 클래스로 통일한다.
+// <span :class="flagIconClass(code)" class="fi-inline" /> 형태로 사용.
+export function flagIconClass(code) {
+  return code ? `fi fi-${String(code).toLowerCase()}` : 'fi fi-un';
+}
+
 // 저축모드 홈(SavingsModeHome.vue)의 countryPresentation과 동일한 값 — 여행모드
 // 화면들(홈 보딩패스, 여행 자금 체크 등)이 전부 이 하나의 함수를 통해 색을 가져오게 해서
 // 화면마다 색이 달라지는 걸 방지한다. (저축모드 파일 자체는 건드리지 않는다)

@@ -307,7 +307,7 @@ watch(
   z-index: 60;
   width: 100%;
   max-width: 390px;
-  padding: 42px 20px 8px;
+  padding: 14px 20px 8px;
   background: #eef2f8;
   transform: translateX(-50%);
 }

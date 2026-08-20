@@ -6,6 +6,7 @@ import {
   useTravelStore,
   countryPresentation as globalCountryPresentation,
   getTravelCountryColors,
+  flagIconClass,
 } from '@/stores/travel';
 import { useExchangeStore } from '@/stores/exchange';
 import NotificationBell from '@/components/common/NotificationBell.vue';
@@ -759,8 +760,8 @@ async function switchMode(mode) {
               <div class="trip-destination">
                 <p class="trip-label">DESTINATION</p>
                 <p class="trip-country-name">
-                  <span v-if="item.code !== 'all'" class="trip-country-flag">{{ item.flag }}</span
-                  ><span>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</span>
+                  <span v-if="item.code !== 'all'" :class="flagIconClass(item.code)" class="fi-inline trip-country-flag" />
+                  <span>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</span>
                 </p>
               </div>
               <div class="destination-route" aria-hidden="true">
@@ -832,7 +833,7 @@ async function switchMode(mode) {
                     '--asset-theme': asset.theme,
                   }"
                 >
-                  <span>{{ asset.flag }} {{ asset.name }} 남은 여행 자산</span
+                  <span><span :class="flagIconClass(asset.code)" class="fi-inline" style="font-size: 13px" /> {{ asset.name }} 남은 여행 자산</span
                   ><b>{{ formatWon(asset.targetBudget - asset.spentAmount) }}</b>
                 </div>
               </div>
@@ -1032,7 +1033,7 @@ async function switchMode(mode) {
           :class="{ active: calculatorDestination.code === item.code }"
           @click="selectCalculatorDestination(item)"
         >
-          {{ item.flag }} {{ item.currency }}
+          <span :class="flagIconClass(item.code)" class="fi-inline" style="font-size: 13px" /> {{ item.currency }}
         </button>
       </div>
       <div class="calculator-fields">
@@ -2220,6 +2221,7 @@ async function switchMode(mode) {
 }
 .trip-country-flag {
   margin-right: 6px;
+  font-size: 20px;
 }
 .trip-day-count {
   color: #ffd466;

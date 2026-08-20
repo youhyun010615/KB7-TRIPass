@@ -3,12 +3,16 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DatePickerSheet from '@/components/savings/DatePickerSheet.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
-import { useTravelStore } from '@/stores/travel'
+import { useTravelStore, flagIconClass } from '@/stores/travel'
 
 const router = useRouter()
 const route = useRoute()
 const store = useTravelStore()
 const isEditMode = computed(() => route.query.mode === 'edit')
+// code가 커뮤니티 제공 ISO 2자리(예: FR)면 flag-icons를, 아니면(통화코드 폴백 등) null을 반환한다.
+function planFlagClass(code) {
+  return code && code.length === 2 ? flagIconClass(code) : null
+}
 const step = ref(route.name === 'TravelRegisterSchedule' ? 2 : 1)
 const dateTarget = ref(null)
 const showValidation = ref(false)
@@ -213,7 +217,7 @@ async function finish() {
                     @click="store.toggleCountry(country.countryId)"
                   >
                     <span class="country-dropdown-check">✓</span>
-                    <img v-if="country.flagUrl" :src="country.flagUrl" alt="">
+                    <span v-if="country.code?.length === 2" :class="flagIconClass(country.code)" class="fi-inline" />
                     <span v-else>{{ country.flag }}</span>
                     {{ country.name }}
                     <small v-if="!country.selectable">선택 불가</small>
@@ -241,7 +245,7 @@ async function finish() {
             @dragover.prevent="reorderTo(index)"
             @dragend="finishNativeReorder"
           >
-            <b>{{ index + 1 }}</b><span>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ plan.currencyCode }}</small>
+            <b>{{ index + 1 }}</b><span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span><span v-else>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ plan.currencyCode }}</small>
             <button type="button" aria-label="방문 순서 드래그" @pointerdown="startPointerReorder(index, $event)">≡</button>
           </li>
         </TransitionGroup>
@@ -275,7 +279,7 @@ async function finish() {
         :style="{ '--accent': plan.accent }"
       >
         <header>
-          <div><b class="order">{{ index + 1 }}</b><span>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ plan.currencyCode }}</small></div>
+          <div><b class="order">{{ index + 1 }}</b><span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span><span v-else>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ plan.currencyCode }}</small></div>
           <button @click="store.toggleCountry(plan.countryId)">삭제</button>
         </header>
         <button class="date-row" @click="dateTarget = plan">
@@ -303,7 +307,7 @@ async function finish() {
         :style="{ '--accent': plan.accent }"
       >
         <header>
-          <div class="budget-country"><span>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ dateLabel(plan.startDate) }} ~ {{ dateLabel(plan.endDate) }}</small></div>
+          <div class="budget-country"><span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span><span v-else>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ dateLabel(plan.startDate) }} ~ {{ dateLabel(plan.endDate) }}</small></div>
         </header>
 
         <section class="ai-recommendation">
@@ -349,7 +353,7 @@ async function finish() {
       <section class="country-summary">
         <h2>여행 국가별 목표</h2>
         <article v-for="plan in store.selectedPlans" :key="plan.countryId" :style="{ '--accent': plan.accent }">
-          <span>{{ plan.flag }}</span>
+          <span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span><span v-else>{{ plan.flag }}</span>
           <div><strong>{{ plan.name }}</strong><small>{{ dateLabel(plan.startDate) }} ~ {{ dateLabel(plan.endDate) }}</small></div>
           <b>{{ money(countryLocalTotal(plan)) }}</b>
         </article>

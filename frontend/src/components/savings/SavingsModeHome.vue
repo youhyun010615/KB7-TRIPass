@@ -5,7 +5,7 @@ import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
 import { useSavingReadinessStore } from '@/stores/savingReadiness';
-import { useTravelStore, countryPresentation as globalCountryPresentation } from '@/stores/travel';
+import { useTravelStore, countryPresentation as globalCountryPresentation, flagIconClass } from '@/stores/travel';
 import { useTravelModeStore } from '@/stores/travelMode';
 import { getAccounts } from '@/api/asset';
 import { getCards } from '@/api/card';
@@ -647,9 +647,10 @@ async function switchMode(mode) {
                       Destination
                     </p>
                     <p
-                      class="text-white text-[26px] font-extrabold leading-none"
+                      class="text-white text-[26px] font-extrabold leading-none flex items-center gap-2"
                     >
-                      {{ country.flag }} {{ country.name }}
+                      <span :class="flagIconClass(country.code)" class="fi-inline" style="font-size: 20px" />
+                      {{ country.name }}
                     </p>
                   </div>
                   <div class="flex-1 mt-3.5 destination-route" aria-hidden="true">
@@ -904,7 +905,7 @@ async function switchMode(mode) {
         </div>
         <div class="exchange-card-body">
           <div class="exchange-country-mark">
-            <span>{{ selectedCountry.flag }}</span>
+            <span :class="flagIconClass(selectedCountry.code)" class="fi-inline" style="font-size: 22px" />
             <div>
               <small>{{ selectedCountry.name }} 여행 환율</small
               ><b>{{ exchangeUnitLabel }} <i>→</i> KRW</b>

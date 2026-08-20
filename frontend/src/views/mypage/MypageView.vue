@@ -133,7 +133,7 @@ const notificationRows = [
 
     <!-- 헤더 -->
     <div ref="mypageHeaderEl" class="mypage-header-fixed">
-      <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 42px">
+      <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 14px">
         <div>
           <p class="mypage-header-eyebrow">
             <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />

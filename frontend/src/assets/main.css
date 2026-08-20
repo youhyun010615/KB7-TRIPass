@@ -4,3 +4,15 @@ body {
   word-break: keep-all;
   overflow-wrap: break-word;
 }
+
+/* 국기 유니코드 이모지 대신 flag-icons 라이브러리를 쓸 때 공통으로 붙이는 크기 규칙.
+   font-size로 전체 크기를 조절할 수 있게 em 단위로 잡는다. */
+.fi-inline {
+  display: inline-block;
+  width: 1.33em;
+  height: 1em;
+  background-size: cover;
+  background-position: 50%;
+  border-radius: 2px;
+  vertical-align: middle;
+}

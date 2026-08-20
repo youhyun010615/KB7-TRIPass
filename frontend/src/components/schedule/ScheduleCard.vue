@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useTravelScheduleStore } from '@/stores/travelSchedule'
+import { flagIconClass } from '@/stores/travel'
 
 const props = defineProps({ schedule: { type: Object, required: true }, compact: { type: Boolean, default: false } })
 const emit = defineEmits(['detail'])
@@ -23,7 +24,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
     <div class="schedule-time">
       <time>{{ item.time }}</time>
       <span v-if="country" class="schedule-country">
-        <span class="schedule-flag">{{ country.flag }}</span>{{ country.name }}
+        <span :class="flagIconClass(country.code)" class="fi-inline schedule-flag" />{{ country.name }}
       </span>
     </div>
     <div class="schedule-copy">
