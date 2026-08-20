@@ -597,7 +597,7 @@ async function switchMode(mode) {
           >
             <!-- ① 기존 탑승권 헤더 -->
             <div
-              class="px-5 pt-4 pb-3 flex items-center justify-between"
+              class="px-5 pt-4 pb-3 h-[49px] flex items-center justify-between"
               :style="`background:${country.headerBg}`"
             >
               <span
@@ -605,7 +605,7 @@ async function switchMode(mode) {
                 >BOARDING PASS</span
               >
               <RouterLink
-                class="text-white text-[10px] font-semibold whitespace-nowrap"
+                class="inline-flex items-center gap-[1px] whitespace-nowrap rounded-full bg-[#ffd66b] px-[10px] py-[3px] text-[11px] font-extrabold text-[#173f8d]"
                 :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
               >
                 여행 계획 수정하기 ›
