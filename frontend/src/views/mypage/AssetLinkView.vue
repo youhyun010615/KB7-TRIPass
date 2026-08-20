@@ -257,12 +257,6 @@ async function removeCard(card) {
       <section class="summary-card">
         <div class="summary-heading">
           <div>
-            <span class="summary-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8" />
-                <path d="m8.5 8.5 2 7 1.5-4 1.5 4 2-7M8.1 11.2h7.8M8.5 13.3h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </span>
             <small>총 연동 자산</small>
           </div>
         </div>
@@ -403,9 +397,7 @@ async function removeCard(card) {
 .summary-card::after{right:-48px;top:-68px;width:160px;height:160px;background:rgba(73,126,211,.13)}
 .summary-heading{position:relative;z-index:1;align-items:center}
 .summary-heading>div{display:flex;align-items:center;gap:8px}
-.summary-icon{display:grid;width:30px;height:30px;place-items:center;border-radius:10px;background:#d3e0f4;color:#111827;font-size:14px;font-weight:800;box-shadow:none}
-.summary-icon svg{display:block;width:18px;height:18px;color:#111827}
-.summary-heading small{color:#29466f;font-size:12px;font-weight:800}
+.summary-heading small{color:#29466f;font-size:15px;font-weight:900;letter-spacing:-.02em}
 .summary-heading>span{padding:5px 8px;background:rgba(255,255,255,.48);color:#4c6385;font-size:8px;font-weight:700}
 .summary-card>strong{position:relative;z-index:1;margin-top:18px;color:#10192d;font-size:27px;font-weight:800;letter-spacing:-.04em}
 .summary-counts{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;gap:15px;margin-top:20px;padding:13px 15px;border:1px solid rgba(255,255,255,.5);border-radius:15px;background:rgba(255,255,255,.48);backdrop-filter:blur(5px)}
