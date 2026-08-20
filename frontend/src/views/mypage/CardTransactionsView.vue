@@ -44,6 +44,13 @@ const cardImage = computed(() => {
   return value.cardImageUrl || value.imageUrl || null
 })
 
+const isKbCard = computed(() => {
+  const name = card.value?.cardName ?? ''
+  return resolveCardMeta(card.value).name === 'KB국민은행' || name.includes('KB') || name.includes('국민')
+})
+
+const cardIssuerName = computed(() => isKbCard.value ? '국민은행' : (resolveCardMeta(card.value).name || '연동 카드'))
+
 function maskedCardNumber(number) {
   const value = String(number ?? '').trim()
   if (!value) return '카드번호 비공개'
@@ -189,7 +196,7 @@ function openTransaction(item) {
   <main class="card-page">
     <header class="card-header">
       <button type="button" aria-label="뒤로 가기" @click="router.back()">‹</button>
-      <h1>거래내역 조회</h1>
+      <h1>{{ card?.cardName ?? '카드 거래내역' }}</h1>
     </header>
 
     <section class="card-overview">
@@ -202,24 +209,26 @@ function openTransaction(item) {
         </template>
       </div>
       <div class="card-identity">
-        <small>{{ resolveCardMeta(card).name || '연동 카드' }}</small>
+        <small :class="{ 'kb-issuer': isKbCard }">{{ cardIssuerName }}</small>
         <strong>{{ card?.cardName ?? '연동 카드' }}</strong>
         <p>{{ maskedCardNumber(card?.maskedCardNumber) }} · {{ cardTypeLabel(card?.cardType) }}</p>
       </div>
     </section>
 
-    <div class="quick-actions">
-      <button type="button" :disabled="syncing" @click="syncTransactions()"><span>↻</span>{{ syncing ? '동기화 중' : '최신 내역 불러오기' }}</button>
-    </div>
-
     <p v-if="syncMessage" class="sync-message" :class="{ error: syncMessage.includes('실패') || syncMessage.includes('오류') }">{{ syncMessage }}</p>
 
     <section class="history-panel">
-      <div class="history-title"><div><small>CARD HISTORY</small><h2>카드내역</h2></div><span>{{ transactionCount }}건</span></div>
+      <div class="history-title">
+        <div><small>CARD HISTORY</small><h2>카드내역</h2></div>
+        <div class="history-tools">
+          <button type="button" :disabled="syncing" @click="syncTransactions()"><span>↻</span>{{ syncing ? '동기화 중' : '최신 내역' }}</button>
+          <strong>{{ transactionCount }}건</strong>
+        </div>
+      </div>
       <section class="date-filter">
-        <label><span>시작일</span><input v-model="startDate" type="date" :max="endDate"></label>
-        <i>–</i>
-        <label><span>종료일</span><input v-model="endDate" type="date" :min="startDate" :max="toLocalDateStr(now)"></label>
+        <label><span><b>▦</b> 시작일</span><input v-model="startDate" type="date" :max="endDate"></label>
+        <i>→</i>
+        <label><span><b>▦</b> 종료일</span><input v-model="endDate" type="date" :min="startDate" :max="toLocalDateStr(now)"></label>
       </section>
       <TransactionGroups :groups="groups" :show-icons="false" :loading="loading || syncing" @select="openTransaction" />
     </section>
@@ -230,25 +239,23 @@ function openTransaction(item) {
 .card-page{width:min(100%,390px);min-height:100vh;margin:0 auto;padding:0 0 34px;background:#eef2f8;color:#10192d}
 .card-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;height:68px;padding:14px 20px 0}
 .card-header button{display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#fff;color:#193d82;font-size:24px;font-weight:700;box-shadow:0 5px 16px rgba(36,72,117,.07)}
-.card-header h1{margin:0;font-size:17px;font-weight:900;letter-spacing:-.03em;text-align:center}
-.card-overview{display:grid;grid-template-columns:118px minmax(0,1fr);align-items:center;gap:16px;margin:0 20px;padding:18px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
-.card-preview{position:relative;aspect-ratio:1.586/1;overflow:hidden;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--card-color,#173f8d),#102b70);color:var(--card-text,#fff);box-shadow:0 8px 18px rgba(16,43,112,.18)}
+.card-header h1{overflow:hidden;margin:0;font-size:17px;font-weight:900;letter-spacing:-.03em;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.card-overview{display:grid;grid-template-columns:86px minmax(0,1fr);align-items:center;gap:18px;margin:0 20px;padding:18px 20px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
+.card-preview{position:relative;width:86px;aspect-ratio:360/570;overflow:hidden;padding:10px;border-radius:11px;background:linear-gradient(155deg,var(--card-color,#173f8d),#102b70);color:var(--card-text,#fff);box-shadow:0 10px 20px rgba(16,43,112,.2)}
 .card-preview.has-photo{padding:0;background:#eef2f8}
 .card-preview img{width:100%;height:100%;object-fit:cover}
 .card-preview span{display:block;overflow:hidden;font-size:7px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-.card-preview i{display:block;width:20px;height:14px;margin-top:13px;border-radius:4px;background:linear-gradient(135deg,#f6db8a,#c6a651)}
-.card-preview b{position:absolute;right:10px;bottom:9px;font-size:6.5px;letter-spacing:.04em}
+.card-preview i{display:block;width:18px;height:13px;margin-top:20px;border-radius:4px;background:linear-gradient(135deg,#f6db8a,#c6a651)}
+.card-preview b{position:absolute;left:10px;bottom:10px;font-size:5.5px;letter-spacing:.02em;writing-mode:vertical-rl}
 .card-identity{min-width:0}
 .card-identity small,.card-identity strong,.card-identity p{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card-identity small{color:#286ce0;font-size:8px;font-weight:800}
+.card-identity small{width:max-content;color:#286ce0;font-size:8px;font-weight:800}
+.card-identity small.kb-issuer{padding:5px 8px;border-radius:999px;background:#ffcf33;color:#2f2600;font-size:9px;font-weight:900}
 .card-identity strong{margin-top:5px;color:#10192d;font-size:14px;font-weight:800}
 .card-identity p{margin:6px 0 0;color:#94a3b8;font-size:8px}
-.quick-actions{margin:12px 20px 0}
-.quick-actions button{display:flex;width:100%;min-height:42px;align-items:center;justify-content:center;gap:6px;border-radius:13px;background:#fff;color:#173f8d;font-size:11px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04)}
-.quick-actions button:disabled{opacity:.55}.quick-actions span{color:#286ce0;font-size:15px}
 .sync-message{margin:10px 20px 0;padding:9px 12px;border-radius:9px;background:#eaf2ff;color:#173f8d;font-size:10px;text-align:center}.sync-message.error{background:#ffebee;color:#c62828}
 .history-panel{margin:16px 20px 0;padding:20px 18px 4px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
-.history-title{display:flex;align-items:flex-end;justify-content:space-between}.history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}.history-title h2{margin:3px 0 0;color:#10192d;font-size:16px;font-weight:900}.history-title>span{color:#94a3b8;font-size:10px;font-weight:700}
-.date-filter{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px;margin:15px 0;padding:10px 12px;border:1px solid #e7edf9;border-radius:12px;background:#f7f9fd}.date-filter label span{display:block;margin-bottom:5px;color:#94a3b8;font-size:8px}.date-filter input{width:100%;border:0;background:transparent;color:#10192d;font-size:9px;font-weight:700}.date-filter i{padding-bottom:2px;color:#94a3b8;font-size:9px;font-style:normal}
+.history-title{display:flex;align-items:flex-end;justify-content:space-between}.history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}.history-title h2{margin:3px 0 0;color:#10192d;font-size:16px;font-weight:900}.history-tools{display:flex;align-items:flex-end;flex-direction:column;gap:5px}.history-tools button{display:flex;align-items:center;gap:4px;padding:6px 9px;border-radius:9px;background:#eaf2ff;color:#173f8d;font-size:8.5px;font-weight:900}.history-tools button:disabled{opacity:.55}.history-tools button span{color:#286ce0;font-size:12px}.history-tools strong{color:#94a3b8;font-size:10px;font-weight:700}
+.date-filter{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);align-items:center;gap:7px;margin:15px 0;padding:0;background:transparent}.date-filter label{min-width:0;padding:10px;border:1px solid #dce6f5;border-radius:12px;background:#f7f9fd;transition:border-color .2s,box-shadow .2s}.date-filter label:focus-within{border-color:#286ce0;box-shadow:0 0 0 3px rgba(40,108,224,.1);background:#fff}.date-filter label span{display:flex;align-items:center;gap:4px;margin-bottom:6px;color:#7186aa;font-size:8px;font-weight:800}.date-filter label span b{color:#286ce0;font-size:10px}.date-filter input{width:100%;min-width:0;border:0;background:transparent;color:#10192d;font-size:8.5px;font-weight:800;outline:0}.date-filter i{color:#94a3b8;font-size:11px;font-style:normal;text-align:center}
 .history-panel :deep(.transaction-groups section){margin:0 0 20px}.history-panel :deep(.transaction-groups h3){margin:0;padding:12px 2px 9px;border-bottom:1px solid #eef1f6;color:#7186aa;font-size:11px;font-weight:800}.history-panel :deep(.transaction-groups section.without-icons button){grid-template-columns:minmax(0,1fr) auto;gap:10px;margin:0;padding:14px 2px;border:0;border-bottom:1px solid #eef1f6;border-radius:0;box-shadow:none}.history-panel :deep(.transaction-groups .dot){display:none}.history-panel :deep(.transaction-groups span b){color:#10192d;font-size:12px;font-weight:700}.history-panel :deep(.transaction-groups span small){max-width:190px;margin-top:5px;color:#94a3b8;font-size:8.5px}.history-panel :deep(.transaction-groups strong){font-size:12px;font-weight:800}.history-panel :deep(.transaction-groups time){margin-top:5px;color:#94a3b8;font-size:8.5px}.history-panel :deep(.transaction-groups .withdrawal){color:#e8484f}
 </style>
