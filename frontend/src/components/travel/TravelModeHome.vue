@@ -582,17 +582,36 @@ function parseScheduleDateTime(dateTime) {
 
 const selectedSchedules = computed(() => {
   const apiSchedules = tripStatus.value?.upcomingSchedules || [];
-  const now = Date.now();
+  const now = new Date();
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const tomorrowStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+  ).getTime();
 
-  return apiSchedules
+  const schedules = apiSchedules
     .map((schedule) => ({
       schedule,
       date: parseScheduleDateTime(schedule.dateTime),
     }))
-    .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getTime() >= now)
+    .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getTime() >= todayStart)
     .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((item) => ({
+      ...item,
+      isToday: item.date.getTime() < tomorrowStart,
+    }));
+
+  return [
+    ...schedules.filter((item) => item.isToday),
+    ...schedules.filter((item) => !item.isToday),
+  ]
     .slice(0, 3)
-    .map(({ schedule, date }) => {
+    .map(({ schedule, date, isToday }) => {
       const title = schedule.title || '';
       const location = schedule.location || '';
       const countryName = Object.keys(countryFlagMap).find(
@@ -600,18 +619,24 @@ const selectedSchedules = computed(() => {
       );
 
       return {
-        id: schedule.id ?? `${schedule.dateTime}-${title}-${location}`,
+        id: schedule.id ?? schedule.scheduleId ?? `${schedule.dateTime}-${title}-${location}`,
         title,
-        date: `${date.getMonth() + 1}.${date.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})`,
+        date: isToday
+          ? '오늘'
+          : `${date.getMonth() + 1}.${date.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})`,
         time: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`,
         flagClass: countryFlagMap[countryName]
           ? `fi fi-${countryFlagMap[countryName]}`
           : 'fi fi-xx',
         status: location,
         warning: false,
+        isToday,
       };
     });
 });
+const hasTodaySchedules = computed(() =>
+  selectedSchedules.value.some((item) => item.isToday),
+);
 const calculatorDestination = computed(() =>
   selected.value.code === 'all'
     ? (destinations.value.find((item) => item.code === calculatorCountryCode.value) ??
@@ -982,8 +1007,10 @@ async function switchMode(mode) {
     >
       <div class="card-title schedule-card-title">
         <div>
-          <h2>다가오는 여행 일정</h2>
-          <p>현재와 가까운 일정부터 확인하세요</p>
+          <h2>{{ hasTodaySchedules ? '오늘 여행 일정' : '다가오는 여행 일정' }}</h2>
+          <p>
+            {{ hasTodaySchedules ? '오늘 일정을 먼저 확인하세요' : '현재와 가까운 일정부터 확인하세요' }}
+          </p>
         </div>
         <button type="button" @click="router.push('/schedule')">
           전체 보기 <span aria-hidden="true">›</span>
@@ -997,6 +1024,7 @@ async function switchMode(mode) {
         v-for="(item, index) in selectedSchedules"
         :key="item.id"
         class="schedule-row"
+        :class="{ 'is-today': item.isToday }"
         :style="{ '--row-delay': `${index * 48}ms` }"
         type="button"
         @click="router.push('/schedule')"
@@ -2009,6 +2037,23 @@ async function switchMode(mode) {
   transform: scale(0.985);
   border-color: #cfddf6;
   box-shadow: 0 2px 7px rgba(26, 52, 96, 0.06);
+}
+.schedule-row.is-today {
+  border-color: #cbdcff;
+  background: linear-gradient(135deg, #f4f8ff 0%, #fff 72%);
+  box-shadow: 0 5px 14px rgba(40, 104, 207, 0.09);
+}
+.schedule-row.is-today .schedule-marker {
+  background: linear-gradient(145deg, #173f8d, #2868cf);
+}
+.schedule-row.is-today .schedule-marker::after {
+  background: #ffd45f;
+}
+.schedule-row.is-today .schedule-meta b {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #173f8d;
+  color: #fff;
 }
 .schedule-marker {
   position: relative;
