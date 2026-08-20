@@ -849,17 +849,17 @@ async function confirmUnlinkTravelCard() {
 .modal-field input{font-size:15px;font-weight:700}
 .modal-save{height:44px;font-size:13px}
 
-/* Modern digital wallet card - 주요 카드와 동일한 TRIPASS 블루 톤 */
+/* Modern digital wallet card - 자산관리 화면 색감에 맞춘 라이트 톤 */
 .wallet-card{margin-top:16px;padding-top:0}
 .wallet-card-tab{display:none}
 .wallet-card-inner{
   overflow:hidden;
   padding:20px 19px 16px;
-  border:1px solid rgba(151,184,255,.3);
+  border:1px solid #bfd2f1;
   border-radius:22px;
-  background:linear-gradient(145deg,#1f57d8 0%,#2662ea 58%,#4b7df0 100%);
-  box-shadow:0 12px 26px rgba(38,98,234,.28);
-  color:#fff;
+  background:linear-gradient(135deg,#dce9fb 0%,#c8daf6 100%);
+  box-shadow:0 11px 25px rgba(35,73,136,.12);
+  color:#10192d;
 }
 .wallet-card-inner:before{
   top:-72px;
@@ -868,7 +868,7 @@ async function confirmUnlinkTravelCard() {
   left:auto;
   width:158px;
   height:158px;
-  border:1px solid rgba(255,255,255,.13);
+  border:1px solid rgba(36,91,179,.14);
   border-radius:50%;
   background:transparent;
 }
@@ -879,20 +879,20 @@ async function confirmUnlinkTravelCard() {
   width:120px;
   height:120px;
   border-radius:50%;
-  background:rgba(255,255,255,.08);
+  background:rgba(73,126,211,.13);
   content:"";
   pointer-events:none;
 }
-.wallet-card-top b{color:#ffd466;font-size:13px;font-weight:800;letter-spacing:.1em}
+.wallet-card-top b{color:#29466f;font-size:13px;font-weight:800;letter-spacing:.1em}
 .wallet-card-top button{padding:6px 10px;border-radius:999px;background:#ffd66b;color:#173f8d;font-size:11px;font-weight:800}
-.wallet-balance strong,.wallet-balance span{color:#fff}
-.emergency{color:#ffe18b}
+.wallet-balance strong,.wallet-balance span{color:#10192d}
+.emergency{color:#a66c20}
 .wallet-actions{
   gap:2px;
   padding:4px;
-  border:1px solid rgba(255,255,255,.24);
+  border:1px solid rgba(255,255,255,.5);
   border-radius:13px;
-  background:rgba(16,66,176,.2);
+  background:rgba(255,255,255,.48);
   box-shadow:none;
   backdrop-filter:blur(5px);
 }
@@ -901,11 +901,11 @@ async function confirmUnlinkTravelCard() {
   border:0;
   border-radius:10px;
   background:transparent;
-  color:#fff;
+  color:#174a99;
 }
 .wallet-actions button:first-child,
-.wallet-actions button:nth-child(2){background:rgba(255,255,255,.16);box-shadow:0 4px 10px rgba(18,67,174,.14)}
-.wallet-actions .history-button{background:transparent;color:rgba(255,255,255,.82)}
+.wallet-actions button:nth-child(2){background:#fff;box-shadow:0 4px 10px rgba(35,73,136,.1)}
+.wallet-actions .history-button{background:transparent;color:#4c6385}
 .wallet-status{padding:21px 18px}.wallet-status .section-title{display:flex;align-items:flex-end;justify-content:space-between}.wallet-status .section-title small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.wallet-status .section-title h2{font-size:20px}.wallet-status .section-title>span{max-width:132px;padding:6px 8px;border-radius:999px;background:#fff0ed;color:#e2513c;font-size:9px;font-weight:800;text-align:center}.wallet-status-list{display:grid;gap:10px;margin-top:17px}.wallet-status-list article{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:13px;border-radius:15px;background:#f7f9fd}.wallet-status-list i{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#eaf1ff;color:#245fbf;font-size:11px;font-style:normal;font-weight:900}.wallet-status-list i.reserve{background:#fff5d8;color:#bc8400}.wallet-status-list i.charge{background:#e6f7f3;color:#087f6a}.wallet-status-list div{display:grid;gap:2px}.wallet-status-list b{font-size:12px}.wallet-status-list small{font-size:9px;color:#8b98aa}.wallet-status-list strong{font-size:12px;color:#173f8d}.wallet-status-note{margin-top:13px;padding:10px 12px;border-radius:11px;background:#eef4ff;color:#607393;font-size:9px;line-height:1.45}
 .travel-usage-card{padding:21px 18px}.travel-usage-head{display:flex;align-items:flex-end;justify-content:space-between}.travel-usage-head small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.travel-usage-head h2{margin-top:2px;font-size:20px;font-weight:800}.travel-usage-head>strong{color:#17499c;font-size:25px;font-weight:900}.travel-budget-progress{margin-top:17px;padding:17px 15px;border-radius:17px;background:linear-gradient(145deg,#123c84,#1c5dbd);color:#fff;box-shadow:0 10px 22px rgba(24,77,164,.17)}.travel-budget-progress-label{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800}.travel-budget-progress-label b{color:#ffd466;font-size:17px}.travel-budget-track{height:8px;margin-top:11px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}.travel-budget-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}.travel-budget-meta{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px;font-size:12px;font-weight:800}.travel-budget-meta span{display:grid;gap:2px}.travel-budget-meta span:last-child{text-align:right}.travel-budget-meta small{color:#b8cef2;font-size:8px;letter-spacing:.1em}.travel-fund-usage-list{display:grid;gap:9px;margin-top:12px}.travel-fund-usage-list article{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;padding:13px;border:1px solid #edf1f7;border-radius:15px;background:#f8faff}.travel-fund-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:12px;font-size:9px;font-weight:900}.travel-fund-icon.reserve{background:#fff3cf;color:#a96d00}.travel-fund-icon.charge{background:#e4f6f1;color:#087a69;font-size:18px}.travel-fund-usage-list div{display:grid;gap:3px}.travel-fund-usage-list b{font-size:12px}.travel-fund-usage-list small{color:#8a97aa;font-size:8.5px;line-height:1.35}.travel-fund-usage-list strong{color:#173f8d;font-size:12px;white-space:nowrap}
 </style>
