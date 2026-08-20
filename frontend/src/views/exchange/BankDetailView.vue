@@ -215,6 +215,19 @@ const copyToClipboard = (text) => {
             </div>
             <span>{{ availableCurrencies.length }}개 국가</span>
           </div>
+          <label class="country-search">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
+              <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <input
+              v-model="countrySearch"
+              type="search"
+              placeholder="국가명 또는 통화 검색"
+              @focus="countryDropdownOpen = true"
+              @input="countryDropdownOpen = true"
+            />
+          </label>
           <div class="country-picker" :class="{ open: countryDropdownOpen }">
             <button
               type="button"
@@ -229,13 +242,6 @@ const copyToClipboard = (text) => {
               <i>⌄</i>
             </button>
             <div v-if="countryDropdownOpen" class="country-dropdown">
-              <label class="country-search">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
-                  <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                </svg>
-                <input v-model="countrySearch" type="search" placeholder="국가명 또는 통화 검색" />
-              </label>
               <div class="country-list">
                 <button
                   v-for="currency in filteredCurrencies"
@@ -426,7 +432,7 @@ aside {
 .country-picker {
   position: relative;
   z-index: 5;
-  margin-top: 13px;
+  margin-top: 8px;
 }
 .country-trigger {
   display: grid;
@@ -491,11 +497,17 @@ aside {
   grid-template-columns: 18px 1fr;
   align-items: center;
   gap: 8px;
-  margin: 10px;
+  margin-top: 13px;
   padding: 9px 11px;
+  border: 1px solid #dce5f2;
   border-radius: 10px;
-  background: #f1f5fb;
+  background: #fff;
   color: #78879d;
+  transition: border-color .2s, box-shadow .2s;
+}
+.country-search:focus-within {
+  border-color: #6e9de9;
+  box-shadow: 0 0 0 3px rgba(47, 111, 234, .09);
 }
 .country-search svg { width: 17px; height: 17px; }
 .country-search input {
@@ -589,16 +601,17 @@ aside {
 }
 .conversion-meta {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
   padding: 0 3px;
+  text-align: right;
   letter-spacing: -.015em;
 }
 .conversion-meta em {
   color: #1472ee;
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 10.5px;
+  font-weight: 900;
   font-style: normal;
 }
 .conversion-meta b {
@@ -607,7 +620,6 @@ aside {
   font-weight: 900;
 }
 .conversion-meta span {
-  flex-basis: 100%;
   color: #8795aa;
   font-size: 9px;
   font-weight: 600;
