@@ -14,13 +14,17 @@ const inputAmount = ref(exchange.krwAmount || 100000);
 const displayAmount = ref('');
 const countrySearch = ref('');
 const countryDropdownOpen = ref(false);
+const koreanCountryCollator = new Intl.Collator('ko-KR', {
+  usage: 'sort',
+  sensitivity: 'base',
+});
 
 // 지원되는 전체 국가를 가나다순으로 제공한다.
 const availableCurrencies = computed(() => {
   return [...exchange.currencies].sort((a, b) =>
-    String(a.countryName || a.name || a.code).localeCompare(
+    koreanCountryCollator.compare(
+      String(a.countryName || a.name || a.code),
       String(b.countryName || b.name || b.code),
-      'ko-KR',
     ),
   );
 });
@@ -207,7 +211,7 @@ const copyToClipboard = (text) => {
           <div class="currency-heading">
             <div>
               <small>EXCHANGE CURRENCY</small>
-              <h2>환전할 국가를 선택하세요</h2>
+              <h2>환전할 통화를 선택하세요</h2>
             </div>
             <span>{{ availableCurrencies.length }}개 국가</span>
           </div>
