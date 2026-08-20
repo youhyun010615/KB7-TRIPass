@@ -815,7 +815,7 @@ function closeSelectionFlow() {
 @keyframes header-plane-fly{0%,100%{transform:translateY(0) rotate(0deg);filter:brightness(1) drop-shadow(0 0 0 rgba(47,112,242,0))}25%{transform:translateY(-1.5px) rotate(-8deg)}50%{transform:translateY(0) rotate(0deg);filter:brightness(1.6) drop-shadow(0 0 3px rgba(47,112,242,.55))}75%{transform:translateY(1.5px) rotate(6deg)}}
 .dashboard-header h1{margin-top:2px;font-size:17px;font-weight:400;color:#29466f}
 .dashboard-header .bell{margin-top:0}
-.mission-savings-card{position:relative;overflow:hidden;margin-top:24px;padding:16px 18px;border-radius:16px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 62%,#2f70d9 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24);animation:mission-dash-enter .5s cubic-bezier(.22,1,.36,1) both}
+.mission-savings-card{position:relative;overflow:hidden;margin-top:24px;padding:16px 18px;border-radius:16px;background:linear-gradient(145deg,#1f57d8 0%,#2662ea 58%,#4b7df0 100%);color:#fff;box-shadow:0 10px 24px rgba(38,98,234,.28);animation:mission-dash-enter .5s cubic-bezier(.22,1,.36,1) both}
 .mission-savings-card::after{content:'';position:absolute;top:-56px;right:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
 .mission-savings-card>p{font-size:11px;font-weight:800;letter-spacing:.1em;color:#ffd466}
 .mission-savings-amount{display:flex;align-items:baseline;gap:8px;margin-top:8px}
