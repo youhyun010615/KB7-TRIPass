@@ -24,6 +24,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
 import { flagIconClass } from '@/stores/travel'
+import receiptIcon from '@/assets/icons/receipt.svg'
 
 import {
   getReceiptDates,
@@ -780,7 +781,9 @@ onMounted(loadPage)
             v-if="!filteredReceipts.length"
             class="empty receipt-empty"
         >
-          <span class="empty-receipt-icon" aria-hidden="true">🧾</span>
+          <span class="empty-receipt-icon" aria-hidden="true">
+            <img :src="receiptIcon" alt="" />
+          </span>
 
           <b>
             보관된 영수증이 없어요
@@ -2425,6 +2428,12 @@ onMounted(loadPage)
   position: relative;
   isolation: isolate;
   animation: empty-receipt-float 2.6s ease-in-out infinite;
+}
+
+.empty-receipt-icon img {
+  display: block;
+  width: 27px;
+  height: 27px;
 }
 
 .empty-receipt-icon::before,
