@@ -6,11 +6,11 @@ import {
   House,
   PiggyBank,
   ReceiptText,
-  RefreshCw,
   UserRound,
   WalletCards,
 } from '@lucide/vue'
 
+import ExchangeRateIcon from '@/components/common/ExchangeRateIcon.vue'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { useTravelStore } from '@/stores/travel'
 
@@ -39,7 +39,7 @@ const savingsNavItems = [
   { name: '홈', path: '/', icon: House },
   { name: '저축 미션', path: '/missions', icon: PiggyBank },
   { name: '월렛', path: '/wallet', icon: WalletCards },
-  { name: '환율', path: '/exchange', icon: RefreshCw },
+  { name: '환율', path: '/exchange', icon: ExchangeRateIcon },
   { name: '마이페이지', path: '/mypage', icon: UserRound },
 ]
 
@@ -75,9 +75,9 @@ const indicatorStyle = computed(() => ({
 }))
 const navSurfacePath = computed(() => {
   const center = ((indicatorPosition.value + 0.5) / navItems.value.length) * 390
-  const depth = 32 + pressAmount.value * 7
-  const left = center - 38
-  const right = center + 38
+  const depth = 29 + pressAmount.value * 6
+  const left = center - 36
+  const right = center + 36
   return [
     'M 0 22',
     'Q 0 0 24 0',
@@ -86,7 +86,7 @@ const navSurfacePath = computed(() => {
     `C ${(center + 31).toFixed(2)} ${depth.toFixed(2)} ${(center + 25).toFixed(2)} 0 ${right.toFixed(2)} 0`,
     'H 366',
     'Q 390 0 390 22',
-    'V 96 H 0 Z',
+    'V 78 H 0 Z',
   ].join(' ')
 })
 
@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
     <div class="nav-shell">
       <svg
           class="nav-background"
-          viewBox="0 0 390 90"
+          viewBox="0 0 390 78"
           preserveAspectRatio="none"
           aria-hidden="true"
       >
@@ -244,7 +244,6 @@ onBeforeUnmount(() => {
         <span class="nav-icon">
           <component :is="item.icon" :size="26" :stroke-width="2" />
         </span>
-        <span class="nav-label">{{ item.name }}</span>
       </button>
     </div>
   </nav>
@@ -258,7 +257,7 @@ onBeforeUnmount(() => {
   z-index: 50;
   width: 100%;
   max-width: 390px;
-  height: calc(128px + env(safe-area-inset-bottom));
+  height: calc(104px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -268,10 +267,10 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 0;
   display: grid;
-  height: calc(88px + env(safe-area-inset-bottom));
+  height: calc(70px + env(safe-area-inset-bottom));
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  padding: 14px 6px max(5px, env(safe-area-inset-bottom));
+  padding: 7px 6px max(4px, env(safe-area-inset-bottom));
   pointer-events: auto;
 }
 .nav-background {
@@ -285,10 +284,10 @@ onBeforeUnmount(() => {
 }
 .moving-notch {
   position: absolute;
-  top: -26px;
+  top: -24px;
   z-index: 2;
-  width: 66px;
-  height: 66px;
+  width: 62px;
+  height: 62px;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -298,8 +297,8 @@ onBeforeUnmount(() => {
   left: 50%;
   z-index: 2;
   display: grid;
-  width: 66px;
-  height: 66px;
+  width: 62px;
+  height: 62px;
   place-items: center;
   box-sizing: border-box;
   opacity: var(--orb-opacity);
@@ -318,13 +317,12 @@ onBeforeUnmount(() => {
   z-index: 3;
   display: flex;
   min-width: 0;
-  height: 70px;
+  height: 58px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   color: rgba(255, 255, 255, .7);
-  transform: translateY(9px);
+  transform: translateY(8px);
   -webkit-tap-highlight-color: transparent;
 }
 .nav-icon {
@@ -334,25 +332,9 @@ onBeforeUnmount(() => {
   place-items: center;
   transition: opacity .2s ease, transform .25s ease;
 }
-.nav-label {
-  overflow: hidden;
-  max-width: 100%;
-  color: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color .25s ease, transform .35s cubic-bezier(.22, .82, .2, 1);
-}
 .nav-item.active .nav-icon {
   opacity: 0;
   transform: translateY(-9px) scale(.72);
-}
-.nav-item.active .nav-label {
-  color: #fff;
-  font-weight: 900;
-  transform: translateY(12px);
 }
 .nav-item:active:not(.active) .nav-icon {
   transform: scale(.86);
@@ -375,7 +357,6 @@ onBeforeUnmount(() => {
 .icon-swap-leave-to { opacity: 0; transform: scale(.55) rotate(15deg); }
 @media (prefers-reduced-motion: reduce) {
   .nav-icon,
-  .nav-label,
   .icon-swap-enter-active,
   .icon-swap-leave-active {
     transition: none;
