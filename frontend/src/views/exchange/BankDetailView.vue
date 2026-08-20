@@ -260,8 +260,8 @@ const copyToClipboard = (text) => {
           </div>
 
           <small class="applied-rate">
-            {{ exchange.lastUpdateDate }} 11:00 기준 · 환율
-            {{ format(estimate.buyRate) }}원 적용
+            <span>{{ exchange.lastUpdateDate }} 11:00 기준</span>
+            <b>환율 {{ format(estimate.buyRate) }}원 적용</b>
           </small>
           <div class="conversion-line">
             <input
@@ -272,15 +272,17 @@ const copyToClipboard = (text) => {
               placeholder="0"
             />
             <span class="currency-label">원 환전 시</span>
-            <strong
-              >약
-              {{
-                exchange.getCurrency(estimate.currencyCode)?.symbol ||
-                estimate.currencyCode
-              }}{{ format(computedEstimatedAmount) }}</strong
-            >
+            <span class="conversion-result">
+              <em>↗ 환율 우대 {{ estimate.buyFeeRate }}%</em>
+              <strong
+                >약
+                {{
+                  exchange.getCurrency(estimate.currencyCode)?.symbol ||
+                  estimate.currencyCode
+                }}{{ format(computedEstimatedAmount) }}</strong
+              >
+            </span>
           </div>
-          <p>↗ 환율 우대 {{ estimate.buyFeeRate }}%</p>
         </section>
         <section class="info">
           <h2>지점 정보</h2>
@@ -554,11 +556,22 @@ aside {
   white-space: nowrap;
 }
 .applied-rate {
+  display: flex !important;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   margin-top: 16px;
-  color: #245fc6 !important;
-  font-size: 10px !important;
-  font-weight: 900;
   letter-spacing: -.015em;
+}
+.applied-rate span {
+  color: #8795aa;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+.applied-rate b {
+  color: #df5555;
+  font-size: 11.5px;
+  font-weight: 900;
 }
 .amount-input {
   width: 88px;
@@ -585,19 +598,26 @@ aside {
   color: #8c98a8;
   font-size: 12px;
 }
-.conversion-line strong {
+.conversion-result {
+  display: flex;
   min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
   margin-left: auto;
+}
+.conversion-result em {
+  margin-bottom: 2px;
+  color: #1472ee;
+  font-size: 8px;
+  font-weight: 800;
+  font-style: normal;
+}
+.conversion-result strong {
+  min-width: 0;
   color: #174494;
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -.03em;
-}
-.estimate p {
-  margin-top: 14px;
-  text-align: center;
-  color: #1472ee;
-  font-size: 11px;
 }
 .info h2 {
   color: #173f8d;
