@@ -80,6 +80,7 @@ const dateLabel = (value) =>
     <header>
       <button type="button" @click="router.back()">‹</button>
       <h1>{{ category.name }} 상세</h1>
+      <span aria-hidden="true"></span>
     </header>
     <section class="category-summary" :style="{ '--accent': category.color }">
       <div class="title">
@@ -135,12 +136,20 @@ const dateLabel = (value) =>
 }
 header {
   display: grid;
-  grid-template-columns: 30px 1fr;
+  grid-template-columns: 36px 1fr 36px;
   align-items: center;
 }
 header button {
-  font-size: 28px;
-  text-align: left;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 h1 {
   font-size: 19px;

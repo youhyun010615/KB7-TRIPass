@@ -32,6 +32,7 @@ const reachedAlerts = computed(() => {
       <header>
         <button @click="router.back()">‹</button>
         <h1>내 알림</h1>
+        <span aria-hidden="true"></span>
       </header>
       <section class="list">
         <button
@@ -101,32 +102,28 @@ const reachedAlerts = computed(() => {
   background: #f7f5ef;
 }
 header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
   align-items: center;
-  gap: 10px;
   margin-bottom: 16px;
 }
 header button {
-  width: 32px;
-  height: 32px;
-  font-size: 28px;
-  font-weight: 300;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #10192d;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
   transition: opacity 0.2s;
 }
 header button:active {
   opacity: 0.5;
 }
 header h1 {
-  flex: 1;
-  padding-right: 32px; /* Offset the 32px back button to center perfectly */
   text-align: center;
   font-size: 18px;
   font-weight: 900;

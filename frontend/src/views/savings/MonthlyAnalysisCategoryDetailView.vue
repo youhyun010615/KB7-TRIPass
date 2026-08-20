@@ -352,12 +352,15 @@ function goBack() {
 }
 .report-header > button {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   margin-left: -6px;
   place-items: center;
-  border-radius: 10px;
-  color: #17213a;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
   font-size: 24px;
   line-height: 1;
 }

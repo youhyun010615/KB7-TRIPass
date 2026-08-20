@@ -146,7 +146,7 @@ function commitEdit(acc) {
 .page { min-height: 100vh; padding: 0 16px 100px; background: #f7f4ee; color: #111827; }
 
 .header { display: grid; grid-template-columns: 40px 1fr 40px; align-items: end; height: 76px; padding-bottom: 14px; }
-.back { border: 0; background: none; font-size: 26px; line-height: 1; }
+.back { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #fff; color: #193d82; font-size: 24px; font-weight: 700; box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07); }
 .header h1 { font-size: 17px; font-weight: 800; text-align: center; }
 
 /* 파란 요약 바 */

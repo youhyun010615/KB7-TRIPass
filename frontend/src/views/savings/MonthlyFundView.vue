@@ -93,9 +93,9 @@ const sortedCategorySummaries = computed(() =>
 <style scoped>
 .monthly-page { min-height: 100vh; padding-bottom: 88px; background: #e9eef6; color: #111827; }
 .page-shell { width: min(100%, 390px); min-height: calc(100vh - 88px); margin: 0 auto; padding: 44px 16px 24px; background: #f7f4ee; }
-.app-title { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; margin-bottom: 18px; }
-.app-title button { font-size: 28px; text-align: left; }
-.app-title h1 { font-size: 20px; font-weight: 900; }
+.app-title { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; margin-bottom: 18px; }
+.app-title button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #fff; color: #193d82; font-size: 24px; font-weight: 700; box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07); }
+.app-title h1 { font-size: 20px; font-weight: 900; text-align: center; }
 .app-title select { max-width: 92px; padding: 6px 4px; border: 1px solid #e5eaf2; border-radius: 999px; background: white; color: #475569; font-size: 10px; }
 .card { margin-top: 14px; padding: 18px 16px; border: 1px solid #edf0f5; border-radius: 18px; background: #fff; box-shadow: 0 7px 16px rgba(30, 52, 98, .07); }
 .card h2 { font-size: 16px; font-weight: 900; }

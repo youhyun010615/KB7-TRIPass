@@ -42,9 +42,9 @@ onMounted(() => {
 
 <style scoped>
 .goal-page { min-height: 100vh; padding: 0 18px 92px; color: #111827; background: #f4f7ff; }
-.page-header { height: 56px; display: grid; grid-template-columns: 38px 1fr 48px; align-items: end; padding-bottom: 14px; }
+.page-header { height: 56px; display: grid; grid-template-columns: 36px 1fr 36px; align-items: end; padding-bottom: 14px; }
 .page-header h1 { font-size: 17px; font-weight: 800; text-align:center; }
-.page-header button { border: 0; background: none; text-align: left; font-size: 24px; }
+.page-header button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #fff; color: #193d82; font-weight: 700; box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07); font-size: 24px; }
 .empty-ticket { position:relative; overflow:hidden; margin-top:22px; padding:24px 20px 21px; border-radius:24px; color:#fff; text-align:center; background:linear-gradient(145deg,#173b86,#29499d); box-shadow:0 14px 25px rgba(31,59,130,.2); }
 .empty-ticket::before,.empty-ticket::after { content:''; position:absolute; top:42%; width:22px; height:22px; border-radius:50%; background:#f4f7ff; }.empty-ticket::before { left:-11px; }.empty-ticket::after { right:-11px; }
 .ticket-visual { display:flex; align-items:center; justify-content:space-between; height:74px; padding:0 32px; border-radius:17px; background:#edf3ff; color:#1e469b; font-size:19px; }.ticket-visual i { position:relative; font-size:31px; font-style:normal; transform:rotate(18deg); }.ticket-visual i::before { content:''; position:absolute; top:50%; right:29px; width:80px; border-top:2px dashed #9bb8f6; transform:rotate(-8deg); }.ticket-visual i::after { content:''; position:absolute; top:50%; left:29px; width:80px; border-top:2px dashed #9bb8f6; transform:rotate(8deg); }

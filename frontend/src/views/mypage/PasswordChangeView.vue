@@ -126,7 +126,7 @@ async function submitPasswordChange() {
     >
       <button
           type="button"
-          class="flex h-8 w-8 items-center justify-center"
+          class="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-[0_5px_16px_rgba(36,72,117,0.07)]"
           aria-label="뒤로 가기"
           @click="router.back()"
       >
@@ -138,7 +138,7 @@ async function submitPasswordChange() {
         >
           <path
               d="M15 18L9 12L15 6"
-              stroke="#172033"
+              stroke="#193d82"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -147,7 +147,7 @@ async function submitPasswordChange() {
       </button>
 
       <h1
-          class="flex-1 pr-8 text-center text-xl font-bold text-[#172033]"
+          class="flex-1 pr-9 text-center text-xl font-bold text-[#172033]"
       >
         비밀번호 변경
       </h1>

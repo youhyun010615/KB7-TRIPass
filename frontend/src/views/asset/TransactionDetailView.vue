@@ -185,12 +185,16 @@ const rows = computed(() => {
   margin-bottom: 18px;
 }
 .detail-page > header button {
+  display: grid;
   width: 36px;
   height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
   color: #193d82;
   font-size: 24px;
   font-weight: 700;
-  text-align: left;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 .detail-page > header h1 {
   text-align: center;

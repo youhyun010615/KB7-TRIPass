@@ -1055,8 +1055,16 @@ onBeforeUnmount(removeImage)
 }
 
 .page-header > button:first-child {
-  font-size: 30px;
-  text-align: left;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 
 .page-header h1 {

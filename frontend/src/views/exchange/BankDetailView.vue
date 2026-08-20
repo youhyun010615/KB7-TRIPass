@@ -188,6 +188,7 @@ const copyToClipboard = (text) => {
               {{ displayDistance }} · {{ displayWalkTime }}분
             </small>
           </div>
+          <span aria-hidden="true"></span>
         </header>
         <section class="estimate">
           <!-- CurrencyTabNav 컴포넌트를 이용한 좌우 스크롤 통화 선택기 -->
@@ -273,25 +274,28 @@ const copyToClipboard = (text) => {
   background: #f7f5ef;
 }
 header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
   align-items: center;
   margin-bottom: 16px;
 }
 header button {
-  width: 28px;
-  font-size: 25px;
-  background: none;
-  border: none;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  color: #193d82;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
   cursor: pointer;
-  padding: 0;
-  text-align: left;
 }
 .header-title {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-right: 28px; /* Offset the back button to center perfectly */
 }
 header h1 {
   font-size: 18px;

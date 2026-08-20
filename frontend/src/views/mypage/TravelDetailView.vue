@@ -104,12 +104,12 @@ onMounted(async () => {
 
     <!-- 헤더 -->
     <div class="flex items-center gap-3 px-5 pt-3.5 pb-3">
-      <button type="button" class="p-1" @click="router.back()">
+      <button type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-white shadow-[0_5px_16px_rgba(36,72,117,0.07)]" @click="router.back()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M15 6l-6 6 6 6" stroke="#10192B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 6l-6 6 6 6" stroke="#193d82" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <h1 class="flex-1 text-[18px] font-black text-gray-900 truncate">{{ trip?.tripName ?? '여행 상세' }}</h1>
+      <h1 class="flex-1 text-center text-[18px] font-black text-gray-900 truncate">{{ trip?.tripName ?? '여행 상세' }}</h1>
       <button v-if="!isEnded" type="button" class="text-[13px] font-bold flex-shrink-0" style="color:#2F6FED" @click="goEdit">편집</button>
       <span v-else class="text-[13px] font-bold flex-shrink-0" style="color:#2F6FED">공유</span>
     </div>

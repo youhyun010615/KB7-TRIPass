@@ -443,21 +443,21 @@ watch(
 
 .page-header {
   display: grid;
-  grid-template-columns: 42px 1fr 42px;
+  grid-template-columns: 36px 1fr 36px;
   align-items: center;
   margin-bottom: 17px;
 }
 
 .back-button {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff;
   color: #16366f;
-  font-size: 28px;
+  font-size: 24px;
   box-shadow: 0 5px 16px #24487512;
 }
 
