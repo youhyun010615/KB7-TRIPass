@@ -123,12 +123,20 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 .status-undecided { background: #fff; }
 .status-undecided .schedule-title-row em { background: #eceff3; color: #657184; }
 .is-completed {
-  border-color: #dfe5ee;
-  background: #fff;
+  border-color: #d6dbe3;
+  background: #eef1f5;
+  box-shadow: none;
 }
-.is-completed .schedule-flag-wrap{filter:grayscale(.25)}
+.is-completed .schedule-flag-wrap{
+  background:#dfe3e9;
+  filter:grayscale(1);
+  opacity:.7;
+}
+.is-completed .schedule-copy h4{color:#667085}
+.is-completed .schedule-meta{color:#8a94a3}
+.is-completed .schedule-place{color:#98a1ae}
 .is-today{border-color:#ffd978;background:#fffaf0;box-shadow:0 7px 20px rgba(198,139,0,.09)}
-.is-today.is-completed{border-color:#ffd978;background:#fffaf0}
+.is-today.is-completed{border-color:#d6dbe3;background:#eef1f5;box-shadow:none}
 .compact {
   border: 1px solid rgba(255, 255, 255, 0.72);
   background: rgba(255, 255, 255, 0.96);
