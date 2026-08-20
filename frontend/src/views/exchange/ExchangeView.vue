@@ -12,7 +12,6 @@ import { useTravelStore } from '@/stores/travel';
 const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
-const currencySearch = ref('');
 const countryDropdownOpen = ref(false);
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
@@ -75,18 +74,12 @@ const displayCurrencies = computed(() => {
 });
 
 const filteredCurrencies = computed(() => {
-  const keyword = currencySearch.value.trim().toLocaleLowerCase('ko-KR');
   return displayCurrencies.value
     .map((currency) => ({
       ...currency,
       // /exchange-rates/countries가 국가 단위로 내려주므로 countryName을 그대로 쓴다.
       countryName: currency.countryName || currency.name || currency.code,
     }))
-    .filter((currency) =>
-      !keyword || [currency.countryName, currency.code, currency.name, currency.symbol]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase('ko-KR').includes(keyword)),
-    )
     .sort((a, b) => a.countryName.localeCompare(b.countryName, 'ko-KR'));
 });
 
@@ -158,8 +151,8 @@ watch(
               </svg>
             </span>
             <div class="btn-text">
-              <strong>모든 국가보기</strong>
-              <p>모든 통화 환율</p>
+              <strong>전체 통화 환율</strong>
+              <p>국가별 환율 확인</p>
             </div>
           </button>
           <button
@@ -173,40 +166,22 @@ watch(
               </svg>
             </span>
             <div class="btn-text">
-              <strong>내 알림 목록</strong>
+              <strong>환율 알림 목록</strong>
               <p>환율 지정 알림</p>
             </div>
           </button>
         </div>
-        <div class="currency-search">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
-            <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-          </svg>
-          <input
-            v-model="currencySearch"
-            type="search"
-            inputmode="search"
-            autocomplete="off"
-            aria-label="국가 또는 통화 검색"
-            placeholder="국가명 또는 통화코드 검색"
-          />
-          <button
-            v-if="currencySearch"
-            type="button"
-            aria-label="검색어 지우기"
-            @click="currencySearch = ''"
-          >
-            ×
-          </button>
+        <div class="currency-section-heading">
+          <strong>여행 국가 환율 바로보기</strong>
+          <p>국가를 선택해 현재 환율과 추이를 확인하세요.</p>
         </div>
 
         <template v-if="filteredCurrencies.length > 0">
-          <div class="currency-select" :class="{ open: countryDropdownOpen || !!currencySearch }">
+          <div class="currency-select" :class="{ open: countryDropdownOpen }">
             <button
               type="button"
               class="currency-select-trigger"
-              :aria-expanded="countryDropdownOpen || !!currencySearch"
+              :aria-expanded="countryDropdownOpen"
               @click="countryDropdownOpen = !countryDropdownOpen"
             >
               <img
@@ -225,13 +200,13 @@ watch(
               </svg>
             </button>
 
-            <div v-if="countryDropdownOpen || currencySearch" class="currency-country-list" aria-label="지원 국가 목록">
+            <div v-if="countryDropdownOpen" class="currency-country-list" aria-label="지원 국가 목록">
               <button
                 v-for="currency in filteredCurrencies"
                 :key="currency.countryId ?? currency.code"
                 type="button"
                 :class="{ active: exchange.selectedCurrency?.countryId != null ? exchange.selectedCurrency.countryId === currency.countryId : exchange.selectedCode === currency.code }"
-                @click="exchange.selectedCode = currency.code; exchange.selectedCountryId = currency.countryId ?? null; countryDropdownOpen = false; currencySearch = ''"
+                @click="exchange.selectedCode = currency.code; exchange.selectedCountryId = currency.countryId ?? null; countryDropdownOpen = false"
               >
                 <img v-if="currency.flagUrl" class="currency-country-flag-img" :src="currency.flagUrl" alt="" />
                 <span v-else class="fi currency-country-flag" :class="currency.flagClass" aria-hidden="true"></span>
@@ -248,11 +223,6 @@ watch(
           />
           <ExchangeCalculator />
         </template>
-        <div v-else-if="currencySearch" class="currency-search-empty">
-          <b>검색 결과가 없어요</b>
-          <p>국가명이나 통화코드를 다시 확인해 주세요.</p>
-          <button type="button" @click="currencySearch = ''">전체 통화 보기</button>
-        </div>
         <template v-else>
           <div class="empty-state">
             <div class="empty-icon">💸</div>
@@ -462,52 +432,22 @@ header h1 {
   color: #96a1b5;
   white-space: nowrap;
 }
-.currency-search {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 26px;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 10px 0 13px;
-  margin: 2px 0 3px;
-  border: 1px solid #dce4f0;
-  border-radius: 14px;
-  background: #fff;
-  color: #7d8ba3;
-  box-shadow: 0 5px 16px rgba(23, 43, 77, .04);
+.currency-section-heading {
+  margin-top: 18px;
 }
-.currency-search:focus-within {
-  border-color: #2f6fea;
-  box-shadow: 0 0 0 3px rgba(47, 111, 234, .1);
+.currency-section-heading strong {
+  color: #173f8d;
+  font-size: 15px;
+  font-weight: 800;
 }
-.currency-search svg {
-  width: 18px;
-  height: 18px;
-}
-.currency-search input {
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #17233b;
-  font-size: 12px;
-  font-weight: 600;
-}
-.currency-search input::placeholder { color: #a0aabd; }
-.currency-search input::-webkit-search-cancel-button { display: none; }
-.currency-search button {
-  display: grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  border-radius: 50%;
-  background: #eef2f8;
-  color: #718097;
-  font-size: 18px;
-  line-height: 1;
+.currency-section-heading p {
+  margin-top: 4px;
+  color: #8d99ad;
+  font-size: 10px;
+  font-weight: 500;
 }
 .currency-select {
-  margin: 8px 0 12px;
+  margin: 10px 0 12px;
 }
 .currency-select-trigger {
   display: grid;
@@ -612,29 +552,6 @@ header h1 {
 .currency-country-list button.active .currency-country-name,
 .currency-country-list button.active b,
 .currency-country-list button.active .currency-country-check { color: #2464d8; }
-.currency-search-empty {
-  margin: 10px 0 16px;
-  padding: 28px 18px;
-  border: 1px dashed #cad5e5;
-  border-radius: 18px;
-  background: #fff;
-  text-align: center;
-}
-.currency-search-empty b { font-size: 13px; }
-.currency-search-empty p {
-  margin-top: 6px;
-  color: #8a97aa;
-  font-size: 10px;
-}
-.currency-search-empty button {
-  margin-top: 14px;
-  padding: 8px 13px;
-  border-radius: 10px;
-  background: #eaf1ff;
-  color: #2464d8;
-  font-size: 10px;
-  font-weight: 800;
-}
 .empty-state {
   display: flex;
   flex-direction: column;
