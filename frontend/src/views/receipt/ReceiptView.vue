@@ -616,7 +616,11 @@ onMounted(loadPage)
               :disabled="loading"
               @click="selectedCountryId = country.countryId"
           >
-            <Check v-if="selectedCountryId === country.countryId" :size="12" :stroke-width="3" />
+            <Check
+              v-if="country.countryId !== null && selectedCountryId === country.countryId"
+              :size="12"
+              :stroke-width="3"
+            />
             {{ country.countryName }}
           </button>
         </div>

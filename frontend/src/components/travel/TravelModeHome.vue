@@ -23,6 +23,7 @@ import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
 import livingIcon from '@/assets/icons/home-dollar.svg';
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
+import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -33,6 +34,7 @@ const router = useRouter();
 const travelMode = useTravelModeStore();
 const travelStore = useTravelStore();
 const exchangeStore = useExchangeStore();
+const scheduleStore = useTravelScheduleStore();
 
 // 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
 // position:sticky가 동작하지 않는다. 대신 position:fixed로 고정하고,
@@ -408,6 +410,7 @@ onMounted(async () => {
       // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
       const status = await travelStore.loadTripStatus(tripId.value, null);
       persistentCountries.value = status?.countries || [];
+      await scheduleStore.loadSchedules().catch(() => {});
 
       if (travelMode.consumeAutoSelect()) {
         selectedCountryId.value = findTodayCountryCode(persistentCountries.value);
@@ -628,10 +631,20 @@ const selectedSchedules = computed(() => {
   ).getTime();
 
   const schedules = apiSchedules
-    .map((schedule) => ({
-      schedule,
-      date: parseScheduleDateTime(schedule.dateTime),
-    }))
+    .map((summary) => {
+      const scheduleId = summary.id ?? summary.scheduleId;
+      const detailed = scheduleStore.schedules.find((item) => Number(item.id) === Number(scheduleId));
+      const schedule = detailed || summary;
+      const dateTime = detailed?.date
+        ? `${detailed.date}T${detailed.time || '00:00'}`
+        : summary.dateTime;
+
+      return {
+        schedule,
+        summary,
+        date: parseScheduleDateTime(dateTime),
+      };
+    })
     .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getTime() >= now.getTime())
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .map((item) => ({
@@ -644,19 +657,20 @@ const selectedSchedules = computed(() => {
     ...schedules.filter((item) => !item.isToday),
   ]
     .slice(0, 3)
-    .map(({ schedule, date, isToday }, index) => {
-      const title = schedule.title || '';
-      const location = schedule.location || '';
-      const countryName = schedule.countryName || Object.keys(countryFlagMap).find(
+    .map(({ schedule, summary, date, isToday }, index) => {
+      const title = schedule.title || summary.title || '';
+      const location = schedule.placeName || schedule.location || summary.location || '';
+      const countryName = schedule.countryName || summary.countryName || Object.keys(countryFlagMap).find(
         (name) => location.includes(name) || title.includes(name),
       );
+      const countryCode = schedule.countryCode || countryFlagMap[countryName]?.toUpperCase() || '';
 
       return {
-        id: schedule.id ?? schedule.scheduleId ?? `${schedule.dateTime}-${title}-${location}`,
+        id: schedule.id ?? summary.scheduleId ?? `${summary.dateTime}-${title}-${location}`,
         title,
         date: isToday
           ? '오늘'
-          : `${date.getMonth() + 1}.${date.getDate()} (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})`,
+          : `${date.getFullYear()}. ${String(date.getMonth() + 1).padStart(2, '0')}. ${String(date.getDate()).padStart(2, '0')}. (${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})`,
         time: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`,
         flagClass: countryFlagMap[countryName]
           ? `fi fi-${countryFlagMap[countryName]}`
@@ -666,11 +680,12 @@ const selectedSchedules = computed(() => {
         isToday,
         isNext: index === 0,
         schedule: {
-          id: schedule.id ?? schedule.scheduleId,
+          ...schedule,
+          id: schedule.id ?? summary.scheduleId,
           title,
           date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'),
           time: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`,
-          countryCode: countryFlagMap[countryName]?.toUpperCase() || '',
+          countryCode,
           currency: schedule.currencyCode || schedule.currency || '',
           amount: Number(schedule.amount || 0),
           paymentStatus: String(schedule.paymentStatus || 'undecided').toLowerCase(),
@@ -1057,7 +1072,7 @@ async function switchMode(mode) {
     </article>
     <article
       v-reveal
-      class="card schedule-card reveal-card"
+      class="card schedule-section-card reveal-card"
       style="--card-delay: 70ms"
     >
       <div class="card-title schedule-card-title">
@@ -2015,7 +2030,7 @@ async function switchMode(mode) {
 .budget-total strong {
   color: #2872e5;
 }
-.schedule-card {
+.schedule-section-card {
   margin-bottom: 12px;
   padding: 20px;
   border: 1px solid #e7edf9;
