@@ -1891,7 +1891,7 @@ async function switchMode(mode) {
 }
 .checklist-btn {
   display: inline-block;
-  margin: 10px 0 12px;
+  margin: 71px 0 12px;
   padding: 8px 16px;
   border-radius: 12px;
   background: #ffb800;
