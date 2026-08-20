@@ -1266,7 +1266,7 @@ onBeforeUnmount(() => {
         <!-- 최종 결제 금액 -->
         <div class="total">
           <span>
-            TOTALE · 최종 결제 금액
+            {{ translated ? '최종 결제 금액' : 'TOTALE' }}
           </span>
 
           <strong>
@@ -2600,6 +2600,30 @@ onBeforeUnmount(() => {
 .result-page .tripass-receipt-document .merchant-value {
   height: 58px;
   font-size: 17px;
+}
+
+/* 상단 결제 정보도 하단 품목 영역과 같은 영수증 톤으로 연결 */
+.result-page .tripass-receipt-document.tripass-receipt-document .readonly-trip,
+.result-page .tripass-receipt-document.tripass-receipt-document .readonly-value {
+  border: 1px solid #e5decd;
+  background: #f7f3e9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+.result-page .tripass-receipt-document.tripass-receipt-document .merchant-value {
+  border-color: #ddd4bf;
+  background: #f2ede1;
+}
+
+.result-page .tripass-receipt-document .currency-field {
+  padding-bottom: 18px;
+  border-bottom: 1px dashed #d8cfba;
+}
+
+.result-page .tripass-receipt-document .result-items-heading {
+  margin-top: 0;
+  padding-top: 16px;
+  border-top: 0;
 }
 
 .result-page .tripass-receipt-document .result-items-heading {

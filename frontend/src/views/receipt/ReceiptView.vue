@@ -741,7 +741,7 @@ onMounted(loadPage)
               <i
                   v-if="item.splitCount > 1"
               >
-                <template v-if="item.participantNames">함께: {{ item.participantNames }}</template>
+                <template v-if="item.participantNames">공동 인원: {{ item.participantNames }}</template>
                 <template v-else>공동결제 참여자 확인</template>
               </i>
             </div>
@@ -2087,8 +2087,8 @@ onMounted(loadPage)
 .trip-country-flags { display: inline-flex; align-items: center; gap: 3px; }
 .trip-country-flags i {
   display: block;
-  width: 25px;
-  height: 17px;
+  width: 22px;
+  height: 15px;
   border-radius: 3px;
   background-size: cover;
   font-style: normal;
