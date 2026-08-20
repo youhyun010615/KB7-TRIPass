@@ -22,6 +22,7 @@ import leisureIcon from '@/assets/icons/hobby_drink.svg';
 import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
 import livingIcon from '@/assets/icons/home-dollar.svg';
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
+import calculatorIcon from '@/assets/icons/calculator.svg';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
@@ -317,7 +318,7 @@ const categoryList = computed(() => {
       details,
       icon: getCategoryIcon(name),
     };
-  });
+  }).sort((a, b) => b.total - a.total || CATEGORY_ORDER.indexOf(a.name) - CATEGORY_ORDER.indexOf(b.name));
 });
 
 const isReturnPeriod = computed(() => {
@@ -1151,7 +1152,7 @@ async function switchMode(mode) {
       aria-label="외화 계산기 열기"
       @click="openCalculator"
     >
-      ▦
+      <img :src="calculatorIcon" alt="" aria-hidden="true" />
     </button>
     </template>
   </section>
@@ -2212,10 +2213,10 @@ async function switchMode(mode) {
   z-index: 45;
   width: 320px;
   padding: 14px;
-  border: 1px solid #dfe5ee;
+  border: 1px solid #bfd3f2;
   border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 10px 30px #15254733;
+  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
+  box-shadow: 0 12px 30px rgba(23, 63, 141, .2);
 }
 .calculator-head {
   display: flex;
@@ -2236,7 +2237,7 @@ async function switchMode(mode) {
   flex: none;
   padding: 6px 8px;
   border-radius: 7px;
-  background: #f2f4f7;
+  background: rgba(255, 255, 255, .68);
   font-size: 9px;
 }
 .calculator-currencies button.active {
@@ -2257,7 +2258,8 @@ async function switchMode(mode) {
   justify-content: space-between;
   padding: 10px;
   border-radius: 9px;
-  background: #f4f5f7;
+  border: 1px solid rgba(23, 63, 141, .1);
+  background: rgba(255, 255, 255, .78);
   font-size: 12px;
   font-weight: 900;
 }
@@ -2279,12 +2281,16 @@ async function switchMode(mode) {
   z-index: 44;
   width: 48px;
   height: 48px;
-  border: 6px solid #dce5f2;
+  border: 5px solid #fff;
   border-radius: 50%;
-  background: #173f8d;
-  color: #fff;
-  font-size: 22px;
-  box-shadow: 0 8px 18px #173f8d3d;
+  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
+  box-shadow: 0 8px 18px rgba(23, 63, 141, .25);
+}
+.calculator-fab img {
+  display: block;
+  width: 23px;
+  height: 23px;
+  margin: auto;
 }
 .summary-title-wrapper {
   display: flex;
