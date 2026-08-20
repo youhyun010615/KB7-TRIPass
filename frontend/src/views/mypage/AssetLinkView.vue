@@ -16,6 +16,73 @@ const accounts = ref([])
 const loading = ref(true)
 const deletingKeys = ref(new Set())
 const errorMessage = ref('')
+const activeCardIndex = ref(0)
+const cardDragOffset = ref(0)
+const isCardDragging = ref(false)
+let cardPointerStart = 0
+let cardWasDragged = false
+
+const activeCard = computed(() => cardStore.cards[activeCardIndex.value] ?? null)
+
+function cardDeckStyle(index) {
+  const step = 98
+  const x = (index - activeCardIndex.value) * step + cardDragOffset.value
+  const distance = Math.min(Math.abs(x) / step, 3)
+  const scale = Math.max(.76, 1 - distance * .11)
+  const rotateY = Math.max(-52, Math.min(52, -x * .32))
+  const rotateZ = Math.max(-4, Math.min(4, x * .025))
+
+  return {
+    zIndex: 20 - Math.round(distance),
+    opacity: Math.max(0, 1 - Math.max(0, distance - 1.35) * .7),
+    pointerEvents: distance > 1.8 ? 'none' : 'auto',
+    transform: `translate3d(calc(-50% + ${x}px), ${distance * 11}px, ${-distance * 38}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`,
+    transition: isCardDragging.value ? 'none' : 'transform 460ms cubic-bezier(.16, 1, .3, 1), opacity 300ms ease',
+  }
+}
+
+function startCardDrag(event) {
+  if (!cardStore.cards.length) return
+  cardPointerStart = event.clientX
+  cardDragOffset.value = 0
+  cardWasDragged = false
+  isCardDragging.value = true
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+}
+
+function moveCardDrag(event) {
+  if (!isCardDragging.value) return
+  const rawOffset = event.clientX - cardPointerStart
+  const atFirst = activeCardIndex.value === 0 && rawOffset > 0
+  const atLast = activeCardIndex.value === cardStore.cards.length - 1 && rawOffset < 0
+  cardDragOffset.value = (atFirst || atLast) ? rawOffset * .32 : rawOffset
+  if (Math.abs(rawOffset) > 5) cardWasDragged = true
+}
+
+function endCardDrag(event) {
+  if (!isCardDragging.value) return
+  event.currentTarget.releasePointerCapture?.(event.pointerId)
+  const step = 98
+  const movedCards = Math.abs(cardDragOffset.value) > 28
+    ? Math.max(1, Math.round(Math.abs(cardDragOffset.value) / step))
+    : 0
+  const direction = cardDragOffset.value < 0 ? 1 : -1
+  activeCardIndex.value = Math.max(0, Math.min(cardStore.cards.length - 1, activeCardIndex.value + direction * movedCards))
+  isCardDragging.value = false
+  cardDragOffset.value = 0
+}
+
+function selectDeckCard(index, card) {
+  if (cardWasDragged) {
+    cardWasDragged = false
+    return
+  }
+  if (index !== activeCardIndex.value) {
+    activeCardIndex.value = index
+    return
+  }
+  router.push(`/mypage/cards/${card.id}/transactions`)
+}
 
 const totalBalance = computed(() => accounts.value.reduce(
   (total, account) => total + Number(account.balance ?? 0),
@@ -150,6 +217,7 @@ async function removeCard(card) {
   try {
     await deleteCard(card.id)
     cardStore.cards = cardStore.cards.filter((item) => item.id !== card.id)
+    activeCardIndex.value = Math.max(0, Math.min(activeCardIndex.value, cardStore.cards.length - 1))
   } catch (error) {
     console.error('카드 연동 해제 실패', error)
     errorMessage.value = error.response?.data?.message ?? '카드 연동 해제에 실패했습니다.'
@@ -222,17 +290,27 @@ async function removeCard(card) {
 
       <section class="asset-section card-section">
         <div class="section-title"><div><h2>내 카드</h2><small>좌우로 밀어 카드를 확인하세요</small></div><span>{{ cardStore.cards.length }}장</span></div>
-        <div class="card-carousel">
-          <article
-            v-for="card in cardStore.cards"
+        <div
+          v-if="cardStore.cards.length"
+          class="card-deck"
+          :class="{ dragging: isCardDragging }"
+          @pointerdown="startCardDrag"
+          @pointermove="moveCardDrag"
+          @pointerup="endCardDrag"
+          @pointercancel="endCardDrag"
+        >
+          <button
+            v-for="(card, index) in cardStore.cards"
             :key="card.id"
-            class="card-slide"
-            :style="{ '--card-color': resolveCardMeta(card).color, '--card-text': resolveCardMeta(card).text }"
+            type="button"
+            class="card-deck-item"
+            :class="{ active: activeCardIndex === index }"
+            :style="[cardDeckStyle(index), { '--card-color': resolveCardMeta(card).color, '--card-text': resolveCardMeta(card).text }]"
+            @click="selectDeckCard(index, card)"
           >
             <div
               class="card-visual-big"
               :class="{ 'is-photo': cardVisualImage(card) }"
-              @click="router.push(`/mypage/cards/${card.id}/transactions`)"
             >
               <img v-if="cardVisualImage(card)" :src="cardVisualImage(card)" alt="" class="card-visual-photo" />
               <template v-else>
@@ -244,25 +322,30 @@ async function removeCard(card) {
                 <div class="card-visual-number">{{ card.maskedCardNumber || '카드번호 비공개' }}</div>
               </template>
             </div>
-            <div class="card-info-panel">
-              <div>
-                <strong>{{ card.cardName }}</strong>
-                <dl>
-                  <div><dt>카드사</dt><dd>{{ resolveCardMeta(card).name }}</dd></div>
-                  <div><dt>카드번호</dt><dd>{{ card.maskedCardNumber || '비공개' }}</dd></div>
-                </dl>
-              </div>
-              <button type="button" class="delete-button" :disabled="isDeleting(`card-${card.id}`)" @click.stop="removeCard(card)">
-                {{ isDeleting(`card-${card.id}`) ? '처리 중' : '연동 해제' }}
-              </button>
-            </div>
-          </article>
-          <button type="button" class="card-slide card-add-slide" @click="router.push('/profile/financial?step=9&from=asset')">
-            <span>＋</span>
-            <strong>카드 추가하기</strong>
-            <small>소비 내역을 함께 관리해요</small>
           </button>
         </div>
+
+        <Transition name="card-detail" mode="out-in">
+          <div v-if="activeCard" :key="activeCard.id" class="active-card-info">
+            <div class="card-info-panel">
+              <div>
+                <strong>{{ activeCard.cardName }}</strong>
+                <dl>
+                  <div><dt>카드사</dt><dd>{{ resolveCardMeta(activeCard).name }}</dd></div>
+                  <div><dt>카드번호</dt><dd>{{ activeCard.maskedCardNumber || '비공개' }}</dd></div>
+                </dl>
+              </div>
+              <button type="button" class="delete-button" :disabled="isDeleting(`card-${activeCard.id}`)" @click.stop="removeCard(activeCard)">
+                {{ isDeleting(`card-${activeCard.id}`) ? '처리 중' : '연동 해제' }}
+              </button>
+            </div>
+          </div>
+        </Transition>
+
+        <button type="button" class="card-add-button" @click="router.push('/profile/financial?step=9&from=asset')">
+            <span>＋</span>
+            <span><strong>카드 추가하기</strong><small>소비 내역을 함께 관리해요</small></span>
+        </button>
       </section>
 
       <aside class="unlink-note">
@@ -335,4 +418,19 @@ async function removeCard(card) {
 .card-add-slide>span{display:grid;width:38px;height:38px;place-items:center;border-radius:13px;background:#e5efff;color:#2865ca;font-size:20px}
 .card-add-slide>strong{margin-top:11px;font-size:12px;font-weight:800}
 .card-add-slide>small{margin-top:4px;color:#8c9bb0;font-size:8.5px}
+.card-deck{position:relative;height:292px;margin:0 -18px;overflow:hidden;perspective:900px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+.card-deck.dragging{cursor:grabbing}
+.card-deck-item{position:absolute;top:7px;left:50%;width:168px;padding:0;border:0;background:transparent;transform-style:preserve-3d;will-change:transform,opacity;-webkit-tap-highlight-color:transparent}
+.card-deck-item:not(.active) .card-visual-big{box-shadow:0 7px 15px rgba(16,25,43,.11)}
+.card-deck-item.active .card-visual-big{box-shadow:0 17px 31px rgba(16,43,112,.24)}
+.active-card-info{margin-top:1px;transform-origin:center top}
+.active-card-info>.card-info-panel{min-height:112px}
+.card-detail-enter-active,.card-detail-leave-active{transition:opacity .18s ease,transform .32s cubic-bezier(.16,1,.3,1)}
+.card-detail-enter-from{opacity:0;transform:translateY(8px) scale(.94)}
+.card-detail-leave-to{opacity:0;transform:translateY(-3px) scale(.97)}
+.card-add-button{display:flex;align-items:center;gap:10px;width:100%;margin-top:11px;padding:10px 13px;border:1px dashed #b9c9df;border-radius:15px;background:#f8fbff;color:#1d4f9f;text-align:left}
+.card-add-button>span:first-child{display:grid;width:34px;height:34px;flex:none;place-items:center;border-radius:11px;background:#e5efff;color:#2865ca;font-size:18px}
+.card-add-button strong,.card-add-button small{display:block}
+.card-add-button strong{font-size:11px;font-weight:800}
+.card-add-button small{margin-top:3px;color:#8c9bb0;font-size:8px}
 </style>
