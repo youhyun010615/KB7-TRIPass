@@ -151,8 +151,7 @@ const notificationRows = [
       <section class="member-card">
         <span class="member-card-glow" aria-hidden="true"></span>
         <header class="member-card-head">
-          <img src="@/assets/brand/tripass-text.png" alt="TRIPASS" />
-          <span>MEMBER · {{ authStore.user?.id ?? '000000' }}</span>
+          <span>TRIPASS MEMBER CARD</span>
         </header>
 
         <div class="member-profile">
@@ -301,12 +300,7 @@ const notificationRows = [
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-.member-card-head img {
-  width: 76px;
-  height: auto;
-  filter: brightness(0) invert(1);
+  justify-content: flex-end;
 }
 .member-card-head span {
   color: rgba(255, 255, 255, .52);
