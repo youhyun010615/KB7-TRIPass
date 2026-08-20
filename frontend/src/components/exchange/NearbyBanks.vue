@@ -721,7 +721,9 @@ function goToDetail(bank) {
 }
 .title {
   display: flex;
-  justify-content: space-between;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 8px;
   margin: 18px 2px 8px;
   flex-shrink: 0;
 }
@@ -732,7 +734,8 @@ function goToDetail(bank) {
 }
 .title span {
   color: #718097;
-  font-size: 8px;
+  font-size: 9.5px;
+  font-weight: 600;
 }
 .list {
   flex: 1;
