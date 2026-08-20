@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BottomNav from '@/components/common/BottomNav.vue'
 import TransactionEditModal from '@/components/asset/TransactionEditModal.vue'
 import { useAssetStore } from '@/stores/asset'
 import api from '@/api'
@@ -153,8 +152,6 @@ const rows = computed(() => {
       <p v-if="item.country" class="trip-note">이 거래는 등록한 {{ item.country }} 여행 기간에 포함된 내역이에요.</p>
     </template>
     <p v-else class="empty">거래내역을 찾을 수 없어요.</p>
-
-    <BottomNav />
 
     <TransactionEditModal
       :model-value="Boolean(editMode)"
