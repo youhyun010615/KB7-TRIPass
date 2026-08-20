@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
+import TransactionFilterSheet from '@/components/asset/TransactionFilterSheet.vue'
 import { useCardStore } from '@/stores/cardStore'
 import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
@@ -79,7 +80,8 @@ const now = new Date()
 const initialSyncStartDate = toLocalDateStr(threeMonthsAgoFrom(now))
 const startDate = ref(initialSyncStartDate)
 const endDate = ref(toLocalDateStr(now))
-const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+const period = ref('3개월')
+const sort = ref('latest')
 
 function monthlyRanges(from, to) {
   const ranges = []
@@ -105,22 +107,23 @@ function parseTime(value) {
   return String(value ?? '00:00').split(':').map(Number)
 }
 
-const groups = computed(() => cardStore.cardTransactions.reduce((result, transaction) => {
+const rawGroups = computed(() => cardStore.cardTransactions.reduce((result, transaction) => {
   const [year, month, day] = parseDate(transaction.transactionDate)
   if (!year || !month || !day) return result
 
   const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  const jsDate = new Date(year, month - 1, day)
-  const label = `${date.replaceAll('-', '.')} (${DAYS[jsDate.getDay()]})`
-  const [hour = 0, minute = 0] = parseTime(transaction.transactionTime)
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`
+  const [hour = 0, minute = 0, second = 0] = parseTime(transaction.transactionTime)
+  const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
   const item = {
     id: transaction.id,
     merchant: transaction.merchantName ?? '(가맹점명 없음)',
     category: transaction.categoryName ?? '기타',
     method: card.value?.cardName ?? '',
     amount: -Math.abs(Number(transaction.amount)),
-    time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
-    dateLabel: label,
+    time,
+    transactionDate: date,
+    transactionDateText: `${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')} ${time}`,
     balanceAfter: null,
     memo: transaction.memo ?? '',
     merchantType: transaction.merchantType ?? '',
@@ -128,11 +131,29 @@ const groups = computed(() => cardStore.cardTransactions.reduce((result, transac
     sourceType: 'CARD',
   }
 
-  const group = result.find((entry) => entry.date === date)
+  const group = result.find((entry) => entry.date === monthKey)
   if (group) group.items.push(item)
-  else result.push({ date, label, items: [item] })
+  else result.push({ date: monthKey, label: `${year}.${String(month).padStart(2, '0')}`, items: [item] })
   return result
 }, []))
+
+const groups = computed(() => rawGroups.value
+  .map((group) => ({
+    ...group,
+    items: [...group.items].sort((a, b) => {
+      const aKey = `${a.transactionDate} ${a.time}`
+      const bKey = `${b.transactionDate} ${b.time}`
+      return sort.value === 'latest' ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey)
+    }),
+  }))
+  .sort((a, b) => sort.value === 'latest' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)))
+
+function applyFilters(value) {
+  startDate.value = value.startDate
+  endDate.value = value.endDate
+  period.value = value.period
+  sort.value = value.sort
+}
 
 async function loadTransactions() {
   loading.value = true
@@ -225,12 +246,8 @@ function openTransaction(item) {
           <strong>{{ transactionCount }}건</strong>
         </div>
       </div>
-      <section class="date-filter">
-        <label><span><b>▦</b> 시작일</span><input v-model="startDate" type="date" :max="endDate"></label>
-        <i>→</i>
-        <label><span><b>▦</b> 종료일</span><input v-model="endDate" type="date" :min="startDate" :max="toLocalDateStr(now)"></label>
-      </section>
-      <TransactionGroups :groups="groups" :show-icons="false" :loading="loading || syncing" @select="openTransaction" />
+      <TransactionFilterSheet :start-date="startDate" :end-date="endDate" :period="period" :sort="sort" @apply="applyFilters" />
+      <TransactionGroups :groups="groups" :show-icons="false" :bank-layout="true" :loading="loading || syncing" @select="openTransaction" />
     </section>
   </main>
 </template>
@@ -256,6 +273,5 @@ function openTransaction(item) {
 .sync-message{margin:10px 20px 0;padding:9px 12px;border-radius:9px;background:#eaf2ff;color:#173f8d;font-size:10px;text-align:center}.sync-message.error{background:#ffebee;color:#c62828}
 .history-panel{margin:16px 20px 0;padding:20px 18px 4px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(16,25,43,.05)}
 .history-title{display:flex;align-items:flex-end;justify-content:space-between}.history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}.history-title h2{margin:3px 0 0;color:#10192d;font-size:16px;font-weight:900}.history-tools{display:flex;align-items:flex-end;flex-direction:column;gap:5px}.history-tools button{display:flex;align-items:center;gap:4px;padding:6px 9px;border-radius:9px;background:#eaf2ff;color:#173f8d;font-size:8.5px;font-weight:900}.history-tools button:disabled{opacity:.55}.history-tools button span{color:#286ce0;font-size:12px}.history-tools strong{color:#94a3b8;font-size:10px;font-weight:700}
-.date-filter{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);align-items:center;gap:7px;margin:15px 0;padding:0;background:transparent}.date-filter label{min-width:0;padding:10px;border:1px solid #dce6f5;border-radius:12px;background:#f7f9fd;transition:border-color .2s,box-shadow .2s}.date-filter label:focus-within{border-color:#286ce0;box-shadow:0 0 0 3px rgba(40,108,224,.1);background:#fff}.date-filter label span{display:flex;align-items:center;gap:4px;margin-bottom:6px;color:#7186aa;font-size:8px;font-weight:800}.date-filter label span b{color:#286ce0;font-size:10px}.date-filter input{width:100%;min-width:0;border:0;background:transparent;color:#10192d;font-size:8.5px;font-weight:800;outline:0}.date-filter i{color:#94a3b8;font-size:11px;font-style:normal;text-align:center}
 .history-panel :deep(.transaction-groups section){margin:0 0 20px}.history-panel :deep(.transaction-groups h3){margin:0;padding:12px 2px 9px;border-bottom:1px solid #eef1f6;color:#7186aa;font-size:11px;font-weight:800}.history-panel :deep(.transaction-groups section.without-icons button){grid-template-columns:minmax(0,1fr) auto;gap:10px;margin:0;padding:14px 2px;border:0;border-bottom:1px solid #eef1f6;border-radius:0;box-shadow:none}.history-panel :deep(.transaction-groups .dot){display:none}.history-panel :deep(.transaction-groups span b){color:#10192d;font-size:12px;font-weight:700}.history-panel :deep(.transaction-groups span small){max-width:190px;margin-top:5px;color:#94a3b8;font-size:8.5px}.history-panel :deep(.transaction-groups strong){font-size:12px;font-weight:800}.history-panel :deep(.transaction-groups time){margin-top:5px;color:#94a3b8;font-size:8.5px}.history-panel :deep(.transaction-groups .withdrawal){color:#e8484f}
 </style>

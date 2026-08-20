@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TransactionGroups from '@/components/asset/TransactionGroups.vue'
+import TransactionFilterSheet from '@/components/asset/TransactionFilterSheet.vue'
 import { useAssetStore, bankPresentationByName } from '@/stores/asset'
 import api from '@/api'
 
@@ -25,6 +26,8 @@ function resolveBankMeta(name) {
 }
 const isReal = route.query.isReal === 'true'
 const filter = ref('all')
+const period = ref('3개월')
+const sort = ref('latest')
 
 function toLocalDateStr(d) {
   const y = d.getFullYear()
@@ -46,7 +49,6 @@ const today = toLocalDateStr(new Date())
 const threeMonthsAgo = toLocalDateStr(threeMonthsAgoFrom(new Date()))
 const startDate = ref(isReal ? threeMonthsAgo : '2026-06-20')
 const endDate = ref(isReal ? today : '2026-07-19')
-const tabs = [{ id: 'all', label: '전체' }, { id: 'deposit', label: '입금' }, { id: 'withdrawal', label: '출금' }]
 const realAccount = ref({ name: '', number: '', type: '', bank: '', balance: 0 })
 const realTransactions = ref([])
 
@@ -124,7 +126,7 @@ function maskedAccountNumber(number) {
 
 const accountTransactions = computed(() => isReal ? [] : asset.transactionsByAccount(account.value?.id))
 
-const groups = computed(() => {
+const rawGroups = computed(() => {
   if (isReal) {
     return realTransactions.value.reduce((result, t) => {
       const [y, mo, d] = Array.isArray(t.transactionDate) ? t.transactionDate : t.transactionDate.split('-').map(Number)
@@ -144,6 +146,7 @@ const groups = computed(() => {
           : (realAccount.value.name || route.query.name || ''),
         amount,
         time,
+        transactionDate: date,
         transactionDateText: `${String(mo).padStart(2, '0')}.${String(d).padStart(2, '0')} ${time}`,
         balanceAfter: Number(t.balanceAfter ?? 0),
         memo: t.memo ?? '',
@@ -174,6 +177,25 @@ const groups = computed(() => {
       return result
     }, [])
 })
+
+const groups = computed(() => rawGroups.value
+  .map((group) => ({
+    ...group,
+    items: [...group.items].sort((a, b) => {
+      const aKey = `${a.transactionDate ?? a.date ?? ''} ${a.time ?? ''}`
+      const bKey = `${b.transactionDate ?? b.date ?? ''} ${b.time ?? ''}`
+      return sort.value === 'latest' ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey)
+    }),
+  }))
+  .sort((a, b) => sort.value === 'latest' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)))
+
+function applyFilters(value) {
+  startDate.value = value.startDate
+  endDate.value = value.endDate
+  period.value = value.period
+  filter.value = value.type
+  sort.value = value.sort
+}
 </script>
 
 <template>
@@ -197,13 +219,7 @@ const groups = computed(() => {
 
     <section class="history-panel">
       <div class="history-title"><div><small>ACCOUNT HISTORY</small><h2>거래내역</h2></div><span>{{ groups.reduce((sum, group) => sum + group.items.length, 0) }}건</span></div>
-      <section class="date-filter">
-        <span class="calendar-mark">▦</span>
-        <label aria-label="시작일"><input v-model="startDate" type="date" :max="endDate"></label>
-        <i>~</i>
-        <label aria-label="종료일"><input v-model="endDate" type="date" :min="startDate"></label>
-      </section>
-    <div class="tabs"><button v-for="tab in tabs" :key="tab.id" :class="{ active: filter === tab.id }" type="button" @click="filter = tab.id">{{ tab.label }}</button></div>
+      <TransactionFilterSheet :start-date="startDate" :end-date="endDate" :period="period" :type="filter" :sort="sort" :supports-type="true" @apply="applyFilters" />
     <TransactionGroups :groups="groups" :show-icons="false" :bank-layout="true" :loading="loading" @select="isReal ? router.push({ path: `/asset/transactions/${$event.id}`, state: { item: $event } }) : router.push(`/asset/transactions/${$event.id}`)" />
     </section>
   </main>
@@ -235,14 +251,6 @@ const groups = computed(() => {
 .history-title small{display:block;color:#286ce0;font-family:'Space Mono',monospace;font-size:7.5px;font-weight:800;letter-spacing:.11em}
 .history-title h2{margin-top:3px;color:#10192d;font-size:16px;font-weight:900}
 .history-title>span{color:#94a3b8;font-size:10px;font-weight:700}
-.date-filter{display:grid;grid-template-columns:20px minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:5px;margin-top:15px;padding:11px 4px 9px;border-bottom:1.5px solid #667085;background:#fff}
-.calendar-mark{display:grid;width:19px;height:19px;place-items:center;color:#173f8d;font-size:12px}
-.date-filter label{min-width:0}
-.date-filter input{width:100%;min-width:0;border:0;background:transparent;color:#202938;font-size:9px;font-weight:800;outline:0}
-.date-filter i{color:#667085;font-size:10px;font-style:normal}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 15px;padding:4px;border-radius:12px;background:#f4f7fb;text-align:center}
-.tabs button{padding:8px 0;border-radius:9px;color:#7186aa;font-size:10px;font-weight:700}
-.tabs button.active{background:#fff;color:#173f8d;box-shadow:0 3px 8px rgba(29,50,82,.08)}
 .history-panel :deep(.transaction-groups section){margin:0 0 20px}
 .history-panel :deep(.transaction-groups h3){margin:0;padding:12px 2px 9px;border-bottom:1px solid #eef1f6;color:#7186aa;font-size:11px;font-weight:800}
 .history-panel :deep(.transaction-groups section.without-icons button){grid-template-columns:minmax(0,1fr) auto;gap:10px;margin:0;padding:14px 2px;border:0;border-bottom:1px solid #eef1f6;border-radius:0;box-shadow:none}
