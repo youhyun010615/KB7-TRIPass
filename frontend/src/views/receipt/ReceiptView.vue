@@ -2369,6 +2369,7 @@ onMounted(loadPage)
 .receipt-sort-select { position: relative; }
 
 .receipt-sort-select select {
+  color-scheme: light;
   height: 30px;
   padding: 0 27px 0 10px;
   border: 1px solid rgba(255, 255, 255, .24);
@@ -2383,7 +2384,10 @@ onMounted(loadPage)
   font-weight: 850;
 }
 
-.receipt-sort-select select option { color: #17243a; background: #fff; }
+.receipt-sort-select select option {
+  background-color: #fff;
+  color: #17243a;
+}
 .receipt-sort-select .sr-only {
   position: absolute;
   width: 1px;
