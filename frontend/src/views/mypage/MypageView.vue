@@ -278,10 +278,10 @@ const notificationRows = [
   position: relative;
   overflow: hidden;
   padding: 18px;
-  border: 1px solid rgba(151, 184, 255, .3);
+  border: 1px solid rgba(105, 151, 232, .22);
   border-radius: 22px;
-  background: linear-gradient(145deg, #1f57d8 0%, #2662ea 58%, #4b7df0 100%);
-  box-shadow: 0 12px 26px rgba(38, 98, 234, .28);
+  background: linear-gradient(145deg, #0b2a6b 0%, #123c94 62%, #174da7 100%);
+  box-shadow: 0 12px 26px rgba(11, 42, 107, .22);
   color: #fff;
 }
 .member-card-glow {
@@ -306,11 +306,11 @@ const notificationRows = [
   font-weight: 800;
 }
 .member-card-head span {
-  color: rgba(255, 255, 255, .52);
+  color: #ffd466;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: .08em;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
 }
 .member-profile {
   position: relative;
