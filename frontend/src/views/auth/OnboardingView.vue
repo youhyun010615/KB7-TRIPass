@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
+import aiIcon from '@/assets/icons/ai.svg'
+import moneyExchangeIcon from '@/assets/icons/money-exchange.svg'
 
 const router = useRouter()
 
@@ -9,7 +11,7 @@ const slides = [
   {
     key: 'journey',
     eyebrow: '',
-    title: ['여행을 준비하는', '가장 똑똑한 금융 습관'],
+    title: [],
     description: '',
   },
   {
@@ -157,6 +159,14 @@ function onTouchEnd() {
                       <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
                     </svg>
                     <strong class="brand-name">TRIPASS</strong>
+                  </div>
+                  <h1 class="journey-tagline">여행을 준비하는<br />가장 똑똑한 금융 습관</h1>
+                  <div class="journey-feature-strip" aria-label="TRIPASS 주요 기능">
+                    <div><span>₩</span><strong>저축 목표</strong></div>
+                    <i aria-hidden="true"></i>
+                    <div><span><img :src="moneyExchangeIcon" alt="" /></span><strong>여행 지출</strong></div>
+                    <i aria-hidden="true"></i>
+                    <div class="ai-feature"><span><img :src="aiIcon" alt="" /></span><strong>AI 리포트</strong></div>
                   </div>
                 </div>
 
@@ -1169,7 +1179,7 @@ function onTouchEnd() {
 
 .brand-logo-stage {
   display: flex;
-  height: 178px;
+  height: 158px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1228,8 +1238,8 @@ function onTouchEnd() {
 
 .logo-takeoff-plane {
   position: absolute;
-  top: 28px;
-  left: calc(50% + 34px);
+  top: 79px;
+  left: calc(50% - 53px);
   z-index: 5;
   width: 27px;
   height: 27px;
@@ -1250,18 +1260,101 @@ function onTouchEnd() {
   letter-spacing: 0.14em;
 }
 
+.brand-name {
+  color: #fff;
+  text-shadow: 0 8px 20px rgba(2, 17, 55, 0.22);
+}
+
 .slide.is-active .brand-app-icon {
   animation: app-icon-arrive 680ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both,
     app-icon-float 3.6s ease-in-out 850ms infinite;
 }
 
 .slide.is-active .logo-takeoff-route {
-  animation: logo-route-draw 3.4s cubic-bezier(0.22, 1, 0.36, 1) 700ms infinite;
+  display: none;
 }
 
 .slide.is-active .logo-takeoff-plane {
-  animation: logo-plane-takeoff 3.4s cubic-bezier(0.22, 1, 0.36, 1) 700ms infinite;
+  animation: logo-plane-on-curve 2.8s cubic-bezier(0.42, 0, 0.2, 1) 650ms infinite;
 }
+
+.journey-feature-strip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.journey-tagline {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 850;
+  line-height: 1.48;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+.journey-feature-strip div {
+  display: flex;
+  width: 66px;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+}
+
+.journey-feature-strip div span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  color: var(--yellow);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.04);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.journey-feature-strip div span img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(87%) sepia(94%) saturate(739%) hue-rotate(327deg) brightness(103%) contrast(102%);
+}
+
+.journey-feature-strip div strong {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.journey-feature-strip > i {
+  width: 16px;
+  height: 1px;
+  margin-top: 19px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.16);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.slide.is-active .journey-feature-strip div { animation: feature-arrive 480ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.slide.is-active .journey-feature-strip div:nth-of-type(1) { animation-delay: 620ms; }
+.slide.is-active .journey-feature-strip div:nth-of-type(2) { animation-delay: 800ms; }
+.slide.is-active .journey-feature-strip div:nth-of-type(3) { animation-delay: 980ms; }
+.slide.is-active .journey-feature-strip > i { animation: feature-connect 420ms ease-out both; }
+.slide.is-active .journey-feature-strip > i:nth-of-type(1) { animation-delay: 760ms; }
+.slide.is-active .journey-feature-strip > i:nth-of-type(2) { animation-delay: 940ms; }
+.slide.is-active .journey-feature-strip div span { animation: feature-pulse 2.4s ease-in-out 1.3s infinite; }
+.slide.is-active .journey-feature-strip .ai-feature span { animation: ai-feature-orbit 2.8s ease-in-out 1.3s infinite; }
+.slide.is-active .journey-feature-strip .ai-feature span img { animation: ai-feature-blink 1.8s ease-in-out 1.3s infinite; }
 
 .saving-visual {
   gap: 12px;
@@ -1607,12 +1700,37 @@ function onTouchEnd() {
   84%, 100% { opacity: 0; transform: rotate(-21deg) scaleX(1); }
 }
 
-@keyframes logo-plane-takeoff {
-  0%, 16% { opacity: 1; transform: translate(0, 0) rotate(45deg) scale(0.78); }
-  24% { opacity: 1; transform: translate(8px, -7px) rotate(45deg) scale(0.9); }
-  56% { opacity: 1; transform: translate(112px, -78px) rotate(48deg) scale(1); }
-  82% { opacity: 0; transform: translate(calc(50vw - 20px), -35vh) rotate(51deg) scale(0.8); }
-  100% { opacity: 0; transform: translate(calc(50vw - 20px), -35vh) rotate(51deg) scale(0.8); }
+@keyframes logo-plane-on-curve {
+  0%, 12% { opacity: 0; transform: translate(0, 0) rotate(54deg) scale(0.66); }
+  22% { opacity: 1; }
+  45% { opacity: 1; transform: translate(48px, -20px) rotate(48deg) scale(0.82); }
+  72% { opacity: 1; transform: translate(88px, -55px) rotate(42deg) scale(0.96); }
+  88%, 100% { opacity: 0; transform: translate(105px, -76px) rotate(39deg) scale(0.78); }
+}
+
+@keyframes feature-arrive {
+  from { opacity: 0; transform: translateY(10px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes feature-connect {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes feature-pulse {
+  0%, 100% { transform: translateY(0); box-shadow: 0 0 0 rgba(255, 212, 94, 0); }
+  50% { transform: translateY(-3px); box-shadow: 0 0 16px rgba(255, 212, 94, 0.12); }
+}
+
+@keyframes ai-feature-orbit {
+  0%, 100% { transform: translateY(0) rotate(0); box-shadow: 0 0 0 rgba(255, 212, 94, 0); }
+  50% { transform: translateY(-3px) rotate(8deg); box-shadow: 0 0 18px rgba(255, 212, 94, 0.18); }
+}
+
+@keyframes ai-feature-blink {
+  0%, 100% { opacity: 0.72; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.08); }
 }
 
 @keyframes ai-orbit { to { transform: rotate(360deg); } }
@@ -1627,7 +1745,7 @@ function onTouchEnd() {
   .flight-route { margin-top: 18px; }
   .visual-stage { min-height: 185px; }
   .slide-eyebrow + .visual-stage { min-height: 190px; }
-  .brand-logo-stage { height: 150px; }
+  .brand-logo-stage { height: 140px; }
   .brand-app-icon { width: 82px; height: 82px; }
   .brand-app-icon-wrap { width: 98px; height: 98px; }
   .saving-visual { gap: 8px; }
@@ -1646,6 +1764,11 @@ function onTouchEnd() {
   .slide.is-active .brand-app-icon,
   .slide.is-active .logo-takeoff-route,
   .slide.is-active .logo-takeoff-plane,
+  .slide.is-active .journey-feature-strip div,
+  .slide.is-active .journey-feature-strip > i,
+  .slide.is-active .journey-feature-strip div span,
+  .slide.is-active .journey-feature-strip .ai-feature span,
+  .slide.is-active .journey-feature-strip .ai-feature span img,
   .slide.is-active .brand-logo-halo,
   .slide.is-active .brand-flight-path span,
   .slide.is-active .brand-flight-path b,
