@@ -467,10 +467,19 @@ function showPastSchedules() {
   margin: 16px -5px 0;
   padding: 0 5px 5px;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
   scroll-behavior: smooth;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #c7d3e4 transparent;
+}
+.upcoming-list::-webkit-scrollbar {
+  width: 6px;
+}
+.upcoming-list::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: #c7d3e4;
 }
 .date-group h3 {
   display: flex;

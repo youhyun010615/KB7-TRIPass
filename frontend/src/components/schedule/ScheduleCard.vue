@@ -62,6 +62,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   box-shadow: 0 4px 12px rgba(16, 25, 43, .055);
   color: #10192d;
   text-align: left;
+  touch-action: pan-y;
 }
 .schedule-time {
   display: flex;
