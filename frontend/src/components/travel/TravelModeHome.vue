@@ -10,9 +10,13 @@ import {
 import { useExchangeStore } from '@/stores/exchange';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import foodIcon from '@/assets/icons/food.svg';
+import foodIconRaw from '@/assets/icons/food.svg?raw';
 import cafeIcon from '@/assets/icons/cafe.svg';
+import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
 import shoppingIcon from '@/assets/icons/shopping-cart.svg';
+import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
 import taxiIcon from '@/assets/icons/taxi.svg';
+import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -204,17 +208,40 @@ const categoryIconImages = {
   쇼핑: shoppingIcon,
   교통: taxiIcon,
 };
+const categoryIconRawImages = {
+  식비: foodIconRaw,
+  카페: cafeIconRaw,
+  쇼핑: shoppingIconRaw,
+  교통: taxiIconRaw,
+};
+const categoryPresentation = {
+  식비: { color: '#e0613d', soft: '#fff0ec' },
+  교통: { color: '#3478e5', soft: '#edf4ff' },
+  쇼핑: { color: '#7449ad', soft: '#f3effd' },
+  카페: { color: '#a66c12', soft: '#fff5e8' },
+  관광: { color: '#e25283', soft: '#ffedf3' },
+  숙박: { color: '#19a88b', soft: '#e7f6f5' },
+  생활비: { color: '#19a88b', soft: '#e7f6f5' },
+  기타: { color: '#718096', soft: '#f0f3f8' },
+};
 
 function getCategoryIcon(name) {
+  const presentation = categoryPresentation[name] || categoryPresentation.기타;
   return {
     iconSrc: categoryIconImages[name] || null,
+    iconRaw: categoryIconRawImages[name] || null,
     icon: categoryIcons[name] || '📁',
+    ...presentation,
   };
 }
 
 // 국가별 색상 — stores/travel.js의 getTravelCountryColors()가 유일한 소스다.
 // (여행모드의 다른 화면들과 색이 어긋나지 않도록 이 화면만의 사본을 두지 않는다)
 const getCountryPresentation = getTravelCountryColors;
+
+function coloredCategoryIcon(icon) {
+  return icon.iconRaw?.replaceAll('black', icon.color) || '';
+}
 
 // 국가별 색상 매핑 헬퍼 (저축모드와 동일한 headerBg 사용)
 function getCountryColor(countryName) {
@@ -228,18 +255,22 @@ const categorySummary = computed(() => tripStatus.value?.categorySummary || []);
 // 카테고리는 0원으로 채운다.
 const CATEGORY_ORDER = ['식비', '교통', '쇼핑', '카페', '관광', '숙박', '기타'];
 
-const maxCategoryTotal = computed(() => {
-  return Math.max(...categorySummary.value.map((c) => c.totalAmount), 1);
-});
+const totalCategorySpending = computed(() =>
+  categorySummary.value.reduce(
+    (sum, category) => sum + Number(category.totalAmount || 0),
+    0,
+  ),
+);
 
 const categoryList = computed(() => {
   const byName = new Map(categorySummary.value.map((cat) => [cat.categoryName, cat]));
 
   return CATEGORY_ORDER.map((name) => {
     const cat = byName.get(name);
-    const total = cat?.totalAmount || 0;
-    // 이제 바의 전체 길이를 maxCategoryTotal 대비로 설정 (비례적 표현)
-    const barWidthPercent = (total / maxCategoryTotal.value) * 100;
+    const total = Number(cat?.totalAmount || 0);
+    const ratio = totalCategorySpending.value > 0
+      ? (total / totalCategorySpending.value) * 100
+      : 0;
 
     const details = (cat?.countryDetails || []).map((d) => ({
       ...d,
@@ -250,7 +281,8 @@ const categoryList = computed(() => {
     return {
       name,
       total,
-      barWidth: barWidthPercent,
+      barWidth: ratio,
+      ratio: Math.round(ratio),
       details,
       icon: getCategoryIcon(name),
     };
@@ -810,40 +842,60 @@ async function switchMode(mode) {
       @click="router.push('/travel/funds')"
       @keydown.enter="router.push('/travel/funds')"
     >
-      <div class="card-title">
+      <div class="card-title budget-card-title">
         <h2>여행자금 체크</h2>
         <div class="legend" v-if="countries.length > 0">
           <span
             v-for="c in countries"
             :key="c.countryName"
             :style="{ color: getCountryColor(c.countryName) }"
-            >● {{ c.countryName }}</span
+          >● {{ c.countryName }}</span
           >
         </div>
       </div>
+      <div class="budget-total-block">
+        <span>총 지출</span>
+        <strong>{{ formatWon(totalCategorySpending) }}</strong>
+      </div>
+      <div class="budget-divider"></div>
+      <div class="budget-heading">
+        <span>카테고리별 지출</span>
+        <span>여행 기간</span>
+      </div>
       <div v-for="cat in categoryList" :key="cat.name" class="budget-row">
-        <span class="category"
-          ><i>
-            <img v-if="cat.icon.iconSrc" :src="cat.icon.iconSrc" alt="" />
+        <span class="category">
+          <i :style="{ background: cat.icon.soft }">
+            <span
+              v-if="cat.icon.iconRaw"
+              class="budget-category-icon"
+              v-html="coloredCategoryIcon(cat.icon)"
+            ></span>
             <template v-else>{{ cat.icon.icon }}</template>
           </i>
-          {{ cat.name }}</span
-        >
-        <div class="split-bar" :style="{ width: `${cat.barWidth}%` }">
-          <i
-            v-for="d in cat.details"
-            :key="d.countryName"
-            @mouseover="
-              showTooltip($event, `${d.countryName}: ${formatWon(d.amount)}`)
-            "
-            @mouseleave="hideTooltip"
-            :style="{
-              width: `${d.percent}%`,
-              background: getCountryColor(d.countryName),
-            }"
-          />
+          {{ cat.name }}
+        </span>
+        <div class="split-bar">
+          <div class="budget-bar-fill" :style="{ width: `${cat.barWidth}%` }">
+            <i
+              v-for="d in cat.details"
+              :key="d.countryName"
+              @mouseover="
+                showTooltip($event, `${d.countryName}: ${formatWon(d.amount)}`)
+              "
+              @mouseleave="hideTooltip"
+              :style="{
+                width: `${d.percent}%`,
+                background: getCountryColor(d.countryName),
+              }"
+            />
+            <i
+              v-if="cat.total > 0 && cat.details.length === 0"
+              :style="{ width: '100%', background: cat.icon.color }"
+            />
+          </div>
         </div>
-        <b>{{ formatWon(cat.total) }}</b>
+        <b class="budget-amount">{{ formatWon(cat.total) }}</b>
+        <b class="budget-ratio">{{ cat.ratio }}%</b>
       </div>
     </article>
     <article class="card">
@@ -1656,64 +1708,140 @@ async function switchMode(mode) {
 }
 .legend {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
-.legend span:first-child {
-  color: #276ce0;
+.budget-card {
+  padding: 20px;
+  border: 1px solid #e7edf9;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #fff 0%, #f8faff 100%);
+  box-shadow: 0 8px 22px rgba(16, 25, 43, 0.07);
 }
-.legend span:last-child {
-  color: #c12b40;
+.budget-card-title {
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+.budget-card-title h2 {
+  color: #173f8d;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.budget-total-block {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 12px;
+}
+.budget-total-block span {
+  color: #98a2b3;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.budget-total-block strong {
+  color: #10192b;
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 19px;
+  font-weight: 800;
+}
+.budget-divider {
+  height: 1px;
+  margin: 18px 0;
+  background: #eef1f7;
+}
+.budget-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.budget-heading span:first-child {
+  color: #10192b;
+  font-size: 13.5px;
+  font-weight: 900;
+}
+.budget-heading span:last-child {
+  color: #98a2b3;
+  font-size: 11px;
+  font-weight: 700;
 }
 .budget-row {
   display: grid;
-  grid-template-columns: 92px 1fr 76px;
+  grid-template-columns: 94px minmax(44px, 1fr) auto 30px;
   align-items: center;
-  gap: 7px;
-  height: 43px;
+  gap: 9px;
+  min-height: 45px;
 }
 .category {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11px;
+  gap: 9px;
+  color: #10192b;
+  font-size: 12.5px;
   font-weight: 700;
 }
 .category i {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   place-items: center;
-  border-radius: 50%;
-  background: #f3f5f8;
+  border-radius: 11px;
   font-style: normal;
+  font-size: 15px;
 }
-.category i img {
-  width: 14px;
-  height: 14px;
+.budget-category-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.budget-category-icon :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .single-bar,
 .split-bar {
   display: flex;
-  height: 7px;
+  height: 6px;
   overflow: hidden;
   border-radius: 99px;
-  background: #e8ebf2;
+  background: #edf0f6;
+}
+.budget-bar-fill {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  transform-origin: left;
+  animation: budget-bar-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .single-bar i,
-.split-bar i,
-.split-bar em {
+.budget-bar-fill i {
   display: block;
   height: 100%;
 }
-.split-bar i {
-  background: #0b3c90;
-}
-.split-bar em {
-  background: #a51530;
-}
-.budget-row > b {
-  text-align: right;
+.budget-amount {
+  color: #5a6478;
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+}
+.budget-ratio {
+  width: 30px;
+  color: #98a2b3;
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
+}
+@keyframes budget-bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 .budget-total {
   display: flex;
