@@ -7,6 +7,8 @@ import NotificationBell from '@/components/common/NotificationBell.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import TravelCardVisual from '@/components/common/TravelCardVisual.vue'
 import { useTripWalletStore } from '@/stores/tripWallet'
+import { useTravelModeStore } from '@/stores/travelMode'
+import { useTravelStore } from '@/stores/travel'
 import { getAccountInstitutions } from '@/api/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
 import { flagClassMap } from '@/stores/exchange'
@@ -15,6 +17,29 @@ const sampleTravelCardImage = getTravelCardImage('KB국민카드')
 
 const router = useRouter()
 const wallet = useTripWalletStore()
+const travelMode = useTravelModeStore()
+const travel = useTravelStore()
+const isTravelWallet = computed(() => travelMode.isTravelMode)
+
+const travelTargetAmount = computed(() => Number(
+  travel.activeTrip?.totalTargetAmount || wallet.targetAmount || 0,
+))
+const travelSpentAmount = computed(() => {
+  const countries = travel.tripStatus?.countries || []
+  if (countries.length) {
+    return countries.reduce((sum, country) => sum + Number(country.spentAmount || 0), 0)
+  }
+  return Number(travel.aggregatedBudget?.travelExpenseTotal || 0)
+})
+const travelUsagePercent = computed(() => {
+  if (travelTargetAmount.value <= 0) return 0
+  return Math.round((travelSpentAmount.value / travelTargetAmount.value) * 100)
+})
+const travelUsageBarPercent = computed(() => Math.min(100, travelUsagePercent.value))
+const emergencySpentAmount = computed(() => Math.max(
+  0,
+  Number(wallet.overTargetSpentAmount || travelSpentAmount.value - travelTargetAmount.value),
+))
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
 const walletHeaderEl = ref(null)
@@ -264,7 +289,19 @@ onMounted(async () => {
   }
 
   try {
-    await Promise.all([wallet.loadWalletMain(), wallet.loadAccounts(), wallet.loadAutoSaving(), wallet.loadForeignBalances()])
+    const tasks = [wallet.loadWalletMain(), wallet.loadAccounts(), wallet.loadAutoSaving(), wallet.loadForeignBalances()]
+    if (isTravelWallet.value) {
+      tasks.push((async () => {
+        await travel.loadActiveGoal()
+        if (travel.tripId) {
+          await Promise.all([
+            travel.loadTripStatus(travel.tripId),
+            travel.loadBudgetCheck(travel.tripId),
+          ])
+        }
+      })())
+    }
+    await Promise.all(tasks)
   } catch {
     showNotice(wallet.errorMessage)
   }
@@ -364,7 +401,7 @@ async function confirmUnlinkTravelCard() {
           <strong>{{ wallet.balance.toLocaleString('ko-KR') }}</strong>
           <span>원</span>
         </div>
-        <p class="emergency">여행 중에는 목표 자금 → 비상금 → 추가 최우기 순으로 사용해요.</p>
+        <p class="emergency">여행 중에는 목표 자금 → 비상금 → 추가 충전 순으로 사용해요.</p>
         <div class="wallet-actions">
           <button type="button" @click="openTransfer('charge')">채우기</button>
           <button type="button" @click="openTransfer('withdraw')">빼기</button>
@@ -373,7 +410,41 @@ async function confirmUnlinkTravelCard() {
       </div>
     </section>
 
-    <section class="wallet-status white-card">
+    <section v-if="isTravelWallet" class="travel-usage-card white-card">
+      <div class="travel-usage-head">
+        <div><small>TRAVEL FUND</small><h2>여행 자금 사용 현황</h2></div>
+        <strong>{{ travelUsagePercent }}%</strong>
+      </div>
+
+      <div class="travel-budget-progress">
+        <div class="travel-budget-progress-label">
+          <span>전체 여행 사용률</span><b>{{ travelUsagePercent }}%</b>
+        </div>
+        <div class="travel-budget-track">
+          <i :style="{ width: `${travelUsageBarPercent}%` }" />
+        </div>
+        <div class="travel-budget-meta">
+          <span><small>BUDGET</small>{{ money(travelTargetAmount) }}</span>
+          <span><small>SPENT</small>{{ money(travelSpentAmount) }}</span>
+        </div>
+      </div>
+
+      <div class="travel-fund-usage-list">
+        <article>
+          <span class="travel-fund-icon reserve">SOS</span>
+          <div><b>비상금 사용</b><small>목표 금액을 모두 사용한 뒤 자동으로 차감돼요</small></div>
+          <strong>{{ money(emergencySpentAmount) }}</strong>
+        </article>
+        <article>
+          <span class="travel-fund-icon charge">+</span>
+          <div><b>다른 계좌에서 추가</b><small>여행 중 월렛에 직접 채운 누적 금액이에요</small></div>
+          <strong>{{ money(wallet.externalChargeAmount) }}</strong>
+        </article>
+      </div>
+      <p class="wallet-status-note">환전은 월렛 안에서 자금을 옮기는 과정이라 여행 지출에 포함하지 않아요.</p>
+    </section>
+
+    <section v-else class="wallet-status white-card">
       <div class="section-title">
         <div><small>TRAVEL FUND</small><h2>월렛 현황</h2></div>
         <span v-if="wallet.overTargetSpentAmount > 0">목표 초과 지출 {{ money(wallet.overTargetSpentAmount) }}</span>
@@ -392,7 +463,7 @@ async function confirmUnlinkTravelCard() {
       <p class="wallet-status-note">환전은 월렛 내 자금 이동이며 지출로 계산하지 않아요.</p>
     </section>
 
-    <section class="saving-card white-card">
+    <section v-if="!isTravelWallet" class="saving-card white-card">
       <div class="section-title">
         <h2>월별 합산 금액</h2>
       </div>
@@ -847,4 +918,5 @@ async function confirmUnlinkTravelCard() {
 .wallet-actions button:nth-child(2){background:#fff;box-shadow:0 4px 10px rgba(35,73,136,.1)}
 .wallet-actions .history-button{background:transparent;color:#4c6385}
 .wallet-status{padding:21px 18px}.wallet-status .section-title{display:flex;align-items:flex-end;justify-content:space-between}.wallet-status .section-title small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.wallet-status .section-title h2{font-size:20px}.wallet-status .section-title>span{max-width:132px;padding:6px 8px;border-radius:999px;background:#fff0ed;color:#e2513c;font-size:9px;font-weight:800;text-align:center}.wallet-status-list{display:grid;gap:10px;margin-top:17px}.wallet-status-list article{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:13px;border-radius:15px;background:#f7f9fd}.wallet-status-list i{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#eaf1ff;color:#245fbf;font-size:11px;font-style:normal;font-weight:900}.wallet-status-list i.reserve{background:#fff5d8;color:#bc8400}.wallet-status-list i.charge{background:#e6f7f3;color:#087f6a}.wallet-status-list div{display:grid;gap:2px}.wallet-status-list b{font-size:12px}.wallet-status-list small{font-size:9px;color:#8b98aa}.wallet-status-list strong{font-size:12px;color:#173f8d}.wallet-status-note{margin-top:13px;padding:10px 12px;border-radius:11px;background:#eef4ff;color:#607393;font-size:9px;line-height:1.45}
+.travel-usage-card{padding:21px 18px}.travel-usage-head{display:flex;align-items:flex-end;justify-content:space-between}.travel-usage-head small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.travel-usage-head h2{margin-top:2px;font-size:20px;font-weight:800}.travel-usage-head>strong{color:#17499c;font-size:25px;font-weight:900}.travel-budget-progress{margin-top:17px;padding:17px 15px;border-radius:17px;background:linear-gradient(145deg,#123c84,#1c5dbd);color:#fff;box-shadow:0 10px 22px rgba(24,77,164,.17)}.travel-budget-progress-label{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800}.travel-budget-progress-label b{color:#ffd466;font-size:17px}.travel-budget-track{height:8px;margin-top:11px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}.travel-budget-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}.travel-budget-meta{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px;font-size:12px;font-weight:800}.travel-budget-meta span{display:grid;gap:2px}.travel-budget-meta span:last-child{text-align:right}.travel-budget-meta small{color:#b8cef2;font-size:8px;letter-spacing:.1em}.travel-fund-usage-list{display:grid;gap:9px;margin-top:12px}.travel-fund-usage-list article{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;padding:13px;border:1px solid #edf1f7;border-radius:15px;background:#f8faff}.travel-fund-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:12px;font-size:9px;font-weight:900}.travel-fund-icon.reserve{background:#fff3cf;color:#a96d00}.travel-fund-icon.charge{background:#e4f6f1;color:#087a69;font-size:18px}.travel-fund-usage-list div{display:grid;gap:3px}.travel-fund-usage-list b{font-size:12px}.travel-fund-usage-list small{color:#8a97aa;font-size:8.5px;line-height:1.35}.travel-fund-usage-list strong{color:#173f8d;font-size:12px;white-space:nowrap}
 </style>
