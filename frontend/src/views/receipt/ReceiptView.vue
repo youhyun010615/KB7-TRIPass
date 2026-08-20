@@ -2059,10 +2059,10 @@ onMounted(loadPage)
   overflow: hidden;
   margin-top: 16px;
   padding: 18px;
-  border: 1px solid rgba(121, 161, 229, .25);
+  border: 1px solid #dce5f2;
   border-radius: 22px;
-  background: linear-gradient(145deg, #0b2a61 0%, #123b82 58%, #174b9c 100%);
-  box-shadow: 0 12px 24px rgba(18, 48, 102, .18);
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(30, 64, 125, .08);
 }
 
 .trip-summary-heading {
@@ -2078,14 +2078,14 @@ onMounted(loadPage)
   flex: 0 0 46px;
   place-items: center;
   border-radius: 15px;
-  background: rgba(255, 255, 255, .13);
-  color: #ffd466;
+  background: #edf4ff;
+  color: #2f6fed;
 }
 
 .trip-summary-heading small {
   display: block;
   margin-top: 5px;
-  color: rgba(255, 255, 255, .65);
+  color: #8290a6;
   font-size: 10px;
   font-weight: 850;
   letter-spacing: .03em;
@@ -2097,7 +2097,7 @@ onMounted(loadPage)
   flex-wrap: wrap;
   align-items: center;
   gap: 7px;
-  color: #fff;
+  color: #142440;
   font-size: 17px;
   font-weight: 950;
   letter-spacing: -.035em;
@@ -2128,18 +2128,18 @@ onMounted(loadPage)
   min-height: 66px;
   padding: 13px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, .1);
+  background: #f4f7fc;
 }
 
 .trip-summary-metrics span {
-  color: rgba(255, 255, 255, .62);
+  color: #8997aa;
   font-size: 8px;
   font-weight: 850;
 }
 
 .trip-summary-metrics strong {
   overflow: hidden;
-  color: #fff;
+  color: #173f8d;
   font-size: 14px;
   font-weight: 950;
   text-overflow: ellipsis;
@@ -2148,7 +2148,7 @@ onMounted(loadPage)
 
 .trip-summary-metrics em {
   margin-left: 2px;
-  color: rgba(255, 255, 255, .72);
+  color: #72829a;
   font-size: 9px;
   font-style: normal;
 }
