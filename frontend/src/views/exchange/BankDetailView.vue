@@ -255,6 +255,10 @@ const copyToClipboard = (text) => {
             </div>
           </div>
 
+          <small class="applied-rate">
+            {{ exchange.lastUpdateDate }} 11:00 기준 · 환율
+            {{ format(estimate.buyRate) }}원 적용
+          </small>
           <div class="conversion-line">
             <input
               type="text"
@@ -272,21 +276,10 @@ const copyToClipboard = (text) => {
               }}{{ format(computedEstimatedAmount) }}</strong
             >
           </div>
-          <small v-if="exchange.lastUpdateDate" class="header-subtitle">
-            {{ exchange.lastUpdateDate }} 기준
-          </small>
           <dl>
             <div>
               <dt>살 때 환율</dt>
               <dd>{{ format(estimate.buyRate) }}원</dd>
-            </div>
-            <div>
-              <dt>팔 때 환율</dt>
-              <dd>{{ format(estimate.sellRate) }}원</dd>
-            </div>
-            <div>
-              <dt>기준 환율</dt>
-              <dd>{{ format(estimate.baseRate) }}원</dd>
             </div>
           </dl>
           <p>↗ 환율 우대 {{ estimate.buyFeeRate }}%</p>
@@ -562,6 +555,13 @@ aside {
   background: #f5f8fc;
   white-space: nowrap;
 }
+.applied-rate {
+  margin-top: 16px;
+  color: #8795aa !important;
+  font-size: 9.5px !important;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
 .amount-input {
   width: 88px;
   min-width: 0;
@@ -597,8 +597,11 @@ aside {
 }
 .estimate dl {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 16px;
+  grid-template-columns: 1fr;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: #f5f8fc;
 }
 .estimate dl > div {
   text-align: center;
