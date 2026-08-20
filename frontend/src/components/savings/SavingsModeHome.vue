@@ -621,7 +621,7 @@ async function switchMode(mode) {
 
             <!-- ② 사진 전체 배경 섹션 (나머지 전부) -->
             <div
-              class="relative"
+              class="relative ticket-photo-section"
               :style="
                 country.image
                   ? `background:url(${country.image}) center/cover no-repeat`
@@ -633,7 +633,7 @@ async function switchMode(mode) {
                 class="absolute inset-0 bg-black/30 pointer-events-none z-0"
               />
 
-              <div class="relative z-10 px-5 pt-6">
+              <div class="relative z-10 px-5 pt-6 ticket-photo-content">
                 <!-- DESTINATION / DEPARTURE / 설명 -->
                 <div class="flex items-center gap-2">
                   <div class="flex-none">
@@ -1322,6 +1322,14 @@ async function switchMode(mode) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ticket-photo-section {
+  display: flex;
+  min-height: 360px;
+  flex-direction: column;
+}
+.ticket-photo-content {
+  flex: 1;
 }
 .ticket-stub {
   height: 45px;
