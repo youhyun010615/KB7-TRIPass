@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   CalendarDays,
@@ -18,6 +18,13 @@ const router = useRouter()
 const route = useRoute()
 const travelModeStore = useTravelModeStore()
 const travelStore = useTravelStore()
+const indicatorStorageKey = 'tripass-bottom-nav-index'
+const initialIndicatorIndex = Number(window.sessionStorage.getItem(indicatorStorageKey))
+const displayedIndex = ref(Number.isInteger(initialIndicatorIndex) ? initialIndicatorIndex : 0)
+const indicatorMoving = ref(false)
+let indicatorTimer = null
+let firstFrame = null
+let secondFrame = null
 
 const savingsNavItems = [
   { name: '홈', path: '/', icon: House },
@@ -50,8 +57,18 @@ const activeIndex = computed(() => {
 })
 const activeItem = computed(() => navItems.value[activeIndex.value])
 const indicatorStyle = computed(() => ({
-  left: `${((activeIndex.value + 0.5) / navItems.value.length) * 100}%`,
+  left: `${((displayedIndex.value + 0.5) / navItems.value.length) * 100}%`,
 }))
+
+function moveIndicator(index) {
+  window.clearTimeout(indicatorTimer)
+  indicatorMoving.value = displayedIndex.value !== index
+  displayedIndex.value = index
+  indicatorTimer = window.setTimeout(() => {
+    indicatorMoving.value = false
+    window.sessionStorage.setItem(indicatorStorageKey, String(index))
+  }, 500)
+}
 
 async function openReceipt() {
   await travelStore.loadActiveGoal({ force: true })
@@ -63,18 +80,38 @@ async function openReceipt() {
 }
 
 async function handleNavigation(item) {
+  window.sessionStorage.setItem(indicatorStorageKey, String(activeIndex.value))
   if (item.action === 'receipt') {
     await openReceipt()
     return
   }
   await router.push(item.path)
 }
+
+watch(activeIndex, index => moveIndicator(index))
+
+onMounted(() => {
+  firstFrame = window.requestAnimationFrame(() => {
+    secondFrame = window.requestAnimationFrame(() => moveIndicator(activeIndex.value))
+  })
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(indicatorTimer)
+  window.cancelAnimationFrame(firstFrame)
+  window.cancelAnimationFrame(secondFrame)
+})
 </script>
 
 <template>
   <nav class="bottom-nav" aria-label="주요 메뉴">
     <div class="nav-shell">
-      <span class="moving-notch" :style="indicatorStyle" aria-hidden="true">
+      <span
+          class="moving-notch"
+          :class="{ moving: indicatorMoving }"
+          :style="indicatorStyle"
+          aria-hidden="true"
+      >
         <span class="notch-halo" />
         <span class="active-orb">
           <Transition name="icon-swap" mode="out-in">
@@ -114,31 +151,31 @@ async function handleNavigation(item) {
   z-index: 50;
   width: 100%;
   max-width: 390px;
-  height: 88px;
+  height: 98px;
   transform: translateX(-50%);
   pointer-events: none;
 }
 .nav-shell {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: max(10px, env(safe-area-inset-bottom));
   left: 0;
   display: grid;
   height: 68px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
   padding: 5px 7px max(4px, env(safe-area-inset-bottom));
-  border-radius: 25px 25px 0 0;
+  border-radius: 25px;
   background: linear-gradient(105deg, #0c2f73 0%, #174b9c 55%, #1e5eb8 100%);
   box-shadow: 0 -8px 24px rgba(12, 47, 115, .22);
   pointer-events: auto;
 }
 .moving-notch {
   position: absolute;
-  top: -27px;
+  top: -30px;
   z-index: 2;
-  width: 72px;
-  height: 62px;
+  width: 66px;
+  height: 66px;
   transform: translateX(-50%);
   transition: left .46s cubic-bezier(.22, .82, .2, 1);
   pointer-events: none;
@@ -150,27 +187,9 @@ async function handleNavigation(item) {
   background: #fff;
   box-shadow: 0 3px 0 rgba(223, 232, 246, .9);
 }
-.notch-halo::before,
-.notch-halo::after {
-  position: absolute;
-  top: 27px;
-  width: 18px;
-  height: 18px;
-  content: '';
-}
-.notch-halo::before {
-  left: -13px;
-  border-radius: 0 15px 0 0;
-  box-shadow: 6px -6px 0 5px #fff;
-}
-.notch-halo::after {
-  right: -13px;
-  border-radius: 15px 0 0;
-  box-shadow: -6px -6px 0 5px #fff;
-}
 .active-orb {
   position: absolute;
-  top: 6px;
+  top: 7px;
   left: 50%;
   z-index: 2;
   display: grid;
@@ -184,6 +203,22 @@ async function handleNavigation(item) {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, .14),
     0 8px 17px rgba(8, 34, 84, .3);
+}
+.moving-notch.moving .notch-halo {
+  animation: notch-press .5s cubic-bezier(.22, .82, .2, 1);
+}
+.moving-notch.moving .active-orb {
+  animation: orb-travel .5s cubic-bezier(.22, .82, .2, 1);
+}
+@keyframes notch-press {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scaleX(.9) scaleY(1.1); }
+  70% { transform: scaleX(1.04) scaleY(.97); }
+}
+@keyframes orb-travel {
+  0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+  45% { transform: translateX(-50%) translateY(5px) scale(.91); }
+  72% { transform: translateX(-50%) translateY(-2px) scale(1.03); }
 }
 .nav-item {
   position: relative;
@@ -251,6 +286,10 @@ async function handleNavigation(item) {
   .icon-swap-enter-active,
   .icon-swap-leave-active {
     transition: none;
+  }
+  .moving-notch.moving .notch-halo,
+  .moving-notch.moving .active-orb {
+    animation: none;
   }
 }
 </style>
