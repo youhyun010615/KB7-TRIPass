@@ -980,10 +980,13 @@ async function switchMode(mode) {
       class="card schedule-card reveal-card"
       style="--card-delay: 70ms"
     >
-      <div class="card-title">
-        <h2>다가오는 여행 일정</h2>
+      <div class="card-title schedule-card-title">
+        <div>
+          <h2>다가오는 여행 일정</h2>
+          <p>현재와 가까운 일정부터 확인하세요</p>
+        </div>
         <button type="button" @click="router.push('/schedule')">
-          전체 보기
+          전체 보기 <span aria-hidden="true">›</span>
         </button>
       </div>
       <div v-if="selectedSchedules.length === 0" class="empty-msg">
@@ -998,14 +1001,20 @@ async function switchMode(mode) {
         type="button"
         @click="router.push('/schedule')"
       >
-        <span
-          ><b v-if="item.date">{{ item.date }}</b
-          ><strong
-            ><i :class="item.flagClass" style="margin-right: 5px"></i
-            >{{ item.title }}</strong
-          ><small>{{ item.time }}</small></span
-        >
-        <em :class="{ warning: item.warning }">{{ item.status }}</em>
+        <span class="schedule-marker" aria-hidden="true">
+          <i :class="item.flagClass"></i>
+        </span>
+        <span class="schedule-content">
+          <span class="schedule-meta">
+            <b v-if="item.date">{{ item.date }}</b>
+            <time>{{ item.time }}</time>
+          </span>
+          <strong>{{ item.title }}</strong>
+          <small v-if="item.status">
+            <span aria-hidden="true">⌖</span>{{ item.status }}
+          </small>
+        </span>
+        <span class="schedule-arrow" aria-hidden="true">›</span>
       </button>
     </article>
     </div>
@@ -1935,45 +1944,151 @@ async function switchMode(mode) {
 .budget-total strong {
   color: #2872e5;
 }
-.schedule-row {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
-  padding: 11px 0;
-  border-top: 1px solid #edf0f4;
-  text-align: left;
-}
-.schedule-row span > * {
-  display: block;
-}
-.schedule-row b {
-  margin-bottom: 5px;
-  color: #315fc0;
-  font-size: 10px;
-}
-.schedule-row strong {
-  font-size: 11px;
-}
-.schedule-row small {
-  margin-top: 4px;
-  color: #8996a7;
-  font-size: 9px;
-}
-.schedule-row em {
-  padding: 5px 7px;
-  border-radius: 6px;
-  background: #eaf3ff;
-  color: #2472da;
-  font-size: 8px;
-  font-style: normal;
-}
-.schedule-row em.warning {
-  background: #fff0ef;
-  color: #db6258;
-}
 .schedule-card {
   margin-bottom: 12px;
+  padding: 20px;
+  border: 1px solid #e7edf9;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #fff 0%, #f8faff 100%);
+  box-shadow: 0 8px 22px rgba(16, 25, 43, 0.07);
+}
+.schedule-card-title {
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.schedule-card-title h2 {
+  color: #173f8d;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.schedule-card-title p {
+  margin-top: 5px;
+  color: #98a2b3;
+  font-size: 10px;
+  font-weight: 600;
+}
+.schedule-card-title button {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 9px;
+  background: #edf4ff;
+  color: #2868cf;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.schedule-card-title button span {
+  font-size: 14px;
+  line-height: 1;
+}
+.schedule-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 38px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 11px;
+  min-height: 70px;
+  margin-top: 9px;
+  padding: 11px 12px;
+  border: 1px solid #edf1f8;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 3px 10px rgba(26, 52, 96, 0.04);
+  text-align: left;
+  transition: transform 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.schedule-row:first-of-type {
+  margin-top: 0;
+}
+.schedule-row:active {
+  transform: scale(0.985);
+  border-color: #cfddf6;
+  box-shadow: 0 2px 7px rgba(26, 52, 96, 0.06);
+}
+.schedule-marker {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #e8f1ff, #f3f7ff);
+  box-shadow: inset 0 0 0 1px rgba(50, 104, 199, 0.05);
+}
+.schedule-marker::after {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #3975d8;
+  content: '';
+}
+.schedule-marker i {
+  font-size: 18px;
+  border-radius: 2px;
+  box-shadow: 0 2px 5px rgba(17, 38, 74, 0.12);
+}
+.schedule-content {
+  min-width: 0;
+}
+.schedule-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+.schedule-meta b {
+  color: #2868cf;
+  font-size: 9.5px;
+  font-weight: 900;
+}
+.schedule-meta time {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eef3fa;
+  color: #6f7d92;
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 700;
+}
+.schedule-content > strong {
+  display: block;
+  overflow: hidden;
+  color: #111b2f;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.schedule-content > small {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #8793a6;
+  font-size: 8.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.schedule-content > small span {
+  color: #5b82c5;
+  font-size: 10px;
+}
+.schedule-arrow {
+  color: #9ba8ba;
+  font-size: 20px;
+  font-weight: 300;
+  text-align: right;
 }
 .quick-calculator {
   position: fixed;
