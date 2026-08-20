@@ -905,6 +905,7 @@ async function switchMode(mode) {
         </div>
         <div class="exchange-card-body">
           <div class="exchange-country-mark">
+            <i :class="flagIconClass(selectedCountry.code)" class="exchange-flag-icon" aria-hidden="true"></i>
             <div>
               <small>{{ selectedCountry.name }} 여행 환율</small
               ><b>{{ exchangeUnitLabel }} <i>→</i> KRW</b>
@@ -2264,6 +2265,19 @@ async function switchMode(mode) {
   min-width: 0;
   align-items: center;
   gap: 10px;
+}
+/* 국기가 다른 .exchange-country-mark > span 규칙들과 섞이지 않도록 완전히 별도 클래스로 관리한다. */
+.exchange-country-mark .exchange-flag-icon {
+  display: block;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.12);
+  background-size: cover;
+  background-position: 50%;
 }
 .exchange-country-mark > span {
   display: grid;
