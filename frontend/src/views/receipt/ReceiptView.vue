@@ -2334,20 +2334,39 @@ onMounted(loadPage)
 
 .receipt-list {
   position: relative;
-  overflow: hidden;
-  margin-top: 12px;
+  overflow: visible;
+  margin-top: 20px;
   padding: 0 16px 18px;
-  border-radius: 22px 22px 8px 8px;
+  border: 1px solid #173f8d;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: #fff;
+}
+
+.receipt-list::before {
+  position: absolute;
+  top: -7px;
+  right: -1px;
+  left: -1px;
+  height: 8px;
+  background:
+    radial-gradient(circle at 7px 7px, #fff 6px, transparent 6.5px) 0 1px / 14px 8px repeat-x,
+    radial-gradient(circle at 7px 7px, #173f8d 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
+  content: '';
+  pointer-events: none;
 }
 
 .receipt-list::after {
   position: absolute;
   right: -1px;
-  bottom: -1px;
+  bottom: -9px;
   left: -1px;
-  height: 8px;
-  background: radial-gradient(circle at 7px 0, #f4f7fc 6px, transparent 6.5px) 0 0 / 14px 8px repeat-x;
+  height: 10px;
+  background:
+    radial-gradient(circle at 7px 0, #fff 6px, transparent 6.5px) 0 0 / 14px 10px repeat-x,
+    radial-gradient(circle at 7px 0, #173f8d 7px, transparent 7.5px) 0 1px / 14px 10px repeat-x;
   content: '';
+  pointer-events: none;
 }
 
 .receipt-list-topline {

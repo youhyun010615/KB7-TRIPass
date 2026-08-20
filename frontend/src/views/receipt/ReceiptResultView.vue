@@ -2552,7 +2552,7 @@ onBeforeUnmount(() => {
   margin: 0 0 26px;
   padding: 0 19px 24px;
   border-top: 0;
-  border-color: #173f8d;
+  border-color: #eee7d6;
   border-radius: 0 0 7px 7px;
   background: #fffaf0;
   box-shadow: 0 15px 34px rgba(45, 54, 74, .1);
@@ -2564,17 +2564,13 @@ onBeforeUnmount(() => {
   right: -1px;
   left: -1px;
   height: 8px;
-  background:
-    radial-gradient(circle at 7px 7px, #fffaf0 6px, transparent 6.5px) 0 1px / 14px 8px repeat-x,
-    radial-gradient(circle at 7px 7px, #173f8d 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
+  background: radial-gradient(circle at 7px 7px, #fffaf0 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
   content: '';
   pointer-events: none;
 }
 
 .result-page .tripass-receipt-document::after {
-  background:
-    radial-gradient(circle at 7px 0, #fffaf0 6px, transparent 6.5px) 0 0 / 14px 11px repeat-x,
-    radial-gradient(circle at 7px 0, #173f8d 7px, transparent 7.5px) 0 1px / 14px 11px repeat-x;
+  background: radial-gradient(circle at 7px 0, #fffaf0 6.5px, transparent 7px) 0 0 / 14px 11px repeat-x;
 }
 
 .result-page .receipt-paper-heading {
