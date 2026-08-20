@@ -603,9 +603,6 @@ async function switchMode(mode) {
               <span
                 class="text-[10px] font-bold tracking-widest"
                 style="color: #ffd466"
-                >TRIPASS AIR</span
-              >
-              <span class="text-white/70 text-[10px] font-bold tracking-widest"
                 >BOARDING PASS</span
               >
               <RouterLink
@@ -675,16 +672,14 @@ async function switchMode(mode) {
                   {{ country.desc }}
                 </p>
 
-                <!-- 사진이 보이는 여백 및 체크리스트 버튼 -->
-                <div class="ticket-photo-space">
-                  <button
-                    v-if="checklistInfo"
-                    class="checklist-btn"
-                    @click="goToPreparationChecklist"
-                  >
-                    {{ checklistInfo.label }} ›
-                  </button>
-                </div>
+                <!-- 체크리스트 버튼: 여행 저축 목표 박스 왼쪽 위 -->
+                <button
+                  v-if="checklistInfo"
+                  class="checklist-btn"
+                  @click="goToPreparationChecklist"
+                >
+                  {{ checklistInfo.label }} ›
+                </button>
 
                 <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
                 <div
@@ -739,7 +734,7 @@ async function switchMode(mode) {
                 :style="`background:${country.headerBg}`"
               >
                 <button
-                  class="ticket-stub w-full px-5 flex items-center justify-start gap-1 active:bg-gray-50"
+                  class="ticket-stub w-full px-5 flex items-center justify-end gap-1 active:bg-gray-50"
                   @click="goWallet"
                 >
                   <span class="text-[13px] font-bold text-white">송금하기</span>
@@ -1324,9 +1319,6 @@ async function switchMode(mode) {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(22, 39, 78, 0.15);
 }
-.ticket-photo-space {
-  height: 104px;
-}
 .ticket-description {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1898,13 +1890,9 @@ async function switchMode(mode) {
   width: 17px;
   background: #2469e8;
 }
-.ticket-photo-space {
-  height: 112px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .checklist-btn {
+  display: inline-block;
+  margin: 10px 0 12px;
   padding: 8px 16px;
   border-radius: 12px;
   background: #ffb800;
@@ -1912,9 +1900,21 @@ async function switchMode(mode) {
   font-size: 11px;
   font-weight: 900;
   box-shadow: 0 4px 12px rgba(255, 184, 0, 0.3);
+  animation: checklist-btn-float 2.4s ease-in-out infinite;
 }
 .checklist-btn:active {
   transform: scale(0.96);
+}
+@keyframes checklist-btn-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(255, 184, 0, 0.3);
+  }
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(255, 184, 0, 0.4);
+  }
 }
 .ticket-stub {
   height: 49px;
@@ -2642,6 +2642,7 @@ async function switchMode(mode) {
   .month-saving-card,
   .ai-report-card,
   .exchange-live-card,
+  .checklist-btn,
   .month-saving-progress i::after {
     animation: none;
   }

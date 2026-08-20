@@ -169,7 +169,7 @@ const notificationRows = [
 
         <button type="button" class="member-link" @click="router.push('/mypage/assets')">
           <span>계좌 {{ accountCount }} · 카드 {{ cardCount }}</span>
-          <b>자산 관리하기</b>
+          <b>자산관리</b>
           <i>›</i>
         </button>
       </section>
