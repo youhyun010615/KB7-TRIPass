@@ -2358,27 +2358,27 @@ onMounted(loadPage)
   justify-content: space-between;
   margin: 0 -16px;
   padding: 14px 16px;
-  background: transparent;
-  color: #173f8d;
+  background: linear-gradient(135deg, #123b83, #2059b2);
+  color: #cfe0ff;
   font-size: 8px;
   font-weight: 900;
   letter-spacing: .13em;
 }
 
-.receipt-list-topline b { color: #173f8d; font-size: 9px; }
+.receipt-list-topline b { color: #ffd466; font-size: 9px; }
 .receipt-sort-select { position: relative; }
 
 .receipt-sort-select select {
   height: 30px;
   padding: 0 27px 0 10px;
-  border: 1px solid #adc5eb;
+  border: 1px solid rgba(255, 255, 255, .24);
   border-radius: 9px;
   appearance: none;
   background:
-    linear-gradient(45deg, transparent 50%, #173f8d 50%) calc(100% - 13px) 12px / 4px 4px no-repeat,
-    linear-gradient(135deg, #173f8d 50%, transparent 50%) calc(100% - 9px) 12px / 4px 4px no-repeat,
-    rgba(255, 255, 255, .65);
-  color: #173f8d;
+    linear-gradient(45deg, transparent 50%, #d8e6ff 50%) calc(100% - 13px) 12px / 4px 4px no-repeat,
+    linear-gradient(135deg, #d8e6ff 50%, transparent 50%) calc(100% - 9px) 12px / 4px 4px no-repeat,
+    rgba(255, 255, 255, .1);
+  color: #fff;
   font-size: 9px;
   font-weight: 850;
 }
