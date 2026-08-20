@@ -476,7 +476,7 @@ const router = createRouter({
       path: '/trips/:tripId/receipts/settlements',
       name: 'ReceiptSettlements',
       component: () =>
-          import('@/views/receipt/ReceiptSettlementView.vue'),
+          import('@/views/receipt/ReceiptView.vue'),
       meta: {
         requiresAuth: true,
       },
@@ -485,7 +485,7 @@ const router = createRouter({
       path: '/trips/:tripId/receipts/settlements/:participantName',
       name: 'ReceiptParticipantSettlement',
       component: () =>
-          import('@/views/receipt/ReceiptSettlementView.vue'),
+          import('@/views/receipt/ReceiptView.vue'),
       meta: {
         requiresAuth: true,
       },

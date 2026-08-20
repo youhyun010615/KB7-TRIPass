@@ -22,6 +22,7 @@ import {
 } from '@lucide/vue'
 
 import BottomNav from '@/components/common/BottomNav.vue'
+import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
 
 import {
   getReceiptDates,
@@ -34,6 +35,13 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+
+const activeVaultView = ref(
+    ['ReceiptSettlements', 'ReceiptParticipantSettlement']
+        .includes(String(route.name))
+        ? 'settlements'
+        : 'receipts',
+)
 
 const tripId = computed(() => {
   const value = Number(route.params.tripId)
@@ -423,8 +431,11 @@ async function resetDateFilter() {
 }
 
 function openSettlements() {
-  if (!tripId.value) return
-  router.push({ name: 'ReceiptSettlements', params: { tripId: tripId.value } })
+  activeVaultView.value = 'settlements'
+}
+
+function openReceipts() {
+  activeVaultView.value = 'receipts'
 }
 
 function openReceipt(receiptId) {
@@ -487,6 +498,18 @@ watch(
     },
 )
 
+watch(
+    () => route.name,
+    name => {
+      if (
+          ['ReceiptSettlements', 'ReceiptParticipantSettlement']
+              .includes(String(name))
+      ) {
+        activeVaultView.value = 'settlements'
+      }
+    },
+)
+
 onMounted(loadPage)
 </script>
 
@@ -545,14 +568,28 @@ onMounted(loadPage)
     </section>
 
     <nav class="vault-tabs" aria-label="영수증 보관함 메뉴">
-      <button type="button" class="active">
+      <button
+          type="button"
+          :class="{ active: activeVaultView === 'receipts' }"
+          @click="openReceipts"
+      >
         <ReceiptText :size="16" /> 영수증
       </button>
-      <button type="button" @click="openSettlements">
+      <button
+          type="button"
+          :class="{ active: activeVaultView === 'settlements' }"
+          @click="openSettlements"
+      >
         <HandCoins :size="17" /> 정산
       </button>
     </nav>
 
+    <ReceiptSettlementView
+        v-if="activeVaultView === 'settlements' && tripId"
+        :trip-id="tripId"
+    />
+
+    <template v-else>
     <section class="filter-section">
       <div class="section-heading">
         <div>
@@ -790,6 +827,7 @@ onMounted(loadPage)
         <span>영수증 촬영</span>
       </button>
     </div>
+    </template>
 
     <BottomNav />
   </main>
