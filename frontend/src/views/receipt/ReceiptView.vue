@@ -57,6 +57,7 @@ const totalReceiptCount = ref(0)
 
 const selectedCountryId = ref(null)
 const dateFilterEnabled = ref(false)
+const receiptSortOrder = ref('latest')
 const startDate = ref('')
 const endDate = ref('')
 const availableReceiptDates = ref([])
@@ -119,18 +120,18 @@ const groups = computed(() => {
   return [...dateMap.entries()]
       .sort(
           ([firstDate], [secondDate]) =>
-              secondDate.localeCompare(
-                  firstDate,
-              ),
+              receiptSortOrder.value === 'latest'
+                  ? secondDate.localeCompare(firstDate)
+                  : firstDate.localeCompare(secondDate),
       )
       .map(([date, items]) => ({
         date,
 
         items: [...items].sort(
             (first, second) =>
-                second.time.localeCompare(
-                    first.time,
-                ),
+                receiptSortOrder.value === 'latest'
+                    ? second.time.localeCompare(first.time)
+                    : first.time.localeCompare(second.time),
         ),
       }))
 })
@@ -640,15 +641,14 @@ onMounted(loadPage)
 
     <section class="receipt-list">
       <div class="receipt-list-topline">
-        <b>TRIPASS RECEIPT</b>
-        <span>RECEIPT NO. {{ String(tripId || 0).padStart(4, '0') }}</span>
-      </div>
-      <div class="title">
-        <div>
-          <small>RECEIPT HISTORY</small>
-          <h2>보관된 영수증</h2>
-        </div>
-        <span>최신 결제순</span>
+        <b>RECEIPT HISTORY</b>
+        <label class="receipt-sort-select">
+          <span class="sr-only">영수증 정렬 방식</span>
+          <select v-model="receiptSortOrder" aria-label="영수증 정렬 방식">
+            <option value="latest">최신 결제순</option>
+            <option value="oldest">오래된 순</option>
+          </select>
+        </label>
       </div>
 
       <div
@@ -2170,6 +2170,32 @@ onMounted(loadPage)
 }
 
 .receipt-list-topline b { color: #ffd466; font-size: 9px; }
+.receipt-sort-select { position: relative; }
+
+.receipt-sort-select select {
+  height: 30px;
+  padding: 0 27px 0 10px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 9px;
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #d8e6ff 50%) calc(100% - 13px) 12px / 4px 4px no-repeat,
+    linear-gradient(135deg, #d8e6ff 50%, transparent 50%) calc(100% - 9px) 12px / 4px 4px no-repeat,
+    rgba(255, 255, 255, .1);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.receipt-sort-select select option { color: #17243a; background: #fff; }
+.receipt-sort-select .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 .receipt-list .title { padding-top: 17px; }
 .receipt-list .title h2 { font-size: 16px; }
 .receipt-list .title span { font-size: 9px; }

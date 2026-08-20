@@ -983,12 +983,7 @@ onBeforeUnmount(() => {
         </template>
       </h1>
 
-      <button
-          type="button"
-          @click="toggleEditing"
-      >
-        {{ editing ? '취소' : '수정' }}
-      </button>
+      <span aria-hidden="true" />
     </header>
 
     <!-- 로딩 -->
@@ -1043,7 +1038,9 @@ onBeforeUnmount(() => {
         <div class="receipt-paper-heading">
           <span>TRIPASS</span>
           <b>여행 영수증</b>
-          <small>NO. {{ receiptId || 'NEW' }}</small>
+          <button type="button" @click="toggleEditing">
+            {{ editing ? '취소' : '수정' }}
+          </button>
         </div>
 
         <!-- 상호명 -->
@@ -2571,6 +2568,15 @@ onBeforeUnmount(() => {
 .result-page .receipt-paper-heading span { color: #173f8d; font-size: 8px; }
 .result-page .receipt-paper-heading b { font-size: 14px; }
 .result-page .receipt-paper-heading small { font-size: 10px; }
+.result-page .receipt-paper-heading button {
+  justify-self: end;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #eaf1ff;
+  color: #2f6fed;
+  font-size: 11px;
+  font-weight: 900;
+}
 
 .result-page .tripass-receipt-document .field { margin-top: 16px; }
 .result-page .tripass-receipt-document .field > span {
