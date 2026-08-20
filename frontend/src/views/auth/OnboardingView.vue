@@ -1203,16 +1203,16 @@ function onTouchEnd() {
 
 .logo-takeoff-route {
   position: absolute;
-  top: 70px;
-  left: calc(50% + 24px);
-  z-index: 1;
-  width: 230px;
-  height: 100px;
+  top: 39px;
+  left: calc(50% + 39px);
+  z-index: 3;
+  width: 250px;
+  height: 112px;
   overflow: hidden;
   opacity: 0;
   border-top: 2px dashed rgba(255, 212, 94, 0.72);
-  border-radius: 50% 0 0;
-  transform: rotate(-23deg) scaleX(0);
+  border-radius: 56% 0 0;
+  transform: rotate(-21deg) scaleX(0);
   transform-origin: left top;
 }
 
@@ -1227,10 +1227,10 @@ function onTouchEnd() {
 }
 
 .logo-takeoff-plane {
-  position: fixed;
-  top: 48%;
-  left: 50%;
-  z-index: 8;
+  position: absolute;
+  top: 28px;
+  left: calc(50% + 34px);
+  z-index: 5;
   width: 27px;
   height: 27px;
   opacity: 0;
@@ -1601,18 +1601,18 @@ function onTouchEnd() {
 }
 
 @keyframes logo-route-draw {
-  0%, 15% { opacity: 0; transform: rotate(-23deg) scaleX(0); }
+  0%, 18% { opacity: 0; transform: rotate(-21deg) scaleX(0); }
   30% { opacity: 0.9; }
-  62% { opacity: 0.7; transform: rotate(-23deg) scaleX(1); }
-  82%, 100% { opacity: 0; transform: rotate(-23deg) scaleX(1); }
+  66% { opacity: 0.7; transform: rotate(-21deg) scaleX(1); }
+  84%, 100% { opacity: 0; transform: rotate(-21deg) scaleX(1); }
 }
 
 @keyframes logo-plane-takeoff {
-  0%, 13% { opacity: 0; transform: translate(-16px, 18px) rotate(45deg) scale(0.7); }
-  22% { opacity: 1; }
-  58% { opacity: 1; transform: translate(95px, -74px) rotate(45deg) scale(1); }
-  82% { opacity: 0; transform: translate(56vw, -38vh) rotate(48deg) scale(0.82); }
-  100% { opacity: 0; transform: translate(56vw, -38vh) rotate(48deg) scale(0.82); }
+  0%, 16% { opacity: 1; transform: translate(0, 0) rotate(45deg) scale(0.78); }
+  24% { opacity: 1; transform: translate(8px, -7px) rotate(45deg) scale(0.9); }
+  56% { opacity: 1; transform: translate(112px, -78px) rotate(48deg) scale(1); }
+  82% { opacity: 0; transform: translate(calc(50vw - 20px), -35vh) rotate(51deg) scale(0.8); }
+  100% { opacity: 0; transform: translate(calc(50vw - 20px), -35vh) rotate(51deg) scale(0.8); }
 }
 
 @keyframes ai-orbit { to { transform: rotate(360deg); } }
