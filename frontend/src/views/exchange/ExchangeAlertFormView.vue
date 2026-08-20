@@ -29,9 +29,6 @@ const targetRateDisplay = computed({
 });
 
 const valid = computed(() => form.currencyCode && form.targetRate > 0);
-const expected = computed(() =>
-  exchange.expectedForeign(form.targetRate, currency.value?.unit),
-);
 const format = (v) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
 
@@ -99,14 +96,17 @@ onMounted(async () => {
         <span aria-hidden="true"></span>
       </header>
       <section class="current">
-        <small>현재 주요 환율</small
-        ><strong
-          >{{ currency?.unit }}{{ currency?.symbol }} =
-          {{ format(currency?.rate) }}원</strong
-        ><em :class="{ up: currency?.change > 0 }"
-          >{{ currency?.change > 0 ? '▲' : '▼' }}
-          {{ format(Math.abs(currency?.change || 0)) }}원</em
-        >
+        <small>현재 주요 환율</small>
+        <div class="current-rate-row">
+          <strong
+            >{{ currency?.unit }}{{ currency?.symbol }} =
+            {{ format(currency?.rate) }}원</strong
+          >
+          <em :class="{ up: currency?.change > 0 }"
+            >{{ currency?.change > 0 ? '▲' : '▼' }}
+            {{ format(Math.abs(currency?.change || 0)) }}원</em
+          >
+        </div>
       </section>
 
       <!-- 커스텀 통화 선택 버튼 -->
@@ -149,25 +149,23 @@ onMounted(async () => {
         </ul>
       </label>
 
-      <label
-        >목표 환율
-        <div>
+      <label class="target-rate">
+        <span class="target-heading">
+          <b>목표 환율</b>
+          <em
+            >현재 환율 대비
+            {{ format(Math.abs((currency?.rate || 0) - form.targetRate)) }}원
+            차이</em
+          >
+        </span>
+        <div class="rate-input">
           <span>{{ currency?.unit }} {{ currency?.symbol }} =</span
           ><input v-model="targetRateDisplay" type="text" /><b>원</b>
-        </div></label
-      >
-      <section class="result">
-        <small>목표 환율에 도달하면</small
-        ><strong
-          >약 {{ currency?.symbol }}{{ format(expected) }} 환전 가능</strong
-        >
-        <p>
-          현재 환율 대비
-          {{ format(Math.abs((currency?.rate || 0) - form.targetRate)) }}원 차이
-        </p>
-      </section>
+        </div>
+        <small class="target-guide">직접 목표 환율을 입력해 보세요.</small>
+      </label>
       <button class="save" :disabled="!valid" @click="save">
-        환율 알림 {{ isEditMode ? '수정' : '저장' }}</button
+        {{ isEditMode ? '알림 수정' : '알림 등록' }}</button
       ><button v-if="isEditMode" class="delete" @click="remove">
         알림 삭제
       </button>
@@ -211,8 +209,7 @@ header h1 {
   letter-spacing: -0.03em;
 }
 .current,
-label,
-.result {
+label {
   display: block;
   margin-top: 12px;
   padding: 16px;
@@ -221,28 +218,31 @@ label,
   background: #fff;
   box-shadow: 0 8px 20px rgba(16, 25, 43, 0.05);
 }
-.current {
-  position: relative;
-}
 .current small,
 .current strong {
   display: block;
 }
 .current small {
   color: #8b97a8;
-  font-size: 8px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.current-rate-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  margin-top: 7px;
 }
 .current strong {
-  margin-top: 7px;
   color: #174494;
   font-size: 20px;
 }
 .current em {
-  position: absolute;
-  right: 15px;
-  bottom: 18px;
+  margin-bottom: 2px;
   color: #0a9e73;
-  font-size: 8px;
+  font-size: 10px;
+  font-weight: 800;
   font-style: normal;
 }
 .current em.up {
@@ -250,7 +250,8 @@ label,
 }
 label {
   color: #66758a;
-  font-size: 9px;
+  font-size: 13px;
+  font-weight: 800;
 }
 /* 통화 선택 커스텀 버튼 */
 .currency-selector {
@@ -341,7 +342,7 @@ label {
 .custom-dropdown li:hover {
   background-color: #f7f9fc;
 }
-label > div {
+.rate-input {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -365,23 +366,29 @@ label span,
 label b {
   font-size: 14px;
 }
-.result small,
-.result strong {
+.target-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.target-heading b {
+  color: #66758a;
+  font-size: 13px;
+}
+.target-heading em {
+  color: #2470dd;
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  text-align: right;
+}
+.target-guide {
   display: block;
-}
-.result small {
-  color: #8995a6;
-  font-size: 8px;
-}
-.result strong {
-  margin-top: 7px;
-  color: #1472ee;
-  font-size: 14px;
-}
-.result p {
-  margin-top: 7px;
-  color: #079d72;
-  font-size: 8px;
+  margin-top: 8px;
+  color: #96a2b4;
+  font-size: 10px;
+  font-weight: 500;
 }
 .save,
 .delete {

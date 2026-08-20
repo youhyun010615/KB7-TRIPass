@@ -31,7 +31,7 @@ const reachedAlerts = computed(() => {
     <div class="shell">
       <header>
         <button @click="router.back()">‹</button>
-        <h1>내 알림</h1>
+        <h1>목표 환율 알림</h1>
         <span aria-hidden="true"></span>
       </header>
       <section class="list">
@@ -67,7 +67,7 @@ const reachedAlerts = computed(() => {
           <i class="arrow">›</i>
         </button>
         <div v-if="!exchange.alerts.length" class="empty">
-          등록한 환율 알림이 없어요.
+          등록된 환율 알림이 없어요
         </div>
       </section>
 
@@ -197,10 +197,11 @@ header h1 {
   margin-left: 4px; /* 환율 금액과의 최소 간격 */
 }
 .empty {
-  padding: 50px;
+  padding: 64px 20px;
   text-align: center;
   color: #94a3b8;
-  font-size: 9px;
+  font-size: 15px;
+  font-weight: 700;
 }
 aside {
   margin-top: 15px;
