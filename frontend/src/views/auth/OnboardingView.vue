@@ -275,9 +275,7 @@ function onTouchEnd() {
   flex-direction: column;
   overflow: hidden;
   color: white;
-  background:
-    radial-gradient(circle at 96% 6%, rgba(108, 159, 255, 0.38) 0 84px, transparent 85px),
-    linear-gradient(160deg, #2861c9 0%, #153f91 42%, #0b2865 100%);
+  background: radial-gradient(120% 90% at 50% 0%, #2456b8 0%, #173d8f 46%, #0c2564 100%);
   isolation: isolate;
   touch-action: pan-y;
 }
@@ -303,20 +301,20 @@ function onTouchEnd() {
 }
 
 .ambient-top {
-  top: -62px;
-  right: -58px;
-  width: 210px;
-  height: 210px;
-  background: rgba(255, 255, 255, 0.06);
+  top: -70px;
+  right: -60px;
+  width: 230px;
+  height: 230px;
+  background: rgba(255, 212, 102, 0.09);
   animation: ambient-drift 8s ease-in-out infinite alternate;
 }
 
 .ambient-bottom {
-  bottom: -110px;
-  left: -82px;
+  bottom: -90px;
+  left: -70px;
   width: 250px;
   height: 250px;
-  background: rgba(42, 91, 181, 0.34);
+  background: rgba(255, 255, 255, 0.035);
   animation: ambient-drift 10s ease-in-out 1s infinite alternate-reverse;
 }
 
@@ -324,34 +322,34 @@ function onTouchEnd() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: max(42px, env(safe-area-inset-top)) 22px 0;
+  padding: max(56px, calc(env(safe-area-inset-top) + 16px)) 24px 0;
 }
 
 .step-label,
 .eyebrow,
 .brand-subtitle {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.24em;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
 }
 
 .step-label {
-  color: rgba(214, 227, 255, 0.72);
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .skip-button {
   padding: 6px 0 6px 12px;
   border: 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.5);
   background: transparent;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 800;
 }
 
 .flight-route {
   position: relative;
   height: 56px;
-  margin: 30px 28px 0;
+  margin: 26px 28px 0;
 }
 
 .route-line {
@@ -413,9 +411,10 @@ function onTouchEnd() {
   position: absolute;
   top: 28px;
   color: rgba(255, 255, 255, 0.56);
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-family: 'Space Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .route-caption-left { left: -3px; }
@@ -443,7 +442,7 @@ function onTouchEnd() {
   flex: 0 0 100%;
   flex-direction: column;
   align-items: center;
-  padding: 5px 26px 0;
+  padding: 0 30px 6px;
   opacity: 0.46;
   transform: scale(0.965);
   transition: opacity 260ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -469,7 +468,7 @@ function onTouchEnd() {
 .visual-stage {
   display: flex;
   width: 100%;
-  min-height: clamp(205px, 29vh, 270px);
+  min-height: clamp(190px, 27vh, 248px);
   align-items: center;
   justify-content: center;
 }
@@ -942,23 +941,25 @@ function onTouchEnd() {
 }
 
 .copy-block h1 {
-  margin: 13px 0 0;
-  font-size: clamp(22px, 6.5vw, 27px);
-  line-height: 1.38;
-  font-weight: 850;
-  letter-spacing: -0.045em;
+  margin: 10px 0 0;
+  font-size: 21px;
+  line-height: 1.5;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .description {
-  margin-top: 14px;
-  color: rgba(210, 225, 255, 0.76);
-  font-size: 12px;
-  line-height: 1.75;
+  max-width: 260px;
+  margin: 12px auto 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.7;
   white-space: pre-line;
 }
 
 .onboarding-footer {
-  padding: 12px 20px max(22px, env(safe-area-inset-bottom));
+  padding: 0 24px max(40px, calc(env(safe-area-inset-bottom) + 18px));
 }
 
 .page-indicator {
@@ -988,9 +989,9 @@ function onTouchEnd() {
 .primary-button,
 .login-button {
   width: 100%;
-  height: 52px;
-  border-radius: 13px;
-  font-size: 14px;
+  height: 50px;
+  border-radius: 14px;
+  font-size: 14.5px;
   font-weight: 800;
   transition: transform 150ms ease, filter 150ms ease;
 }
@@ -1008,6 +1009,7 @@ function onTouchEnd() {
   border: 1px solid rgba(255, 255, 255, 0.54);
   color: white;
   background: rgba(255, 255, 255, 0.04);
+  font-size: 13.5px;
 }
 
 .final-actions {
