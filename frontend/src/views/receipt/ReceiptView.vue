@@ -2058,9 +2058,9 @@ onMounted(loadPage)
   overflow: hidden;
   margin-top: 16px;
   padding: 18px;
-  border: 1px solid #dce5f2;
+  border: 1px solid #bfd3f2;
   border-radius: 22px;
-  background: #fff;
+  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
   box-shadow: 0 12px 24px rgba(30, 64, 125, .08);
 }
 
@@ -2116,7 +2116,7 @@ onMounted(loadPage)
   min-height: 66px;
   padding: 13px;
   border-radius: 14px;
-  background: #f4f7fc;
+  background: rgba(255, 255, 255, .58);
 }
 
 .trip-summary-metrics span {
@@ -2327,7 +2327,7 @@ onMounted(loadPage)
   padding: 0 16px 18px;
   border: 0;
   border-radius: 0 0 8px 8px;
-  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
+  background: #fff;
 }
 
 .receipt-list::before {
@@ -2336,7 +2336,7 @@ onMounted(loadPage)
   right: -1px;
   left: -1px;
   height: 8px;
-  background: radial-gradient(circle at 7px 7px, #dce9fb 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
+  background: radial-gradient(circle at 7px 7px, #fff 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
   content: '';
   pointer-events: none;
 }
@@ -2347,7 +2347,7 @@ onMounted(loadPage)
   bottom: -8px;
   left: 7px;
   height: 9px;
-  background: radial-gradient(circle at 50% 0, #c8daf6 0 7px, transparent 7.5px) center top / 14px 9px repeat-x;
+  background: radial-gradient(circle at 50% 0, #fff 0 7px, transparent 7.5px) center top / 14px 9px repeat-x;
   content: '';
   pointer-events: none;
 }

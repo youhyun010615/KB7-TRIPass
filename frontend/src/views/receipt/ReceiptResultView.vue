@@ -2512,8 +2512,10 @@ onBeforeUnmount(() => {
   z-index: 30;
   height: 72px;
   align-items: center;
-  padding: 0;
-  background: rgba(244, 247, 252, .94);
+  width: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
+  background: #f4f7fc;
   backdrop-filter: blur(14px);
 }
 
@@ -2591,7 +2593,17 @@ onBeforeUnmount(() => {
   font-weight: 900;
 }
 
-.result-page .tripass-receipt-document .field { margin-top: 16px; }
+.result-page .tripass-receipt-document .field {
+  margin: 14px 7px 0;
+}
+
+.result-page .tripass-receipt-document .field-grid {
+  margin: 0 7px;
+}
+
+.result-page .tripass-receipt-document .field-grid .field {
+  margin: 14px 0 0;
+}
 .result-page .tripass-receipt-document .field > span {
   margin-bottom: 7px;
   color: #93a0b5;
@@ -2601,18 +2613,18 @@ onBeforeUnmount(() => {
 
 .result-page .tripass-receipt-document .readonly-trip,
 .result-page .tripass-receipt-document .readonly-value {
-  height: 48px;
+  height: 44px;
   justify-content: center;
   border-radius: 13px;
   background: rgba(35, 53, 82, .055);
   color: #17243a;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
 }
 
 .result-page .tripass-receipt-document .merchant-value {
-  height: 58px;
-  font-size: 17px;
+  height: 50px;
+  font-size: 15px;
 }
 
 /* 상단 결제 정보도 하단 품목 영역과 같은 영수증 톤으로 연결 */
