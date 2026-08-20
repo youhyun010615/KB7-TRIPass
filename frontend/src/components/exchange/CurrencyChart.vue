@@ -144,10 +144,6 @@ watch(() => props.currency, fetchHistory, { immediate: true });
 
 <template v-if="props.currency">
   <section class="chart">
-    <small v-if="lastUpdateDate" class="update-info">
-      {{ lastUpdateDate }} 고시 기준
-      <span class="update-note">· 매일 오전 11시 갱신</span>
-    </small>
     <div class="chart-head">
       <h2>환율 추이</h2>
       <nav>
@@ -161,6 +157,10 @@ watch(() => props.currency, fetchHistory, { immediate: true });
         </button>
       </nav>
     </div>
+    <small v-if="lastUpdateDate" class="update-info">
+      {{ lastUpdateDate }} 고시 기준
+      <span class="update-note">· 매일 오전 11시 갱신</span>
+    </small>
     <div class="rate-row">
       <strong
         >{{ safeCurrency.unit }}{{ safeCurrency.symbol }} =
@@ -211,13 +211,13 @@ nav .active {
 .chart {
   margin-top: 18px;
   padding: 22px 18px 18px;
-  border: 0;
+  border: 1px solid #bcd2ff;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 8px 24px rgba(23, 43, 77, .05);
+  background: linear-gradient(150deg, #eff5ff 0%, #e6f0ff 100%);
+  box-shadow: 0 10px 26px rgba(23, 43, 77, .055);
 }
 .chart h2 {
-  color: #96a3b8;
+  color: #173f8d;
   font-size: 12.5px;
   font-weight: 700;
 }
@@ -238,6 +238,7 @@ nav .active {
 }
 .update-info {
   display: block;
+  margin-top: 6px;
   margin-bottom: 8px;
   color: #9aa6b8;
   font-size: 9px;
