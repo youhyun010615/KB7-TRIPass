@@ -64,6 +64,13 @@ const timelineGroups = computed(() => {
     isCompleted: items.every(isScheduleCompleted),
   }));
 });
+const selectedDateGroup = computed(() =>
+  timelineGroups.value.find((group) => group.date === selectedCalendarDate.value),
+);
+const selectedDateItems = computed(() => selectedDateGroup.value?.items || []);
+const upcomingTimelineGroups = computed(() =>
+  timelineGroups.value.filter((group) => group.date !== selectedCalendarDate.value),
+);
 const scheduleCountByDate = computed(() => {
   const counts = new Map();
   store.sortedSchedules.forEach((item) => {
@@ -104,6 +111,11 @@ const dateLabel = (date) =>
     day: '2-digit',
     weekday: 'short',
   }).format(new Date(`${date}T00:00:00`));
+const shortDateLabel = (date) => {
+  if (!date) return '';
+  const value = new Date(`${date}T00:00:00`);
+  return `${String(value.getMonth() + 1).padStart(2, '0')}.${String(value.getDate()).padStart(2, '0')} (${new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(value)})`;
+};
 const travelDays = computed(() =>
   Math.max(
     1,
@@ -227,11 +239,26 @@ function showPastSchedules() {
     </section>
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
 
+    <section v-if="selectedDateItems.length" class="today-schedule-section">
+      <div class="list-heading">
+        <h2>오늘 일정</h2>
+        <em>{{ shortDateLabel(selectedCalendarDate) }}</em>
+      </div>
+      <div class="today-schedule-list">
+        <ScheduleCard
+          v-for="item in selectedDateItems"
+          :key="item.id"
+          :schedule="item"
+          :completed="isScheduleCompleted(item)"
+          @detail="openDetail"
+        />
+      </div>
+    </section>
+
     <section class="upcoming-card">
       <div class="section-title">
         <div>
-          <h2>{{ nextSchedule ? '여행 일정' : '지난 일정' }}</h2>
-          <p>날짜를 선택하면 해당 일정으로 바로 이동해요</p>
+          <h2>다가오는 일정</h2>
         </div>
         <button
           v-if="completedScheduleCount"
@@ -244,7 +271,7 @@ function showPastSchedules() {
       </div>
       <div ref="timelineList" class="upcoming-list">
         <div
-          v-for="group in timelineGroups"
+          v-for="group in upcomingTimelineGroups"
           :key="group.date"
           class="date-group"
           :class="{ completed: group.isCompleted }"
@@ -300,17 +327,17 @@ function showPastSchedules() {
 .trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:14px 16px 15px;border-radius:18px;background:linear-gradient(155deg,#0b2a6b 0%,#123c94 60%,#17459f 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24)}.trip-pass-head{display:flex;align-items:center;justify-content:space-between}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-pass-head em{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.16);font-size:9px;font-style:normal;font-weight:800}.trip-route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:13px}.trip-route>div{min-width:70px}.trip-route small{display:block;color:rgba(255,255,255,.55);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em}.trip-route strong{display:block;margin-top:3px;font-size:18px;font-weight:800}.route-end{text-align:right}.route-flight{position:relative;height:2px;border-radius:99px;background:rgba(255,255,255,.22)}.route-flight i{position:absolute;top:50%;font-size:15px;font-style:normal;transform:translate(-50%,-55%);transition:left .5s ease}.trip-timeline-pass>p{margin-top:10px;color:rgba(255,255,255,.65);font-size:11px}.trip-progress{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}.trip-progress>span{grid-column:1/-1;height:2px;border-radius:99px;background:rgba(255,255,255,.22)}.trip-progress>span i{display:block;height:100%;border-radius:inherit;background:#ffd466;transition:width .6s ease}.trip-progress small{margin-top:5px;color:rgba(255,255,255,.5);font-family:'Space Mono',monospace;font-size:8px}.trip-progress small:last-child{text-align:right}
 .calendar-card {
   overflow: hidden;
-  padding: 17px 0 14px;
-  border: 1px solid #e7edf8;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 7px 20px rgba(26, 55, 103, 0.07);
+  padding: 1px 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .calendar-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 17px 13px;
+  display:none;
 }
 .calendar-heading > div {
   display: grid;
@@ -338,8 +365,8 @@ function showPastSchedules() {
 }
 .calendar-strip {
   display: flex;
-  gap: 7px;
-  padding: 0 14px 3px;
+  gap: 9px;
+  padding: 0 2px 5px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -348,14 +375,14 @@ function showPastSchedules() {
 .calendar-strip::-webkit-scrollbar { display: none; }
 .calendar-strip button {
   display: grid;
-  flex: 0 0 45px;
-  min-height: 62px;
+  flex: 0 0 46px;
+  min-height: 68px;
   place-items: center;
   align-content: center;
   gap: 3px;
   border: 1px solid #edf1f7;
-  border-radius: 14px;
-  background: #f8faff;
+  border-radius: 13px;
+  background: #fff;
   color: #17233b;
   scroll-snap-align: center;
   transition: .2s ease;
@@ -366,7 +393,8 @@ function showPastSchedules() {
   font-weight: 800;
 }
 .calendar-strip button strong {
-  font-size: 15px;
+  font-family:'Space Mono',ui-monospace,monospace;
+  font-size: 14px;
   font-weight: 900;
 }
 .calendar-strip button > span {
@@ -385,7 +413,7 @@ function showPastSchedules() {
 .calendar-strip button.empty { color: #98a2b3; }
 .calendar-strip button.active {
   border-color: #1d58b8;
-  background: linear-gradient(145deg, #153f8c, #2467ca);
+  background: #0b2a6b;
   color: #fff;
   box-shadow: 0 7px 15px rgba(30, 88, 181, .25);
   transform: translateY(-1px);
@@ -554,11 +582,11 @@ function showPastSchedules() {
 }
 .upcoming-card {
   margin-top: 14px;
-  padding: 18px;
-  border: 1px solid #e7edf9;
-  border-radius: 22px;
-  background: linear-gradient(165deg, #fff 0%, #f8faff 100%);
-  box-shadow: 0 8px 22px rgba(16, 25, 43, 0.07);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .section-title {
   display: flex;
@@ -567,8 +595,8 @@ function showPastSchedules() {
   gap: 10px;
 }
 .section-title h2 {
-  color: #173f8d;
-  font-size: 18px;
+  color: #10192b;
+  font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.035em;
 }
@@ -603,8 +631,8 @@ function showPastSchedules() {
 .upcoming-list {
   position: relative;
   max-height: 560px;
-  margin: 16px -5px 0;
-  padding: 0 5px 5px 13px;
+  margin: 14px 0 0;
+  padding: 0 2px 5px 41px;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
@@ -641,7 +669,7 @@ function showPastSchedules() {
   position: absolute;
   top: 28px;
   bottom: -25px;
-  left: 0;
+  left: -25px;
   width: 2px;
   border-radius: 99px;
   background: #dce7f7;
@@ -650,7 +678,7 @@ function showPastSchedules() {
 .date-group:last-child::before { bottom: 28px; }
 .date-group h3::before {
   position: absolute;
-  left: -18px;
+  left: -43px;
   width: 10px;
   height: 10px;
   border: 3px solid #f8faff;
@@ -673,9 +701,10 @@ function showPastSchedules() {
 }
 .date-group :deep(.schedule-card) {
   margin-top: 9px;
-  border-left: 3px solid #2f6fed;
+  border-left: 0;
 }
 .date-group.completed :deep(.schedule-card) { border-left-color: #b7c0ce; }
+.today-schedule-section{margin-top:22px}.list-heading{display:flex;align-items:center;gap:9px}.list-heading h2{font-size:17px;font-weight:900}.list-heading em{padding:5px 10px;border-radius:999px;background:#0b2a6b;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:10px;font-style:normal;font-weight:800}.today-schedule-list{display:grid;gap:11px;margin-top:12px}
 .empty {
   padding: 40px;
   text-align: center;

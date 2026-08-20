@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue'
 import { useTravelScheduleStore } from '@/stores/travelSchedule'
-import { flagIconClass } from '@/stores/travel'
 
 const props = defineProps({
   schedule: { type: Object, required: true },
@@ -11,9 +10,17 @@ const props = defineProps({
 const emit = defineEmits(['detail'])
 const store = useTravelScheduleStore()
 const item = computed(() => store.normalizeSchedule(props.schedule))
-const country = computed(() => store.countries.find(entry => entry.code === item.value.countryCode))
 const paymentLabel = computed(() => ({ prepaid: '사전결제 완료', onsite: '현장결제 필요', undecided: '미정' })[item.value.paymentStatus] || '미정')
 const hasAmount = computed(() => Number(item.value.amount) > 0)
+const scheduleIcon = computed(() => {
+  const text = `${item.value.title || ''} ${item.value.placeName || ''}`
+  if (/열차|기차|역|TGV|교통/.test(text)) return '🚆'
+  if (/숙소|호텔|체크인/.test(text)) return '🏨'
+  if (/식사|레스토랑|카페|디너/.test(text)) return '🍽️'
+  if (/박물관|미술관|투어|전시/.test(text)) return '🏛️'
+  if (/공항|비행|항공/.test(text)) return '✈️'
+  return '📍'
+})
 </script>
 
 <template>
@@ -25,12 +32,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
     @click="emit('detail', item.id)"
     @keydown.enter="emit('detail', item.id)"
   >
-    <div class="schedule-time">
-      <time>{{ item.time }}</time>
-      <span v-if="country" class="schedule-country">
-        <span :class="flagIconClass(country.code)" class="fi-inline schedule-flag" />{{ country.name }}
-      </span>
-    </div>
+    <div class="schedule-icon" aria-hidden="true">{{ scheduleIcon }}</div>
     <div class="schedule-copy">
       <div class="schedule-title-row">
         <h4>{{ item.title }}</h4>
@@ -38,11 +40,10 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
           {{ completed ? '✓ 일정 완료' : paymentLabel }}
         </em>
       </div>
-      <p class="schedule-place">{{ item.placeName || '장소 미정' }}</p>
       <p class="schedule-meta">
-        {{ item.placeAddress || '주소 미정' }}<template v-if="hasAmount">
-          <span class="dot">·</span>{{ item.currency }} {{ Number(item.amount).toLocaleString() }}</template>
+        {{ item.time }}<template v-if="hasAmount"><span class="dot">·</span>{{ item.currency }} {{ Number(item.amount).toLocaleString() }}</template>
       </p>
+      <p class="schedule-place">📍 {{ item.placeName || '장소 미정' }}</p>
     </div>
     <span class="schedule-chevron" aria-hidden="true">›</span>
   </article>
@@ -51,52 +52,21 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 <style scoped>
 .schedule-card {
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr) 18px;
+  grid-template-columns: 54px minmax(0, 1fr) 14px;
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 16px;
+  min-height: 104px;
+  padding: 18px 16px;
   border: 1px solid #edf0f5;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 4px 12px rgba(16, 25, 43, .055);
+  box-shadow: 0 7px 20px rgba(16, 25, 43, .07);
   color: #10192d;
   text-align: left;
   touch-action: pan-y;
 }
-.schedule-time {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  align-self: start;
-}
-.schedule-time time {
-  padding: 9px 4px;
-  width: 100%;
-  border-radius: 11px;
-  background: #eef2ff;
-  color: #173f8d;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.schedule-country {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  color: #7e8b9e;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-}
-.schedule-flag {
-  font-size: 14px;
-}
+.schedule-icon{display:grid;width:46px;height:46px;place-items:center;align-self:center;border-radius:50%;background:#eaf1ff;font-size:20px}
 .schedule-copy {
   min-width: 0;
 }
@@ -109,8 +79,8 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 .schedule-copy h4 {
   min-width: 0;
   color: #10192d;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 850;
   line-height: 1.35;
 }
 .schedule-title-row em {
@@ -127,19 +97,20 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
 }
 .schedule-place {
   overflow: hidden;
-  margin-top: 6px;
-  color: #3d4a63;
-  font-size: 13px;
-  font-weight: 600;
+  margin-top: 5px;
+  color: #98a2b3;
+  font-size: 11px;
+  font-weight: 500;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .schedule-meta {
   overflow: hidden;
-  margin-top: 3px;
-  color: #8a97ab;
-  font-size: 12px;
+  margin-top: 8px;
+  color: #7e8b9e;
+  font-family:'Space Mono',ui-monospace,monospace;
+  font-size: 11.5px;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -161,10 +132,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   border-color: #dfe5ee;
   background: #fff;
 }
-.is-completed .schedule-time time {
-  background: #eef1f5;
-  color: #667085;
-}
+.is-completed .schedule-icon{background:#eef1f5;filter:grayscale(.35)}
 .is-completed .schedule-title-row .completion-badge,
 .compact.is-completed .schedule-title-row .completion-badge {
   background: #e8f7ef;
@@ -176,8 +144,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
   box-shadow: 0 9px 22px rgba(6, 30, 76, 0.18);
   color: #10192d;
 }
-.compact .schedule-time time { background: #e8f1ff; color: #174b9f; }
-.compact .schedule-country { color: #718096; }
+.compact .schedule-icon{background:#e8f1ff}
 .compact .schedule-copy h4 { color: #10192d; }
 .compact .schedule-place { color: #3d4a63; }
 .compact .schedule-meta { color: #8a97ab; }
