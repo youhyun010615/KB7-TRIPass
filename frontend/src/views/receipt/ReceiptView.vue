@@ -2343,11 +2343,11 @@ onMounted(loadPage)
 
 .receipt-list::after {
   position: absolute;
-  right: -1px;
-  bottom: -9px;
-  left: -1px;
-  height: 10px;
-  background: radial-gradient(circle at 7px 0, #c8daf6 7px, transparent 7.5px) 0 0 / 14px 10px repeat-x;
+  right: 7px;
+  bottom: -8px;
+  left: 7px;
+  height: 9px;
+  background: radial-gradient(circle at 50% 0, #c8daf6 0 7px, transparent 7.5px) center top / 14px 9px repeat-x;
   content: '';
   pointer-events: none;
 }
