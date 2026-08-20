@@ -78,7 +78,7 @@ watch(
 
 <template>
   <main class="page">
-    <div class="shell">
+    <div class="shell tab-scroll-surface" data-tab-scroll>
       <div class="exchange-header">
         <header>
           <div class="exchange-header-top">
@@ -245,7 +245,9 @@ watch(
   padding: 78px 20px 100px;
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   background: #eef2f8;
   box-sizing: border-box;

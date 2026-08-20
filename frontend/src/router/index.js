@@ -683,8 +683,28 @@ router.onError((error, to) => {
   window.location.href = to?.fullPath || window.location.href;
 });
 
-router.afterEach(() => {
+const MAIN_TAB_PATHS = new Set(['/', '/missions', '/wallet', '/exchange', '/mypage']);
+
+router.afterEach((to) => {
   sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
+
+  // 모달에서 다른 탭으로 바로 이동했을 때 body 스크롤 잠금이 남지 않게 한다.
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+
+  if (!MAIN_TAB_PATHS.has(to.path)) return;
+
+  // 각 메인 탭은 자신만의 단일 스크롤 영역을 사용하며 진입 시 최상단에서 시작한다.
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      document.querySelector('[data-tab-scroll]')?.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      });
+    });
+  });
 });
 
 export default router;

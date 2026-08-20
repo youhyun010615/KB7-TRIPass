@@ -41,7 +41,7 @@ onMounted(async () => {
 
 <template>
   <TravelEndingView v-if="lifecycleReady && travelStore.lifecycle?.endingReviewRequired" />
-  <main v-else class="app-home-shell min-h-screen pb-20">
+  <main v-else class="app-home-shell tab-scroll-surface pb-20" data-tab-scroll>
     <SavingsModeHome
       v-if="travelModeStore.isSavingsMode"
       :on-switch-mode="switchMode"
@@ -65,7 +65,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.app-home-shell { position: relative; width: min(100%, 390px); height: 100vh; height: 100dvh; min-height: 0; margin: 0 auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: none; scrollbar-width: none; background: #eef2f8; }
+.app-home-shell { position: relative; width: min(100%, 390px); height: 100vh; height: 100dvh; min-height: 0; margin: 0 auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: none; background: #eef2f8; }
 .app-home-shell::-webkit-scrollbar { display: none; }
 .mode-flight-loader { position: fixed; top: 0; bottom: 0; left: 50%; width: min(100vw,390px); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateX(-50%); background: linear-gradient(180deg,#173f8d 0%,#285eb7 70%,#dbeafe 100%); color: #fff; }
 .mode-flight-loader strong { margin-top: 22px; font-size: 18px; }

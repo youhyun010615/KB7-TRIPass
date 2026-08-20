@@ -116,7 +116,7 @@ const notificationRows = [
         <NotificationBell />
       </div>
     </div>
-    <div class="mypage-scroll pb-20">
+    <div class="mypage-scroll tab-scroll-surface pb-20" data-tab-scroll>
       <div class="px-4 flex flex-col gap-[22px]">
 
       <!-- 멤버 패스 카드 -->

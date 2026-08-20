@@ -383,7 +383,7 @@ function closeSelectionFlow() {
 </script>
 
 <template>
-  <main class="mission-page">
+  <main class="mission-page tab-scroll-surface" data-tab-scroll>
     <div v-if="showSelectionFlow" class="report-backdrop" @click="closeSelectionFlow"></div>
 
     <div :class="showSelectionFlow ? 'report-modal' : 'page-shell'">
@@ -783,7 +783,7 @@ function closeSelectionFlow() {
 </template>
 
 <style scoped>
-.mission-page{--navy:#153b86;min-height:100vh;padding:0 18px 104px;background:#eef2f8;color:#132348}.mission-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 18px;background:#eef2f8;transform:translateX(-50%)}
+.mission-page{--navy:#153b86;height:100vh;height:100dvh;min-height:0;padding:0 18px 104px;background:#eef2f8;color:#132348}.mission-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 18px;background:#eef2f8;transform:translateX(-50%)}
 .report-backdrop{position:fixed;inset:0;z-index:50;background:rgba(9,18,38,.55);animation:report-backdrop-enter .3s ease both}
 .report-modal{position:fixed;z-index:51;top:50%;left:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:358px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;border-radius:24px;background:#f3f6ff;box-shadow:0 24px 60px rgba(9,18,38,.35);animation:report-modal-enter .28s cubic-bezier(.22,1,.36,1) both}
 .report-modal-body{overflow-y:auto;flex:1;padding:0 18px 30px}

@@ -14,6 +14,21 @@ body {
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
 }
+
+/* 메인 탭은 문서(body)가 아니라 각 화면의 단일 본문 영역만 스크롤한다. */
+.tab-scroll-surface {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-scroll-surface::-webkit-scrollbar {
+  display: none;
+}
 ::-webkit-scrollbar {
   width: 6px;
 }
