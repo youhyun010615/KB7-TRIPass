@@ -6,6 +6,7 @@ import NotificationBell from '@/components/common/NotificationBell.vue'
 import { useSavingMissionsStore } from '@/stores/savingMissions'
 import { useMonthlyFundStore } from '@/stores/monthlyFund'
 import { useTravelStore } from '@/stores/travel'
+import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis'
 import { getAccounts } from '@/api/asset'
 import { getCards } from '@/api/card'
 import foodIcon from '@/assets/icons/food.svg'
@@ -28,13 +29,17 @@ const router = useRouter()
 const missionStore = useSavingMissionsStore()
 const monthlyFundStore = useMonthlyFundStore()
 const travelStore = useTravelStore()
+const monthlyAnalysisStore = useMonthlyAnalysisStore()
 const isTraveling = computed(() => travelStore.lifecycle?.lifecycle === 'TRAVELING')
+const hasTrip = computed(() => Boolean(travelStore.lifecycle?.hasTrip))
+const hasLinkedAccount = computed(() => Boolean(travelStore.lifecycle?.hasLinkedAccount))
+const reportNeedsViewing = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING')
 const linkedAccountCount = ref(0)
 const linkedCardCount = ref(0)
 const financialSourcesLoading = ref(true)
 const financialSourcesError = ref('')
 const hasLinkedFinancialSources = computed(
-  () => linkedAccountCount.value + linkedCardCount.value > 0,
+  () => hasLinkedAccount.value,
 )
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
@@ -79,7 +84,10 @@ const showSelectionFlow = computed(
 const showDashboard = computed(
   () =>
     hasLinkedFinancialSources.value &&
+    hasTrip.value &&
+    !reportNeedsViewing.value &&
     !financialSourcesLoading.value &&
+    !monthlyAnalysisStore.loading &&
     !missionStore.loading &&
     !missionStore.errorMessage &&
     !showSelectionFlow.value,
@@ -224,7 +232,14 @@ const targetMonthLabel = computed(() => monthLabel(missionStore.targetYearMonth)
 
 onMounted(async () => {
   await travelStore.loadLifecycle()
-  await loadFinancialSourcesAndMissions()
+  if (hasTrip.value && hasLinkedAccount.value) {
+    await Promise.all([
+      loadFinancialSourcesAndMissions(),
+      monthlyAnalysisStore.loadCurrentAnalysis({ force: true }),
+    ])
+  } else {
+    financialSourcesLoading.value = false
+  }
   // 리포트/홈의 '추천 미션 보러가기'는 쿼리로 바로 선택 화면(showSelection)을 띄우는데,
   // 이미 진행 중인 미션이 있는 상태에서는 store의 addingMissions 플래그가 없으면
   // toggleCategory/selectRate가 조용히 무시돼 카테고리를 선택할 수 없었다.
@@ -267,6 +282,15 @@ function retryReadiness() {
 
 function goFinancialSources() {
   router.push('/profile/financial?step=1')
+}
+
+function goTravelRegister() {
+  router.push({ name: 'TravelRegister' })
+}
+
+function goPendingReport() {
+  const yearMonth = monthlyAnalysisStore.report?.analysisYearMonth
+  if (yearMonth) router.push(`/savings/analyses/${yearMonth}`)
 }
 
 function monthLabel(yearMonth) {
@@ -425,14 +449,44 @@ function closeSelectionFlow() {
 
       <div :class="{ 'report-modal-body': showSelectionFlow }">
 
-    <section v-if="isTraveling" class="state-card travel-mission-lock">
+    <section v-if="!hasTrip" class="mission-home-setup">
+      <span class="mission-home-label">AI SAVING MISSION</span>
+      <div class="mission-home-setup-body">
+        <div class="mission-ai-stage" aria-hidden="true"><span class="mission-ai-orbit"></span><span class="mission-ai-core"><img :src="aiIcon" alt="" /></span></div>
+        <h2>{{ hasLinkedAccount ? '여행 계획을 등록해야 미션을 진행할 수 있어요' : '여행 계획과 계좌 등록을 해야 미션을 진행할 수 있어요' }}</h2>
+        <p>저축 미션은 소비 습관을 분석해 여행 자금을 자연스럽게 모으도록 도와주는 탭이에요.</p>
+        <button type="button" @click="goTravelRegister">여행 계획 등록하기</button>
+      </div>
+    </section>
+
+    <section v-else-if="!hasLinkedAccount" class="mission-home-setup">
+      <span class="mission-home-label">AI SAVING MISSION</span>
+      <div class="mission-home-setup-body">
+        <div class="mission-ai-stage" aria-hidden="true"><span class="mission-ai-orbit"></span><span class="mission-ai-core"><img :src="aiIcon" alt="" /></span></div>
+        <h2>계좌를 등록해야 미션을 진행할 수 있어요</h2>
+        <p>연결한 계좌의 소비 내역을 분석해 실천 가능한 여행 저축 미션을 추천해 드려요.</p>
+        <button type="button" @click="goFinancialSources">계좌 등록하기</button>
+      </div>
+    </section>
+
+    <section v-else-if="isTraveling" class="state-card travel-mission-lock">
       <span>✈</span>
       <h2>현재 여행 중이어서<br>진행할 수 있는 미션이 없어요</h2>
       <p>완료한 미션은 마이페이지의 여행 관리에서 확인할 수 있어요.</p>
       <button type="button" @click="router.push(`/mypage/travel/${travelStore.lifecycle?.tripId}`)">완료 미션 보기</button>
     </section>
 
-    <section v-else-if="financialSourcesLoading" class="state-card loading-card">
+    <section v-else-if="reportNeedsViewing" class="mission-home-setup">
+      <span class="mission-home-label">MONTHLY REPORT</span>
+      <div class="mission-home-setup-body">
+        <div class="mission-ai-stage" aria-hidden="true"><span class="mission-ai-orbit"></span><span class="mission-ai-core"><img :src="aiReportIcon" alt="" /></span></div>
+        <h2>이번 달 분석 리포트를 먼저 확인해 주세요</h2>
+        <p>지난 소비 분석을 확인하면 그 결과를 바탕으로 맞춤 미션을 등록할 수 있어요.</p>
+        <button type="button" @click="goPendingReport">리포트 보기</button>
+      </div>
+    </section>
+
+    <section v-else-if="financialSourcesLoading || monthlyAnalysisStore.loading" class="state-card loading-card">
       <span class="loading-plane">✈</span>
       <h2>AI 미션을 준비하고 있어요</h2>
       <p>지난달 소비 분석과 저장된 미션을 확인하고 있어요.</p>

@@ -14,6 +14,8 @@ export const useTravelModeStore = defineStore('travelMode', () => {
     localStorage.getItem('travelModeCurrency') ?? 'EUR',
   );
   const calculatorAmount = ref(100);
+  const needsAutoSelect = ref(true);
+  const lifecycleChecked = ref(false);
 
   // 개발·시연 환경에서는 여행 준비/여행 모드를 자유롭게 오가며 화면을 검증한다.
   // 운영 전환 시 false로 변경하면 등록한 여행 기간에만 진입한다.
@@ -38,6 +40,9 @@ export const useTravelModeStore = defineStore('travelMode', () => {
 
   function setMode(newMode) {
     if (newMode === 'travel' && !canEnterTravelMode.value) return false;
+    if (newMode === 'travel' && mode.value !== 'travel') {
+      needsAutoSelect.value = true;
+    }
     mode.value = newMode;
     localStorage.setItem('travelMode', newMode);
     return true;
@@ -83,12 +88,29 @@ export const useTravelModeStore = defineStore('travelMode', () => {
     }
   }
 
+  function consumeAutoSelect() {
+    if (!needsAutoSelect.value) return false;
+    needsAutoSelect.value = false;
+    return true;
+  }
+
+  function resetForNewSession() {
+    mode.value = 'savings';
+    selectedDestination.value = 'all';
+    calculatorOpen.value = false;
+    calculatorCurrency.value = 'EUR';
+    calculatorAmount.value = 100;
+    needsAutoSelect.value = true;
+    lifecycleChecked.value = false;
+  }
+
   return {
     mode,
     selectedDestination,
     calculatorOpen,
     calculatorCurrency,
     calculatorAmount,
+    needsAutoSelect,
     demoMode,
     travelStartDate,
     travelEndDate,
@@ -103,5 +125,8 @@ export const useTravelModeStore = defineStore('travelMode', () => {
     closeCalculator,
     setCalculatorCurrency,
     toggleTravelMode,
+    consumeAutoSelect,
+    lifecycleChecked,
+    resetForNewSession,
   };
 });

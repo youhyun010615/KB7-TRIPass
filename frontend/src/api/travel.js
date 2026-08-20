@@ -34,6 +34,17 @@ export async function fetchCurrentTripLifecycle() {
   return unwrap(response);
 }
 
+export async function acknowledgeTripOnboarding() {
+  await api.post('/trips/onboarding/ack');
+}
+
+export async function resolveWalletReflect(tripId, reflect) {
+  const response = await api.post(`/trips/${tripId}/wallet-reflect`, {
+    reflect: Boolean(reflect),
+  });
+  return response.data?.data ?? null;
+}
+
 export async function archiveTrip(tripId) {
   const response = await api.post(`/trips/${tripId}/archive`);
   return unwrap(response);

@@ -67,6 +67,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/setup/trip-onboarding',
+      name: 'TripOnboarding',
+      component: () => import('@/views/travel/TripOnboardingView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/savings',
       name: 'Savings',
       component: () => import('@/views/savings/SavingsView.vue'),

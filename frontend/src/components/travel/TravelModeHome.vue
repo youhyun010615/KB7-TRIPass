@@ -408,7 +408,10 @@ onMounted(async () => {
       // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
       const status = await travelStore.loadTripStatus(tripId.value, null);
       persistentCountries.value = status?.countries || [];
-      selectedCountryId.value = findTodayCountryCode(persistentCountries.value);
+
+      if (travelMode.consumeAutoSelect()) {
+        selectedCountryId.value = findTodayCountryCode(persistentCountries.value);
+      }
 
       if (selectedCountryId.value !== 'all') {
         await loadData();

@@ -20,6 +20,9 @@ const wallet = useTripWalletStore()
 const travelMode = useTravelModeStore()
 const travel = useTravelStore()
 const isTravelWallet = computed(() => travelMode.isTravelMode)
+const showMonthlySavings = computed(() =>
+  !isTravelWallet.value && Boolean(travel.lifecycle?.savingsTrackingStarted),
+)
 
 const travelTargetAmount = computed(() => Number(
   travel.activeTrip?.totalTargetAmount || wallet.targetAmount || 0,
@@ -294,7 +297,7 @@ onMounted(async () => {
   }
 
   try {
-    const tasks = [wallet.loadWalletMain(), wallet.loadAccounts(), wallet.loadAutoSaving(), wallet.loadForeignBalances()]
+    const tasks = [wallet.loadWalletMain(), wallet.loadAccounts(), wallet.loadAutoSaving(), wallet.loadForeignBalances(), travel.loadLifecycle()]
     if (isTravelWallet.value) {
       tasks.push((async () => {
         await travel.loadActiveGoal()
@@ -449,7 +452,7 @@ async function confirmUnlinkTravelCard() {
       <p class="wallet-status-note">환전은 월렛 안에서 자금을 옮기는 과정이라 여행 지출에 포함하지 않아요.</p>
     </section>
 
-    <section v-if="!isTravelWallet" class="saving-card white-card">
+    <section v-if="showMonthlySavings" class="saving-card white-card">
       <div class="section-title">
         <h2>월별 합산 금액</h2>
       </div>

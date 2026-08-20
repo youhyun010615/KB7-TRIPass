@@ -2,6 +2,8 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { requestFcmToken } from '@/api/firebase';
 import { registerFcmToken } from '@/api/notification';
+import { useTravelModeStore } from './travelMode';
+import { useTravelStore } from './travel';
 
 export const useAuthStore = defineStore('auth', () => {
   // Access Token은 브라우저 메모리에서만 관리한다.
@@ -31,6 +33,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 로그인 성공 후 처리 (FCM 토큰 등록 포함)
   async function handleLoginSuccess(token, userInfo) {
+    clearAllCache();
+    useTravelModeStore().resetForNewSession();
+    useTravelStore().resetGoal();
     setToken(token);
     setUser(userInfo);
     hasLinkedAccount.value = null;
@@ -68,15 +73,25 @@ export const useAuthStore = defineStore('auth', () => {
     hasLinkedAccount.value = Boolean(linked);
   }
 
-  // 프론트에 저장된 로그인 정보를 제거한다.
+  function clearAllCache() {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('tripass') || key === 'accessToken'
+        || key === 'isProfileComplete' || key === 'travelMode'
+        || key === 'travelModeDestination' || key === 'travelModeCurrency')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  }
+
   function logout() {
     accessToken.value = null;
     user.value = null;
     isProfileComplete.value = false;
     hasLinkedAccount.value = null;
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('tripass-user');
-    localStorage.removeItem('isProfileComplete');
+    clearAllCache();
   }
 
   return {

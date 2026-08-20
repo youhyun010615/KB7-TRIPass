@@ -58,8 +58,10 @@ const linkedCardCount = ref(0);
 const financialSourcesLoading = ref(false);
 const financialSourcesError = ref('');
 const hasLinkedFinancialSources = computed(
-  () => linkedAccountCount.value + linkedCardCount.value > 0,
+  () => travelStore.lifecycle?.hasLinkedAccount ?? (linkedAccountCount.value + linkedCardCount.value > 0),
 );
+const savingsTrackingStarted = computed(() => Boolean(travelStore.lifecycle?.savingsTrackingStarted));
+const homeReportPending = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING');
 
 async function loadFinancialSources() {
   financialSourcesLoading.value = true;
@@ -85,6 +87,10 @@ async function loadFinancialSources() {
 }
 
 async function loadHomeInsights({ force = false } = {}) {
+  if (!travelStore.lifecycle?.hasTrip || !savingsTrackingStarted.value) {
+    monthlyAnalysisStore.resetAnalysis();
+    return;
+  }
   await Promise.all([
     loadFinancialSources(),
     savingMissionsStore.loadMissionStatus(),
@@ -99,6 +105,7 @@ async function loadHomeInsights({ force = false } = {}) {
 }
 
 onMounted(async () => {
+  await travelStore.loadLifecycle();
   await nextTick();
   restoreCountryPosition();
   await Promise.all([
@@ -517,14 +524,14 @@ async function switchMode(mode) {
       </div>
 
       <HomeSavingMissionCard
-        v-if="savingMissionsStore.hasStartedMissions"
+        v-if="travelStore.lifecycle?.hasTrip && savingMissionsStore.hasStartedMissions"
         class="mx-4 mt-3"
         :mission-data="savingMissionsStore.missions"
         @open="openSavingMissions"
       />
 
       <section
-        v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources"
+        v-else-if="travelStore.lifecycle?.hasTrip && !financialSourcesLoading && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -542,7 +549,7 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="!financialSourcesLoading && hasLinkedFinancialSources"
+        v-else-if="travelStore.lifecycle?.hasTrip && !financialSourcesLoading && hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -555,7 +562,7 @@ async function switchMode(mode) {
           </div>
           <b>맞춤 저축 미션을 시작해 보세요!</b>
           <small>연결된 금융 데이터를 분석해 줄이기 좋은 소비와 절약 목표를 추천해 드려요.</small>
-          <button type="button" @click="openRecommendedMissions">이달의 리포트 보러가기</button>
+          <button type="button" @click="openRecommendedMissions">미션 등록하기</button>
         </div>
       </section>
     </template>
@@ -764,7 +771,7 @@ async function switchMode(mode) {
         </div>
       </div>
 
-      <section class="month-saving-card mx-4 mt-3">
+      <section v-if="savingsTrackingStarted" class="month-saving-card mx-4 mt-3">
         <div class="month-saving-heading">
           <h2>{{ currentMonthLabel }} 여행 저축</h2>
         </div>
@@ -802,7 +809,7 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-if="homeInsightLoading"
+        v-if="savingsTrackingStarted && homeInsightLoading"
         class="analysis-summary-skeleton mx-4 mt-3"
         aria-label="월간 분석 및 미션 정보를 불러오는 중"
       >
@@ -810,7 +817,7 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="financialSourcesError"
+        v-else-if="savingsTrackingStarted && financialSourcesError"
         class="analysis-load-error mx-4 mt-3"
       >
         <span>AI</span>
@@ -822,14 +829,14 @@ async function switchMode(mode) {
       </section>
 
       <HomeSavingMissionCard
-        v-else-if="savingMissionsStore.hasStartedMissions"
+        v-else-if="savingsTrackingStarted && savingMissionsStore.hasStartedMissions && !homeReportPending"
         class="mx-4 mt-3"
         :mission-data="savingMissionsStore.missions"
         @open="openSavingMissions"
       />
 
       <section
-        v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources"
+        v-else-if="savingsTrackingStarted && !financialSourcesLoading && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -847,7 +854,7 @@ async function switchMode(mode) {
       </section>
 
       <section
-        v-else-if="!financialSourcesLoading && hasLinkedFinancialSources"
+        v-else-if="savingsTrackingStarted && !financialSourcesLoading && hasLinkedFinancialSources && !homeReportPending"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -865,14 +872,14 @@ async function switchMode(mode) {
       </section>
 
       <MonthlyAnalysisSummaryCard
-        v-else-if="monthlyAnalysisStore.hasVisibleReport"
+        v-else-if="savingsTrackingStarted && homeReportPending"
         class="mx-4 mt-3"
         :report="monthlyAnalysisStore.report"
         @open="openMonthlyAnalysis"
       />
 
       <section
-        v-else-if="monthlyAnalysisStore.errorMessage"
+        v-else-if="savingsTrackingStarted && monthlyAnalysisStore.errorMessage"
         class="analysis-load-error mx-4 mt-3"
       >
         <span>AI</span>
@@ -883,7 +890,7 @@ async function switchMode(mode) {
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
-      <section v-else class="analysis-empty-state mx-4 mt-3">
+      <section v-else-if="savingsTrackingStarted" class="analysis-empty-state mx-4 mt-3">
         <small class="analysis-empty-label">AI SAVING MISSION</small>
         <button type="button" @click="openFinancialSources">
           <span class="analysis-empty-plus" aria-hidden="true">＋</span>

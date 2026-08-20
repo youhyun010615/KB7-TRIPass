@@ -253,7 +253,13 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
       addingMissions.value = false;
       return missions.value;
     } catch (error) {
-      errorMessage.value = errorMessageOf(
+      const code = error.response?.data?.code || error.response?.data?.errorCode;
+      const guardedMessages = {
+        TRIP_REQUIRED_FOR_MISSION: '여행 계획을 등록해야 미션을 진행할 수 있어요',
+        ACCOUNT_REQUIRED_FOR_MISSION: '계좌를 등록해야 미션을 진행할 수 있어요',
+        MISSION_REPORT_NOT_VIEWED: '이번 달 분석 리포트를 먼저 확인해 주세요',
+      };
+      errorMessage.value = guardedMessages[code] || errorMessageOf(
         error,
         '저축 미션을 시작하지 못했어요.',
       );

@@ -14,6 +14,8 @@ import {
   fetchCurrentTripLifecycle,
   archiveTrip as archiveTripApi,
   acknowledgeTripStartReport,
+  acknowledgeTripOnboarding,
+  resolveWalletReflect,
 } from '@/api/travel';
 
 import imageAE from '@/assets/countries/AE.webp';
@@ -302,6 +304,7 @@ export const useTravelStore = defineStore('travel', () => {
   const budgetLoading = ref(false);
   const lifecycle = ref(null);
   const lifecycleLoading = ref(false);
+  const walletReflectSubmitting = ref(false);
 
   const countryFlagMap = {
     프랑스: { code: 'fr', class: 'fi fi-fr', emoji: '🇫🇷' },
@@ -722,6 +725,31 @@ export const useTravelStore = defineStore('travel', () => {
     }
   }
 
+  async function acknowledgeOnboarding() {
+    await acknowledgeTripOnboarding();
+    if (lifecycle.value) {
+      lifecycle.value = { ...lifecycle.value, onboardingPending: false };
+    }
+  }
+
+  async function resolveWalletBalanceReflect(reflect) {
+    if (!lifecycle.value?.tripId || walletReflectSubmitting.value) return false;
+    walletReflectSubmitting.value = true;
+    try {
+      await resolveWalletReflect(lifecycle.value.tripId, reflect);
+      await loadLifecycle();
+      return true;
+    } catch (error) {
+      if (error.response?.status === 409) {
+        await loadLifecycle();
+        return true;
+      }
+      throw error;
+    } finally {
+      walletReflectSubmitting.value = false;
+    }
+  }
+
   async function archiveCurrentTrip() {
     if (!lifecycle.value?.tripId) return false;
     await archiveTripApi(lifecycle.value.tripId);
@@ -815,6 +843,9 @@ export const useTravelStore = defineStore('travel', () => {
     completion.value = null;
     tripName.value = '';
     clearPlans();
+    lifecycle.value = null;
+    lifecycleLoading.value = false;
+    walletReflectSubmitting.value = false;
     Object.keys(allocations).forEach((key) => delete allocations[key]);
     clearError();
   }
@@ -862,6 +893,7 @@ export const useTravelStore = defineStore('travel', () => {
     statusLoading,
     lifecycle,
     lifecycleLoading,
+    walletReflectSubmitting,
     totalTargetAmount,
     prepaidExpenseTotal,
     monthlySavingTarget,
@@ -878,6 +910,8 @@ export const useTravelStore = defineStore('travel', () => {
     loadCountries,
     loadActiveGoal,
     loadLifecycle,
+    acknowledgeOnboarding,
+    resolveWalletBalanceReflect,
     archiveCurrentTrip,
     acknowledgeStartReport,
     loadHomeDashboard,

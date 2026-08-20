@@ -312,9 +312,6 @@ async function signup() {
       phoneVerificationRequestId.value,
     })
 
-    // 회원가입 직후의 첫 로그인에서만 금융 프로필 온보딩을 노출한다.
-    // sessionStorage를 사용해 브라우저를 닫거나 온보딩을 한 번 시작하면 남지 않게 한다.
-    sessionStorage.setItem('tripass-financial-onboarding-pending', 'true')
     window.alert('회원가입이 완료되었습니다.')
     await router.replace('/login')
   } catch (error) {

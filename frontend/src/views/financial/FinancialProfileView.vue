@@ -8,6 +8,7 @@ import { getCardInstitutions, linkCard } from '@/api/card'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const isOnboarding = computed(() => route.query.onboarding === '1')
 
 const CARD_COMPANY_STEP = 9
 const CARD_LOGIN_STEP = 10
@@ -245,6 +246,11 @@ function skipProfile() {
   router.replace('/')
 }
 
+function skipOnboardingAccount() {
+  authStore.completeProfile()
+  router.replace('/')
+}
+
 onMounted(() => {
   if (step.value === 2) goToBankSelect()
   if (step.value === CARD_COMPANY_STEP) goToCardSelect()
@@ -254,6 +260,7 @@ onMounted(() => {
 
 <template>
   <main class="finance-profile">
+    <button v-if="isOnboarding && step !== 5" type="button" class="onboarding-skip-floating" @click="skipOnboardingAccount">다음에 할게요</button>
     <section class="finance-shell" :class="{ 'is-tall': step === 7, 'is-navy-shell': step === 0 }">
       <template v-if="step === 0">
         <div class="intro-hero">
@@ -718,6 +725,7 @@ onMounted(() => {
 button, input, select { font: inherit; }
 button { border: 0; cursor: pointer; }
 .finance-profile { min-height: 100vh; background: #f3f6fb; }
+.onboarding-skip-floating{position:fixed;top:18px;right:max(18px,calc((100vw - 390px)/2 + 18px));z-index:80;padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:#52637e;font-size:11px;font-weight:800;box-shadow:0 5px 16px rgba(19,45,91,.12)}
 .finance-shell { position: relative; width: 100%; min-height: 100vh; overflow: hidden; background: #f3f6fb; }
 .finance-shell.is-tall { padding-bottom: 92px; }
 .finance-shell.is-navy-shell { background: linear-gradient(155deg, #0b2a6b 0%, #123c94 60%, #17459f 100%); }
