@@ -34,6 +34,7 @@ const exchangeStore = useExchangeStore();
 const travelHeaderEl = ref(null);
 const travelHeaderHeight = ref(0);
 let travelHeaderResizeObserver = null;
+let lowerCardRevealObserver = null;
 
 function syncTravelHeaderHeight() {
   if (travelHeaderEl.value) {
@@ -392,6 +393,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   travelHeaderResizeObserver?.disconnect();
+  lowerCardRevealObserver?.disconnect();
 });
 
 const selectedCountryId = computed({
@@ -403,6 +405,39 @@ const countryCarousel = ref(null);
 // 스와이프로 국가가 바뀔 때마다 값을 올려서 활성 티켓의 :key를 바꾼다 — 저축모드 홈과
 // 동일하게, DOM을 다시 그리게 만들어 진행률 박스의 진입 애니메이션을 매번 재생시킨다.
 const countryAnimationKey = ref(0);
+
+function getLowerCardRevealObserver() {
+  if (lowerCardRevealObserver || !('IntersectionObserver' in window)) {
+    return lowerCardRevealObserver;
+  }
+
+  lowerCardRevealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        lowerCardRevealObserver?.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -36px' },
+  );
+
+  return lowerCardRevealObserver;
+}
+
+const vReveal = {
+  mounted(el) {
+    const observer = getLowerCardRevealObserver();
+    if (observer) {
+      observer.observe(el);
+    } else {
+      el.classList.add('is-visible');
+    }
+  },
+  unmounted(el) {
+    lowerCardRevealObserver?.unobserve(el);
+  },
+};
 
 // restoreCountryPosition()이 코드로 scrollLeft를 바꾸는 동안에는 그 이동을
 // "사용자가 스와이프했다"고 오인해 selectedCountryId를 되돌리지 않도록 막는다.
@@ -874,8 +909,14 @@ async function switchMode(mode) {
       {{ tooltip.text }}
     </div>
 
+    <div
+      :key="`travel-dashboard-${countryAnimationKey}`"
+      class="travel-dashboard"
+    >
     <article
-      class="card budget-card"
+      v-reveal
+      class="card budget-card reveal-card"
+      style="--card-delay: 0ms"
       role="button"
       tabindex="0"
       aria-label="여행자금 체크 상세 보기"
@@ -902,7 +943,12 @@ async function switchMode(mode) {
         <span>카테고리별 지출</span>
         <span>여행 기간</span>
       </div>
-      <div v-for="cat in categoryList" :key="cat.name" class="budget-row">
+      <div
+        v-for="(cat, index) in categoryList"
+        :key="cat.name"
+        class="budget-row"
+        :style="{ '--row-delay': `${index * 48}ms` }"
+      >
         <span class="category">
           <i :style="{ background: cat.icon.soft }">
             <span
@@ -938,7 +984,11 @@ async function switchMode(mode) {
         <b class="budget-ratio">{{ cat.ratio }}%</b>
       </div>
     </article>
-    <article class="card">
+    <article
+      v-reveal
+      class="card reveal-card"
+      style="--card-delay: 70ms"
+    >
       <div class="card-title">
         <h2>다가오는 여행 일정</h2>
         <button type="button" @click="router.push('/schedule')">
@@ -950,9 +1000,10 @@ async function switchMode(mode) {
       </div>
       <button
         v-else
-        v-for="item in selectedSchedules"
+        v-for="(item, index) in selectedSchedules"
         :key="item.title"
         class="schedule-row"
+        :style="{ '--row-delay': `${index * 48}ms` }"
         type="button"
         @click="router.push('/schedule')"
       >
@@ -967,7 +1018,11 @@ async function switchMode(mode) {
       </button>
     </article>
 
-    <article class="card recent-card">
+    <article
+      v-reveal
+      class="card recent-card reveal-card"
+      style="--card-delay: 140ms"
+    >
       <div class="card-title">
         <h2>최근 지출 내역</h2>
         <button type="button" @click="router.push('/asset/transactions')">
@@ -979,9 +1034,10 @@ async function switchMode(mode) {
       </div>
       <button
         v-else
-        v-for="item in selectedRecent"
+        v-for="(item, index) in selectedRecent"
         :key="item.place"
         class="recent-row"
+        :style="{ '--row-delay': `${index * 48}ms` }"
         type="button"
         @click="router.push('/asset/transactions')"
       >
@@ -995,6 +1051,7 @@ async function switchMode(mode) {
         ><strong> {{ item.amount }}</strong>
       </button>
     </article>
+    </div>
 
     <section
       v-if="travelMode.calculatorOpen"
@@ -1169,6 +1226,10 @@ async function switchMode(mode) {
   from { opacity: 0; transform: translateY(22px) scale(0.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes home-row-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes ticket-card-enter {
   from { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(3px); }
   to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
@@ -1185,7 +1246,12 @@ async function switchMode(mode) {
   .fund-progress-box,
   .fund-progress-track i::after,
   .route-pin-pulse,
-  .card { animation: none; }
+  .card,
+  .reveal-card.is-visible .budget-row,
+  .reveal-card.is-visible .schedule-row,
+  .reveal-card.is-visible .recent-row { animation: none; }
+  .reveal-card,
+  .reveal-card.is-visible { opacity: 1; transform: none; }
   .country-slide { transition: none; }
 }
 .empty-trip-tear { position: relative; height: 18px; }
@@ -1724,13 +1790,34 @@ async function switchMode(mode) {
   background: #fff;
   box-shadow: 0 4px 14px rgba(16, 25, 43, 0.06);
   text-align: left;
-  animation: home-card-reveal 0.56s 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.card:nth-of-type(2) {
-  animation-delay: 0.38s;
+.reveal-card {
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
 }
-.card:nth-of-type(3) {
-  animation-delay: 0.52s;
+.reveal-card.is-visible {
+  animation: home-card-reveal 0.56s var(--card-delay, 0ms)
+    cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.reveal-card.is-visible .budget-row,
+.reveal-card.is-visible .schedule-row,
+.reveal-card.is-visible .recent-row {
+  animation: home-row-reveal 0.42s
+    calc(var(--card-delay, 0ms) + 160ms + var(--row-delay, 0ms))
+    cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-card,
+  .reveal-card.is-visible {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .reveal-card.is-visible .budget-row,
+  .reveal-card.is-visible .schedule-row,
+  .reveal-card.is-visible .recent-row {
+    animation: none;
+  }
 }
 .card-title {
   display: flex;
