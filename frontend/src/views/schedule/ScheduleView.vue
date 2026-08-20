@@ -293,14 +293,7 @@ function showPastSchedules() {
         <div>
           <h2>다가오는 일정</h2>
         </div>
-        <button
-          v-if="completedScheduleCount"
-          type="button"
-          @click="showPastSchedules"
-        >
-          완료 {{ completedScheduleCount }}건 <span aria-hidden="true">↑</span>
-        </button>
-        <span v-else>총 {{ store.sortedSchedules.length }}건</span>
+        <span>총 {{ store.sortedSchedules.length }}건</span>
       </div>
       <div ref="timelineList" class="upcoming-list">
         <div
@@ -311,6 +304,12 @@ function showPastSchedules() {
           :data-date="group.date"
           :data-next-group="groupHasNextSchedule(group) ? 'true' : null"
         >
+          <p
+            v-if="completedScheduleCount && groupHasNextSchedule(group)"
+            class="completed-count-note"
+          >
+            완료된 일정 {{ completedScheduleCount }}건
+          </p>
           <h3>
             {{ dateLabel(group.date) }}
             <span v-if="group.isCompleted">완료된 일정</span>
@@ -758,6 +757,13 @@ function showPastSchedules() {
   border-left: 0;
 }
 .date-group.completed :deep(.schedule-card) { border-color:#d6dbe3; }
+.completed-count-note {
+  margin: 2px 4px 8px 9px;
+  color: #98a2b3;
+  font-size: 10px;
+  font-weight: 750;
+}
+.completed-count-note + h3 { margin-top: 0; }
 .today-schedule-section{margin-top:22px}.list-heading{display:flex;align-items:center;gap:9px}.list-heading h2{font-size:17px;font-weight:900}.list-heading em{padding:5px 10px;border-radius:999px;background:#0b2a6b;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:10px;font-style:normal;font-weight:800}.today-schedule-list{display:grid;gap:11px;margin-top:12px}
 .empty {
   padding: 40px;
