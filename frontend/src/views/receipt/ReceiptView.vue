@@ -580,7 +580,6 @@ onMounted(loadPage)
     <template v-else>
     <section class="trip-receipt-summary">
       <div class="trip-summary-heading">
-        <span class="trip-summary-icon"><ReceiptText :size="22" :stroke-width="2.2" /></span>
         <div>
           <h2>
             {{ tripTitle }}
@@ -2069,17 +2068,6 @@ onMounted(loadPage)
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.trip-summary-icon {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
-  place-items: center;
-  border-radius: 15px;
-  background: #edf4ff;
-  color: #2f6fed;
 }
 
 .trip-summary-heading small {
