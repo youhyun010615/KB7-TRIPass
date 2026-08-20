@@ -71,6 +71,33 @@ const tripTitle = computed(() =>
     '여행 정보 확인 중',
 )
 
+const countryCodeFallback = {
+  프랑스: 'FR', 독일: 'DE', 스위스: 'CH', 일본: 'JP', 홍콩: 'HK',
+  이탈리아: 'IT', 스페인: 'ES', 네덜란드: 'NL', 벨기에: 'BE',
+  오스트리아: 'AT', 포르투갈: 'PT', 그리스: 'GR', 영국: 'GB',
+  미국: 'US', 캐나다: 'CA', 호주: 'AU', 뉴질랜드: 'NZ', 태국: 'TH',
+  베트남: 'VN', 싱가포르: 'SG', 대만: 'TW', 중국: 'CN',
+}
+
+function flagEmoji(country) {
+  const code = String(
+      country?.countryCode ||
+      country?.code ||
+      country?.iso2 ||
+      countryCodeFallback[country?.countryName] ||
+      '',
+  ).toUpperCase()
+
+  if (!/^[A-Z]{2}$/.test(code)) return '🌍'
+  return [...code]
+      .map(letter => String.fromCodePoint(127397 + letter.charCodeAt(0)))
+      .join('')
+}
+
+const tripCountryFlags = computed(() =>
+    (trip.value?.countries || []).slice(0, 3).map(flagEmoji),
+)
+
 const countries = computed(() => {
   const tripCountries =
       trip.value?.countries ?? []
@@ -554,8 +581,13 @@ onMounted(loadPage)
       <div class="trip-summary-heading">
         <span class="trip-summary-icon"><ReceiptText :size="22" :stroke-width="2.2" /></span>
         <div>
+          <h2>
+            {{ tripTitle }}
+            <span class="trip-country-flags" aria-label="여행 국가">
+              <i v-for="(flag, index) in tripCountryFlags" :key="`${flag}-${index}`">{{ flag }}</i>
+            </span>
+          </h2>
           <small>{{ formatTripDateRange() }}</small>
-          <h2>{{ tripTitle }}</h2>
         </div>
       </div>
       <div class="trip-summary-metrics">
@@ -2004,12 +2036,16 @@ onMounted(loadPage)
 .vault-tabs button { height: 44px; font-size: 12px; }
 
 .trip-receipt-summary {
+  position: relative;
+  overflow: hidden;
   margin-top: 16px;
   padding: 18px;
-  border: 1px solid #e2e8f2;
+  border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 12px 30px rgba(30, 64, 125, .08);
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 255, 255, .12) 0 74px, transparent 75px),
+    linear-gradient(140deg, #0b2a6b 0%, #17479f 58%, #2662b8 100%);
+  box-shadow: 0 15px 32px rgba(23, 63, 141, .2);
 }
 
 .trip-summary-heading {
@@ -2025,12 +2061,14 @@ onMounted(loadPage)
   flex: 0 0 46px;
   place-items: center;
   border-radius: 15px;
-  background: #eaf1ff;
-  color: #2f6fed;
+  background: rgba(255, 255, 255, .13);
+  color: #ffd466;
 }
 
 .trip-summary-heading small {
-  color: #687892;
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, .65);
   font-size: 10px;
   font-weight: 850;
   letter-spacing: .03em;
@@ -2038,15 +2076,26 @@ onMounted(loadPage)
 
 .trip-summary-heading h2 {
   margin-top: 4px;
-  color: #10192b;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #fff;
   font-size: 17px;
   font-weight: 950;
   letter-spacing: -.035em;
 }
 
+.trip-country-flags { display: inline-flex; align-items: center; gap: 3px; }
+.trip-country-flags i {
+  font-size: 14px;
+  font-style: normal;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .18));
+}
+
 .trip-summary-metrics {
   display: grid;
-  grid-template-columns: 1.2fr .8fr;
+  grid-template-columns: 1fr 1fr;
   gap: 9px;
   margin-top: 15px;
 }
@@ -2055,20 +2104,21 @@ onMounted(loadPage)
   display: grid;
   min-width: 0;
   gap: 5px;
+  min-height: 66px;
   padding: 13px;
   border-radius: 14px;
-  background: #f5f7fb;
+  background: rgba(255, 255, 255, .1);
 }
 
 .trip-summary-metrics span {
-  color: #8795aa;
+  color: rgba(255, 255, 255, .62);
   font-size: 8px;
   font-weight: 850;
 }
 
 .trip-summary-metrics strong {
   overflow: hidden;
-  color: #153b81;
+  color: #fff;
   font-size: 14px;
   font-weight: 950;
   text-overflow: ellipsis;
@@ -2077,7 +2127,7 @@ onMounted(loadPage)
 
 .trip-summary-metrics em {
   margin-left: 2px;
-  color: #66758c;
+  color: rgba(255, 255, 255, .72);
   font-size: 9px;
   font-style: normal;
 }
