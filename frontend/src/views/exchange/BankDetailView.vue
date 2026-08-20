@@ -259,10 +259,6 @@ const copyToClipboard = (text) => {
             </div>
           </div>
 
-          <small class="applied-rate">
-            <span>{{ exchange.lastUpdateDate }} 11:00 기준</span>
-            <b>환율 {{ format(estimate.buyRate) }}원 적용</b>
-          </small>
           <div class="conversion-line">
             <input
               type="text"
@@ -272,16 +268,18 @@ const copyToClipboard = (text) => {
               placeholder="0"
             />
             <span class="currency-label">원 환전 시</span>
-            <span class="conversion-result">
-              <em>↗ 환율 우대 {{ estimate.buyFeeRate }}%</em>
-              <strong
-                >약
-                {{
-                  exchange.getCurrency(estimate.currencyCode)?.symbol ||
-                  estimate.currencyCode
-                }}{{ format(computedEstimatedAmount) }}</strong
-              >
-            </span>
+            <strong
+              >약
+              {{
+                exchange.getCurrency(estimate.currencyCode)?.symbol ||
+                estimate.currencyCode
+              }}{{ format(computedEstimatedAmount) }}</strong
+            >
+          </div>
+          <div class="conversion-meta">
+            <em>↗ 환율 우대 {{ estimate.buyFeeRate }}%</em>
+            <b>환율 {{ format(estimate.buyRate) }}원 적용</b>
+            <span>({{ exchange.lastUpdateDate }} 11:00 기준)</span>
           </div>
         </section>
         <section class="info">
@@ -555,24 +553,6 @@ aside {
   background: #f5f8fc;
   white-space: nowrap;
 }
-.applied-rate {
-  display: flex !important;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 16px;
-  letter-spacing: -.015em;
-}
-.applied-rate span {
-  color: #8795aa;
-  font-size: 9.5px;
-  font-weight: 600;
-}
-.applied-rate b {
-  color: #df5555;
-  font-size: 11.5px;
-  font-weight: 900;
-}
 .amount-input {
   width: 88px;
   min-width: 0;
@@ -598,26 +578,39 @@ aside {
   color: #8c98a8;
   font-size: 12px;
 }
-.conversion-result {
-  display: flex;
+.conversion-line > strong {
   min-width: 0;
-  flex-direction: column;
-  align-items: flex-end;
   margin-left: auto;
-}
-.conversion-result em {
-  margin-bottom: 2px;
-  color: #1472ee;
-  font-size: 8px;
-  font-weight: 800;
-  font-style: normal;
-}
-.conversion-result strong {
-  min-width: 0;
   color: #174494;
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -.03em;
+  white-space: nowrap;
+}
+.conversion-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 0 3px;
+  letter-spacing: -.015em;
+}
+.conversion-meta em {
+  color: #1472ee;
+  font-size: 9px;
+  font-weight: 800;
+  font-style: normal;
+}
+.conversion-meta b {
+  color: #168065;
+  font-size: 10.5px;
+  font-weight: 900;
+}
+.conversion-meta span {
+  flex-basis: 100%;
+  color: #8795aa;
+  font-size: 9px;
+  font-weight: 600;
 }
 .info h2 {
   color: #173f8d;
