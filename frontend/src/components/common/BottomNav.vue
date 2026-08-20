@@ -63,22 +63,22 @@ const activeIndex = computed(() => {
 const activeItem = computed(() => navItems.value[activeIndex.value])
 const indicatorStyle = computed(() => ({
   left: `${((indicatorPosition.value + 0.5) / navItems.value.length) * 100}%`,
-  '--press-y': `${pressAmount.value * 5}px`,
+  '--press-y': `${pressAmount.value * 6}px`,
 }))
 const navSurfacePath = computed(() => {
   const center = ((indicatorPosition.value + 0.5) / navItems.value.length) * 390
-  const depth = 30 + pressAmount.value * 6
-  const left = center - 34
-  const right = center + 34
+  const depth = 32 + pressAmount.value * 7
+  const left = center - 38
+  const right = center + 38
   return [
-    'M 0 24',
+    'M 0 22',
     'Q 0 0 24 0',
     `H ${left.toFixed(2)}`,
-    `C ${(center - 23).toFixed(2)} 0 ${(center - 27).toFixed(2)} ${depth.toFixed(2)} ${center.toFixed(2)} ${depth.toFixed(2)}`,
-    `C ${(center + 27).toFixed(2)} ${depth.toFixed(2)} ${(center + 23).toFixed(2)} 0 ${right.toFixed(2)} 0`,
+    `C ${(center - 25).toFixed(2)} 0 ${(center - 31).toFixed(2)} ${depth.toFixed(2)} ${center.toFixed(2)} ${depth.toFixed(2)}`,
+    `C ${(center + 31).toFixed(2)} ${depth.toFixed(2)} ${(center + 25).toFixed(2)} 0 ${right.toFixed(2)} 0`,
     'H 366',
-    'Q 390 0 390 24',
-    'V 90 H 0 Z',
+    'Q 390 0 390 22',
+    'V 96 H 0 Z',
   ].join(' ')
 })
 
@@ -180,8 +180,8 @@ onBeforeUnmount(() => {
             <component
                 :is="activeItem.icon"
                 :key="activeItem.name"
-                :size="23"
-                :stroke-width="2.35"
+                :size="30"
+                :stroke-width="2.45"
             />
           </Transition>
         </span>
@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
           @click="handleNavigation(item)"
       >
         <span class="nav-icon">
-          <component :is="item.icon" :size="21" :stroke-width="1.9" />
+          <component :is="item.icon" :size="26" :stroke-width="2" />
         </span>
         <span class="nav-label">{{ item.name }}</span>
       </button>
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
   z-index: 50;
   width: 100%;
   max-width: 390px;
-  height: calc(112px + env(safe-area-inset-bottom));
+  height: calc(128px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -223,10 +223,10 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 0;
   display: grid;
-  height: calc(82px + env(safe-area-inset-bottom));
+  height: calc(88px + env(safe-area-inset-bottom));
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  padding: 12px 7px max(4px, env(safe-area-inset-bottom));
+  padding: 14px 6px max(5px, env(safe-area-inset-bottom));
   pointer-events: auto;
 }
 .nav-background {
@@ -240,10 +240,10 @@ onBeforeUnmount(() => {
 }
 .moving-notch {
   position: absolute;
-  top: -28px;
+  top: -26px;
   z-index: 2;
-  width: 60px;
-  height: 60px;
+  width: 66px;
+  height: 66px;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -253,8 +253,8 @@ onBeforeUnmount(() => {
   left: 50%;
   z-index: 2;
   display: grid;
-  width: 60px;
-  height: 60px;
+  width: 66px;
+  height: 66px;
   place-items: center;
   box-sizing: border-box;
   transform: translateX(-50%) translateY(var(--press-y));
@@ -271,19 +271,19 @@ onBeforeUnmount(() => {
   z-index: 3;
   display: flex;
   min-width: 0;
-  height: 66px;
+  height: 70px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
   color: rgba(255, 255, 255, .7);
-  transform: translateY(8px);
+  transform: translateY(9px);
   -webkit-tap-highlight-color: transparent;
 }
 .nav-icon {
   display: grid;
-  width: 27px;
-  height: 24px;
+  width: 32px;
+  height: 29px;
   place-items: center;
   transition: opacity .2s ease, transform .25s ease;
 }
@@ -291,7 +291,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   max-width: 100%;
   color: inherit;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
 .nav-item.active .nav-label {
   color: #fff;
   font-weight: 900;
-  transform: translateY(10px);
+  transform: translateY(12px);
 }
 .nav-item:active:not(.active) .nav-icon {
   transform: scale(.86);
