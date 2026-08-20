@@ -2337,10 +2337,9 @@ onMounted(loadPage)
   overflow: visible;
   margin-top: 20px;
   padding: 0 16px 18px;
-  border: 1px solid #173f8d;
-  border-top: 0;
+  border: 0;
   border-radius: 0 0 8px 8px;
-  background: #fff;
+  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
 }
 
 .receipt-list::before {
@@ -2349,9 +2348,7 @@ onMounted(loadPage)
   right: -1px;
   left: -1px;
   height: 8px;
-  background:
-    radial-gradient(circle at 7px 7px, #fff 6px, transparent 6.5px) 0 1px / 14px 8px repeat-x,
-    radial-gradient(circle at 7px 7px, #173f8d 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
+  background: radial-gradient(circle at 7px 7px, #dce9fb 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
   content: '';
   pointer-events: none;
 }
@@ -2362,9 +2359,7 @@ onMounted(loadPage)
   bottom: -9px;
   left: -1px;
   height: 10px;
-  background:
-    radial-gradient(circle at 7px 0, #fff 6px, transparent 6.5px) 0 0 / 14px 10px repeat-x,
-    radial-gradient(circle at 7px 0, #173f8d 7px, transparent 7.5px) 0 1px / 14px 10px repeat-x;
+  background: radial-gradient(circle at 7px 0, #c8daf6 7px, transparent 7.5px) 0 0 / 14px 10px repeat-x;
   content: '';
   pointer-events: none;
 }

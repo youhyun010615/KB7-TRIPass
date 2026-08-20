@@ -18,6 +18,11 @@ import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
+import leisureIcon from '@/assets/icons/hobby_drink.svg';
+import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
+import livingIcon from '@/assets/icons/home-dollar.svg';
+import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
+import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -217,33 +222,35 @@ const routePinPosition = computed(() => 4 + (tripProgressPercent.value / 100) * 
 const categoryIcons = {
   식비: '🍴',
   교통: '🚆',
-  숙박: '🏨',
   쇼핑: '🛍️',
-  관광: '🎨',
-  기타: '💬',
+  기타: '•••',
   카페: '☕',
-  생활비: '📦',
+  생활비: '🏠',
+  '취미·여가': '🎮',
 };
 const categoryIconImages = {
   식비: foodIcon,
   카페: cafeIcon,
   쇼핑: shoppingIcon,
   교통: taxiIcon,
+  생활비: livingIcon,
+  '취미·여가': leisureIcon,
 };
 const categoryIconRawImages = {
   식비: foodIconRaw,
   카페: cafeIconRaw,
   쇼핑: shoppingIconRaw,
   교통: taxiIconRaw,
+  생활비: livingIconRaw,
+  '취미·여가': leisureIconRaw,
 };
 const categoryPresentation = {
   식비: { color: '#e0613d', soft: '#fff0ec' },
   교통: { color: '#3478e5', soft: '#edf4ff' },
   쇼핑: { color: '#7449ad', soft: '#f3effd' },
   카페: { color: '#a66c12', soft: '#fff5e8' },
-  관광: { color: '#e25283', soft: '#ffedf3' },
-  숙박: { color: '#19a88b', soft: '#e7f6f5' },
   생활비: { color: '#19a88b', soft: '#e7f6f5' },
+  '취미·여가': { color: '#8b5cf6', soft: '#f3effd' },
   기타: { color: '#718096', soft: '#f0f3f8' },
 };
 
@@ -275,7 +282,7 @@ const categorySummary = computed(() => tripStatus.value?.categorySummary || []);
 
 // 거래가 없는 국가/기간이라도 카테고리 표 자체는 항상 노출한다 — 응답에 없는
 // 카테고리는 0원으로 채운다.
-const CATEGORY_ORDER = ['식비', '교통', '쇼핑', '카페', '관광', '숙박', '기타'];
+const CATEGORY_ORDER = ['식비', '교통', '쇼핑', '카페', '생활비', '취미·여가', '기타'];
 
 const totalCategorySpending = computed(() =>
   categorySummary.value.reduce(
@@ -637,7 +644,7 @@ const selectedSchedules = computed(() => {
     .map(({ schedule, date, isToday }, index) => {
       const title = schedule.title || '';
       const location = schedule.location || '';
-      const countryName = Object.keys(countryFlagMap).find(
+      const countryName = schedule.countryName || Object.keys(countryFlagMap).find(
         (name) => location.includes(name) || title.includes(name),
       );
 
@@ -655,6 +662,17 @@ const selectedSchedules = computed(() => {
         warning: false,
         isToday,
         isNext: index === 0,
+        schedule: {
+          id: schedule.id ?? schedule.scheduleId,
+          title,
+          date: [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'),
+          time: `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`,
+          countryCode: countryFlagMap[countryName]?.toUpperCase() || '',
+          currency: schedule.currencyCode || schedule.currency || '',
+          amount: Number(schedule.amount || 0),
+          paymentStatus: String(schedule.paymentStatus || 'undecided').toLowerCase(),
+          placeName: location,
+        },
       };
     });
 });
@@ -1051,31 +1069,21 @@ async function switchMode(mode) {
       <div v-if="selectedSchedules.length === 0" class="empty-msg">
         예정된 여행 일정이 없어요.
       </div>
-      <button
+      <div
         v-else
         v-for="(item, index) in selectedSchedules"
         :key="item.id"
-        class="schedule-row"
+        class="home-schedule-row"
         :class="{ 'is-next': item.isNext }"
         :style="{ '--row-delay': `${index * 48}ms` }"
-        type="button"
-        @click="router.push('/schedule')"
       >
-        <span class="schedule-marker" aria-hidden="true">
-          <i :class="item.flagClass"></i>
-        </span>
-        <span class="schedule-content">
-          <span class="schedule-meta">
-            <b v-if="item.date">{{ item.date }}</b>
-            <time>{{ item.time }}</time>
-          </span>
-          <strong>{{ item.title }}</strong>
-          <small v-if="item.status">
-            <span aria-hidden="true">⌖</span>{{ item.status }}
-          </small>
-        </span>
-        <span class="schedule-arrow" aria-hidden="true">›</span>
-      </button>
+        <small class="home-schedule-date">{{ item.date }}</small>
+        <ScheduleCard
+          :schedule="item.schedule"
+          :today="item.isToday"
+          @detail="router.push('/schedule')"
+        />
+      </div>
     </article>
     </div>
 
@@ -2044,6 +2052,18 @@ async function switchMode(mode) {
 .schedule-card-title button span {
   font-size: 14px;
   line-height: 1;
+}
+.home-schedule-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+}
+.home-schedule-row:first-of-type { margin-top: 0; }
+.home-schedule-date {
+  color: #2f6fed;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 800;
 }
 .schedule-row {
   display: grid;

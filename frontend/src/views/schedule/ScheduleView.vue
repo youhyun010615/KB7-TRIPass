@@ -154,10 +154,13 @@ const tripProgress = computed(() => {
   return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
 });
 const tripStateLabel = computed(() => {
-  if (tripProgress.value <= 0) return '여행 예정';
-  if (tripProgress.value >= 100) return '여행 완료';
-  const elapsed = Math.max(1, Math.floor((new Date(`${store.today}T00:00:00`) - new Date(`${store.travelStart}T00:00:00`)) / 86_400_000) + 1);
-  return `여행 중 · D+${elapsed}`;
+  const today = new Date(`${store.today}T00:00:00`).getTime();
+  const start = new Date(`${store.travelStart}T00:00:00`).getTime();
+  const end = new Date(`${store.travelEnd}T00:00:00`).getTime();
+  if (today < start) return '여행 예정';
+  if (today > end) return '여행 완료';
+  const elapsed = Math.max(0, Math.floor((today - start) / 86_400_000));
+  return `여행 중 · DAY ${elapsed}`;
 });
 const openDetail = (id) => router.push(`/schedule/${id}`);
 
@@ -223,13 +226,11 @@ function showPastSchedules() {
       </div>
       <div class="trip-route">
         <div>
-          <small>{{ firstCountry?.name }}</small>
-          <strong><span v-if="firstCountry" :class="flagIconClass(firstCountry.code)" class="fi-inline route-flag" /> {{ firstCountry?.code }}</strong>
+          <strong><span v-if="firstCountry" :class="flagIconClass(firstCountry.code)" class="fi-inline route-flag" /> {{ firstCountry?.name }}</strong>
         </div>
         <span class="route-flight"><i :style="{ left: `${tripProgress}%` }">✈</i></span>
         <div class="route-end">
-          <small>{{ lastCountry?.name }}</small>
-          <strong>{{ lastCountry?.code }} <span v-if="lastCountry" :class="flagIconClass(lastCountry.code)" class="fi-inline route-flag" /></strong>
+          <strong>{{ lastCountry?.name }} <span v-if="lastCountry" :class="flagIconClass(lastCountry.code)" class="fi-inline route-flag" /></strong>
         </div>
       </div>
       <p>{{ store.travelStart }} — {{ store.travelEnd }} · {{ travel.tripName || '나의 여행' }}</p>
