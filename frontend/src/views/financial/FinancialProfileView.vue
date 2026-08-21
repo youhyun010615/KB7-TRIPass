@@ -151,6 +151,10 @@ function backFromInstitutionSelect(defaultStep) {
     router.push('/mypage/assets')
     return
   }
+  if (isOnboarding.value) {
+    router.replace({ name: 'TripOnboarding' })
+    return
+  }
   step.value = defaultStep
 }
 

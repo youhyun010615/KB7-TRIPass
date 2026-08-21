@@ -35,7 +35,7 @@ function openTripRegistration() {
 
 function openAccountRegistration() {
   if (hasLinkedAccount.value) return
-  router.push({ name: 'FinancialProfile', query: { onboarding: '1' } })
+  router.push({ name: 'FinancialProfile', query: { onboarding: '1', step: '2' } })
 }
 
 function openCardRegistration() {
