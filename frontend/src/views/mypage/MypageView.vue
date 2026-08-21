@@ -32,7 +32,9 @@ const hasTravelingTrip = computed(() => trips.value.some((trip) => tripStatus(tr
 const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
 const visitedCountryCount = computed(() => {
   const countries = new Set()
-  trips.value.forEach((trip) => splitCountryNames(trip.countryNames).forEach((name) => countries.add(name)))
+  trips.value
+    .filter((trip) => trip.status === 'ENDED' || tripStatus(trip) === '여행 중')
+    .forEach((trip) => splitCountryNames(trip.countryNames).forEach((name) => countries.add(name)))
   return countries.size
 })
 

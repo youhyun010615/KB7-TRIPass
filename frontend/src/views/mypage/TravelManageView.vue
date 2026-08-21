@@ -67,9 +67,11 @@ onMounted(async () => {
     const trips = (await fetchMyTrips()) || []
 
     const uniqueCountries = new Set()
-    trips.forEach((t) =>
-      splitCountryNames(t.countryNames).forEach((name) => uniqueCountries.add(name)),
-    )
+    trips
+      .filter((t) => t.status === 'ENDED' || isTraveling(t))
+      .forEach((t) =>
+        splitCountryNames(t.countryNames).forEach((name) => uniqueCountries.add(name)),
+      )
     visitedCountryCount.value = uniqueCountries.size
     visitedCountryCodes.value = [...uniqueCountries].slice(0, 4).map(countryCodeOf).filter(Boolean)
 
