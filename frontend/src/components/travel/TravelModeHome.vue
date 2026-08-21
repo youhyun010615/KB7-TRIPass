@@ -2208,23 +2208,35 @@ async function switchMode(mode) {
 }
 .quick-calculator {
   position: fixed;
-  right: max(calc((100vw - 390px) / 2 + 18px), 18px);
-  bottom: 77px;
+  right: max(calc((100vw - 390px) / 2 + 18px), 12px);
+  bottom: 136px;
   z-index: 45;
-  width: 320px;
-  padding: 14px;
+  width: min(354px, calc(100vw - 24px));
+  padding: 18px;
   border: 1px solid #bfd3f2;
-  border-radius: 15px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
   box-shadow: 0 12px 30px rgba(23, 63, 141, .2);
+}
+.quick-calculator::after {
+  position: absolute;
+  right: 15px;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  border-right: 1px solid #bfd3f2;
+  border-bottom: 1px solid #bfd3f2;
+  background: #c8daf6;
+  content: '';
+  transform: rotate(45deg);
 }
 .calculator-head {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 15px;
 }
 .calculator-head button {
-  font-size: 18px;
+  font-size: 21px;
   color: #7b8798;
 }
 .calculator-currencies {
@@ -2249,18 +2261,19 @@ async function switchMode(mode) {
   grid-template-columns: 1fr 20px 1fr;
   align-items: center;
   gap: 4px;
-  margin-top: 8px;
+  margin-top: 12px;
 }
 .calculator-fields label,
 .calculator-fields output {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
-  border-radius: 9px;
+  min-height: 52px;
+  padding: 12px;
+  border-radius: 12px;
   border: 1px solid rgba(23, 63, 141, .1);
   background: rgba(255, 255, 255, .78);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
 }
 .calculator-fields input {
@@ -2272,7 +2285,7 @@ async function switchMode(mode) {
 .calculator-fields span,
 .calculator-fields small {
   color: #9aa4b3;
-  font-size: 8px;
+  font-size: 9px;
 }
 .calculator-fab {
   position: fixed;
