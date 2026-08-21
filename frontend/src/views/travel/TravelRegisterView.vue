@@ -31,6 +31,7 @@ const selectedWalletAccountId = ref(null)
 const walletStepLoading = ref(false)
 const walletStepError = ref('')
 const showWalletWithdrawSheet = ref(false)
+const activeBudgetCountryId = ref(null)
 let searchTimer
 
 function toggleCountryFromDropdown(countryId) {
@@ -66,6 +67,7 @@ const dateLabel = (value) => value ? value.replaceAll('-', '.') : '여행 날짜
 const stepTitle = computed(() => ['여행 계획 등록', '여행 일정 입력', '여행 예산', '여행 목표 확인', '월렛 자금 선택'][step.value - 1])
 const registrationHeroTitle = computed(() => {
   if (step.value === 5) return '마지막으로 월렛 자금을 정해 주세요'
+  if (step.value === 3) return '국가별 예산을 확인해 주세요'
   if (isEditMode.value) {
     return step.value === 4 ? '수정할 여행 목표를 최종 확인해 주세요' : '현재 여행 계획을 다시 확인해 볼까요?'
   }
@@ -73,6 +75,7 @@ const registrationHeroTitle = computed(() => {
 })
 const registrationHeroDescription = computed(() => {
   if (step.value === 5) return '남아 있는 월렛 잔액을 이번 여행에 사용할지 선택하면 등록이 완료돼요.'
+  if (step.value === 3) return 'AI가 추천한 예산이에요. 필요한 항목만 바꿀 수 있어요.'
   if (isEditMode.value) {
     return step.value === 4
       ? '변경한 여행 일정과 목표 예산을 반영하기 전 한 번 더 확인해요.'
@@ -96,6 +99,11 @@ const liveTargetAmount = computed(() =>
 )
 const livePrepaidExpenseTotal = computed(() =>
   store.selectedPlans.reduce((sum, plan) => sum + countryPrepaidTotal(plan), 0),
+)
+const activeBudgetPlan = computed(() =>
+  store.selectedPlans.find(plan => plan.countryId === activeBudgetCountryId.value)
+    ?? store.selectedPlans[0]
+    ?? null,
 )
 const walletDecisionAmount = computed(() => Number(
   store.lifecycle?.walletReflectAmount ?? store.currentWalletBalance ?? 0,
@@ -125,6 +133,16 @@ watch(searchKeyword, (keyword) => {
   window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(() => store.loadCountries(keyword.trim()), 250)
 })
+
+watch(
+  () => store.selectedPlans.map(plan => plan.countryId),
+  (countryIds) => {
+    if (!countryIds.includes(activeBudgetCountryId.value)) {
+      activeBudgetCountryId.value = countryIds[0] ?? null
+    }
+  },
+  { immediate: true },
+)
 
 watch(() => route.name, (routeName) => {
   if (routeName === 'TravelRegisterSchedule') step.value = 2
@@ -454,46 +472,59 @@ function goToOnboardingHub() {
     </template>
 
     <template v-else-if="step === 3">
-      <section class="budget-hero">
-        <span class="ai-orbit"><i>AI</i></span>
-        <div><small>AI 추천 완료</small><h2>여행 예산을 확인해 주세요</h2><p>필요한 항목만 아래에서 바꿀 수 있어요.</p></div>
-      </section>
+      <nav class="budget-country-tabs" aria-label="국가별 여행 예산">
+        <button
+          v-for="plan in store.selectedPlans"
+          :key="plan.countryId"
+          type="button"
+          :class="{ active: activeBudgetPlan?.countryId === plan.countryId }"
+          @click="activeBudgetCountryId = plan.countryId"
+        >
+          <span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span>
+          <span v-else>{{ plan.flag }}</span>
+          <b>{{ plan.name }}</b>
+        </button>
+      </nav>
       <section
-        v-for="plan in store.selectedPlans"
-        :key="plan.countryId"
-        class="country-card budget-card"
-        :style="{ '--accent': plan.accent }"
+        v-if="activeBudgetPlan"
+        :key="activeBudgetPlan.countryId"
+        class="country-card budget-card budget-card-active"
+        :style="{ '--accent': activeBudgetPlan.accent }"
       >
-        <header>
-          <div class="budget-country"><span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span><span v-else>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ dateLabel(plan.startDate) }} ~ {{ dateLabel(plan.endDate) }}</small></div>
+        <header class="budget-country-header">
+          <div class="budget-country">
+            <strong>{{ activeBudgetPlan.name }}</strong>
+            <small>{{ dateLabel(activeBudgetPlan.startDate) }} ~ {{ dateLabel(activeBudgetPlan.endDate) }}</small>
+          </div>
+          <span class="budget-recommendation-status">
+            <i class="budget-ai-motion"><b>AI</b></i>
+            추천 완료
+          </span>
         </header>
 
-        <section class="ai-recommendation">
-          <div class="ai-recommendation-head"><span><i>AI</i> 추천 예산</span><b>{{ money(recommendedLocalTotal(plan)) }}</b></div>
-          <div class="ai-values">
-            <span>사전 지출 <b>{{ money(recommendedPrepaidTotal(plan)) }}</b></span>
-            <span>현지 여행 자금 <b>{{ money(recommendedLocalTotal(plan)) }}</b></span>
-          </div>
+        <section class="budget-recommendation-summary">
+          <div><span>사전 지출 <small>(AI 추천)</small></span><b>{{ money(recommendedPrepaidTotal(activeBudgetPlan)) }}</b></div>
+          <div><span>현지 여행 자금 <small>(AI 추천)</small></span><b>{{ money(recommendedLocalTotal(activeBudgetPlan)) }}</b></div>
         </section>
 
         <section class="editable-budget">
-          <div class="manual-heading"><div><b><i>✎</i> 직접 수정</b><span>입력창을 눌러 금액을 바꾸세요</span></div><button type="button" @click="store.resetBudgetToRecommendation(plan.countryId)">추천값 복원</button></div>
+          <div class="manual-heading"><div><b><i>✎</i> 아래 금액을 눌러 직접 수정할 수 있어요</b></div><button type="button" @click="store.resetBudgetToRecommendation(activeBudgetPlan.countryId)">추천값 복원</button></div>
           <div class="budget-section-title"><b>사전 지출</b><span>저축 목표 제외</span></div>
           <div class="budget-grid prepaid-grid">
             <label v-for="category in budgetCategories.filter((item) => item.prepaid)" :key="category.field">
               <span>{{ category.icon }} {{ category.label }}</span>
-              <div><input type="number" min="0" max="100000000" :aria-label="`${plan.name} ${category.label} 예산`" :value="plan.budget[category.field]" @input="store.updateBudget(plan.countryId, category.field, $event.target.value)"><em>원</em></div>
+              <div><input type="number" min="0" max="100000000" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="activeBudgetPlan.budget[category.field]" @input="store.updateBudget(activeBudgetPlan.countryId, category.field, $event.target.value)"><em>원</em></div>
             </label>
           </div>
-          <div class="subtotal prepaid"><span>합계</span><b>{{ money(countryPrepaidTotal(plan)) }}</b></div>
+          <div class="subtotal prepaid"><span>합계</span><b>{{ money(countryPrepaidTotal(activeBudgetPlan)) }}</b></div>
           <div class="budget-section-title local"><b>현지 여행 자금</b><span>TRIP 월렛 저축</span></div>
           <div class="budget-grid">
             <label v-for="category in budgetCategories.filter((item) => !item.prepaid)" :key="category.field">
               <span>{{ category.icon }} {{ category.label }}</span>
-              <div><input type="number" min="0" max="100000000" :aria-label="`${plan.name} ${category.label} 예산`" :value="plan.budget[category.field]" @input="store.updateBudget(plan.countryId, category.field, $event.target.value)"><em>원</em></div>
+              <div><input type="number" min="0" max="100000000" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="activeBudgetPlan.budget[category.field]" @input="store.updateBudget(activeBudgetPlan.countryId, category.field, $event.target.value)"><em>원</em></div>
             </label>
           </div>
-          <div class="subtotal local-total"><span>{{ plan.name }} 저축 목표</span><b>{{ money(countryLocalTotal(plan)) }}</b></div>
+          <div class="subtotal local-total"><span>{{ activeBudgetPlan.name }} 저축 목표</span><b>{{ money(countryLocalTotal(activeBudgetPlan)) }}</b></div>
         </section>
       </section>
       <section class="total-preview">
@@ -645,4 +676,5 @@ function goToOnboardingHub() {
   margin-top:8px;
   box-shadow:0 10px 24px rgba(20,35,70,.12);
 }
+.budget-country-tabs{display:flex;gap:5px;overflow-x:auto;margin:-4px -3px 13px;padding:4px 3px;border-radius:999px;background:#f1f4f9;scrollbar-width:none}.budget-country-tabs::-webkit-scrollbar{display:none}.budget-country-tabs button{display:flex;flex:1 0 auto;min-width:96px;height:40px;align-items:center;justify-content:center;gap:6px;padding:0 13px;border:0;border-radius:999px;color:#9aa8bd;background:transparent;font-size:10px;white-space:nowrap;transition:color .2s,background .2s,box-shadow .2s,transform .2s}.budget-country-tabs button .fi-inline{width:18px;height:13px;border-radius:2px}.budget-country-tabs button b{font-size:10px}.budget-country-tabs button.active{color:#fff;background:#173b86;box-shadow:0 6px 13px rgba(23,59,134,.2);transform:translateY(-1px)}.budget-card.budget-card-active{margin-top:0;padding:0;border:0;border-left:0;border-radius:0;background:transparent;box-shadow:none}.budget-country-header{display:flex!important;align-items:center!important;justify-content:space-between;padding:3px 0 12px}.budget-country-header .budget-country{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.budget-country-header .budget-country strong{font-size:15px}.budget-country-header .budget-country small{font-size:9px}.budget-recommendation-status{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:999px;color:#2469e8;background:#edf4ff;font-size:9px;font-weight:900;white-space:nowrap}.budget-ai-motion{position:relative;display:grid;width:21px;height:21px;place-items:center;border:2px dotted #4384f1;border-radius:50%;font-style:normal;animation:budget-ai-spin 2.4s linear infinite}.budget-ai-motion::after{position:absolute;top:-3px;right:-2px;width:5px;height:5px;border-radius:50%;background:#2469e8;box-shadow:0 0 0 3px rgba(36,105,232,.14);content:''}.budget-ai-motion b{font-size:6px;animation:budget-ai-counter-spin 2.4s linear infinite}.budget-recommendation-summary{display:grid;grid-template-columns:1fr 1fr;margin-bottom:11px;border-radius:14px;background:#f5f7fb}.budget-recommendation-summary div{padding:15px 9px;text-align:center}.budget-recommendation-summary div+div{border-left:1px dashed #d7dfeb}.budget-recommendation-summary span{display:block;color:#7d8ba1;font-size:8px;font-weight:800}.budget-recommendation-summary span small{font-size:7px}.budget-recommendation-summary b{display:block;margin-top:8px;color:#101c32;font-size:14px}.budget-recommendation-summary div:last-child b{color:#173b86}.budget-card-active .editable-budget{margin-top:0;padding:0;border:0;background:transparent}.budget-card-active .manual-heading{margin-bottom:13px;padding:10px 11px;border:1px solid #f2d18e;border-radius:11px;background:#fff9eb}.budget-card-active .manual-heading b{color:#b96d05;font-size:9px}.budget-card-active .manual-heading b i{width:auto;height:auto;color:inherit;background:none}.budget-card-active .manual-heading button{font-size:8px}.budget-card-active .budget-grid.prepaid-grid{grid-template-columns:1fr}.budget-card-active .budget-grid.prepaid-grid label{display:flex;align-items:center}.budget-card-active .budget-grid.prepaid-grid label>span{flex:1}.budget-card-active .budget-grid.prepaid-grid label div{width:54%;margin-top:0;border-top:0}.budget-card-active .subtotal{border-radius:0;background:transparent}.budget-card-active .subtotal.prepaid{color:#b96d05}.budget-card-active .subtotal.local-total{color:#173b86}.total-preview{border-top:1px solid #e4e9f2;border-radius:0;box-shadow:none}@keyframes budget-ai-spin{to{transform:rotate(360deg)}}@keyframes budget-ai-counter-spin{to{transform:rotate(-360deg)}}@media(prefers-reduced-motion:reduce){.budget-ai-motion,.budget-ai-motion b{animation:none}}
 </style>
