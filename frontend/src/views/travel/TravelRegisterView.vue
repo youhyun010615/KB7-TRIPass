@@ -212,7 +212,6 @@ async function includeWalletBalance() {
   walletStepError.value = ''
   try {
     if (walletDecisionRequired.value) await store.resolveWalletBalanceReflect(true)
-    await finish()
   } catch (error) {
     walletStepError.value = error.response?.data?.message || '월렛 선택을 처리하지 못했어요.'
   } finally {
@@ -241,7 +240,6 @@ async function withdrawWalletBalance() {
     })
     await store.resolveWalletBalanceReflect(false)
     showWalletWithdrawSheet.value = false
-    await finish()
   } catch (error) {
     walletStepError.value = error.response?.data?.message || '월렛 잔액을 계좌로 보내지 못했어요.'
   } finally {
@@ -249,8 +247,13 @@ async function withdrawWalletBalance() {
   }
 }
 
-function connectAccount() {
-  router.push({ name: 'FinancialProfile', query: { onboarding: '1' } })
+async function completeWalletStep() {
+  if (walletStepLoading.value || store.homeLoading) return
+  if (walletDecisionRequired.value) {
+    await includeWalletBalance()
+    if (walletDecisionRequired.value) return
+  }
+  await finish()
 }
 
 function back() {
@@ -295,14 +298,14 @@ function goToOnboardingHub() {
     </header>
     <div class="steps"><i v-for="index in 5" :key="index" :class="{ active: index <= step }" /></div>
 
-    <section v-if="usesGuidedRegisterDesign" class="registration-hero">
+    <section v-if="usesGuidedRegisterDesign" :key="`hero-${step}`" class="registration-hero">
       <span>TRIP PLAN BOARDING PASS</span>
       <small>STEP {{ step }} / 5</small>
       <h2>{{ registrationHeroTitle }}</h2>
       <p>{{ registrationHeroDescription }}</p>
     </section>
 
-    <section class="register-content">
+    <section :key="step" class="register-content">
 
     <div v-if="store.errorMessage" class="error-banner" role="alert">
       <span>!</span>
@@ -510,43 +513,33 @@ function goToOnboardingHub() {
     </template>
 
     <template v-else>
-      <section class="complete-guide"><span>✓</span><p>여행 목표가 완성되었어요</p><small>마지막으로 기존 월렛 잔액의 사용 방법을 정해 주세요.</small></section>
       <TravelTicket title="총 여행 저축 목표" :meta="`현지 여행 자금 · ${store.selectedPlans.length}개국 합산`">
         <div class="grand-total">{{ money(store.totalTargetAmount || liveTargetAmount) }}</div>
         <p class="ticket-note">사전 지출 {{ money(store.prepaidExpenseTotal || livePrepaidExpenseTotal) }}은 별도로 기록돼요.</p>
       </TravelTicket>
-      <section class="completion-stats">
-        <div><span>현재 TRIP 월렛</span><b>{{ money(walletDecisionAmount) }}</b></div>
-        <div><span>남은 저축 기간</span><b>{{ store.remainingMonths }}개월</b></div>
-      </section>
       <section v-if="walletStepLoading && !store.lifecycle" class="wallet-loading">월렛 정보를 확인하고 있어요…</section>
-      <section v-else-if="walletDecisionRequired && walletDecisionAmount > 0" class="wallet-decision-card">
-        <span class="wallet-decision-icon">₩</span>
-        <small>MY TRIP WALLET</small>
-        <h2>월렛에 {{ money(walletDecisionAmount) }}이 남아 있어요</h2>
-        <p>이 금액을 이번 여행 목표 자금에 포함할까요?</p>
-        <div class="wallet-decision-actions">
-          <button type="button" class="secondary" :disabled="walletStepLoading" @click="openWalletWithdrawal">빼고 시작할게요</button>
-          <button type="button" :disabled="walletStepLoading" @click="includeWalletBalance">포함할게요</button>
+      <section v-else class="onboarding-wallet-card" :class="{ resolved: !walletDecisionRequired }">
+        <div class="onboarding-wallet-top">
+          <div><small>TRIPASS WALLET</small><b>월렛 잔액</b></div>
+          <span>{{ walletDecisionRequired ? '선택 필요' : '선택 완료' }}</span>
         </div>
-        <button v-if="!walletAccounts.length" type="button" class="account-connect-link" @click="connectAccount">잔액을 빼려면 계좌 연결하기 ›</button>
-      </section>
-      <section v-else-if="walletDecisionRequired" class="wallet-empty-card">
-        <span>₩</span>
-        <div><b>현재 월렛 잔액이 0원이에요</b><p>추가 금액 없이 새 여행 저축을 시작할게요.</p></div>
-      </section>
-      <section v-else class="wallet-empty-card resolved">
-        <span>✓</span>
-        <div><b>월렛 자금 설정이 완료됐어요</b><p>이제 여행 목표에 맞춰 저축을 시작할 수 있어요.</p></div>
+        <strong class="onboarding-wallet-balance">{{ money(walletDecisionAmount) }}</strong>
+        <p v-if="walletDecisionRequired && walletDecisionAmount > 0">남아 있는 잔액을 이번 여행 목표에 포함하거나 연결 계좌로 뺄 수 있어요.</p>
+        <p v-else-if="walletDecisionRequired">현재 잔액이 없어 추가 금액 없이 여행 목표를 시작해요.</p>
+        <p v-else>월렛 자금 선택이 완료됐어요. 다음 단계에서 계좌 등록을 이어갈 수 있어요.</p>
+        <div class="wallet-decision-actions">
+          <button v-if="walletDecisionRequired && walletDecisionAmount > 0" type="button" class="secondary" :disabled="walletStepLoading" @click="openWalletWithdrawal">계좌로 빼기</button>
+          <button v-if="walletDecisionRequired && walletDecisionAmount > 0" type="button" :disabled="walletStepLoading" @click="includeWalletBalance">목표 자금에 충전</button>
+        </div>
       </section>
       <p v-if="walletStepError" class="wallet-step-error">{{ walletStepError }}</p>
       <button
         v-if="!walletDecisionRequired || walletDecisionAmount === 0"
         class="primary-cta"
         :disabled="walletStepLoading || store.homeLoading"
-        @click="includeWalletBalance"
+        @click="completeWalletStep"
       >
-        {{ walletStepLoading || store.homeLoading ? '처리하고 있어요…' : (walletDecisionRequired ? '추가 금액 없이 시작할게요' : '여행 저축 시작하기') }}
+        {{ walletStepLoading || store.homeLoading ? '처리하고 있어요…' : '다음' }}
       </button>
     </template>
     </section>
@@ -598,4 +591,5 @@ function goToOnboardingHub() {
 .page-header:has(.onboarding-skip){grid-template-columns:78px 1fr 78px}.page-header .onboarding-skip{display:block;width:auto;height:32px;padding:0;background:transparent;color:#60718d;font-size:10px;font-weight:800;box-shadow:none;white-space:nowrap}
 .register-content{display:contents}.onboarding-register{padding:0 0 104px;background:#f3f6fb}.onboarding-register .page-header{height:62px;padding:0 20px 12px;color:#fff;background:#0b2a6b}.onboarding-register .page-header>button:first-child{color:#fff;background:rgba(255,255,255,.12);box-shadow:none}.onboarding-register .page-header .onboarding-skip{color:rgba(255,255,255,.72)}.onboarding-register .steps{gap:6px;margin:0;padding:3px 22px 13px;background:#0b2a6b}.onboarding-register .steps i{background:rgba(255,255,255,.18)}.onboarding-register .steps i.active{background:#ffd45e}.registration-hero{position:relative;overflow:hidden;padding:15px 24px 73px;color:#fff;background:linear-gradient(155deg,#0b2a6b 0%,#123c94 62%,#17459f 100%)}.registration-hero::after{position:absolute;right:-48px;bottom:-72px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06);content:''}.registration-hero>span{font-size:9px;font-weight:900;letter-spacing:.13em;color:#ffd45e}.registration-hero>small{float:right;color:rgba(255,255,255,.58);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;font-weight:800}.registration-hero h2{position:relative;z-index:1;margin-top:15px;font-size:20px;line-height:1.35;letter-spacing:-.04em}.registration-hero p{position:relative;z-index:1;margin-top:7px;color:rgba(255,255,255,.66);font-size:10px;font-weight:600;line-height:1.55}.onboarding-register .register-content{position:relative;z-index:2;display:block;margin:-48px 18px 0;padding:18px 16px 26px;border-radius:20px;background:#fff;box-shadow:0 14px 30px rgba(11,42,107,.16)}.onboarding-register .register-content::before,.onboarding-register .register-content::after{position:absolute;top:35px;width:18px;height:18px;border-radius:50%;background:#123c94;content:''}.onboarding-register .register-content::before{left:-9px}.onboarding-register .register-content::after{right:-9px}.onboarding-register .guide-card{margin-top:2px;background:#eef4ff}.onboarding-register .country-card,.onboarding-register .selection-summary,.onboarding-register .total-preview{box-shadow:none}.onboarding-register .complete-guide{margin-top:2px}.onboarding-register .primary-cta{box-shadow:0 10px 24px rgba(23,59,134,.24)}
 .goal-review-note{margin-top:13px;padding:14px;border:1px solid #cbdaf2;border-radius:14px;background:#f4f8ff}.goal-review-note b{color:#173b86;font-size:12px}.goal-review-note p{margin-top:5px;color:#70809a;font-size:9px;line-height:1.55}.wallet-loading{margin-top:12px;padding:20px;border-radius:15px;background:#fff;color:#70809a;text-align:center;font-size:11px}.wallet-decision-card{position:relative;overflow:hidden;margin-top:13px;padding:20px 17px;border:1px solid #bcd2f5;border-radius:20px;background:linear-gradient(145deg,#eef5ff,#fff);text-align:center}.wallet-decision-card::after{position:absolute;right:-34px;top:-34px;width:112px;height:112px;border-radius:50%;background:#dceaff;content:''}.wallet-decision-icon{position:relative;z-index:1;display:grid;width:48px;height:48px;margin:0 auto 10px;place-items:center;border-radius:15px;color:#fff;background:#2469e8;font-size:20px;font-weight:900}.wallet-decision-card>small{position:relative;z-index:1;color:#2f70e9;font-size:8px;font-weight:900;letter-spacing:.15em}.wallet-decision-card h2{position:relative;z-index:1;margin-top:7px;font-size:16px;font-weight:900}.wallet-decision-card>p{position:relative;z-index:1;margin-top:6px;color:#70809a;font-size:10px}.wallet-decision-actions{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1.15fr;gap:8px;margin-top:17px}.wallet-decision-actions button,.wallet-withdraw-actions button{height:47px;border-radius:13px;color:#fff;background:#173b86;font-size:11px;font-weight:900}.wallet-decision-actions button.secondary,.wallet-withdraw-actions button.secondary{color:#53627a;background:#e9eef6}.wallet-decision-actions button:disabled,.wallet-withdraw-actions button:disabled{opacity:.55}.account-connect-link{position:relative;z-index:1;margin-top:12px;color:#2469e8;background:none;font-size:9px;font-weight:800}.wallet-empty-card{display:flex;align-items:center;gap:12px;margin-top:13px;padding:16px;border:1px solid #dce5f2;border-radius:16px;background:#fff}.wallet-empty-card>span{display:grid;flex:0 0 42px;height:42px;place-items:center;border-radius:13px;color:#2469e8;background:#eaf2ff;font-size:17px;font-weight:900}.wallet-empty-card b{font-size:12px}.wallet-empty-card p{margin-top:4px;color:#8190a6;font-size:9px}.wallet-empty-card.resolved>span{color:#078568;background:#e2f7f0}.wallet-step-error{margin-top:10px;padding:10px 12px;border-radius:10px;color:#c5353b;background:#fff0f1;font-size:9px;line-height:1.5}.wallet-withdraw-backdrop{position:fixed;z-index:240;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(9,22,49,.52)}.wallet-withdraw-sheet{width:min(100%,390px);padding:12px 20px calc(22px + env(safe-area-inset-bottom));border-radius:26px 26px 0 0;background:#fff;box-shadow:0 -16px 40px rgba(12,35,78,.2)}.wallet-withdraw-sheet>i{display:block;width:40px;height:4px;margin:0 auto 18px;border-radius:99px;background:#d8e0ed}.wallet-withdraw-sheet>small{color:#2f70e9;font-size:9px;font-weight:900;letter-spacing:.14em}.wallet-withdraw-sheet h2{margin-top:7px;font-size:19px;font-weight:900}.wallet-withdraw-sheet>p{margin-top:7px;color:#75849a;font-size:10px}.wallet-account-list{display:grid;gap:8px;margin-top:16px}.wallet-account-list>button{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;width:100%;padding:12px;border:1px solid #e1e8f2;border-radius:14px;background:#f8faff;text-align:left}.wallet-account-list>button.selected{border:2px solid #2f70e9;background:#eef5ff}.wallet-account-list>button>span{display:grid;width:36px;height:36px;place-items:center;border-radius:50%;color:#173b86;background:#fff;font-size:12px;font-weight:900}.wallet-account-list b{display:block;font-size:11px}.wallet-account-list small{display:block;margin-top:3px;color:#8a98ad;font-size:8px}.wallet-account-list em{color:#2f70e9;font-size:9px;font-style:normal;font-weight:900}.wallet-withdraw-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;margin-top:18px}
+.onboarding-register .registration-hero{animation:hero-change .48s cubic-bezier(.22,1,.36,1) both}.onboarding-register .register-content{animation:content-change .5s cubic-bezier(.22,1,.36,1) both}.onboarding-register .register-content>*{animation:stagger-in .42s cubic-bezier(.22,1,.36,1) both}.onboarding-register .register-content>*:nth-child(2){animation-delay:.05s}.onboarding-register .register-content>*:nth-child(3){animation-delay:.1s}.onboarding-register .register-content>*:nth-child(4){animation-delay:.15s}.onboarding-register .register-content>*:nth-child(5){animation-delay:.2s}.onboarding-wallet-card{position:relative;overflow:hidden;margin-top:16px;padding:20px 18px 18px;border-radius:22px;color:#fff;background:linear-gradient(145deg,#0d2f76 0%,#174ca8 62%,#2d6fd9 100%);box-shadow:0 14px 30px rgba(18,58,133,.24);animation:wallet-arrive .62s cubic-bezier(.22,1,.36,1) .16s both}.onboarding-wallet-card::before{position:absolute;inset:10px;border:1px solid rgba(168,198,249,.34);border-radius:18px;content:'';pointer-events:none}.onboarding-wallet-card::after{position:absolute;right:-42px;top:-52px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.08);content:''}.onboarding-wallet-top,.onboarding-wallet-balance,.onboarding-wallet-card>p,.onboarding-wallet-card .wallet-decision-actions{position:relative;z-index:1}.onboarding-wallet-top{display:flex;align-items:flex-start;justify-content:space-between}.onboarding-wallet-top div{display:flex;flex-direction:column;gap:4px}.onboarding-wallet-top small{color:#ffd45e;font-size:8px;font-weight:900;letter-spacing:.14em}.onboarding-wallet-top b{font-size:14px}.onboarding-wallet-top>span{padding:6px 9px;border-radius:999px;color:#173f8d;background:#ffd45e;font-size:8px;font-weight:900}.onboarding-wallet-card.resolved .onboarding-wallet-top>span{color:#087e5b;background:#dff8ef}.onboarding-wallet-balance{display:block;margin-top:22px;font-family:'Space Mono',ui-monospace,monospace;font-size:32px;line-height:1;font-weight:800;letter-spacing:-.05em}.onboarding-wallet-card>p{margin-top:13px;padding-top:13px;border-top:1px dashed rgba(255,255,255,.35);color:rgba(255,255,255,.72);font-size:9px;line-height:1.55;text-align:left}.onboarding-wallet-card .wallet-decision-actions{margin-top:16px}.onboarding-wallet-card .wallet-decision-actions button{border:1px solid rgba(255,255,255,.3);background:#fff;color:#173f8d}.onboarding-wallet-card .wallet-decision-actions button.secondary{color:#fff;background:rgba(255,255,255,.14)}@keyframes hero-change{from{opacity:0;transform:translateY(-9px)}to{opacity:1;transform:translateY(0)}}@keyframes content-change{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes stagger-in{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}@keyframes wallet-arrive{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@media(prefers-reduced-motion:reduce){.onboarding-register .registration-hero,.onboarding-register .register-content,.onboarding-register .register-content>*,.onboarding-wallet-card{animation:none}}
 </style>
