@@ -566,8 +566,8 @@ const myManageItems = computed(() => [
 .trip-circle { position:relative;isolation:isolate;display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
 .trip-circle-item.selected { color:#111b30; }
 .trip-circle-item.selected .trip-circle { box-shadow:0 0 0 3px #2f70f2;transform:scale(1.03); }
-.trip-circle-item.selected.traveling .trip-circle { border-color:#fff;box-shadow:0 0 0 1px rgba(17,166,101,.22),0 5px 15px rgba(18,167,102,.2);transform:scale(1.04); }
-.trip-circle-item.selected.traveling .trip-circle::before { position:absolute;z-index:-1;inset:-7px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);box-shadow:0 0 0 1px rgba(18,169,104,.14);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
+.trip-circle-item.selected.traveling .trip-circle { border-color:#fff;box-shadow:0 5px 15px rgba(18,167,102,.14);transform:scale(1.03); }
+.trip-circle-item.selected.traveling .trip-circle::before { position:absolute;z-index:-1;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
 .trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#dce8f7 center/cover no-repeat; }
 .trip-cover::after { position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,44,99,.03),rgba(15,44,99,.18));content:''; }
 .trip-cover-fallback { position:absolute;inset:0;background:linear-gradient(145deg,#b9d4f4 0%,#dfeafa 42%,#8bb2df 100%); }
