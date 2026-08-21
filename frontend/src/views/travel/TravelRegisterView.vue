@@ -10,6 +10,7 @@ const route = useRoute()
 const store = useTravelStore()
 const isEditMode = computed(() => route.query.mode === 'edit')
 const isOnboarding = computed(() => route.query.onboarding === '1')
+const usesGuidedRegisterDesign = computed(() => isOnboarding.value || isEditMode.value)
 const registrationQuery = computed(() => ({
   ...(isEditMode.value ? { mode: 'edit' } : {}),
   ...(isOnboarding.value ? { onboarding: '1' } : {}),
@@ -45,6 +46,22 @@ const budgetCategories = [
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
 const dateLabel = (value) => value ? value.replaceAll('-', '.') : '여행 날짜 선택'
 const stepTitle = computed(() => ['여행 계획 등록', '여행 일정 입력', '여행 예산', '여행 목표 확인'][step.value - 1])
+const registrationHeroTitle = computed(() => {
+  if (isEditMode.value) {
+    return step.value === 4 ? '여행 계획 수정을 완료했어요' : '현재 여행 계획을 다시 확인해 볼까요?'
+  }
+  return step.value === 4 ? '여행 계획 등록을 완료했어요' : '나만의 여행 계획을 만들어 볼까요?'
+})
+const registrationHeroDescription = computed(() => {
+  if (isEditMode.value) {
+    return step.value === 4
+      ? '변경한 여행 계획과 목표 예산을 반영했어요.'
+      : '여행지와 일정, 목표 예산을 현재 계획에 맞게 수정해요.'
+  }
+  return step.value === 4
+    ? '이제 준비 화면으로 돌아가 계좌를 연결할 수 있어요.'
+    : '여행지와 일정에 맞춰 필요한 목표 예산까지 함께 준비해요.'
+})
 
 const countryLocalTotal = (plan) => ['foodAmount', 'activityAmount', 'transportAmount', 'otherAmount']
   .reduce((sum, field) => sum + Number(plan.budget[field] || 0), 0)
@@ -182,7 +199,7 @@ function goToOnboardingHub() {
 </script>
 
 <template>
-  <main class="register-page" :class="{ 'onboarding-register': isOnboarding }" :aria-busy="store.loading">
+  <main class="register-page" :class="{ 'onboarding-register': usesGuidedRegisterDesign }" :aria-busy="store.loading">
     <header class="page-header">
       <button aria-label="뒤로가기" @click="back">‹</button>
       <h1>{{ isEditMode ? stepTitle.replace('등록', '수정') : stepTitle }}</h1>
@@ -191,11 +208,11 @@ function goToOnboardingHub() {
     </header>
     <div class="steps"><i v-for="index in 4" :key="index" :class="{ active: index <= step }" /></div>
 
-    <section v-if="isOnboarding" class="registration-hero">
+    <section v-if="usesGuidedRegisterDesign" class="registration-hero">
       <span>TRIP PLAN BOARDING PASS</span>
       <small>STEP {{ step }} / 4</small>
-      <h2>{{ step === 4 ? '여행 계획 등록을 완료했어요' : '나만의 여행 계획을 만들어 볼까요?' }}</h2>
-      <p>{{ step === 4 ? '이제 준비 화면으로 돌아가 계좌를 연결할 수 있어요.' : '여행지와 일정에 맞춰 필요한 목표 예산까지 함께 준비해요.' }}</p>
+      <h2>{{ registrationHeroTitle }}</h2>
+      <p>{{ registrationHeroDescription }}</p>
     </section>
 
     <section class="register-content">
