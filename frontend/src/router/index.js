@@ -545,6 +545,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/travel/:id/schedules',
+      name: 'TravelScheduleList',
+      component: () => import('@/views/mypage/TravelScheduleListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/assets',
       name: 'AssetLink',
       component: () => import('@/views/mypage/AssetLinkView.vue'),
