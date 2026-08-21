@@ -319,7 +319,14 @@ function goToOnboardingHub() {
 </script>
 
 <template>
-  <main class="register-page" :class="{ 'onboarding-register': usesGuidedRegisterDesign }" :aria-busy="store.loading">
+  <main
+    class="register-page"
+    :class="{
+      'onboarding-register': usesGuidedRegisterDesign,
+      'budget-summary-step': step === 3,
+    }"
+    :aria-busy="store.loading"
+  >
     <header class="page-header">
       <button aria-label="뒤로가기" @click="back">‹</button>
       <h1>{{ isEditMode ? stepTitle.replace('등록', '수정') : stepTitle }}</h1>
@@ -527,14 +534,19 @@ function goToOnboardingHub() {
           <div class="subtotal local-total"><span>{{ activeBudgetPlan.name }} 저축 목표</span><b>{{ money(countryLocalTotal(activeBudgetPlan)) }}</b></div>
         </section>
       </section>
-      <section class="total-preview">
-        <div><span>사전 지출 총액</span><b>{{ money(livePrepaidExpenseTotal) }}</b></div>
-        <div class="goal"><span>여행 저축 목표</span><b>{{ money(liveTargetAmount) }}</b></div>
+      <section class="budget-fixed-summary">
+        <section class="total-preview">
+          <div><span>사전 지출 총액</span><b>{{ money(livePrepaidExpenseTotal) }}</b></div>
+          <div class="goal">
+            <span>여행 저축 목표 · {{ store.selectedPlans.length }}개국 합산</span>
+            <b>{{ money(liveTargetAmount) }}</b>
+          </div>
+        </section>
+        <p v-if="showValidation && !store.canCompleteGoal" class="collision">⚠ 현지 여행 자금은 0원보다 커야 해요.</p>
+        <button class="primary-cta" :disabled="!store.canCompleteGoal || store.loading" @click="reviewGoal">
+          여행 목표 최종 확인하기
+        </button>
       </section>
-      <p v-if="showValidation && !store.canCompleteGoal" class="collision">⚠ 현지 여행 자금은 0원보다 커야 해요.</p>
-      <button class="primary-cta" :disabled="!store.canCompleteGoal || store.loading" @click="reviewGoal">
-        여행 목표 최종 확인하기
-      </button>
     </template>
 
     <template v-else-if="step === 4">
@@ -677,4 +689,13 @@ function goToOnboardingHub() {
   box-shadow:0 10px 24px rgba(20,35,70,.12);
 }
 .budget-country-tabs{display:flex;gap:5px;overflow-x:auto;margin:-4px -3px 13px;padding:4px 3px;border-radius:999px;background:#f1f4f9;scrollbar-width:none}.budget-country-tabs::-webkit-scrollbar{display:none}.budget-country-tabs button{display:flex;flex:1 0 auto;min-width:96px;height:40px;align-items:center;justify-content:center;gap:6px;padding:0 13px;border:0;border-radius:999px;color:#9aa8bd;background:transparent;font-size:10px;white-space:nowrap;transition:color .2s,background .2s,box-shadow .2s,transform .2s}.budget-country-tabs button .fi-inline{width:18px;height:13px;border-radius:2px}.budget-country-tabs button b{font-size:10px}.budget-country-tabs button.active{color:#fff;background:#173b86;box-shadow:0 6px 13px rgba(23,59,134,.2);transform:translateY(-1px)}.budget-card.budget-card-active{margin-top:0;padding:0;border:0;border-left:0;border-radius:0;background:transparent;box-shadow:none}.budget-country-header{display:flex!important;align-items:center!important;justify-content:space-between;padding:3px 0 12px}.budget-country-header .budget-country{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.budget-country-header .budget-country strong{font-size:15px}.budget-country-header .budget-country small{font-size:9px}.budget-recommendation-status{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:999px;color:#2469e8;background:#edf4ff;font-size:9px;font-weight:900;white-space:nowrap}.budget-ai-motion{position:relative;display:grid;width:21px;height:21px;place-items:center;border:2px dotted #4384f1;border-radius:50%;font-style:normal;animation:budget-ai-spin 2.4s linear infinite}.budget-ai-motion::after{position:absolute;top:-3px;right:-2px;width:5px;height:5px;border-radius:50%;background:#2469e8;box-shadow:0 0 0 3px rgba(36,105,232,.14);content:''}.budget-ai-motion b{font-size:6px;animation:budget-ai-counter-spin 2.4s linear infinite}.budget-recommendation-summary{display:grid;grid-template-columns:1fr 1fr;margin-bottom:11px;border-radius:14px;background:#f5f7fb}.budget-recommendation-summary div{padding:15px 9px;text-align:center}.budget-recommendation-summary div+div{border-left:1px dashed #d7dfeb}.budget-recommendation-summary span{display:block;color:#7d8ba1;font-size:8px;font-weight:800}.budget-recommendation-summary span small{font-size:7px}.budget-recommendation-summary b{display:block;margin-top:8px;color:#101c32;font-size:14px}.budget-recommendation-summary div:last-child b{color:#173b86}.budget-card-active .editable-budget{margin-top:0;padding:0;border:0;background:transparent}.budget-card-active .manual-heading{margin-bottom:13px;padding:10px 11px;border:1px solid #f2d18e;border-radius:11px;background:#fff9eb}.budget-card-active .manual-heading b{color:#b96d05;font-size:9px}.budget-card-active .manual-heading b i{width:auto;height:auto;color:inherit;background:none}.budget-card-active .manual-heading button{font-size:8px}.budget-card-active .budget-grid.prepaid-grid{grid-template-columns:1fr}.budget-card-active .budget-grid.prepaid-grid label{display:flex;align-items:center}.budget-card-active .budget-grid.prepaid-grid label>span{flex:1}.budget-card-active .budget-grid.prepaid-grid label div{width:54%;margin-top:0;border-top:0}.budget-card-active .subtotal{border-radius:0;background:transparent}.budget-card-active .subtotal.prepaid{color:#b96d05}.budget-card-active .subtotal.local-total{color:#173b86}.total-preview{border-top:1px solid #e4e9f2;border-radius:0;box-shadow:none}@keyframes budget-ai-spin{to{transform:rotate(360deg)}}@keyframes budget-ai-counter-spin{to{transform:rotate(-360deg)}}@media(prefers-reduced-motion:reduce){.budget-ai-motion,.budget-ai-motion b{animation:none}}
+.register-page.budget-summary-step{padding-bottom:176px}
+.budget-fixed-summary{position:fixed;z-index:30;left:50%;bottom:0;width:min(390px,100%);padding:12px 20px calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);border-top:1px solid #e4e9f2;background:#fff;box-shadow:0 -10px 28px rgba(16,25,43,.07)}
+.budget-fixed-summary .total-preview{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.budget-fixed-summary .total-preview div{display:flex;align-items:center;justify-content:space-between;color:#8891a0;font-size:11px;font-weight:700;line-height:1.35}
+.budget-fixed-summary .total-preview div>b{color:#10192b;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;font-weight:700;letter-spacing:-.025em}
+.budget-fixed-summary .total-preview .goal{margin-top:8px;padding-top:0;border-top:0;color:#10192b;font-size:12.5px;font-weight:800}
+.budget-fixed-summary .total-preview .goal>b{color:#0b2a6b;font-size:16px;font-weight:800}
+.budget-fixed-summary .collision{margin:7px 0 0;padding:6px 9px}
+.budget-fixed-summary .primary-cta{height:48px;margin-top:10px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:none}
 </style>
