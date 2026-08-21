@@ -839,7 +839,8 @@ button { border: 0; cursor: pointer; }
 .bank-logo-mark { position: relative; display: block; width: 38px; height: 40px; overflow: hidden; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .bank-logo-mark img { position: absolute; top: 50%; left: 0; width: auto; max-width: none; height: 34px; object-fit: initial; background: transparent; transform: translateY(-50%); }
 .bank-logo-0011 img { left: 50%; height: 38px; transform: translate(-50%, -50%); }
-.bank-logo-0004 { width: 33px; }
+.bank-logo-0004 { width: 40px; }
+.bank-logo-0004 img { height: 39px; }
 .bank-logo-0004 img,
 .bank-logo-0088 img,
 .bank-logo-0031 img { mix-blend-mode: multiply; }
