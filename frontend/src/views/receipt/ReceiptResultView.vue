@@ -1407,6 +1407,7 @@ onBeforeUnmount(() => {
 
       <!-- 실제 영수증 사진 -->
       <button
+          v-if="originalImageUrl"
           class="original-button"
           type="button"
           @click="showOriginal = true"
