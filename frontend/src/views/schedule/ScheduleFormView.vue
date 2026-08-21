@@ -17,22 +17,24 @@ const travel = useTravelStore();
 const editing = computed(() => Boolean(route.params.scheduleId));
 const archiveMode = computed(() => Boolean(route.meta.scheduleArchive));
 const requestedDate = computed(() => String(route.query.date || ''));
-const availableCountries = computed(() => {
-  const codes = new Set(travel.selectedPlans.map((plan) => plan.code).filter(Boolean));
-  return store.countries.filter((item) => codes.has(item.code));
-});
+const availableCountries = computed(() =>
+  travel.selectedPlans.map((plan) => ({
+    ...plan,
+    code: String(plan.code || '').toUpperCase(),
+    currency: plan.currencyCode || plan.currency || '',
+  })),
+);
 const original = editing.value
   ? store.getSchedule(route.params.scheduleId)
   : null;
-const initialCountryCode =
-  original?.countryCode || store.countries[0]?.code || '';
+const initialCountryCode = original?.countryCode || '';
 const form = reactive(
   original
     ? { ...original }
     : {
         title: '',
         countryCode: initialCountryCode,
-        date: requestedDate.value || store.period(initialCountryCode).startDate,
+        date: requestedDate.value || '',
         time: '10:00',
         currency:
           store.countries.find((item) => item.code === initialCountryCode)
@@ -45,11 +47,11 @@ const form = reactive(
       },
 );
 const country = computed(() =>
-  store.countries.find((item) => item.code === form.countryCode),
+  availableCountries.value.find((item) => item.code === form.countryCode),
 );
-const selectedPeriod = computed(() =>
-  country.value ? store.period(country.value.code) : null,
-);
+const selectedPeriod = computed(() => country.value
+  ? { startDate: country.value.startDate, endDate: country.value.endDate }
+  : null);
 const dateInCountry = computed(
   () =>
     selectedPeriod.value &&
@@ -135,11 +137,10 @@ onMounted(async () => {
     }
   }
   if (!editing.value && requestedDate.value) {
-    const requestedCountry = store.countryForDate(requestedDate.value);
-    const isConfiguredCountry = availableCountries.value.some(
-      (item) => item.code === requestedCountry?.code,
+    const requestedCountry = availableCountries.value.find(
+      (item) => requestedDate.value >= item.startDate && requestedDate.value <= item.endDate,
     );
-    if (requestedCountry && isConfiguredCountry) {
+    if (requestedCountry) {
       form.countryCode = requestedCountry.code;
       form.currency = requestedCountry.currency;
       form.date = requestedDate.value;
