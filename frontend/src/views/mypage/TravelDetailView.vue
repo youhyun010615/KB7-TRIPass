@@ -130,7 +130,7 @@ onMounted(async () => {
           <path d="M15 6l-6 6 6 6" stroke="#193d82" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <h1 class="flex-1 text-center text-[18px] font-black text-gray-900 truncate">{{ trip?.tripName ?? '여행 상세' }}</h1>
+      <h1 class="flex-1 text-center text-[18px] font-black text-gray-900 truncate">여행 관리</h1>
       <button v-if="!isEnded" type="button" class="text-[13px] font-bold flex-shrink-0" style="color:#2F6FED" @click="goEdit">편집</button>
       <span v-else class="text-[13px] font-bold flex-shrink-0" style="color:#2F6FED">공유</span>
     </div>
@@ -144,37 +144,34 @@ onMounted(async () => {
       <div class="relative rounded-[20px] text-white p-5 overflow-hidden" style="background: linear-gradient(155deg, #0B2A6B 0%, #123C94 62%, #17459F 100%); box-shadow: 0 10px 24px rgba(11,42,107,0.2)">
         <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
 
-        <div class="relative flex items-center justify-between">
-          <p class="text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">{{ isEnded ? 'TRIP COMPLETED' : isTraveling ? 'NOW TRAVELING' : 'MY TRIP ARCHIVE' }}</p>
-          <span class="text-[10.5px] font-bold" :style="isEnded ? 'color:#FFD466' : (isTraveling ? 'color:#6FE3C1' : 'color:rgba(255,255,255,0.55)')">{{ tripStatusLabel }}</span>
-        </div>
-
-        <div class="relative mt-3">
-          <span class="block text-[15px] font-extrabold">{{ countryLabel }}</span>
-          <div class="trip-detail-flags mt-2">
-            <span v-for="(code, i) in countryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline trip-detail-flag"></span>
+        <div class="relative flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="flex min-w-0 items-center gap-2">
+              <p class="truncate text-[17px] font-black">{{ trip.tripName }}</p>
+              <div class="trip-detail-flags flex-shrink-0">
+                <span v-for="(code, i) in countryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline trip-detail-flag"></span>
+              </div>
+            </div>
+            <p class="font-mono text-[11.5px] font-bold mt-2" style="color:rgba(255,255,255,.68)">
+              {{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일
+            </p>
           </div>
+          <span
+            class="flex-shrink-0 rounded-full px-2.5 py-[5px] text-[10.5px] font-bold"
+            :style="isEnded ? 'background:rgba(255,212,102,.15);color:#FFD466' : isTraveling ? 'background:rgba(111,227,193,.15);color:#6FE3C1' : 'background:rgba(255,255,255,.13);color:#fff'"
+          >{{ isEnded ? tripStatusLabel : isTraveling ? '여행 중' : `출국까지 ${dDayLabel}` }}</span>
         </div>
-        <p class="relative font-mono text-[12px] font-bold mt-1.5" style="color: rgba(255,255,255,0.6)">
-          {{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일
-        </p>
 
         <template v-if="!isEnded">
-          <div class="relative flex items-end justify-between mt-4">
-            <div />
-            <div class="text-right">
-              <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.55)">출국까지</p>
-              <p class="font-mono text-[26px] font-bold mt-1" style="color:#FFD466">{{ dDayLabel }}</p>
-            </div>
-          </div>
           <div class="relative mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
             <div class="flex items-baseline justify-between text-[11px] font-bold">
-              <span style="color: rgba(255,255,255,0.6)">여행 자금 {{ formatWon(report?.targetBudget) }} 목표</span>
+              <span style="color: rgba(255,255,255,0.72)">여행 목표 자금</span>
               <span style="color:#FFD466">{{ savingsPercent }}%</span>
             </div>
             <div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background: rgba(255,255,255,0.18)">
               <div class="h-full rounded-full" :style="{ width: `${savingsPercent}%`, background: '#FFD466' }"></div>
             </div>
+            <p class="mt-2 text-right font-mono text-[11px] font-bold" style="color:rgba(255,255,255,.68)">{{ formatWon(report?.targetBudget) }}</p>
           </div>
         </template>
 

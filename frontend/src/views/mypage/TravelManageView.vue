@@ -47,7 +47,9 @@ function isTraveling(trip) {
 }
 
 function statusLabel(trip) {
-  return isTraveling(trip) ? '여행 중' : '준비 중'
+  if (isTraveling(trip)) return '여행 중'
+  const days = daysUntilStart(trip)
+  return days === null ? 'D-' : `D-${Math.max(0, days)}`
 }
 
 function formatDateRange(startDate, endDate) {
@@ -57,16 +59,6 @@ function formatDateRange(startDate, endDate) {
 
 function formatWon(amount) {
   return `${Number(amount || 0).toLocaleString('ko-KR')}원`
-}
-
-function checklistLabel(trip) {
-  const total = trip.report?.checklistTotal ?? 0
-  const completed = trip.report?.checklistCompleted ?? 0
-  return `체크리스트 ${completed}/${total}`
-}
-
-function savingsPercent(trip) {
-  return Math.min(100, Math.max(0, Number(trip.report?.savingsPercent ?? 0)))
 }
 
 onMounted(async () => {
@@ -180,39 +172,23 @@ onMounted(async () => {
           style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)"
           @click="router.push(`/mypage/travel/${trip.tripId}`)"
         >
-          <div class="px-[18px] pt-[18px] pb-4">
-            <div class="flex items-center gap-2.5">
-              <span class="travel-list-flags flex-shrink-0 whitespace-nowrap">
-                <span v-for="countryName in splitCountryNames(trip.countryNames)" :key="countryName" :class="flagIconClass(countryCodeOf(countryName))" class="fi-inline travel-list-flag"></span>
-              </span>
-              <div class="flex-1 min-w-0">
-                <p class="text-[15.5px] font-black text-gray-900 truncate">{{ trip.tripName }}</p>
-                <p class="font-mono text-[11.5px] font-bold text-gray-400 mt-1">{{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일</p>
+          <div class="relative flex min-h-[94px] items-center px-[18px] py-[17px] pr-[48px]">
+            <div class="min-w-0 flex-1">
+              <div class="flex min-w-0 items-center gap-2">
+                <p class="truncate text-[15.5px] font-black text-gray-900">{{ trip.tripName }}</p>
+                <span class="travel-list-flags flex-shrink-0 whitespace-nowrap">
+                  <span v-for="countryName in splitCountryNames(trip.countryNames)" :key="countryName" :class="flagIconClass(countryCodeOf(countryName))" class="fi-inline travel-list-flag"></span>
+                </span>
               </div>
+              <p class="font-mono text-[11.5px] font-bold text-gray-400 mt-1.5">{{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일</p>
+            </div>
+            <div class="absolute right-[14px] top-[14px] flex flex-col items-end gap-3">
               <span
                 class="flex-shrink-0 text-[10.5px] font-bold px-2.5 py-[5px] rounded-full"
                 :style="isTraveling(trip) ? 'background:#E5F8F2; color:#0FAE96' : 'background:#EAF1FF; color:#0B2A6B'"
               >{{ statusLabel(trip) }}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#A7B0C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
-
-            <div v-if="trip.report" class="mt-4">
-              <div class="flex items-baseline justify-between text-[11px] font-bold">
-                <span style="color:#98A2B3">여행 자금 {{ formatWon(trip.report.targetBudget) }} 목표</span>
-                <span style="color:#2F6FED">{{ savingsPercent(trip) }}%</span>
-              </div>
-              <div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background:#EDF0F6">
-                <div class="h-full rounded-full" :style="{ width: `${savingsPercent(trip)}%`, background: '#2F6FED' }"></div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="trip.report" class="flex items-center gap-3 px-[18px] py-[13px]" style="background:#F6F8FC; border-top:1px solid #ECEFF5">
-            <span class="flex-1 text-[11.5px] font-bold" style="color:#5A6478">
-              출국까지 D-{{ trip.report.daysUntilTrip }} · {{ checklistLabel(trip) }}
-            </span>
-            <span class="flex-shrink-0 text-[11.5px] font-bold" style="color:#2F6FED" @click.stop="router.push(`/mypage/travel/${trip.tripId}`)">
-              일정 보기 ›
-            </span>
           </div>
         </button>
       </div>
