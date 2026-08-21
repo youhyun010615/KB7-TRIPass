@@ -349,7 +349,8 @@ public class WalletService {
     public void resolveWalletReflect(
             Long userId,
             Long tripId,
-            boolean reflect
+            boolean reflect,
+            Long targetAccountId
     ) {
         com.tripass.travel.domain.Trip trip = travelMapper.selectTripById(tripId);
         if (trip == null || trip.getSavingsTrackingStartedAt() == null) {
@@ -381,10 +382,10 @@ public class WalletService {
                         "기존 월렛 잔액 여행 저축 반영"
                 );
             } else {
-                Long targetAccountId = walletMapper.findAnyLinkedAccountIdByUserId(userId);
                 if (targetAccountId == null) {
                     throw new WalletException(WALLET_ACCOUNT_NOT_FOUND);
                 }
+                validateUserAccount(userId, targetAccountId);
                 BigDecimal amount = wallet.getBalanceAmount();
 
                 increaseAccountBalance(userId, targetAccountId, amount);

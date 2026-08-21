@@ -8,4 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class WalletReflectRequestDto {
     private boolean reflect;
+    private Long targetAccountId;
 }

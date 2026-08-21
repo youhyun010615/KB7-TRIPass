@@ -51,5 +51,7 @@ public interface SavingMissionMapper {
 
     Boolean isSavingsTrackingStartedForUser(@Param("userId") Long userId);
 
+    int countActiveCardsByUserId(@Param("userId") Long userId);
+
     Long findActiveTripIdByUserId(@Param("userId") Long userId);
 }

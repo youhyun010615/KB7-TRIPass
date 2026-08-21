@@ -69,12 +69,17 @@ public class TravelController {
     }
 
     @PostMapping("/{id}/wallet-reflect")
-    public ResponseEntity<ApiResponse<Void>> resolveWalletReflect(
+    public ResponseEntity<ApiResponse<WalletReflectResponseDto>> resolveWalletReflect(
             @PathVariable("id") Long tripId,
             @RequestBody WalletReflectRequestDto request,
             Authentication authentication) {
-        travelService.resolveWalletReflect(tripId, getAuthenticatedUserId(authentication), request.isReflect());
-        return ResponseEntity.ok(ApiResponse.success("월렛 잔액 반영 여부를 처리했습니다.", null));
+        WalletReflectResponseDto result = travelService.resolveWalletReflect(
+                tripId,
+                getAuthenticatedUserId(authentication),
+                request.isReflect(),
+                request.getTargetAccountId()
+        );
+        return ResponseEntity.ok(ApiResponse.success("월렛 잔액 반영 여부를 처리했습니다.", result));
     }
 
     /**

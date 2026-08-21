@@ -104,9 +104,6 @@ public class TravelService {
         boolean hasLinkedAccount = travelMapper.countActiveAccountsByUserId(userId) > 0;
         if (!hasLinkedAccount) return;
 
-        boolean hasLinkedCard = travelMapper.countActiveCardsByUserId(userId) > 0;
-        if (!hasLinkedCard) return;
-
         travelMapper.activateSavingsTracking(trip.getId());
 
         BigDecimal walletBalance = travelMapper.findWalletBalanceByUserId(userId);
@@ -118,9 +115,31 @@ public class TravelService {
 
     /** 여행 저축 집계 시작 시점의 월렛 잔액을 여행 목표에 반영할지 결정한다. */
     @Transactional
-    public void resolveWalletReflect(Long tripId, Long currentUserId, boolean reflect) {
+    public WalletReflectResponseDto resolveWalletReflect(
+            Long tripId,
+            Long currentUserId,
+            boolean reflect,
+            Long targetAccountId
+    ) {
         validateTripOwner(tripId, currentUserId);
-        walletService.resolveWalletReflect(currentUserId, tripId, reflect);
+        BigDecimal reflectedAmount = defaultZero(travelMapper.findWalletBalanceByUserId(currentUserId));
+        walletService.resolveWalletReflect(currentUserId, tripId, reflect, targetAccountId);
+
+        TripGoalResponseDto trip = travelMapper.findTripGoalById(tripId);
+        BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
+        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
+        BigDecimal monthlySavingTarget = TripSavingCalculator.calculateMonthlySavingTarget(
+                defaultZero(trip.getTotalTargetAmount()), walletBalance, remainingMonths
+        );
+        saveMonthlySavingPlan(tripId, monthlySavingTarget);
+
+        return WalletReflectResponseDto.builder()
+                .reflected(reflect)
+                .reflectedAmount(reflectedAmount)
+                .walletBalance(walletBalance)
+                .remainingMonths(remainingMonths)
+                .monthlySavingTarget(monthlySavingTarget)
+                .build();
     }
 
     @Transactional
@@ -403,10 +422,12 @@ public class TravelService {
         TripGoalResponseDto trip = getActiveTripGoal(currentUserId);
         BigDecimal totalTarget = defaultZero(trip.getTotalTargetAmount());
         BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
-        BigDecimal remainingTarget = totalTarget.subtract(walletBalance).max(BigDecimal.ZERO);
+        BigDecimal travelCardBalance = defaultZero(travelMapper.findTravelCardKrwBalanceByUserId(currentUserId));
+        BigDecimal securedTravelFund = walletBalance.add(travelCardBalance);
+        BigDecimal remainingTarget = totalTarget.subtract(securedTravelFund).max(BigDecimal.ZERO);
         BigDecimal progressPercent = totalTarget.signum() == 0
                 ? BigDecimal.ZERO
-                : walletBalance.multiply(BigDecimal.valueOf(100))
+                : securedTravelFund.multiply(BigDecimal.valueOf(100))
                         .divide(totalTarget, 2, RoundingMode.HALF_UP)
                         .min(BigDecimal.valueOf(100));
         int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
@@ -443,7 +464,7 @@ public class TravelService {
                 .daysUntilDeparture(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate())))
                 .totalTargetAmount(totalTarget)
                 .prepaidExpenseTotal(defaultZero(travelMapper.findPrepaidExpenseTotalByTripId(trip.getTripId())))
-                .walletBalance(walletBalance)
+                .walletBalance(securedTravelFund)
                 .remainingTargetAmount(remainingTarget)
                 .savingProgressPercent(progressPercent)
                 .remainingMonths(remainingMonths)
