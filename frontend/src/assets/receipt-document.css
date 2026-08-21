@@ -252,7 +252,7 @@
   margin: 8px 0 26px;
   padding: 0 19px 25px;
   border-color: #bfd2f1;
-  border-radius: 18px 18px 7px 7px;
+  border-radius: 7px;
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
   box-shadow: 0 11px 25px rgba(35, 73, 136, .12);
 }
@@ -260,8 +260,8 @@
 .manual-page .tripass-receipt-document::before {
   position: absolute;
   top: -7px;
-  right: 14px;
-  left: 14px;
+  right: -1px;
+  left: -1px;
   display: block;
   height: 8px;
   background: radial-gradient(circle at 7px 7px, #dce9fb 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
