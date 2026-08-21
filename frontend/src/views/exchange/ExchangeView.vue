@@ -13,17 +13,23 @@ const router = useRouter();
 const exchange = useExchangeStore();
 const travel = useTravelStore();
 const countryDropdownOpen = ref(false);
+const travelGoalLoading = ref(true);
 
 const currentTab = computed({
   get: () => exchange.currentTab,
   set: (val) => (exchange.currentTab = val),
 });
 
-onMounted(() => {
-  exchange.updateExchangeRates();
+onMounted(async () => {
   // 여행 계획이 아직 로드되지 않은 상태로 환율 탭에 바로 들어오면
   // travel.selectedPlans가 비어 있어 등록 국가 필터링이 되지 않는 문제를 방지한다.
-  travel.loadActiveGoal();
+  // 다른 화면이 activeTrip만 채워 initialized=true로 만든 경우도 있으므로,
+  // 국가 계획이 비어 있다면 force로 국가까지 다시 hydrate한다.
+  await Promise.all([
+    exchange.updateExchangeRates(),
+    travel.loadActiveGoal({ force: travel.selectedPlans.length === 0 }),
+  ]);
+  travelGoalLoading.value = false;
 });
 
 // 여행 미등록 시 전체 국가, 등록 시 여행에 등록된 국가만 표시한다.
@@ -31,19 +37,24 @@ onMounted(() => {
 // currencyCode가 아닌 countryId로 걸러야 같은 EUR이라도 등록한 국가(예: 프랑스)만
 // 보이고, 국가를 추가/삭제하면 그대로 반영된다.
 const displayCurrencies = computed(() => {
-  if (travel.selectedPlans.length === 0) {
+  if (travelGoalLoading.value) return [];
+
+  const hasActiveTravelGoal = Boolean(travel.tripId || travel.activeTrip?.tripId);
+  if (!hasActiveTravelGoal) {
     return exchange.currencies;
   }
 
-  const countryIds = new Set(
-    travel.selectedPlans
-      .map((plan) => plan.countryId)
-      .filter((id) => id != null),
-  );
-
-  const filtered = exchange.currencies.filter((c) => countryIds.has(c.countryId));
-  // 등록한 국가가 환율 데이터에 하나도 없으면 전체 국가로 대체 표시한다.
-  return filtered.length > 0 ? filtered : exchange.currencies;
+  // 백엔드 응답에서 countryId가 문자열/숫자로 달라도 매칭되게 정규화하고,
+  // 이전 데이터처럼 ID가 맞지 않는 경우에는 국가명으로 한 번 더 매칭한다.
+  // 여행 목표가 존재할 때는 매칭 실패 시에도 전체 국가로 돌아가지 않는다.
+  return travel.selectedPlans
+    .map((plan) => exchange.currencies.find((currency) => (
+      (plan.countryId != null
+        && currency.countryId != null
+        && String(currency.countryId) === String(plan.countryId))
+      || (plan.name && currency.countryName === plan.name)
+    )))
+    .filter(Boolean);
 });
 
 const filteredCurrencies = computed(() => {
@@ -148,7 +159,11 @@ watch(
           <p>국가를 선택해 현재 환율과 추이를 확인하세요.</p>
         </div>
 
-        <template v-if="filteredCurrencies.length > 0">
+        <div v-if="travelGoalLoading" class="empty-state exchange-loading-state">
+          <div class="exchange-loading-spinner" aria-hidden="true"></div>
+          <p>등록한 여행 국가의 환율을 불러오고 있어요.</p>
+        </div>
+        <template v-else-if="filteredCurrencies.length > 0">
           <div class="currency-select" :class="{ open: countryDropdownOpen }">
             <button
               type="button"
@@ -199,8 +214,12 @@ watch(
           <div class="empty-state">
             <div class="empty-icon">💸</div>
             <p>
-              아직 관심 있는 환율이 없어요!<br />여행을 계획하거나 직접 통화를
-              추가해보세요.
+              <template v-if="travel.tripId || travel.activeTrip?.tripId">
+                등록한 여행 국가의 환율 정보가 아직 없어요.<br />잠시 후 다시 확인해 주세요.
+              </template>
+              <template v-else>
+                아직 관심 있는 환율이 없어요!<br />여행을 계획하거나 직접 통화를 추가해보세요.
+              </template>
             </p>
             <div class="empty-actions">
               <button
@@ -230,6 +249,21 @@ watch(
 </template>
 
 <style scoped>
+.exchange-loading-state {
+  min-height: 180px;
+}
+.exchange-loading-spinner {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 14px;
+  border: 3px solid #dbe7fb;
+  border-top-color: #2469e8;
+  border-radius: 50%;
+  animation: exchange-spin .75s linear infinite;
+}
+@keyframes exchange-spin {
+  to { transform: rotate(360deg); }
+}
 .page {
   height: 100vh;
   height: 100dvh;
