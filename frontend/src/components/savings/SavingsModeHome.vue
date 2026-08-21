@@ -678,7 +678,7 @@ async function switchMode(mode) {
                   {{ country.desc }}
                 </p>
 
-                <span v-if="checklistInfo" class="ticket-checklist-spacer" aria-hidden="true"></span>
+                <span class="ticket-checklist-spacer" aria-hidden="true"></span>
 
                 <!-- 체크리스트 버튼: 여행 저축 목표 박스 왼쪽 위 -->
                 <button
