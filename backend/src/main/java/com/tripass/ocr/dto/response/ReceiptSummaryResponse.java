@@ -54,4 +54,7 @@ public class ReceiptSummaryResponse {
 
     // 영수증 이미지 접근 경로
     private String fileUrl;
+
+    // 공동결제 참여자 이름 (쉼표 구분)
+    private String participantNames;
 }

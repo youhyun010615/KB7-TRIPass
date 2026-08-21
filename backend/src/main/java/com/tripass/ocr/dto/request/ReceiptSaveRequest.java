@@ -25,8 +25,7 @@ public class ReceiptSaveRequest {
     @NotNull(message = "결제 국가를 선택해 주세요.")
     private Long countryId;
 
-    // 지출 카테고리 PK
-    @NotNull(message = "지출 카테고리를 선택해 주세요.")
+    // 지출 카테고리 PK (선택)
     private Long categoryId;
 
     // 결제 통화 코드

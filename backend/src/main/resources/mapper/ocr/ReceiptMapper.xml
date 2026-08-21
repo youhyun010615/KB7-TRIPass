@@ -38,6 +38,8 @@
 
         <result property="fileUrl"
                 column="file_url"/>
+        <result property="participantNames"
+                column="participant_names"/>
     </resultMap>
 
     <!-- 영수증 상세 조회 결과 -->
@@ -276,17 +278,28 @@
 
             receipt.total_amount,
             receipt.split_count,
-            receipt.file_url
+            receipt.file_url,
+
+            (SELECT GROUP_CONCAT(p.participant_name ORDER BY p.display_order SEPARATOR ', ')
+             FROM receipt_participants p
+             WHERE p.receipt_id = receipt.id AND p.is_deleted = 0
+            ) AS participant_names
         FROM receipts receipt
                  INNER JOIN countries country
                             ON country.id = receipt.country_id
-                 INNER JOIN spending_categories category
+                 LEFT JOIN spending_categories category
                             ON category.id = receipt.category_id
                  LEFT JOIN currencies currency
                            ON currency.id = receipt.currency_id
         WHERE receipt.user_id = #{userId}
           AND receipt.trip_id = #{tripId}
           AND receipt.is_deleted = 0
+        <if test="startDate != null">
+          AND receipt.payment_datetime &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+          AND receipt.payment_datetime &lt; #{endDate}
+        </if>
         ORDER BY receipt.payment_datetime DESC,
                  receipt.id DESC
     </select>
@@ -329,7 +342,7 @@
         FROM receipts receipt
                  INNER JOIN countries country
                             ON country.id = receipt.country_id
-                 INNER JOIN spending_categories category
+                 LEFT JOIN spending_categories category
                             ON category.id = receipt.category_id
                  LEFT JOIN currencies currency
                            ON currency.id = receipt.currency_id
@@ -611,5 +624,88 @@
         </if>
 
     </update>
+
+    <!-- 참여자별 정산 요약 조회 (통화별 분리) -->
+    <select id="findParticipantSettlements" resultType="java.util.HashMap">
+        SELECT
+            p.participant_name AS participantName,
+            COUNT(DISTINCT r.id) AS receiptCount,
+            currency.currency_code AS currencyCode,
+            currency.symbol AS currencySymbol,
+            SUM(r.total_amount / r.split_count) AS owedAmount,
+            MAX(p.is_settled) AS isSettled
+        FROM receipt_participants p
+                 INNER JOIN receipts r ON r.id = p.receipt_id
+                 LEFT JOIN currencies currency ON currency.id = r.currency_id
+        WHERE r.user_id = #{userId}
+          AND r.trip_id = #{tripId}
+          AND r.is_deleted = 0
+          AND p.is_deleted = 0
+        GROUP BY p.participant_name, currency.currency_code, currency.symbol
+        ORDER BY p.participant_name, owedAmount DESC
+    </select>
+
+    <!-- 특정 참여자의 영수증 목록 조회 -->
+    <select id="findReceiptsByParticipantName"
+            resultMap="receiptSummaryRowMap">
+        SELECT
+            receipt.id,
+            receipt.trip_id,
+            receipt.country_id,
+            country.country_name,
+            receipt.category_id,
+            category.category_name,
+            receipt.merchant_original_name,
+            receipt.merchant_translated_name,
+            receipt.payment_datetime,
+            currency.currency_code,
+            currency.symbol AS currency_symbol,
+            receipt.total_amount,
+            receipt.split_count,
+            receipt.file_url,
+            (SELECT GROUP_CONCAT(p2.participant_name ORDER BY p2.display_order SEPARATOR ', ')
+             FROM receipt_participants p2
+             WHERE p2.receipt_id = receipt.id AND p2.is_deleted = 0
+            ) AS participant_names
+        FROM receipts receipt
+                 INNER JOIN receipt_participants p
+                            ON p.receipt_id = receipt.id
+                 INNER JOIN countries country
+                            ON country.id = receipt.country_id
+                 LEFT JOIN spending_categories category
+                            ON category.id = receipt.category_id
+                 LEFT JOIN currencies currency
+                           ON currency.id = receipt.currency_id
+        WHERE receipt.user_id = #{userId}
+          AND receipt.trip_id = #{tripId}
+          AND receipt.is_deleted = 0
+          AND p.is_deleted = 0
+          AND p.participant_name = #{participantName}
+        ORDER BY receipt.payment_datetime DESC,
+                 receipt.id DESC
+    </select>
+
+    <!-- 참여자 정산 완료 토글 -->
+    <update id="toggleParticipantSettlement">
+        UPDATE receipt_participants p
+            INNER JOIN receipts r ON r.id = p.receipt_id
+        SET p.is_settled = #{settled},
+            p.settled_at = IF(#{settled} = 1, NOW(), NULL)
+        WHERE p.participant_name = #{participantName}
+          AND r.user_id = #{userId}
+          AND r.trip_id = #{tripId}
+          AND r.is_deleted = 0
+          AND p.is_deleted = 0
+    </update>
+
+    <!-- 영수증이 등록된 날짜 목록 조회 -->
+    <select id="findReceiptDates" resultType="string">
+        SELECT DISTINCT DATE_FORMAT(payment_datetime, '%Y-%m-%d') AS receipt_date
+        FROM receipts
+        WHERE user_id = #{userId}
+          AND trip_id = #{tripId}
+          AND is_deleted = 0
+        ORDER BY receipt_date DESC
+    </select>
 
 </mapper>

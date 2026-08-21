@@ -8,11 +8,15 @@ import com.tripass.ocr.dto.internal.StoredReceiptFile;
 import com.tripass.ocr.dto.internal.ValidatedReceiptImage;
 import com.tripass.ocr.dto.request.ReceiptItemSaveRequest;
 import com.tripass.ocr.dto.request.ReceiptSaveRequest;
+import com.tripass.ocr.dto.response.CurrencyAmountResponse;
+import com.tripass.ocr.dto.response.ParticipantReceiptsResponse;
+import com.tripass.ocr.dto.response.ParticipantSettlementResponse;
 import com.tripass.ocr.dto.response.ReceiptDetailResponse;
 import com.tripass.ocr.dto.response.ReceiptItemResponse;
 import com.tripass.ocr.dto.request.ReceiptParticipantSaveRequest;
 import com.tripass.ocr.dto.response.ReceiptSummaryResponse;
 import com.tripass.ocr.dto.response.ReceiptParticipantResponse;
+import com.tripass.ocr.dto.response.SettlementSummaryResponse;
 import com.tripass.ocr.mapper.ReceiptMapper;
 import com.tripass.ocr.model.Receipt;
 import com.tripass.ocr.model.ReceiptItem;
@@ -28,11 +32,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -150,7 +157,9 @@ public class ReceiptServiceImpl
         List<ReceiptSummaryRow> rows =
                 receiptMapper.findAllByUserIdAndTripId(
                         userId,
-                        tripId
+                        tripId,
+                        null,
+                        null
                 );
 
         if (rows == null || rows.isEmpty()) {
@@ -387,6 +396,222 @@ public class ReceiptServiceImpl
                 receiptRow.getFileType(),
                 imageBytes
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReceiptSummaryResponse> getReceipts(
+            Long userId,
+            Long tripId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        validateUserId(userId);
+        validateTripId(tripId);
+
+        if (!receiptMapper.existsTripByIdAndUserId(tripId, userId)) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_TRIP_NOT_FOUND",
+                    "여행 정보를 찾을 수 없습니다."
+            );
+        }
+
+        LocalDateTime startDateTime = startDate != null
+                ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null
+                ? endDate.plusDays(1).atStartOfDay() : null;
+
+        List<ReceiptSummaryRow> rows =
+                receiptMapper.findAllByUserIdAndTripId(
+                        userId, tripId, startDateTime, endDateTime
+                );
+
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return rows.stream()
+                .map(this::createSummaryResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SettlementSummaryResponse getSettlementSummary(
+            Long userId,
+            Long tripId
+    ) {
+        validateUserId(userId);
+        validateTripId(tripId);
+
+        if (!receiptMapper.existsTripByIdAndUserId(tripId, userId)) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_TRIP_NOT_FOUND",
+                    "여행 정보를 찾을 수 없습니다."
+            );
+        }
+
+        List<Map<String, Object>> rows =
+                receiptMapper.findParticipantSettlements(userId, tripId);
+
+        if (rows == null || rows.isEmpty()) {
+            return new SettlementSummaryResponse(
+                    Collections.emptyList(), 0, Collections.emptyList()
+            );
+        }
+
+        // 참여자별로 그룹핑 (쿼리가 participant+currency 조합으로 나옴)
+        java.util.LinkedHashMap<String, List<Map<String, Object>>> grouped = new java.util.LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String name = (String) row.get("participantName");
+            grouped.computeIfAbsent(name, k -> new ArrayList<>()).add(row);
+        }
+
+        List<ParticipantSettlementResponse> participants = new ArrayList<>();
+        // 전체 통화별 합산
+        java.util.LinkedHashMap<String, BigDecimal[]> totalByCurrency = new java.util.LinkedHashMap<>();
+
+        for (Map.Entry<String, List<Map<String, Object>>> entry : grouped.entrySet()) {
+            String name = entry.getKey();
+            List<Map<String, Object>> participantRows = entry.getValue();
+
+            int totalCount = 0;
+            boolean settled = true;
+            List<CurrencyAmountResponse> amounts = new ArrayList<>();
+
+            for (Map<String, Object> row : participantRows) {
+                int count = ((Number) row.get("receiptCount")).intValue();
+                totalCount += count;
+                BigDecimal owed = new BigDecimal(row.get("owedAmount").toString());
+                String currCode = row.get("currencyCode") != null ? row.get("currencyCode").toString() : "KRW";
+                String currSymbol = row.get("currencySymbol") != null ? row.get("currencySymbol").toString() : "₩";
+                Object isSettledObj = row.get("isSettled");
+                boolean isSettledVal = isSettledObj instanceof Boolean
+                        ? (Boolean) isSettledObj
+                        : ((Number) isSettledObj).intValue() != 0;
+                if (!isSettledVal) settled = false;
+
+                amounts.add(new CurrencyAmountResponse(currCode, currSymbol, owed));
+
+                totalByCurrency.computeIfAbsent(currCode, k -> new BigDecimal[]{BigDecimal.ZERO, null})
+                        [0] = totalByCurrency.computeIfAbsent(currCode, k -> new BigDecimal[]{BigDecimal.ZERO, null})[0].add(owed);
+                // store symbol
+                if (totalByCurrency.get(currCode)[1] == null) {
+                    // hack: store symbol as string via array - use separate map instead
+                }
+            }
+
+            participants.add(new ParticipantSettlementResponse(name, totalCount, settled, amounts));
+        }
+
+        // Build total amounts by currency (cleaner approach)
+        java.util.LinkedHashMap<String, CurrencyAmountResponse> totals = new java.util.LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String currCode = row.get("currencyCode") != null ? row.get("currencyCode").toString() : "KRW";
+            String currSymbol = row.get("currencySymbol") != null ? row.get("currencySymbol").toString() : "₩";
+            BigDecimal owed = new BigDecimal(row.get("owedAmount").toString());
+
+            totals.merge(currCode,
+                    new CurrencyAmountResponse(currCode, currSymbol, owed),
+                    (old, nw) -> new CurrencyAmountResponse(currCode, currSymbol, old.getAmount().add(nw.getAmount()))
+            );
+        }
+
+        return new SettlementSummaryResponse(
+                new ArrayList<>(totals.values()),
+                participants.size(),
+                participants
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ParticipantReceiptsResponse getParticipantReceipts(
+            Long userId,
+            Long tripId,
+            String participantName
+    ) {
+        validateUserId(userId);
+        validateTripId(tripId);
+
+        if (!receiptMapper.existsTripByIdAndUserId(tripId, userId)) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_TRIP_NOT_FOUND",
+                    "여행 정보를 찾을 수 없습니다."
+            );
+        }
+
+        List<ReceiptSummaryRow> rows =
+                receiptMapper.findReceiptsByParticipantName(userId, tripId, participantName);
+
+        List<ReceiptSummaryResponse> receipts = (rows == null || rows.isEmpty())
+                ? Collections.emptyList()
+                : rows.stream().map(this::createSummaryResponse).toList();
+
+        BigDecimal totalOwed = BigDecimal.ZERO;
+        for (ReceiptSummaryResponse r : receipts) {
+            if (r.getSplitAmount() != null) {
+                totalOwed = totalOwed.add(r.getSplitAmount());
+            }
+        }
+
+        return new ParticipantReceiptsResponse(participantName, totalOwed, receipts);
+    }
+
+    @Override
+    @Transactional
+    public void toggleParticipantSettlement(
+            Long userId,
+            Long tripId,
+            String participantName,
+            boolean settled
+    ) {
+        validateUserId(userId);
+        validateTripId(tripId);
+
+        if (!receiptMapper.existsTripByIdAndUserId(tripId, userId)) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_TRIP_NOT_FOUND",
+                    "여행 정보를 찾을 수 없습니다."
+            );
+        }
+
+        int updated = receiptMapper.toggleParticipantSettlement(
+                userId, tripId, participantName, settled
+        );
+
+        if (updated == 0) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "PARTICIPANT_NOT_FOUND",
+                    "해당 참여자를 찾을 수 없습니다."
+            );
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getReceiptDates(
+            Long userId,
+            Long tripId
+    ) {
+        validateUserId(userId);
+        validateTripId(tripId);
+
+        if (!receiptMapper.existsTripByIdAndUserId(tripId, userId)) {
+            throw new CustomException(
+                    HttpStatus.NOT_FOUND,
+                    "RECEIPT_TRIP_NOT_FOUND",
+                    "여행 정보를 찾을 수 없습니다."
+            );
+        }
+
+        List<String> dates = receiptMapper.findReceiptDates(userId, tripId);
+        return dates != null ? dates : Collections.emptyList();
     }
 
     // 영수증 저장 모델을 생성한다.
@@ -865,7 +1090,8 @@ public class ReceiptServiceImpl
             );
         }
 
-        if (!receiptMapper.existsCategoryById(
+        if (request.getCategoryId() != null
+                && !receiptMapper.existsCategoryById(
                 request.getCategoryId()
         )) {
             throw new CustomException(
@@ -902,7 +1128,8 @@ public class ReceiptServiceImpl
                         row.getTripId(),
                         row.getId(),
                         row.getFileUrl()
-                )
+                ),
+                row.getParticipantNames()
         );
     }
 

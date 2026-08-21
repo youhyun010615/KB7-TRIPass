@@ -34,4 +34,6 @@ public class ReceiptSummaryRow {
     private Integer splitCount;
 
     private String fileUrl;
+
+    private String participantNames;
 }

@@ -54,7 +54,9 @@ public interface ReceiptMapper {
     // 로그인 회원의 특정 여행 영수증 목록 조회
     List<ReceiptSummaryRow> findAllByUserIdAndTripId(
             @Param("userId") Long userId,
-            @Param("tripId") Long tripId
+            @Param("tripId") Long tripId,
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate
     );
 
     // 로그인 회원의 영수증 상세 조회
@@ -150,6 +152,33 @@ public interface ReceiptMapper {
 
             @Param("tripId")
             Long tripId
+    );
+
+    // 참여자별 정산 요약 조회
+    List<java.util.Map<String, Object>> findParticipantSettlements(
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
+    );
+
+    // 참여자 정산 완료 토글
+    int toggleParticipantSettlement(
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId,
+            @Param("participantName") String participantName,
+            @Param("settled") boolean settled
+    );
+
+    // 영수증이 등록된 날짜 목록 조회
+    List<String> findReceiptDates(
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId
+    );
+
+    // 특정 참여자의 영수증 목록 조회
+    List<ReceiptSummaryRow> findReceiptsByParticipantName(
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId,
+            @Param("participantName") String participantName
     );
 
     // 수정 요청에서 제거된 공동결제 참여자만 논리 삭제
