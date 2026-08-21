@@ -728,9 +728,7 @@ function goToOnboardingHub() {
 .budget-recommendation-panel .budget-recommendation-summary{margin:0;background:transparent}
 .budget-recommendation-panel .budget-recommendation-summary>div{border-radius:11px;background:#fff}
 .budget-recommendation-panel .budget-recommendation-summary>div+div{margin-left:7px;border-left:0}
-.budget-recommendation-panel .budget-recommendation-summary span{font-size:12px}
-.budget-recommendation-panel .budget-recommendation-summary span small{font-size:9px}
-.budget-card-active .budget-grid label>span{font-size:10.5px}
-.budget-card-active .budget-grid input{font-size:14px}
-.budget-card-active .budget-grid em{font-size:9px}
+.budget-card-active .budget-section-title b{font-size:12px}
+.budget-card-active .subtotal{align-items:center;font-size:12px}
+.budget-card-active .subtotal b{font-size:12px}
 </style>
