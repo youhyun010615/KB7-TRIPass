@@ -104,9 +104,13 @@ public interface AssetMapper {
             @org.apache.ibatis.annotations.Param("userId") Long userId,
             @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber
     );
-    void upsertUserTravelCardFromLinkedCard(
+    List<java.util.Map<String, Object>> findAllActiveTravelCards();
+
+    void upsertUserTravelCard(
             @org.apache.ibatis.annotations.Param("userId") Long userId,
+            @org.apache.ibatis.annotations.Param("travelCardId") Long travelCardId,
             @org.apache.ibatis.annotations.Param("cardName") String cardName,
+            @org.apache.ibatis.annotations.Param("issuerName") String issuerName,
             @org.apache.ibatis.annotations.Param("maskedCardNumber") String maskedCardNumber,
             @org.apache.ibatis.annotations.Param("organizationCode") String organizationCode
     );

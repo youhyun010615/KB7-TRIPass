@@ -18,6 +18,9 @@ import java.util.Map;
  *   <li>{@code demoprep} / {@code Mock1234!} — 시연 계정: 여행 전(준비중), 도쿄 여행 D-8</li>
  *   <li>{@code demotravel} / {@code Mock1234!} — 시연 계정: 여행 중, 프랑스(종료)→독일(진행중)→스위스(예정)</li>
  *   <li>{@code demodone} / {@code Mock1234!} — 시연 계정: 여행 후, 방콕 2주 여행 종료</li>
+ *   <li>{@code demofresh} / {@code Mock1234!} — QA 계정: 여행 미등록 신규 상태. 계좌 연동 시
+ *       2026년 1~8월 급여·고정비·소비 내역이 실거래 유사 패턴으로 채워진다(여행 목표 없이
+ *       계좌·카드부터 연결하는 온보딩 흐름 테스트용)</li>
  * </ul>
  *
  * <p>demoprep/demotravel/demodone은 TriPass 시연 영상 촬영용으로 추가된 계정으로, DB에 이미
@@ -44,6 +47,10 @@ public class MockCodefClient implements CodefClient {
     public static final String DEMO_TRAVEL_CONNECTED_ID = "MOCK-CONNECTED-DEMO-TRAVEL";
     public static final String DEMO_DONE_CONNECTED_ID = "MOCK-CONNECTED-DEMO-DONE";
 
+    // ===== 신규 QA 계정 (28세 직장인, 1~8월 실거래 유사 데이터, 계좌·카드 연동 시연용) =====
+    public static final String DEMO_FRESH_LOGIN_ID = "demofresh";
+    public static final String DEMO_FRESH_CONNECTED_ID = "MOCK-CONNECTED-DEMO-FRESH";
+
     private static final String ACCESS_TOKEN = "mock-codef-access-token";
 
     // ===== tripassqa 데이터 =====
@@ -64,6 +71,10 @@ public class MockCodefClient implements CodefClient {
     private static final List<Map<String, Object>> TRAVEL_USER_BANK_TRANSACTIONS = buildTravelUserBankTransactions();
     private static final List<Map<String, Object>> TRAVEL_USER_CARD_TRANSACTIONS = buildTravelUserCardTransactions();
     private static final List<Map<String, Object>> TRAVEL_USER_TRAVELCARD_TRANSACTIONS = buildTravelUserTravelCardTransactions();
+
+    // ===== demofresh 데이터 (28세 직장인, 2026년 1~8월) =====
+    private static final List<Map<String, Object>> FRESH_BANK_TRANSACTIONS = buildFreshBankTransactions();
+    private static final List<Map<String, Object>> FRESH_CARD_TRANSACTIONS = buildFreshCardTransactions();
 
     @Override
     public String encodePassword(String plainPassword) {
@@ -137,6 +148,9 @@ public class MockCodefClient implements CodefClient {
         }
         if (DEMO_DONE_LOGIN_ID.equals(loginId) && DEMO_PASSWORD.equals(password)) {
             return success(Map.of("connectedId", DEMO_DONE_CONNECTED_ID));
+        }
+        if (DEMO_FRESH_LOGIN_ID.equals(loginId) && DEMO_PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", DEMO_FRESH_CONNECTED_ID));
         }
 
         return failure("CF-01002", "Mock 금융기관 아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -216,6 +230,15 @@ public class MockCodefClient implements CodefClient {
             return success(data);
         }
 
+        if (DEMO_FRESH_CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf("resAccount", "44404230001111", "resAccountName", "KB국민은행 급여통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "10624000", "resWithdrawableAmount", "10624000")
+            ));
+            return success(data);
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
@@ -280,6 +303,13 @@ public class MockCodefClient implements CodefClient {
             )));
         }
 
+        if (DEMO_FRESH_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(mapOf(
+                    "resCardName", "KB Star 체크카드", "resCardNo", "5412-****-****-4401",
+                    "resCardType", "02", "resPaymentAccount", "44404230001111"
+            )));
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
     }
 
@@ -300,6 +330,13 @@ public class MockCodefClient implements CodefClient {
         if (TRAVEL_CONNECTED_ID.equals(connectedId)) {
             List<Map<String, Object>> transactions = "55512340001234".equals(account)
                     ? filterByDate(TRAVEL_USER_BANK_TRANSACTIONS, body, "resAccountTrDate")
+                    : List.of();
+            return success(Map.of("resTrHistoryList", transactions));
+        }
+
+        if (DEMO_FRESH_CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> transactions = "44404230001111".equals(account)
+                    ? filterByDate(FRESH_BANK_TRANSACTIONS, body, "resAccountTrDate")
                     : List.of();
             return success(Map.of("resTrHistoryList", transactions));
         }
@@ -341,6 +378,13 @@ public class MockCodefClient implements CodefClient {
                 case "5412-****-****-8802" -> TRAVEL_USER_TRAVELCARD_TRANSACTIONS;
                 default -> List.of();
             };
+            return success(filterByDate(source, body, "resUsedDate"));
+        }
+
+        if (DEMO_FRESH_CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> source = "5412-****-****-4401".equals(cardNo)
+                    ? FRESH_CARD_TRANSACTIONS
+                    : List.of();
             return success(filterByDate(source, body, "resUsedDate"));
         }
 
@@ -534,6 +578,79 @@ public class MockCodefClient implements CodefClient {
         addCategoryTransactions(t, "202608", "LIVING", "편의점",
                 new String[]{"CU편의점", "GS25"}, preTripDays,
                 new int[]{3200, 4500, 2800, 5100});
+
+        return List.copyOf(t);
+    }
+
+    // ===================================================================
+    // demofresh 거래 데이터 (28세 직장인, 2026년 1~8월)
+    // 급여 실수령 295만원, 월세·통신비·적금 자동이체 + 체크카드 일상 소비.
+    // ===================================================================
+
+    private static List<Map<String, Object>> buildFreshBankTransactions() {
+        List<Map<String, Object>> t = new ArrayList<>();
+        int[] cardBill = {780000, 810000, 895000, 860000, 920000, 875000, 1050000, 990000};
+        long balance = 1_200_000L;
+        for (int month = 1; month <= 8; month++) {
+            String ym = "2026" + String.format("%02d", month);
+
+            balance += 2_950_000L;
+            t.add(bankTransaction(ym + "01", "090000", "2950000", "0", String.valueOf(balance), month + "월 급여"));
+
+            balance -= cardBill[month - 1];
+            t.add(bankTransaction(ym + "05", "081500", "0", String.valueOf(cardBill[month - 1]), String.valueOf(balance), "KB카드 결제"));
+
+            balance -= 550_000L;
+            t.add(bankTransaction(ym + "10", "140000", "0", "550000", String.valueOf(balance), "월세·관리비 자동이체"));
+
+            balance -= 62_000L;
+            t.add(bankTransaction(ym + "15", "093000", "0", "62000", String.valueOf(balance), "통신비 자동이체"));
+
+            // 8월은 오늘(8/21) 이전까지만 발생한 거래로 제한한다.
+            if (month < 8) {
+                balance -= 300_000L;
+                t.add(bankTransaction(ym + "25", "100000", "0", "300000", String.valueOf(balance), "정기적금 자동이체"));
+            }
+        }
+        return List.copyOf(t);
+    }
+
+    private static List<Map<String, Object>> buildFreshCardTransactions() {
+        List<Map<String, Object>> t = new ArrayList<>();
+
+        for (int month = 1; month <= 8; month++) {
+            String ym = "2026" + String.format("%02d", month);
+            boolean isCurrentMonth = month == 8; // 오늘(8/21) 이전까지만 생성
+            int adj = (month - 1) * 250;
+
+            int[] foodDays = isCurrentMonth ? new int[]{3, 8, 13, 19} : new int[]{3, 8, 13, 19, 26};
+            addRegularCategoryTransactions(t, ym, "FOOD", "일반음식점",
+                    new String[]{"한솥도시락", "김밥천국", "정성반상"}, foodDays, 9500 + adj, 800);
+
+            int[] cafeDays = isCurrentMonth ? new int[]{2, 9, 15, 21} : new int[]{2, 9, 15, 21, 27};
+            addRegularCategoryTransactions(t, ym, "CAFE", "커피전문점",
+                    new String[]{"스타벅스", "이디야", "메가커피"}, cafeDays, 5200 + adj, 400);
+
+            int[] livingDays = isCurrentMonth ? new int[]{4, 11, 17} : new int[]{4, 11, 17, 23, 29};
+            addRegularCategoryTransactions(t, ym, "LIVING", "편의점",
+                    new String[]{"CU편의점", "GS25", "세븐일레븐"}, livingDays, 6500 + adj, 400);
+
+            int[] transportDays = isCurrentMonth ? new int[]{6, 14, 20} : new int[]{6, 14, 20, 25};
+            addRegularCategoryTransactions(t, ym, "TRANSPORT", "대중교통",
+                    new String[]{"서울교통공사", "카카오택시"}, transportDays, 8000 + adj, 500);
+
+            int[] shoppingDays = isCurrentMonth ? new int[]{10} : new int[]{10, 24};
+            addRegularCategoryTransactions(t, ym, "SHOPPING", "온라인쇼핑",
+                    new String[]{"쿠팡", "무신사", "올리브영"}, shoppingDays, 35000 + adj, 5000);
+
+            int[] deliveryDays = isCurrentMonth ? new int[]{7, 16} : new int[]{7, 16, 28};
+            addRegularCategoryTransactions(t, ym, "DELIVERY", "배달서비스",
+                    new String[]{"배달의민족", "쿠팡이츠"}, deliveryDays, 18000 + adj, 1500);
+
+            t.add(cardTransaction(ym + "01", "080000", "17000", "FR" + ym.substring(2) + "SUB1", "넷플릭스", "온라인서비스"));
+            t.add(cardTransaction(ym + "01", "080500", "14900", "FR" + ym.substring(2) + "SUB2", "유튜브 프리미엄", "온라인서비스"));
+            t.add(cardTransaction(ym + "02", "190000", "89000", "FR" + ym.substring(2) + "GYM", "스포애니 피트니스", "스포츠시설"));
+        }
 
         return List.copyOf(t);
     }

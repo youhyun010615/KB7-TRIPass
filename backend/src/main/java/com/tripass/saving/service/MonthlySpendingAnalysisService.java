@@ -123,21 +123,21 @@ public class MonthlySpendingAnalysisService {
 
         List<MissionDetailResponseDto.MonthlyTrendItem> monthlyTrend = trendRows.stream()
                 .map(row -> new MissionDetailResponseDto.MonthlyTrendItem(
-                        (String) row.get("year_month"),
+                        (String) row.get("yearMonth"),
                         new BigDecimal(row.get("spending").toString()),
-                        ((Number) row.get("transaction_count")).intValue()))
+                        ((Number) row.get("transactionCount")).intValue()))
                 .toList();
 
         // 전월 실제 금액
         YearMonth prevMonth = analysisYearMonth.minusMonths(1);
         BigDecimal previousMonthSpending = trendRows.stream()
-                .filter(row -> prevMonth.toString().equals(row.get("year_month")))
+                .filter(row -> prevMonth.toString().equals(row.get("yearMonth")))
                 .map(row -> new BigDecimal(row.get("spending").toString()))
                 .findFirst().orElse(null);
 
         // 3개월 평균 (현재 달 제외)
         List<BigDecimal> pastMonthAmounts = trendRows.stream()
-                .filter(row -> !analysisYearMonth.toString().equals(row.get("year_month")))
+                .filter(row -> !analysisYearMonth.toString().equals(row.get("yearMonth")))
                 .map(row -> new BigDecimal(row.get("spending").toString()))
                 .toList();
         BigDecimal threeMonthAverage = null;

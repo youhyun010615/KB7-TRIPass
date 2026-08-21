@@ -278,23 +278,26 @@
         WHERE id = #{id}
     </update>
 
-    <!-- 연동 카드가 트래블카드 상품 마스터와 일치할 때만 사용자 보유 카드로 등록 -->
-    <insert id="upsertUserTravelCardFromLinkedCard">
+    <!-- 활성 트래블카드 상품 마스터 전체 조회 (Java 매칭용) -->
+    <select id="findAllActiveTravelCards" resultType="java.util.HashMap">
+        SELECT id, card_name AS cardName, card_company AS cardCompany
+        FROM travel_cards
+        WHERE is_active = TRUE AND is_deleted = 0
+    </select>
+
+    <!-- 매칭된 트래블카드를 사용자 보유 카드로 등록 -->
+    <insert id="upsertUserTravelCard">
         INSERT INTO user_travel_cards
             (user_id, travel_card_id, card_name, issuer_name, masked_card_number,
              brand_name, card_color, status, external_card_key, is_deleted, created_at, updated_at)
-        SELECT #{userId}, tc.id, tc.card_name, tc.card_company, #{maskedCardNumber},
-               'CODEF', 'BLUE', 'ACTIVE',
-               CONCAT('CODEF:', #{organizationCode}, ':', #{maskedCardNumber}), FALSE, NOW(), NOW()
-        FROM travel_cards tc
-        WHERE tc.card_name = #{cardName}
-          AND tc.is_active = TRUE
-        LIMIT 1
+        VALUES (#{userId}, #{travelCardId}, #{cardName}, #{issuerName}, #{maskedCardNumber},
+                'CODEF', 'BLUE', 'ACTIVE',
+                CONCAT('CODEF:', #{organizationCode}, ':', #{maskedCardNumber}), FALSE, NOW(), NOW())
         ON DUPLICATE KEY UPDATE
-            travel_card_id = VALUES(travel_card_id),
-            card_name = VALUES(card_name),
-            issuer_name = VALUES(issuer_name),
-            masked_card_number = VALUES(masked_card_number),
+            travel_card_id = #{travelCardId},
+            card_name = #{cardName},
+            issuer_name = #{issuerName},
+            masked_card_number = #{maskedCardNumber},
             status = 'ACTIVE',
             is_deleted = FALSE,
             deleted_at = NULL,
