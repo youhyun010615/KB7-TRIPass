@@ -1,6 +1,7 @@
 <script setup>
 import {
   computed,
+  onBeforeUnmount,
   onMounted,
   ref,
   watch,
@@ -38,6 +39,24 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const receiptHeaderEl = ref(null)
+const receiptHeaderHeight = ref(0)
+let receiptHeaderResizeObserver = null
+
+watch(receiptHeaderEl, element => {
+  receiptHeaderResizeObserver?.disconnect()
+  receiptHeaderResizeObserver = null
+  if (!element) return
+  receiptHeaderHeight.value = element.offsetHeight
+  if (window.ResizeObserver) {
+    receiptHeaderResizeObserver = new ResizeObserver(() => {
+      receiptHeaderHeight.value = element.offsetHeight
+    })
+    receiptHeaderResizeObserver.observe(element)
+  }
+})
+
+onBeforeUnmount(() => receiptHeaderResizeObserver?.disconnect())
 
 const activeVaultView = ref(
     ['ReceiptSettlements', 'ReceiptParticipantSettlement']
@@ -561,7 +580,7 @@ onMounted(loadPage)
 
 <template>
   <main class="receipt-page">
-    <div class="receipt-header-fixed">
+    <div ref="receiptHeaderEl" class="receipt-header-fixed">
       <header class="receipt-header">
         <div>
           <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
@@ -571,12 +590,13 @@ onMounted(loadPage)
       </header>
       <TravelModeMeta
         :trip-name="tripTitle"
+        :date-range="formatTripDateRange()"
         :day="receiptTravelDay"
         :country-name="receiptCurrentCountry.name"
         :country-code="receiptCurrentCountry.code"
       />
     </div>
-    <div class="receipt-header-spacer" aria-hidden="true" />
+    <div class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
 
     <nav class="vault-tabs" aria-label="영수증 보관함 메뉴">
       <button
@@ -2071,7 +2091,6 @@ onMounted(loadPage)
 }
 
 /* Receipt archive — compact paper layout */
-.receipt-header-spacer { height: 86px; }
 
 .vault-tabs {
   margin-top: 4px;

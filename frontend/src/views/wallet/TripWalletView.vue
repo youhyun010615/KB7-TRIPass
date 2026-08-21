@@ -26,6 +26,8 @@ const showMonthlySavings = computed(() =>
 )
 const walletTripCountries = computed(() => travel.activeTrip?.countries || [])
 const walletTravelStart = computed(() => walletTripCountries.value.map(item => item.arrivalDate || item.startDate).filter(Boolean).sort()[0] || '')
+const walletTravelEnd = computed(() => walletTripCountries.value.map(item => item.departureDate || item.endDate).filter(Boolean).sort().at(-1) || '')
+const walletTravelDateRange = computed(() => walletTravelStart.value && walletTravelEnd.value ? `${walletTravelStart.value} — ${walletTravelEnd.value}` : '')
 const walletTravelDay = computed(() => {
   if (!walletTravelStart.value) return 0
   const start = new Date(`${walletTravelStart.value}T00:00:00`).getTime()
@@ -417,6 +419,7 @@ async function confirmUnlinkTravelCard() {
       <TravelModeMeta
         v-if="isTravelWallet"
         :trip-name="travel.tripName"
+        :date-range="walletTravelDateRange"
         :day="walletTravelDay"
         :country-name="walletCurrentCountry.name"
         :country-code="walletCurrentCountry.code"
