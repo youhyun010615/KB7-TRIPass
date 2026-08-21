@@ -2092,13 +2092,13 @@ onMounted(loadPage)
 
 .trip-receipt-summary {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   margin-top: 16px;
-  padding: 18px;
+  padding: 0;
   border: 0;
-  border-radius: 22px;
-  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
-  box-shadow: 0 12px 24px rgba(30, 64, 125, .08);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .trip-summary-heading {
