@@ -11,11 +11,10 @@ import { useTripWalletStore } from '@/stores/tripWallet'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { countryPresentation, useTravelStore } from '@/stores/travel'
 import { getAccountInstitutions } from '@/api/asset'
-import { getTravelCardImage } from '@/utils/travelCard'
 import { flagClassMap } from '@/stores/exchange'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
 
-const sampleTravelCardImage = getTravelCardImage('KB국민카드')
+const sampleTravelCardImage = kbTravelersTosimiImage
 
 const router = useRouter()
 const wallet = useTripWalletStore()
