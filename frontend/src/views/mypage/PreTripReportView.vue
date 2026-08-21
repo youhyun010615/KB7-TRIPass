@@ -133,7 +133,7 @@ const budgetSegments = computed(() => {
     </section>
     </div>
 
-    <button class="pdf" type="button" @click="download" :disabled="downloading">{{ downloading ? 'PDF 생성 중...' : '▣ PDF 저장하기' }}</button>
+    <button class="pdf" type="button" @click="download" :disabled="downloading">{{ downloading ? 'PDF 생성 중...' : 'PDF 저장하기' }}</button>
     </template>
 
     <BottomNav />
@@ -152,9 +152,9 @@ const budgetSegments = computed(() => {
 .summary h2 { margin-top: 10px; font-size: 15px; }
 .summary p { margin-top: 5px; color: #b9c9e1; font-size: 8px; }
 .card { margin-top: 11px; padding: 15px; border: 1px solid #e2e7ef; border-radius: 15px; background: #fff; }
-.card h3 { font-size: 12px; font-weight: 900; }
+.card h3 { font-size: 15px; font-weight: 900; }
 .card.highlight { background: #eaf3ff; border-color: #cfe3ff; }
-.card.highlight .label { color: #3970ad; font-size: 9px; font-weight: 800; }
+.card.highlight .label { color: #3970ad; font-size: 15px; font-weight: 900; }
 .card.highlight .big { margin-top: 6px; color: #123a82; font-size: 20px; font-weight: 900; }
 .card.highlight .big small { color: #5f7fae; font-size: 10px; font-weight: 700; }
 .card.highlight .bar { height: 6px; margin-top: 10px; border-radius: 4px; background: #d7e6fb; overflow: hidden; }
