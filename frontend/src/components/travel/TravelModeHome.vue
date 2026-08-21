@@ -2206,18 +2206,6 @@ async function switchMode(mode) {
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
   box-shadow: 0 12px 30px rgba(23, 63, 141, .2);
 }
-.quick-calculator::after {
-  position: absolute;
-  right: 15px;
-  bottom: -9px;
-  width: 18px;
-  height: 18px;
-  border-right: 1px solid #bfd3f2;
-  border-bottom: 1px solid #bfd3f2;
-  background: #c8daf6;
-  content: '';
-  transform: rotate(45deg);
-}
 .calculator-head {
   display: flex;
   justify-content: space-between;
