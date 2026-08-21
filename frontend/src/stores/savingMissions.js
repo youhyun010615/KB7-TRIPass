@@ -10,6 +10,7 @@ import {
 import {
   fetchMonthlyAnalysis,
   generateMonthlyAnalysis,
+  markMonthlyAnalysisViewed,
 } from '@/api/monthlyAnalysis';
 
 function isAnalysisNotFound(error) {
@@ -23,11 +24,17 @@ function isAnalysisNotFound(error) {
 // mission-options/mission-selections는 분석 리포트가 있어야 조회되므로
 // 이 단계를 먼저 거쳐야 한다.
 async function ensureAnalysisExists(yearMonth) {
+  let analysis;
   try {
-    await fetchMonthlyAnalysis(yearMonth);
+    analysis = await fetchMonthlyAnalysis(yearMonth);
   } catch (error) {
     if (!isAnalysisNotFound(error)) throw error;
-    await generateMonthlyAnalysis(yearMonth);
+    analysis = await generateMonthlyAnalysis(yearMonth);
+  }
+  if (analysis?.reportStatus === 'PENDING') {
+    try {
+      await markMonthlyAnalysisViewed(yearMonth);
+    } catch { /* 상태 전이 실패해도 옵션 조회는 진행 */ }
   }
 }
 

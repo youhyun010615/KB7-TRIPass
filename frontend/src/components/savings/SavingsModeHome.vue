@@ -102,7 +102,7 @@ async function loadHomeInsights({ force = false } = {}) {
     return;
   }
 
-  await monthlyAnalysisStore.loadCurrentAnalysis({ force });
+  await monthlyAnalysisStore.loadLatestAnalysis({ force });
 }
 
 onMounted(async () => {

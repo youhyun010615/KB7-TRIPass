@@ -27,7 +27,7 @@ onMounted(async () => {
   // 국가 계획이 비어 있다면 force로 국가까지 다시 hydrate한다.
   await Promise.all([
     exchange.updateExchangeRates(),
-    travel.loadActiveGoal({ force: travel.selectedPlans.length === 0 }),
+    travel.loadActiveGoal({ force: true }),
   ]);
   travelGoalLoading.value = false;
 });

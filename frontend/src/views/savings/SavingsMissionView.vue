@@ -235,7 +235,7 @@ onMounted(async () => {
   if (hasTrip.value && hasLinkedAccount.value) {
     await Promise.all([
       loadFinancialSourcesAndMissions(),
-      monthlyAnalysisStore.loadCurrentAnalysis({ force: true }),
+      monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
     ])
   } else {
     financialSourcesLoading.value = false
