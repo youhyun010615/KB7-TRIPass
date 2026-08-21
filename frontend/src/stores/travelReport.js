@@ -59,6 +59,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
         .map(name => travelStore.countryFlagMap[name]?.code)
         .filter(Boolean),
       countries: (r.countryNames || []).join(' · '),
+      dateRange: formatDateRange(r.startDate, r.endDate),
       dDay: r.daysUntilTrip,
       status: statusLabel(tripBasic.value?.status),
     }

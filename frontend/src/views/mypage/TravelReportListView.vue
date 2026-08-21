@@ -32,10 +32,13 @@ watch(tripId, id => { if (id) load(id) })
       <b>{{ report.status }}</b>
     </div>
     <div class="ticket-title-row">
-      <h2>{{ report.title }}</h2>
-      <div class="ticket-flags" aria-label="여행 국가">
-        <span v-for="code in report.countryCodes" :key="code" :class="flagIconClass(code)" class="fi-inline" />
+      <div class="ticket-title-main">
+        <h2>{{ report.title }}</h2>
+        <div class="ticket-flags" aria-label="여행 국가">
+          <span v-for="code in report.countryCodes" :key="code" :class="flagIconClass(code)" class="fi-inline" />
+        </div>
       </div>
+      <p>{{ report.dateRange }}</p>
     </div>
   </section>
   <div class="report-list-heading">
@@ -92,9 +95,12 @@ watch(tripId, id => { if (id) load(id) })
   letter-spacing: .06em;
 }
 .ticket .ticket-title-row {
-  gap: 12px;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 7px;
   margin-top: 15px;
 }
+.ticket .ticket-title-main{display:flex;min-width:0;align-items:center;gap:8px}
 .ticket .ticket-title-row h2 {
   min-width: 0;
   overflow: hidden;
@@ -104,6 +110,7 @@ watch(tripId, id => { if (id) load(id) })
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ticket .ticket-title-row>p{color:rgba(255,255,255,.72);font-family:'Space Mono',monospace;font-size:9px;font-weight:700}
 .ticket-flags{display:flex;flex:0 0 auto;gap:5px}.ticket-flags .fi-inline{width:25px;height:17px;border-radius:4px;background-size:cover;box-shadow:0 2px 5px rgba(0,0,0,.2)}
 .ticket .ticket-period-row { margin-top: 9px; }
 .ticket .ticket-period-row p {
