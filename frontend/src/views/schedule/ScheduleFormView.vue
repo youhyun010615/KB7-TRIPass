@@ -7,6 +7,8 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
+import { createSchedule } from '@/api/schedule';
+import { fetchTripGoal } from '@/api/travel';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 import { useTravelStore } from '@/stores/travel';
 
@@ -17,8 +19,9 @@ const travel = useTravelStore();
 const editing = computed(() => Boolean(route.params.scheduleId));
 const archiveMode = computed(() => Boolean(route.meta.scheduleArchive));
 const requestedDate = computed(() => String(route.query.date || ''));
+const archiveCountries = ref([]);
 const availableCountries = computed(() =>
-  travel.selectedPlans.map((plan) => ({
+  (archiveMode.value ? archiveCountries.value : travel.selectedPlans).map((plan) => ({
     ...plan,
     code: String(plan.code || '').toUpperCase(),
     currency: plan.currencyCode || plan.currency || '',
@@ -79,7 +82,7 @@ const wonAmount = computed(() =>
   Math.round(Number(form.amount || 0) * (wonRates[form.currency] || 1)),
 );
 const tripDateRange = computed(() => {
-  const plans = travel.selectedPlans || [];
+  const plans = availableCountries.value;
   const starts = plans.map((item) => item.startDate).filter(Boolean).sort();
   const ends = plans.map((item) => item.endDate).filter(Boolean).sort();
   return starts.length && ends.length ? `${starts[0].replaceAll('-', '.')} ~ ${ends.at(-1).replaceAll('-', '.')}` : '';
@@ -104,9 +107,32 @@ async function submit() {
     memo: form.memo.trim(),
   };
   try {
-    const success = editing.value
-      ? await store.update(route.params.scheduleId, payload)
-      : await store.save(payload);
+    let success;
+    if (!editing.value && archiveMode.value) {
+      const tripId = Number(route.params.id || route.query.tripId);
+      const tripCountryId = country.value?.tripCountryId;
+      if (!tripId || !tripCountryId) {
+        store.errorMessage = '선택한 여행의 국가 정보를 불러오지 못했어요.';
+        success = false;
+      } else {
+        await createSchedule(tripId, {
+          tripCountryId,
+          scheduleName: payload.title,
+          scheduledAt: `${payload.date}T${payload.time}:00`,
+          amount: payload.amount,
+          currencyCode: payload.currency || undefined,
+          paymentStatus: String(payload.paymentStatus || 'undecided').toUpperCase(),
+          placeName: payload.placeName,
+          placeAddress: '',
+          memo: payload.memo,
+        });
+        success = true;
+      }
+    } else {
+      success = editing.value
+        ? await store.update(route.params.scheduleId, payload)
+        : await store.save(payload);
+    }
     if (success) {
       if (editing.value) {
         router.push(`/schedule/${route.params.scheduleId}`);
@@ -120,13 +146,43 @@ async function submit() {
         router.push({ path: '/schedule', query: route.query });
       }
     }
+  } catch (error) {
+    store.errorMessage = error.response?.data?.message || '여행 일정을 등록하지 못했어요.';
   } finally {
     isSubmitting.value = false;
   }
 }
 
 onMounted(async () => {
-  await store.ensureTripLoaded().catch(() => {});
+  if (archiveMode.value) {
+    const tripId = Number(route.params.id || route.query.tripId);
+    try {
+      if (!travel.countries.length) await travel.loadCountries();
+      const trip = await fetchTripGoal(tripId);
+      archiveCountries.value = (trip?.countries || []).map((item) => {
+        const catalog = travel.countries.find(
+          (entry) => Number(entry.countryId) === Number(item.countryId),
+        );
+        const name = item.countryName || catalog?.name || '';
+        const presentation = travel.countryFlagMap[name] || {};
+        return {
+          ...catalog,
+          ...item,
+          code: catalog?.code || presentation.code || '',
+          name,
+          flag: catalog?.flag || presentation.emoji || '🌍',
+          currencyCode: item.currencyCode || catalog?.currencyCode || '',
+          startDate: item.arrivalDate || item.startDate || '',
+          endDate: item.departureDate || item.endDate || '',
+        };
+      });
+    } catch {
+      archiveCountries.value = [];
+      store.errorMessage = '선택한 여행의 국가 정보를 불러오지 못했어요.';
+    }
+  } else {
+    await store.ensureTripLoaded().catch(() => {});
+  }
   if (!editing.value && availableCountries.value.length) {
     const isConfiguredCountry = availableCountries.value.some(
       (item) => item.code === form.countryCode,
