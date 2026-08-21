@@ -199,16 +199,23 @@ function positionCalendarAtToday() {
 async function focusTimelineDate(date) {
   selectedCalendarDate.value = date;
   await nextTick();
+  await new Promise((resolve) => window.requestAnimationFrame(resolve));
   const list = timelineList.value;
   const target = list?.querySelector(`[data-date="${date}"]`);
   if (!target || !list) return;
 
-  const targetTop =
-    target.getBoundingClientRect().top -
-    list.getBoundingClientRect().top +
-    list.scrollTop;
+  // 뒤쪽 날짜도 목록의 최상단까지 이동할 수 있도록 부족한 하단 공간만 확보한다.
+  list.style.setProperty('--focus-tail-space', '0px');
+  const targetTop = target.offsetTop;
+  const requiredTail = Math.max(
+    0,
+    targetTop - (list.scrollHeight - list.clientHeight) + 8,
+  );
+  list.style.setProperty('--focus-tail-space', `${requiredTail}px`);
+  await nextTick();
+  await new Promise((resolve) => window.requestAnimationFrame(resolve));
   list.scrollTo({
-    top: Math.max(0, targetTop - 8),
+    top: Math.max(0, targetTop - 2),
     behavior: 'smooth',
   });
 }
@@ -697,7 +704,7 @@ function showPastSchedules() {
   position: relative;
   max-height: 560px;
   margin: 14px 0 0;
-  padding: 0 2px 5px 41px;
+  padding: 0 2px calc(5px + var(--focus-tail-space, 0px)) 41px;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
