@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
@@ -24,6 +24,7 @@ const savingMissionsStore = useSavingMissionsStore();
 const savingReadinessStore = useSavingReadinessStore();
 const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
+const route = useRoute();
 const router = useRouter();
 
 // 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
@@ -409,11 +410,17 @@ function openFinancialSources() {
 }
 
 function openAccountConnection() {
-  router.push('/profile/financial?step=2&from=home');
+  router.push({
+    path: '/profile/financial',
+    query: { step: 2, from: 'home', returnTo: route.fullPath },
+  });
 }
 
 function openCardConnection() {
-  router.push('/profile/financial?step=9&from=home');
+  router.push({
+    path: '/profile/financial',
+    query: { step: 9, from: 'home', returnTo: route.fullPath },
+  });
 }
 
 function openMonthlyAnalysis() {

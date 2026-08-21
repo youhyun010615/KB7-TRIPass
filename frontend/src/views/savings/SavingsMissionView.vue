@@ -287,11 +287,17 @@ function goFinancialSources() {
 }
 
 function goAccountConnection() {
-  router.push('/profile/financial?step=2&from=mission')
+  router.push({
+    path: '/profile/financial',
+    query: { step: 2, from: 'mission', returnTo: route.fullPath },
+  })
 }
 
 function goCardConnection() {
-  router.push('/profile/financial?step=9&from=mission')
+  router.push({
+    path: '/profile/financial',
+    query: { step: 9, from: 'mission', returnTo: route.fullPath },
+  })
 }
 
 function goTravelRegister() {
