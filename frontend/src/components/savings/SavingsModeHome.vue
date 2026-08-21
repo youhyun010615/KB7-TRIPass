@@ -31,6 +31,7 @@ const router = useRouter();
 // 실제 렌더 높이를 측정해 뒤에 그만큼의 여백을 확보한다.
 const savingsHeaderEl = ref(null);
 const savingsHeaderHeight = ref(0);
+const showTripRequiredModal = ref(false);
 let savingsHeaderResizeObserver = null;
 
 function syncSavingsHeaderHeight() {
@@ -443,7 +444,7 @@ function goToPreparationChecklist() {
 
 async function switchMode(mode) {
   if (mode === 'travel' && !homeDashboard.value) {
-    window.alert('여행 계획을 먼저 등록해 주세요.');
+    showTripRequiredModal.value = true;
     return;
   }
   const isTravelMode = mode === 'travel' ? true : false;
@@ -454,6 +455,15 @@ async function switchMode(mode) {
   } else {
     console.error('모드 전환 실패');
   }
+}
+
+function closeTripRequiredModal() {
+  showTripRequiredModal.value = false;
+}
+
+function startTripRegistration() {
+  showTripRequiredModal.value = false;
+  router.push({ name: 'TravelRegister', query: { onboarding: '1' } });
 }
 </script>
 
@@ -942,10 +952,37 @@ async function switchMode(mode) {
         </div>
       </div>
     </template>
+
+    <Teleport to="body">
+      <Transition name="trip-required-modal">
+        <div
+          v-if="showTripRequiredModal"
+          class="trip-required-backdrop"
+          role="presentation"
+          @click.self="closeTripRequiredModal"
+        >
+          <section class="trip-required-dialog" role="dialog" aria-modal="true" aria-labelledby="trip-required-title">
+            <button type="button" class="trip-required-close" aria-label="알림 닫기" @click="closeTripRequiredModal">×</button>
+            <div class="trip-required-symbol" aria-hidden="true">
+              <span>✈</span>
+              <i />
+            </div>
+            <small>TRIPASS NOTICE</small>
+            <h2 id="trip-required-title">여행 계획이 먼저 필요해요</h2>
+            <p>여행 모드는 등록한 여행의 일정과 예산을 기준으로 준비돼요. 여행 계획부터 간단히 만들어 볼까요?</p>
+            <div class="trip-required-actions">
+              <button type="button" class="later" @click="closeTripRequiredModal">나중에</button>
+              <button type="button" class="register" @click="startTripRegistration">여행 계획 등록하기</button>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 </template>
 
 <style scoped>
+.trip-required-backdrop{position:fixed;z-index:500;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(8,21,48,.58);backdrop-filter:blur(5px)}.trip-required-dialog{position:relative;overflow:hidden;width:min(100%,350px);padding:28px 24px 22px;border-radius:25px;background:#fff;box-shadow:0 24px 64px rgba(6,24,61,.3);text-align:center}.trip-required-dialog::before{position:absolute;top:-72px;right:-58px;width:180px;height:180px;border-radius:50%;background:#edf4ff;content:''}.trip-required-close{position:absolute;top:14px;right:14px;z-index:2;display:grid;width:32px;height:32px;place-items:center;border-radius:50%;color:#7b8da8;background:#f2f6fc;font-size:21px}.trip-required-symbol{position:relative;display:grid;width:70px;height:70px;margin:0 auto 17px;place-items:center;border-radius:23px;color:#ffd45e;background:linear-gradient(145deg,#0b2a6b,#2465ce);box-shadow:0 12px 25px rgba(23,77,167,.25)}.trip-required-symbol span{position:relative;z-index:1;font-size:29px;transform:rotate(-12deg)}.trip-required-symbol i{position:absolute;inset:-7px;border:1px dashed #8cb6fa;border-radius:28px;animation:notice-orbit 7s linear infinite}.trip-required-dialog>small{position:relative;color:#2f6fed;font-size:9px;font-weight:900;letter-spacing:.14em}.trip-required-dialog h2{position:relative;margin-top:8px;color:#10192b;font-size:20px;font-weight:900;letter-spacing:-.04em}.trip-required-dialog>p{position:relative;margin-top:10px;color:#74839a;font-size:12px;font-weight:600;line-height:1.65}.trip-required-actions{position:relative;display:grid;grid-template-columns:.8fr 1.4fr;gap:9px;margin-top:23px}.trip-required-actions button{height:49px;border-radius:14px;font-size:13px;font-weight:900}.trip-required-actions .later{color:#687790;background:#eef2f8}.trip-required-actions .register{color:#fff;background:#174596;box-shadow:0 8px 18px rgba(23,69,150,.2)}.trip-required-modal-enter-active,.trip-required-modal-leave-active{transition:opacity .22s ease}.trip-required-modal-enter-active .trip-required-dialog,.trip-required-modal-leave-active .trip-required-dialog{transition:transform .34s cubic-bezier(.22,1,.36,1),opacity .22s ease}.trip-required-modal-enter-from,.trip-required-modal-leave-to{opacity:0}.trip-required-modal-enter-from .trip-required-dialog{opacity:0;transform:translateY(22px) scale(.94)}.trip-required-modal-leave-to .trip-required-dialog{opacity:0;transform:translateY(12px) scale(.97)}@keyframes notice-orbit{to{transform:rotate(360deg)}}
 .empty-trip-ticket-wrap {
   position: relative;
 }
