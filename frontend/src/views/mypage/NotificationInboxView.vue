@@ -30,11 +30,11 @@ function open(item) {
   <main class="page">
     <header>
       <button @click="router.back()">‹</button>
-      <h1>알림<img :src="notificationIcon" alt="" /></h1>
+      <h1>알림</h1>
       <button @click="store.markAllRead">전체 읽음</button>
     </header>
     <div class="title">
-      <h2>최근 알림</h2>
+      <h2><img :src="notificationIcon" alt="" />최근 알림 내역</h2>
     </div>
     <section class="list">
       <div
@@ -55,12 +55,13 @@ function open(item) {
         </span>
         <div class="actions">
           <strong v-if="!item.read" class="dot" />
-          <button 
-            v-if="item.url" 
-            class="go-btn" 
+          <button
+            v-if="item.url"
+            class="go-btn"
+            aria-label="알림 상세로 이동"
             @click.stop="open(item)"
           >
-            이동 ›
+            ›
           </button>
         </div>
       </div>
@@ -124,15 +125,24 @@ function open(item) {
   font-weight: 900;
   letter-spacing: -0.03em;
 }
-.page h1 img { width:21px;height:21px;object-fit:contain; }
 .title {
   display: flex;
   justify-content: space-between;
   margin: 20px 2px 10px;
 }
 .title h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 16px;
   font-weight: 900;
+}
+.title h2 img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+  filter: invert(23%) sepia(77%) saturate(1471%) hue-rotate(196deg)
+    brightness(86%) contrast(91%);
 }
 .list {
   overflow: hidden;
@@ -200,9 +210,14 @@ function open(item) {
   background: #ff6b35;
 }
 .go-btn {
+  display: grid;
+  width: 28px;
+  height: 38px;
+  place-items: center;
   color: #173f8d;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 27px;
+  font-weight: 500;
+  line-height: 1;
 }
 .go-btn:active {
   opacity: 0.6;
