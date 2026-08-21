@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 html {
+  /* 운영체제 다크 모드와 무관하게 네이티브 드롭다운도 서비스의 라이트 UI를 사용한다. */
+  color-scheme: only light;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
   /* 데스크톱에서 스크롤바가 고정 헤더 위까지 두껍게 걸쳐 보이지 않도록 얇고 옅게. */
@@ -13,6 +15,33 @@ body {
   overflow-wrap: break-word;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
+}
+
+/*
+ * 공통 드롭다운
+ * 화면별 select가 macOS/모바일의 검은 네이티브 메뉴로 열리지 않도록
+ * 선택 필드와 옵션 팔레트를 TRIPASS의 흰색 스타일로 고정한다.
+ */
+select {
+  color-scheme: only light;
+  background-color: #fff;
+  color: #17243a;
+  font-family: inherit;
+}
+
+select option,
+select optgroup {
+  color-scheme: only light;
+  background-color: #fff;
+  color: #17243a;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+select option:checked {
+  background-color: #eef4ff;
+  color: #173f8d;
 }
 
 /* 메인 탭은 문서(body)가 아니라 각 화면의 단일 본문 영역만 스크롤한다. */
