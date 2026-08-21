@@ -3,17 +3,33 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
 import { getAccounts } from '@/api/asset'
+import { fetchMyTrips } from '@/api/travel'
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
+import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const cardStore = useCardStore()
+const travelStore = useTravelStore()
 
 const isLoggingOut = ref(false)
 const accounts = ref([])
+const trips = ref([])
+const selectedTripId = ref(null)
+const tripMenuOpen = ref(false)
+
+const selectedTrip = computed(() =>
+  trips.value.find((trip) => Number(trip.tripId) === Number(selectedTripId.value)) || trips.value[0] || null,
+)
+const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
+const visitedCountryCount = computed(() => {
+  const countries = new Set()
+  trips.value.forEach((trip) => splitCountryNames(trip.countryNames).forEach((name) => countries.add(name)))
+  return countries.size
+})
 
 const memberIdentity = computed(() => {
   const provider = authStore.user?.loginProvider ?? 'LOCAL'
@@ -34,6 +50,57 @@ function formatWon(amount) {
   return amount.toLocaleString('ko-KR') + '원'
 }
 
+function splitCountryNames(joined) {
+  return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
+}
+
+function countryCodeOf(countryName) {
+  return countryPresentation[countryName]?.code || ''
+}
+
+function tripCover(trip) {
+  const country = splitCountryNames(trip?.countryNames)[0]
+  return countryPresentation[country]?.image || ''
+}
+
+function formatDateRange(startDate, endDate) {
+  const format = (date) => (date ? date.replaceAll('-', '.') : '')
+  return `${format(startDate)} - ${format(endDate)}`
+}
+
+function tripStatus(trip) {
+  if (trip?.status === 'ENDED') return '완료'
+  if (trip?.status === 'TRAVELING') return '여행 중'
+  if (!trip?.startDate) return '준비 중'
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const start = new Date(`${trip.startDate}T00:00:00`)
+  const days = Math.ceil((start - today) / 86400000)
+  return days <= 0 ? '여행 중' : `D-${days}`
+}
+
+function selectTrip(trip) {
+  if (Number(selectedTripId.value) === Number(trip.tripId)) return
+  selectedTripId.value = trip.tripId
+  tripMenuOpen.value = false
+}
+
+function startNewTrip() {
+  travelStore.resetGoal()
+  router.push({ name: 'TravelRegister' })
+}
+
+const travelMenuItems = computed(() => {
+  if (!selectedTrip.value) return []
+  const id = selectedTrip.value.tripId
+  return [
+    { label: '여행 리포트', sub: '저축 기록과 여행 후 지출 분석', badge: '확인', icon: 'report', path: `/mypage/reports?tripId=${id}` },
+    { label: '체크리스트', sub: '여행 전 · 귀국 준비', badge: '확인', icon: 'check', path: `/mypage/checklists?tripId=${id}` },
+    { label: '여행 일정', sub: '등록한 일정 확인', badge: '보기', icon: 'schedule', path: '/schedule' },
+    { label: '영수증 보관함', sub: 'OCR 영수증과 지출 기록', badge: '보기', icon: 'receipt', path: `/trips/${id}/receipts` },
+    { label: '완료 미션', sub: '진행했던 미션 기록', badge: '확인', icon: 'mission', path: `/mypage/travel/${id}` },
+  ]
+})
+
 onMounted(async () => {
   try {
     const res = await getAccounts()
@@ -42,6 +109,13 @@ onMounted(async () => {
     accounts.value = []
   }
   await cardStore.loadCards()
+  try {
+    trips.value = (await fetchMyTrips()) || []
+    selectedTripId.value = trips.value[0]?.tripId ?? null
+  } catch (error) {
+    console.error('마이페이지 여행 목록 조회 실패:', error)
+    trips.value = []
+  }
 })
 
 async function logout() {
@@ -74,12 +148,6 @@ const myManageItems = computed(() => [
     sub: '연락처와 비밀번호 관리',
     path: '/mypage/profile',
     icon: 'user',
-  },
-  {
-    label: '여행 관리',
-    sub: '등록한 여행과 관련 기록',
-    path: '/mypage/travel',
-    icon: 'travel',
   },
   {
     label: '알림 설정',
@@ -166,6 +234,85 @@ const myManageItems = computed(() => [
           </button>
         </div>
       </div>
+
+      <!-- 여행 관리 -->
+      <section class="trip-management">
+        <header class="trip-section-head">
+          <div>
+            <h2>여행 관리</h2>
+            <span>방문 국가 {{ visitedCountryCount }} · 완료 여행 {{ completedTripCount }}</span>
+          </div>
+          <button type="button" @click="router.push('/mypage/travel')">전체보기 ›</button>
+        </header>
+
+        <div class="trip-selector">
+          <button
+              v-for="trip in trips"
+              :key="trip.tripId"
+              type="button"
+              class="trip-circle-item"
+              :class="{ selected: Number(selectedTripId) === Number(trip.tripId) }"
+              @click="selectTrip(trip)"
+          >
+            <span class="trip-circle">
+              <span
+                  class="trip-cover"
+                  :style="tripCover(trip) ? { backgroundImage: `linear-gradient(rgba(11,42,107,.1),rgba(11,42,107,.2)),url(${tripCover(trip)})` } : {}"
+              >
+                <span v-if="!tripCover(trip)" class="circle-flags">
+                  <span v-for="name in splitCountryNames(trip.countryNames).slice(0, 3)" :key="name" :class="flagIconClass(countryCodeOf(name))" class="fi-inline"></span>
+                </span>
+              </span>
+            </span>
+            <b>{{ trip.tripName }}</b>
+          </button>
+
+          <button type="button" class="trip-circle-item add-trip" @click="startNewTrip">
+            <span class="trip-circle"><i>＋</i></span>
+            <b>새 여행</b>
+          </button>
+        </div>
+
+        <p v-if="!trips.length" class="trip-empty">등록된 여행이 없어요.</p>
+
+        <article v-else-if="selectedTrip" class="selected-trip-card">
+          <button type="button" class="selected-trip-summary" @click="tripMenuOpen = !tripMenuOpen">
+            <div class="selected-trip-main">
+              <div class="selected-trip-name">
+                <strong>{{ selectedTrip.tripName }}</strong>
+                <span class="selected-flags">
+                  <span v-for="name in splitCountryNames(selectedTrip.countryNames)" :key="name" :class="flagIconClass(countryCodeOf(name))" class="fi-inline"></span>
+                </span>
+              </div>
+              <small>{{ formatDateRange(selectedTrip.startDate, selectedTrip.endDate) }} · {{ selectedTrip.totalDays || '' }}일</small>
+            </div>
+            <em :class="{ traveling: tripStatus(selectedTrip) === '여행 중' }">{{ tripStatus(selectedTrip) }}</em>
+            <svg :class="{ open: tripMenuOpen }" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+
+          <Transition name="trip-menu">
+            <div v-if="tripMenuOpen" class="trip-menu-grid">
+              <button
+                  v-for="item in travelMenuItems"
+                  :key="item.label"
+                  type="button"
+                  class="trip-menu-item"
+                  :class="{ wide: item.icon === 'mission' }"
+                  @click="router.push(item.path)"
+              >
+                <span class="trip-menu-icon" aria-hidden="true">
+                  <svg v-if="item.icon === 'report'" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M12 20V5M19 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <svg v-else-if="item.icon === 'check' || item.icon === 'mission'" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <svg v-else-if="item.icon === 'schedule'" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M9 3.5v3M15 3.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <span class="trip-menu-copy"><b>{{ item.label }}</b><small>{{ item.sub }}</small></span>
+                <em>{{ item.badge }}</em>
+              </button>
+            </div>
+          </Transition>
+        </article>
+      </section>
 
       <button
           type="button"
@@ -372,4 +519,51 @@ const myManageItems = computed(() => [
 .logout-button:active { background:#fff5f6; }
 .logout-button:disabled { opacity:.55; }
 .logout-button svg { width:17px;height:17px; }
+.trip-management { display:flex;flex-direction:column;gap:12px;margin-top:4px; }
+.trip-section-head { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+.trip-section-head>div { display:flex;min-width:0;align-items:baseline;gap:8px; }
+.trip-section-head h2 { margin:0;color:#111b30;font-size:15px;font-weight:800;letter-spacing:-.03em; }
+.trip-section-head>div>span { overflow:hidden;color:#98a4b6;font-size:9px;font-weight:700;text-overflow:ellipsis;white-space:nowrap; }
+.trip-section-head button { flex:none;border:0;background:transparent;color:#2f70f2;font-size:10px;font-weight:800; }
+.trip-selector { display:flex;gap:13px;overflow-x:auto;padding:5px 4px 10px;scrollbar-width:none;scroll-snap-type:x proximity; }
+.trip-selector::-webkit-scrollbar { display:none; }
+.trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:7px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start; }
+.trip-circle-item b { display:block;overflow:hidden;width:100%;font-size:9.5px;font-weight:800;text-align:center;text-overflow:ellipsis;white-space:nowrap; }
+.trip-circle { display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
+.trip-circle-item.selected { color:#111b30; }
+.trip-circle-item.selected .trip-circle { box-shadow:0 0 0 3px #2f70f2;transform:scale(1.03); }
+.trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#eaf1ff center/cover no-repeat; }
+.trip-cover::after { position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,44,99,.03),rgba(15,44,99,.18));content:''; }
+.circle-flags { position:relative;z-index:1;display:flex;max-width:45px;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px; }
+.circle-flags .fi { width:18px;height:12px;border-radius:2px;box-shadow:0 1px 3px rgba(15,34,68,.18); }
+.add-trip .trip-circle { border:2px dashed #cad5e7;background:#fff;box-shadow:none;color:#2f70f2;font-size:25px;font-weight:400; }
+.add-trip:active .trip-circle { transform:scale(.96); }
+.trip-empty { padding:22px 16px;border:1px dashed #cfdbed;border-radius:19px;background:#fff;color:#95a2b5;font-size:10px;text-align:center; }
+.selected-trip-card { overflow:hidden;border:1px solid #e8edf5;border-radius:20px;background:#fff;box-shadow:0 8px 23px rgba(26,51,93,.075); }
+.selected-trip-summary { display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto 18px;align-items:center;gap:9px;padding:16px;border:0;background:#fff;text-align:left; }
+.selected-trip-main { min-width:0; }
+.selected-trip-name { display:flex;align-items:center;gap:7px; }
+.selected-trip-name strong { overflow:hidden;color:#111b30;font-size:14px;font-weight:800;text-overflow:ellipsis;white-space:nowrap; }
+.selected-flags { display:flex;align-items:center;gap:2px; }
+.selected-flags .fi { width:14px;height:10px;border-radius:2px;box-shadow:0 1px 2px rgba(15,34,68,.15); }
+.selected-trip-main small { display:block;margin-top:5px;color:#95a2b5;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700; }
+.selected-trip-summary>em { padding:6px 9px;border-radius:99px;background:#edf3ff;color:#2866d4;font-size:9px;font-style:normal;font-weight:800;white-space:nowrap; }
+.selected-trip-summary>em.traveling { background:#e8f8ef;color:#138454; }
+.selected-trip-summary>svg { width:18px;height:18px;color:#9aa6b8;transition:transform .22s ease; }
+.selected-trip-summary>svg.open { transform:rotate(180deg); }
+.trip-menu-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:13px;border-top:1px solid #edf1f7;background:#fff; }
+.trip-menu-item { position:relative;display:flex;min-width:0;min-height:112px;flex-direction:column;align-items:flex-start;padding:13px;border:0;border-radius:16px;background:#f6f8fc;color:#111b30;text-align:left; }
+.trip-menu-item:active { background:#edf3ff;transform:scale(.985); }
+.trip-menu-item.wide { grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px; }
+.trip-menu-icon { display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#eaf1ff;color:#2f70f2; }
+.trip-menu-icon svg { width:18px;height:18px; }
+.trip-menu-copy { min-width:0; }
+.trip-menu-item:not(.wide) .trip-menu-copy { margin-top:13px; }
+.trip-menu-item b { display:block;font-size:11px;font-weight:800;line-height:1.35; }
+.trip-menu-item small { display:block;margin-top:4px;color:#98a4b6;font-size:8.5px;line-height:1.45; }
+.trip-menu-item>em { position:absolute;top:13px;right:13px;padding:4px 7px;border-radius:99px;background:#fff;color:#64748b;font-size:8px;font-style:normal;font-weight:800; }
+.trip-menu-item.wide>em { position:static; }
+.trip-menu-enter-active,.trip-menu-leave-active { overflow:hidden;transition:max-height .3s ease,opacity .2s ease; }
+.trip-menu-enter-from,.trip-menu-leave-to { max-height:0;opacity:0; }
+.trip-menu-enter-to,.trip-menu-leave-from { max-height:420px;opacity:1; }
 </style>
