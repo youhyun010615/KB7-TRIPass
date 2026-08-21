@@ -509,9 +509,15 @@ function goToOnboardingHub() {
           </span>
         </header>
 
-        <section class="budget-recommendation-summary">
-          <div><span>사전 지출 <small>(AI 추천)</small></span><b>{{ money(recommendedPrepaidTotal(activeBudgetPlan)) }}</b></div>
-          <div><span>현지 여행 자금 <small>(AI 추천)</small></span><b>{{ money(recommendedLocalTotal(activeBudgetPlan)) }}</b></div>
+        <section class="budget-recommendation-panel">
+          <header class="budget-recommendation-title">
+            <i aria-hidden="true">AI</i>
+            <b>AI 추천 예산</b>
+          </header>
+          <div class="budget-recommendation-summary">
+            <div><span>사전 지출 <small>(AI 추천)</small></span><b>{{ money(recommendedPrepaidTotal(activeBudgetPlan)) }}</b></div>
+            <div><span>현지 여행 자금 <small>(AI 추천)</small></span><b>{{ money(recommendedLocalTotal(activeBudgetPlan)) }}</b></div>
+          </div>
         </section>
 
         <section class="editable-budget">
@@ -700,4 +706,11 @@ function goToOnboardingHub() {
 .budget-fixed-summary .collision{margin:7px 0 0;padding:6px 9px}
 .budget-fixed-summary .primary-cta{height:48px;margin-top:10px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:none}
 .ai-guide>div{flex:1}.date-row img{flex:0 0 18px;width:18px;height:18px}
+.budget-recommendation-panel{margin-bottom:12px;padding:12px;border:1.5px solid #a9ccff;border-radius:16px;background:#eef5ff}
+.budget-recommendation-title{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important;padding:0 0 10px!important}
+.budget-recommendation-title i{display:grid;width:30px;height:30px;place-items:center;border-radius:9px;color:#fff;background:#2469e8;font-size:10px;font-style:normal;font-weight:900;box-shadow:0 5px 12px rgba(36,105,232,.2)}
+.budget-recommendation-title b{color:#174fae;font-size:12px;font-weight:900}
+.budget-recommendation-panel .budget-recommendation-summary{margin:0;background:transparent}
+.budget-recommendation-panel .budget-recommendation-summary>div{border-radius:11px;background:#fff}
+.budget-recommendation-panel .budget-recommendation-summary>div+div{margin-left:7px;border-left:0}
 </style>
