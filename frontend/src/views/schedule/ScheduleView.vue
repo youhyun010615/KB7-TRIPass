@@ -72,18 +72,9 @@ const timelineGroups = computed(() => {
     isCompleted: items.every(isScheduleCompleted),
   }));
 });
-const selectedDateGroup = computed(() =>
-  timelineGroups.value.find((group) => group.date === selectedCalendarDate.value),
-);
-const selectedDateItems = computed(() => selectedDateGroup.value?.items || []);
-const nextUpcomingSchedule = computed(() =>
-  store.sortedSchedules.find(
-    (item) => item.date !== selectedCalendarDate.value && !isScheduleCompleted(item),
-  ),
-);
+const featuredSchedule = computed(() => nextSchedule.value || null);
 const upcomingTimelineGroups = computed(() =>
   timelineGroups.value
-    .filter((group) => group.date !== selectedCalendarDate.value)
     .sort((a, b) => a.date.localeCompare(b.date)),
 );
 const scheduleCountByDate = computed(() => {
@@ -177,12 +168,21 @@ async function positionTimelineAtNext() {
 
   await nextTick();
   await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  const nextAnchor = list.querySelector('[data-next-anchor="true"]');
   const nextGroup = list.querySelector('[data-next-group="true"]');
-  list.scrollTop = nextGroup ? Math.max(0, nextGroup.offsetTop - 2) : 0;
+  const target = nextAnchor || nextGroup;
+  if (!target) {
+    list.scrollTop = 0;
+    return;
+  }
+
+  const targetTop =
+    target.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+  list.scrollTop = Math.max(0, targetTop - (nextAnchor ? 48 : 2));
 }
 
 function groupHasNextSchedule(group) {
-  return group.items.some((item) => item.id === nextUpcomingSchedule.value?.id);
+  return group.items.some((item) => item.id === nextSchedule.value?.id);
 }
 
 function positionCalendarAtToday() {
@@ -265,17 +265,16 @@ function showPastSchedules() {
     </section>
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
 
-    <section v-if="selectedDateItems.length" class="today-schedule-section">
+    <section v-if="featuredSchedule" class="today-schedule-section">
       <div class="list-heading">
         <h2>오늘 일정</h2>
-        <em>{{ shortDateLabel(selectedCalendarDate) }}</em>
+        <em>{{ shortDateLabel(featuredSchedule.date) }}</em>
       </div>
       <div class="today-schedule-list">
         <ScheduleCard
-          v-for="item in selectedDateItems"
-          :key="item.id"
-          :schedule="item"
-          :completed="isScheduleCompleted(item)"
+          :key="featuredSchedule.id"
+          :schedule="featuredSchedule"
+          :completed="false"
           today
           @detail="openDetail"
         />
@@ -285,7 +284,7 @@ function showPastSchedules() {
     <section class="upcoming-card">
       <div class="section-title">
         <div>
-          <h2>다가오는 일정</h2>
+          <h2>전체 일정</h2>
         </div>
         <span>총 {{ store.sortedSchedules.length }}건</span>
       </div>
