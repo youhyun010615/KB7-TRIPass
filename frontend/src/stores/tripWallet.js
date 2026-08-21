@@ -1,5 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
+import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
 import {
   chargeWallet,
   deleteWalletAutoSaving,
@@ -42,7 +43,7 @@ const initialMonthlySavings = [
 // backend/src/main/resources/sql/travel_card_seed.sql 의 13개 카드와 1:1로 대응한다.
 // 실제 API가 카드 이미지를 내려주지 않으므로, cardName으로 매칭해 이 목록의 이미지를 붙여 쓴다.
 const defaultTravelCardOptions = [
-  { id: 1, travelCardId: 1, userTravelCardId: 1, issuer: 'KB국민카드', name: '트래블러스 체크카드', number: '1234 · 5678 · **** · 3456', brand: 'TRAVELERS', color: '#153783', images: cardImages('travelers_1.png', 'travelers_2.png', 'travelers_3.png', 'travelers_4.png', 'travelers_5.png') },
+  { id: 1, travelCardId: 1, userTravelCardId: 1, issuer: 'KB국민카드', name: '트래블러스 체크카드', number: '1234 · 5678 · **** · 3456', brand: 'TRAVELERS', color: '#153783', images: [kbTravelersTosimiImage] },
   { id: 2, travelCardId: 2, userTravelCardId: 2, issuer: '하나카드', name: '트래블로그 체크카드', number: '4567 · 1234 · **** · 9081', brand: 'TRAVLOG', color: '#12a997', images: cardImages('travlog_1.png', 'travlog_2.png', 'travlog_3.png') },
   { id: 3, travelCardId: 3, userTravelCardId: 3, issuer: '하나카드', name: '트래블GO 체크카드', number: '2231 · 5567 · **** · 7789', brand: 'TRAVLGO', color: '#f0b429', images: cardImages('travlgo_1.png', 'travlgo_2.png') },
   { id: 4, travelCardId: 4, userTravelCardId: 4, issuer: '우리카드', name: '위비트래블 체크카드', number: '3345 · 8890 · **** · 4412', brand: 'WIBEE TRAVEL', color: '#7cb9e8', images: cardImages('wibee_travel_1.png', 'wibee_travel_2.png') },
