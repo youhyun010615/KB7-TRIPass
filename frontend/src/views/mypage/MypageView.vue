@@ -26,6 +26,7 @@ const tripMenuOpen = ref(false)
 const selectedTrip = computed(() =>
   trips.value.find((trip) => Number(trip.tripId) === Number(selectedTripId.value)) || trips.value[0] || null,
 )
+const hasTravelingTrip = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중'))
 const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
 const visitedCountryCount = computed(() => {
   const countries = new Set()
@@ -99,6 +100,7 @@ function selectTrip(trip) {
 }
 
 function startNewTrip() {
+  if (hasTravelingTrip.value) return
   travelStore.resetGoal()
   router.push({ name: 'TravelRegister' })
 }
@@ -279,11 +281,19 @@ const myManageItems = computed(() => [
             <b>{{ trip.tripName }}</b>
           </button>
 
-          <button type="button" class="trip-circle-item add-trip" @click="startNewTrip">
+          <button
+            type="button"
+            class="trip-circle-item add-trip"
+            :class="{ blocked: hasTravelingTrip }"
+            :disabled="hasTravelingTrip"
+            @click="startNewTrip"
+          >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
             <b>새 여행</b>
           </button>
         </div>
+
+        <p v-if="hasTravelingTrip" class="new-trip-notice">여행중에는 새로운 여행을 등록할 수 없어요.</p>
 
         <p v-if="!trips.length" class="trip-empty">등록된 여행이 없어요.</p>
 
@@ -553,6 +563,11 @@ const myManageItems = computed(() => [
 .add-trip .trip-circle { border:2px dashed #cad5e7;background:#fff;box-shadow:none;color:#2f70f2;font-size:25px;font-weight:400; }
 .add-trip-plus { display:grid;width:100%;height:100%;place-items:center;font-family:Arial,sans-serif;font-size:25px;font-style:normal;font-weight:400;line-height:1;transform:none; }
 .add-trip:active .trip-circle { transform:scale(.96); }
+.add-trip.blocked { cursor:not-allowed;color:#aab3c1;opacity:.82; }
+.add-trip.blocked .trip-circle { border-style:solid;border-color:#d8dee8;background:#e8ebf0;color:#aeb6c2;box-shadow:inset 0 0 0 1px rgba(137,148,164,.08); }
+.add-trip.blocked .add-trip-plus { position:relative;color:transparent; }
+.add-trip.blocked .add-trip-plus::before { position:absolute;inset:0;display:grid;place-items:center;color:#929dab;font-size:18px;content:'×'; }
+.new-trip-notice { margin:-5px 4px 0;color:#8c98aa;font-size:9.5px;font-weight:700;line-height:1.45; }
 .trip-empty { padding:22px 16px;border:1px dashed #cfdbed;border-radius:19px;background:#fff;color:#95a2b5;font-size:10px;text-align:center; }
 .selected-trip-card { overflow:hidden;border:1px solid #e8edf5;border-radius:20px;background:#fff;box-shadow:0 8px 23px rgba(26,51,93,.075); }
 .selected-trip-summary { display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto 18px;align-items:center;gap:9px;padding:16px;border:0;background:#fff;text-align:left; }
