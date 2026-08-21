@@ -68,15 +68,18 @@ const filteredCurrencies = computed(() => {
 });
 
 watch(
-  displayCurrencies,
+  filteredCurrencies,
   (newList) => {
     if (newList && newList.length > 0) {
       const isSelectedValid = newList.some((c) =>
         exchange.selectedCountryId != null
-          ? c.countryId === exchange.selectedCountryId
+          ? String(c.countryId) === String(exchange.selectedCountryId)
           : c.code === exchange.selectedCode,
       );
       if (!isSelectedValid) {
+        // 여행 국가만 가나다순으로 정렬한 목록의 첫 국가를 기본값으로 사용한다.
+        // 이전에 저장한 동일 통화 국가(예: 그리스 EUR)가 여행 목록에 없으면
+        // 통화 코드만으로 되살리지 않고 현재 여행 국가로 교체한다.
         exchange.selectedCode = newList[0].code;
         exchange.selectedCountryId = newList[0].countryId ?? null;
       }

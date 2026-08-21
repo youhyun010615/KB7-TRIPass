@@ -67,7 +67,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   const selectedCurrency = computed(() => {
     if (selectedCountryId.value != null) {
       const byCountry = currencies.value.find(
-        (item) => item.countryId === selectedCountryId.value,
+        (item) => String(item.countryId) === String(selectedCountryId.value),
       );
       if (byCountry) return byCountry;
     }
