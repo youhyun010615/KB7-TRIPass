@@ -144,23 +144,21 @@ const tripCountries = computed(() => {
   const codes = store.configuredPeriods.map((period) => period.code);
   return codes.map((code) => store.countries.find((country) => country.code === code)).filter(Boolean);
 });
-const firstCountry = computed(() => tripCountries.value[0] || store.countries[0]);
-const lastCountry = computed(() => tripCountries.value.at(-1) || firstCountry.value);
-const tripProgress = computed(() => {
-  const start = new Date(`${store.travelStart}T00:00:00`).getTime();
-  const end = new Date(`${store.travelEnd}T00:00:00`).getTime();
-  const now = new Date(`${store.today}T00:00:00`).getTime();
-  if (![start, end, now].every(Number.isFinite) || end <= start) return 0;
-  return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
-});
-const tripStateLabel = computed(() => {
-  const today = new Date(`${store.today}T00:00:00`).getTime();
-  const start = new Date(`${store.travelStart}T00:00:00`).getTime();
-  const end = new Date(`${store.travelEnd}T00:00:00`).getTime();
-  if (today < start) return '여행 예정';
-  if (today > end) return '여행 완료';
-  const elapsed = Math.max(0, Math.floor((today - start) / 86_400_000));
-  return `여행 중 · DAY ${elapsed}`;
+const currentCountry = computed(() => {
+  const todaySchedules = store.sortedSchedules.filter((item) => item.date === store.today);
+  const currentTime = new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date());
+  const startedSchedule = [...todaySchedules]
+    .filter((item) => (item.time || '00:00') <= currentTime)
+    .at(-1);
+  const activeSchedule = startedSchedule || todaySchedules[0];
+  const scheduleCountry = store.countries.find(
+    (country) => country.code === activeSchedule?.countryCode,
+  );
+  return scheduleCountry || store.countryForDate(store.today) || tripCountries.value[0] || null;
 });
 const openDetail = (id) => router.push(`/schedule/${id}`);
 
@@ -221,23 +219,17 @@ function showPastSchedules() {
 
     <section class="trip-timeline-pass">
       <div class="trip-pass-head">
-        <small>TRIP TIMELINE · TRIPASS</small>
-        <em :class="{ traveling: tripProgress > 0 && tripProgress < 100 }">{{ tripStateLabel }}</em>
+        <small>TRIPASS TIMELINE</small>
       </div>
-      <div class="trip-route">
-        <div>
-          <strong><span v-if="firstCountry" :class="flagIconClass(firstCountry.code)" class="fi-inline route-flag" /> {{ firstCountry?.name }}</strong>
-        </div>
-        <span class="route-flight"><i :style="{ left: `${tripProgress}%` }">✈</i></span>
-        <div class="route-end">
-          <strong>{{ lastCountry?.name }} <span v-if="lastCountry" :class="flagIconClass(lastCountry.code)" class="fi-inline route-flag" /></strong>
+      <div class="trip-title-row">
+        <h2>{{ travel.tripName || '나의 여행' }}</h2>
+        <div v-if="currentCountry" class="current-country">
+          <small>NOW</small>
+          <strong>{{ currentCountry.name }}</strong>
+          <span :class="flagIconClass(currentCountry.code)" class="fi-inline current-country-flag" />
         </div>
       </div>
-      <p>{{ store.travelStart }} — {{ store.travelEnd }} · {{ travel.tripName || '나의 여행' }}</p>
-      <div class="trip-progress">
-        <span><i :style="{ width: `${tripProgress}%` }" /></span>
-        <small>DAY 1</small><small>DAY {{ travelDays }}</small>
-      </div>
+      <p>{{ store.travelStart }} — {{ store.travelEnd }}</p>
     </section>
 
     <section class="calendar-card">
@@ -357,7 +349,7 @@ function showPastSchedules() {
 }
 .schedule-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 20px;background:#f4f5f9;transform:translateX(-50%)}
 .schedule-header{display:flex;align-items:flex-start;justify-content:space-between}.header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.schedule-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.schedule-header-spacer{height:82px}
-.trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:14px 16px 15px;border-radius:18px;background:linear-gradient(155deg,#0b2a6b 0%,#123c94 60%,#17459f 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24)}.trip-pass-head{display:flex;align-items:center;justify-content:space-between}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-pass-head em{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.16);font-size:9px;font-style:normal;font-weight:800}.trip-route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:13px}.trip-route>div{min-width:70px}.trip-route small{display:block;color:rgba(255,255,255,.55);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em}.trip-route strong{display:block;margin-top:3px;font-size:18px;font-weight:800}.route-end{text-align:right}.route-flight{position:relative;height:2px;border-radius:99px;background:rgba(255,255,255,.22)}.route-flight i{position:absolute;top:50%;font-size:15px;font-style:normal;transform:translate(-50%,-55%);transition:left .5s ease}.trip-timeline-pass>p{margin-top:10px;color:rgba(255,255,255,.65);font-size:11px}.trip-progress{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}.trip-progress>span{grid-column:1/-1;height:5px;border-radius:99px;background:rgba(255,255,255,.34);box-shadow:inset 0 1px 2px rgba(4,22,60,.25)}.trip-progress>span i{display:block;height:100%;border-radius:inherit;background:#ffd45e;box-shadow:0 0 8px rgba(255,212,94,.52);transition:width .6s ease}.trip-progress small{margin-top:5px;color:rgba(255,255,255,.68);font-family:'Space Mono',monospace;font-size:8px}.trip-progress small:last-child{text-align:right}
+.trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(155deg,#0b2a6b 0%,#123c94 60%,#17459f 100%);color:#fff;box-shadow:0 10px 24px rgba(11,42,107,.24)}.trip-pass-head{display:flex;align-items:center}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}.trip-title-row h2{min-width:0;overflow:hidden;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.current-country{display:flex;flex:0 0 auto;align-items:center;gap:5px;padding:6px 8px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(255,255,255,.12)}.current-country small{color:#ffd466;font-family:'Space Mono',monospace;font-size:7px;font-weight:900;letter-spacing:.08em}.current-country strong{font-size:10px;font-weight:850}.current-country-flag{width:22px;height:15px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.18)}.trip-timeline-pass>p{margin-top:9px;color:rgba(255,255,255,.7);font-size:10px;font-weight:650}
 .trip-pass-head em.traveling{background:rgba(255,212,94,.2);color:#fff2bd;animation:travel-status-pulse 1.8s ease-in-out infinite}@keyframes travel-status-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,94,.28)}50%{transform:scale(1.04);box-shadow:0 0 0 6px rgba(255,212,94,0)}}
 .calendar-card {
   overflow: hidden;
