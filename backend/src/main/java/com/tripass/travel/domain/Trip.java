@@ -27,6 +27,8 @@ public class Trip {
     private LocalDateTime createdAt;     // 생성 일시
     private LocalDateTime updatedAt;     // 수정 일시
     private LocalDateTime startReportViewedAt; // 여행 시작 저축 리포트 팝업 확인 시각
+    private LocalDateTime savingsTrackingStartedAt; // 여행+계좌 둘 다 등록되어 여행 저축 집계가 시작된 시각
+    private Boolean walletReflectResolved;          // 집계 시작 시점 월렛 잔액 반영 프롬프트 처리 완료 여부
 
     /**
      * 비즈니스 로직: 여행 상태(Status) 변경

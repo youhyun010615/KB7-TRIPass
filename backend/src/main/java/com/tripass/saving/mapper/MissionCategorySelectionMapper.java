@@ -42,4 +42,8 @@ public interface MissionCategorySelectionMapper {
      * 이미 선택된 카테고리를 다시 선택하면 created_at은 유지되고 값만 갱신된다.
      */
     void upsertSelection(MissionCategorySelectionDto dto);
+
+    String findActiveTripStatusByUserId(@Param("userId") Long userId);
+
+    Boolean isSavingsTrackingStartedForUser(@Param("userId") Long userId);
 }

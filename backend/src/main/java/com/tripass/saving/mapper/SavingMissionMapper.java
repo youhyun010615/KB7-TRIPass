@@ -46,4 +46,10 @@ public interface SavingMissionMapper {
     int completeMonthlyMissionIfAllWeeksEvaluated(@Param("monthlySavingMissionId") Long monthlySavingMissionId);
 
     int markReportClosed(@Param("userId") Long userId, @Param("analysisYearMonth") String analysisYearMonth);
+
+    String findActiveTripStatusByUserId(@Param("userId") Long userId);
+
+    Boolean isSavingsTrackingStartedForUser(@Param("userId") Long userId);
+
+    Long findActiveTripIdByUserId(@Param("userId") Long userId);
 }

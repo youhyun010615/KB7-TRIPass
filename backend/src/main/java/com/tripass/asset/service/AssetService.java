@@ -2,6 +2,7 @@ package com.tripass.asset.service;
 
 import com.tripass.asset.dto.*;
 import com.tripass.asset.duplicate.DuplicateTransactionMatcher;
+import com.tripass.asset.duplicate.MatchCandidate;
 import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.asset.service.codef.CodefClient;
 import com.tripass.common.exception.CustomException;
@@ -9,6 +10,7 @@ import com.tripass.saving.classification.CategoryClassificationResult;
 import com.tripass.saving.classification.CategorySource;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
 import com.tripass.saving.service.MonthlySpendingAnalysisService;
+import com.tripass.travel.service.TravelService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,19 +34,22 @@ public class AssetService {
     private final DuplicateTransactionMatcher duplicateTransactionMatcher;
     private final CodefClient codefClient;
     private final MonthlySpendingAnalysisService monthlySpendingAnalysisService;
+    private final TravelService travelService;
 
     public AssetService(
             AssetMapper assetMapper,
             TransactionCategoryClassifier transactionCategoryClassifier,
             DuplicateTransactionMatcher duplicateTransactionMatcher,
             CodefClient codefClient,
-            MonthlySpendingAnalysisService monthlySpendingAnalysisService
+            MonthlySpendingAnalysisService monthlySpendingAnalysisService,
+            TravelService travelService
     ) {
         this.assetMapper = assetMapper;
         this.transactionCategoryClassifier = transactionCategoryClassifier;
         this.duplicateTransactionMatcher = duplicateTransactionMatcher;
         this.codefClient = codefClient;
         this.monthlySpendingAnalysisService = monthlySpendingAnalysisService;
+        this.travelService = travelService;
     }
 
     @Transactional
@@ -193,6 +198,11 @@ public class AssetService {
                 }
                 assetMapper.linkCardsToAccountByPaymentNumber(userId, dto.getId(), dto.getAccountNumber());
                 saved.add(dto);
+            }
+
+            // 계좌 연동이 완료된 시점에 이미 여행이 등록되어 있다면 여행 저축 집계를 시작한다.
+            if (!saved.isEmpty()) {
+                travelService.activateSavingsTrackingIfEligible(userId);
             }
 
             return saved;
@@ -355,14 +365,7 @@ public class AssetService {
                 } else {
                     assetMapper.insertCard(dto);
                 }
-                // 트래블카드 상품과 이름이 일치할 때만 사용자 보유 트래블카드로 등록한다.
-                // 이후 월렛 연결은 기존 화면에서 사용자가 직접 수행한다.
-                assetMapper.upsertUserTravelCardFromLinkedCard(
-                        userId,
-                        dto.getCardName(),
-                        dto.getMaskedCardNumber(),
-                        dto.getOrganizationCode()
-                );
+                registerTravelCardIfMatched(userId, dto);
                 saved.add(dto);
             }
 
@@ -713,15 +716,74 @@ public class AssetService {
         if (account == null) {
             throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");
         }
-        List<TransactionDto> transactions = assetMapper.findTransactionsByAccountIdWithFilter(
-                accountId, startDate, endDate, type);
+        List<TransactionDto> transactions = new ArrayList<>(
+                assetMapper.findTransactionsByAccountIdWithFilter(accountId, startDate, endDate, type));
+
+        List<TransactionDto> accountWithdrawals = transactions.stream()
+                .filter(t -> t.getAccountId() != null)
+                .filter(t -> "WITHDRAWAL".equals(t.getTransactionType()))
+                .toList();
+        List<TransactionDto> checkCardWithdrawals = transactions.stream()
+                .filter(t -> t.getCardId() != null)
+                .filter(t -> "CHECK".equals(t.getSourceCardType()))
+                .filter(t -> "WITHDRAWAL".equals(t.getTransactionType()))
+                .toList();
+
+        List<MatchCandidate> matches = duplicateTransactionMatcher.findMatches(
+                accountWithdrawals, checkCardWithdrawals);
+
+        Map<Long, TransactionDto> txById = new HashMap<>();
+        for (TransactionDto t : transactions) {
+            txById.put(t.getId(), t);
+        }
+        Set<Long> duplicateAccountIds = new HashSet<>();
+        for (MatchCandidate match : matches) {
+            duplicateAccountIds.add(match.accountTransactionId());
+            TransactionDto cardTx = txById.get(match.cardTransactionId());
+            TransactionDto bankTx = txById.get(match.accountTransactionId());
+            if (cardTx != null && bankTx != null
+                    && bankTx.getBalanceAfter() != null
+                    && bankTx.getBalanceAfter().compareTo(BigDecimal.ZERO) > 0) {
+                cardTx.setBalanceAfter(bankTx.getBalanceAfter());
+            }
+        }
+
+        List<TransactionDto> deduped = new ArrayList<>();
+        for (TransactionDto t : transactions) {
+            if (!duplicateAccountIds.contains(t.getId())) {
+                deduped.add(t);
+            }
+        }
+
+        fillMissingBalances(deduped);
+
         AccountTransactionResponseDto response = new AccountTransactionResponseDto();
         response.setAccountName(account.getAccountName());
         response.setAccountNumber(account.getAccountNumber());
         response.setAccountType(account.getAccountType());
         response.setBalance(account.getBalance());
-        response.setTransactions(transactions);
+        response.setTransactions(deduped);
         return response;
+    }
+
+    private void fillMissingBalances(List<TransactionDto> transactions) {
+        List<TransactionDto> sorted = new ArrayList<>(transactions);
+        sorted.sort(Comparator.comparing(TransactionDto::getTransactionDate)
+                .thenComparing(t -> t.getTransactionTime() != null ? t.getTransactionTime() : LocalTime.MIDNIGHT));
+
+        BigDecimal runningBalance = null;
+        for (TransactionDto tx : sorted) {
+            if (tx.getBalanceAfter() != null && tx.getBalanceAfter().compareTo(BigDecimal.ZERO) > 0) {
+                runningBalance = tx.getBalanceAfter();
+            } else if (runningBalance != null) {
+                if ("DEPOSIT".equals(tx.getTransactionType())) {
+                    runningBalance = runningBalance.add(tx.getAmount());
+                } else {
+                    runningBalance = runningBalance.subtract(tx.getAmount());
+                }
+                tx.setBalanceAfter(runningBalance);
+            }
+        }
     }
 
     public List<TransactionDto> getAllTransactions(Long userId, String startDate, String endDate) {
@@ -794,6 +856,60 @@ public class AssetService {
             case "30" -> "SAVING";     // 적금
             default   -> "CHECKING";
         };
+    }
+
+    /**
+     * CODEF 연동 카드가 travel_cards 마스터의 트래블카드 상품과 매칭되면 user_travel_cards에 등록한다.
+     * 카드명의 공통 부분문자열(3자 이상)로 유연하게 매칭하여, CODEF가 반환하는 카드명이
+     * 마스터와 정확히 일치하지 않아도 동일 상품을 인식할 수 있다.
+     */
+    private void registerTravelCardIfMatched(Long userId, CardDto linkedCard) {
+        List<Map<String, Object>> travelCards = assetMapper.findAllActiveTravelCards();
+        String linkedNorm = normalizeCardName(linkedCard.getCardName());
+
+        Map<String, Object> bestMatch = null;
+        int bestLength = 0;
+
+        for (Map<String, Object> tc : travelCards) {
+            String masterNorm = normalizeCardName((String) tc.get("cardName"));
+            int commonLen = longestCommonSubstring(linkedNorm, masterNorm);
+            if (commonLen >= 3 && commonLen > bestLength) {
+                bestLength = commonLen;
+                bestMatch = tc;
+            }
+        }
+
+        if (bestMatch != null) {
+            assetMapper.upsertUserTravelCard(
+                    userId,
+                    ((Number) bestMatch.get("id")).longValue(),
+                    (String) bestMatch.get("cardName"),
+                    (String) bestMatch.get("cardCompany"),
+                    linkedCard.getMaskedCardNumber(),
+                    linkedCard.getOrganizationCode()
+            );
+        }
+    }
+
+    private String normalizeCardName(String name) {
+        if (name == null) return "";
+        return name.replace("체크카드", "").replace("체크", "").replace("카드", "")
+                .replaceAll("\\s+", "");
+    }
+
+    private int longestCommonSubstring(String a, String b) {
+        if (a.isEmpty() || b.isEmpty()) return 0;
+        int maxLen = 0;
+        int[][] dp = new int[a.length() + 1][b.length() + 1];
+        for (int i = 1; i <= a.length(); i++) {
+            for (int j = 1; j <= b.length(); j++) {
+                if (a.charAt(i - 1) == b.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                    if (dp[i][j] > maxLen) maxLen = dp[i][j];
+                }
+            }
+        }
+        return maxLen;
     }
 
     private BigDecimal parseBigDecimal(Object value) {

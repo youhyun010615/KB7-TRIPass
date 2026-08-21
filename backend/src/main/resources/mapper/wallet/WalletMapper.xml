@@ -209,6 +209,13 @@
         FROM month_range mr
                  LEFT JOIN wallet_ledger wl
                            ON wl.wallet_id = #{walletId}
+                               AND wl.transaction_type != 'ADJUST'
+                               AND wl.trip_id = (
+                                   SELECT id FROM trips
+                                   WHERE user_id = #{userId} AND is_deleted = 0
+                                     AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+                                   ORDER BY created_at DESC LIMIT 1
+                               )
                                AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(mr.month_start, '%Y-%m')
         GROUP BY mr.month_start
         ORDER BY mr.month_start
@@ -239,6 +246,13 @@
             ), 0) AS withdraw_amount
         FROM wallet_ledger
         WHERE wallet_id = #{walletId}
+          AND transaction_type != 'ADJUST'
+          AND trip_id = (
+              SELECT id FROM trips
+              WHERE user_id = #{userId} AND is_deleted = 0
+                AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+              ORDER BY created_at DESC LIMIT 1
+          )
           AND DATE_FORMAT(created_at, '%Y-%m') = #{month}
     </select>
 
@@ -401,6 +415,16 @@
               AND user_id = #{userId}
               AND is_deleted = 0
         )
+    </select>
+
+    <select id="findAnyLinkedAccountIdByUserId" resultType="long">
+        SELECT id
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = 1
+        ORDER BY created_at DESC
+        LIMIT 1
     </select>
 
     <select id="existsIdempotencyKey"
@@ -679,6 +703,7 @@
             keyProperty="id">
         INSERT INTO wallet_ledger (
             wallet_id,
+            trip_id,
             direction,
             transaction_type,
             transfer_method,
@@ -694,6 +719,7 @@
         )
         VALUES (
             #{walletId},
+            #{tripId},
             #{direction},
             #{transactionType},
             #{transferMethod},
@@ -1139,6 +1165,35 @@
         FROM wallet_auto_saving_logs
         WHERE wallet_id = #{walletId}
         ORDER BY executed_at DESC
+    </select>
+
+    <select id="findTripWalletSummary" resultType="java.util.HashMap">
+        SELECT t.id                                             AS tripId,
+               COALESCE(w.balance_amount, 0)                    AS walletBalance,
+               t.total_target_amount                            AS targetAmount,
+               COALESCE(t.initial_wallet_balance, 0)            AS initialWalletBalance,
+               COALESCE(t.emergency_amount, 0)                  AS emergencyAmount,
+               COALESCE(t.external_charge_amount, 0)            AS externalChargedAmount,
+               COALESCE(
+                   (SELECT SUM(tr.amount)
+                    FROM transactions tr
+                    WHERE tr.trip_id = t.id AND tr.is_deleted = 0), 0
+               )                                                AS totalTripSpentAmount,
+               COALESCE(
+                   (SELECT SUM(wl.amount)
+                    FROM wallet_ledger wl
+                    WHERE wl.wallet_id = w.id
+                      AND wl.direction = 'IN'
+                      AND wl.transaction_type = 'CHARGE'
+                      AND wl.created_at >= t.start_date
+                      AND wl.created_at &lt;= DATE_ADD(t.end_date, INTERVAL 1 DAY)
+                   ), 0
+               )                                                AS travelPeriodChargeAmount
+        FROM trips t
+        LEFT JOIN wallet w ON t.user_id = w.user_id
+        WHERE t.id = #{tripId}
+          AND t.user_id = #{userId}
+          AND t.is_deleted = 0
     </select>
 
 </mapper>

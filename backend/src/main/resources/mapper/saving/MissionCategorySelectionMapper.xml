@@ -64,4 +64,24 @@
             updated_at               = NOW()
     </insert>
 
+    <select id="findActiveTripStatusByUserId" resultType="string">
+        SELECT status
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="isSavingsTrackingStartedForUser" resultType="boolean">
+        SELECT CASE WHEN savings_tracking_started_at IS NOT NULL THEN 1 ELSE 0 END
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
 </mapper>

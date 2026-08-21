@@ -25,6 +25,8 @@ public enum WalletErrorCode {
     INSUFFICIENT_ACCOUNT_BALANCE(HttpStatus.BAD_REQUEST, "계좌 출금 가능 잔액이 부족합니다."),
     INSUFFICIENT_WALLET_BALANCE(HttpStatus.BAD_REQUEST, "월렛 잔액이 부족합니다."),
     DUPLICATED_REQUEST(HttpStatus.CONFLICT, "이미 처리된 요청입니다."),
+    WALLET_REFLECT_ALREADY_RESOLVED(HttpStatus.CONFLICT, "이미 처리된 월렛 잔액 반영 요청입니다."),
+    WALLET_REFLECT_NOT_READY(HttpStatus.BAD_REQUEST, "아직 여행 저축 집계가 시작되지 않았습니다."),
     WALLET_CONFLICT(HttpStatus.CONFLICT, "월렛 잔액 변경 중 충돌이 발생했습니다.");
 
     private final HttpStatus status;

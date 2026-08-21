@@ -37,6 +37,51 @@ public class WalletService {
     private static final Pattern MONTH_PATTERN = Pattern.compile("^\\d{4}-(0[1-9]|1[0-2])$");
 
     private final WalletMapper walletMapper;
+    private final com.tripass.travel.mapper.TravelMapper travelMapper;
+
+    public TripWalletSummaryResponseDto getTripWalletSummary(Long userId, Long tripId) {
+        java.util.Map<String, Object> row = walletMapper.findTripWalletSummary(tripId, userId);
+        if (row == null) {
+            throw new WalletException(WALLET_NOT_FOUND);
+        }
+
+        BigDecimal targetAmount = toBigDecimal(row.get("targetAmount"));
+        BigDecimal emergencyInitial = toBigDecimal(row.get("emergencyAmount"));
+        BigDecimal externalCharged = toBigDecimal(row.get("externalChargedAmount"));
+        BigDecimal totalSpent = toBigDecimal(row.get("totalTripSpentAmount"));
+        BigDecimal walletBalance = toBigDecimal(row.get("walletBalance"));
+
+        BigDecimal targetSpent = totalSpent.min(targetAmount);
+        BigDecimal remainingAfterTarget = totalSpent.subtract(targetSpent).max(BigDecimal.ZERO);
+        BigDecimal emergencySpent = remainingAfterTarget.min(emergencyInitial);
+        BigDecimal remainingAfterEmergency = remainingAfterTarget.subtract(emergencySpent).max(BigDecimal.ZERO);
+        BigDecimal externalChargeSpent = remainingAfterEmergency.min(externalCharged);
+
+        int usagePercent = targetAmount.signum() == 0 ? 0
+                : totalSpent.multiply(BigDecimal.valueOf(100))
+                        .divide(targetAmount, 0, RoundingMode.HALF_UP)
+                        .intValue();
+
+        return TripWalletSummaryResponseDto.builder()
+                .tripId(((Number) row.get("tripId")).longValue())
+                .walletBalance(walletBalance)
+                .targetAmount(targetAmount)
+                .targetSpentAmount(targetSpent)
+                .emergencyInitialAmount(emergencyInitial)
+                .emergencySpentAmount(emergencySpent)
+                .emergencyRemainingAmount(emergencyInitial.subtract(emergencySpent))
+                .externalChargedAmount(externalCharged)
+                .externalChargeSpentAmount(externalChargeSpent)
+                .totalTripSpentAmount(totalSpent)
+                .usagePercent(usagePercent)
+                .build();
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
+        return new BigDecimal(value.toString());
+    }
 
     public WalletMainResponseDto getWalletMain(Long userId) {
         WalletMainResponseDto response = walletMapper.findWalletMainByUserId(userId);
@@ -125,7 +170,7 @@ public class WalletService {
 
         Long walletId = getWalletId(userId);
         WalletMonthlySavingDetailResponseDto detail =
-                walletMapper.findMonthlySavingDetailSummary(walletId, month);
+                walletMapper.findMonthlySavingDetailSummary(userId, walletId, month);
 
         if (detail == null) {
             detail = WalletMonthlySavingDetailResponseDto.builder()
@@ -293,6 +338,86 @@ public class WalletService {
                 .walletId(wallet.getId())
                 .balanceAmount(nextBalance)
                 .build();
+    }
+
+    /**
+     * 여행 저축 집계 시작 시점의 월렛 잔액을 여행 목표에 반영할지 결정한다.
+     * 반영을 선택하면 잔액은 이동 없이 해당 여행의 저축 기록으로 인정되고,
+     * 반영을 거부하면 잔액 전액이 주계좌로 송금되어 월렛은 0원부터 다시 시작한다.
+     */
+    @Transactional
+    public void resolveWalletReflect(
+            Long userId,
+            Long tripId,
+            boolean reflect
+    ) {
+        com.tripass.travel.domain.Trip trip = travelMapper.selectTripById(tripId);
+        if (trip == null || trip.getSavingsTrackingStartedAt() == null) {
+            throw new WalletException(WALLET_REFLECT_NOT_READY);
+        }
+        if (Boolean.TRUE.equals(trip.getWalletReflectResolved())) {
+            throw new WalletException(WALLET_REFLECT_ALREADY_RESOLVED);
+        }
+
+        Wallet wallet = getWalletForUpdate(userId);
+        String idempotencyKey = "TRIP_REFLECT_" + tripId;
+
+        if (wallet.getBalanceAmount().compareTo(BigDecimal.ZERO) > 0) {
+            if (reflect) {
+                insertLedger(
+                        wallet.getId(),
+                        tripId,
+                        WalletDirection.IN,
+                        WalletTransactionType.ADJUST,
+                        null,
+                        wallet.getBalanceAmount(),
+                        wallet.getBalanceAmount(),
+                        wallet.getBalanceAmount(),
+                        WalletSourceType.SYSTEM,
+                        null,
+                        WalletTargetType.WALLET,
+                        wallet.getId(),
+                        idempotencyKey,
+                        "기존 월렛 잔액 여행 저축 반영"
+                );
+            } else {
+                Long targetAccountId = walletMapper.findAnyLinkedAccountIdByUserId(userId);
+                if (targetAccountId == null) {
+                    throw new WalletException(WALLET_ACCOUNT_NOT_FOUND);
+                }
+                BigDecimal amount = wallet.getBalanceAmount();
+
+                increaseAccountBalance(userId, targetAccountId, amount);
+                BigDecimal accountBalanceAfter =
+                        walletMapper.findAccountBalance(userId, targetAccountId);
+                walletMapper.insertAccountTransaction(
+                        targetAccountId, "DEPOSIT", amount,
+                        accountBalanceAfter, "TRIPASS 월렛 출금(여행 저축 미반영)",
+                        idempotencyKey);
+
+                BigDecimal nextBalance = BigDecimal.ZERO;
+                updateWalletBalance(wallet, nextBalance);
+
+                insertLedger(
+                        wallet.getId(),
+                        null,
+                        WalletDirection.OUT,
+                        WalletTransactionType.WITHDRAW,
+                        null,
+                        amount,
+                        amount,
+                        nextBalance,
+                        WalletSourceType.WALLET,
+                        wallet.getId(),
+                        WalletTargetType.ACCOUNT,
+                        targetAccountId,
+                        idempotencyKey,
+                        "여행 저축 미반영 잔액 계좌 송금"
+                );
+            }
+        }
+
+        travelMapper.markWalletReflectResolved(tripId);
     }
 
     @Transactional
@@ -962,8 +1087,44 @@ public class WalletService {
             String idempotencyKey,
             String memo
     ) {
+        return insertLedger(
+                walletId, resolveActiveTripIdForLedger(findWalletOwnerId(walletId)), direction, transactionType,
+                transferMethod, amount, balanceBefore, balanceAfter, sourceType, sourceId,
+                targetType, targetId, idempotencyKey, memo
+        );
+    }
+
+    /**
+     * 여행+계좌가 모두 등록되어 여행 저축 집계가 시작된 이후의 월렛 거래는
+     * 별도 확인 없이 자동으로 해당 여행의 저축 기록으로 귀속시킨다.
+     */
+    private Long resolveActiveTripIdForLedger(Long userId) {
+        if (userId == null) return null;
+        com.tripass.travel.domain.Trip trip = travelMapper.selectLatestTripByUserId(userId);
+        if (trip == null || trip.getSavingsTrackingStartedAt() == null) return null;
+        if (!"PLANNING".equals(trip.getStatus()) && !"TRAVELING".equals(trip.getStatus())) return null;
+        return trip.getId();
+    }
+
+    private WalletLedger insertLedger(
+            Long walletId,
+            Long tripId,
+            WalletDirection direction,
+            WalletTransactionType transactionType,
+            TransferMethod transferMethod,
+            BigDecimal amount,
+            BigDecimal balanceBefore,
+            BigDecimal balanceAfter,
+            WalletSourceType sourceType,
+            Long sourceId,
+            WalletTargetType targetType,
+            Long targetId,
+            String idempotencyKey,
+            String memo
+    ) {
         WalletLedger ledger = WalletLedger.builder()
                 .walletId(walletId)
+                .tripId(tripId)
                 .direction(direction.name())
                 .transactionType(transactionType.name())
                 .transferMethod(transferMethod == null ? null : transferMethod.name())

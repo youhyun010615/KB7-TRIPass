@@ -33,6 +33,7 @@ public interface WalletMapper {
     );
 
     WalletMonthlySavingDetailResponseDto findMonthlySavingDetailSummary(
+            @Param("userId") Long userId,
             @Param("walletId") Long walletId,
             @Param("month") String month
     );
@@ -61,6 +62,9 @@ public interface WalletMapper {
             @Param("userId") Long userId,
             @Param("accountId") Long accountId
     );
+
+    /** 월렛 주계좌 지정 여부와 무관하게, 연동된 계좌 중 하나를 반환한다(여행 저축 미반영 시 송금 대상). */
+    Long findAnyLinkedAccountIdByUserId(@Param("userId") Long userId);
 
     boolean existsIdempotencyKey(@Param("idempotencyKey") String idempotencyKey);
 
@@ -182,6 +186,11 @@ public interface WalletMapper {
     int insertAutoSavingLog(WalletAutoSavingLog log);
 
     List<WalletAutoSavingLogResponseDto> findAutoSavingLogsByWalletId(@Param("walletId") Long walletId);
+
+    java.util.Map<String, Object> findTripWalletSummary(
+            @Param("tripId") Long tripId,
+            @Param("userId") Long userId
+    );
 
     java.math.BigDecimal findAccountBalance(
             @Param("userId") Long userId,

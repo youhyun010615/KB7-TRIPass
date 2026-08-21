@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class MonthlySavingMissionDto {
     private Long id;
     private Long userId;
+    private Long tripId;
     private Long monthlySpendingAnalysisId;
     private Long missionCategorySelectionId;
     private Long categoryId;

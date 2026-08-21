@@ -152,6 +152,8 @@
             start_date AS startDate,
             end_date AS endDate,
             total_target_amount AS totalTargetAmount,
+            savings_tracking_started_at AS savingsTrackingStartedAt,
+            wallet_reflect_resolved AS walletReflectResolved,
             is_deleted AS isDeleted,
             deleted_at AS deletedAt,
             created_at AS createdAt,
@@ -285,7 +287,7 @@
     <select id="selectLatestTripByUserId" resultType="Trip">
         SELECT id, user_id, trip_name, status, start_date, end_date,
                total_target_amount, is_deleted, deleted_at, created_at, updated_at,
-               start_report_viewed_at
+               start_report_viewed_at, savings_tracking_started_at, wallet_reflect_resolved
         FROM trips
         WHERE user_id = #{userId}
           AND is_deleted = 0
@@ -295,6 +297,46 @@
             id DESC
         LIMIT 1
     </select>
+
+    <select id="countActiveAccountsByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = 1
+    </select>
+
+    <update id="activateSavingsTracking">
+        UPDATE trips
+        SET savings_tracking_started_at = NOW()
+        WHERE id = #{tripId}
+          AND savings_tracking_started_at IS NULL
+    </update>
+
+    <update id="markWalletReflectResolved">
+        UPDATE trips
+        SET wallet_reflect_resolved = 1
+        WHERE id = #{tripId}
+    </update>
+
+    <select id="findWalletBalanceByUserId" resultType="java.math.BigDecimal">
+        SELECT balance_amount
+        FROM wallet
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findOnboardingShownAt" resultType="java.time.LocalDateTime">
+        SELECT onboarding_shown_at
+        FROM users
+        WHERE id = #{userId}
+    </select>
+
+    <update id="markOnboardingShown">
+        UPDATE users
+        SET onboarding_shown_at = NOW()
+        WHERE id = #{userId}
+          AND onboarding_shown_at IS NULL
+    </update>
 
     <update id="archiveTrip">
         UPDATE trips
@@ -531,6 +573,13 @@
                  JOIN wallet w ON wl.wallet_id = w.id
         WHERE w.user_id = #{userId}
           AND w.status = 'ACTIVE'
+          AND wl.transaction_type != 'ADJUST'
+          AND wl.trip_id = (
+              SELECT id FROM trips
+              WHERE user_id = #{userId} AND is_deleted = 0
+                AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+              ORDER BY created_at DESC LIMIT 1
+          )
           AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m')
     </select>
 
@@ -611,11 +660,14 @@
     </update>
 
     <update id="updateTravelingTrips">
-        UPDATE trips
-        SET status = 'TRAVELING'
-        WHERE status = 'PLANNING'
-          AND start_date &lt;= #{today}
-          AND is_deleted = 0
+        UPDATE trips t
+        LEFT JOIN wallet w ON t.user_id = w.user_id
+        SET t.status = 'TRAVELING',
+            t.initial_wallet_balance = COALESCE(w.balance_amount, 0),
+            t.emergency_amount = GREATEST(COALESCE(w.balance_amount, 0) - t.total_target_amount, 0)
+        WHERE t.status = 'PLANNING'
+          AND t.start_date &lt;= #{today}
+          AND t.is_deleted = 0
     </update>
 
 </mapper>

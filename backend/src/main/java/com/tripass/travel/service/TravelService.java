@@ -28,12 +28,21 @@ public class TravelService {
     private final TravelMapper travelMapper;
     private final ScheduleService scheduleService;
     private final ChecklistService checklistService;
+    private final com.tripass.wallet.service.WalletService walletService;
 
     public TripLifecycleResponseDto getCurrentLifecycle(Long currentUserId) {
         Trip trip = travelMapper.selectLatestTripByUserId(currentUserId);
+        boolean hasLinkedAccount = travelMapper.countActiveAccountsByUserId(currentUserId) > 0;
+        boolean onboardingPending = travelMapper.findOnboardingShownAt(currentUserId) == null;
+
         if (trip == null) {
             return TripLifecycleResponseDto.builder()
                     .lifecycle("NONE")
+                    .hasTrip(false)
+                    .hasLinkedAccount(hasLinkedAccount)
+                    .savingsTrackingStarted(false)
+                    .needsWalletReflectPrompt(false)
+                    .onboardingPending(onboardingPending)
                     .build();
         }
 
@@ -43,6 +52,13 @@ public class TravelService {
         else if (today.isBefore(trip.getStartDate())) lifecycle = "PREPARING";
         else if (!today.isAfter(trip.getEndDate())) lifecycle = "TRAVELING";
         else lifecycle = "REVIEW";
+
+        boolean savingsTrackingStarted = trip.getSavingsTrackingStartedAt() != null;
+        boolean needsWalletReflectPrompt = savingsTrackingStarted
+                && Boolean.FALSE.equals(trip.getWalletReflectResolved());
+        BigDecimal walletReflectAmount = needsWalletReflectPrompt
+                ? travelMapper.findWalletBalanceByUserId(currentUserId)
+                : null;
 
         return TripLifecycleResponseDto.builder()
                 .tripId(trip.getId())
@@ -56,7 +72,49 @@ public class TravelService {
                 .startReportAvailable("TRAVELING".equals(lifecycle))
                 .startReportAcknowledged(trip.getStartReportViewedAt() != null)
                 .endingReviewRequired("REVIEW".equals(lifecycle))
+                .hasTrip(true)
+                .hasLinkedAccount(hasLinkedAccount)
+                .savingsTrackingStarted(savingsTrackingStarted)
+                .needsWalletReflectPrompt(needsWalletReflectPrompt)
+                .walletReflectAmount(walletReflectAmount)
+                .onboardingPending(onboardingPending)
                 .build();
+    }
+
+    @Transactional
+    public void acknowledgeOnboarding(Long currentUserId) {
+        travelMapper.markOnboardingShown(currentUserId);
+    }
+
+    /**
+     * 여행 등록 또는 계좌 등록으로 "여행+계좌 둘 다 충족" 조건이 새로 성립했는지 확인하고,
+     * 성립했다면 해당 여행의 여행 저축 집계를 시작한다. 이 시점에 월렛 잔액이 있으면
+     * 반영 여부 프롬프트가 필요한 상태로 남기고(needs prompt), 없으면 즉시 처리 완료로 표시한다.
+     */
+    @Transactional
+    public void activateSavingsTrackingIfEligible(Long userId) {
+        Trip trip = travelMapper.selectLatestTripByUserId(userId);
+        if (trip == null) return;
+        if (!"PLANNING".equals(trip.getStatus()) && !"TRAVELING".equals(trip.getStatus())) return;
+        if (trip.getSavingsTrackingStartedAt() != null) return;
+
+        boolean hasLinkedAccount = travelMapper.countActiveAccountsByUserId(userId) > 0;
+        if (!hasLinkedAccount) return;
+
+        travelMapper.activateSavingsTracking(trip.getId());
+
+        BigDecimal walletBalance = travelMapper.findWalletBalanceByUserId(userId);
+        if (walletBalance == null || walletBalance.compareTo(BigDecimal.ZERO) <= 0) {
+            // 반영할 잔액이 없으면 프롬프트 없이 바로 처리 완료 처리한다.
+            travelMapper.markWalletReflectResolved(trip.getId());
+        }
+    }
+
+    /** 여행 저축 집계 시작 시점의 월렛 잔액을 여행 목표에 반영할지 결정한다. */
+    @Transactional
+    public void resolveWalletReflect(Long tripId, Long currentUserId, boolean reflect) {
+        validateTripOwner(tripId, currentUserId);
+        walletService.resolveWalletReflect(currentUserId, tripId, reflect);
     }
 
     @Transactional
@@ -274,6 +332,8 @@ public class TravelService {
         travelMapper.insertTripWalletIfAbsent(currentUserId);
         // 여행 목표 등록시 관련 체크리스트도 같이 생성
         checklistService.initializeChecklist(command.getId());
+        // 이미 계좌가 연동되어 있다면 이 시점부터 여행 저축 집계를 시작한다.
+        activateSavingsTrackingIfEligible(currentUserId);
 
         return TripGoalCreateResponseDto.builder()
                 .tripId(command.getId())

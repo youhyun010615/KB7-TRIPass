@@ -28,6 +28,19 @@ public class WalletController {
     private final WalletService walletService;
 
     @ApiOperation(
+            value = "여행 월렛 자금 집계 조회",
+            notes = "여행별 자금 출처(목표/비상금/추가충전)별 사용액과 잔액을 조회합니다."
+    )
+    @GetMapping("/trips/{tripId}/summary")
+    public ResponseEntity<ApiResponse<TripWalletSummaryResponseDto>> getTripWalletSummary(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long tripId
+    ) {
+        TripWalletSummaryResponseDto data = walletService.getTripWalletSummary(userId, tripId);
+        return ResponseEntity.ok(ApiResponse.success("여행 월렛 자금 집계 조회 성공", data));
+    }
+
+    @ApiOperation(
             value = "월렛 메인 조회",
             notes = "로그인 사용자의 월렛 잔액과 대표 연동 계좌 정보를 조회합니다."
     )

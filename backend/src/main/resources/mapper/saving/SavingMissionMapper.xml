@@ -35,11 +35,11 @@
 
     <insert id="insertMonthlyMission" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO monthly_saving_missions (
-            user_id, monthly_spending_analysis_id, mission_category_selection_id, category_id,
+            user_id, trip_id, monthly_spending_analysis_id, mission_category_selection_id, category_id,
             target_year_month, reduction_rate, baseline_spending_amount,
             monthly_reduction_target, monthly_usage_target, planned_saving_amount, start_week, status
         ) VALUES (
-            #{userId}, #{monthlySpendingAnalysisId}, #{missionCategorySelectionId}, #{categoryId},
+            #{userId}, #{tripId}, #{monthlySpendingAnalysisId}, #{missionCategorySelectionId}, #{categoryId},
             #{targetYearMonth}, #{reductionRate}, #{baselineSpendingAmount},
             #{monthlyReductionTarget}, #{monthlyUsageTarget}, #{plannedSavingAmount}, #{startWeek}, #{status}
         )
@@ -140,5 +140,35 @@
           AND analysis_year_month = #{analysisYearMonth}
           AND report_status IN ('PENDING', 'VIEWED')
     </update>
+
+    <select id="findActiveTripStatusByUserId" resultType="string">
+        SELECT status
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="isSavingsTrackingStartedForUser" resultType="boolean">
+        SELECT CASE WHEN savings_tracking_started_at IS NOT NULL THEN 1 ELSE 0 END
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="findActiveTripIdByUserId" resultType="long">
+        SELECT id
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
 
 </mapper>

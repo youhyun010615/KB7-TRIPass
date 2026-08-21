@@ -59,6 +59,19 @@ public interface TravelMapper {
 
     String findTripStatus(@Param("tripId") Long tripId);
 
+    // 여행/계좌 온보딩 및 여행 저축 집계 관련
+    int countActiveAccountsByUserId(@Param("userId") Long userId);
+
+    int activateSavingsTracking(@Param("tripId") Long tripId);
+
+    int markWalletReflectResolved(@Param("tripId") Long tripId);
+
+    BigDecimal findWalletBalanceByUserId(@Param("userId") Long userId);
+
+    java.time.LocalDateTime findOnboardingShownAt(@Param("userId") Long userId);
+
+    int markOnboardingShown(@Param("userId") Long userId);
+
     void updateTripGoal(TripGoalCommandDto command);
 
     void softDeleteTripCountries(@Param("tripId") Long tripId);

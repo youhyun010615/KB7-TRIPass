@@ -16,6 +16,7 @@ public class WalletLedger {
 
     private Long id;
     private Long walletId;
+    private Long tripId;
     private String direction;
     private String transactionType;
     private String transferMethod;

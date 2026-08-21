@@ -81,6 +81,7 @@ public class MissionCategorySelectionService {
     public MissionSelectionsResponseDto saveMissionSelections(
             Long userId, YearMonth analysisYearMonth, MissionSelectionRequestDto request
     ) {
+        validateTripStatusForMission(userId);
         Long monthlySpendingAnalysisId = resolveAnalysisId(userId, analysisYearMonth);
         // 같은 분석에 대한 동시 PUT이 upsert/delete 순서가 엇갈리며 교착되지 않도록 먼저 직렬화한다.
         missionCategorySelectionMapper.lockMonthlySpendingAnalysis(monthlySpendingAnalysisId);
@@ -142,6 +143,22 @@ public class MissionCategorySelectionService {
 
             missionCategorySelectionMapper.upsertSelection(
                     toSelectionDto(monthlySpendingAnalysisId, selection.getCategoryId(), baseline, calculated));
+        }
+    }
+
+    private void validateTripStatusForMission(Long userId) {
+        String status = missionCategorySelectionMapper.findActiveTripStatusByUserId(userId);
+        if (status == null) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "TRIP_REQUIRED_FOR_MISSION",
+                    "여행 계획을 등록해야 미션을 진행할 수 있어요.");
+        }
+        if (!"PLANNING".equals(status)) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_NOT_ALLOWED",
+                    "여행 중이거나 종료된 여행에서는 미션을 선택할 수 없습니다.");
+        }
+        if (!Boolean.TRUE.equals(missionCategorySelectionMapper.isSavingsTrackingStartedForUser(userId))) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "ACCOUNT_REQUIRED_FOR_MISSION",
+                    "계좌를 등록해야 미션을 진행할 수 있어요.");
         }
     }
 

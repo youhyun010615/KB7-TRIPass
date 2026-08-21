@@ -51,6 +51,7 @@ public class SavingMissionService {
      */
     @Transactional
     public CreationResult createMissions(Long userId, YearMonth targetYearMonth) {
+        validateTripStatusForMission(userId);
         MonthlySpendingAnalysisDto analysis = resolveAnalysis(userId, targetYearMonth);
         mapper.lockMonthlySpendingAnalysis(analysis.getId());
 
@@ -72,8 +73,9 @@ public class SavingMissionService {
         }
 
         int startWeek = resolveStartWeek(targetYearMonth, LocalDate.now(clock));
+        Long tripId = mapper.findActiveTripIdByUserId(userId);
         for (MissionCategorySelectionDto selection : newSelections) {
-            createCategoryMission(userId, analysis, targetYearMonth, selection, startWeek);
+            createCategoryMission(userId, tripId, analysis, targetYearMonth, selection, startWeek);
         }
         mapper.markReportClosed(userId, analysis.getAnalysisYearMonth());
 
@@ -88,6 +90,7 @@ public class SavingMissionService {
 
     private void createCategoryMission(
             Long userId,
+            Long tripId,
             MonthlySpendingAnalysisDto analysis,
             YearMonth targetYearMonth,
             MissionCategorySelectionDto selection,
@@ -100,6 +103,7 @@ public class SavingMissionService {
 
         MonthlySavingMissionDto monthly = new MonthlySavingMissionDto();
         monthly.setUserId(userId);
+        monthly.setTripId(tripId);
         monthly.setMonthlySpendingAnalysisId(analysis.getId());
         monthly.setMissionCategorySelectionId(selection.getId());
         monthly.setCategoryId(selection.getCategoryId());
@@ -157,6 +161,10 @@ public class SavingMissionService {
             throw new CustomException(HttpStatus.NOT_FOUND, "MONTHLY_ANALYSIS_NOT_FOUND",
                     "미션 적용월에 해당하는 월간 분석 리포트를 찾을 수 없습니다.");
         }
+        if ("PENDING".equals(analysis.getReportStatus())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_REPORT_NOT_VIEWED",
+                    "지난달 분석 리포트를 먼저 확인해야 미션을 등록할 수 있어요.");
+        }
         return analysis;
     }
 
@@ -195,6 +203,22 @@ public class SavingMissionService {
                 weekly.getWeeklyUsageLimit(), weekly.getWeeklyExpectedSaving(), weekly.getActualSpending(),
                 weekly.getActualSaving(), weekly.getRewardAmount(), weekly.getRewardedAt(), weekly.getStatus(),
                 categoryName + " 지출을 " + amount + "원 줄이세요.");
+    }
+
+    private void validateTripStatusForMission(Long userId) {
+        String status = mapper.findActiveTripStatusByUserId(userId);
+        if (status == null) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "TRIP_REQUIRED_FOR_MISSION",
+                    "여행 계획을 등록해야 미션을 진행할 수 있어요.");
+        }
+        if (!"PLANNING".equals(status)) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "MISSION_NOT_ALLOWED",
+                    "여행 중이거나 종료된 여행에서는 미션을 생성할 수 없습니다.");
+        }
+        if (!Boolean.TRUE.equals(mapper.isSavingsTrackingStartedForUser(userId))) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "ACCOUNT_REQUIRED_FOR_MISSION",
+                    "계좌를 등록해야 미션을 진행할 수 있어요.");
+        }
     }
 
     /** Controller가 최초 생성(201)과 멱등 재호출(200)을 구분할 수 있게 하는 내부 결과. */

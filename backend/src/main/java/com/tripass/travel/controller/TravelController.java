@@ -61,6 +61,22 @@ public class TravelController {
         return ResponseEntity.ok(ApiResponse.success("여행 시작 리포트를 확인했습니다.", null));
     }
 
+    @PostMapping("/onboarding/ack")
+    public ResponseEntity<ApiResponse<Void>> acknowledgeOnboarding(
+            Authentication authentication) {
+        travelService.acknowledgeOnboarding(getAuthenticatedUserId(authentication));
+        return ResponseEntity.ok(ApiResponse.success("온보딩을 확인했습니다.", null));
+    }
+
+    @PostMapping("/{id}/wallet-reflect")
+    public ResponseEntity<ApiResponse<Void>> resolveWalletReflect(
+            @PathVariable("id") Long tripId,
+            @RequestBody WalletReflectRequestDto request,
+            Authentication authentication) {
+        travelService.resolveWalletReflect(tripId, getAuthenticatedUserId(authentication), request.isReflect());
+        return ResponseEntity.ok(ApiResponse.success("월렛 잔액 반영 여부를 처리했습니다.", null));
+    }
+
     /**
      * 2. 여행 자금 체크 조회
      */
