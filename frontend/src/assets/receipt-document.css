@@ -240,3 +240,104 @@
   .manual-page .tripass-receipt-document .field-grid,
   .result-page .tripass-receipt-document .field-grid { grid-template-columns: 1fr; }
 }
+
+/* 수기 입력도 영수증 상세와 동일한 TRIPASS 영수증 톤을 사용한다. */
+.manual-page .tripass-receipt-document {
+  overflow: visible;
+  margin: 8px 0 26px;
+  padding: 0 19px 25px;
+  border-color: #c8daf6;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
+  box-shadow: 0 15px 34px rgba(45, 54, 74, .1);
+}
+
+.manual-page .tripass-receipt-document::before {
+  position: absolute;
+  top: -7px;
+  right: -1px;
+  left: -1px;
+  height: 8px;
+  background: radial-gradient(circle at 7px 7px, #dce9fb 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
+  content: '';
+  pointer-events: none;
+}
+
+.manual-page .tripass-receipt-document::after {
+  background: radial-gradient(circle at 7px 0, #c8daf6 6.5px, transparent 7px) 0 0 / 14px 11px repeat-x;
+}
+
+.manual-page .receipt-paper-heading {
+  padding: 18px 1px 16px;
+  border-color: rgba(23, 63, 141, .18);
+}
+
+.manual-page .receipt-paper-heading span { color: #173f8d; font-size: 8px; }
+.manual-page .receipt-paper-heading b { font-size: 14px; }
+.manual-page .receipt-paper-heading small { font-size: 9px; }
+
+.manual-page .tripass-receipt-document .field {
+  margin: 14px 7px 0;
+}
+
+.manual-page .tripass-receipt-document .field-grid {
+  margin: 0 7px;
+}
+
+.manual-page .tripass-receipt-document .field-grid .field {
+  margin: 14px 0 0;
+}
+
+.manual-page .tripass-receipt-document .field > span,
+.manual-page .tripass-receipt-document .item-name > span,
+.manual-page .tripass-receipt-document .item-detail-grid label > span {
+  margin-bottom: 7px;
+  color: #8190a8;
+  font-size: 9.5px;
+  text-align: center;
+}
+
+.manual-page .tripass-receipt-document input,
+.manual-page .tripass-receipt-document select,
+.manual-page .tripass-receipt-document .readonly-trip {
+  border-color: rgba(23, 63, 141, .28);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.manual-page .tripass-receipt-document .readonly-trip {
+  justify-content: center;
+  color: #17243a;
+  font-size: 12px;
+}
+
+.manual-page .tripass-receipt-document .merchant-field input {
+  height: 50px;
+  border-color: rgba(23, 63, 141, .38);
+  font-size: 15px;
+}
+
+.manual-page .tripass-receipt-document .currency-field {
+  padding-bottom: 18px;
+  border-bottom: 1px dashed rgba(23, 63, 141, .22);
+}
+
+.manual-page .tripass-receipt-document .items-section,
+.manual-page .tripass-receipt-document .total-amount-section {
+  border-color: rgba(23, 63, 141, .22);
+}
+
+.manual-page .tripass-receipt-document .item-card {
+  border-color: rgba(23, 63, 141, .18);
+}
+
+.manual-page .tripass-receipt-document .image-section {
+  border-color: rgba(23, 63, 141, .28);
+  background: rgba(255, 255, 255, .68);
+}
+
+.manual-page .tripass-receipt-document > .receipt-document-footer {
+  color: #7690bc;
+  border-color: rgba(23, 63, 141, .14);
+}

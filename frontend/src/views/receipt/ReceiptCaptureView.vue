@@ -23,6 +23,8 @@ import {
   useReceiptStore,
 } from '@/stores/receipt'
 
+import receiptIcon from '@/assets/icons/receipt.svg'
+
 const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
@@ -53,28 +55,6 @@ const fileInput = ref(null)
 const cameraInput = ref(null)
 
 let progressTimer = null
-
-const tripDateRange = computed(() => {
-  const startDate =
-      trip.value?.startDate
-
-  const endDate =
-      trip.value?.endDate
-
-  if (!startDate && !endDate) {
-    return ''
-  }
-
-  if (!startDate) {
-    return endDate
-  }
-
-  if (!endDate) {
-    return startDate
-  }
-
-  return `${startDate} ~ ${endDate}`
-})
 
 function openFilePicker() {
   if (loadingTrip.value || analyzing.value) {
@@ -370,25 +350,6 @@ onBeforeUnmount(() => {
     </header>
 
     <template v-if="step === 'upload'">
-      <section class="trip-card">
-        <small>저장할 여행</small>
-
-        <b>
-          {{
-            trip?.tripName ||
-            (
-                loadingTrip
-                    ? '여행 정보 불러오는 중'
-                    : '여행 정보를 확인해 주세요'
-            )
-          }}
-        </b>
-
-        <span v-if="tripDateRange">
-          {{ tripDateRange }}
-        </span>
-      </section>
-
       <section
           v-if="
       !loadingTrip &&
@@ -408,8 +369,22 @@ onBeforeUnmount(() => {
       </section>
 
       <section class="upload-card">
-        <div class="receipt-icon">
-          🧾
+        <div
+            class="receipt-animation"
+            aria-hidden="true"
+        >
+          <span class="receipt-orbit" />
+          <span class="receipt-spark spark-one">✦</span>
+          <span class="receipt-spark spark-two">✦</span>
+
+          <div class="receipt-icon">
+            <img
+                :src="receiptIcon"
+                alt=""
+            >
+
+            <i />
+          </div>
         </div>
 
         <h2>
@@ -569,7 +544,7 @@ onBeforeUnmount(() => {
 .capture-page {
   min-height: 100vh;
   padding: 0 18px 40px;
-  background: #f8f6f1;
+  background: #f3f6fc;
   color: #111a2d
 }
 
@@ -606,53 +581,82 @@ onBeforeUnmount(() => {
   font-size: 10px
 }
 
-.trip-card {
-  display: flex;
-  flex-direction: column;
-  padding: 17px;
-  border-radius: 16px;
-  background: #173f8c;
-  color: #fff
-}
-
-.trip-card small {
-  color: #b9cff1;
-  font-size: 8px
-}
-
-.trip-card b {
-  margin-top: 6px;
-  font-size: 15px
-}
-
-.trip-card span {
-  margin-top: 4px;
-  color: #cfddf3;
-  font-size: 9px
-}
-
 .upload-card {
   display: flex;
   min-height: 330px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 14px;
-  border: 1px solid #d9e3ef;
-  border-radius: 18px;
-  background: #fff;
+  margin-top: 8px;
+  padding: 28px 20px;
+  border: 1px solid #cfddf4;
+  border-radius: 24px;
+  background: linear-gradient(150deg, #fff 0%, #f2f7ff 100%);
+  box-shadow: 0 16px 36px rgba(29, 67, 132, .09);
   text-align: center
 }
 
-.receipt-icon {
+.receipt-animation {
+  position: relative;
   display: grid;
-  width: 62px;
-  height: 62px;
+  width: 112px;
+  height: 112px;
   place-items: center;
-  border-radius: 18px;
-  background: #edf3ff;
-  color: #256bd8;
-  font-size: 29px
+}
+
+.receipt-orbit {
+  position: absolute;
+  inset: 5px;
+  border: 1.5px dashed #8db2ed;
+  border-radius: 50%;
+  animation: receipt-orbit 8s linear infinite;
+}
+
+.receipt-icon {
+  position: relative;
+  display: grid;
+  width: 70px;
+  height: 70px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(38, 98, 234, .12);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 12px 25px rgba(38, 98, 234, .15);
+  animation: receipt-float 2.8s ease-in-out infinite;
+}
+
+.receipt-icon img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.receipt-icon i {
+  position: absolute;
+  right: 13px;
+  left: 13px;
+  height: 2px;
+  border-radius: 2px;
+  background: #ffd25d;
+  box-shadow: 0 0 8px rgba(255, 194, 49, .65);
+  animation: receipt-scan 2.2s ease-in-out infinite;
+}
+
+.receipt-spark {
+  position: absolute;
+  z-index: 2;
+  color: #ffd25d;
+  font-size: 14px;
+  animation: receipt-spark 1.8s ease-in-out infinite;
+}
+
+.spark-one { top: 11px; right: 5px; }
+.spark-two {
+  bottom: 10px;
+  left: 7px;
+  color: #4e83e7;
+  animation-delay: .7s;
 }
 
 .upload-card h2 {
@@ -697,7 +701,7 @@ onBeforeUnmount(() => {
   height: 54px;
   margin-top: 14px;
   border-radius: 14px;
-  background: #19489c;
+  background: #173f8d;
   color: #fff;
   font-size: 13px;
   font-weight: 900
@@ -916,12 +920,38 @@ onBeforeUnmount(() => {
 .file-select-button {
   margin-top: 24px;
   padding: 12px 24px;
-  border: 1px dashed #2e73df;
+  border: 0;
   border-radius: 12px;
-  background: #f4f8ff;
-  color: #2368d5;
+  background: #2662ea;
+  color: #fff;
   font-size: 11px;
   font-weight: 900;
+}
+
+@keyframes receipt-float {
+  0%, 100% { transform: translateY(2px) rotate(-1deg); }
+  50% { transform: translateY(-6px) rotate(1deg); }
+}
+
+@keyframes receipt-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes receipt-scan {
+  0%, 100% { top: 18px; opacity: .45; }
+  50% { top: 50px; opacity: 1; }
+}
+
+@keyframes receipt-spark {
+  0%, 100% { opacity: .35; transform: scale(.75) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.15) rotate(90deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt-orbit,
+  .receipt-icon,
+  .receipt-icon i,
+  .receipt-spark { animation: none; }
 }
 
 .file-select-button:disabled,
