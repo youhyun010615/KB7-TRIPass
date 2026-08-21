@@ -521,6 +521,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/notification-settings',
+      name: 'MypageNotificationSettings',
+      component: () => import('@/views/mypage/NotificationSettingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/profile/edit',
       name: 'MypageProfileEdit',
       redirect: '/mypage/password',

@@ -1,28 +1,19 @@
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
 import { getAccounts } from '@/api/asset'
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
-import { useMypageStore } from '@/stores/mypage'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const cardStore = useCardStore()
-const mypageStore = useMypageStore()
 
 const isLoggingOut = ref(false)
 const accounts = ref([])
-const notificationStartTime = ref(localStorage.getItem('tripass-notification-start') || '09:00')
-const notificationEndTime = ref(localStorage.getItem('tripass-notification-end') || '22:00')
-
-watch([notificationStartTime, notificationEndTime], ([start, end]) => {
-  localStorage.setItem('tripass-notification-start', start)
-  localStorage.setItem('tripass-notification-end', end)
-})
 
 const memberIdentity = computed(() => {
   const provider = authStore.user?.loginProvider ?? 'LOCAL'
@@ -51,7 +42,6 @@ onMounted(async () => {
     accounts.value = []
   }
   await cardStore.loadCards()
-  await mypageStore.fetchSettings()
 })
 
 async function logout() {
@@ -91,14 +81,13 @@ const myManageItems = computed(() => [
     path: '/mypage/travel',
     icon: 'travel',
   },
+  {
+    label: '알림 설정',
+    sub: '알림 종류와 수신 시간 관리',
+    path: '/mypage/notification-settings',
+    icon: 'notification',
+  },
 ])
-
-const notificationRows = [
-  { key: 'travelScheduleEnabled', label: '여행 일정', sub: '출국 D-day와 예약 일정' },
-  { key: 'exchangeRateEnabled', label: '환율 및 환전', sub: '목표 환율 도달 시' },
-  { key: 'checklistEnabled', label: '체크리스트', sub: '준비물·서류 리마인드' },
-  { key: 'travelReportEnabled', label: '여행 리포트', sub: '월간 지출 요약' },
-]
 </script>
 
 <template>
@@ -161,6 +150,9 @@ const notificationRows = [
             <div class="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0" style="background: #EAF1FF">
               <img v-if="item.icon === 'user'" src="@/assets/icons/blue_profile.svg" width="19" height="19" alt="" />
               <img v-if="item.icon === 'travel'" src="@/assets/icons/blue_airplane.svg" width="19" height="19" alt="" />
+              <svg v-if="item.icon === 'notification'" width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="#2F6FED" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
               <svg v-if="item.icon === 'card'" width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="#2F6FED" stroke-width="1.8"/>
                 <path d="M3 10.5h18" stroke="#2F6FED" stroke-width="1.8"/>
@@ -174,62 +166,6 @@ const notificationRows = [
               <path d="M9 6l6 6-6 6" stroke="#C7CDD8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-        </div>
-      </div>
-
-      <!-- 알림 설정 -->
-      <div class="flex flex-col gap-[11px]">
-        <div class="flex items-center justify-between px-0.5">
-          <span class="text-base font-black text-gray-900">알림 설정</span>
-          <div class="flex items-center gap-2">
-            <span class="text-[11.5px] font-extrabold" style="color:#98A2B3">전체 알림</span>
-            <button
-              type="button"
-              class="relative w-[42px] h-6 rounded-full flex items-center px-[3px] transition-colors"
-              :style="{ background: mypageStore.settings.allEnabled ? '#2F6FED' : '#DDE2EC', justifyContent: mypageStore.settings.allEnabled ? 'flex-end' : 'flex-start' }"
-              :aria-pressed="mypageStore.settings.allEnabled"
-              aria-label="전체 알림"
-              @click="mypageStore.toggleSetting('allEnabled')"
-            >
-              <span class="w-[18px] h-[18px] rounded-full bg-white"></span>
-            </button>
-          </div>
-        </div>
-        <div class="bg-white rounded-[20px] overflow-hidden" style="box-shadow: 0 4px 14px rgba(16,25,43,0.07)">
-          <div
-            v-for="(row, i) in notificationRows"
-            :key="row.key"
-            class="flex items-center gap-3 px-[18px] py-[14px]"
-            :class="i < notificationRows.length - 1 ? 'border-b' : ''"
-            style="border-color: #F1F3F8"
-          >
-            <div class="flex-1">
-              <div class="text-[14px] font-extrabold text-gray-900">{{ row.label }}</div>
-              <div class="text-[11px] text-gray-400 mt-[3px]">{{ row.sub }}</div>
-            </div>
-            <button
-              type="button"
-              class="relative w-[42px] h-6 rounded-full flex items-center px-[3px] flex-shrink-0 transition-colors"
-              :disabled="mypageStore.settings.allEnabled"
-              :style="{ background: (mypageStore.settings.allEnabled || mypageStore.settings[row.key]) ? '#2F6FED' : '#DDE2EC', justifyContent: (mypageStore.settings.allEnabled || mypageStore.settings[row.key]) ? 'flex-end' : 'flex-start' }"
-              :aria-pressed="mypageStore.settings.allEnabled || mypageStore.settings[row.key]"
-              :aria-label="row.label"
-              @click="mypageStore.toggleSetting(row.key)"
-            >
-              <span class="w-[18px] h-[18px] rounded-full bg-white"></span>
-            </button>
-          </div>
-        </div>
-        <div class="notification-time-card">
-          <div class="notification-time-head">
-            <div><b>알림 수신 시간</b><small>설정한 시간 안에서 알림을 받아요</small></div>
-            <span>TIME</span>
-          </div>
-          <div class="notification-time-fields">
-            <label><span>시작</span><input v-model="notificationStartTime" type="time" aria-label="알림 시작 시간" /></label>
-            <i>–</i>
-            <label><span>종료</span><input v-model="notificationEndTime" type="time" aria-label="알림 종료 시간" /></label>
-          </div>
         </div>
       </div>
 
