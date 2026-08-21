@@ -11,3 +11,7 @@ export function updateMyProfile({ name }) {
         name,
     })
 }
+
+export function resetAccount() {
+    return api.post('/dev/reset-account')
+}

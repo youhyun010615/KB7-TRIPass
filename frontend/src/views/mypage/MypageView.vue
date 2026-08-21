@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
+import { resetAccount as resetAccountApi } from '@/api/mypage'
 import { getAccounts } from '@/api/asset'
 import { fetchMyTrips } from '@/api/travel'
 import { useAuthStore } from '@/stores/auth'
@@ -18,6 +19,7 @@ const cardStore = useCardStore()
 const travelStore = useTravelStore()
 
 const isLoggingOut = ref(false)
+const isResetting = ref(false)
 const accounts = ref([])
 const trips = ref([])
 const selectedTripId = ref(null)
@@ -155,6 +157,22 @@ async function logout() {
     await router.replace('/login')
 
     isLoggingOut.value = false
+  }
+}
+
+async function resetAccount() {
+  if (isResetting.value) return
+  const confirmed = window.confirm('계정의 모든 데이터(여행, 계좌, 카드, 거래내역, 미션 등)가 삭제됩니다.\n\n정말 초기화할까요?')
+  if (!confirmed) return
+  isResetting.value = true
+  try {
+    await resetAccountApi()
+    window.alert('계정 데이터가 초기화되었습니다.')
+    window.location.reload()
+  } catch (error) {
+    window.alert('초기화에 실패했습니다: ' + (error.response?.data?.message || error.message))
+  } finally {
+    isResetting.value = false
   }
 }
 
@@ -344,6 +362,16 @@ const myManageItems = computed(() => [
           </Transition>
         </article>
       </section>
+
+      <button
+          type="button"
+          class="reset-button"
+          :disabled="isResetting"
+          @click="resetAccount"
+      >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14.25-5M20 12a8 8 0 0 1-14.25 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 3v4h-4M4 21v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {{ isResetting ? '초기화 중...' : '계정 데이터 초기화' }}
+      </button>
 
       <button
           type="button"
@@ -546,6 +574,10 @@ const myManageItems = computed(() => [
 .notification-time-fields label>span { display:block;margin-bottom:3px;color:#8b98ab;font-size:8px;font-weight:700; }
 .notification-time-fields input { width:100%;border:0;outline:0;background:transparent;color:#17387f;font-size:12px;font-weight:800; }
 .notification-time-fields i { padding-bottom:11px;color:#a5afbd;font-style:normal;text-align:center; }
+.reset-button { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;border:1px solid #dde3ed;border-radius:16px;background:#fff;color:#6b7a90;font-size:12px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04); }
+.reset-button:active { background:#f5f7fb; }
+.reset-button:disabled { opacity:.55; }
+.reset-button svg { width:17px;height:17px; }
 .logout-button { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;margin:0 0 16px;border:1px solid #f0d9dd;border-radius:16px;background:#fff;color:#c94e5b;font-size:12px;font-weight:800;box-shadow:0 5px 14px rgba(116,31,45,.045); }
 .logout-button:active { background:#fff5f6; }
 .logout-button:disabled { opacity:.55; }
