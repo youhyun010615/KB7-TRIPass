@@ -12,6 +12,7 @@ import shinhanBankLogo from '@/assets/bank-logos/shinhan-user.png'
 import ibkBankLogo from '@/assets/bank-logos/ibk-bank-official.svg'
 import kbankLogo from '@/assets/bank-logos/kbank-user.png'
 import imBankLogo from '@/assets/bank-logos/im-user.jpg'
+import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
 
 const router = useRouter()
 const route = useRoute()
@@ -321,8 +322,8 @@ onMounted(() => {
         <div class="intro-hero">
           <span class="hero-orbit" aria-hidden="true"></span>
           <p class="hero-mark">
+            <img :src="tripassTransparentSymbol" alt="" aria-hidden="true">
             <span>TRIPASS</span>
-            <svg class="hero-plane" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z"/></svg>
           </p>
           <h1 class="hero-title">여행 준비를 위해<br>주거래 계좌를 연결해요</h1>
           <p class="hero-description">연결한 계좌의 거래내역을 분석해<br>여행자금 절약 코칭을 제공해요</p>
@@ -797,7 +798,8 @@ button { border: 0; cursor: pointer; }
 .page-content h2 { margin: 0; font-size: 24px; line-height: 1.35; letter-spacing: -.045em; }
 .intro-hero { position: relative; padding: 58px 24px 64px; overflow: hidden; color: #fff; background: linear-gradient(155deg, #0b2a6b 0%, #123c94 60%, #17459f 100%); }
 .hero-orbit { position: absolute; top: -50px; right: -45px; width: 170px; height: 170px; border-radius: 50%; background: rgba(255,255,255,.06); }
-.hero-mark { position: relative; margin: 0; display: flex; align-items: center; gap: 7px; color: #fff; font-size: 13px; font-weight: 900; letter-spacing: .02em; }
+.hero-mark { position: relative; margin: 0; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 16px; font-weight: 900; letter-spacing: .12em; }
+.hero-mark img { width: 54px; height: 42px; object-fit: contain; }
 .hero-plane { color: #ffd45e; transform: rotate(45deg); }
 .benefit-plane { color: #ffd45e; transform: rotate(45deg); }
 .pass-plane { transform: rotate(45deg); }
