@@ -376,7 +376,7 @@ function goToOnboardingHub() {
 
           <template v-if="countryDropdownOpen">
             <div class="country-dropdown-panel">
-              <ul v-if="searchKeyword.trim() && sortedCountries.length" class="country-dropdown-list country-search-results">
+              <ul v-if="sortedCountries.length" class="country-dropdown-list country-search-results">
                 <li v-for="country in sortedCountries" :key="country.countryId">
                   <button
                     type="button"
@@ -397,7 +397,6 @@ function goToOnboardingHub() {
                   </button>
                 </li>
               </ul>
-              <p v-else-if="!searchKeyword.trim()" class="empty-copy">찾고 싶은 국가명을 입력해 주세요.</p>
               <p v-else-if="!store.countryLoading" class="empty-copy">검색 결과가 없어요.</p>
             </div>
           </template>
