@@ -278,7 +278,15 @@ const myManageItems = computed(() => [
                 <span v-if="!tripCover(trip)" class="trip-cover-fallback" aria-hidden="true"></span>
               </span>
             </span>
-            <b>{{ trip.tripName }}</b>
+            <span class="trip-circle-flags" :aria-label="`${trip.tripName} 여행 국가`">
+              <span
+                v-for="name in splitCountryNames(trip.countryNames)"
+                :key="name"
+                :class="flagIconClass(countryCodeOf(name))"
+                class="fi-inline"
+              ></span>
+              <small v-if="!splitCountryNames(trip.countryNames).length">국가 미정</small>
+            </span>
           </button>
 
           <button
@@ -549,6 +557,9 @@ const myManageItems = computed(() => [
 .trip-selector::-webkit-scrollbar { display:none; }
 .trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:7px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start; }
 .trip-circle-item b { display:block;overflow:hidden;width:100%;font-size:9.5px;font-weight:800;text-align:center;text-overflow:ellipsis;white-space:nowrap; }
+.trip-circle-flags { display:flex;min-height:13px;align-items:center;justify-content:center;gap:3px; }
+.trip-circle-flags .fi-inline { display:block;width:18px;height:12px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(15,34,68,.16); }
+.trip-circle-flags small { color:#9aa5b5;font-size:8px;font-weight:700; }
 .trip-circle { display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
 .trip-circle-item.selected { color:#111b30; }
 .trip-circle-item.selected .trip-circle { box-shadow:0 0 0 3px #2f70f2;transform:scale(1.03); }
