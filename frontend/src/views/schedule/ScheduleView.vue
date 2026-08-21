@@ -36,6 +36,7 @@ onMounted(async () => {
   if (props.listMode) {
     const id = Number(route.params.id || route.query.tripId);
     if (Number.isFinite(id) && id > 0) {
+      if (!travel.countries.length) await travel.loadCountries().catch(() => {});
       await Promise.allSettled([
         reportStore.loadPreTripReport(id),
         reportStore.loadTripBasic(id),
@@ -146,6 +147,34 @@ const dateLabel = (date) =>
     day: '2-digit',
     weekday: 'short',
   }).format(new Date(`${date}T00:00:00`));
+const countriesForDate = (date) => {
+  const archivedCountries = props.listMode
+    ? (reportStore.tripBasic?.countries || []).filter((item) => {
+        const start = item.arrivalDate || item.startDate || '';
+        const end = item.departureDate || item.endDate || '';
+        return start && end && date >= start && date <= end;
+      }).map((item) => {
+        const catalog = travel.countries.find(
+          (country) => Number(country.countryId) === Number(item.countryId),
+        );
+        const name = item.countryName || catalog?.name || '';
+        return {
+          code: catalog?.code || travel.countryFlagMap[name]?.code || '',
+          name,
+        };
+      })
+    : [];
+  if (archivedCountries.length) return archivedCountries;
+  const codes = store.configuredPeriods
+    .filter((period) => date >= period.startDate && date <= period.endDate)
+    .map((period) => period.code);
+  const scheduleCodes = store.sortedSchedules
+    .filter((item) => item.date === date)
+    .map((item) => item.countryCode);
+  return [...new Set([...codes, ...scheduleCodes])]
+    .map((code) => store.countries.find((country) => country.code === code))
+    .filter(Boolean);
+};
 const shortDateLabel = (date) => {
   if (!date) return '';
   const value = new Date(`${date}T00:00:00`);
@@ -391,7 +420,17 @@ function showPastSchedules() {
             완료된 일정 {{ completedScheduleCount }}건
           </p>
           <h3>
-            {{ dateLabel(group.date) }}
+            <span>{{ dateLabel(group.date) }}</span>
+            <span v-if="countriesForDate(group.date).length" class="date-countries">
+              <span
+                v-for="item in countriesForDate(group.date)"
+                :key="item.code || item.name"
+                class="date-country"
+              >
+                <i :class="flagIconClass(item.code)" />
+                {{ item.name }}
+              </span>
+            </span>
           </h3>
           <ScheduleCard
             v-for="item in group.items"
@@ -805,6 +844,7 @@ function showPastSchedules() {
 .date-group:first-child h3 {
   margin-top: 2px;
 }
+.date-countries{display:flex;align-items:center;justify-content:flex-end;gap:5px}.date-country{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:999px;background:#edf4ff;color:#355b91;font-size:9px;font-weight:900;white-space:nowrap}.date-country i{display:inline-block;width:16px;height:11px;border-radius:2px;background-position:center;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .date-group {
   position: relative;
   padding-left: 9px;
