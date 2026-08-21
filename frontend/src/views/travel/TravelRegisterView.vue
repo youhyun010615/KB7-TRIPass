@@ -45,6 +45,13 @@ function syncRegisterFrame() {
   }
 }
 
+function toggleCountryFromDropdown(countryId) {
+  const changed = store.toggleCountry(countryId)
+  if (!changed) return
+  store.clearError()
+  countryDropdownOpen.value = false
+}
+
 const sortedCountries = computed(() =>
   [...store.countries].sort((a, b) => {
     if (a.selectable !== b.selectable) return a.selectable ? -1 : 1
@@ -381,7 +388,7 @@ function goToOnboardingHub() {
                     }"
                     :disabled="!country.selectable"
                     :aria-disabled="!country.selectable"
-                    @click="store.toggleCountry(country.countryId)"
+                    @click="toggleCountryFromDropdown(country.countryId)"
                   >
                     <span class="country-dropdown-check">✓</span>
                     <span v-if="country.code?.length === 2" :class="flagIconClass(country.code)" class="fi-inline" />
