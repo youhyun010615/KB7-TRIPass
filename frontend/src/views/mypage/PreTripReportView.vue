@@ -127,10 +127,6 @@ const budgetSegments = computed(() => {
       </table>
     </section>
 
-    <section class="final">
-      <b>✈️ 여행 전 준비 상태</b>
-      <small>여행 날짜가 되면 여행 모드에서 TRIP 월렛과 트래블 카드 잔액을 이어서 관리할 수 있어요.</small>
-    </section>
     </div>
 
     <button class="pdf" type="button" @click="download" :disabled="downloading">{{ downloading ? 'PDF 생성 중...' : 'PDF 저장하기' }}</button>

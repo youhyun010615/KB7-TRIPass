@@ -8,19 +8,25 @@
         <span />
       </header>
 
+      <nav class="return-nav" aria-label="귀국 체크리스트 단계">
+        <button type="button" class="active">귀국</button>
+      </nav>
+
       <section class="pass">
-        <small>RETURN CHECK BOARDING PASS</small><i />
-        <div>
-          <h2>귀국 체크리스트</h2>
-          <b>{{ progress.done }} / {{ progress.total }} 완료</b>
+        <small>TRIP CHECKLIST</small><i />
+        <div class="progress-panel">
+          <div class="progress-head">
+            <h2>귀국 체크리스트</h2>
+            <b>{{ progress.done }} / {{ progress.total }} 완료</b>
+          </div>
+          <div class="bar">
+            <span :style="{ width: `${progress.percent}%` }" />
+          </div>
+          <footer>
+            <strong>{{ progress.percent }}% 완료</strong>
+            <em>{{ progress.total - progress.done }}개 항목 남음</em>
+          </footer>
         </div>
-        <div class="bar">
-          <span :style="{ width: `${progress.percent}%` }" />
-        </div>
-        <footer>
-          <strong>{{ progress.percent }}% 완료</strong>
-          <em>{{ progress.total - progress.done }}개 항목 남음</em>
-        </footer>
       </section>
     </div>
 
@@ -42,12 +48,7 @@
 
             <div class="content">
               <b class="item-title">
-                <span
-                  class="type-badge"
-                  :class="item.isCustom ? 'custom' : 'default'"
-                >
-                  {{ item.isCustom ? '사용자' : '기본' }}
-                </span>
+                <span v-if="item.isCustom" class="type-badge custom">사용자</span>
                 <span class="name">{{ item.itemName }}</span>
               </b>
             </div>
@@ -81,8 +82,8 @@
         ＋ 체크리스트 추가
       </button>
     </div>
+    <BottomNav />
   </main>
-  <BottomNav />
 </template>
 
 <script setup>
@@ -156,11 +157,12 @@ const handleDelete = async (event, itemId) => {
 /* 📌 Layout & Scroll 구조 설정 */
 .page {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: 0 18px;
-  background: #f8f6f1;
+  background: #f3f6fc;
   color: #111a2d;
   box-sizing: border-box;
   overflow: hidden;
@@ -211,13 +213,35 @@ const handleDelete = async (event, itemId) => {
   font-size: 17px;
   font-weight: 900;
 }
+.return-nav {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #e9eef7;
+}
+.return-nav button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #8a96a8;
+  font-size: 10px;
+  font-weight: 800;
+}
+.return-nav .active {
+  background: #173f8d;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(23,63,141,.18);
+}
 
-/* Boarding Pass (보라색 테마) */
+/* Boarding Pass */
 .pass {
   position: relative;
   padding: 19px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #63308d, #934fba);
+  background: linear-gradient(145deg, #2662ea, #173f8d);
   color: #fff;
 }
 .pass:before,
@@ -227,7 +251,7 @@ const handleDelete = async (event, itemId) => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #f8f6f1;
+  background: #f3f6fc;
   content: '';
 }
 .pass:before {
@@ -237,14 +261,14 @@ const handleDelete = async (event, itemId) => {
   right: -7px;
 }
 .pass small {
-  color: #e1c8ee;
+  color: #cbd9f7;
   font-size: 8px;
   font-weight: 800;
 }
 .pass i {
   display: block;
   margin: 12px 0;
-  border-top: 1px dashed #c79bdd;
+  border-top: 1px dashed #8ba9df;
 }
 .pass > div {
   display: flex;
@@ -466,4 +490,12 @@ const handleDelete = async (event, itemId) => {
 .page{background:#f3f6fc}.pass{background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.pass:before,.pass:after{background:#f3f6fc}.pass small,.pass footer em{color:#cbd9f7}.pass i{border-color:#8ba9df}.pass .bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}.item-card{border-color:#dfe7f4;background:#fff;box-shadow:0 7px 18px rgba(23,63,141,.05)}.check-icon{border-color:#a9bfe8}.item-card.done .check-icon{border-color:#2662ea;background:#2662ea}.add-button{border-color:#bfd0f1;color:#2662ea;background:#f9fbff}
 .bottom-nav :deep(.nav-background){filter:none}
 .pass{padding:16px;border-radius:16px;box-shadow:0 9px 22px rgba(23,63,141,.14)}.pass h2{font-size:15px}.pass .bar{margin-top:13px}.scroll-content h3{margin:16px 2px 8px;font-size:13px}.items{gap:7px}.item-card{gap:8px;padding:11px 12px;border-radius:12px;box-shadow:0 5px 14px rgba(23,63,141,.045)}.item-title{font-size:11px}.check-icon{width:22px;height:22px;font-size:13px}.actions{gap:5px}.status-tag{padding:4px 7px}.add-button{margin-top:10px;padding:11px;border-radius:10px}.add-box{margin-top:10px;padding:10px;border-radius:11px}
+.return-nav{gap:5px;margin-bottom:11px;padding:5px;border:0;border-radius:18px;background:#e9edf5}.return-nav button{min-height:38px;padding:0 10px;border-radius:14px;font-size:11px;font-weight:850}.return-nav button.active{background:#173f8d;color:#fff;box-shadow:0 5px 13px rgba(23,63,141,.22)}
+.pass{padding:15px;border:1px solid #d9e4f5;border-radius:19px;background:#fff;color:#10234a;box-shadow:0 8px 22px rgba(23,63,141,.07)}
+.pass:before,.pass:after{display:none}.pass>small{color:#2f6fed;font-size:8px;letter-spacing:.13em}.pass>i{margin:9px 0 11px;border-color:#d7e1f0}
+.pass>.progress-panel{display:block;padding:15px;border-radius:16px;background:linear-gradient(145deg,#123c84,#1c5dbd);color:#fff;box-shadow:0 9px 20px rgba(24,77,164,.17)}
+.pass .progress-head{display:flex;align-items:center;justify-content:space-between}.pass .progress-head h2{font-size:15px;font-weight:850;letter-spacing:-.025em}.pass .progress-head b{color:#ffd466;font-size:12px;font-weight:900}
+.pass .bar{height:8px;margin-top:12px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}.pass .bar span{border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}
+.pass footer{margin-top:10px}.pass footer strong{color:#fff;font-size:11px;font-weight:850}.pass footer em{color:#b8cef2;font-size:9px;font-weight:700}
+.scroll-content h3{margin:18px 3px 10px;color:#17233b;font-size:16px;font-weight:900;letter-spacing:-.025em}.item-card{min-height:58px;padding:12px 14px;border:1px solid #d7e2f2;border-radius:14px}.item-title{gap:7px;color:#17233b;font-size:14px;font-weight:850;line-height:1.35}.type-badge.custom{padding:3px 6px;border-radius:6px;background:#fff7ed;color:#f97316;font-size:8px;font-weight:800}.status-tag{min-width:39px;padding:6px 8px;border-radius:999px;font-size:9px;font-weight:850;text-align:center}.item-card.done{background:#f1f6ff}.item-card.done .status-tag{font-size:11px;font-weight:900}
 </style>

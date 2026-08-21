@@ -132,8 +132,8 @@
         ＋ 체크리스트 추가
       </button>
     </div>
+    <BottomNav />
   </main>
-  <BottomNav />
 </template>
 
 <script setup>
@@ -261,11 +261,12 @@ const handleDelete = async (event, itemId) => {
 <style scoped>
 .page {
   position: relative; /* 바텀네비 위치 기준점 */
-  height: 100vh;
+  min-height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: 0 18px;
-  background: #f8f6f1;
+  background: #f3f6fc;
   color: #111a2d;
   box-sizing: border-box;
   overflow: hidden; /* 페이지 전체 스크롤 차단 */
