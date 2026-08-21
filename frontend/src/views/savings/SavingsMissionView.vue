@@ -33,13 +33,14 @@ const monthlyAnalysisStore = useMonthlyAnalysisStore()
 const isTraveling = computed(() => travelStore.lifecycle?.lifecycle === 'TRAVELING')
 const hasTrip = computed(() => Boolean(travelStore.lifecycle?.hasTrip))
 const hasLinkedAccount = computed(() => Boolean(travelStore.lifecycle?.hasLinkedAccount))
+const hasLinkedCard = computed(() => Boolean(travelStore.lifecycle?.hasLinkedCard))
 const reportNeedsViewing = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING')
 const linkedAccountCount = ref(0)
 const linkedCardCount = ref(0)
 const financialSourcesLoading = ref(true)
 const financialSourcesError = ref('')
 const hasLinkedFinancialSources = computed(
-  () => hasLinkedAccount.value,
+  () => hasLinkedAccount.value && hasLinkedCard.value,
 )
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
@@ -516,7 +517,8 @@ function closeSelectionFlow() {
           <span class="mission-ai-core"><img :src="aiIcon" alt="" /></span>
         </div>
         <h2>AI 추천 미션을 받아보세요!</h2>
-        <p>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</p>
+        <p v-if="!hasLinkedAccount">먼저 계좌를 연결하면 여행 저축 집계를 시작할 수 있어요.</p>
+        <p v-else>카드를 연결하면 소비 내역을 분석해 맞춤 저축 미션을 추천해 드려요.</p>
         <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
       </div>
     </section>

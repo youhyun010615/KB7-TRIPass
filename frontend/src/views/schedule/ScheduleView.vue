@@ -8,7 +8,7 @@ import TravelModeMeta from '@/components/travel/TravelModeMeta.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 import { useTravelStore } from '@/stores/travel';
 
-defineProps({
+const props = defineProps({
   listMode: {
     type: Boolean,
     default: false,
@@ -82,6 +82,7 @@ const timelineGroups = computed(() => {
 const featuredSchedule = computed(() => nextSchedule.value || null);
 const upcomingTimelineGroups = computed(() =>
   timelineGroups.value
+    .filter((group) => !props.listMode || !selectedCalendarDate.value || group.date === selectedCalendarDate.value)
     .sort((a, b) => a.date.localeCompare(b.date)),
 );
 const scheduleCountByDate = computed(() => {
@@ -291,7 +292,7 @@ function showPastSchedules() {
     </section>
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
 
-    <section v-if="featuredSchedule" class="today-schedule-section">
+    <section v-if="featuredSchedule && !listMode" class="today-schedule-section">
       <div class="list-heading">
         <h2>다가오는 일정</h2>
         <em>{{ shortDateLabel(featuredSchedule.date) }}</em>
@@ -310,9 +311,9 @@ function showPastSchedules() {
     <section class="upcoming-card" :class="{ 'is-empty': !timelineGroups.length }">
       <div class="section-title">
         <div>
-          <h2>전체 일정</h2>
+          <h2>{{ listMode && selectedCalendarDate ? dateLabel(selectedCalendarDate) : '전체 일정' }}</h2>
         </div>
-        <span>총 {{ store.sortedSchedules.length }}건</span>
+        <span>총 {{ listMode ? upcomingTimelineGroups.reduce((sum, group) => sum + group.items.length, 0) : store.sortedSchedules.length }}건</span>
       </div>
       <div ref="timelineList" class="upcoming-list">
         <div
@@ -355,7 +356,10 @@ function showPastSchedules() {
       @click="
         router.push({
           path: '/schedule/new',
-          query: router.currentRoute.value.query,
+          query: {
+            ...router.currentRoute.value.query,
+            ...(selectedCalendarDate ? { date: selectedCalendarDate } : {}),
+          },
         })
       "
     >

@@ -20,13 +20,16 @@ const original = editing.value
   : null;
 const initialCountryCode =
   original?.countryCode || store.countries[0]?.code || '';
+const requestedDate = !editing.value && typeof route.query.date === 'string'
+  ? route.query.date
+  : '';
 const form = reactive(
   original
     ? { ...original }
     : {
         title: '',
         countryCode: initialCountryCode,
-        date: store.period(initialCountryCode).startDate,
+        date: requestedDate || store.period(initialCountryCode).startDate,
         time: '10:00',
         currency:
           store.countries.find((item) => item.code === initialCountryCode)
@@ -111,7 +114,16 @@ async function submit() {
 }
 
 onMounted(() => {
-  store.ensureTripLoaded().catch(() => {});
+  store.ensureTripLoaded().then(() => {
+    if (!editing.value && requestedDate) {
+      const dateCountry = store.countryForDate(requestedDate);
+      if (dateCountry) {
+        form.countryCode = dateCountry.code;
+        form.currency = dateCountry.currency;
+        form.date = requestedDate;
+      }
+    }
+  }).catch(() => {});
 });
 </script>
 

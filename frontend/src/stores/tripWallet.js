@@ -20,6 +20,7 @@ import {
   linkWalletAccount,
   linkWalletTravelCard,
   saveWalletAutoSaving,
+  sellWalletExchange,
   setWalletPrimaryAccount,
   topupWalletTravelCard,
   unlinkWalletAccount,
@@ -622,6 +623,21 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     return result
   }
 
+  async function sellFromTravelCard(payload) {
+    const foreignAmount = Number(String(payload.foreignAmount ?? '').replace(/,/g, '')) || 0
+    const walletTravelCardId = payload.walletTravelCardId ?? travelCard.value?.walletTravelCardId
+    if (!walletTravelCardId || foreignAmount <= 0) return null
+
+    const result = await sellWalletExchange({
+      walletTravelCardId,
+      currencyCode: payload.currencyCode,
+      foreignAmount,
+      idempotencyKey: createIdempotencyKey('exchange-sell'),
+    })
+    await Promise.all([loadWalletMain(), loadForeignBalances(), loadLedgers()])
+    return result
+  }
+
   watch(() => ({
     walletId: walletId.value,
     balance: balance.value,
@@ -696,6 +712,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     loadCurrencies,
     estimateExchange,
     exchangeToTravelCard,
+    sellFromTravelCard,
     loadAutoSavingLogs,
   }
 })

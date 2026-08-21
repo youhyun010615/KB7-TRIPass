@@ -84,7 +84,7 @@ const menuItems = computed(() => {
     ]
   }
   return [
-    { label: '여행 리포트', desc: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${tripId}`, badge: isTraveling.value ? '열람 가능' : '준비 중' },
+    { label: '여행 리포트', desc: '여행 시작일부터 확인 가능', icon: 'report', path: `/mypage/reports?tripId=${tripId}`, badge: isTraveling.value ? '열람 가능' : '준비 중', disabled: !isTraveling.value },
     { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}`, badge: `${report.value?.checklistCompleted ?? 0}/${report.value?.checklistTotal ?? 0}` },
     { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${tripId}/schedules?tripId=${tripId}`, badge: `${report.value?.scheduleCount ?? 0}개` },
     { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${tripId}/receipts`, badge: `${receipts.value.length}장` },
@@ -219,9 +219,9 @@ onMounted(async () => {
             :key="item.label"
             type="button"
             class="menu-tile text-left active:scale-[0.97]"
-            :class="{ 'col-span-2': i === menuItems.length - 1 && menuItems.length % 2 === 1 }"
+            :class="{ 'col-span-2': i === menuItems.length - 1 && menuItems.length % 2 === 1, 'opacity-60': item.disabled }"
             :style="{ animationDelay: `${i * 70}ms` }"
-            @click="router.push(item.path)"
+            @click="!item.disabled && router.push(item.path)"
           >
             <div class="flex items-start justify-between">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #EEF2FF">

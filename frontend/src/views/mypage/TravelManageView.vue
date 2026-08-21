@@ -8,8 +8,13 @@ import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/tra
 
 const router = useRouter()
 const travelStore = useTravelStore()
+const showActiveTripNotice = ref(false)
 
 function startNewTrip() {
+  if (upcomingTrips.value.length > 0) {
+    showActiveTripNotice.value = true
+    return
+  }
   // 스토어에 이전에 조회했던 여행 정보가 남아있을 수 있어서, 새 여행
   // 등록 폼이 빈 상태로 시작하도록 먼저 초기화한다.
   travelStore.resetGoal()
@@ -242,6 +247,15 @@ onMounted(async () => {
     </div>
 
     <BottomNav />
+
+    <div v-if="showActiveTripNotice" class="fixed inset-0 z-[120] grid place-items-center bg-slate-950/45 px-5" @click.self="showActiveTripNotice = false">
+      <section class="w-full max-w-sm rounded-[24px] bg-white p-6 text-center shadow-2xl">
+        <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#EAF1FF] text-2xl">✈</span>
+        <h2 class="mt-4 text-lg font-black text-gray-900">진행 중인 여행이 있어요</h2>
+        <p class="mt-2 text-xs font-semibold leading-5 text-gray-500">현재 여행을 마친 뒤 새로운 여행 목표를 등록할 수 있어요.<br>먼저 진행 중인 여행을 확인해 주세요.</p>
+        <button type="button" class="mt-5 w-full rounded-2xl bg-[#173F8D] py-3.5 text-sm font-black text-white" @click="showActiveTripNotice = false">확인</button>
+      </section>
+    </div>
   </div>
 </template>
 

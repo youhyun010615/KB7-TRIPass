@@ -58,9 +58,21 @@ const linkedAccountCount = ref(0);
 const linkedCardCount = ref(0);
 const financialSourcesLoading = ref(false);
 const financialSourcesError = ref('');
-const hasLinkedFinancialSources = computed(
-  () => travelStore.lifecycle?.hasLinkedAccount ?? (linkedAccountCount.value + linkedCardCount.value > 0),
+const hasLinkedAccount = computed(
+  () => travelStore.lifecycle?.hasLinkedAccount ?? linkedAccountCount.value > 0,
 );
+const hasLinkedCard = computed(
+  () => travelStore.lifecycle?.hasLinkedCard ?? linkedCardCount.value > 0,
+);
+const hasLinkedFinancialSources = computed(
+  () => hasLinkedAccount.value && hasLinkedCard.value,
+);
+const missingFinancialSourceCopy = computed(() => {
+  if (!hasLinkedAccount.value) {
+    return '저축 기록을 시작하려면 계좌를 연결해 주세요. 카드까지 연결하면 소비 분석과 맞춤 미션도 받을 수 있어요.';
+  }
+  return '저축 기록은 시작됐어요. 카드를 연결하면 소비 내역을 분석해 맞춤 저축 미션을 추천해 드려요.';
+});
 const savingsTrackingStarted = computed(() => Boolean(travelStore.lifecycle?.savingsTrackingStarted));
 const homeReportPending = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING');
 
@@ -553,7 +565,7 @@ function startTripRegistration() {
             <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
           </div>
           <b>AI 추천 미션을 받아보세요!</b>
-          <small>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</small>
+          <small>{{ missingFinancialSourceCopy }}</small>
           <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
         </div>
       </section>
@@ -858,7 +870,7 @@ function startTripRegistration() {
             <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
           </div>
           <b>AI 추천 미션을 받아보세요!</b>
-          <small>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</small>
+          <small>{{ missingFinancialSourceCopy }}</small>
           <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
         </div>
       </section>

@@ -44,11 +44,6 @@ function save() {
   }
 }
 
-async function remove() {
-  await exchange.removeAlert(form.id);
-  router.replace('/exchange/alerts');
-}
-
 function selectCurrency(code) {
   form.currencyCode = code;
   isModalOpen.value = false;
@@ -165,10 +160,7 @@ onMounted(async () => {
         <small class="target-guide">직접 목표 환율을 입력해 보세요.</small>
       </label>
       <button class="save" :disabled="!valid" @click="save">
-        {{ isEditMode ? '알림 수정' : '알림 등록' }}</button
-      ><button v-if="isEditMode" class="delete" @click="remove">
-        알림 삭제
-      </button>
+        {{ isEditMode ? '수정 완료' : '알림 등록' }}</button>
     </div>
   </main>
 </template>

@@ -48,7 +48,7 @@ watch(tripId, id => { if (id) load(id) })
     <span>생성된 리포트 {{ reportCount }}개</span>
   </div>
   <p class="report-list-description">여행 전후의 자금 흐름을 리포트를 통해 확인해보세요.<br>여행 후 리포트는 여행 후에 볼 수 있어요.</p>
-  <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue"><img :src="reportIcon" alt="" /></span><div><b>여행 저축 리포트</b><small>여행 전 저축과 자금 준비 기록</small></div><em>생성완료</em><strong>›</strong></button>
+  <button class="report-card" :class="{disabled:report.status==='여행 전'}" :disabled="report.status==='여행 전'" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue"><img :src="reportIcon" alt="" /></span><div><b>여행 저축 리포트</b><small>여행 시작일부터 확인할 수 있어요</small></div><em>{{ report.status==='여행 전'?'준비 중':'확인' }}</em><strong>›</strong></button>
   <button class="report-card" :class="{disabled:report.status!=='여행 완료'}" :disabled="report.status!=='여행 완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b></div><em class="after">{{ report.status==='여행 완료'?'확인':'준비 중' }}</em><strong>›</strong></button>
   </template>
   <BottomNav/></main></template>

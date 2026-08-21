@@ -355,9 +355,15 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/exchange/alerts/:alertId',
+      path: '/exchange/alerts/:alertId/edit',
       name: 'ExchangeAlertEdit',
       component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts/:alertId',
+      name: 'ExchangeAlertDetail',
+      component: () => import('@/views/exchange/ExchangeAlertDetailView.vue'),
       meta: { requiresAuth: true },
     },
     {

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import DatePickerSheet from '@/components/savings/DatePickerSheet.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
 import calendarIcon from '@/assets/icons/calendar.svg'
-import { fetchWalletAccounts, withdrawWallet } from '@/api/wallet'
+import { fetchWalletAccounts } from '@/api/wallet'
 import { useTravelStore, flagIconClass } from '@/stores/travel'
 
 const router = useRouter()
@@ -274,12 +274,10 @@ async function withdrawWalletBalance() {
   walletStepLoading.value = true
   walletStepError.value = ''
   try {
-    await withdrawWallet({
-      targetAccountId: selectedWalletAccount.value.accountId ?? selectedWalletAccount.value.id,
-      amount: walletDecisionAmount.value,
-      idempotencyKey: `trip-goal-wallet-${store.tripId}-${selectedWalletAccount.value.accountId ?? selectedWalletAccount.value.id}`,
-    })
-    await store.resolveWalletBalanceReflect(false)
+    await store.resolveWalletBalanceReflect(
+      false,
+      selectedWalletAccount.value.accountId ?? selectedWalletAccount.value.id,
+    )
     walletResolution.value = 'withdrawn'
     showWalletWithdrawSheet.value = false
   } catch (error) {
