@@ -782,7 +782,7 @@ function showPastSchedules() {
 }
 .add-button {
   position: fixed;
-  right: max(calc((100vw - 390px) / 2 + 28px), 28px);
+  left: 50%;
   bottom: 78px;
   z-index: 40;
   display: flex;
@@ -796,9 +796,10 @@ function showPastSchedules() {
   background: #0b2a6b;
   color: #fff;
   box-shadow: 0 10px 22px rgba(23, 63, 141, 0.3);
+  transform: translateX(-50%);
 }
 .add-button:active {
-  transform: scale(0.98);
+  transform: translateX(-50%) scale(0.98);
 }
 .add-button-icon {
   display: flex;
