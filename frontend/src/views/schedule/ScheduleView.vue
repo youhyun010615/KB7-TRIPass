@@ -288,7 +288,7 @@ function showPastSchedules() {
       </div>
     </section>
 
-    <section class="upcoming-card">
+    <section class="upcoming-card" :class="{ 'is-empty': !timelineGroups.length }">
       <div class="section-title">
         <div>
           <h2>전체 일정</h2>
@@ -640,6 +640,19 @@ function showPastSchedules() {
   background: transparent;
   box-shadow: none;
 }
+.upcoming-card.is-empty {
+  display: flex;
+  min-height: calc(100dvh - 300px);
+  flex-direction: column;
+}
+.upcoming-card.is-empty .upcoming-list {
+  display: flex;
+  max-height: none;
+  flex: 1;
+  margin-top: 0;
+  padding: 0;
+  overflow: hidden;
+}
 .section-title {
   display: flex;
   align-items: flex-start;
@@ -765,10 +778,14 @@ function showPastSchedules() {
 }
 .empty-state {
   display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 44px 20px;
+  padding: 20px 20px 76px;
   text-align: center;
 }
 .empty-state span {
