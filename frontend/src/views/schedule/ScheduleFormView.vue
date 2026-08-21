@@ -156,13 +156,14 @@ onMounted(() => {
             :max="selectedPeriod?.endDate"
           /><input v-model="form.time" type="time" />
         </div>
-        <small v-if="error" class="error">{{ error }}</small
-        ><small v-else-if="country"
-          >{{ country.flag }} {{ country.name }} 여행 일정</small
-        ></label
+        <small v-if="error" class="error">{{ error }}</small></label
       >
       <label
-        ><span>₩ 금액</span>
+        ><span>장소명</span
+        ><input v-model="form.placeName" placeholder="예: 루브르 박물관"
+      /></label>
+      <label
+        ><span>금액</span>
         <div class="money">
           <select v-model="form.currency">
             <option v-for="item in currencies" :key="item">
@@ -173,8 +174,7 @@ onMounted(() => {
           }}</em>
         </div>
         <div class="conversion">
-          <small>원화 환산 금액</small
-          ><output>약 {{ wonAmount.toLocaleString() }}원</output>
+          <output>원화 환산 금액 · 약 {{ wonAmount.toLocaleString() }}원</output>
         </div></label
       >
       <div class="payment">
@@ -198,10 +198,6 @@ onMounted(() => {
           미정
         </button>
       </div>
-      <label
-        ><span>📍 장소명</span
-        ><input v-model="form.placeName" placeholder="예: 루브르 박물관"
-      /></label>
     </section>
     <section class="memo-card">
       <label><span>메모</span><textarea v-model="form.memo" maxlength="100" placeholder="일정에 필요한 내용을 메모해 주세요."/><small>{{ form.memo.length }}/100</small></label>
@@ -349,18 +345,13 @@ onMounted(() => {
 .conversion {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 8px;
 }
-.conversion small {
-  color: #246dd7;
-  font-size: 9px;
-  font-weight: 800;
-}
 .conversion output {
-  color: #19489c;
-  font-size: 11px;
-  font-weight: 900;
+  color: #6480a7;
+  font-size: 10px;
+  font-weight: 800;
 }
 .submit {
   position: fixed;

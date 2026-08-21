@@ -196,12 +196,19 @@ function positionCalendarAtToday() {
   list.scrollLeft = Math.max(0, target.offsetLeft - list.offsetLeft - 2);
 }
 
-function focusTimelineDate(date) {
+async function focusTimelineDate(date) {
   selectedCalendarDate.value = date;
-  const target = timelineList.value?.querySelector(`[data-date="${date}"]`);
-  if (!target || !timelineList.value) return;
-  timelineList.value.scrollTo({
-    top: Math.max(0, target.offsetTop - 8),
+  await nextTick();
+  const list = timelineList.value;
+  const target = list?.querySelector(`[data-date="${date}"]`);
+  if (!target || !list) return;
+
+  const targetTop =
+    target.getBoundingClientRect().top -
+    list.getBoundingClientRect().top +
+    list.scrollTop;
+  list.scrollTo({
+    top: Math.max(0, targetTop - 8),
     behavior: 'smooth',
   });
 }
@@ -781,24 +788,22 @@ function showPastSchedules() {
 }
 .add-button {
   position: fixed;
-  left: 50%;
+  right: max(calc((100vw - 390px) / 2 + 28px), 28px);
   bottom: 78px;
+  left: max(calc((100vw - 390px) / 2 + 28px), 28px);
   z-index: 40;
   display: flex;
-  width: auto;
   height: 48px;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 18px;
   border-radius: 13px;
   background: #0b2a6b;
   color: #fff;
   box-shadow: 0 10px 22px rgba(23, 63, 141, 0.3);
-  transform: translateX(-50%);
 }
 .add-button:active {
-  transform: translateX(-50%) scale(0.98);
+  transform: scale(0.98);
 }
 .add-button-icon {
   display: flex;
