@@ -1067,11 +1067,10 @@ async function switchMode(mode) {
     >
       <div class="card-title schedule-card-title">
         <div>
-          <h2>여행 일정</h2>
-          <p>다음 일정 예정</p>
+          <h2>다가오는 여행 일정</h2>
         </div>
         <button type="button" @click="router.push('/schedule')">
-          전체 보기 <span aria-hidden="true">›</span>
+          전체 일정 <span aria-hidden="true">›</span>
         </button>
       </div>
       <div v-if="selectedSchedules.length === 0" class="empty-msg">
@@ -1288,6 +1287,8 @@ async function switchMode(mode) {
   .fund-progress-box,
   .fund-progress-track i::after,
   .route-pin-pulse,
+  .schedule-card-title h2,
+  .schedule-card-title h2::after,
   .card,
   .reveal-card.is-visible .budget-row,
   .reveal-card.is-visible .schedule-row { animation: none; }
@@ -2033,16 +2034,25 @@ async function switchMode(mode) {
   margin-bottom: 16px;
 }
 .schedule-card-title h2 {
+  position: relative;
+  display: inline-block;
   color: #173f8d;
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.03em;
+  animation: schedule-title-arrive 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.schedule-card-title p {
-  margin-top: 5px;
-  color: #98a2b3;
-  font-size: 10px;
-  font-weight: 600;
+.schedule-card-title h2::after {
+  position: absolute;
+  right: 0;
+  bottom: -5px;
+  left: 0;
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #ffd45e, #2f70e9);
+  content: '';
+  transform-origin: left;
+  animation: schedule-title-line 2.8s ease-in-out infinite;
 }
 .schedule-card-title button {
   display: flex;
@@ -2060,6 +2070,14 @@ async function switchMode(mode) {
 .schedule-card-title button span {
   font-size: 14px;
   line-height: 1;
+}
+@keyframes schedule-title-arrive {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes schedule-title-line {
+  0%, 100% { opacity: .45; transform: scaleX(.28); }
+  48%, 62% { opacity: 1; transform: scaleX(1); }
 }
 .home-schedule-row {
   display: grid;
