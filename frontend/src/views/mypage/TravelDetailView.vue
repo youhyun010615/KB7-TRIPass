@@ -79,7 +79,7 @@ const menuItems = computed(() => {
       { label: '여행 리포트', desc: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${tripId}` },
       { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}` },
       { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${tripId}/schedules?tripId=${tripId}` },
-      { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${tripId}/receipts` },
+      { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${tripId}/receipts` },
       { label: '완료 미션', desc: '매달 진행했던 미션 기록', icon: 'mission', path: '/missions' },
     ]
   }
@@ -87,7 +87,7 @@ const menuItems = computed(() => {
     { label: '여행 리포트', desc: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${tripId}`, badge: isTraveling.value ? '열람 가능' : '준비 중' },
     { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${tripId}`, badge: `${report.value?.checklistCompleted ?? 0}/${report.value?.checklistTotal ?? 0}` },
     { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${tripId}/schedules?tripId=${tripId}`, badge: `${report.value?.scheduleCount ?? 0}개` },
-    { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${tripId}/receipts`, badge: `${receipts.value.length}장` },
+    { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${tripId}/receipts`, badge: `${receipts.value.length}장` },
     { label: '완료 미션', desc: '매달 진행했던 미션 기록', icon: 'mission', path: '/missions', badge: '-' },
   ]
 })

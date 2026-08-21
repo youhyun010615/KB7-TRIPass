@@ -551,6 +551,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/travel/:tripId/receipts',
+      name: 'TravelReceiptArchive',
+      component: () => import('@/views/receipt/ReceiptView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
       path: '/mypage/assets',
       name: 'AssetLink',
       component: () => import('@/views/mypage/AssetLinkView.vue'),

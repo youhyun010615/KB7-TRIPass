@@ -38,6 +38,7 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const isArchiveView = computed(() => Boolean(route.meta.receiptArchive))
 const receiptHeaderEl = ref(null)
 const receiptHeaderHeight = ref(0)
 let receiptHeaderResizeObserver = null
@@ -579,7 +580,17 @@ onMounted(loadPage)
 
 <template>
   <main class="receipt-page">
-    <div ref="receiptHeaderEl" class="receipt-header-fixed">
+    <div
+      ref="receiptHeaderEl"
+      class="receipt-header-fixed"
+      :class="{ 'archive-header-fixed': isArchiveView }"
+    >
+      <header v-if="isArchiveView" class="archive-header">
+        <button type="button" aria-label="여행 관리로 돌아가기" @click="router.back()">‹</button>
+        <h1>영수증 보관함</h1>
+        <span aria-hidden="true"></span>
+      </header>
+      <template v-else>
       <header class="receipt-header">
         <div>
           <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
@@ -595,6 +606,7 @@ onMounted(loadPage)
         :country-code="receiptCurrentCountry.code"
         :country-codes="tripCountryCodes"
       />
+      </template>
     </div>
     <div class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
 
@@ -855,7 +867,7 @@ onMounted(loadPage)
     </div>
     </template>
 
-    <BottomNav />
+    <BottomNav v-if="!isArchiveView" />
   </main>
 </template>
 
@@ -1263,6 +1275,10 @@ onMounted(loadPage)
 
 /* TRIPASS receipt vault renewal */
 .receipt-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 18px;background:#f4f7fc;transform:translateX(-50%)}
+.receipt-header-fixed.archive-header-fixed { padding: 0; background: #f4f7fc; }
+.archive-header { display: grid; min-height: 70px; padding: 14px 18px; grid-template-columns: 36px 1fr 36px; align-items: center; }
+.archive-header button { display: grid; width: 36px; height: 36px; padding: 0; place-items: center; border: 0; border-radius: 12px; color: #173f8d; background: #fff; font-size: 30px; font-weight: 500; line-height: 1; }
+.archive-header h1 { margin: 0; color: #10192b; font-size: 20px; font-weight: 900; text-align: center; }
 .receipt-header{display:flex;align-items:flex-start;justify-content:space-between}.receipt-header .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.receipt-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.receipt-header-spacer{height:132px}
 .receipt-page {
   min-height: 100vh;
