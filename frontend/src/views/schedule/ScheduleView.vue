@@ -1,14 +1,16 @@
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import TravelModeMeta from '@/components/travel/TravelModeMeta.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 import { useTravelStore } from '@/stores/travel';
+import { useTravelReportStore } from '@/stores/travelReport';
+import { flagIconClass } from '@/stores/travel';
 
-defineProps({
+const props = defineProps({
   listMode: {
     type: Boolean,
     default: false,
@@ -16,8 +18,10 @@ defineProps({
 });
 
 const router = useRouter();
+const route = useRoute();
 const store = useTravelScheduleStore();
 const travel = useTravelStore();
+const reportStore = useTravelReportStore();
 const timelineList = ref(null);
 const calendarStrip = ref(null);
 const currentTimestamp = ref(Date.now());
@@ -29,6 +33,15 @@ onMounted(async () => {
     currentTimestamp.value = Date.now();
   }, 60_000);
   await store.loadSchedules().catch(() => {});
+  if (props.listMode) {
+    const id = Number(route.params.id || route.query.tripId);
+    if (Number.isFinite(id) && id > 0) {
+      await Promise.allSettled([
+        reportStore.loadPreTripReport(id),
+        reportStore.loadTripBasic(id),
+      ]);
+    }
+  }
   await nextTick();
   await positionTimelineAtNext();
   positionCalendarAtToday();
@@ -166,6 +179,24 @@ const currentTravelDay = computed(() => {
   return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
 });
 const openDetail = (id) => router.push(`/schedule/${id}`);
+const archiveTrip = computed(() => reportStore.tripSummary);
+const archiveStatus = computed(() =>
+  archiveTrip.value?.status === '여행 중' ? '여행중' : archiveTrip.value?.status,
+);
+
+function openScheduleForm() {
+  const query = { ...route.query };
+  if (selectedCalendarDate.value) query.date = selectedCalendarDate.value;
+  if (props.listMode) {
+    const tripId = route.params.id || route.query.tripId;
+    router.push({
+      path: `/mypage/travel/${tripId}/schedules/new`,
+      query: { ...query, tripId },
+    });
+    return;
+  }
+  router.push({ path: '/schedule/new', query });
+}
 
 async function positionTimelineAtNext() {
   const list = timelineList.value;
@@ -258,6 +289,27 @@ function showPastSchedules() {
       <h1>여행 일정 목록</h1>
       <span aria-hidden="true" />
     </header>
+
+    <section v-if="listMode && archiveTrip" class="archive-trip-ticket">
+      <div class="archive-ticket-head">
+        <small>TRIP SCHEDULE</small>
+        <b :class="{ traveling: archiveStatus === '여행중' }">{{ archiveStatus }}</b>
+      </div>
+      <div class="archive-ticket-body">
+        <div class="archive-ticket-title">
+          <h2>{{ archiveTrip.title }}</h2>
+          <div class="archive-ticket-flags" aria-label="여행 국가">
+            <span
+              v-for="code in archiveTrip.countryCodes"
+              :key="code"
+              :class="flagIconClass(code)"
+              class="archive-ticket-flag"
+            />
+          </div>
+        </div>
+        <p>{{ archiveTrip.dateRange }}</p>
+      </div>
+    </section>
 
     <section class="calendar-card">
       <div class="calendar-heading">
@@ -352,12 +404,7 @@ function showPastSchedules() {
     <button
       class="add-button"
       type="button"
-      @click="
-        router.push({
-          path: '/schedule/new',
-          query: router.currentRoute.value.query,
-        })
-      "
+      @click="openScheduleForm"
     >
       <span class="add-button-icon" aria-hidden="true">+</span>
       <span class="add-button-label">여행 일정 추가</span>
@@ -379,6 +426,8 @@ function showPastSchedules() {
 .schedule-header-spacer{height:142px}
 .schedule-list-mode{padding-bottom:48px}
 .schedule-list-header{display:grid;height:64px;align-items:center;grid-template-columns:40px 1fr 40px;margin-bottom:12px;padding-top:4px}.schedule-list-header button{display:grid;width:36px;height:36px;padding:0;border:0;background:transparent;color:#10192d;font-size:36px;font-weight:400;line-height:1;place-items:center}.schedule-list-header h1{margin:0;text-align:center;font-size:20px;font-weight:900;letter-spacing:-.04em}
+.archive-trip-ticket{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%);color:#fff;box-shadow:0 12px 26px rgba(24,51,99,.2)}
+.archive-ticket-head{display:flex;align-items:center;justify-content:space-between}.archive-ticket-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.archive-ticket-head b{padding:5px 9px;border:1px solid rgba(255,212,94,.62);border-radius:999px;background:rgba(255,212,94,.13);color:#ffd466;font-family:'Space Mono',monospace;font-size:9px;font-weight:900;letter-spacing:.06em}.archive-ticket-head b.traveling{animation:archive-status-pulse 1.8s ease-in-out infinite}.archive-ticket-body{display:flex;align-items:flex-start;flex-direction:column;gap:7px;margin-top:15px}.archive-ticket-title{display:flex;min-width:0;align-items:center;gap:8px}.archive-ticket-title h2{min-width:0;overflow:hidden;margin:0;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.archive-ticket-flags{display:flex;flex:0 0 auto;gap:3px}.archive-ticket-flag{width:13px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}.archive-ticket-body>p{color:rgba(255,255,255,.72);font-family:'Space Mono',monospace;font-size:9px;font-weight:700}@keyframes archive-status-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,212,94,.35)}50%{box-shadow:0 0 0 5px rgba(255,212,94,0)}}
 .trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%);color:#fff;box-shadow:0 12px 26px rgba(24,51,99,.2)}.trip-pass-head{display:flex;align-items:center;justify-content:space-between}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-pass-head strong{padding:5px 9px;border:1px solid rgba(255,255,255,.42);border-radius:999px;background:#ffd45e;color:#173f8d;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.06em;animation:day-badge-glow 2s ease-in-out infinite}.trip-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}.trip-title-row h2{min-width:0;overflow:hidden;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.current-country{position:relative;display:flex;overflow:hidden;flex:0 0 auto;align-items:center;gap:5px;padding:6px 9px;border:1px solid rgba(255,212,94,.72);border-radius:999px;background:#4169af;animation:now-country-pulse 1.8s ease-in-out infinite}.current-country::after{position:absolute;top:-8px;bottom:-8px;left:-20px;width:10px;background:rgba(255,255,255,.5);content:'';filter:blur(3px);transform:rotate(18deg);animation:now-country-shine 2.4s ease-in-out infinite}.current-country small{color:#ffd466;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.08em}.current-country strong{font-size:10px;font-weight:900}.current-country-flag{width:22px;height:15px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.18)}.trip-period-row{display:flex;align-items:center;margin-top:9px}.trip-period-row p{color:rgba(255,255,255,.72);font-size:10px;font-weight:650}@keyframes day-badge-glow{0%,100%{box-shadow:0 3px 8px rgba(255,212,94,.2)}50%{box-shadow:0 4px 15px rgba(255,212,94,.55)}}@keyframes header-now-pulse{0%,100%{box-shadow:0 0 0 0 rgba(38,98,234,.12)}50%{box-shadow:0 0 0 4px rgba(38,98,234,0)}}@keyframes now-country-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,94,.35)}50%{transform:scale(1.045);box-shadow:0 0 0 6px rgba(255,212,94,0)}}@keyframes now-country-shine{0%,45%{left:-20px;opacity:0}60%{opacity:1}85%,100%{left:calc(100% + 20px);opacity:0}}@media(prefers-reduced-motion:reduce){.current-country,.current-country::after,.trip-pass-head strong,.schedule-travel-meta .header-now{animation:none}}
 .calendar-card {
   overflow: hidden;

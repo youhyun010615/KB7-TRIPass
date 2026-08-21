@@ -15,6 +15,8 @@ const router = useRouter();
 const store = useTravelScheduleStore();
 const travel = useTravelStore();
 const editing = computed(() => Boolean(route.params.scheduleId));
+const archiveMode = computed(() => Boolean(route.meta.scheduleArchive));
+const requestedDate = computed(() => String(route.query.date || ''));
 const original = editing.value
   ? store.getSchedule(route.params.scheduleId)
   : null;
@@ -26,7 +28,7 @@ const form = reactive(
     : {
         title: '',
         countryCode: initialCountryCode,
-        date: store.period(initialCountryCode).startDate,
+        date: requestedDate.value || store.period(initialCountryCode).startDate,
         time: '10:00',
         currency:
           store.countries.find((item) => item.code === initialCountryCode)
@@ -99,24 +101,39 @@ async function submit() {
     const success = editing.value
       ? await store.update(route.params.scheduleId, payload)
       : await store.save(payload);
-    if (success)
-      router.push(
-        editing.value
-          ? `/schedule/${route.params.scheduleId}`
-          : { path: '/schedule', query: route.query },
-      );
+    if (success) {
+      if (editing.value) {
+        router.push(`/schedule/${route.params.scheduleId}`);
+      } else if (archiveMode.value) {
+        const tripId = route.params.id || route.query.tripId;
+        router.push({
+          path: `/mypage/travel/${tripId}/schedules`,
+          query: { tripId },
+        });
+      } else {
+        router.push({ path: '/schedule', query: route.query });
+      }
+    }
   } finally {
     isSubmitting.value = false;
   }
 }
 
-onMounted(() => {
-  store.ensureTripLoaded().catch(() => {});
+onMounted(async () => {
+  await store.ensureTripLoaded().catch(() => {});
+  if (!editing.value && requestedDate.value) {
+    const requestedCountry = store.countryForDate(requestedDate.value);
+    if (requestedCountry) {
+      form.countryCode = requestedCountry.code;
+      form.currency = requestedCountry.currency;
+      form.date = requestedDate.value;
+    }
+  }
 });
 </script>
 
 <template>
-  <main class="form-page">
+  <main class="form-page" :class="{ 'archive-form': archiveMode }">
     <header>
       <button type="button" @click="router.back()">‹</button>
       <h1>여행일정 {{ editing ? '수정' : '추가' }}</h1>
@@ -219,7 +236,7 @@ onMounted(() => {
     >
       {{ isSubmitting ? '처리 중...' : editing ? '수정 완료' : '등록하기' }}
     </button>
-    <BottomNav />
+    <BottomNav v-if="!archiveMode" />
   </main>
 </template>
 
@@ -380,4 +397,5 @@ onMounted(() => {
 .submit:disabled {
   background: #a7b2c6;
 }
+.archive-form{padding-bottom:92px}.archive-form .submit{bottom:18px}
 </style>

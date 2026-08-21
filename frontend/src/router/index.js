@@ -551,6 +551,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/travel/:id/schedules/new',
+      name: 'TravelScheduleArchiveNew',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true, scheduleArchive: true },
+    },
+    {
       path: '/mypage/travel/:tripId/receipts',
       name: 'TravelReceiptArchive',
       component: () => import('@/views/receipt/ReceiptView.vue'),
