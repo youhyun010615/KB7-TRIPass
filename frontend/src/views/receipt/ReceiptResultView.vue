@@ -16,6 +16,7 @@ import {
   getReceiptImage,
   updateReceipt,
 } from '@/api/receipt'
+import currencySymbols from '@/assets/currencySymbols.json'
 const route = useRoute()
 const router = useRouter()
 const store = useReceiptStore()
@@ -191,6 +192,21 @@ const selectedCountryName = computed(() => {
       '국가 미지정'
   )
 })
+
+const currencyOptions = computed(() => {
+  const tripCurrencies = (trip.value?.countries || [])
+      .map(country => String(country.currencyCode || '').toUpperCase())
+      .filter(Boolean)
+
+  return [...new Set([
+    ...tripCurrencies,
+    ...Object.keys(currencySymbols),
+  ])].sort((a, b) => a.localeCompare(b))
+})
+
+const currencyMark = computed(() => (
+    currencySymbols[form.currencyCode] || form.currencyCode || '통화'
+))
 
 const displayedMerchantName = computed(() => {
   if (translated.value) {
@@ -1043,6 +1059,13 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
+        <label class="field trip-field receipt-trip-field">
+          <span>여행</span>
+          <div class="readonly-trip">
+            ✈️ {{ trip?.tripName || '여행 정보 확인 중' }}
+          </div>
+        </label>
+
         <!-- 상호명 -->
         <label class="field merchant-field">
           <span>상호명</span>
@@ -1074,7 +1097,7 @@ onBeforeUnmount(() => {
           </div>
         </label>
 
-        <label class="field trip-field">
+        <label class="field trip-field legacy-trip-field">
           <span>여행</span>
           <div class="readonly-trip">
             ✈️ {{ trip?.tripName || '여행 정보 확인 중' }}
@@ -1082,7 +1105,7 @@ onBeforeUnmount(() => {
         </label>
 
         <!-- 국가·날짜·시간 -->
-        <label class="field country-field">
+        <label class="field country-field result-country-field">
           <span>국가</span>
           <select
               v-if="editing"
@@ -1126,16 +1149,14 @@ onBeforeUnmount(() => {
           </label>
         </div>
 
-        <label class="field currency-field">
+        <label class="field currency-field result-currency-field">
           <span>통화 코드</span>
-          <input
-              v-if="editing"
-              v-model="form.currencyCode"
-              type="text"
-              maxlength="3"
-              placeholder="예: EUR"
-              @input="normalizeCurrencyCode"
-          >
+          <select v-if="editing" v-model="form.currencyCode">
+            <option value="">통화 선택</option>
+            <option v-for="code in currencyOptions" :key="code" :value="code">
+              {{ code }} · {{ currencySymbols[code] }}
+            </option>
+          </select>
           <div v-else class="readonly-value">
             {{ form.currencyCode || '통화 미지정' }}
           </div>
@@ -1143,10 +1164,12 @@ onBeforeUnmount(() => {
 
         <div class="items-heading result-items-heading">
           <div>
-            <b>결제 품목</b>
+            <div class="result-items-title-row">
+              <b>결제 품목</b>
+              <strong>{{ form.items.length }}개 품목</strong>
+            </div>
             <small>영수증에 기록된 결제 항목이에요.</small>
           </div>
-          <strong>{{ form.items.length }}개 품목</strong>
         </div>
 
         <div class="dash" />
@@ -1251,7 +1274,7 @@ onBeforeUnmount(() => {
             </div>
 
             <strong>
-              {{ form.currencyCode }}
+              {{ currencyMark }}
               {{
                 Number(
                     item.amount || 0,
@@ -1261,17 +1284,26 @@ onBeforeUnmount(() => {
           </template>
         </article>
 
+        <button
+            v-if="editing"
+            type="button"
+            class="add-item-button receipt-add-item-button"
+            @click="addItem"
+        >
+          ＋ 품목 추가
+        </button>
+
         <div class="dash" />
 
         <!-- 최종 결제 금액 -->
         <div class="total">
           <span>
-            {{ translated ? '최종 결제 금액' : 'TOTALE' }}
+            최종 결제 금액
           </span>
 
           <strong>
             <template v-if="editing">
-              <span class="total-currency">{{ form.currencyCode || '통화' }}</span>
+              <span class="total-currency">{{ currencyMark }}</span>
 
               <input
                   v-model="form.totalAmount"
@@ -1284,7 +1316,7 @@ onBeforeUnmount(() => {
             </template>
 
             <template v-else>
-              {{ form.currencyCode }}
+              {{ currencyMark }}
               {{
                 Number(
                     form.totalAmount || 0,
@@ -1307,15 +1339,66 @@ onBeforeUnmount(() => {
           {{ splitAmount.toFixed(2) }}
         </p>
 
-        <!-- 최종 결제 금액과 원본 사진 사이 -->
-        <button
-            v-if="editing"
-            type="button"
-            class="add-item-button"
-            @click="addItem"
-        >
-          ＋ 품목 추가
-        </button>
+        <div class="receipt-shared-slot">
+          <section v-if="!editing && form.splitCount > 1" class="shared-payment-summary receipt-shared-payment">
+            <div class="shared-summary-heading">
+              <div><small>SHARED PAYMENT</small><h2>공동결제 정보</h2></div>
+              <strong>{{ form.splitCount }}명</strong>
+            </div>
+            <div class="shared-summary-amount">
+              <span>1인당 정산 금액</span>
+              <b>{{ currencyMark }} {{ splitAmount.toFixed(2) }}</b>
+            </div>
+            <div class="shared-summary-participants">
+              <span>함께 결제한 사람</span>
+              <div>
+                <em>나</em>
+                <em v-for="participant in form.participants" :key="participant.id ?? participant.participantName">
+                  {{ participant.participantName }}
+                </em>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="editing" class="shared-payment-card receipt-shared-payment">
+            <div class="shared-heading">
+              <div>
+                <b>♧ 공동 인원 추가</b>
+                <small>공동인원을 추가해 이후에 정산하기 기능을 사용해보세요</small>
+              </div>
+              <label class="switch">
+                <input v-model="form.sharedPayment" type="checkbox" @change="toggleSharedPayment">
+                <i />
+              </label>
+            </div>
+            <template v-if="form.sharedPayment">
+              <div class="people-count">
+                <span>전체 인원 수</span>
+                <div>
+                  <button type="button" aria-label="인원 감소" @click="decreaseSplitCount">−</button>
+                  <b>{{ form.splitCount }}</b>
+                  <button type="button" aria-label="인원 증가" @click="increaseSplitCount">+</button>
+                </div>
+              </div>
+              <div class="per-person">
+                <span>1인당 결제 금액</span>
+                <b>{{ currencyMark }} {{ splitAmount.toFixed(2) }}</b>
+              </div>
+              <div class="participants">
+                <b>결제 인원</b>
+                <small>로그인 사용자를 제외한 참여자 이름</small>
+                <input
+                    v-for="(participant, index) in form.participants"
+                    :key="participant.id ?? `new-participant-${index}`"
+                    v-model.trim="participant.participantName"
+                    type="text"
+                    maxlength="100"
+                    :placeholder="`참여자 ${index + 1}`"
+                >
+              </div>
+            </template>
+          </section>
+        </div>
 
         <p class="receipt-document-footer">
           THANK YOU FOR TRAVELING WITH TRIPASS
@@ -2550,15 +2633,43 @@ onBeforeUnmount(() => {
 }
 
 .result-page .tripass-receipt-document {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 9px;
   overflow: visible;
-  margin: 0 0 26px;
-  padding: 0 19px 24px;
-  border-top: 0;
-  border-color: #c8daf6;
-  border-radius: 0 0 7px 7px;
+  margin: 8px 0 26px;
+  padding: 0 19px 25px;
+  border: 1px solid #bfd2f1;
+  border-radius: 7px;
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
-  box-shadow: 0 15px 34px rgba(45, 54, 74, .1);
+  box-shadow: 0 11px 25px rgba(35, 73, 136, .12);
 }
+
+.result-page .tripass-receipt-document > * { grid-column: 1 / -1; }
+.result-page .tripass-receipt-document .receipt-paper-heading { order: 0; }
+.result-page .tripass-receipt-document .receipt-trip-field { order: 1; }
+.result-page .tripass-receipt-document .merchant-field { order: 2; }
+.result-page .tripass-receipt-document .result-country-field {
+  grid-column: 1;
+  order: 3;
+  margin-right: 0;
+}
+.result-page .tripass-receipt-document .result-currency-field {
+  grid-column: 2;
+  order: 3;
+  margin-left: 0;
+}
+.result-page .tripass-receipt-document .datetime-field { order: 4; }
+.result-page .tripass-receipt-document .result-items-heading { order: 5; }
+.result-page .tripass-receipt-document .receipt-item { order: 6; }
+.result-page .tripass-receipt-document .receipt-add-item-button { order: 6; }
+.result-page .tripass-receipt-document .total { order: 7; }
+.result-page .tripass-receipt-document .receipt-shared-slot { order: 8; }
+.result-page .tripass-receipt-document .receipt-document-footer { order: 9; }
+.result-page .tripass-receipt-document .legacy-trip-field,
+.result-page .tripass-receipt-document > .split-summary,
+.result-page > .shared-payment-summary,
+.result-page > .shared-payment-card { display: none; }
 
 .result-page .tripass-receipt-document::before {
   position: absolute;
@@ -2613,7 +2724,7 @@ onBeforeUnmount(() => {
 
 .result-page .tripass-receipt-document .readonly-trip,
 .result-page .tripass-receipt-document .readonly-value {
-  height: 44px;
+  height: 46px;
   justify-content: center;
   border-radius: 13px;
   background: rgba(35, 53, 82, .055);
@@ -2623,8 +2734,13 @@ onBeforeUnmount(() => {
 }
 
 .result-page .tripass-receipt-document .merchant-value {
-  height: 50px;
+  height: 54px;
   font-size: 15px;
+}
+
+.result-page .tripass-receipt-document .receipt-trip-field .readonly-trip {
+  height: 54px;
+  font-size: 14px;
 }
 
 /* 상단 결제 정보도 하단 품목 영역과 같은 영수증 톤으로 연결 */
@@ -2643,14 +2759,27 @@ onBeforeUnmount(() => {
 }
 
 .result-page .tripass-receipt-document .currency-field {
-  padding-bottom: 18px;
-  border-bottom: 1px dashed #d8cfba;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.result-page .tripass-receipt-document .country-field select,
+.result-page .tripass-receipt-document .currency-field select {
+  border-color: rgba(23, 63, 141, .18);
+  background-color: #fff;
+  color: #17243a;
+  color-scheme: only light;
+}
+
+.result-page .tripass-receipt-document select option {
+  background: #fff !important;
+  color: #17243a !important;
 }
 
 .result-page .tripass-receipt-document .result-items-heading {
-  margin-top: 0;
+  margin-top: 20px;
   padding-top: 16px;
-  border-top: 0;
+  border-top: 1px dashed rgba(23, 63, 141, .22);
 }
 
 .result-page .tripass-receipt-document .result-items-heading {
@@ -2660,6 +2789,16 @@ onBeforeUnmount(() => {
 .result-page .tripass-receipt-document .result-items-heading b { font-size: 14px; }
 .result-page .tripass-receipt-document .result-items-heading small { font-size: 11px; }
 .result-page .tripass-receipt-document .result-items-heading strong { font-size: 11.5px; }
+
+.result-items-title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.result-page .tripass-receipt-document .result-items-heading {
+  justify-content: flex-start;
+}
 
 .result-page .tripass-receipt-document .receipt-item {
   border-color: #ddd5c3;
@@ -2672,6 +2811,15 @@ onBeforeUnmount(() => {
 .result-page .tripass-receipt-document .total > span { color: #5a6478; font-size: 12.5px; }
 .result-page .tripass-receipt-document .total strong { color: #0b2a6b; font-size: 20px; }
 .result-page .tripass-receipt-document .split-summary { font-size: 11px; }
+.result-page .tripass-receipt-document .receipt-shared-slot > section {
+  margin: 16px 0 0 !important;
+  box-shadow: none;
+}
+.result-page .tripass-receipt-document .receipt-shared-slot .shared-payment-summary {
+  padding: 16px;
+  border-color: #f1d477;
+  background: #fff4bf;
+}
 .result-page .tripass-receipt-document > .receipt-document-footer {
   margin-top: 20px;
   color: #c7b98f;
