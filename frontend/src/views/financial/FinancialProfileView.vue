@@ -4,6 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api'
 import { getCardInstitutions, linkCard } from '@/api/card'
+import kbStarIcon from '@/assets/bank-app-icons/kb-star.jpg'
+import nhAlloneIcon from '@/assets/bank-app-icons/nh-allone.jpg'
+import wooriWonIcon from '@/assets/bank-app-icons/woori-won.jpg'
+import hanaOneqIcon from '@/assets/bank-app-icons/hana-oneq.jpg'
+import shinhanSolIcon from '@/assets/bank-app-icons/shinhan-sol.jpg'
+import ibkIoneIcon from '@/assets/bank-app-icons/ibk-ione.jpg'
+import kbankIcon from '@/assets/bank-app-icons/kbank.jpg'
+import imbankIcon from '@/assets/bank-app-icons/imbank.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -36,23 +44,20 @@ const cardConnectionError = ref('')
 const isCardInstitutionLoading = ref(false)
 const isCardConnecting = ref(false)
 
-const bankLogoDomains = {
-  '0004': 'kbstar.com',
-  '0011': 'nonghyup.com',
-  '0020': 'wooribank.com',
-  '0081': 'kebhana.com',
-  '0088': 'shinhan.com',
-  '0003': 'ibk.co.kr',
-  '0089': 'kbanknow.com',
-  '0031': 'imbank.co.kr',
+const bankAppIcons = {
+  '0004': kbStarIcon,
+  '0011': nhAlloneIcon,
+  '0020': wooriWonIcon,
+  '0081': hanaOneqIcon,
+  '0088': shinhanSolIcon,
+  '0003': ibkIoneIcon,
+  '0089': kbankIcon,
+  '0031': imbankIcon,
 }
 
 function bankLogoUrl(bank) {
-  if (bank?.logoUrl) return bank.logoUrl
-  const domain = bankLogoDomains[String(bank?.organizationCode || '').padStart(4, '0')]
-  return domain
-    ? `https://www.google.com/s2/favicons?domain_url=https://${domain}&sz=128`
-    : ''
+  const code = String(bank?.organizationCode || '').padStart(4, '0')
+  return bankAppIcons[code] || bank?.logoUrl || ''
 }
 
 function hideBrokenBankLogo(event) {
@@ -812,7 +817,7 @@ button { border: 0; cursor: pointer; }
 .security-note { margin-top: 16px; padding: 18px; display: flex; gap: 12px; border-radius: 14px; background: #eaf1ff; }.security-note > span { color: #2f6fed; }.security-note strong { font-size: 11px; }.security-note p { margin: 4px 0 0; color: #64748b; font-size: 9px; }
 .bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.bank-option { position: relative; height: 88px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid transparent; border-radius: 14px; background: #f4f5f9; }.bank-option.selected { border-color: #2f6fed; background: #fff; box-shadow: 0 4px 12px rgba(47,111,237,.12); }.bank-option.pending { opacity: .6; cursor: not-allowed; }.bank-option strong { font-size: 11px; color: #10192b; }.bank-option i { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; color: white; background: #2f6fed; font-size: 11px; font-style: normal; display: grid; place-items: center; }.bank-option small { position: absolute; top: 10px; right: 9px; color: #e5484d; font-size: 8px; }.bank-mark, .certificate-mark { display: grid; place-items: center; border-radius: 9px; font-weight: 900; }.bank-mark { width: 30px; height: 30px; font-size: 11px; }.bank-mark.mint { color: #047857; background: #d1fae5; }.bank-mark.yellow { color: #3f3100; background: #ffe44d; }.bank-mark.blue { color: white; background: #1688e8; }.bank-mark.green { color: white; background: #10b981; }.bank-mark.navy { color: white; background: #263f8c; }
 .bank-logo-mark { position: relative; display: grid; width: 38px; height: 38px; place-items: center; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.bank-logo-mark img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: transparent; }
+.bank-logo-mark img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 10px; background: transparent; }
 .bank-logo-fallback { display: grid; width: 100%; height: 100%; place-items: center; border-radius: 10px; color: #263f8c; background: transparent; font-size: 12px; font-weight: 900; }
 .terms-backdrop { height: 100vh; color: rgba(17,24,39,.75); background: #999; }.terms-copy { padding: 24px 31px; }.terms-copy h3 { margin: 0 0 13px; font-size: 14px; }.terms-copy p, .terms-copy small { display: block; margin: 0 0 5px; font-size: 10px; }
 .certificate-sheet { position: absolute; z-index: 5; left: 9px; right: 9px; bottom: 10px; padding: 20px; border-radius: 24px; background: white; box-shadow: 0 -8px 30px rgba(0,0,0,.12); }.sheet-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }.sheet-heading h2 { margin: 0; font-size: 18px; }.sheet-heading button { color: #64748b; background: transparent; font-size: 23px; }
