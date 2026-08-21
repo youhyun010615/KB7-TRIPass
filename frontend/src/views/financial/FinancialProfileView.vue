@@ -11,6 +11,7 @@ import hanaBankLogo from '@/assets/bank-logos/hana-bank.svg'
 import shinhanBankLogo from '@/assets/bank-logos/shinhan-bank.svg'
 import ibkBankLogo from '@/assets/bank-logos/ibk-bank-official.svg'
 import kbankLogo from '@/assets/bank-logos/kbank.svg'
+import imBankLogo from '@/assets/bank-logos/im-bank.png'
 
 const router = useRouter()
 const route = useRoute()
@@ -62,6 +63,7 @@ const localBankLogos = {
   '0088': shinhanBankLogo,
   '0003': ibkBankLogo,
   '0089': kbankLogo,
+  '0031': imBankLogo,
 }
 
 function bankLogoUrl(bank) {
