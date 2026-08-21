@@ -966,13 +966,6 @@ async function switchMode(mode) {
             </div>
           </div>
           <div class="perforation lower"><i /><span /><i /></div>
-          <button
-            class="ticket-stub"
-            type="button"
-            @click="router.push('/travel/funds')"
-          >
-            <span>여행 목표 자금 관리</span>
-          </button>
         </div>
       </article>
     </div>
@@ -1004,11 +997,6 @@ async function switchMode(mode) {
       v-reveal
       class="card budget-card reveal-card"
       style="--card-delay: 0ms"
-      role="button"
-      tabindex="0"
-      aria-label="여행자금 체크 상세 보기"
-      @click="router.push('/travel/funds')"
-      @keydown.enter="router.push('/travel/funds')"
     >
       <div class="card-title budget-card-title">
         <h2>여행자금 체크</h2>

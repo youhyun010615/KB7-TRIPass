@@ -377,27 +377,6 @@ const router = createRouter({
       component: () => import('@/views/travel/TravelRegisterView.vue'),
       meta: { requiresAuth: true },
     },
-    {
-      path: '/travel/funds',
-      name: 'TravelFundCheck',
-      component: () => import('@/views/travel/TravelFundCheckView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/travel/funds/categories/:categoryId',
-      name: 'TravelFundCategoryDetail',
-      component: () =>
-        import('@/views/travel/TravelFundCategoryDetailView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/travel/funds/transactions/:transactionId',
-      name: 'TravelFundTransactionDetail',
-      component: () =>
-        import('@/views/travel/TravelFundTransactionDetailView.vue'),
-      meta: { requiresAuth: true },
-    },
-
     // ── SCH (담당: 홍유진) ──────────────────────────────────
     {
       path: '/schedule',
