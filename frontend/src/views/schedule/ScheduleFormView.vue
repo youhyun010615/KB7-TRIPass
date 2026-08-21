@@ -177,7 +177,9 @@ onMounted(() => {
           <output>원화 환산 금액 · 약 {{ wonAmount.toLocaleString() }}원</output>
         </div></label
       >
-      <div class="payment">
+      <div class="payment-wrap">
+        <strong>결제 상태</strong>
+        <div class="payment">
         <button
           type="button"
           :class="{ active: form.paymentStatus === 'prepaid' }"
@@ -197,6 +199,7 @@ onMounted(() => {
         >
           미정
         </button>
+        </div>
       </div>
     </section>
     <section class="memo-card">
@@ -320,12 +323,20 @@ onMounted(() => {
   color: #e5484d;
   text-align: left;
 }
+.payment-wrap {
+  padding: 13px;
+  border-bottom: 1px solid #edf0f4;
+}
+.payment-wrap > strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 900;
+}
 .payment {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 7px;
-  padding: 13px;
-  border-bottom: 1px solid #edf0f4;
 }
 .payment button {
   padding: 10px 4px;
