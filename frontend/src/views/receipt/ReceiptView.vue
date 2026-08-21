@@ -2095,7 +2095,7 @@ onMounted(loadPage)
   overflow: hidden;
   margin-top: 16px;
   padding: 18px;
-  border: 1px solid #bfd3f2;
+  border: 0;
   border-radius: 22px;
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
   box-shadow: 0 12px 24px rgba(30, 64, 125, .08);
@@ -2142,7 +2142,7 @@ onMounted(loadPage)
 .trip-summary-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
+  gap: 9px;
   margin-top: 0;
 }
 
@@ -2150,12 +2150,11 @@ onMounted(loadPage)
   display: grid;
   min-width: 0;
   gap: 5px;
-  min-height: 58px;
-  padding: 8px 13px;
-  background: transparent;
+  min-height: 66px;
+  padding: 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .58);
 }
-
-.trip-summary-metrics > div + div { border-left: 1px solid rgba(23, 63, 141, .16); }
 
 .trip-summary-metrics span {
   color: #8997aa;
