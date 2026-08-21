@@ -581,16 +581,10 @@ onMounted(loadPage)
 <template>
   <main class="receipt-page">
     <div
+      v-if="!isArchiveView"
       ref="receiptHeaderEl"
       class="receipt-header-fixed"
-      :class="{ 'archive-header-fixed': isArchiveView }"
     >
-      <header v-if="isArchiveView" class="archive-header">
-        <button type="button" aria-label="여행 관리로 돌아가기" @click="router.back()">‹</button>
-        <h1>영수증 보관함</h1>
-        <span aria-hidden="true"></span>
-      </header>
-      <template v-else>
       <header class="receipt-header">
         <div>
           <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
@@ -606,9 +600,8 @@ onMounted(loadPage)
         :country-code="receiptCurrentCountry.code"
         :country-codes="tripCountryCodes"
       />
-      </template>
     </div>
-    <div class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
+    <div v-if="!isArchiveView" class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
 
     <nav class="vault-tabs" aria-label="영수증 보관함 메뉴">
       <button

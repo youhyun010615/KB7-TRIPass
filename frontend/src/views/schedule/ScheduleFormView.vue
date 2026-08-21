@@ -17,6 +17,10 @@ const travel = useTravelStore();
 const editing = computed(() => Boolean(route.params.scheduleId));
 const archiveMode = computed(() => Boolean(route.meta.scheduleArchive));
 const requestedDate = computed(() => String(route.query.date || ''));
+const availableCountries = computed(() => {
+  const codes = new Set(travel.selectedPlans.map((plan) => plan.code).filter(Boolean));
+  return store.countries.filter((item) => codes.has(item.code));
+});
 const original = editing.value
   ? store.getSchedule(route.params.scheduleId)
   : null;
@@ -121,9 +125,21 @@ async function submit() {
 
 onMounted(async () => {
   await store.ensureTripLoaded().catch(() => {});
+  if (!editing.value && availableCountries.value.length) {
+    const isConfiguredCountry = availableCountries.value.some(
+      (item) => item.code === form.countryCode,
+    );
+    if (!isConfiguredCountry) {
+      form.countryCode = availableCountries.value[0].code;
+      applyCountry();
+    }
+  }
   if (!editing.value && requestedDate.value) {
     const requestedCountry = store.countryForDate(requestedDate.value);
-    if (requestedCountry) {
+    const isConfiguredCountry = availableCountries.value.some(
+      (item) => item.code === requestedCountry?.code,
+    );
+    if (requestedCountry && isConfiguredCountry) {
       form.countryCode = requestedCountry.code;
       form.currency = requestedCountry.currency;
       form.date = requestedDate.value;
@@ -155,7 +171,7 @@ onMounted(async () => {
         ><span>국가</span
         ><select v-model="form.countryCode" @change="applyCountry">
           <option
-            v-for="item in store.countries"
+            v-for="item in availableCountries"
             :key="item.code"
             :value="item.code"
           >

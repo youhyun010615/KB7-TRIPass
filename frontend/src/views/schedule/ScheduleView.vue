@@ -97,6 +97,15 @@ const upcomingTimelineGroups = computed(() =>
   timelineGroups.value
     .sort((a, b) => a.date.localeCompare(b.date)),
 );
+const visibleTimelineGroups = computed(() => {
+  if (!props.listMode || !selectedCalendarDate.value) return upcomingTimelineGroups.value;
+  return upcomingTimelineGroups.value.filter(
+    (group) => group.date === selectedCalendarDate.value,
+  );
+});
+const visibleScheduleCount = computed(() =>
+  visibleTimelineGroups.value.reduce((total, group) => total + group.items.length, 0),
+);
 const scheduleCountByDate = computed(() => {
   const counts = new Map();
   store.sortedSchedules.forEach((item) => {
@@ -343,7 +352,7 @@ function showPastSchedules() {
     </section>
     <p v-if="store.errorMessage" class="empty">{{ store.errorMessage }}</p>
 
-    <section v-if="featuredSchedule" class="today-schedule-section">
+    <section v-if="featuredSchedule && !listMode" class="today-schedule-section">
       <div class="list-heading">
         <h2>다가오는 일정</h2>
         <em>{{ shortDateLabel(featuredSchedule.date) }}</em>
@@ -359,16 +368,16 @@ function showPastSchedules() {
       </div>
     </section>
 
-    <section class="upcoming-card" :class="{ 'is-empty': !timelineGroups.length }">
+    <section class="upcoming-card" :class="{ 'is-empty': !visibleTimelineGroups.length }">
       <div class="section-title">
         <div>
-          <h2>전체 일정</h2>
+          <h2>{{ listMode ? '선택한 날짜 일정' : '전체 일정' }}</h2>
         </div>
-        <span>총 {{ store.sortedSchedules.length }}건</span>
+        <span>총 {{ listMode ? visibleScheduleCount : store.sortedSchedules.length }}건</span>
       </div>
       <div ref="timelineList" class="upcoming-list">
         <div
-          v-for="group in upcomingTimelineGroups"
+          v-for="group in visibleTimelineGroups"
           :key="group.date"
           class="date-group"
           :class="{ completed: group.isCompleted }"
@@ -376,7 +385,7 @@ function showPastSchedules() {
           :data-next-group="groupHasNextSchedule(group) ? 'true' : null"
         >
           <p
-            v-if="completedScheduleCount && groupHasNextSchedule(group)"
+            v-if="!listMode && completedScheduleCount && groupHasNextSchedule(group)"
             class="completed-count-note"
           >
             완료된 일정 {{ completedScheduleCount }}건
@@ -393,10 +402,10 @@ function showPastSchedules() {
             @detail="openDetail"
           />
         </div>
-        <div v-if="!timelineGroups.length" class="empty-state">
+        <div v-if="!visibleTimelineGroups.length" class="empty-state">
           <span class="empty-calendar-icon" aria-hidden="true">＋</span>
-          <b>아직 등록된 일정이 없어요</b>
-          <small>첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.</small>
+          <b>{{ listMode ? '선택한 날짜에 등록된 일정이 없어요' : '아직 등록된 일정이 없어요' }}</b>
+          <small>{{ listMode ? '아래 버튼을 눌러 이 날짜에 일정을 추가해 보세요.' : '첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.' }}</small>
         </div>
       </div>
     </section>
