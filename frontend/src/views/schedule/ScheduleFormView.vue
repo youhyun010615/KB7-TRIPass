@@ -183,13 +183,13 @@ onBeforeUnmount(() => {
     <section class="form-card">
       <div class="section-title"><h2>일정 정보</h2><p>여행 중 방문할 일정 정보를 입력해요.</p></div>
       <label
-        ><span>▱ 일정명</span
+        ><span>일정명</span
         ><input
           v-model="form.title"
           placeholder="예: 루브르 박물관 가이드 투어"
       /></label>
       <label
-        ><span>🌐 국가</span
+        ><span>국가</span
         ><select v-model="form.countryCode" @change="applyCountry">
           <option
             v-for="item in store.countries"
@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
         </select></label
       >
       <label
-        ><span>▣ 일시</span>
+        ><span>일시</span>
         <div class="split">
           <input
             v-model="form.date"
@@ -237,19 +237,19 @@ onBeforeUnmount(() => {
           :class="{ active: form.paymentStatus === 'prepaid' }"
           @click="form.paymentStatus = 'prepaid'"
         >
-          💳 사전결제 완료</button
+          사전결제 완료</button
         ><button
           type="button"
           :class="{ active: form.paymentStatus === 'onsite' }"
           @click="form.paymentStatus = 'onsite'"
         >
-          💵 현장결제 필요</button
+          현장결제 필요</button
         ><button
           type="button"
           :class="{ active: form.paymentStatus === 'undecided' }"
           @click="form.paymentStatus = 'undecided'"
         >
-          ❔ 미정
+          미정
         </button>
       </div>
       <label
@@ -343,7 +343,7 @@ onBeforeUnmount(() => {
 .form-card label > span {
   display: block;
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
 }
 .form-card input,
@@ -364,7 +364,7 @@ onBeforeUnmount(() => {
 }
 .split {
   display: grid;
-  grid-template-columns: 1fr 90px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
 }
 .money {
@@ -386,7 +386,8 @@ onBeforeUnmount(() => {
   display: block;
   margin-top: 6px;
   color: #6480a7;
-  font-size: 8px;
+  font-size: 10px;
+  font-weight: 800;
   text-align: right;
 }
 .form-card label > .error {
@@ -405,7 +406,8 @@ onBeforeUnmount(() => {
   border: 1px solid #dfe5ed;
   border-radius: 9px;
   color: #64748b;
-  font-size: 8px;
+  font-size: 10px;
+  font-weight: 800;
 }
 .payment button.active {
   border-color: #3477e9;

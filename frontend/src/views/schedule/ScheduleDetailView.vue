@@ -17,7 +17,7 @@ onMounted(() => {
 const country = computed(() => store.countries.find(item => item.code === schedule.value?.countryCode))
 const wonRate = { EUR:1486.2, USD:1380, CHF:1704.6, JPY:9.23, HKD:184.2 }
 const won = computed(() => Math.round((schedule.value?.amount || 0) * (wonRate[schedule.value?.currency] || 1)))
-const paymentLabel = computed(() => ({ prepaid:'💳 사전결제 완료', onsite:'💵 현장결제 필요', undecided:'❔ 미정' })[schedule.value?.paymentStatus] || '❔ 미정')
+const paymentLabel = computed(() => ({ prepaid:'사전결제 완료', onsite:'현장결제 필요', undecided:'미정' })[schedule.value?.paymentStatus] || '미정')
 const tripDateRange = computed(() => {
   const plans = travel.selectedPlans || []
   const starts = plans.map(item => item.startDate).filter(Boolean).sort()
