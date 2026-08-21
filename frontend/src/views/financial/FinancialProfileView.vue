@@ -13,11 +13,34 @@ import ibkBankLogo from '@/assets/bank-logos/ibk-bank-official.svg'
 import kbankLogo from '@/assets/bank-logos/kbank-user.png'
 import imBankLogo from '@/assets/bank-logos/im-user.jpg'
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
+import kbCardLogo from '@/assets/card-company-logos/kb-card.jpg'
+import hyundaiCardLogo from '@/assets/card-company-logos/hyundai-card.svg'
+import samsungCardLogo from '@/assets/card-company-logos/samsung-card.png'
+import nhCardLogo from '@/assets/card-company-logos/nh-card.jpg'
+import bcCardLogo from '@/assets/card-company-logos/bc-card.png'
+import shinhanCardLogo from '@/assets/card-company-logos/shinhan-card.gif'
+import lotteCardLogo from '@/assets/card-company-logos/lotte-card.jpg'
+import hanaCardLogo from '@/assets/card-company-logos/hana-card.png'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const isOnboarding = computed(() => route.query.onboarding === '1')
+
+const cardCompanyLogos = {
+  '0301': kbCardLogo,
+  '0302': hyundaiCardLogo,
+  '0303': samsungCardLogo,
+  '0304': nhCardLogo,
+  '0305': bcCardLogo,
+  '0306': shinhanCardLogo,
+  '0311': lotteCardLogo,
+  '0313': hanaCardLogo,
+}
+
+function cardCompanyLogo(institution) {
+  return cardCompanyLogos[institution?.organizationCode] || institution?.logoUrl || ''
+}
 
 const CARD_COMPANY_STEP = 9
 const CARD_LOGIN_STEP = 10
@@ -651,7 +674,7 @@ onMounted(() => {
                   :class="{ selected: selectedCardInstitution?.organizationCode === institution.organizationCode }"
                   @click="selectedCardInstitution = institution"
                 >
-                  <img v-if="institution.logoUrl" :src="institution.logoUrl" :alt="institution.institutionName" class="institution-logo">
+                  <img v-if="cardCompanyLogo(institution)" :src="cardCompanyLogo(institution)" :alt="`${institution.institutionName} 로고`" class="institution-logo card-company-logo">
                   <span v-else class="bank-mark card-mark">{{ institution.institutionName.charAt(0) }}</span>
                   <strong>{{ institution.institutionName }}</strong>
                   <i v-if="selectedCardInstitution?.organizationCode === institution.organizationCode">✓</i>
@@ -899,6 +922,6 @@ button { border: 0; cursor: pointer; }
 .form-card { margin-bottom: 10px; padding: 15px; border-radius: 17px; background: white; box-shadow: 0 6px 18px rgba(15,23,42,.08); }.form-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }.form-card-title input { min-width: 0; flex: 1; border: 0; outline: none; color: #111827; font-size: 13px; font-weight: 800; }.form-card-title button { padding: 5px; color: #e5484d; background: transparent; font-size: 9px; }.field-grid { display: grid; gap: 10px; }.field-grid.two { grid-template-columns: .75fr 1.25fr; }.field-grid.account-memo { grid-template-columns: 1.8fr .8fr; margin-top: 10px; }.field-grid label, .full-field { position: relative; color: #64748b; font-size: 9px; }.field-grid input, .field-grid select, .full-field input, .full-field select { width: 100%; height: 43px; margin-top: 6px; padding: 0 13px; border: 1px solid #e5eaf2; border-radius: 10px; outline: 0; color: #111827; background: white; font-size: 11px; }.field-grid em { position: absolute; right: 11px; bottom: 13px; color: #94a3b8; font-size: 9px; font-style: normal; }.field-grid input { padding-right: 27px; }.full-field { display: block; margin-top: 10px; }.add-row { width: 100%; height: 48px; border-radius: 14px; color: #0066ff; background: #dde5ff; font-size: 12px; font-weight: 800; }
 .fixed-form { padding-bottom: 90px; }.expense-card .feature-icon { width: 38px; height: 38px; }.expense-card .form-card-title { margin-bottom: 10px; }.expense-card .form-card-title strong { flex: 1; color: #111827; font-size: 13px; }.expense-name { margin: 0 0 10px; }.expense-name > em { color: #e5484d; font-style: normal; }.expense-name input:focus { border-color: #263f8c; }
 .category-content > .subcopy { margin-bottom: 23px; }.category-row { height: 66px; margin-bottom: 15px; padding: 10px 11px; display: flex; align-items: center; gap: 14px; border: 1px solid #e5eaf2; border-radius: 14px; background: white; }.category-row > div { flex: 1; }.category-row strong, .category-row small { display: block; }.category-row strong { font-size: 13px; }.category-row small { margin-top: 5px; color: #64748b; font-size: 9px; }.category-row label { display: flex; align-items: center; gap: 6px; }.category-row input { width: 130px; height: 44px; padding: 0 12px; border: 1.5px solid #d6dce7; border-radius: 11px; outline: none; color: #111827; background: white; text-align: right; font-size: 16px; font-weight: 800; }.category-row em { color: #96a1b5; font-size: 11px; font-style: normal; }.category-total { min-height: 76px; margin-top: 38px; padding: 15px 18px; display: flex; justify-content: space-between; align-items: flex-start; border-radius: 16px; color: #0066ff; background: #eef2ff; font-size: 11px; font-weight: 800; }.category-total strong { color: #263f8c; font-size: 20px; }
-.asset-link-options { display: grid; gap: 12px; }.asset-link-options .load-bank-card + .load-bank-card { margin-top: 0; }.card-building { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; color: #8b5cf6; background: #f3f0fc; }.asset-selection-guide { margin: 0; padding: 16px 0; color: #64748b; font-size: 12px; text-align: center; }.card-company-grid { margin-top: 24px; }.card-mark { color: #fff; background: linear-gradient(145deg, #263f8c, #4f6ec4); }.institution-logo { width: 27px; height: 27px; border-radius: 7px; object-fit: contain; }.connection-empty { padding: 48px 0; color: #94a3b8; font-size: 12px; line-height: 1.6; text-align: center; }.retry-button { margin-top: 12px; padding: 9px 18px; border-radius: 9px; color: #286dd8; background: #edf4ff; font-size: 12px; font-weight: 700; }.connection-error { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; color: #c62828; background: #ffebee; font-size: 11px; line-height: 1.5; }.selected-institution { margin-bottom: 30px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid #dce5f5; border-radius: 14px; background: #fff; }.selected-institution small, .selected-institution strong { display: block; }.selected-institution small { margin-bottom: 3px; color: #94a3b8; font-size: 9px; }.selected-institution strong { font-size: 13px; }.credential-form { margin-top: 25px; display: grid; gap: 13px; }.linked-card-list { margin-top: 16px; display: grid; gap: 10px; }.linked-card-item { padding: 15px; display: flex; align-items: center; gap: 12px; border-radius: 14px; background: #fff; box-shadow: 0 6px 16px rgba(15,23,42,.08); }.linked-card-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 11px; color: #8b5cf6; background: #f0eaff; }.linked-card-item div { min-width: 0; }.linked-card-item strong, .linked-card-item small { display: block; }.linked-card-item strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.linked-card-item small { margin-top: 4px; color: #64748b; font-size: 9px; }
+.asset-link-options { display: grid; gap: 12px; }.asset-link-options .load-bank-card + .load-bank-card { margin-top: 0; }.card-building { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; color: #8b5cf6; background: #f3f0fc; }.asset-selection-guide { margin: 0; padding: 16px 0; color: #64748b; font-size: 12px; text-align: center; }.card-company-grid { margin-top: 24px; }.card-mark { color: #fff; background: linear-gradient(145deg, #263f8c, #4f6ec4); }.institution-logo { width: 27px; height: 27px; border-radius: 7px; object-fit: contain; }.card-company-logo { width: 82px; height: 34px; border-radius: 0; mix-blend-mode: multiply; }.connection-empty { padding: 48px 0; color: #94a3b8; font-size: 12px; line-height: 1.6; text-align: center; }.retry-button { margin-top: 12px; padding: 9px 18px; border-radius: 9px; color: #286dd8; background: #edf4ff; font-size: 12px; font-weight: 700; }.connection-error { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; color: #c62828; background: #ffebee; font-size: 11px; line-height: 1.5; }.selected-institution { margin-bottom: 30px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid #dce5f5; border-radius: 14px; background: #fff; }.selected-institution small, .selected-institution strong { display: block; }.selected-institution small { margin-bottom: 3px; color: #94a3b8; font-size: 9px; }.selected-institution strong { font-size: 13px; }.credential-form { margin-top: 25px; display: grid; gap: 13px; }.linked-card-list { margin-top: 16px; display: grid; gap: 10px; }.linked-card-item { padding: 15px; display: flex; align-items: center; gap: 12px; border-radius: 14px; background: #fff; box-shadow: 0 6px 16px rgba(15,23,42,.08); }.linked-card-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 11px; color: #8b5cf6; background: #f0eaff; }.linked-card-item div { min-width: 0; }.linked-card-item strong, .linked-card-item small { display: block; }.linked-card-item strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.linked-card-item small { margin-top: 4px; color: #64748b; font-size: 9px; }
 @media (max-width: 360px) { .intro-hero { padding-inline: 20px; }.intro-content { padding-inline: 16px; }.insight-pass-bar, .intro-list, .intro-action { padding-inline: 16px; }.hero-title { font-size: 17px; } }
 </style>
