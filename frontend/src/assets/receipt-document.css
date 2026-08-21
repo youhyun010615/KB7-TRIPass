@@ -247,10 +247,10 @@
   overflow: visible;
   margin: 8px 0 26px;
   padding: 0 19px 25px;
-  border-color: #c8daf6;
+  border-color: #bfd2f1;
   border-radius: 7px;
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
-  box-shadow: 0 15px 34px rgba(45, 54, 74, .1);
+  box-shadow: 0 11px 25px rgba(35, 73, 136, .12);
 }
 
 .manual-page .tripass-receipt-document::before {

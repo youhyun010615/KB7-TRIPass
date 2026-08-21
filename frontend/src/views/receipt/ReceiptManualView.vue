@@ -278,11 +278,6 @@ function removeItem(index) {
   )
 }
 
-function applyItemTotal() {
-  form.totalAmount =
-      itemTotalAmount.value.toFixed(2)
-}
-
 function increaseSplitCount() {
   if (form.splitCount >= 20) {
     return
@@ -831,14 +826,6 @@ onBeforeUnmount(removeImage)
             <strong>{{ itemTotalAmount.toFixed(2) }}</strong>
           </div>
 
-          <button
-              type="button"
-              class="apply-item-total-button"
-              :disabled="itemTotalAmount <= 0"
-              @click="applyItemTotal"
-          >
-            최종 결제 금액 확정
-          </button>
         </section>
 
         <p class="receipt-document-footer">
@@ -1341,25 +1328,6 @@ form {
   font-weight: 900;
   line-height: 52px;
   text-align: right;
-}
-
-.apply-item-total-button {
-  width: 100%;
-  margin-top: 9px;
-  padding: 9px;
-  border: 1px solid #cbd8ea;
-  border-radius: 9px;
-  background: #f7faff;
-  color: #47709f;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.apply-item-total-button:disabled {
-  border-color: #dce3ee;
-  background: rgba(255,255,255,.55);
-  color: #9aa6b8;
-  cursor: not-allowed;
 }
 
 .shared-payment-card {
