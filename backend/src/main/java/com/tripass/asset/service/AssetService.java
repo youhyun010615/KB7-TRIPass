@@ -369,6 +369,8 @@ public class AssetService {
                 saved.add(dto);
             }
 
+            travelService.activateSavingsTrackingIfEligible(userId);
+
             return saved;
 
         } catch (CustomException e) {

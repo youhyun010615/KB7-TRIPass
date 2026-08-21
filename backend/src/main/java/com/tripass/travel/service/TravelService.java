@@ -33,6 +33,7 @@ public class TravelService {
     public TripLifecycleResponseDto getCurrentLifecycle(Long currentUserId) {
         Trip trip = travelMapper.selectLatestTripByUserId(currentUserId);
         boolean hasLinkedAccount = travelMapper.countActiveAccountsByUserId(currentUserId) > 0;
+        boolean hasLinkedCard = travelMapper.countActiveCardsByUserId(currentUserId) > 0;
         boolean onboardingPending = travelMapper.findOnboardingShownAt(currentUserId) == null;
 
         if (trip == null) {
@@ -40,6 +41,7 @@ public class TravelService {
                     .lifecycle("NONE")
                     .hasTrip(false)
                     .hasLinkedAccount(hasLinkedAccount)
+                    .hasLinkedCard(hasLinkedCard)
                     .savingsTrackingStarted(false)
                     .needsWalletReflectPrompt(false)
                     .onboardingPending(onboardingPending)
@@ -74,6 +76,7 @@ public class TravelService {
                 .endingReviewRequired("REVIEW".equals(lifecycle))
                 .hasTrip(true)
                 .hasLinkedAccount(hasLinkedAccount)
+                .hasLinkedCard(hasLinkedCard)
                 .savingsTrackingStarted(savingsTrackingStarted)
                 .needsWalletReflectPrompt(needsWalletReflectPrompt)
                 .walletReflectAmount(walletReflectAmount)
@@ -100,6 +103,9 @@ public class TravelService {
 
         boolean hasLinkedAccount = travelMapper.countActiveAccountsByUserId(userId) > 0;
         if (!hasLinkedAccount) return;
+
+        boolean hasLinkedCard = travelMapper.countActiveCardsByUserId(userId) > 0;
+        if (!hasLinkedCard) return;
 
         travelMapper.activateSavingsTracking(trip.getId());
 

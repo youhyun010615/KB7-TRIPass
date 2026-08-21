@@ -306,6 +306,13 @@
           AND is_active = 1
     </select>
 
+    <select id="countActiveCardsByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM cards
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+    </select>
+
     <update id="activateSavingsTracking">
         UPDATE trips
         SET savings_tracking_started_at = NOW()

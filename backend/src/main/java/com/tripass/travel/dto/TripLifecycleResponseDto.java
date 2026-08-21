@@ -28,6 +28,7 @@ public class TripLifecycleResponseDto {
     // 여행/계좌 등록 온보딩 및 여행 저축 집계 상태
     private boolean hasTrip;
     private boolean hasLinkedAccount;
+    private boolean hasLinkedCard;
     private boolean savingsTrackingStarted;
     private boolean needsWalletReflectPrompt;
     private BigDecimal walletReflectAmount;
