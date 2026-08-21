@@ -109,11 +109,11 @@ const travelMenuItems = computed(() => {
   if (!selectedTrip.value) return []
   const id = selectedTrip.value.tripId
   return [
-    { label: '여행 리포트', sub: '저축 기록과 여행 후 지출 분석', badge: '확인', icon: 'report', path: `/mypage/reports?tripId=${id}` },
-    { label: '체크리스트', sub: '여행 전 · 귀국 준비', badge: '확인', icon: 'check', path: `/mypage/checklists?tripId=${id}` },
-    { label: '여행 일정', sub: '등록한 일정 확인', badge: '보기', icon: 'schedule', path: '/schedule' },
-    { label: '영수증 보관함', sub: 'OCR 영수증과 지출 기록', badge: '보기', icon: 'receipt', path: `/trips/${id}/receipts` },
-    { label: '완료 미션', sub: '진행했던 미션 기록', badge: '확인', icon: 'mission', path: `/mypage/travel/${id}` },
+    { label: '여행 리포트', sub: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${id}` },
+    { label: '체크리스트', sub: '여행 전 · 귀국 준비', icon: 'check', path: `/mypage/checklists?tripId=${id}` },
+    { label: '여행 일정', sub: '등록한 일정 확인', icon: 'schedule', path: '/schedule' },
+    { label: '영수증 보관함', sub: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/trips/${id}/receipts` },
+    { label: '완료 미션', sub: '진행했던 미션 기록', icon: 'mission', path: `/mypage/travel/${id}` },
   ]
 })
 
@@ -289,11 +289,9 @@ const myManageItems = computed(() => [
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
-            <b>새 여행</b>
+            <b>여행 추가</b>
           </button>
         </div>
-
-        <p v-if="hasTravelingTrip" class="new-trip-notice">여행중에는 새로운 여행을 등록할 수 없어요.</p>
 
         <p v-if="!trips.length" class="trip-empty">등록된 여행이 없어요.</p>
 
@@ -330,7 +328,6 @@ const myManageItems = computed(() => [
                   <svg v-else viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                 </span>
                 <span class="trip-menu-copy"><b>{{ item.label }}</b><small>{{ item.sub }}</small></span>
-                <em>{{ item.badge }}</em>
               </button>
             </div>
           </Transition>
@@ -565,9 +562,7 @@ const myManageItems = computed(() => [
 .add-trip:active .trip-circle { transform:scale(.96); }
 .add-trip.blocked { cursor:not-allowed;color:#aab3c1;opacity:.82; }
 .add-trip.blocked .trip-circle { border-style:solid;border-color:#d8dee8;background:#e8ebf0;color:#aeb6c2;box-shadow:inset 0 0 0 1px rgba(137,148,164,.08); }
-.add-trip.blocked .add-trip-plus { position:relative;color:transparent; }
-.add-trip.blocked .add-trip-plus::before { position:absolute;inset:0;display:grid;place-items:center;color:#929dab;font-size:18px;content:'×'; }
-.new-trip-notice { margin:-5px 4px 0;color:#8c98aa;font-size:9.5px;font-weight:700;line-height:1.45; }
+.add-trip.blocked .add-trip-plus { color:#929dab; }
 .trip-empty { padding:22px 16px;border:1px dashed #cfdbed;border-radius:19px;background:#fff;color:#95a2b5;font-size:10px;text-align:center; }
 .selected-trip-card { overflow:hidden;border:1px solid #e8edf5;border-radius:20px;background:#fff;box-shadow:0 8px 23px rgba(26,51,93,.075); }
 .selected-trip-summary { display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto 18px;align-items:center;gap:9px;padding:16px;border:0;background:#fff;text-align:left; }
@@ -590,7 +585,7 @@ const myManageItems = computed(() => [
 .trip-menu-item:nth-child(4) { animation-delay:.23s; }
 .trip-menu-item:nth-child(5) { animation-delay:.29s; }
 .trip-menu-item:active { background:#edf3ff;transform:scale(.985); }
-.trip-menu-item.wide { grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px; }
+.trip-menu-item.wide { grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:10px; }
 .trip-menu-icon { display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#eaf1ff;color:#2f70f2; }
 .trip-menu-icon svg { width:18px;height:18px; }
 .trip-menu-icon img { width:19px;height:19px;object-fit:contain; }
@@ -598,8 +593,6 @@ const myManageItems = computed(() => [
 .trip-menu-item:not(.wide) .trip-menu-copy { margin-top:13px; }
 .trip-menu-item b { display:block;font-size:11px;font-weight:800;line-height:1.35; }
 .trip-menu-item small { display:block;margin-top:4px;color:#98a4b6;font-size:8.5px;line-height:1.45; }
-.trip-menu-item>em { position:absolute;top:13px;right:13px;padding:4px 7px;border-radius:99px;background:#fff;color:#64748b;font-size:8px;font-style:normal;font-weight:800; }
-.trip-menu-item.wide>em { position:static; }
 .trip-menu-enter-active,.trip-menu-leave-active { overflow:hidden;transition:max-height .3s ease,opacity .2s ease; }
 .trip-menu-enter-from,.trip-menu-leave-to { max-height:0;opacity:0; }
 .trip-menu-enter-to,.trip-menu-leave-from { max-height:420px;opacity:1; }
