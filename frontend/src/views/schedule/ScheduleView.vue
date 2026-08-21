@@ -144,22 +144,6 @@ const tripCountries = computed(() => {
   const codes = store.configuredPeriods.map((period) => period.code);
   return codes.map((code) => store.countries.find((country) => country.code === code)).filter(Boolean);
 });
-const currentCountry = computed(() => {
-  const todaySchedules = store.sortedSchedules.filter((item) => item.date === store.today);
-  const currentTime = new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date());
-  const startedSchedule = [...todaySchedules]
-    .filter((item) => (item.time || '00:00') <= currentTime)
-    .at(-1);
-  const activeSchedule = startedSchedule || todaySchedules[0];
-  const scheduleCountry = store.countries.find(
-    (country) => country.code === activeSchedule?.countryCode,
-  );
-  return scheduleCountry || store.countryForDate(store.today) || tripCountries.value[0] || null;
-});
 const currentTravelDay = computed(() => {
   const start = new Date(`${store.travelStart}T00:00:00`).getTime();
   const today = new Date(`${store.today}T00:00:00`).getTime();
@@ -235,14 +219,7 @@ function showPastSchedules() {
             />
           </span>
         </h2>
-        <div class="trip-status-stack">
-          <strong class="travel-day">DAY {{ currentTravelDay }}</strong>
-          <div v-if="currentCountry" class="current-country">
-            <small>NOW</small>
-            <strong>{{ currentCountry.name }}</strong>
-            <span :class="flagIconClass(currentCountry.code)" class="current-country-flag" />
-          </div>
-        </div>
+        <strong class="travel-day">DAY {{ currentTravelDay }}</strong>
       </div>
       <p class="trip-period">{{ store.travelStart }} — {{ store.travelEnd }}</p>
     </section>
@@ -415,41 +392,6 @@ function showPastSchedules() {
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .04em;
-}
-.trip-status-stack {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-.current-country {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 8px;
-  border: 1px solid rgba(23, 63, 141, .16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .48);
-  color: #173f8d;
-}
-.current-country small {
-  color: #2662ea;
-  font-family: 'Space Mono', monospace;
-  font-size: 8px;
-  font-weight: 950;
-  letter-spacing: .05em;
-}
-.current-country strong {
-  font-size: 9px;
-  font-weight: 900;
-}
-.current-country-flag {
-  width: 19px;
-  height: 13px;
-  border-radius: 3px;
-  background-size: cover;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .16);
 }
 .trip-period {
   margin-top: 6px;
