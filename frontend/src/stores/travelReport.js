@@ -19,9 +19,9 @@ function formatShortDate(dateStr) {
 }
 
 function statusLabel(status) {
-  if (status === 'ENDED') return '완료'
+  if (status === 'ENDED') return '여행 완료'
   if (status === 'TRAVELING') return '여행 중'
-  return '예정'
+  return '여행 전'
 }
 
 export const useTravelReportStore = defineStore('travelReport', () => {
@@ -55,6 +55,9 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     return {
       title: r.tripName,
       flags: flagsFor(r.countryNames),
+      countryCodes: (r.countryNames || [])
+        .map(name => travelStore.countryFlagMap[name]?.code)
+        .filter(Boolean),
       countries: (r.countryNames || []).join(' · '),
       dDay: r.daysUntilTrip,
       status: statusLabel(tripBasic.value?.status),

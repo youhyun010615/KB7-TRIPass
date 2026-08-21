@@ -3,6 +3,7 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
+import { flagIconClass } from '@/stores/travel'
 
 const route=useRoute(); const router=useRouter(); const store=useTravelReportStore()
 const tripId=computed(()=>{
@@ -10,6 +11,7 @@ const tripId=computed(()=>{
   return route.query.tripId && Number.isFinite(parsed) && parsed > 0 ? parsed : null
 })
 const report=computed(()=>store.tripSummary)
+const reportCount=computed(()=>report.value?.status === '여행 완료' ? 2 : 1)
 
 function load(id) {
   store.loadPreTripReport(id)
@@ -27,21 +29,22 @@ watch(tripId, id => { if (id) load(id) })
   <section class="ticket">
     <div class="ticket-head">
       <small>TRIP REPORT ARCHIVE</small>
-      <b>D-{{ report.dDay }}</b>
+      <b>{{ report.status }}</b>
     </div>
     <div class="ticket-title-row">
-      <h2>{{ report.flags }} {{ report.title }}</h2>
-      <em>여행 전 · 여행 후</em>
-    </div>
-    <div class="ticket-period-row">
-      <p>생성된 리포트</p>
-      <strong>2개</strong>
+      <h2>{{ report.title }}</h2>
+      <div class="ticket-flags" aria-label="여행 국가">
+        <span v-for="code in report.countryCodes" :key="code" :class="flagIconClass(code)" class="fi-inline" />
+      </div>
     </div>
   </section>
-  <h3>리포트 목록</h3>
+  <div class="report-list-heading">
+    <h3>리포트 목록</h3>
+    <span>생성된 리포트 {{ reportCount }}개</span>
+  </div>
+  <p class="report-list-description">여행 전후의 자금 흐름을 한눈에 확인할 수 있어요.</p>
   <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue">▥</span><div><b>여행 저축 리포트</b><small>여행 전 저축과 자금 준비 기록</small></div><em>확인</em><strong>›</strong></button>
-  <button class="report-card" :class="{disabled:report.status!=='완료'}" :disabled="report.status!=='완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b><small>지출 분석과 여행 기록 요약</small></div><em class="after">{{ report.status==='완료'?'여행 후':'준비 중' }}</em><strong>›</strong></button>
-  <aside>✈️ <span><b>여행 단계에 맞춰 리포트를 확인해 보세요</b><small>여행 전후의 자금 변화를 한눈에 볼 수 있어요.</small></span></aside>
+  <button class="report-card" :class="{disabled:report.status!=='여행 완료'}" :disabled="report.status!=='여행 완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b></div><em class="after">{{ report.status==='여행 완료'?'확인':'준비 중' }}</em><strong>›</strong></button>
   </template>
   <BottomNav/></main></template>
 
@@ -80,6 +83,10 @@ watch(tripId, id => { if (id) load(id) })
   letter-spacing: .13em;
 }
 .ticket .ticket-head b {
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 212, 94, .62);
+  border-radius: 999px;
+  background: rgba(255, 212, 94, .13);
   font-size: 9px;
   font-weight: 900;
   letter-spacing: .06em;
@@ -97,17 +104,7 @@ watch(tripId, id => { if (id) load(id) })
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ticket .ticket-title-row em {
-  flex: 0 0 auto;
-  padding: 6px 9px;
-  border: 1px solid rgba(163, 194, 248, .55);
-  border-radius: 999px;
-  background: #4169af;
-  color: #fff;
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 850;
-}
+.ticket-flags{display:flex;flex:0 0 auto;gap:5px}.ticket-flags .fi-inline{width:25px;height:17px;border-radius:4px;background-size:cover;box-shadow:0 2px 5px rgba(0,0,0,.2)}
 .ticket .ticket-period-row { margin-top: 9px; }
 .ticket .ticket-period-row p {
   color: rgba(255, 255, 255, .72);
@@ -121,4 +118,5 @@ watch(tripId, id => { if (id) load(id) })
   font-weight: 900;
   letter-spacing: .06em;
 }
+.report-list-heading{display:flex;align-items:center;gap:8px;margin:21px 2px 0}.report-list-heading h3{font-size:14px;font-weight:900}.report-list-heading span{color:#2662ea;font-size:10px;font-weight:850}.report-list-description{margin:6px 2px 13px;color:#77869d;font-size:10px;font-weight:600}.page>h3{margin:0}.report-card div b{font-size:14px;font-weight:900}
 </style>
