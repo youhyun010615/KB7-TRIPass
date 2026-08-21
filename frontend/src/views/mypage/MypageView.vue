@@ -58,9 +58,21 @@ function countryCodeOf(countryName) {
   return countryPresentation[countryName]?.code || ''
 }
 
+const homeCountryImages = {
+  프랑스: '/images/france.png',
+  스위스: '/images/switzerland.webp',
+  독일: '/images/germany.png',
+  일본: '/images/japan.webp',
+  홍콩: '/images/Hong%20Kong.png',
+}
+
 function tripCover(trip) {
-  const country = splitCountryNames(trip?.countryNames)[0]
-  return countryPresentation[country]?.image || ''
+  const countries = splitCountryNames(trip?.countryNames)
+  for (const country of countries) {
+    const image = homeCountryImages[country] || countryPresentation[country]?.image
+    if (image) return image
+  }
+  return ''
 }
 
 function formatDateRange(startDate, endDate) {
@@ -239,7 +251,7 @@ const myManageItems = computed(() => [
       <section class="trip-management">
         <header class="trip-section-head">
           <div>
-            <h2>여행 관리</h2>
+            <h2>내 여행</h2>
             <span>방문 국가 {{ visitedCountryCount }} · 완료 여행 {{ completedTripCount }}</span>
           </div>
           <button type="button" @click="router.push('/mypage/travel')">전체보기 ›</button>
@@ -259,16 +271,14 @@ const myManageItems = computed(() => [
                   class="trip-cover"
                   :style="tripCover(trip) ? { backgroundImage: `linear-gradient(rgba(11,42,107,.1),rgba(11,42,107,.2)),url(${tripCover(trip)})` } : {}"
               >
-                <span v-if="!tripCover(trip)" class="circle-flags">
-                  <span v-for="name in splitCountryNames(trip.countryNames).slice(0, 3)" :key="name" :class="flagIconClass(countryCodeOf(name))" class="fi-inline"></span>
-                </span>
+                <span v-if="!tripCover(trip)" class="trip-cover-fallback" aria-hidden="true"></span>
               </span>
             </span>
             <b>{{ trip.tripName }}</b>
           </button>
 
           <button type="button" class="trip-circle-item add-trip" @click="startNewTrip">
-            <span class="trip-circle"><i>＋</i></span>
+            <span class="trip-circle"><span class="add-trip-plus">+</span></span>
             <b>새 여행</b>
           </button>
         </div>
@@ -532,11 +542,13 @@ const myManageItems = computed(() => [
 .trip-circle { display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
 .trip-circle-item.selected { color:#111b30; }
 .trip-circle-item.selected .trip-circle { box-shadow:0 0 0 3px #2f70f2;transform:scale(1.03); }
-.trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#eaf1ff center/cover no-repeat; }
+.trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#dce8f7 center/cover no-repeat; }
 .trip-cover::after { position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,44,99,.03),rgba(15,44,99,.18));content:''; }
+.trip-cover-fallback { position:absolute;inset:0;background:linear-gradient(145deg,#b9d4f4 0%,#dfeafa 42%,#8bb2df 100%); }
 .circle-flags { position:relative;z-index:1;display:flex;max-width:45px;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px; }
 .circle-flags .fi { width:18px;height:12px;border-radius:2px;box-shadow:0 1px 3px rgba(15,34,68,.18); }
 .add-trip .trip-circle { border:2px dashed #cad5e7;background:#fff;box-shadow:none;color:#2f70f2;font-size:25px;font-weight:400; }
+.add-trip-plus { display:grid;width:100%;height:100%;place-items:center;font-family:Arial,sans-serif;font-size:25px;font-style:normal;font-weight:400;line-height:1;transform:none; }
 .add-trip:active .trip-circle { transform:scale(.96); }
 .trip-empty { padding:22px 16px;border:1px dashed #cfdbed;border-radius:19px;background:#fff;color:#95a2b5;font-size:10px;text-align:center; }
 .selected-trip-card { overflow:hidden;border:1px solid #e8edf5;border-radius:20px;background:#fff;box-shadow:0 8px 23px rgba(26,51,93,.075); }
@@ -548,7 +560,8 @@ const myManageItems = computed(() => [
 .selected-flags .fi { width:14px;height:10px;border-radius:2px;box-shadow:0 1px 2px rgba(15,34,68,.15); }
 .selected-trip-main small { display:block;margin-top:5px;color:#95a2b5;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700; }
 .selected-trip-summary>em { padding:6px 9px;border-radius:99px;background:#edf3ff;color:#2866d4;font-size:9px;font-style:normal;font-weight:800;white-space:nowrap; }
-.selected-trip-summary>em.traveling { background:#e8f8ef;color:#138454; }
+.selected-trip-summary>em.traveling { position:relative;background:#e8f8ef;color:#138454;animation:traveling-pill-glow 1.8s ease-in-out infinite; }
+.selected-trip-summary>em.traveling::before { display:inline-block;width:5px;height:5px;margin-right:5px;border-radius:50%;background:#1dbf73;box-shadow:0 0 0 0 rgba(29,191,115,.38);content:'';vertical-align:1px;animation:traveling-dot-pulse 1.4s ease-out infinite; }
 .selected-trip-summary>svg { width:18px;height:18px;color:#9aa6b8;transition:transform .22s ease; }
 .selected-trip-summary>svg.open { transform:rotate(180deg); }
 .trip-menu-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:13px;border-top:1px solid #edf1f7;background:#fff; }
@@ -566,4 +579,12 @@ const myManageItems = computed(() => [
 .trip-menu-enter-active,.trip-menu-leave-active { overflow:hidden;transition:max-height .3s ease,opacity .2s ease; }
 .trip-menu-enter-from,.trip-menu-leave-to { max-height:0;opacity:0; }
 .trip-menu-enter-to,.trip-menu-leave-from { max-height:420px;opacity:1; }
+@keyframes traveling-pill-glow {
+  0%,100% { box-shadow:0 0 0 0 rgba(29,191,115,0); }
+  50% { box-shadow:0 0 0 5px rgba(29,191,115,.09); }
+}
+@keyframes traveling-dot-pulse {
+  0% { box-shadow:0 0 0 0 rgba(29,191,115,.42); }
+  70%,100% { box-shadow:0 0 0 6px rgba(29,191,115,0); }
+}
 </style>
