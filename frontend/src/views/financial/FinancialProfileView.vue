@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api'
 import { getCardInstitutions, linkCard } from '@/api/card'
+import shinhanBankLogo from '@/assets/bank-logos/shinhan-bank.png'
+import ibkBankLogo from '@/assets/bank-logos/ibk-bank.svg'
 
 const router = useRouter()
 const route = useRoute()
@@ -47,9 +49,16 @@ const bankLogoDomains = {
   '0031': 'imbank.co.kr',
 }
 
+const localBankLogos = {
+  '0088': shinhanBankLogo,
+  '0003': ibkBankLogo,
+}
+
 function bankLogoUrl(bank) {
+  const code = String(bank?.organizationCode || '').padStart(4, '0')
+  if (localBankLogos[code]) return localBankLogos[code]
   if (bank?.logoUrl) return bank.logoUrl
-  const domain = bankLogoDomains[String(bank?.organizationCode || '').padStart(4, '0')]
+  const domain = bankLogoDomains[code]
   return domain
     ? `https://www.google.com/s2/favicons?domain_url=https://${domain}&sz=128`
     : ''
@@ -407,7 +416,7 @@ onMounted(() => {
                     @click="selectedBank = bank"
                 >
                   <span class="bank-logo-mark">
-                    <span class="bank-logo-fallback">{{ bank.institutionName.charAt(0) }}</span>
+                    <span v-if="!bankLogoUrl(bank)" class="bank-logo-fallback">{{ bank.institutionName.charAt(0) }}</span>
                     <img
                       v-if="bankLogoUrl(bank)"
                       :src="bankLogoUrl(bank)"
