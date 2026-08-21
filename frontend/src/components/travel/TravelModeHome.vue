@@ -966,6 +966,7 @@ async function switchMode(mode) {
             </div>
           </div>
           <div class="perforation lower"><i /><span /><i /></div>
+          <div class="ticket-stub" aria-hidden="true"></div>
         </div>
       </article>
     </div>
