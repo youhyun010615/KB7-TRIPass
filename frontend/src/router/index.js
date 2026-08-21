@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useTripWalletStore } from '@/stores/tripWallet';
+import { beginLoading, endLoading } from '@/utils/loadingOverlay';
+
+let routeLoadingKey = null;
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -601,6 +604,8 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+  if (routeLoadingKey) endLoading(routeLoadingKey);
+  routeLoadingKey = beginLoading(Symbol('route-navigation'));
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
@@ -667,6 +672,10 @@ const CHUNK_LOAD_ERROR_PATTERN =
 const CHUNK_RELOAD_FLAG = 'tripass-chunk-reload';
 
 router.onError((error, to) => {
+  if (routeLoadingKey) {
+    endLoading(routeLoadingKey);
+    routeLoadingKey = null;
+  }
   if (!CHUNK_LOAD_ERROR_PATTERN.test(error?.message || '')) return;
   if (sessionStorage.getItem(CHUNK_RELOAD_FLAG)) return;
 
@@ -677,6 +686,10 @@ router.onError((error, to) => {
 const MAIN_TAB_PATHS = new Set(['/', '/missions', '/wallet', '/exchange', '/mypage']);
 
 router.afterEach((to) => {
+  if (routeLoadingKey) {
+    endLoading(routeLoadingKey);
+    routeLoadingKey = null;
+  }
   sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
 
   // 모달에서 다른 탭으로 바로 이동했을 때 body 스크롤 잠금이 남지 않게 한다.

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import {useAuthStore} from '@/stores/auth'
+import { beginLoading, endLoading } from '@/utils/loadingOverlay'
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
@@ -12,6 +13,7 @@ const api = axios.create({
 let refreshPromise = null
 
 api.interceptors.request.use((config) => {
+    config._loadingOverlayKey = beginLoading(Symbol('api-request'))
     const authStore = useAuthStore()
     if (authStore.accessToken) {
         config.headers.Authorization = `Bearer ${authStore.accessToken}`
@@ -40,10 +42,20 @@ function isPublicAuthRequest(url) {
     )
 }
 
+function finishLoading(config) {
+    if (!config?._loadingOverlayKey) return
+    endLoading(config._loadingOverlayKey)
+    config._loadingOverlayKey = null
+}
+
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        finishLoading(response.config)
+        return response
+    },
 
     async (error) => {
+        finishLoading(error.config)
         const authStore = useAuthStore()
         const originalRequest = error.config
         const status = error.response?.status
