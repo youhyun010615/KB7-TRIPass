@@ -12,6 +12,7 @@ import { createReceipt } from '@/api/receipt'
 import { fetchTripGoal } from '@/api/travel'
 import { Users } from '@lucide/vue'
 import receiptIcon from '@/assets/icons/receipt.svg'
+import currencySymbols from '@/assets/currencySymbols.json'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,10 +95,21 @@ const selectedCountry = computed(() => {
   )
 })
 
-/*
- * 품목 합계는 참고용입니다.
- * 최종 결제 금액을 강제로 변경하지 않습니다.
- */
+const currencyOptions = computed(() => {
+  const tripCurrencies = (trip.value?.countries || [])
+      .map(country => String(country.currencyCode || '').toUpperCase())
+      .filter(Boolean)
+
+  return [...new Set([
+    ...tripCurrencies,
+    ...Object.keys(currencySymbols),
+  ])].sort((a, b) => a.localeCompare(b))
+})
+
+const currencyMark = computed(() => (
+    currencySymbols[form.currencyCode] || form.currencyCode || '통화'
+))
+
 const itemTotalAmount = computed(() => {
   return form.items.reduce((total, item) => {
     const amount = Number(item.amount)
@@ -320,6 +332,14 @@ watch(
       form.currencyCode =
           country?.currencyCode || ''
     },
+)
+
+watch(
+    itemTotalAmount,
+    total => {
+      form.totalAmount = total > 0 ? total.toFixed(2) : ''
+    },
+    { immediate: true },
 )
 
 watch(
@@ -649,21 +669,31 @@ onBeforeUnmount(removeImage)
           >
         </label>
 
-        <label class="field country-field">
-          <span>국가</span>
+        <div class="field-grid country-currency-field">
+          <label class="field country-field">
+            <span>국가</span>
+            <select v-model.number="form.countryId">
+              <option :value="null">국가 선택</option>
+              <option
+                  v-for="country in trip?.countries || []"
+                  :key="country.countryId"
+                  :value="country.countryId"
+              >
+                {{ country.countryName }}
+              </option>
+            </select>
+          </label>
 
-          <select v-model.number="form.countryId">
-            <option :value="null">국가 선택</option>
-
-            <option
-                v-for="country in trip?.countries || []"
-                :key="country.countryId"
-                :value="country.countryId"
-            >
-              {{ country.countryName }}
-            </option>
-          </select>
-        </label>
+          <label class="field currency-field">
+            <span>통화 코드</span>
+            <select v-model="form.currencyCode">
+              <option value="">통화 선택</option>
+              <option v-for="code in currencyOptions" :key="code" :value="code">
+                {{ code }} · {{ currencySymbols[code] }}
+              </option>
+            </select>
+          </label>
+        </div>
 
         <!-- 결제 날짜와 시간 -->
         <div class="field-grid datetime-field">
@@ -685,20 +715,6 @@ onBeforeUnmount(removeImage)
             >
           </label>
         </div>
-
-        <!-- 통화 코드 -->
-        <label class="field currency-field">
-          <span>통화 코드</span>
-
-          <input
-              v-model="form.currencyCode"
-              type="text"
-              maxlength="3"
-              autocomplete="off"
-              placeholder="예: EUR"
-              @input="normalizeCurrencyCode"
-          >
-        </label>
 
         <!-- 결제 품목 -->
         <section class="items-section">
@@ -769,10 +785,7 @@ onBeforeUnmount(removeImage)
 
                 <div class="item-amount-input">
                   <b>
-                    {{
-                      form.currencyCode ||
-                      '통화'
-                    }}
+                    {{ currencyMark }}
                   </b>
 
                   <input
@@ -808,34 +821,23 @@ onBeforeUnmount(removeImage)
               </small>
             </div>
 
-            <em>
-              품목 합계
-              {{ form.currencyCode || '통화' }}
-              {{ itemTotalAmount.toFixed(2) }}
-            </em>
           </div>
 
           <div class="editable-total-amount">
             <b>
-              {{ form.currencyCode || '통화' }}
+              {{ currencyMark }}
             </b>
 
-            <input
-                v-model="form.totalAmount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                inputmode="decimal"
-                placeholder="0.00"
-            >
+            <strong>{{ itemTotalAmount.toFixed(2) }}</strong>
           </div>
 
           <button
               type="button"
               class="apply-item-total-button"
+              :disabled="itemTotalAmount <= 0"
               @click="applyItemTotal"
           >
-            품목 합계를 최종 결제 금액에 적용
+            최종 결제 금액 확정
           </button>
         </section>
 
@@ -1009,7 +1011,6 @@ form {
 .receipt-form-card {
   padding: 14px;
   border-radius: 20px;
-  background: #fff9eb;
 }
 
 .image-section {
@@ -1168,18 +1169,18 @@ form {
 }
 
 .items-heading b {
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .items-heading small {
   margin-top: 5px;
   color: #8c98aa;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .items-heading strong {
   color: #2670e8;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .item-card {
@@ -1197,13 +1198,13 @@ form {
 }
 
 .item-card-heading b {
-  color: #65738a;
-  font-size: 9px;
+  color: #17243a;
+  font-size: 12px;
 }
 
 .item-card-heading button {
   color: #e55353;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -1220,18 +1221,18 @@ form {
   display: block;
   margin-bottom: 5px;
   color: #718096;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 800;
 }
 
 .item-card input {
   width: 100%;
-  height: 42px;
+  height: 46px;
   padding: 0 10px;
   border: 1px solid #d5deeb;
   border-radius: 10px;
   background: #fff;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .item-detail-grid {
@@ -1253,9 +1254,14 @@ form {
 }
 
 .item-amount-input b {
-  padding-left: 10px;
+  min-width: 34px;
+  margin-left: 10px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  background: #eaf1ff;
   color: #173f8d;
-  font-size: 9px;
+  font-size: 11px;
+  text-align: center;
 }
 
 .item-amount-input input {
@@ -1264,12 +1270,12 @@ form {
 
 .add-item-button {
   width: 100%;
-  height: 44px;
+  height: 48px;
   margin-top: 13px;
   border: 1px dashed #2670e8;
   border-radius: 11px;
   color: #2670e8;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -1292,15 +1298,15 @@ form {
 }
 
 .total-amount-heading span {
-  color: #536077;
-  font-size: 10px;
+  color: #17243a;
+  font-size: 15px;
   font-weight: 900;
 }
 
 .total-amount-heading small {
   margin-top: 5px;
   color: #99a3b3;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .total-amount-heading em {
@@ -1317,24 +1323,23 @@ form {
   border: 1px solid #ef9700;
   border-radius: 11px;
   background: #fff;
+  box-shadow: 0 0 0 4px rgba(239,151,0,.1);
 }
 
 .editable-total-amount b {
   padding-left: 12px;
-  color: #e66b00;
+  color: #2670e8;
   font-size: 12px;
 }
 
-.editable-total-amount input {
+.editable-total-amount strong {
   width: 100%;
-  height: 48px;
+  height: 52px;
   padding: 0 12px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #e66b00;
-  font-size: 17px;
+  color: #173f8d;
+  font-size: 19px;
   font-weight: 900;
+  line-height: 52px;
   text-align: right;
 }
 
@@ -1346,8 +1351,15 @@ form {
   border-radius: 9px;
   background: #f7faff;
   color: #47709f;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
+}
+
+.apply-item-total-button:disabled {
+  border-color: #dce3ee;
+  background: rgba(255,255,255,.55);
+  color: #9aa6b8;
+  cursor: not-allowed;
 }
 
 .shared-payment-card {
