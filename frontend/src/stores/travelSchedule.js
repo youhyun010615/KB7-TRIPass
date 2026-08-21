@@ -121,9 +121,10 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
     await travel.loadActiveGoal({ force: true }).catch(() => {})
   }
 
-  async function loadSchedules() {
-    await ensureTripLoaded()
-    if (!travel.tripId) {
+  async function loadSchedules(tripIdOverride = null) {
+    if (!tripIdOverride) await ensureTripLoaded()
+    const targetTripId = Number(tripIdOverride || travel.tripId)
+    if (!targetTripId) {
       schedules.value = []
       return schedules.value
     }
@@ -131,7 +132,7 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
     isLoading.value = true
     errorMessage.value = ''
     try {
-      const rows = await fetchSchedules(travel.tripId)
+      const rows = await fetchSchedules(targetTripId)
       schedules.value = (rows ?? []).map(normalizeApiSchedule)
       return schedules.value
     } catch (error) {
