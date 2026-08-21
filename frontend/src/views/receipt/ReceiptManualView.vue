@@ -10,6 +10,8 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { createReceipt } from '@/api/receipt'
 import { fetchTripGoal } from '@/api/travel'
+import { Users } from '@lucide/vue'
+import receiptIcon from '@/assets/icons/receipt.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -614,62 +616,6 @@ onBeforeUnmount(removeImage)
           <small>NO. NEW</small>
         </div>
 
-        <!-- 선택적인 영수증 이미지 첨부 -->
-        <div class="image-section">
-          <input
-              ref="fileInput"
-              type="file"
-              accept="image/jpeg,image/png"
-              hidden
-              @change="selectImage"
-          >
-
-          <template v-if="previewUrl">
-            <img
-                :src="previewUrl"
-                alt="첨부한 영수증 미리보기"
-            >
-
-            <div>
-              <b>{{ selectedFile?.name }}</b>
-
-              <small>
-                저장할 때 원본 이미지도 함께 등록됩니다.
-              </small>
-            </div>
-
-            <button
-                type="button"
-                class="remove-image-button"
-                @click="removeImage"
-            >
-              삭제
-            </button>
-          </template>
-
-          <template v-else>
-            <span class="camera-icon">
-              ▣
-            </span>
-
-            <div>
-              <b>영수증 사진 첨부</b>
-
-              <small>
-                선택 사항 · 이미지 없이도 저장할 수 있어요
-              </small>
-            </div>
-
-            <button
-                type="button"
-                class="add-image-button"
-                @click="openFilePicker"
-            >
-              추가
-            </button>
-          </template>
-        </div>
-
         <!-- 현재 여행 -->
         <label class="field trip-field">
           <span>여행</span>
@@ -898,14 +844,35 @@ onBeforeUnmount(removeImage)
         </p>
       </section>
 
+      <!-- 선택적인 영수증 이미지 첨부 -->
+      <section class="image-section" :class="{ empty: !previewUrl }">
+        <input ref="fileInput" type="file" accept="image/jpeg,image/png" hidden @change="selectImage">
+        <template v-if="previewUrl">
+          <img :src="previewUrl" alt="첨부한 영수증 미리보기">
+          <div><b>{{ selectedFile?.name }}</b><small>저장할 때 원본 이미지도 함께 등록돼요.</small></div>
+          <button type="button" class="remove-image-button" @click="removeImage">삭제</button>
+        </template>
+        <template v-else>
+          <img :src="receiptIcon" class="receipt-upload-icon" alt="">
+          <b>영수증 사진 첨부</b>
+          <button type="button" class="add-image-button" @click="openFilePicker">업로드</button>
+        </template>
+      </section>
+
+      <!-- 메모 -->
+      <label class="memo-field">
+        <span>메모</span>
+        <textarea v-model.trim="form.memo" maxlength="500" placeholder="메모를 입력하세요" />
+      </label>
+
       <!-- 공동결제 -->
       <section class="shared-payment-card">
         <div class="shared-heading">
           <div>
-            <b>♧ 공동 인원 추가</b>
+            <b class="shared-title"><Users :size="17" /> 공동 인원 추가</b>
 
             <small>
-              로그인 사용자를 포함한 전체 결제 인원을 설정합니다.
+              공동인원을 추가해 이후에 정산하기 기능을 사용해보세요
             </small>
           </div>
 
@@ -976,17 +943,6 @@ onBeforeUnmount(removeImage)
           </div>
         </template>
       </section>
-
-      <!-- 메모 -->
-      <label class="memo-field">
-        <span>메모</span>
-
-        <textarea
-            v-model.trim="form.memo"
-            maxlength="500"
-            placeholder="메모를 입력하세요"
-        />
-      </label>
 
       <div class="save-area">
         <button
@@ -1069,6 +1025,42 @@ form {
   background: #fff;
 }
 
+.image-section.empty {
+  display: flex;
+  min-height: 142px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  border: 1px solid #dce6f3;
+  background: #fff;
+  box-shadow: 0 9px 25px rgba(32, 65, 120, .07);
+}
+
+.image-section.empty .receipt-upload-icon {
+  width: 42px;
+  height: 42px;
+  padding: 9px;
+  border-radius: 13px;
+  background: #eaf2ff;
+  object-fit: contain;
+}
+
+.image-section.empty > b {
+  color: #536077;
+  font-size: 10px;
+}
+
+.image-section.empty .add-image-button {
+  min-width: 82px;
+  padding: 8px 15px;
+  border-radius: 9px;
+  background: #2662ea;
+  color: #fff;
+  font-size: 10px;
+}
+
 .image-section img,
 .camera-icon {
   display: grid;
@@ -1133,6 +1125,11 @@ form {
   border-radius: 12px;
   background: #fff;
   font-size: 12px;
+}
+
+.currency-field input {
+  border: 0;
+  box-shadow: none;
 }
 
 .field input,
@@ -1376,6 +1373,12 @@ form {
   font-size: 12px;
 }
 
+.shared-heading .shared-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .shared-heading small {
   margin-top: 6px;
   color: #68758b;
@@ -1487,6 +1490,11 @@ form {
 .memo-field {
   display: block;
   margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dce6f3;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 9px 25px rgba(32, 65, 120, .07);
 }
 
 .memo-field textarea {
@@ -1496,8 +1504,14 @@ form {
   resize: vertical;
   border: 1px solid #d5deeb;
   border-radius: 12px;
-  background: #fff;
+  background: #f8faff;
   font-size: 11px;
+}
+
+.manual-page .memo-field,
+.manual-page .shared-payment-card {
+  margin-right: 0;
+  margin-left: 0;
 }
 
 .save-area {
