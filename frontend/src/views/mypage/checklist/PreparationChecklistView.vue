@@ -23,17 +23,19 @@
       <!-- 상단 패스/진행률 카드 -->
       <section class="pass">
         <small>TRIP PREP BOARDING PASS</small><i />
-        <div>
-          <h2>{{ dynamicStageMeta[stage].label }} 체크리스트</h2>
-          <b>{{ progress.done }} / {{ progress.total }} 완료</b>
+        <div class="progress-panel">
+          <div class="progress-head">
+            <h2>{{ dynamicStageMeta[stage].label }} 체크리스트</h2>
+            <b>{{ progress.done }} / {{ progress.total }} 완료</b>
+          </div>
+          <div class="bar">
+            <span :style="{ width: `${progress.percent}%` }" />
+          </div>
+          <footer>
+            <strong>{{ progress.percent }}% 완료</strong>
+            <em>{{ progress.total - progress.done }}개 항목 남음</em>
+          </footer>
         </div>
-        <div class="bar">
-          <span :style="{ width: `${progress.percent}%` }" />
-        </div>
-        <footer>
-          <strong>{{ progress.percent }}% 완료</strong>
-          <em>{{ progress.total - progress.done }}개 항목 남음</em>
-        </footer>
       </section>
     </div>
 
@@ -56,10 +58,10 @@
             <div class="content">
               <b class="item-title">
                 <span
-                  class="type-badge"
-                  :class="item.isCustom ? 'custom' : 'default'"
+                  v-if="item.isCustom"
+                  class="type-badge custom"
                 >
-                  {{ item.isCustom ? '사용자' : '기본' }}
+                  사용자
                 </span>
                 <span class="name">{{ item.itemName }}</span>
               </b>
@@ -595,4 +597,59 @@ const handleDelete = async (event, itemId) => {
 .page{background:#f3f6fc}.pass{background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.pass:before,.pass:after{background:#f3f6fc}.pass small,.pass footer em{color:#cbd9f7}.pass .bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}nav{background:#e8edf7}nav button.active{background:#173f8d;color:#fff}.item-card{border-color:#dfe7f4;background:#fff;box-shadow:0 7px 18px rgba(23,63,141,.05)}.check-icon{border-color:#a9bfe8}.item-card.done .check-icon{border-color:#2662ea;background:#2662ea}.add-button{border-color:#bfd0f1;color:#2662ea;background:#f9fbff}
 .page nav{margin-bottom:11px;border-radius:12px}.page nav button{padding:8px}.pass{padding:16px;border-radius:16px;box-shadow:0 9px 22px rgba(23,63,141,.14)}.pass h2{font-size:15px}.pass .bar{margin-top:13px}.scroll-content h3{margin:16px 2px 8px;font-size:13px}.items{gap:7px}.item-card{gap:8px;padding:11px 12px;border-radius:12px;box-shadow:0 5px 14px rgba(23,63,141,.045)}.item-title{font-size:12px}.check-icon{width:22px;height:22px;font-size:13px}.actions{gap:5px}.status-tag{padding:4px 7px}.add-button{margin-top:10px;padding:11px;border-radius:10px}.add-box{margin-top:10px;padding:10px;border-radius:11px}
 .pass{border:1px solid #bfd2f1;background:linear-gradient(135deg,#dce9fb 0%,#c8daf6 100%);color:#10234a}.pass:before,.pass:after{display:none}.pass small,.pass footer em{color:#6680a8}.pass i{border-color:#a9bfdf}.pass .bar{background:rgba(255,255,255,.72)}.pass .bar span{background:#2662ea}.item-card{border:1px solid #d7e2f2;border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(23,63,141,.06)}.item-card.done{background:#f1f6ff}.item-card.done .check-icon{border-color:#2662ea;background:#2662ea}
+.page nav{
+  gap:5px;
+  padding:5px;
+  border:0;
+  border-radius:18px;
+  background:#e9edf5;
+}
+.page nav button{
+  min-height:38px;
+  padding:0 10px;
+  border-radius:14px;
+  color:#8e99ab;
+  font-size:11px;
+  font-weight:850;
+  transition:background .22s ease,color .22s ease,box-shadow .22s ease,transform .22s ease;
+}
+.page nav button.active{
+  background:#173f8d;
+  color:#fff;
+  box-shadow:0 5px 13px rgba(23,63,141,.22);
+  transform:translateY(-1px);
+}
+.pass{
+  padding:15px;
+  border:1px solid #d9e4f5;
+  border-radius:19px;
+  background:#fff;
+  color:#10234a;
+  box-shadow:0 8px 22px rgba(23,63,141,.07);
+}
+.pass>small{color:#2f6fed;font-size:8px;letter-spacing:.13em}
+.pass>i{margin:9px 0 11px;border-color:#d7e1f0}
+.pass>.progress-panel{
+  display:block;
+  padding:15px;
+  border-radius:16px;
+  background:linear-gradient(145deg,#123c84,#1c5dbd);
+  color:#fff;
+  box-shadow:0 9px 20px rgba(24,77,164,.17);
+}
+.pass .progress-head{display:flex;align-items:center;justify-content:space-between}
+.pass .progress-head h2{font-size:15px;font-weight:850;letter-spacing:-.025em}
+.pass .progress-head b{color:#ffd466;font-size:12px;font-weight:900}
+.pass .bar{height:8px;margin-top:12px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}
+.pass .bar span{border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}
+.pass footer{margin-top:10px}
+.pass footer strong{color:#fff;font-size:11px;font-weight:850}
+.pass footer em{color:#b8cef2;font-size:9px;font-weight:700}
+.scroll-content h3{margin:18px 3px 10px;color:#17233b;font-size:16px;font-weight:900;letter-spacing:-.025em}
+.item-card{min-height:58px;padding:12px 14px}
+.item-title{gap:7px;color:#17233b;font-size:14px;font-weight:850;line-height:1.35}
+.type-badge.custom{padding:3px 6px;border-radius:6px;font-size:8px;font-weight:800}
+.status-tag{min-width:39px;padding:6px 8px;border-radius:999px;font-size:9px;font-weight:850;text-align:center}
+.item-card.done .status-tag{font-size:11px;font-weight:900}
+@media (prefers-reduced-motion:reduce){.page nav button{transition:none}.page nav button.active{transform:none}}
 </style>
