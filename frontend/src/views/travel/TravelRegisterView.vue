@@ -399,7 +399,7 @@ function goToOnboardingHub() {
         </div>
         <p v-if="showValidation && !store.selectedPlans.length" class="error-text">여행 국가를 한 개 이상 선택해 주세요.</p>
       </section>
-      <section v-if="store.selectedPlans.length" class="selection-summary">
+      <section v-if="store.selectedPlans.length && !countryDropdownOpen" class="selection-summary">
         <div class="selection-head"><strong>방문 순서</strong><span>≡ 손잡이를 드래그해 순서를 바꿔보세요</span></div>
         <TransitionGroup name="country-order" tag="ol" class="selected-country-list">
           <li
@@ -418,12 +418,12 @@ function goToOnboardingHub() {
         </TransitionGroup>
       </section>
       <RouterLink
-        v-if="store.tripName.trim() && store.selectedPlans.length"
+        v-if="!countryDropdownOpen && store.tripName.trim() && store.selectedPlans.length"
         class="primary-cta"
         :to="{ name: 'TravelRegisterSchedule', query: registrationQuery }"
       >여행 일정 입력하기</RouterLink>
       <button
-        v-else
+        v-else-if="!countryDropdownOpen"
         type="button"
         class="primary-cta"
         disabled
@@ -620,5 +620,15 @@ function goToOnboardingHub() {
 .primary-cta{
   left:var(--register-frame-center,50%);
   width:min(354px,calc(var(--register-frame-width,390px) - 36px));
+}
+.country-dropdown-backdrop{display:none}
+.country-dropdown-panel{
+  position:relative;
+  top:auto;
+  left:auto;
+  right:auto;
+  z-index:auto;
+  margin-top:8px;
+  box-shadow:0 10px 24px rgba(20,35,70,.12);
 }
 </style>
