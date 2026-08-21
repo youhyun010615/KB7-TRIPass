@@ -24,7 +24,20 @@ watch(tripId, id => { if (id) load(id) })
   <p v-else-if="!report && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
   <p v-else-if="!report" class="loading">불러오는 중...</p>
   <template v-else>
-  <section class="ticket"><small>TRIP REPORT ARCHIVE</small><div><h2>{{ report.flags }} {{ report.title }}</h2><b>D-{{ report.dDay }}</b></div><i/><p>생성된 리포트</p><div class="total"><strong>2개</strong><em>여행 전 · 여행 후</em></div></section>
+  <section class="ticket">
+    <div class="ticket-head">
+      <small>TRIP REPORT ARCHIVE</small>
+      <b>D-{{ report.dDay }}</b>
+    </div>
+    <div class="ticket-title-row">
+      <h2>{{ report.flags }} {{ report.title }}</h2>
+      <em>여행 전 · 여행 후</em>
+    </div>
+    <div class="ticket-period-row">
+      <p>생성된 리포트</p>
+      <strong>2개</strong>
+    </div>
+  </section>
   <h3>리포트 목록</h3>
   <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue">▥</span><div><b>여행 저축 리포트</b><small>여행 전 저축과 자금 준비 기록</small></div><em>확인</em><strong>›</strong></button>
   <button class="report-card" :class="{disabled:report.status!=='완료'}" :disabled="report.status!=='완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b><small>지출 분석과 여행 기록 요약</small></div><em class="after">{{ report.status==='완료'?'여행 후':'준비 중' }}</em><strong>›</strong></button>
@@ -38,4 +51,74 @@ watch(tripId, id => { if (id) load(id) })
 <style scoped>
 .page{background:#f3f6fc}.ticket{background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 16px 34px rgba(23,63,141,.2)}.ticket:before,.ticket:after{background:#f3f6fc}.ticket>div>b,.ticket .total em{color:#ffd45e}.report-card{border-color:#dfe7f4;box-shadow:0 8px 22px rgba(23,63,141,.06)}.report-card em{background:#e9f0ff;color:#2662ea}.report-card em.after{background:#fff4d7;color:#a86c00}aside{background:#eaf1ff}
 .ticket{padding:18px;border-radius:18px;box-shadow:0 10px 24px rgba(23,63,141,.14)}.ticket h2,.ticket>div>b{margin-top:14px}.ticket i{margin:14px 0 11px}.page>h3{margin:20px 2px 11px}.report-card{grid-template-columns:40px 1fr auto 10px;gap:10px;margin-bottom:10px;padding:14px;border-radius:16px;box-shadow:0 6px 16px rgba(23,63,141,.05)}.report-card>span{width:38px;height:38px;border-radius:12px;font-size:17px}.report-card div small{margin-top:4px}.report-card em{padding:6px 9px}.report-card>strong{font-size:20px}aside{gap:9px;margin-top:17px;padding:13px;border:1px solid #d8e4f8;border-radius:14px}
+
+/* 여행 일정 카드와 동일한 카드 규격·색상·타이포그래피 */
+.ticket {
+  overflow: hidden;
+  padding: 15px 16px 16px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #1f5ab9 0%, #14357f 62%, #102d6d 100%);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(24, 51, 99, .2);
+}
+.ticket::before,
+.ticket::after { display: none; }
+.ticket .ticket-head,
+.ticket .ticket-title-row,
+.ticket .ticket-period-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ticket .ticket-head small,
+.ticket .ticket-head b {
+  margin: 0;
+  color: #ffd466;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.ticket .ticket-head b {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+.ticket .ticket-title-row {
+  gap: 12px;
+  margin-top: 15px;
+}
+.ticket .ticket-title-row h2 {
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ticket .ticket-title-row em {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(163, 194, 248, .55);
+  border-radius: 999px;
+  background: #4169af;
+  color: #fff;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 850;
+}
+.ticket .ticket-period-row { margin-top: 9px; }
+.ticket .ticket-period-row p {
+  color: rgba(255, 255, 255, .72);
+  font-size: 10px;
+  font-weight: 650;
+}
+.ticket .ticket-period-row strong {
+  color: #ffd466;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
 </style>
