@@ -12,6 +12,7 @@ const tripId=computed(()=>{
 })
 const report=computed(()=>store.tripSummary)
 const reportCount=computed(()=>report.value?.status === '여행 완료' ? 2 : 1)
+const displayStatus=computed(()=>report.value?.status === '여행 중' ? '여행중' : report.value?.status)
 
 function load(id) {
   store.loadPreTripReport(id)
@@ -29,7 +30,7 @@ watch(tripId, id => { if (id) load(id) })
   <section class="ticket">
     <div class="ticket-head">
       <small>TRIP REPORT ARCHIVE</small>
-      <b>{{ report.status }}</b>
+      <b :class="{ traveling: displayStatus === '여행중' }">{{ displayStatus }}</b>
     </div>
     <div class="ticket-title-row">
       <div class="ticket-title-main">
@@ -45,7 +46,7 @@ watch(tripId, id => { if (id) load(id) })
     <h3>리포트 목록</h3>
     <span>생성된 리포트 {{ reportCount }}개</span>
   </div>
-  <p class="report-list-description">여행 전후의 자금 흐름을 한눈에 확인할 수 있어요.</p>
+  <p class="report-list-description">여행 전후의 자금 흐름을 리포트를 통해 확인해보세요.<br>여행 후 리포트는 여행 후에 볼 수 있어요.</p>
   <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue">▥</span><div><b>여행 저축 리포트</b><small>여행 전 저축과 자금 준비 기록</small></div><em>확인</em><strong>›</strong></button>
   <button class="report-card" :class="{disabled:report.status!=='여행 완료'}" :disabled="report.status!=='여행 완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b></div><em class="after">{{ report.status==='여행 완료'?'확인':'준비 중' }}</em><strong>›</strong></button>
   </template>
@@ -111,7 +112,8 @@ watch(tripId, id => { if (id) load(id) })
   white-space: nowrap;
 }
 .ticket .ticket-title-row>p{color:rgba(255,255,255,.72);font-family:'Space Mono',monospace;font-size:9px;font-weight:700}
-.ticket-flags{display:flex;flex:0 0 auto;gap:5px}.ticket-flags .fi-inline{width:25px;height:17px;border-radius:4px;background-size:cover;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+.ticket-flags{display:flex;flex:0 0 auto;gap:3px}.ticket-flags .fi-inline{width:13px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.ticket .ticket-head b.traveling{animation:report-status-pulse 1.8s ease-in-out infinite}@keyframes report-status-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,212,94,.35)}50%{box-shadow:0 0 0 5px rgba(255,212,94,0)}}
 .ticket .ticket-period-row { margin-top: 9px; }
 .ticket .ticket-period-row p {
   color: rgba(255, 255, 255, .72);
@@ -125,5 +127,5 @@ watch(tripId, id => { if (id) load(id) })
   font-weight: 900;
   letter-spacing: .06em;
 }
-.report-list-heading{display:flex;align-items:center;gap:8px;margin:21px 2px 0}.report-list-heading h3{font-size:14px;font-weight:900}.report-list-heading span{color:#2662ea;font-size:10px;font-weight:850}.report-list-description{margin:6px 2px 13px;color:#77869d;font-size:10px;font-weight:600}.page>h3{margin:0}.report-card div b{font-size:14px;font-weight:900}
+.report-list-heading{display:flex;align-items:center;gap:8px;margin:21px 2px 0}.report-list-heading h3{font-size:14px;font-weight:900}.report-list-heading span{color:#2662ea;font-size:10px;font-weight:850}.report-list-description{margin:6px 2px 13px;color:#77869d;font-size:10px;font-weight:600;line-height:1.65}.page>h3{margin:0}.report-card div b{font-size:14px;font-weight:900}@media(prefers-reduced-motion:reduce){.ticket .ticket-head b.traveling{animation:none}}
 </style>

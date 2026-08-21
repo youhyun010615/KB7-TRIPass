@@ -141,7 +141,7 @@ onMounted(async () => {
     <div v-else class="px-4 flex flex-col gap-6">
 
       <!-- 여행 요약 카드 -->
-      <div class="relative rounded-[20px] text-white p-5 overflow-hidden" style="background: linear-gradient(155deg, #0B2A6B 0%, #123C94 62%, #17459F 100%); box-shadow: 0 10px 24px rgba(11,42,107,0.2)">
+      <div class="trip-summary-card relative rounded-[20px] p-5 overflow-hidden">
         <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
 
         <div class="relative flex items-start justify-between gap-3">
@@ -152,26 +152,26 @@ onMounted(async () => {
                 <span v-for="(code, i) in countryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline trip-detail-flag"></span>
               </div>
             </div>
-            <p class="font-mono text-[11.5px] font-bold mt-2" style="color:rgba(255,255,255,.68)">
+            <p class="trip-summary-date font-mono text-[11.5px] font-bold mt-2">
               {{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일
             </p>
           </div>
           <span
             class="flex-shrink-0 rounded-full px-2.5 py-[5px] text-[10.5px] font-bold"
-            :style="isEnded ? 'background:rgba(255,212,102,.15);color:#FFD466' : isTraveling ? 'background:rgba(111,227,193,.15);color:#6FE3C1' : 'background:rgba(255,255,255,.13);color:#fff'"
+            :style="isEnded ? 'background:#fff3c7;color:#8c6500' : isTraveling ? 'background:#dff6ef;color:#07826e' : 'background:rgba(255,255,255,.72);color:#173f8d'"
           >{{ isEnded ? tripStatusLabel : isTraveling ? '여행 중' : `출국까지 ${dDayLabel}` }}</span>
         </div>
 
         <template v-if="!isEnded">
-          <div class="relative mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
+          <div class="trip-goal-section relative mt-4 pt-4">
             <div class="flex items-baseline justify-between text-[11px] font-bold">
-              <span style="color: rgba(255,255,255,0.72)">여행 목표 자금</span>
-              <span style="color:#FFD466">{{ savingsPercent }}%</span>
+              <span>여행 목표 자금</span>
+              <span class="trip-goal-percent">{{ savingsPercent }}%</span>
             </div>
-            <div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background: rgba(255,255,255,0.18)">
-              <div class="h-full rounded-full" :style="{ width: `${savingsPercent}%`, background: '#FFD466' }"></div>
+            <div class="trip-goal-bar h-1.5 rounded-full mt-2 overflow-hidden">
+              <div class="h-full rounded-full" :style="{ width: `${savingsPercent}%` }"></div>
             </div>
-            <p class="mt-2 text-right font-mono text-[11px] font-bold" style="color:rgba(255,255,255,.68)">{{ formatWon(report?.targetBudget) }}</p>
+            <p class="trip-goal-amount mt-2 text-right font-mono text-[11px] font-bold">{{ formatWon(report?.targetBudget) }}</p>
           </div>
         </template>
 
@@ -266,8 +266,15 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.trip-detail-flags{display:flex;align-items:center;gap:5px}
-.trip-detail-flag{width:29px;height:19px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.24)}
+.trip-detail-flags{display:flex;align-items:center;gap:3px}
+.trip-detail-flag{width:14px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.trip-summary-card{background:linear-gradient(135deg,#dce9fb 0%,#c8daf6 100%);color:#10234a;box-shadow:0 10px 24px rgba(35,73,136,.13)}
+.trip-summary-date{color:#6680a8}
+.trip-goal-section{border-top:1px solid rgba(23,63,141,.16);color:#365b96}
+.trip-goal-percent{color:#173f8d}
+.trip-goal-bar{background:rgba(255,255,255,.7)}
+.trip-goal-bar>div{background:#2662ea}
+.trip-goal-amount{color:#5e78a2}
 </style>
 
 <style scoped>

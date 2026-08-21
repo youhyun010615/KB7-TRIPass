@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { exportElementToPdf } from '@/utils/pdf'
+import { flagIconClass } from '@/stores/travel'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,7 +63,7 @@ const budgetSegments = computed(() => {
 
 <template>
   <main class="page">
-    <header><button type="button" @click="router.back()">‹</button><h1>여행 대비 리포트</h1><span /></header>
+    <header><button type="button" @click="router.back()">‹</button><h1>여행 저축 리포트</h1><span /></header>
 
     <p v-if="!tripId" class="loading error">여행 정보를 찾을 수 없어요.</p>
     <p v-else-if="!r && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
@@ -70,10 +71,13 @@ const budgetSegments = computed(() => {
 
     <template v-else>
     <div ref="reportContent" class="pdf-content">
-    <section class="summary">
-      <small>TRIP SAVING REPORT</small>
-      <h2>{{ r.trip.flags }} {{ r.trip.title }}</h2>
-      <p>{{ r.trip.dateRange }} · 출국까지 {{ r.trip.dDay }}일</p>
+    <section class="summary report-ticket">
+      <div class="summary-kicker"><small>TRIP REPORT ARCHIVE</small><b>여행 저축</b></div>
+      <div class="summary-title">
+        <h2>{{ r.trip.title }}</h2>
+        <span class="summary-flags"><i v-for="code in r.trip.countryCodes" :key="code" :class="flagIconClass(code)" class="fi-inline" /></span>
+      </div>
+      <p>{{ r.trip.dateRange }}</p>
     </section>
 
     <section class="card highlight">
@@ -184,4 +188,5 @@ const budgetSegments = computed(() => {
 <style scoped>
 .page{background:#f3f6fc}.summary{border-radius:20px;background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.card{border-color:#dfe7f4;border-radius:18px;box-shadow:0 7px 20px rgba(23,63,141,.05)}.card.highlight{background:linear-gradient(145deg,#edf3ff,#f8faff);border-color:#c9d9fa}.card.highlight .bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}.final{background:#fff4d7;color:#795300}.pdf{background:#2662ea;box-shadow:0 10px 22px rgba(38,98,234,.2)}
 .summary{padding:15px;border-radius:18px;box-shadow:0 9px 22px rgba(23,63,141,.14)}.summary h2{margin-top:8px}.card{margin-top:9px;padding:13px;border-radius:16px;box-shadow:0 5px 15px rgba(23,63,141,.045)}.saving-chart{height:100px;margin-top:11px}.donut-row{gap:14px;margin-top:11px}.donut{width:90px;height:90px}.stat-table{margin-top:9px}.final{margin-top:9px;padding:12px;border-radius:12px}.pdf{margin-top:10px;padding:12px;border-radius:10px}
+.report-ticket{background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%)}.summary-kicker{display:flex;align-items:center;justify-content:space-between}.summary-kicker small{color:#ffd466;font-family:'Space Mono',monospace;letter-spacing:.12em}.summary-kicker b{padding:5px 9px;border:1px solid rgba(255,212,94,.62);border-radius:999px;background:rgba(255,212,94,.13);color:#ffd466;font-size:9px}.summary-title{display:flex;align-items:center;gap:7px;margin-top:13px}.summary-title h2{min-width:0;margin:0;overflow:hidden;font-size:17px;text-overflow:ellipsis;white-space:nowrap}.summary-flags{display:flex;gap:3px}.summary-flags i{width:13px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}.report-ticket>p{margin-top:7px;color:rgba(255,255,255,.72);font-family:'Space Mono',monospace;font-size:9px;font-weight:700}
 </style>

@@ -246,5 +246,5 @@ onMounted(async () => {
 <style scoped>
 .travel-record-flag{width:25px;height:17px;border-radius:3px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .travel-list-flags{display:flex;gap:3px}
-.travel-list-flag{width:27px;height:18px;border-radius:3px;background-size:cover;box-shadow:0 1px 3px rgba(15,23,42,.18)}
+.travel-list-flag{width:14px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 2px rgba(15,23,42,.16)}
 </style>
