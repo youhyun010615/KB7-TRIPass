@@ -81,6 +81,7 @@ CREATE TABLE users
         COMMENT '소셜 로그인 제공자의 사용자 고유 식별값',
     current_view_mode VARCHAR(20)  NOT NULL DEFAULT 'SAVING'
         COMMENT '현재 화면 모드(SAVING/TRAVEL)',
+    onboarding_shown_at DATETIME NULL COMMENT '여행/계좌 등록 온보딩 최초 노출 일시(NULL이면 아직 미노출)',
     is_deleted        TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '탈퇴 여부',
     deleted_at        DATETIME     NULL COMMENT '탈퇴일시',
     created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -427,6 +428,8 @@ CREATE TABLE trips
     start_date          DATE           NULL,
     end_date            DATE           NULL,
     total_target_amount DECIMAL(18, 2) NOT NULL DEFAULT 0,
+    savings_tracking_started_at DATETIME NULL COMMENT '여행+계좌 둘 다 등록되어 여행 저축 집계가 시작된 시각',
+    wallet_reflect_resolved TINYINT(1) NOT NULL DEFAULT 0 COMMENT '집계 시작 시점 월렛 잔액 반영 여부 프롬프트 처리 완료 여부',
     start_report_viewed_at DATETIME NULL COMMENT '여행 시작 저축 리포트 팝업 확인 시각',
     is_deleted          TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '삭제 여부',
     deleted_at          DATETIME       NULL COMMENT '삭제일시',
@@ -497,6 +500,7 @@ CREATE TABLE wallet_ledger
 (
     id                BIGINT         NOT NULL AUTO_INCREMENT COMMENT '월렛 원장 ID',
     wallet_id         BIGINT         NOT NULL COMMENT '월렛 ID',
+    trip_id           BIGINT         NULL COMMENT '이 거래가 귀속되는 여행 ID(집계 시작 전 거래는 NULL)',
     direction         VARCHAR(10)    NOT NULL COMMENT '입출금 방향(IN/OUT)',
     transaction_type  VARCHAR(30)    NOT NULL COMMENT '거래 유형(CHARGE/WITHDRAW/CARD_TOPUP/EXCHANGE_SELL/MISSION_REWARD/REFUND/ADJUST)',
     transfer_method   VARCHAR(30)    NULL COMMENT '충전 방식(MANUAL/AUTO_SAVING)',
@@ -512,7 +516,9 @@ CREATE TABLE wallet_ledger
     created_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     PRIMARY KEY (id),
     UNIQUE KEY uk_wallet_ledger_idempotency (idempotency_key),
-    CONSTRAINT fk_wallet_ledger_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id)
+    KEY idx_wallet_ledger_trip (trip_id),
+    CONSTRAINT fk_wallet_ledger_wallet FOREIGN KEY (wallet_id) REFERENCES wallet (id),
+    CONSTRAINT fk_wallet_ledger_trip FOREIGN KEY (trip_id) REFERENCES trips (id)
 ) COMMENT '월렛 원화 원장';
 
 
@@ -1300,6 +1306,7 @@ CREATE TABLE monthly_saving_missions
 (
     id                            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '월간 미션 ID',
     user_id                       BIGINT      NOT NULL COMMENT '회원 ID',
+    trip_id                       BIGINT      NULL COMMENT '이 미션이 귀속되는 여행 ID',
     monthly_spending_analysis_id  BIGINT      NOT NULL COMMENT '월간 분석 ID',
     mission_category_selection_id BIGINT      NOT NULL COMMENT '카테고리 절감률 선택 ID',
     category_id                   BIGINT      NOT NULL COMMENT '소비 카테고리 ID',
@@ -1316,6 +1323,8 @@ CREATE TABLE monthly_saving_missions
     PRIMARY KEY (id),
     UNIQUE KEY uk_monthly_saving_missions_user_month_category (user_id, target_year_month, category_id),
     UNIQUE KEY uk_monthly_saving_missions_selection (mission_category_selection_id),
+    KEY idx_monthly_saving_missions_trip (trip_id),
+    CONSTRAINT fk_monthly_saving_missions_trip FOREIGN KEY (trip_id) REFERENCES trips (id),
     CONSTRAINT fk_monthly_saving_missions_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_monthly_saving_missions_analysis FOREIGN KEY (monthly_spending_analysis_id) REFERENCES monthly_spending_analyses (id),
     CONSTRAINT fk_monthly_saving_missions_selection FOREIGN KEY (mission_category_selection_id) REFERENCES mission_category_selections (id),
