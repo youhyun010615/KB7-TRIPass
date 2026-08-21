@@ -10,10 +10,12 @@ import {
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
+import { useTravelStore } from '@/stores/travel';
 
 const route = useRoute();
 const router = useRouter();
 const store = useTravelScheduleStore();
+const travel = useTravelStore();
 const editing = computed(() => Boolean(route.params.scheduleId));
 const original = editing.value
   ? store.getSchedule(route.params.scheduleId)
@@ -72,6 +74,12 @@ const wonRates = { EUR: 1486.2, USD: 1380, CHF: 1704.6, JPY: 9.23, HKD: 184.2 };
 const wonAmount = computed(() =>
   Math.round(Number(form.amount || 0) * (wonRates[form.currency] || 1)),
 );
+const tripDateRange = computed(() => {
+  const plans = travel.selectedPlans || [];
+  const starts = plans.map((item) => item.startDate).filter(Boolean).sort();
+  const ends = plans.map((item) => item.endDate).filter(Boolean).sort();
+  return starts.length && ends.length ? `${starts[0].replaceAll('-', '.')} ~ ${ends.at(-1).replaceAll('-', '.')}` : '';
+});
 let autocomplete;
 
 function applyCountry() {
@@ -168,7 +176,12 @@ onBeforeUnmount(() => {
       <h1>여행일정 {{ editing ? '수정' : '추가' }}</h1>
       <span />
     </header>
+    <section class="trip-summary">
+      <div><b>{{ travel.tripName || '여행 일정' }}</b><small>{{ tripDateRange }}</small></div>
+      <span>여행 중</span>
+    </section>
     <section class="form-card">
+      <div class="section-title"><h2>일정 정보</h2><p>여행 중 방문할 일정 정보를 입력해요.</p></div>
       <label
         ><span>▱ 일정명</span
         ><input
@@ -259,14 +272,9 @@ onBeforeUnmount(() => {
           </button>
         </div></label
       >
-      <label
-        ><span>📝 메모</span
-        ><textarea
-          v-model="form.memo"
-          maxlength="100"
-          placeholder="일정에 필요한 내용을 메모해 주세요."
-        /><small>{{ form.memo.length }}/100</small></label
-      >
+    </section>
+    <section class="memo-card">
+      <label><span>메모</span><textarea v-model="form.memo" maxlength="100" placeholder="일정에 필요한 내용을 메모해 주세요."/><small>{{ form.memo.length }}/100</small></label>
     </section>
     <p
       v-if="store.errorMessage"
@@ -290,7 +298,7 @@ onBeforeUnmount(() => {
 .form-page {
   min-height: 100vh;
   padding: 0 16px 150px;
-  background: #f8f6f1;
+  background: #f3f6fc;
   color: #10192d;
 }
 .form-page > header {
@@ -322,7 +330,11 @@ onBeforeUnmount(() => {
   border: 1px solid #dce4ee;
   border-radius: 16px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(23, 63, 141, 0.07);
 }
+.trip-summary{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:17px 18px;border:1px solid #d5e1f3;border-radius:18px;background:#fff;box-shadow:0 8px 20px rgba(23,63,141,.07)}
+.trip-summary div{min-width:0}.trip-summary b,.trip-summary small{display:block}.trip-summary b{overflow:hidden;font-size:15px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.trip-summary small{margin-top:6px;color:#8493a9;font-size:10px}.trip-summary>span{flex:none;padding:7px 12px;border-radius:999px;background:#214d97;color:#fff;font-size:9px;font-weight:900}
+.section-title{padding:18px 14px 4px}.section-title h2{font-size:17px;font-weight:900}.section-title p{margin-top:6px;color:#8493a9;font-size:10px}
 .form-card > label {
   display: block;
   padding: 14px;
@@ -331,18 +343,18 @@ onBeforeUnmount(() => {
 .form-card label > span {
   display: block;
   margin-bottom: 8px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
 }
 .form-card input,
 .form-card select,
 .form-card textarea {
   width: 100%;
-  padding: 11px;
+  padding: 13px;
   border: 1px solid #e0e6ef;
   border-radius: 9px;
   background: #fff;
-  font-size: 10px;
+  font-size: 11px;
   outline: none;
 }
 .form-card input:focus,
@@ -401,6 +413,7 @@ onBeforeUnmount(() => {
   color: #246dd7;
   font-weight: 900;
 }
+.memo-card{margin-top:14px;padding:18px 14px;border:1px solid #dce4ee;border-radius:18px;background:#fff;box-shadow:0 8px 22px rgba(23,63,141,.06)}.memo-card label>span{display:block;margin-bottom:10px;font-size:14px;font-weight:900}.memo-card textarea{width:100%;height:112px;padding:14px;border:0;border-radius:14px;background:#f6f8fc;font-size:11px;line-height:1.6;resize:none;outline:none}.memo-card small{display:block;margin-top:6px;color:#8a97aa;font-size:8px;text-align:right}
 .address {
   display: grid;
   grid-template-columns: 1fr 42px;
