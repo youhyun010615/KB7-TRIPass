@@ -119,7 +119,7 @@ onMounted(loadSettlement)
   <div class="settlement-panel">
     <section class="settlement-hero">
       <div class="hero-label"><HandCoins :size="17" /> SETTLEMENT SUMMARY</div>
-      <p>공동경비를 참여자별로<br>확인해 보세요.</p>
+      <p>공동경비를 확인해보세요.</p>
       <div class="hero-total">
         <span>예정 정산 금액</span>
         <div class="amount-stack hero-amounts">
@@ -131,7 +131,7 @@ onMounted(loadSettlement)
 
     <section class="participant-section">
       <div class="content-title">
-        <div><small>PARTICIPANTS</small><h2>참여자별 정산</h2></div>
+        <div><small>SETTLEMENT LIST</small><h2>정산 필요 내역</h2></div>
         <span>{{ summary.participants.length }}명</span>
       </div>
       <p class="section-guide">참여자를 누르면 해당 영수증이 바로 펼쳐져요.</p>
@@ -204,8 +204,8 @@ onMounted(loadSettlement)
           </div>
         </article>
 
-        <div v-if="!summary.participants.length" class="state-box compact">
-          <span><Users :size="24" /></span><b>정산할 공동결제가 없어요</b><small>공동결제 영수증을 등록하면 참여자별로 모아드려요.</small>
+        <div v-if="!summary.participants.length" class="state-box compact empty-settlement">
+          <span class="empty-settlement-icon"><Users :size="24" /></span><b>정산할 공동결제가 없어요</b><small>공동결제 영수증을 등록하면 참여자별로 모아드려요.</small>
         </div>
       </div>
     </section>
@@ -218,5 +218,29 @@ onMounted(loadSettlement)
 .hero-total > span {
   font-size: 15px;
   font-weight: 900;
+}
+.empty-settlement-icon {
+  position: relative;
+  animation: empty-settlement-float 2.1s ease-in-out infinite;
+}
+.empty-settlement-icon::after {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid rgba(47, 111, 237, 0.34);
+  border-radius: 18px;
+  content: '';
+  animation: empty-settlement-ring 2.1s ease-out infinite;
+}
+@keyframes empty-settlement-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes empty-settlement-ring {
+  0% { opacity: .65; transform: scale(.85); }
+  70%, 100% { opacity: 0; transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .empty-settlement-icon,
+  .empty-settlement-icon::after { animation: none; }
 }
 </style>
