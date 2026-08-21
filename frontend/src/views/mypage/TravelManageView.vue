@@ -137,12 +137,14 @@ onMounted(async () => {
       <div class="relative rounded-[20px] text-white p-5 overflow-hidden" style="background: linear-gradient(155deg, #0B2A6B 0%, #123C94 62%, #17459F 100%); box-shadow: 0 10px 24px rgba(11,42,107,0.2)">
         <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
         <p class="relative text-[11px] font-extrabold tracking-[0.1em]" style="color:#FFD466">TRAVEL RECORD</p>
-        <div class="relative flex items-center gap-1 mt-2 text-lg">
-          <span v-for="(code, i) in visitedCountryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline travel-record-flag"></span>
-        </div>
         <div class="relative flex mt-3">
           <div class="flex-1">
-            <p class="font-mono text-[26px] font-bold">{{ visitedCountryCount }}</p>
+            <div class="flex items-center gap-2">
+              <p class="font-mono text-[26px] font-bold">{{ visitedCountryCount }}</p>
+              <div class="flex items-center gap-1">
+                <span v-for="(code, i) in visitedCountryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline travel-record-flag"></span>
+              </div>
+            </div>
             <p class="text-[11px] font-bold mt-[3px]" style="color: rgba(255,255,255,0.55)">방문 국가</p>
           </div>
           <div class="w-px" style="background: rgba(255,255,255,0.16)"></div>
@@ -244,7 +246,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.travel-record-flag{width:25px;height:17px;border-radius:3px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.travel-record-flag{width:13px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 2px rgba(0,0,0,.2)}
 .travel-list-flags{display:flex;gap:3px}
 .travel-list-flag{width:14px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 2px rgba(15,23,42,.16)}
 </style>
