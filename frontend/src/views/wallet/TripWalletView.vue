@@ -6,9 +6,10 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import TravelCardVisual from '@/components/common/TravelCardVisual.vue'
+import TravelModeMeta from '@/components/travel/TravelModeMeta.vue'
 import { useTripWalletStore } from '@/stores/tripWallet'
 import { useTravelModeStore } from '@/stores/travelMode'
-import { useTravelStore } from '@/stores/travel'
+import { countryPresentation, useTravelStore } from '@/stores/travel'
 import { getAccountInstitutions } from '@/api/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
 import { flagClassMap } from '@/stores/exchange'
@@ -23,6 +24,24 @@ const isTravelWallet = computed(() => travelMode.isTravelMode)
 const showMonthlySavings = computed(() =>
   !isTravelWallet.value && Boolean(travel.lifecycle?.savingsTrackingStarted),
 )
+const walletTripCountries = computed(() => travel.activeTrip?.countries || [])
+const walletTravelStart = computed(() => walletTripCountries.value.map(item => item.arrivalDate || item.startDate).filter(Boolean).sort()[0] || '')
+const walletTravelDay = computed(() => {
+  if (!walletTravelStart.value) return 0
+  const start = new Date(`${walletTravelStart.value}T00:00:00`).getTime()
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  return Math.max(0, Math.floor((today.getTime() - start) / 86400000))
+})
+const walletCurrentCountry = computed(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  const item = walletTripCountries.value.find(country => {
+    const start = country.arrivalDate || country.startDate
+    const end = country.departureDate || country.endDate
+    return start && end && start <= today && today <= end
+  }) || walletTripCountries.value[0]
+  const name = item?.countryName || item?.name || ''
+  return { name, code: item?.countryCode || item?.code || countryPresentation[name]?.code || '' }
+})
 
 const travelTargetAmount = computed(() => Number(
   travel.activeTrip?.totalTargetAmount || wallet.targetAmount || 0,
@@ -395,6 +414,13 @@ async function confirmUnlinkTravelCard() {
         </div>
         <NotificationBell />
       </header>
+      <TravelModeMeta
+        v-if="isTravelWallet"
+        :trip-name="travel.tripName"
+        :day="walletTravelDay"
+        :country-name="walletCurrentCountry.name"
+        :country-code="walletCurrentCountry.code"
+      />
     </div>
     <div :style="{ height: walletHeaderHeight + 'px' }" aria-hidden="true" />
 

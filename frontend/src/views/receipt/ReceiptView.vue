@@ -22,6 +22,7 @@ import {
 
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
+import TravelModeMeta from '@/components/travel/TravelModeMeta.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
 import { flagIconClass } from '@/stores/travel'
 import receiptIcon from '@/assets/icons/receipt.svg'
@@ -96,6 +97,21 @@ function countryIsoCode(country) {
 const tripCountryFlags = computed(() =>
     (trip.value?.countries || []).slice(0, 3).map(country => flagIconClass(countryIsoCode(country))),
 )
+const receiptTravelDay = computed(() => {
+  if (!trip.value?.startDate) return 0
+  const start = new Date(`${trip.value.startDate}T00:00:00`).getTime()
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  return Math.max(0, Math.floor((today.getTime() - start) / 86400000))
+})
+const receiptCurrentCountry = computed(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  const item = (trip.value?.countries || []).find(country => {
+    const start = country.arrivalDate || country.startDate
+    const end = country.departureDate || country.endDate
+    return start && end && start <= today && today <= end
+  }) || trip.value?.countries?.[0]
+  return { name: item?.countryName || '', code: countryIsoCode(item) }
+})
 
 const countries = computed(() => {
   const tripCountries =
@@ -553,6 +569,12 @@ onMounted(loadPage)
         </div>
         <NotificationBell />
       </header>
+      <TravelModeMeta
+        :trip-name="tripTitle"
+        :day="receiptTravelDay"
+        :country-name="receiptCurrentCountry.name"
+        :country-code="receiptCurrentCountry.code"
+      />
     </div>
     <div class="receipt-header-spacer" aria-hidden="true" />
 
@@ -1232,7 +1254,7 @@ onMounted(loadPage)
 
 /* TRIPASS receipt vault renewal */
 .receipt-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 18px;background:#f4f7fc;transform:translateX(-50%)}
-.receipt-header{display:flex;align-items:flex-start;justify-content:space-between}.receipt-header .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.receipt-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.receipt-header-spacer{height:82px}
+.receipt-header{display:flex;align-items:flex-start;justify-content:space-between}.receipt-header .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.receipt-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.receipt-header-spacer{height:132px}
 .receipt-page {
   min-height: 100vh;
   padding: 0 18px 164px;
