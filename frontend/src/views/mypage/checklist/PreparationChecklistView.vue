@@ -20,22 +20,19 @@
         </button>
       </nav>
 
-      <!-- 상단 패스/진행률 카드 -->
-      <section class="pass">
-        <small>TRIP PREP BOARDING PASS</small><i />
-        <div class="progress-panel">
-          <div class="progress-head">
-            <h2>{{ dynamicStageMeta[stage].label }} 체크리스트</h2>
-            <b>{{ progress.done }} / {{ progress.total }} 완료</b>
-          </div>
-          <div class="bar">
-            <span :style="{ width: `${progress.percent}%` }" />
-          </div>
-          <footer>
-            <strong>{{ progress.percent }}% 완료</strong>
-            <em>{{ progress.total - progress.done }}개 항목 남음</em>
-          </footer>
+      <!-- 단계별 진행률 카드 -->
+      <section class="progress-panel">
+        <div class="progress-head">
+          <h2>{{ dynamicStageMeta[stage].label }} 체크리스트</h2>
+          <b>{{ progress.done }} / {{ progress.total }} 완료</b>
         </div>
+        <div class="bar">
+          <span :style="{ width: `${progress.percent}%` }" />
+        </div>
+        <footer>
+          <strong>{{ progress.percent }}% 완료</strong>
+          <em>{{ progress.total - progress.done }}개 항목 남음</em>
+        </footer>
       </section>
     </div>
 
@@ -649,6 +646,15 @@ const handleDelete = async (event, itemId) => {
 .pass footer{margin-top:10px}
 .pass footer strong{color:#fff;font-size:11px;font-weight:850}
 .pass footer em{color:#b8cef2;font-size:9px;font-weight:700}
+.fixed-header>.progress-panel{display:block;padding:15px;border-radius:16px;background:linear-gradient(145deg,#123c84,#1c5dbd);color:#fff;box-shadow:0 9px 20px rgba(24,77,164,.17)}
+.progress-panel .progress-head{display:flex;align-items:center;justify-content:space-between}
+.progress-panel .progress-head h2{font-size:15px;font-weight:850;letter-spacing:-.025em}
+.progress-panel .progress-head b{color:#ffd466;font-size:12px;font-weight:900}
+.progress-panel .bar{height:8px;margin-top:12px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}
+.progress-panel .bar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}
+.progress-panel footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.progress-panel footer strong{color:#fff;font-size:11px;font-weight:850}
+.progress-panel footer em{color:#b8cef2;font-size:9px;font-style:normal;font-weight:700}
 .scroll-content h3{margin:18px 3px 10px;color:#17233b;font-size:16px;font-weight:900;letter-spacing:-.025em}
 .item-card{min-height:58px;padding:12px 14px}
 .item-title{gap:7px;color:#17233b;font-size:14px;font-weight:850;line-height:1.35}
