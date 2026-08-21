@@ -8,6 +8,7 @@ import { useCardStore } from '@/stores/cardStore'
 import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
 import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
+import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
 import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
 
 const router = useRouter()
@@ -187,6 +188,9 @@ function cardVisualImage(card) {
   const name = card.cardName ?? ''
   const isKb = resolveCardMeta(card).name === 'KB국민은행' || name.includes('KB') || name.includes('국민')
 
+  if (isKb && name.includes('트래블')) {
+    return kbTravelersTosimiImage
+  }
   if (name.includes('트래블')) {
     return getTravelCardImage(name) || getTravelCardImage(resolveCardMeta(card).name) || kbTravelersImage
   }
