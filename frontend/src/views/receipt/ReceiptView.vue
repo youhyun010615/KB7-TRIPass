@@ -2142,7 +2142,7 @@ onMounted(loadPage)
 .trip-summary-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  gap: 0;
   margin-top: 0;
 }
 
@@ -2150,11 +2150,12 @@ onMounted(loadPage)
   display: grid;
   min-width: 0;
   gap: 5px;
-  min-height: 66px;
-  padding: 13px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .58);
+  min-height: 58px;
+  padding: 8px 13px;
+  background: transparent;
 }
+
+.trip-summary-metrics > div + div { border-left: 1px solid rgba(23, 63, 141, .16); }
 
 .trip-summary-metrics span {
   color: #8997aa;
