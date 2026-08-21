@@ -39,7 +39,7 @@ async function remove() {
       <section class="details"><h3>일정 정보</h3><dl>
         <div><dt>국가</dt><dd>{{ country?.flag }} {{ country?.name }}</dd></div>
         <div><dt>일시</dt><dd>{{ schedule.date }} {{ schedule.time }}</dd></div>
-        <div class="wide"><dt>장소</dt><dd><b>{{ schedule.placeName || '장소 미정' }}</b><small>{{ schedule.placeAddress || '주소 미정' }}</small></dd></div>
+        <div class="wide"><dt>장소</dt><dd><b>{{ schedule.placeName || '장소 미정' }}</b></dd></div>
       </dl></section>
       <section class="memo"><h3>메모</h3><p>{{ schedule.memo || '등록된 메모가 없어요.' }}</p></section>
       <div class="actions"><button type="button" @click="remove">삭제</button><button type="button" @click="router.push(`/schedule/${schedule.id}/edit`)">수정</button></div>

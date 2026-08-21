@@ -1,8 +1,6 @@
 <script setup>
 import {
   computed,
-  nextTick,
-  onBeforeUnmount,
   onMounted,
   reactive,
   ref,
@@ -40,7 +38,6 @@ const form = reactive(
         memo: '',
       },
 );
-const addressInput = ref(null);
 const country = computed(() =>
   store.countries.find((item) => item.code === form.countryCode),
 );
@@ -61,8 +58,7 @@ const valid = computed(
     form.time &&
     form.currency &&
     Number(form.amount) >= 0 &&
-    form.placeName.trim() &&
-    form.placeAddress.trim(),
+    form.placeName.trim(),
 );
 const error = computed(() =>
   form.date && !dateInCountry.value
@@ -80,56 +76,10 @@ const tripDateRange = computed(() => {
   const ends = plans.map((item) => item.endDate).filter(Boolean).sort();
   return starts.length && ends.length ? `${starts[0].replaceAll('-', '.')} ~ ${ends.at(-1).replaceAll('-', '.')}` : '';
 });
-let autocomplete;
-
 function applyCountry() {
   if (!country.value) return;
   form.currency = country.value.currency;
   if (!dateInCountry.value) form.date = selectedPeriod.value.startDate;
-  setupPlaces();
-}
-
-function setupPlaces() {
-  nextTick(() => {
-    if (!addressInput.value || !window.google?.maps?.places?.Autocomplete)
-      return;
-    autocomplete = new window.google.maps.places.Autocomplete(
-      addressInput.value,
-      {
-        fields: ['formatted_address', 'name'],
-        componentRestrictions: { country: form.countryCode.toLowerCase() },
-      },
-    );
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (place.name && !form.placeName) form.placeName = place.name;
-      if (place.formatted_address) form.placeAddress = place.formatted_address;
-    });
-  });
-}
-
-function loadGooglePlaces() {
-  if (window.google?.maps?.places) return setupPlaces();
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (!apiKey || document.querySelector('script[data-tripass-google-places]'))
-    return;
-  const script = document.createElement('script');
-  script.dataset.tripassGooglePlaces = 'true';
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&loading=async`;
-  script.async = true;
-  script.onload = setupPlaces;
-  document.head.appendChild(script);
-}
-
-function searchAddress() {
-  const query = [form.placeName, form.placeAddress, country.value?.name]
-    .filter(Boolean)
-    .join(' ');
-  window.open(
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
-    '_blank',
-    'noopener,noreferrer',
-  );
 }
 
 const isSubmitting = ref(false);
@@ -142,7 +92,7 @@ async function submit() {
     amount: Number(form.amount),
     title: form.title.trim(),
     placeName: form.placeName.trim(),
-    placeAddress: form.placeAddress.trim(),
+    placeAddress: '',
     memo: form.memo.trim(),
   };
   try {
@@ -161,11 +111,7 @@ async function submit() {
 }
 
 onMounted(() => {
-  loadGooglePlaces();
   store.ensureTripLoaded().catch(() => {});
-});
-onBeforeUnmount(() => {
-  autocomplete = null;
 });
 </script>
 
@@ -256,22 +202,6 @@ onBeforeUnmount(() => {
         ><span>📍 장소명</span
         ><input v-model="form.placeName" placeholder="예: 루브르 박물관"
       /></label>
-      <label
-        ><span>🗺 주소</span>
-        <div class="address">
-          <input
-            ref="addressInput"
-            v-model="form.placeAddress"
-            placeholder="주소를 입력하거나 검색해 주세요"
-          /><button
-            type="button"
-            aria-label="Google 지도에서 주소 검색"
-            @click="searchAddress"
-          >
-            ⌕
-          </button>
-        </div></label
-      >
     </section>
     <section class="memo-card">
       <label><span>메모</span><textarea v-model="form.memo" maxlength="100" placeholder="일정에 필요한 내용을 메모해 주세요."/><small>{{ form.memo.length }}/100</small></label>
@@ -416,17 +346,6 @@ onBeforeUnmount(() => {
   font-weight: 900;
 }
 .memo-card{margin-top:14px;padding:18px 14px;border:1px solid #dce4ee;border-radius:18px;background:#fff;box-shadow:0 8px 22px rgba(23,63,141,.06)}.memo-card label>span{display:block;margin-bottom:10px;font-size:14px;font-weight:900}.memo-card textarea{width:100%;height:112px;padding:14px;border:0;border-radius:14px;background:#f6f8fc;font-size:11px;line-height:1.6;resize:none;outline:none}.memo-card small{display:block;margin-top:6px;color:#8a97aa;font-size:8px;text-align:right}
-.address {
-  display: grid;
-  grid-template-columns: 1fr 42px;
-  gap: 7px;
-}
-.address button {
-  border-radius: 9px;
-  background: #19489c;
-  color: #fff;
-  font-size: 22px;
-}
 .conversion {
   display: flex;
   align-items: center;
