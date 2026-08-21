@@ -4,14 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api'
 import { getCardInstitutions, linkCard } from '@/api/card'
-import kbBankLogo from '@/assets/bank-logos/kb-bank.svg'
-import nhBankLogo from '@/assets/bank-logos/nh-bank.svg'
+import kbBankLogo from '@/assets/bank-logos/kb-user.jpg'
+import nhBankLogo from '@/assets/bank-logos/nh-user.gif'
 import wooriBankLogo from '@/assets/bank-logos/woori-bank.svg'
 import hanaBankLogo from '@/assets/bank-logos/hana-bank.svg'
-import shinhanBankLogo from '@/assets/bank-logos/shinhan-bank.svg'
+import shinhanBankLogo from '@/assets/bank-logos/shinhan-user.png'
 import ibkBankLogo from '@/assets/bank-logos/ibk-bank-official.svg'
-import kbankLogo from '@/assets/bank-logos/kbank.svg'
-import imBankLogo from '@/assets/bank-logos/im-bank.png'
+import kbankLogo from '@/assets/bank-logos/kbank-user.png'
+import imBankLogo from '@/assets/bank-logos/im-user.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -74,6 +74,10 @@ function bankLogoUrl(bank) {
   return domain
     ? `https://www.google.com/s2/favicons?domain_url=https://${domain}&sz=128`
     : ''
+}
+
+function bankLogoClass(bank) {
+  return `bank-logo-${String(bank?.organizationCode || '').padStart(4, '0')}`
 }
 
 function hideBrokenBankLogo(event) {
@@ -427,7 +431,7 @@ onMounted(() => {
                     :class="{ selected: selectedBank?.organizationCode === bank.organizationCode }"
                     @click="selectedBank = bank"
                 >
-                  <span class="bank-logo-mark">
+                  <span class="bank-logo-mark" :class="bankLogoClass(bank)">
                     <span v-if="!bankLogoUrl(bank)" class="bank-logo-fallback">{{ bank.institutionName.charAt(0) }}</span>
                     <img
                       v-if="bankLogoUrl(bank)"
@@ -832,8 +836,18 @@ button { border: 0; cursor: pointer; }
 .account-intro { padding-top: 42px; }.load-bank-card { width: 100%; padding: 13px 14px; display: flex; align-items: center; gap: 13px; text-align: left; border: 1px solid #eceff5; border-radius: 14px; background: white; }.load-bank-card > span:nth-child(2) { flex: 1; }.load-bank-card strong, .load-bank-card small { display: block; }.load-bank-card strong { font-size: 13px; color: #10192b; }.load-bank-card small { margin-top: 2px; color: #98a2b3; font-size: 10.5px; }.load-bank-card b { color: #98a2b3; font-size: 18px; font-weight: 400; }.bank-building { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; color: #2f6fed; background: #eaf1ff; }
 .security-note { margin-top: 16px; padding: 18px; display: flex; gap: 12px; border-radius: 14px; background: #eaf1ff; }.security-note > span { color: #2f6fed; }.security-note strong { font-size: 11px; }.security-note p { margin: 4px 0 0; color: #64748b; font-size: 9px; }
 .bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.bank-option { position: relative; height: 88px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid transparent; border-radius: 14px; background: #f4f5f9; }.bank-option.selected { border-color: #2f6fed; background: #fff; box-shadow: 0 4px 12px rgba(47,111,237,.12); }.bank-option.pending { opacity: .6; cursor: not-allowed; }.bank-option strong { font-size: 11px; color: #10192b; }.bank-option i { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; color: white; background: #2f6fed; font-size: 11px; font-style: normal; display: grid; place-items: center; }.bank-option small { position: absolute; top: 10px; right: 9px; color: #e5484d; font-size: 8px; }.bank-mark, .certificate-mark { display: grid; place-items: center; border-radius: 9px; font-weight: 900; }.bank-mark { width: 30px; height: 30px; font-size: 11px; }.bank-mark.mint { color: #047857; background: #d1fae5; }.bank-mark.yellow { color: #3f3100; background: #ffe44d; }.bank-mark.blue { color: white; background: #1688e8; }.bank-mark.green { color: white; background: #10b981; }.bank-mark.navy { color: white; background: #263f8c; }
-.bank-logo-mark { position: relative; display: block; width: 42px; height: 38px; overflow: hidden; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.bank-logo-mark { position: relative; display: block; width: 38px; height: 40px; overflow: hidden; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .bank-logo-mark img { position: absolute; top: 50%; left: 0; width: auto; max-width: none; height: 34px; object-fit: initial; background: transparent; transform: translateY(-50%); }
+.bank-logo-0011 img { left: 50%; height: 38px; transform: translate(-50%, -50%); }
+.bank-logo-0004 { width: 33px; }
+.bank-logo-0004 img,
+.bank-logo-0088 img,
+.bank-logo-0031 img { mix-blend-mode: multiply; }
+.bank-logo-0020 { width: 38px; }
+.bank-logo-0081 { width: 38px; }
+.bank-logo-0031 img { top: -12px; left: -20px; width: 80px; height: 80px; transform: none; }
+.bank-logo-0089 { width: 62px; }
+.bank-logo-0089 img { left: 50%; width: 60px; height: auto; transform: translate(-50%, -50%); }
 .bank-logo-fallback { display: grid; width: 100%; height: 100%; place-items: center; border-radius: 10px; color: #263f8c; background: transparent; font-size: 12px; font-weight: 900; }
 .terms-backdrop { height: 100vh; color: rgba(17,24,39,.75); background: #999; }.terms-copy { padding: 24px 31px; }.terms-copy h3 { margin: 0 0 13px; font-size: 14px; }.terms-copy p, .terms-copy small { display: block; margin: 0 0 5px; font-size: 10px; }
 .certificate-sheet { position: absolute; z-index: 5; left: 9px; right: 9px; bottom: 10px; padding: 20px; border-radius: 24px; background: white; box-shadow: 0 -8px 30px rgba(0,0,0,.12); }.sheet-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }.sheet-heading h2 { margin: 0; font-size: 18px; }.sheet-heading button { color: #64748b; background: transparent; font-size: 23px; }
