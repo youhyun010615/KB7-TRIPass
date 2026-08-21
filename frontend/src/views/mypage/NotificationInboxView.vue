@@ -30,7 +30,7 @@ function open(item) {
   <main class="page">
     <header>
       <button @click="router.back()">‹</button>
-      <h1><img :src="notificationIcon" alt="" />알림</h1>
+      <h1>알림<img :src="notificationIcon" alt="" /></h1>
       <button @click="store.markAllRead">전체 읽음</button>
     </header>
     <div class="title">
@@ -124,7 +124,7 @@ function open(item) {
   font-weight: 900;
   letter-spacing: -0.03em;
 }
-.page h1 img { width:20px;height:20px;object-fit:contain; }
+.page h1 img { width:21px;height:21px;object-fit:contain; }
 .title {
   display: flex;
   justify-content: space-between;
