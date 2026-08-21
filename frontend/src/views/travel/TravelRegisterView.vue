@@ -49,15 +49,20 @@ function toggleCountryFromDropdown(countryId) {
   const changed = store.toggleCountry(countryId)
   if (!changed) return
   store.clearError()
+  searchKeyword.value = ''
   countryDropdownOpen.value = false
 }
 
-const sortedCountries = computed(() =>
-  [...store.countries].sort((a, b) => {
+const sortedCountries = computed(() => {
+  const keyword = searchKeyword.value.trim().toLocaleLowerCase('ko-KR')
+  return [...store.countries]
+    .filter((country) => !keyword || [country.name, country.currencyCode, country.code]
+      .some((value) => String(value || '').toLocaleLowerCase('ko-KR').includes(keyword)))
+    .sort((a, b) => {
     if (a.selectable !== b.selectable) return a.selectable ? -1 : 1
     return (a.name || '').localeCompare(b.name || '', 'ko-KR')
-  }),
-)
+    })
+})
 
 const budgetCategories = [
   { field: 'airfareAmount', label: '항공', icon: '✈', prepaid: true },
@@ -358,27 +363,20 @@ function goToOnboardingHub() {
       <section class="country-section">
         <div class="section-title"><h2>여행 국가 선택</h2><span>복수 선택 가능 · 최대 5개국</span></div>
         <div class="country-dropdown">
-          <button
-            type="button"
-            class="country-dropdown-trigger"
-            @click="countryDropdownOpen = !countryDropdownOpen"
-          >
-            <span v-if="store.selectedPlans.length" class="country-dropdown-value">
-              {{ store.selectedPlans.map((plan) => plan.name).join(', ') }}
-            </span>
-            <span v-else class="country-dropdown-placeholder">국가를 선택해 주세요</span>
-            <i class="country-dropdown-chevron" :class="{ open: countryDropdownOpen }">▾</i>
-          </button>
+          <label class="country-search country-search-main">
+            <span>⌕</span>
+            <input
+              v-model="searchKeyword"
+              placeholder="국가 또는 통화 검색"
+              @focus="countryDropdownOpen = true"
+              @input="countryDropdownOpen = true"
+            >
+            <i v-if="store.countryLoading" class="mini-spinner" />
+          </label>
 
           <template v-if="countryDropdownOpen">
-            <div class="country-dropdown-backdrop" @click="countryDropdownOpen = false"></div>
             <div class="country-dropdown-panel">
-              <label class="country-search">
-                <span>⌕</span>
-                <input v-model="searchKeyword" placeholder="국가 또는 통화 검색">
-                <i v-if="store.countryLoading" class="mini-spinner" />
-              </label>
-              <ul v-if="sortedCountries.length" class="country-dropdown-list">
+              <ul v-if="searchKeyword.trim() && sortedCountries.length" class="country-dropdown-list country-search-results">
                 <li v-for="country in sortedCountries" :key="country.countryId">
                   <button
                     type="button"
@@ -399,8 +397,8 @@ function goToOnboardingHub() {
                   </button>
                 </li>
               </ul>
+              <p v-else-if="!searchKeyword.trim()" class="empty-copy">찾고 싶은 국가명을 입력해 주세요.</p>
               <p v-else-if="!store.countryLoading" class="empty-copy">검색 결과가 없어요.</p>
-              <button type="button" class="country-dropdown-done" @click="countryDropdownOpen = false">완료</button>
             </div>
           </template>
         </div>
