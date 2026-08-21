@@ -238,17 +238,24 @@ function completeProfile() {
     return
   }
   authStore.completeProfile()
+  if (isOnboarding.value) {
+    router.replace({ name: 'TripOnboarding' })
+    return
+  }
   router.replace('/')
 }
 
 function skipProfile() {
+  if (isOnboarding.value) {
+    router.replace({ name: 'TripOnboarding' })
+    return
+  }
   authStore.completeProfile()
   router.replace('/')
 }
 
 function skipOnboardingAccount() {
-  authStore.completeProfile()
-  router.replace('/')
+  router.replace({ name: 'TripOnboarding' })
 }
 
 onMounted(() => {
@@ -260,7 +267,7 @@ onMounted(() => {
 
 <template>
   <main class="finance-profile">
-    <button v-if="isOnboarding && step !== 5" type="button" class="onboarding-skip-floating" @click="skipOnboardingAccount">다음에 할게요</button>
+    <button v-if="isOnboarding && step !== 5" type="button" class="onboarding-skip-floating" @click="skipOnboardingAccount">준비 화면</button>
     <section class="finance-shell" :class="{ 'is-tall': step === 7, 'is-navy-shell': step === 0 }">
       <template v-if="step === 0">
         <div class="intro-hero">
