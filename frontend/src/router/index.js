@@ -563,6 +563,24 @@ const router = createRouter({
       meta: { requiresAuth: true, receiptArchive: true },
     },
     {
+      path: '/mypage/travel/:tripId/receipts/capture',
+      name: 'TravelReceiptArchiveCapture',
+      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/new',
+      name: 'TravelReceiptArchiveNew',
+      component: () => import('@/views/receipt/ReceiptManualView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/:receiptId',
+      name: 'TravelReceiptArchiveDetail',
+      component: () => import('@/views/receipt/ReceiptResultView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true, receiptMode: 'detail' },
+    },
+    {
       path: '/mypage/assets',
       name: 'AssetLink',
       component: () => import('@/views/mypage/AssetLinkView.vue'),
