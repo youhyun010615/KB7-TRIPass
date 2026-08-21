@@ -150,9 +150,7 @@ const myManageItems = computed(() => [
             <div class="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0" style="background: #EAF1FF">
               <img v-if="item.icon === 'user'" src="@/assets/icons/blue_profile.svg" width="19" height="19" alt="" />
               <img v-if="item.icon === 'travel'" src="@/assets/icons/blue_airplane.svg" width="19" height="19" alt="" />
-              <svg v-if="item.icon === 'notification'" width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="#2F6FED" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <img v-if="item.icon === 'notification'" src="@/assets/icons/mingcute_notification-fill.svg" width="19" height="19" alt="" />
               <svg v-if="item.icon === 'card'" width="19" height="19" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="#2F6FED" stroke-width="1.8"/>
                 <path d="M3 10.5h18" stroke="#2F6FED" stroke-width="1.8"/>
