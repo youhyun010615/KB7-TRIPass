@@ -1463,19 +1463,23 @@ form {
 
 .save-area {
   position: fixed;
-  right: 0;
+  right: auto;
   bottom: 0;
-  left: 0;
-  z-index: 10;
-  padding: 14px 20px 24px;
+  left: 50%;
+  z-index: 40;
+  width: 100%;
+  max-width: 390px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   border-top: 1px solid #e1e6ef;
   background: #fff;
+  box-shadow: 0 -8px 24px rgba(25, 54, 105, .08);
+  transform: translateX(-50%);
 }
 
 .save-area button {
   display: block;
-  width: min(calc(100% - 40px), 350px);
-  height: 54px;
+  width: 100%;
+  height: 52px;
   margin: 0 auto;
   border-radius: 14px;
   background: #173f8d;
