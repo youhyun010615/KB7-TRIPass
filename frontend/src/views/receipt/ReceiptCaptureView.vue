@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
             "
             @click="openFilePicker"
         >
-          파일 선택
+          파일 업로드
         </button>
 
         <input
@@ -447,7 +447,7 @@ onBeforeUnmount(() => {
           "
           @click="openCamera"
       >
-        📷 카메라로 촬영하기
+        📷 촬영하기
       </button>
     </template>
 
