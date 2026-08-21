@@ -107,7 +107,7 @@ const currencyOptions = computed(() => {
 })
 
 const currencyMark = computed(() => (
-    currencySymbols[form.currencyCode] || form.currencyCode || '—'
+    currencySymbols[form.currencyCode] || form.currencyCode || '통화'
 ))
 
 const itemTotalAmount = computed(() => {
@@ -714,16 +714,15 @@ onBeforeUnmount(removeImage)
         <section class="items-section">
           <div class="items-heading">
             <div>
-              <b>결제 품목</b>
+              <div class="items-title-row">
+                <b>결제 품목</b>
+                <strong>{{ form.items.length }}개 품목</strong>
+              </div>
 
               <small>
                 품목별 수량과 금액을 입력해 주세요.
               </small>
             </div>
-
-            <strong>
-              {{ form.items.length }}개 품목
-            </strong>
           </div>
 
           <article
@@ -824,7 +823,47 @@ onBeforeUnmount(removeImage)
 
             <strong>{{ itemTotalAmount.toFixed(2) }}</strong>
           </div>
+        </section>
 
+        <!-- 공동결제 -->
+        <section class="shared-payment-card receipt-shared-payment">
+          <div class="shared-heading">
+            <div>
+              <b class="shared-title"><Users :size="17" /> 공동 인원 추가</b>
+              <small>공동인원을 추가해 이후에 정산하기 기능을 사용해보세요</small>
+            </div>
+            <label class="switch">
+              <input v-model="form.sharedPayment" type="checkbox">
+              <i />
+            </label>
+          </div>
+
+          <template v-if="form.sharedPayment">
+            <div class="people-count">
+              <span>전체 인원 수</span>
+              <div>
+                <button type="button" aria-label="인원 감소" @click="decreaseSplitCount">−</button>
+                <b>{{ form.splitCount }}</b>
+                <button type="button" aria-label="인원 증가" @click="increaseSplitCount">+</button>
+              </div>
+            </div>
+            <div class="per-person">
+              <span>1인당 결제 금액</span>
+              <b>{{ currencyMark }} {{ perPersonAmount.toFixed(2) }}</b>
+            </div>
+            <div class="participants">
+              <b>결제 인원</b>
+              <small>로그인 사용자를 제외한 참여자 이름</small>
+              <input
+                  v-for="(_, index) in form.participantNames"
+                  :key="index"
+                  v-model.trim="form.participantNames[index]"
+                  type="text"
+                  maxlength="100"
+                  :placeholder="`참여자 ${index + 1} 이름`"
+              >
+            </div>
+          </template>
         </section>
 
         <p class="receipt-document-footer">
@@ -852,85 +891,6 @@ onBeforeUnmount(removeImage)
         <span>메모</span>
         <textarea v-model.trim="form.memo" maxlength="500" placeholder="메모를 입력하세요" />
       </label>
-
-      <!-- 공동결제 -->
-      <section class="shared-payment-card">
-        <div class="shared-heading">
-          <div>
-            <b class="shared-title"><Users :size="17" /> 공동 인원 추가</b>
-
-            <small>
-              공동인원을 추가해 이후에 정산하기 기능을 사용해보세요
-            </small>
-          </div>
-
-          <label class="switch">
-            <input
-                v-model="form.sharedPayment"
-                type="checkbox"
-            >
-
-            <i />
-          </label>
-        </div>
-
-        <template v-if="form.sharedPayment">
-          <div class="people-count">
-            <span>전체 인원 수</span>
-
-            <div>
-              <button
-                  type="button"
-                  aria-label="인원 감소"
-                  @click="decreaseSplitCount"
-              >
-                −
-              </button>
-
-              <b>{{ form.splitCount }}</b>
-
-              <button
-                  type="button"
-                  aria-label="인원 증가"
-                  @click="increaseSplitCount"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div class="per-person">
-            <span>1인당 결제 금액</span>
-
-            <b>
-              {{ form.currencyCode || '통화' }}
-              {{ perPersonAmount.toFixed(2) }}
-            </b>
-          </div>
-
-          <div class="participants">
-            <b>결제 인원</b>
-
-            <small>
-              로그인 사용자를 제외한 참여자 이름
-            </small>
-
-            <input
-                v-for="(_, index) in
-                form.participantNames"
-                :key="index"
-                v-model.trim="
-                form.participantNames[index]
-              "
-                type="text"
-                maxlength="100"
-                :placeholder="
-                `참여자 ${index + 1} 이름`
-              "
-            >
-          </div>
-        </template>
-      </section>
 
       <div class="save-area">
         <button
@@ -1145,8 +1105,13 @@ form {
 
 .items-heading {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.items-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
 }
 
 .items-heading b,
@@ -1191,8 +1156,8 @@ form {
 .item-card-heading button {
   padding: 5px 9px;
   border-radius: 8px;
-  background: #ffe7e7;
-  color: #e13f3f;
+  background: #ffd9d5;
+  color: #b42318;
   font-size: 11px;
   font-weight: 800;
 }
@@ -1244,13 +1209,12 @@ form {
 }
 
 .item-amount-input b {
-  min-width: 34px;
+  min-width: 38px;
   margin-left: 10px;
-  padding: 4px 6px;
-  border-radius: 7px;
-  background: #eaf1ff;
+  padding: 0;
+  background: transparent;
   color: #173f8d;
-  font-size: 11px;
+  font-size: 13px;
   text-align: center;
 }
 
