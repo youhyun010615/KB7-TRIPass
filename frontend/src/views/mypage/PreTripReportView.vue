@@ -183,4 +183,5 @@ const budgetSegments = computed(() => {
 </style>
 <style scoped>
 .page{background:#f3f6fc}.summary{border-radius:20px;background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.card{border-color:#dfe7f4;border-radius:18px;box-shadow:0 7px 20px rgba(23,63,141,.05)}.card.highlight{background:linear-gradient(145deg,#edf3ff,#f8faff);border-color:#c9d9fa}.card.highlight .bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}.final{background:#fff4d7;color:#795300}.pdf{background:#2662ea;box-shadow:0 10px 22px rgba(38,98,234,.2)}
+.summary{padding:15px;border-radius:18px;box-shadow:0 9px 22px rgba(23,63,141,.14)}.summary h2{margin-top:8px}.card{margin-top:9px;padding:13px;border-radius:16px;box-shadow:0 5px 15px rgba(23,63,141,.045)}.saving-chart{height:100px;margin-top:11px}.donut-row{gap:14px;margin-top:11px}.donut{width:90px;height:90px}.stat-table{margin-top:9px}.final{margin-top:9px;padding:12px;border-radius:12px}.pdf{margin-top:10px;padding:12px;border-radius:10px}
 </style>

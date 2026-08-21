@@ -343,4 +343,5 @@ aside small {
 </style>
 <style scoped>
 .checklist-page{background:#f3f6fc}.ticket{background:linear-gradient(145deg,#2662ea 0%,#173f8d 100%);box-shadow:0 16px 34px rgba(23,63,141,.2)}.ticket::before,.ticket::after{background:#f3f6fc}.ticket>div>b,.ticket .total em{color:#ffd45e}.bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}.menu-card{border-color:#dfe7f4;box-shadow:0 8px 22px rgba(23,63,141,.06)}.menu-icon{background:#e9f0ff!important;color:#2662ea!important}aside{background:#eaf1ff;color:#173f8d}
+.ticket{padding:18px;border-radius:18px;box-shadow:0 10px 24px rgba(23,63,141,.14)}.ticket h2,.ticket>div>b{margin-top:14px}.ticket i{margin:14px 0 11px}.bar{margin-top:10px}.checklist-page>h3{margin:20px 2px 11px}.menu-card{grid-template-columns:40px 1fr auto 10px;gap:10px;margin-bottom:10px;padding:14px;border-radius:16px;box-shadow:0 6px 16px rgba(23,63,141,.05)}.menu-icon{width:38px;height:38px;border-radius:12px;font-size:18px}.copy small{margin-top:4px}.menu-card em{padding:6px 9px}.menu-card>strong{font-size:20px}aside{gap:9px;margin-top:17px;padding:13px;border:1px solid #d8e4f8;border-radius:14px}
 </style>
