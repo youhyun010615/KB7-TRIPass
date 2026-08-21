@@ -13,6 +13,7 @@ import { countryPresentation, useTravelStore } from '@/stores/travel'
 import { getAccountInstitutions } from '@/api/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
 import { flagClassMap } from '@/stores/exchange'
+import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
 
 const sampleTravelCardImage = getTravelCardImage('KB국민카드')
 
@@ -48,6 +49,14 @@ const walletTripCountryCodes = computed(() => walletTripCountries.value.map(item
   const name = item?.countryName || item?.name || ''
   return item?.countryCode || item?.code || countryPresentation[name]?.code || ''
 }).filter(Boolean))
+
+const walletTravelCardImages = computed(() => {
+  const card = wallet.travelCard
+  const cardIdentity = `${card?.issuer || ''} ${card?.name || ''}`.toUpperCase()
+  const isKbCard = cardIdentity.includes('KB') || cardIdentity.includes('국민')
+
+  return isKbCard ? [kbTravelersTosimiImage] : (card?.images || [])
+})
 
 const travelTargetAmount = computed(() => Number(
   travel.activeTrip?.totalTargetAmount || wallet.targetAmount || 0,
@@ -544,7 +553,7 @@ async function confirmUnlinkTravelCard() {
         <div class="card-visual">
           <TravelCardVisual
             v-model:frozen-index="wallet.travelCard.frozenIndex"
-            :images="wallet.travelCard.images"
+            :images="walletTravelCardImages"
             :color="wallet.travelCard.color"
             :issuer="wallet.travelCard.issuer"
             :brand="wallet.travelCard.brand"
