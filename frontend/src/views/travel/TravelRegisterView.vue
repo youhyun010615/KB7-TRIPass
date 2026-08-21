@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DatePickerSheet from '@/components/savings/DatePickerSheet.vue'
 import TravelTicket from '@/components/savings/TravelTicket.vue'
+import calendarIcon from '@/assets/icons/calendar.svg'
 import { fetchWalletAccounts, withdrawWallet } from '@/api/wallet'
 import { useTravelStore, flagIconClass } from '@/stores/travel'
 
@@ -452,7 +453,6 @@ function goToOnboardingHub() {
         <button @click="goToTripInfo">국가 수정</button>
       </section>
       <section class="ai-guide">
-        <span>📅</span>
         <div><b>방문 순서대로 일정을 입력해 주세요</b><p>국가 간 일정은 겹치지 않아야 하며, 같은 날 다음 국가로 이동할 수 있어요.</p></div>
       </section>
       <section
@@ -468,7 +468,7 @@ function goToOnboardingHub() {
         <button class="date-row" @click="dateTarget = plan">
           <span>여행 날짜</span>
           <b>{{ plan.startDate ? `${dateLabel(plan.startDate)} ~ ${dateLabel(plan.endDate)}` : '날짜 선택' }}</b>
-          <span>▣</span>
+          <img :src="calendarIcon" alt="" aria-hidden="true">
         </button>
         <p v-if="showValidation && store.planError(plan)" class="card-error">⚠ {{ store.planError(plan) }}</p>
       </section>
@@ -698,4 +698,5 @@ function goToOnboardingHub() {
 .budget-fixed-summary .total-preview .goal>b{color:#0b2a6b;font-size:16px;font-weight:800}
 .budget-fixed-summary .collision{margin:7px 0 0;padding:6px 9px}
 .budget-fixed-summary .primary-cta{height:48px;margin-top:10px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:none}
+.ai-guide>div{flex:1}.date-row img{flex:0 0 18px;width:18px;height:18px}
 </style>
