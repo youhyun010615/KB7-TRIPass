@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useMypageStore } from '@/stores/mypage';
 import alertIcon from '@/assets/icons/alert.svg';
+import notificationIcon from '@/assets/icons/mingcute_notification-fill.svg';
 const router = useRouter(),
   store = useMypageStore();
 const meta = {
@@ -29,7 +30,7 @@ function open(item) {
   <main class="page">
     <header>
       <button @click="router.back()">‹</button>
-      <h1>알림</h1>
+      <h1><img :src="notificationIcon" alt="" />알림</h1>
       <button @click="store.markAllRead">전체 읽음</button>
     </header>
     <div class="title">
@@ -114,11 +115,16 @@ function open(item) {
   white-space: nowrap;
 }
 .page h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   text-align: center;
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.03em;
 }
+.page h1 img { width:20px;height:20px;object-fit:contain; }
 .title {
   display: flex;
   justify-content: space-between;
