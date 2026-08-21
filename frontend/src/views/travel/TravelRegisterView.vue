@@ -32,6 +32,7 @@ const selectedWalletAccountId = ref(null)
 const walletStepLoading = ref(false)
 const walletStepError = ref('')
 const showWalletWithdrawSheet = ref(false)
+const walletResolution = ref(null)
 const activeBudgetCountryId = ref(null)
 let searchTimer
 
@@ -110,6 +111,12 @@ const walletDecisionAmount = computed(() => Number(
   store.lifecycle?.walletReflectAmount ?? store.currentWalletBalance ?? 0,
 ))
 const walletDecisionRequired = computed(() => Boolean(store.lifecycle?.needsWalletReflectPrompt))
+const walletStatusLabel = computed(() => {
+  if (walletDecisionRequired.value) return walletDecisionAmount.value > 0 ? '선택 필요' : '0원 시작'
+  if (walletResolution.value === 'included') return '포함 완료'
+  if (walletResolution.value === 'withdrawn') return '송금 완료'
+  return walletDecisionAmount.value > 0 ? '선택 완료' : '0원 시작'
+})
 const selectedWalletAccount = computed(() => walletAccounts.value.find(
   account => Number(account.accountId ?? account.id) === Number(selectedWalletAccountId.value),
 ))
@@ -242,7 +249,10 @@ async function includeWalletBalance() {
   walletStepLoading.value = true
   walletStepError.value = ''
   try {
-    if (walletDecisionRequired.value) await store.resolveWalletBalanceReflect(true)
+    if (walletDecisionRequired.value) {
+      await store.resolveWalletBalanceReflect(true)
+      walletResolution.value = 'included'
+    }
   } catch (error) {
     walletStepError.value = error.response?.data?.message || '월렛 선택을 처리하지 못했어요.'
   } finally {
@@ -270,6 +280,7 @@ async function withdrawWalletBalance() {
       idempotencyKey: `trip-goal-wallet-${store.tripId}-${selectedWalletAccount.value.accountId ?? selectedWalletAccount.value.id}`,
     })
     await store.resolveWalletBalanceReflect(false)
+    walletResolution.value = 'withdrawn'
     showWalletWithdrawSheet.value = false
   } catch (error) {
     walletStepError.value = error.response?.data?.message || '월렛 잔액을 계좌로 보내지 못했어요.'
@@ -586,15 +597,19 @@ function goToOnboardingHub() {
       <section v-else class="onboarding-wallet-card" :class="{ resolved: !walletDecisionRequired }">
         <div class="onboarding-wallet-top">
           <div><small>TRIPASS WALLET</small><b>월렛 잔액</b></div>
-          <span>{{ walletDecisionRequired ? '선택 필요' : '선택 완료' }}</span>
+          <span>{{ walletStatusLabel }}</span>
         </div>
         <strong class="onboarding-wallet-balance">{{ money(walletDecisionAmount) }}</strong>
-        <p v-if="walletDecisionRequired && walletDecisionAmount > 0">남아 있는 잔액을 이번 여행 목표에 포함하거나 연결 계좌로 뺄 수 있어요.</p>
-        <p v-else-if="walletDecisionRequired">현재 잔액이 없어 추가 금액 없이 여행 목표를 시작해요.</p>
-        <p v-else>월렛 자금 선택이 완료됐어요. 다음 단계에서 계좌 등록을 이어갈 수 있어요.</p>
+        <p v-if="walletDecisionRequired && walletDecisionAmount > 0">현재 월렛에 남아 있는 잔액을 여행 목표 금액에 포함하시겠어요? 원하지 않으면 연결 계좌로 보낼 수 있어요.</p>
+        <p v-else-if="walletResolution === 'included'">
+          월렛 잔액을 여행 저축에 포함했어요. 앞으로 {{ store.remainingMonths }}개월 동안 매월 {{ money(store.monthlySavingTarget) }}씩 모으면 돼요.
+        </p>
+        <p v-else-if="walletResolution === 'withdrawn'">선택한 연결 계좌로 잔액을 보냈어요. 이번 여행 월렛은 0원부터 시작해요.</p>
+        <p v-else-if="walletDecisionAmount === 0">현재 월렛에 남은 돈이 없어요. 추가 금액 없이 이번 여행 월렛은 0원으로 시작해요.</p>
+        <p v-else>월렛 자금 선택이 완료됐어요. 다음 단계에서 남은 여행 준비를 이어갈 수 있어요.</p>
         <div class="wallet-decision-actions">
-          <button v-if="walletDecisionRequired && walletDecisionAmount > 0" type="button" class="secondary" :disabled="walletStepLoading" @click="openWalletWithdrawal">계좌로 빼기</button>
-          <button v-if="walletDecisionRequired && walletDecisionAmount > 0" type="button" :disabled="walletStepLoading" @click="includeWalletBalance">목표 자금에 충전</button>
+          <button v-if="walletDecisionRequired && walletDecisionAmount > 0" type="button" class="secondary" :disabled="walletStepLoading" @click="openWalletWithdrawal">연결 계좌로 보내기</button>
+          <button v-if="walletDecisionRequired && walletDecisionAmount > 0" type="button" :disabled="walletStepLoading" @click="includeWalletBalance">여행 목표에 포함하기</button>
         </div>
       </section>
       <p v-if="walletStepError" class="wallet-step-error">{{ walletStepError }}</p>
