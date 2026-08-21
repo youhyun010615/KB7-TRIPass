@@ -144,22 +144,6 @@ const tripCountries = computed(() => {
   const codes = store.configuredPeriods.map((period) => period.code);
   return codes.map((code) => store.countries.find((country) => country.code === code)).filter(Boolean);
 });
-const currentCountry = computed(() => {
-  const todaySchedules = store.sortedSchedules.filter((item) => item.date === store.today);
-  const currentTime = new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date());
-  const startedSchedule = [...todaySchedules]
-    .filter((item) => (item.time || '00:00') <= currentTime)
-    .at(-1);
-  const activeSchedule = startedSchedule || todaySchedules[0];
-  const scheduleCountry = store.countries.find(
-    (country) => country.code === activeSchedule?.countryCode,
-  );
-  return scheduleCountry || store.countryForDate(store.today) || tripCountries.value[0] || null;
-});
 const currentTravelDay = computed(() => {
   const start = new Date(`${store.travelStart}T00:00:00`).getTime();
   const today = new Date(`${store.today}T00:00:00`).getTime();
@@ -224,21 +208,20 @@ function showPastSchedules() {
     <div class="schedule-header-spacer" aria-hidden="true" />
 
     <section class="trip-timeline-pass">
-      <div class="trip-pass-head">
-        <small>TRIPASS TIMELINE</small>
-      </div>
       <div class="trip-title-row">
-        <h2>{{ travel.tripName || '나의 여행' }}</h2>
-        <div v-if="currentCountry" class="current-country">
-          <small>NOW</small>
-          <strong>{{ currentCountry.name }}</strong>
-          <span :class="flagIconClass(currentCountry.code)" class="fi-inline current-country-flag" />
-        </div>
+        <h2>
+          {{ travel.tripName || '나의 여행' }}
+          <span class="trip-country-flags" aria-label="여행 국가">
+            <i
+                v-for="country in tripCountries"
+                :key="country.code"
+                :class="flagIconClass(country.code)"
+            />
+          </span>
+        </h2>
+        <strong class="travel-day">DAY {{ currentTravelDay }}</strong>
       </div>
-      <div class="trip-period-row">
-        <p>{{ store.travelStart }} — {{ store.travelEnd }}</p>
-        <strong>DAY {{ currentTravelDay }}</strong>
-      </div>
+      <p class="trip-period">{{ store.travelStart }} — {{ store.travelEnd }}</p>
     </section>
 
     <section class="calendar-card">
@@ -358,7 +341,65 @@ function showPastSchedules() {
 }
 .schedule-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 20px;background:#f4f5f9;transform:translateX(-50%)}
 .schedule-header{display:flex;align-items:flex-start;justify-content:space-between}.header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.schedule-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.schedule-header-spacer{height:82px}
-.trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%);color:#fff;box-shadow:0 12px 26px rgba(24,51,99,.2)}.trip-pass-head{display:flex;align-items:center}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}.trip-title-row h2{min-width:0;overflow:hidden;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.current-country{display:flex;flex:0 0 auto;align-items:center;gap:5px;padding:6px 9px;border:1px solid rgba(163,194,248,.55);border-radius:999px;background:#4169af;animation:now-country-pulse 2s ease-in-out infinite}.current-country small{color:#ffd466;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.08em}.current-country strong{font-size:10px;font-weight:850}.current-country-flag{width:22px;height:15px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.18)}.trip-period-row{display:flex;align-items:center;justify-content:space-between;margin-top:9px}.trip-period-row p{color:rgba(255,255,255,.72);font-size:10px;font-weight:650}.trip-period-row strong{color:#ffd466;font-family:'Space Mono',monospace;font-size:9px;font-weight:900;letter-spacing:.06em}@keyframes now-country-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,94,.3)}50%{transform:scale(1.035);box-shadow:0 0 0 5px rgba(255,212,94,0)}}@media(prefers-reduced-motion:reduce){.current-country{animation:none}}
+.trip-timeline-pass {
+  position: relative;
+  overflow: hidden;
+  margin: 16px 0 14px;
+  padding: 18px;
+  border: 1px solid #bfd3f2;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
+  color: #142440;
+  box-shadow: 0 12px 24px rgba(30, 64, 125, .08);
+}
+.trip-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.trip-title-row h2 {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #142440;
+  font-size: 17px;
+  font-weight: 950;
+  letter-spacing: -.035em;
+}
+.trip-country-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.trip-country-flags i {
+  display: block;
+  width: 22px;
+  height: 15px;
+  border-radius: 3px;
+  background-size: cover;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .18));
+}
+.travel-day {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .62);
+  color: #173f8d;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+.trip-period {
+  margin-top: 6px;
+  color: #8290a6;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .03em;
+}
 .calendar-card {
   overflow: hidden;
   padding: 1px 0 4px;
@@ -820,7 +861,6 @@ function showPastSchedules() {
   font-weight: 700;
   letter-spacing: -0.01em;
 }
-@media (prefers-reduced-motion: reduce){.trip-pass-head em.traveling{animation:none}}
 .today-preview-list {
   padding-bottom: 12px;
 }
