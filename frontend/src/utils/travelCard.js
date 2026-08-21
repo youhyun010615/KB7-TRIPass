@@ -1,4 +1,4 @@
-import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
+import kbTravelersImage from '@/assets/cards/kb-travelers-tosimi.png'
 import hanaTravelogImage from '@/assets/travel-cards/hana-travelog.png'
 import wooriWibeeTravelImage from '@/assets/travel-cards/woori-wibee-travel.png'
 import shinhanSolTravelImage from '@/assets/travel-cards/shinhan-sol-travel.png'
