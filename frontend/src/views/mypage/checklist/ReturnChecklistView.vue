@@ -173,7 +173,8 @@ const handleDelete = async (event, itemId) => {
 .scroll-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 95px;
+  padding-bottom: calc(145px + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(145px + env(safe-area-inset-bottom));
 
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -410,6 +411,7 @@ const handleDelete = async (event, itemId) => {
   font-size: 10px;
   font-weight: 900;
   cursor: pointer;
+  margin-bottom: 20px;
 }
 
 .add-box {

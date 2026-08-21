@@ -279,7 +279,8 @@ const handleDelete = async (event, itemId) => {
 .scroll-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 95px; /* 바텀네비게이션 레이어 안 겹치게 여백 */
+  padding-bottom: calc(145px + env(safe-area-inset-bottom)); /* 추가 영역이 하단 내비게이션에 가리지 않도록 확보 */
+  scroll-padding-bottom: calc(145px + env(safe-area-inset-bottom));
 
   /* 스크롤바 감추기 */
   -ms-overflow-style: none;
@@ -548,6 +549,7 @@ const handleDelete = async (event, itemId) => {
   font-size: 10px;
   font-weight: 900;
   cursor: pointer;
+  margin-bottom: 20px;
 }
 .add-box {
   margin-top: 14px;
