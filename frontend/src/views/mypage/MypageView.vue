@@ -565,7 +565,12 @@ const myManageItems = computed(() => [
 .selected-trip-summary>svg { width:18px;height:18px;color:#9aa6b8;transition:transform .22s ease; }
 .selected-trip-summary>svg.open { transform:rotate(180deg); }
 .trip-menu-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:13px;border-top:1px solid #edf1f7;background:#fff; }
-.trip-menu-item { position:relative;display:flex;min-width:0;min-height:112px;flex-direction:column;align-items:flex-start;padding:13px;border:0;border-radius:16px;background:#f6f8fc;color:#111b30;text-align:left; }
+.trip-menu-item { position:relative;display:flex;min-width:0;min-height:112px;flex-direction:column;align-items:flex-start;padding:13px;border:0;border-radius:16px;background:#f6f8fc;color:#111b30;text-align:left;opacity:0;transform:translateY(16px) scale(.94);animation:trip-menu-card-reveal .46s cubic-bezier(.2,.82,.28,1.18) forwards;will-change:transform,opacity; }
+.trip-menu-item:nth-child(1) { animation-delay:.05s; }
+.trip-menu-item:nth-child(2) { animation-delay:.11s; }
+.trip-menu-item:nth-child(3) { animation-delay:.17s; }
+.trip-menu-item:nth-child(4) { animation-delay:.23s; }
+.trip-menu-item:nth-child(5) { animation-delay:.29s; }
 .trip-menu-item:active { background:#edf3ff;transform:scale(.985); }
 .trip-menu-item.wide { grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px; }
 .trip-menu-icon { display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#eaf1ff;color:#2f70f2; }
@@ -586,5 +591,13 @@ const myManageItems = computed(() => [
 @keyframes traveling-dot-pulse {
   0% { box-shadow:0 0 0 0 rgba(29,191,115,.42); }
   70%,100% { box-shadow:0 0 0 6px rgba(29,191,115,0); }
+}
+@keyframes trip-menu-card-reveal {
+  0% { opacity:0;transform:translateY(16px) scale(.94); }
+  68% { opacity:1;transform:translateY(-2px) scale(1.015); }
+  100% { opacity:1;transform:translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .trip-menu-item { opacity:1;transform:none;animation:none; }
 }
 </style>
