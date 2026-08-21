@@ -267,7 +267,7 @@ function showPastSchedules() {
 
     <section v-if="featuredSchedule" class="today-schedule-section">
       <div class="list-heading">
-        <h2>오늘 일정</h2>
+        <h2>다가오는 일정</h2>
         <em>{{ shortDateLabel(featuredSchedule.date) }}</em>
       </div>
       <div class="today-schedule-list">
@@ -334,7 +334,7 @@ function showPastSchedules() {
       "
     >
       <span class="add-button-icon" aria-hidden="true">+</span>
-      <span class="add-button-label">새 여행 일정 추가하기</span>
+      <span class="add-button-label">여행 일정 추가</span>
     </button>
     <BottomNav />
   </main>
@@ -349,6 +349,7 @@ function showPastSchedules() {
 }
 .schedule-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 20px 10px;background:#f4f5f9;transform:translateX(-50%)}
 .schedule-header{display:flex;align-items:flex-start;justify-content:space-between}.header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.schedule-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}
+.schedule-header-fixed :deep(.travel-mode-meta){min-height:54px;gap:9px;padding:7px 12px;border-radius:14px}.schedule-header-fixed :deep(.meta-trip-title>strong){font-size:12.5px}.schedule-header-fixed :deep(.meta-trip-flags em){width:19px;height:13px}.schedule-header-fixed :deep(.meta-trip-copy small){font-size:8.5px}.schedule-header-fixed :deep(.meta-day){padding:5px 9px;font-size:10px}.schedule-header-fixed :deep(.meta-now){gap:5px;padding:5px 8px;font-size:10px}.schedule-header-fixed :deep(.meta-now b){font-size:9px}.schedule-header-fixed :deep(.meta-now em){width:22px;height:15px}
 .schedule-travel-meta{display:flex;height:30px;align-items:center;gap:7px;margin-top:9px;padding:0 10px;border:1px solid #d7e2f2;border-radius:10px;background:rgba(255,255,255,.82);box-shadow:0 4px 12px rgba(31,63,116,.05);color:#66758c;white-space:nowrap}.schedule-travel-meta>strong{min-width:0;overflow:hidden;color:#173f8d;font-size:9.5px;font-weight:900;text-overflow:ellipsis}.schedule-travel-meta>i{width:1px;height:10px;flex:0 0 auto;background:#d8e0eb}.schedule-travel-meta>span{flex:0 0 auto;font-family:'Space Mono',monospace;font-size:8px;font-style:normal;font-weight:800}.schedule-travel-meta .header-day{padding:3px 7px;border-radius:999px;background:#ffd45e;color:#173f8d;font-weight:950;box-shadow:0 2px 7px rgba(207,152,0,.2)}.schedule-travel-meta .header-now{display:flex;align-items:center;gap:4px;padding:3px 6px;border:1px solid rgba(38,98,234,.2);border-radius:999px;background:#edf4ff;font-family:inherit;animation:header-now-pulse 2s ease-in-out infinite}.header-now b{color:#2662ea;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.04em}.header-now em{display:block;width:18px;height:12px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.14)}
 .schedule-header-spacer{height:142px}
 .trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%);color:#fff;box-shadow:0 12px 26px rgba(24,51,99,.2)}.trip-pass-head{display:flex;align-items:center;justify-content:space-between}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-pass-head strong{padding:5px 9px;border:1px solid rgba(255,255,255,.42);border-radius:999px;background:#ffd45e;color:#173f8d;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.06em;animation:day-badge-glow 2s ease-in-out infinite}.trip-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}.trip-title-row h2{min-width:0;overflow:hidden;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.current-country{position:relative;display:flex;overflow:hidden;flex:0 0 auto;align-items:center;gap:5px;padding:6px 9px;border:1px solid rgba(255,212,94,.72);border-radius:999px;background:#4169af;animation:now-country-pulse 1.8s ease-in-out infinite}.current-country::after{position:absolute;top:-8px;bottom:-8px;left:-20px;width:10px;background:rgba(255,255,255,.5);content:'';filter:blur(3px);transform:rotate(18deg);animation:now-country-shine 2.4s ease-in-out infinite}.current-country small{color:#ffd466;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.08em}.current-country strong{font-size:10px;font-weight:900}.current-country-flag{width:22px;height:15px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.18)}.trip-period-row{display:flex;align-items:center;margin-top:9px}.trip-period-row p{color:rgba(255,255,255,.72);font-size:10px;font-weight:650}@keyframes day-badge-glow{0%,100%{box-shadow:0 3px 8px rgba(255,212,94,.2)}50%{box-shadow:0 4px 15px rgba(255,212,94,.55)}}@keyframes header-now-pulse{0%,100%{box-shadow:0 0 0 0 rgba(38,98,234,.12)}50%{box-shadow:0 0 0 4px rgba(38,98,234,0)}}@keyframes now-country-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,94,.35)}50%{transform:scale(1.045);box-shadow:0 0 0 6px rgba(255,212,94,0)}}@keyframes now-country-shine{0%,45%{left:-20px;opacity:0}60%{opacity:1}85%,100%{left:calc(100% + 20px);opacity:0}}@media(prefers-reduced-motion:reduce){.current-country,.current-country::after,.trip-pass-head strong,.schedule-travel-meta .header-now{animation:none}}
@@ -783,13 +784,14 @@ function showPastSchedules() {
   position: fixed;
   right: max(calc((100vw - 390px) / 2 + 28px), 28px);
   bottom: 78px;
-  left: max(calc((100vw - 390px) / 2 + 28px), 28px);
   z-index: 40;
   display: flex;
+  width: auto;
   height: 48px;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 0 18px;
   border-radius: 13px;
   background: #0b2a6b;
   color: #fff;
