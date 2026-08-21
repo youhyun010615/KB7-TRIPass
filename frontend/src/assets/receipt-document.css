@@ -219,7 +219,10 @@
 }
 
 .manual-page .shared-payment-card,
-.result-page .shared-payment-card { background: #fff8cc; }
+.result-page .shared-payment-card {
+  border-color: #c7d9f7;
+  background: #eaf2ff;
+}
 
 .manual-page .memo-field textarea,
 .result-page .memo-card textarea,
@@ -248,20 +251,13 @@
   margin: 8px 0 26px;
   padding: 0 19px 25px;
   border-color: #bfd2f1;
-  border-radius: 7px;
+  border-radius: 18px 18px 7px 7px;
   background: linear-gradient(135deg, #dce9fb 0%, #c8daf6 100%);
   box-shadow: 0 11px 25px rgba(35, 73, 136, .12);
 }
 
 .manual-page .tripass-receipt-document::before {
-  position: absolute;
-  top: -7px;
-  right: -1px;
-  left: -1px;
-  height: 8px;
-  background: radial-gradient(circle at 7px 7px, #dce9fb 7px, transparent 7.5px) 0 0 / 14px 8px repeat-x;
-  content: '';
-  pointer-events: none;
+  display: none;
 }
 
 .manual-page .tripass-receipt-document::after {
@@ -269,6 +265,7 @@
 }
 
 .manual-page .receipt-paper-heading {
+  grid-template-columns: 1fr auto 1fr;
   padding: 18px 1px 16px;
   border-color: rgba(23, 63, 141, .18);
 }
@@ -325,12 +322,19 @@
 
 .manual-page .tripass-receipt-document .country-currency-field {
   grid-template-columns: 1fr 1fr;
-  padding-bottom: 18px;
-  border-bottom: 1px dashed rgba(23, 63, 141, .22);
 }
 
+.manual-page .tripass-receipt-document .country-field select,
 .manual-page .tripass-receipt-document .currency-field select {
-  border-color: transparent;
+  border-color: rgba(23, 63, 141, .18);
+  background-color: #fff;
+  color: #17243a;
+  color-scheme: light;
+}
+
+.manual-page .tripass-receipt-document select option {
+  background: #fff;
+  color: #17243a;
 }
 
 .manual-page .tripass-receipt-document .items-section,

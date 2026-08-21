@@ -107,7 +107,7 @@ const currencyOptions = computed(() => {
 })
 
 const currencyMark = computed(() => (
-    currencySymbols[form.currencyCode] || form.currencyCode || '통화'
+    currencySymbols[form.currencyCode] || form.currencyCode || '—'
 ))
 
 const itemTotalAmount = computed(() => {
@@ -628,7 +628,6 @@ onBeforeUnmount(removeImage)
         <div class="receipt-paper-heading">
           <span>TRIPASS</span>
           <b>여행 영수증</b>
-          <small>NO. NEW</small>
         </div>
 
         <!-- 현재 여행 -->
@@ -1190,12 +1189,16 @@ form {
 }
 
 .item-card-heading button {
-  color: #e55353;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: #ffe7e7;
+  color: #e13f3f;
   font-size: 11px;
   font-weight: 800;
 }
 
 .item-card-heading button:disabled {
+  background: #edf1f6;
   color: #c8ced8;
 }
 
