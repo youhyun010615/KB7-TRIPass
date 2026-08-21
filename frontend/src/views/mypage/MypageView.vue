@@ -10,6 +10,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
 import reportIcon from '@/assets/icons/report.svg'
+import checklistIcon from '@/assets/icons/checklist.svg'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -313,7 +314,8 @@ const myManageItems = computed(() => [
               >
                 <span class="trip-menu-icon" aria-hidden="true">
                   <img v-if="item.icon === 'report'" :src="reportIcon" alt="" />
-                  <svg v-else-if="item.icon === 'check' || item.icon === 'mission'" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <img v-else-if="item.icon === 'check'" :src="checklistIcon" alt="" />
+                  <svg v-else-if="item.icon === 'mission'" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   <svg v-else-if="item.icon === 'schedule'" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M9 3.5v3M15 3.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                   <svg v-else viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                 </span>
