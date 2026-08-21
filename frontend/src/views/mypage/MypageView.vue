@@ -9,6 +9,7 @@ import { useCardStore } from '@/stores/cardStore'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
+import reportIcon from '@/assets/icons/report.svg'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -311,7 +312,7 @@ const myManageItems = computed(() => [
                   @click="router.push(item.path)"
               >
                 <span class="trip-menu-icon" aria-hidden="true">
-                  <svg v-if="item.icon === 'report'" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M12 20V5M19 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <img v-if="item.icon === 'report'" :src="reportIcon" alt="" />
                   <svg v-else-if="item.icon === 'check' || item.icon === 'mission'" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   <svg v-else-if="item.icon === 'schedule'" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M9 3.5v3M15 3.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                   <svg v-else viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -575,6 +576,7 @@ const myManageItems = computed(() => [
 .trip-menu-item.wide { grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px; }
 .trip-menu-icon { display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#eaf1ff;color:#2f70f2; }
 .trip-menu-icon svg { width:18px;height:18px; }
+.trip-menu-icon img { width:19px;height:19px;object-fit:contain; }
 .trip-menu-copy { min-width:0; }
 .trip-menu-item:not(.wide) .trip-menu-copy { margin-top:13px; }
 .trip-menu-item b { display:block;font-size:11px;font-weight:800;line-height:1.35; }

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { flagIconClass } from '@/stores/travel'
+import reportIcon from '@/assets/icons/report.svg'
 
 const route=useRoute(); const router=useRouter(); const store=useTravelReportStore()
 const tripId=computed(()=>{
@@ -47,7 +48,7 @@ watch(tripId, id => { if (id) load(id) })
     <span>생성된 리포트 {{ reportCount }}개</span>
   </div>
   <p class="report-list-description">여행 전후의 자금 흐름을 리포트를 통해 확인해보세요.<br>여행 후 리포트는 여행 후에 볼 수 있어요.</p>
-  <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue">▥</span><div><b>여행 저축 리포트</b><small>여행 전 저축과 자금 준비 기록</small></div><em>확인</em><strong>›</strong></button>
+  <button class="report-card" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue"><img :src="reportIcon" alt="" /></span><div><b>여행 저축 리포트</b><small>여행 전 저축과 자금 준비 기록</small></div><em>생성완료</em><strong>›</strong></button>
   <button class="report-card" :class="{disabled:report.status!=='여행 완료'}" :disabled="report.status!=='여행 완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange">▤</span><div><b>여행 후 리포트</b></div><em class="after">{{ report.status==='여행 완료'?'확인':'준비 중' }}</em><strong>›</strong></button>
   </template>
   <BottomNav/></main></template>
@@ -127,5 +128,5 @@ watch(tripId, id => { if (id) load(id) })
   font-weight: 900;
   letter-spacing: .06em;
 }
-.report-list-heading{display:flex;align-items:center;gap:8px;margin:21px 2px 0}.report-list-heading h3{font-size:14px;font-weight:900}.report-list-heading span{color:#2662ea;font-size:10px;font-weight:850}.report-list-description{margin:6px 2px 13px;color:#77869d;font-size:10px;font-weight:600;line-height:1.65}.page>h3{margin:0}.report-card div b{font-size:14px;font-weight:900}@media(prefers-reduced-motion:reduce){.ticket .ticket-head b.traveling{animation:none}}
+.report-list-heading{display:flex;align-items:center;gap:8px;margin:21px 2px 0}.report-list-heading h3{font-size:14px;font-weight:900}.report-list-heading span{color:#2662ea;font-size:10px;font-weight:850}.report-list-description{margin:6px 2px 13px;color:#77869d;font-size:10px;font-weight:600;line-height:1.65}.page>h3{margin:0}.report-card div b{font-size:14px;font-weight:900}.report-card>span img{width:21px;height:21px;object-fit:contain}@media(prefers-reduced-motion:reduce){.ticket .ticket-head b.traveling{animation:none}}
 </style>
