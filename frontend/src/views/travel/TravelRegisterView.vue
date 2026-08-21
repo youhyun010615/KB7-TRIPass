@@ -392,7 +392,19 @@ function goToOnboardingHub() {
             @dragend="finishNativeReorder"
           >
             <b>{{ index + 1 }}</b><span v-if="planFlagClass(plan.code)" :class="planFlagClass(plan.code)" class="fi-inline"></span><span v-else>{{ plan.flag }}</span><strong>{{ plan.name }}</strong><small>{{ plan.currencyCode }}</small>
-            <button type="button" aria-label="방문 순서 드래그" @pointerdown="startPointerReorder(index, $event)">≡</button>
+            <button
+              type="button"
+              class="country-remove-button"
+              :aria-label="`${plan.name} 삭제`"
+              @pointerdown.stop
+              @click.stop="store.toggleCountry(plan.countryId)"
+            >×</button>
+            <button
+              type="button"
+              class="country-drag-button"
+              aria-label="방문 순서 드래그"
+              @pointerdown="startPointerReorder(index, $event)"
+            >≡</button>
           </li>
         </TransitionGroup>
       </section>
@@ -606,6 +618,23 @@ function goToOnboardingHub() {
 }
 .primary-cta:not(:disabled):active{transform:scale(.99)}
 .onboarding-register .register-content>.primary-cta{animation:none}
+.selected-country-list li>.country-remove-button{
+  display:grid;
+  width:25px;
+  height:25px;
+  margin-left:auto;
+  place-items:center;
+  border-radius:50%;
+  color:#d9484f;
+  background:#fff0f1;
+  font-size:17px;
+  line-height:1;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.selected-country-list li>.country-drag-button{
+  margin-left:0;
+}
 .country-dropdown-backdrop{display:none}
 .country-dropdown-panel{
   position:relative;
