@@ -44,6 +44,10 @@ const walletCurrentCountry = computed(() => {
   const name = item?.countryName || item?.name || ''
   return { name, code: item?.countryCode || item?.code || countryPresentation[name]?.code || '' }
 })
+const walletTripCountryCodes = computed(() => walletTripCountries.value.map(item => {
+  const name = item?.countryName || item?.name || ''
+  return item?.countryCode || item?.code || countryPresentation[name]?.code || ''
+}).filter(Boolean))
 
 const travelTargetAmount = computed(() => Number(
   travel.activeTrip?.totalTargetAmount || wallet.targetAmount || 0,
@@ -423,6 +427,7 @@ async function confirmUnlinkTravelCard() {
         :day="walletTravelDay"
         :country-name="walletCurrentCountry.name"
         :country-code="walletCurrentCountry.code"
+        :country-codes="walletTripCountryCodes"
       />
     </div>
     <div :style="{ height: walletHeaderHeight + 'px' }" aria-hidden="true" />

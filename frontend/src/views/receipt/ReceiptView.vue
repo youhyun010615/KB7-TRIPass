@@ -25,7 +25,6 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import TravelModeMeta from '@/components/travel/TravelModeMeta.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
-import { flagIconClass } from '@/stores/travel'
 import receiptIcon from '@/assets/icons/receipt.svg'
 
 import {
@@ -113,8 +112,8 @@ function countryIsoCode(country) {
   return /^[A-Z]{2}$/.test(code) ? code : 'UN'
 }
 
-const tripCountryFlags = computed(() =>
-    (trip.value?.countries || []).slice(0, 3).map(country => flagIconClass(countryIsoCode(country))),
+const tripCountryCodes = computed(() =>
+    (trip.value?.countries || []).slice(0, 3).map(countryIsoCode),
 )
 const receiptTravelDay = computed(() => {
   if (!trip.value?.startDate) return 0
@@ -594,6 +593,7 @@ onMounted(loadPage)
         :day="receiptTravelDay"
         :country-name="receiptCurrentCountry.name"
         :country-code="receiptCurrentCountry.code"
+        :country-codes="tripCountryCodes"
       />
     </div>
     <div class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
@@ -622,17 +622,6 @@ onMounted(loadPage)
 
     <template v-else>
     <section class="trip-receipt-summary">
-      <div class="trip-summary-heading">
-        <div>
-          <h2>
-            {{ tripTitle }}
-            <span class="trip-country-flags" aria-label="여행 국가">
-              <i v-for="(flag, index) in tripCountryFlags" :key="`${flag}-${index}`" :class="flag" />
-            </span>
-          </h2>
-          <small>{{ formatTripDateRange() }}</small>
-        </div>
-      </div>
       <div class="trip-summary-metrics">
         <div>
           <span>총 결제 금액</span>
@@ -2154,7 +2143,7 @@ onMounted(loadPage)
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 9px;
-  margin-top: 15px;
+  margin-top: 0;
 }
 
 .trip-summary-metrics > div {

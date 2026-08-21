@@ -228,6 +228,7 @@ function showPastSchedules() {
         :day="currentTravelDay"
         :country-name="currentCountry?.name"
         :country-code="currentCountry?.code"
+        :country-codes="tripCountries.map(country => country.code)"
       />
     </div>
     <div class="schedule-header-spacer" aria-hidden="true" />
