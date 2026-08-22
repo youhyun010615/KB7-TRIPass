@@ -336,8 +336,9 @@ onMounted(loadComparison)
                 class="benefit-row"
                 @click="openCardDetail(card.id)"
             >
-              <span class="benefit-name">
-                {{ card.cardName }}
+              <span class="benefit-identity">
+                <b class="benefit-name">{{ card.cardName }}</b>
+                <small class="benefit-company">{{ card.cardCompany }}</small>
               </span>
 
               <span class="benefit-result">
@@ -683,7 +684,7 @@ button {
   width: 100%;
   min-height: 59px;
   padding: 12px 0;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, auto) 35px;
+  grid-template-columns: minmax(76px, 108px) minmax(0, 1fr) 35px;
   gap: 8px;
   align-items: center;
   border-top: 1px solid #edf1f6;
@@ -696,12 +697,28 @@ button {
   border-top: 0;
 }
 
+.benefit-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .benefit-name {
   overflow: hidden;
   color: #1c2940;
   font-size: 12.5px;
   font-weight: 750;
-  line-height: 1.4;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.benefit-company {
+  overflow: hidden;
+  color: #8a97aa;
+  font-size: 9.5px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
