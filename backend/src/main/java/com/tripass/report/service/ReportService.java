@@ -23,6 +23,7 @@ public class ReportService {
     private static final int NEXT_TRIP_SAVING_MONTHS = 6;
 
     private final ReportMapper reportMapper;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     /** 여행 대비 리포트를 조회합니다. */
     public PreTripReportResponseDto getPreTripReport(Long tripId, Long currentUserId) {
@@ -42,7 +43,7 @@ public class ReportService {
         ChecklistProgressRowDto checklist = reportMapper.findChecklistProgress(tripId, "PRE_TRAVEL");
         ScheduleCountRowDto scheduleCount = reportMapper.findScheduleCounts(tripId);
 
-        long dDay = Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate()));
+        long dDay = Math.max(0, ChronoUnit.DAYS.between(devDateUtil.today(currentUserId), trip.getStartDate()));
 
         return PreTripReportResponseDto.builder()
                 .tripId(trip.getTripId())

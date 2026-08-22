@@ -46,4 +46,6 @@ public interface MissionCategorySelectionMapper {
     String findActiveTripStatusByUserId(@Param("userId") Long userId);
 
     Boolean isSavingsTrackingStartedForUser(@Param("userId") Long userId);
+
+    int countActiveCardsByUserId(@Param("userId") Long userId);
 }

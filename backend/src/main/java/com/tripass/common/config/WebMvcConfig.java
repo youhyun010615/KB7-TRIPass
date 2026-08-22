@@ -50,7 +50,9 @@ import java.util.List;
         "com.tripass.wallet.controller",
         "com.tripass.wallet.fx.controller",
         "com.tripass.wallet.travelcard.controller",
-        "com.tripass.common.exception"
+        "com.tripass.dev.controller",
+        "com.tripass.common.exception",
+        "com.tripass.dev.controller"
 })
 public class WebMvcConfig implements WebMvcConfigurer {
 

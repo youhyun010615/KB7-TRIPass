@@ -568,6 +568,18 @@
           AND status = 'ACTIVE'
     </select>
 
+    <select id="findTravelCardKrwBalanceByUserId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(tcb.krw_estimated_amount), 0)
+        FROM wallet w
+                 JOIN wallet_travel_card wtc
+                      ON wtc.wallet_id = w.id
+                     AND wtc.status = 'LINKED'
+                 JOIN travel_card_balance tcb
+                      ON tcb.wallet_travel_card_id = wtc.id
+        WHERE w.user_id = #{userId}
+          AND w.status = 'ACTIVE'
+    </select>
+
     <select id="findCurrentMonthWalletSaving" resultType="java.math.BigDecimal">
         SELECT COALESCE(SUM(
             CASE
@@ -580,7 +592,7 @@
                  JOIN wallet w ON wl.wallet_id = w.id
         WHERE w.user_id = #{userId}
           AND w.status = 'ACTIVE'
-          AND wl.transaction_type != 'ADJUST'
+          AND wl.transaction_type NOT IN ('ADJUST', 'CARD_TOPUP', 'EXCHANGE_SELL')
           AND wl.trip_id = (
               SELECT id FROM trips
               WHERE user_id = #{userId} AND is_deleted = 0

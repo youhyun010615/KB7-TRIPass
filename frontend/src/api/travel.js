@@ -38,9 +38,10 @@ export async function acknowledgeTripOnboarding() {
   await api.post('/trips/onboarding/ack');
 }
 
-export async function resolveWalletReflect(tripId, reflect) {
+export async function resolveWalletReflect(tripId, reflect, targetAccountId = null) {
   const response = await api.post(`/trips/${tripId}/wallet-reflect`, {
     reflect: Boolean(reflect),
+    ...(targetAccountId ? { targetAccountId } : {}),
   });
   return response.data?.data ?? null;
 }

@@ -48,6 +48,10 @@
         <result
                 property="updatedAt"
                 column="updated_at"/>
+
+        <result
+                property="devOverrideDate"
+                column="dev_override_date"/>
     </resultMap>
 
     <!-- 일반 회원가입에 사용하는 아이디 중복 체크 -->

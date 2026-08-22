@@ -38,6 +38,7 @@ public class CodefMerchantTypeClassifier {
                     Map.entry("아이스크림전문", CAFE),
 
                     // 쇼핑
+                    Map.entry("온라인쇼핑", SHOPPING),
                     Map.entry("체인스토어", SHOPPING),
                     Map.entry("온라인상품권", SHOPPING),
                     Map.entry("일반상품권", SHOPPING),
@@ -66,6 +67,7 @@ public class CodefMerchantTypeClassifier {
                     Map.entry("택시", TRANSPORT),
                     Map.entry("시내버스", TRANSPORT),
                     Map.entry("지하철", TRANSPORT),
+                    Map.entry("대중교통", TRANSPORT),
 
                     // 취미여가
                     Map.entry("영화공연장", LEISURE),
@@ -73,8 +75,13 @@ public class CodefMerchantTypeClassifier {
                     Map.entry("기타교육교습", LEISURE),
                     Map.entry("사진관현상소", LEISURE),
                     Map.entry("헬스클럽", LEISURE),
+                    Map.entry("스포츠시설", LEISURE),
                     Map.entry("골프장", LEISURE),
                     Map.entry("노래방", LEISURE),
+
+                    // 배달·구독
+                    Map.entry("배달서비스", FOOD),
+                    Map.entry("온라인서비스", LIVING),
 
                     // 기타
                     Map.entry("기타서비스", OTHER),

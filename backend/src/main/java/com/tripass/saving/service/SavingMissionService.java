@@ -219,6 +219,10 @@ public class SavingMissionService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "ACCOUNT_REQUIRED_FOR_MISSION",
                     "계좌를 등록해야 미션을 진행할 수 있어요.");
         }
+        if (mapper.countActiveCardsByUserId(userId) == 0) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_REQUIRED_FOR_MISSION",
+                    "카드를 등록해야 소비 분석 기반 미션을 진행할 수 있어요.");
+        }
     }
 
     /** Controller가 최초 생성(201)과 멱등 재호출(200)을 구분할 수 있게 하는 내부 결과. */

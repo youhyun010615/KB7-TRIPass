@@ -10,7 +10,6 @@ import {
 import {
   fetchMonthlyAnalysis,
   generateMonthlyAnalysis,
-  markMonthlyAnalysisViewed,
 } from '@/api/monthlyAnalysis';
 
 function isAnalysisNotFound(error) {
@@ -31,11 +30,7 @@ async function ensureAnalysisExists(yearMonth) {
     if (!isAnalysisNotFound(error)) throw error;
     analysis = await generateMonthlyAnalysis(yearMonth);
   }
-  if (analysis?.reportStatus === 'PENDING') {
-    try {
-      await markMonthlyAnalysisViewed(yearMonth);
-    } catch { /* 상태 전이 실패해도 옵션 조회는 진행 */ }
-  }
+  return analysis;
 }
 
 function previousYearMonth(baseDate = new Date()) {

@@ -732,13 +732,21 @@ export const useTravelStore = defineStore('travel', () => {
     }
   }
 
-  async function resolveWalletBalanceReflect(reflect) {
+  async function resolveWalletBalanceReflect(reflect, targetAccountId = null) {
     if (!lifecycle.value?.tripId || walletReflectSubmitting.value) return false;
     walletReflectSubmitting.value = true;
     try {
-      await resolveWalletReflect(lifecycle.value.tripId, reflect);
+      const result = await resolveWalletReflect(lifecycle.value.tripId, reflect, targetAccountId);
+      if (result) {
+        completion.value = {
+          ...(completion.value || {}),
+          currentWalletBalance: result.walletBalance,
+          remainingMonths: result.remainingMonths,
+          monthlySavingTarget: result.monthlySavingTarget,
+        };
+      }
       await loadLifecycle();
-      return true;
+      return result || true;
     } catch (error) {
       if (error.response?.status === 409) {
         await loadLifecycle();

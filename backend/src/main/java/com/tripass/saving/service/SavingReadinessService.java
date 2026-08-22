@@ -18,8 +18,8 @@ public class SavingReadinessService {
         boolean travelGoalRegistered = savingReadinessMapper.existsRegisteredTravelGoal(userId);
         boolean accountLinked = savingReadinessMapper.existsLinkedAccount(userId);
         boolean cardLinked = savingReadinessMapper.existsLinkedCard(userId);
-        boolean financialAssetLinked = accountLinked || cardLinked;
-        boolean missionPrerequisitesMet = travelGoalRegistered && financialAssetLinked;
+        boolean financialAssetLinked = accountLinked && cardLinked;
+        boolean missionPrerequisitesMet = travelGoalRegistered && accountLinked && cardLinked;
 
         return new SavingReadinessResponseDto(
                 travelGoalRegistered,

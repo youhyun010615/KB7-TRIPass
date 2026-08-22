@@ -12,11 +12,8 @@ export const useSavingReadinessStore = defineStore('savingReadiness', () => {
   const errorMessage = ref('');
   const loaded = ref(false);
 
-  // 저축 미션은 여행 목표와 독립적으로 동작한다. 금융 자산만 연결되어 있다면
-  // 서버가 TRAVEL_GOAL_REQUIRED를 반환해도 미션 화면을 정상 노출한다.
-  const isReady = computed(
-    () => status.value === 'READY' || status.value === 'TRAVEL_GOAL_REQUIRED',
-  );
+  // 미션은 여행 목표·계좌·카드가 모두 준비된 뒤에만 시작할 수 있다.
+  const isReady = computed(() => status.value === 'READY');
   const needsFinancialAsset = computed(
     () =>
       status.value === 'FINANCIAL_ASSET_REQUIRED' ||

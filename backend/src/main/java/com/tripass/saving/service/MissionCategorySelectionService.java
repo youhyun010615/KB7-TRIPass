@@ -160,6 +160,10 @@ public class MissionCategorySelectionService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "ACCOUNT_REQUIRED_FOR_MISSION",
                     "계좌를 등록해야 미션을 진행할 수 있어요.");
         }
+        if (missionCategorySelectionMapper.countActiveCardsByUserId(userId) == 0) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "CARD_REQUIRED_FOR_MISSION",
+                    "카드를 등록해야 소비 분석 기반 미션을 선택할 수 있어요.");
+        }
     }
 
     private Long resolveAnalysisId(Long userId, YearMonth analysisYearMonth) {
