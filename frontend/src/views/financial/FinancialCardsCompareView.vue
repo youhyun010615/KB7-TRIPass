@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 
@@ -15,31 +15,6 @@ const {
   errorMessage,
 } = storeToRefs(travelCardsStore)
 
-const benefitGroups = [
-  {
-    key: 'appliedRateInfo',
-    title: '적용 환율',
-    value: (card) => card.appliedRateInfo,
-    preference: 'high',
-  },
-  {
-    key: 'paymentFee',
-    title: '해외 결제 수수료',
-    value: (card) => card.paymentFee,
-    preference: 'low',
-  },
-  {
-    key: 'withdrawalFee',
-    title: '해외 ATM 수수료',
-    value: (card) => card.withdrawalFee,
-    preference: 'low',
-  },
-]
-
-const canOpenFirstCard = computed(
-    () => comparisonCards.value.length > 0,
-)
-
 function displayValue(value) {
   if (
       value === null ||
@@ -52,39 +27,142 @@ function displayValue(value) {
   return value
 }
 
-function comparisonScore(value, preference) {
-  const text = String(displayValue(value)).replace(/,/g, '')
+// 문자열 안의 숫자를 뽑아 "클수록 좋음" 점수로 변환한다.
+// 환율우대 %, 외화 보유한도, 지원 통화 개수처럼 값이 클수록 유리한 항목에 사용.
+function rateScore(text) {
+  const cleaned = String(text ?? '').replace(/,/g, '')
+  const numbers = cleaned.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? []
 
-  if (/무료|전액\s*면제|수수료\s*없음/.test(text)) {
+  return numbers.length ? Math.max(...numbers) : null
+}
+
+// 수수료류 문자열을 "낮을수록 좋음" 점수로 변환한다. 면제/무료 표현은 0(최고)으로 처리.
+function feeScore(text) {
+  const cleaned = String(text ?? '').replace(/,/g, '')
+
+  if (/무료|전액\s*면제|수수료\s*없음/.test(cleaned)) {
     return 0
   }
 
-  const numbers = text.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? []
+  const numbers = cleaned.match(/\d+(?:\.\d+)?/g)?.map(Number) ?? []
 
-  if (numbers.length === 0) {
-    return null
-  }
-
-  return preference === 'high'
-      ? Math.max(...numbers)
-      : numbers[0]
+  return numbers.length ? -Math.min(...numbers) : null
 }
 
-function isBestBenefit(card, group) {
-  const scores = comparisonCards.value
-      .map((item) => comparisonScore(group.value(item), group.preference))
-      .filter((score) => score !== null)
-  const cardScore = comparisonScore(group.value(card), group.preference)
+// 항상 노출되는 핵심 3항목 + 펼쳐야 보이는 나머지 항목.
+// score()는 카드마다 "클수록 좋음"으로 통일된 값을 반환하고, 없으면 최고 배지를 표시하지 않는다.
+const benefitGroups = [
+  {
+    key: 'appliedRateInfo',
+    title: '적용 환율',
+    format: (card) => displayValue(card.appliedRateInfo),
+    score: (card) => rateScore(card.appliedRateInfo),
+  },
+  {
+    key: 'paymentFee',
+    title: '해외 결제 수수료',
+    format: (card) => displayValue(card.paymentFee),
+    score: (card) => feeScore(card.paymentFee),
+  },
+  {
+    key: 'withdrawalFee',
+    title: '해외 ATM 수수료',
+    format: (card) => displayValue(card.withdrawalFee),
+    score: (card) => feeScore(card.withdrawalFee),
+  },
+  {
+    key: 'exchangeFee',
+    title: '환전 수수료',
+    format: (card) => displayValue(card.exchangeFee),
+    score: (card) => rateScore(card.exchangeFee),
+  },
+  {
+    key: 'reExchangeFee',
+    title: '재환전 수수료',
+    format: (card) => displayValue(card.reExchangeFee),
+    score: (card) => rateScore(card.reExchangeFee),
+  },
+  {
+    key: 'foreignCurrencyHoldingLimit',
+    title: '외화 보유 한도',
+    format: (card) => displayValue(card.foreignCurrencyHoldingLimit),
+    score: (card) => rateScore(card.foreignCurrencyHoldingLimit),
+  },
+  {
+    key: 'supportedCurrencyCount',
+    title: '지원 통화 개수',
+    format: (card) =>
+        card.supportedCurrencyCount ? `${card.supportedCurrencyCount}종` : '-',
+    score: (card) => Number(card.supportedCurrencyCount) || null,
+  },
+  {
+    key: 'instantUse',
+    title: '즉시 사용 가능 여부',
+    format: (card) => (card.instantUse ? '계좌 개설 없이 즉시 사용' : '계좌 개설 필요'),
+    score: (card) => (card.instantUse ? 1 : 0),
+  },
+  {
+    key: 'settlementType',
+    title: '해외 결제 처리 방식',
+    format: (card) =>
+        card.settlementType === 'DIRECT' ? '현지통화 직접 결제' : '달러 환산 후 결제',
+    score: (card) => (card.settlementType === 'DIRECT' ? 1 : 0),
+  },
+  {
+    key: 'autoChargeSupported',
+    title: '자동 충전 지원',
+    format: (card) => (card.autoChargeSupported ? '지원' : '미지원'),
+    score: (card) => (card.autoChargeSupported ? 1 : 0),
+  },
+  {
+    key: 'transitCard',
+    title: '교통카드 지원',
+    format: (card) => (card.transitCard ? '지원' : '미지원'),
+    score: (card) => (card.transitCard ? 1 : 0),
+  },
+  {
+    key: 'requiredAccount',
+    title: '필요 계좌·서비스',
+    format: (card) => displayValue(card.requiredAccount),
+  },
+]
 
-  if (cardScore === null || scores.length === 0) {
+const VISIBLE_GROUP_COUNT = 3
+const isExpanded = ref(false)
+
+const visibleGroups = computed(() =>
+    isExpanded.value
+        ? benefitGroups
+        : benefitGroups.slice(0, VISIBLE_GROUP_COUNT),
+)
+
+const remainingGroupCount = computed(
+    () => benefitGroups.length - VISIBLE_GROUP_COUNT,
+)
+
+function toggleExpanded() {
+  isExpanded.value = !isExpanded.value
+}
+
+const canOpenFirstCard = computed(
+    () => comparisonCards.value.length > 0,
+)
+
+function isBestBenefit(card, group) {
+  if (!group.score) {
     return false
   }
 
-  const bestScore = group.preference === 'high'
-      ? Math.max(...scores)
-      : Math.min(...scores)
+  const scores = comparisonCards.value
+      .map((item) => group.score(item))
+      .filter((score) => score !== null && score !== undefined)
+  const cardScore = group.score(card)
 
-  return cardScore === bestScore
+  if (cardScore === null || cardScore === undefined || scores.length === 0) {
+    return false
+  }
+
+  return cardScore === Math.max(...scores)
 }
 
 
@@ -323,7 +401,7 @@ onMounted(loadComparison)
 
         <div class="benefit-card-list">
           <article
-              v-for="group in benefitGroups"
+              v-for="group in visibleGroups"
               :key="group.key"
               class="benefit-card"
           >
@@ -340,19 +418,34 @@ onMounted(loadComparison)
                 {{ card.cardName }}
               </span>
 
-              <span class="benefit-result">
-                {{ displayValue(group.value(card)) }}
-              </span>
+              <span class="benefit-value">
+                <span
+                    class="benefit-result"
+                    :class="{ best: isBestBenefit(card, group) }"
+                >
+                  {{ group.format(card) }}
+                </span>
 
-              <span
-                  v-if="isBestBenefit(card, group)"
-                  class="best-badge"
-              >
-                최고
+                <span
+                    v-if="isBestBenefit(card, group)"
+                    class="best-badge"
+                >
+                  최고
+                </span>
               </span>
             </button>
           </article>
         </div>
+
+        <button
+            v-if="remainingGroupCount > 0"
+            type="button"
+            class="expand-button"
+            @click="toggleExpanded"
+        >
+          {{ isExpanded ? '접기' : `나머지 ${remainingGroupCount}개 항목 비교` }}
+          <i :class="{ open: isExpanded }">⌄</i>
+        </button>
 
         <p class="comparison-guide">
           카드명을 누르면 해당 카드의 상세 정보를
@@ -660,33 +753,32 @@ button {
 
 .benefit-card-list {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .benefit-card {
-  padding: 17px 16px 7px;
-  border: 1px solid #e8edf5;
-  border-radius: 20px;
+  padding: 24px 20px 6px;
+  border-radius: 24px;
   background: #fff;
   box-shadow: 0 9px 24px rgba(38, 62, 101, 0.05);
 }
 
 .benefit-card h3 {
-  margin: 0 0 8px;
-  color: #111c34;
-  font-size: 14px;
+  margin: 0 0 4px;
+  color: #101b33;
+  font-size: 16px;
   font-weight: 900;
 }
 
 .benefit-row {
-  display: grid;
+  display: flex;
   width: 100%;
-  min-height: 59px;
-  padding: 12px 0;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, auto) 35px;
-  gap: 8px;
+  min-height: 64px;
+  padding: 18px 0;
   align-items: center;
-  border-top: 1px solid #edf1f6;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #eef1f6;
   background: transparent;
   color: inherit;
   text-align: left;
@@ -698,39 +790,76 @@ button {
 
 .benefit-name {
   overflow: hidden;
-  color: #1c2940;
-  font-size: 12.5px;
-  font-weight: 750;
+  flex: 1;
+  min-width: 0;
+  color: #101b33;
+  font-size: 15px;
+  font-weight: 800;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.benefit-value {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
 .benefit-result {
-  color: #173f8d;
-  font-size: 12px;
+  color: #4b5768;
+  font-size: 14px;
   font-weight: 700;
-  line-height: 1.45;
+  line-height: 1.4;
   text-align: right;
   word-break: keep-all;
+  white-space: nowrap;
+}
+
+.benefit-result.best {
+  color: #173f8d;
+  font-size: 17px;
+  font-weight: 900;
 }
 
 .best-badge {
   display: inline-flex;
-  min-width: 35px;
+  flex: none;
+  min-width: 38px;
   min-height: 25px;
   align-items: center;
   border-radius: 999px;
   background: #e8f8ef;
   color: #0a9b61;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 900;
   justify-content: center;
 }
 
-.benefit-row:not(:has(.best-badge))::after {
-  width: 35px;
-  content: '';
+.expand-button {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 16px;
+  background: #fff;
+  color: #52657f;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 9px 24px rgba(38, 62, 101, 0.05);
+}
+
+.expand-button i {
+  font-style: normal;
+  transition: transform 0.2s;
+}
+
+.expand-button i.open {
+  transform: rotate(180deg);
 }
 
 .comparison-guide {
