@@ -17,7 +17,7 @@ onMounted(async () => {
     await Promise.all([wallet.loadAccounts(), wallet.loadAutoSaving()])
     transferDay.value = wallet.autoCharge.day || transferDay.value
   } catch {
-    notice.value = wallet.errorMessage || '자동 채우기 정보를 불러오지 못했어요.'
+    notice.value = wallet.errorMessage || '자동 충전 정보를 불러오지 못했어요.'
   }
 })
 
@@ -31,7 +31,7 @@ async function saveAutoCharge() {
     await wallet.updateAutoCharge({ day: transferDay.value, amount: wallet.autoCharge.amount, enabled: true })
     router.push('/wallet')
   } catch {
-    notice.value = wallet.errorMessage || '자동 채우기 설정 저장에 실패했어요.'
+    notice.value = wallet.errorMessage || '자동 충전 설정 저장에 실패했어요.'
   }
 }
 </script>
@@ -40,12 +40,12 @@ async function saveAutoCharge() {
   <main class="auto-page">
     <header class="page-header">
       <button type="button" class="back-button" @click="router.back()"><ChevronLeft :size="22" /></button>
-      <h1>자동 채우기 설정</h1>
+      <h1>자동 충전 설정</h1>
       <span aria-hidden="true"></span>
     </header>
 
     <section class="setting-panel">
-      <h2>자동 채우기</h2>
+      <h2>자동 충전</h2>
       <p>매달 지정한 날짜에 주계좌에서<br>목표 금액이 자동으로 송금돼요.</p>
 
       <label class="date-field">

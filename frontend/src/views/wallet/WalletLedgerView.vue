@@ -15,8 +15,8 @@ const notice = ref('')
 
 const tabs = [
   { key: 'all', label: '전체' },
-  { key: 'deposit', label: '채우기' },
-  { key: 'withdraw', label: '빼기' },
+  { key: 'deposit', label: '충전' },
+  { key: 'withdraw', label: '송금' },
 ]
 
 const sortOptions = [

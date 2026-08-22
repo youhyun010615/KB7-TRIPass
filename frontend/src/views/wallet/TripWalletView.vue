@@ -258,11 +258,18 @@ async function loadBankInstitutions() {
 }
 
 const quickAmountValues = [10000, 50000, 100000, 1000000]
+const chargeQuickAmountValues = [10000, 50000, 100000]
+const keypadKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'backspace']
+
+const selectedChargeAccount = computed(() => accounts.value.find(account => account.accountId === selectedAccount.value))
+const transferAmountNumber = computed(() => Number(String(amount.value).replace(/[^0-9]/g, '')) || 0)
+const formattedTransferAmount = computed(() => transferAmountNumber.value.toLocaleString('ko-KR'))
 
 const maxTransferAmount = computed(() => {
   if (transferMode.value === 'withdraw') return wallet.balance
   return accounts.value.find(account => account.accountId === selectedAccount.value)?.withdrawableAmount ?? 0
 })
+const canSubmitTransfer = computed(() => transferAmountNumber.value > 0 && transferAmountNumber.value <= maxTransferAmount.value)
 
 function applyQuickAmount(value) {
   if (value === 'full') {
@@ -272,6 +279,16 @@ function applyQuickAmount(value) {
 
   const current = Number(String(amount.value).replace(/[^0-9]/g, '')) || 0
   amount.value = String(current + value)
+}
+
+function appendKeypadValue(value) {
+  const current = String(amount.value).replace(/[^0-9]/g, '')
+  const next = `${current}${value}`.replace(/^0+(?=\d)/, '').slice(0, 9)
+  amount.value = next || ''
+}
+
+function removeKeypadValue() {
+  amount.value = String(amount.value).replace(/[^0-9]/g, '').slice(0, -1)
 }
 
 function openAutoChargeSetting() {
@@ -290,8 +307,8 @@ function showNotice(message) {
 
 function ledgerTitle(item) {
   if (item.memo) return item.memo
-  if (item.transactionType === 'CHARGE') return item.transferMethod === 'AUTO_SAVING' ? '자동 채우기' : '월렛 채우기'
-  if (item.transactionType === 'WITHDRAW') return '월렛 빼기'
+  if (item.transactionType === 'CHARGE') return item.transferMethod === 'AUTO_SAVING' ? '자동 충전' : '트립머니 충전'
+  if (item.transactionType === 'WITHDRAW') return '트립머니 송금'
   if (item.transactionType === 'CARD_TOPUP') return '트래블카드 충전'
   if (item.transactionType === 'MISSION_REWARD') return '미션 보상'
   if (item.transactionType === 'REFUND') return '환불'
@@ -356,16 +373,16 @@ async function saveAutoChargeSetting() {
       enabled: true,
     })
     showAutoChargeSetting.value = false
-    showNotice('자동 채우기 설정을 저장했어요.')
+    showNotice('자동 충전 설정을 저장했어요.')
   } catch {
-    showNotice(wallet.errorMessage || '자동 채우기 설정 저장에 실패했어요.')
+    showNotice(wallet.errorMessage || '자동 충전 설정 저장에 실패했어요.')
   }
 }
 
 async function submitTransfer() {
   const chargeValue = Number(String(amount.value).replace(/[^0-9]/g, '')) || 0
   if (transferMode.value === 'charge' && chargeValue > maxTransferAmount.value) {
-    showNotice('계좌 잔액 안에서 채울 금액을 입력해 주세요.')
+    showNotice('계좌 잔액 안에서 충전할 금액을 입력해 주세요.')
     return
   }
 
@@ -390,13 +407,13 @@ async function submitTransfer() {
     }
 
     if (!ok) {
-      showNotice(transferMode.value === 'charge' ? '채울 금액을 입력해 주세요.' : '출금 정보를 확인해 주세요.')
+      showNotice(transferMode.value === 'charge' ? '충전할 금액을 입력해 주세요.' : '송금 정보를 확인해 주세요.')
       return
     }
 
     showNotice(transferMode.value === 'charge'
-      ? `${money(amount.value)}을 월렛에 채웠어요.`
-      : `${money(amount.value)}을 계좌로 뺐어요.`)
+      ? `${money(amount.value)}을 트립머니에 충전했어요.`
+      : `${money(amount.value)}을 계좌로 송금했어요.`)
     showTransfer.value = false
   } catch {
     showNotice(wallet.errorMessage || '월렛 거래 처리에 실패했어요.')
@@ -444,7 +461,7 @@ async function confirmUnlinkTravelCard() {
       <div class="wallet-card-tab" />
       <div class="wallet-card-inner">
         <div class="wallet-card-top">
-          <b>월렛 잔액</b>
+          <b>트립머니</b>
           <button type="button" class="link-button" @click="router.push('/wallet/accounts')">연결계좌 설정<ChevronRight :size="14" /></button>
         </div>
         <div class="wallet-balance">
@@ -454,8 +471,8 @@ async function confirmUnlinkTravelCard() {
         <p v-if="isTravelWallet" class="emergency">여행 중에는 목표 자금 → 비상금 → 추가 충전 순으로 사용해요.</p>
         <p v-else class="emergency">비상금: {{ money(wallet.emergencyAmount) }}</p>
         <div class="wallet-actions">
-          <button type="button" @click="openTransfer('charge')">채우기</button>
-          <button type="button" @click="openTransfer('withdraw')">빼기</button>
+          <button type="button" @click="openTransfer('charge')">충전</button>
+          <button type="button" @click="openTransfer('withdraw')">송금</button>
           <button type="button" class="history-button" @click="router.push('/wallet/ledgers')">내역</button>
         </div>
       </div>
@@ -599,31 +616,51 @@ async function confirmUnlinkTravelCard() {
 
     <Transition name="sheet">
       <div v-if="showTransfer" class="wallet-sheet-backdrop" @click.self="showTransfer = false">
-        <section class="wallet-sheet">
-          <i class="sheet-handle" />
-          <div class="wallet-sheet-head">
-            <h2>{{ transferMode === 'charge' ? '월렛 채우기' : '월렛 빼기' }}</h2>
-            <button type="button" class="sheet-close" @click="showTransfer = false">×</button>
-          </div>
-          <p>{{ transferMode === 'charge' ? '연결된 계좌에서 월렛으로 여행 자금을 옮겨요.' : '월렛 잔액을 계좌로 돌려보내요.' }}</p>
-
-          <label v-if="transferMode === 'charge'">
-            연결 계좌 선택
-            <select v-model="selectedAccount">
-              <option v-for="account in accounts" :key="account.accountId" :value="account.accountId">
-                {{ account.name }} · {{ account.number }}
-              </option>
-            </select>
-          </label>
+        <section class="wallet-sheet" :class="{ 'charge-sheet': transferMode === 'charge', 'withdraw-sheet': transferMode === 'withdraw' }">
+          <template v-if="transferMode === 'charge'">
+            <header class="charge-sheet-head">
+              <button type="button" aria-label="충전 화면 닫기" @click="showTransfer = false">×</button>
+              <h2>충전</h2>
+              <span aria-hidden="true" />
+            </header>
+            <div class="charge-account-picker">
+              <div v-if="accounts.length" class="charge-account-content">
+                <select v-model="selectedAccount" aria-label="충전 계좌 선택">
+                  <option v-for="account in accounts" :key="account.accountId" :value="account.accountId">내 {{ account.name }} 계좌에서</option>
+                </select>
+                <small>{{ selectedChargeAccount?.number }}</small>
+              </div>
+              <p v-else class="charge-account-empty">연결된 계좌가 없어요</p>
+            </div>
+            <div class="charge-amount-area">
+              <div class="charge-amount-display" :class="{ empty: !transferAmountNumber }">
+                <template v-if="transferAmountNumber"><strong>{{ formattedTransferAmount }}</strong><span>원</span></template>
+                <span v-else>얼마를 충전할까요?</span>
+              </div>
+              <p>트립머니 잔액 {{ money(wallet.balance) }}</p>
+            </div>
+            <div class="charge-controls">
+              <div class="charge-quick-amounts">
+                <button v-for="value in chargeQuickAmountValues" :key="value" type="button" @click="applyQuickAmount(value)">+{{ value / 10000 }}만원</button>
+              </div>
+              <div class="charge-keypad" aria-label="충전 금액 숫자 키패드">
+                <button v-for="key in keypadKeys" :key="key" type="button" :aria-label="key === 'backspace' ? '한 자리 지우기' : `${key} 입력`" @click="key === 'backspace' ? removeKeypadValue() : appendKeypadValue(key)">
+                  <span v-if="key === 'backspace'">←</span><span v-else>{{ key }}</span>
+                </button>
+              </div>
+              <button class="charge-submit" type="button" :disabled="!canSubmitTransfer" @click="submitTransfer">충전하기</button>
+            </div>
+          </template>
 
           <template v-else>
-            <div class="withdraw-mode-tabs">
-              <button type="button" :class="{ active: withdrawMode === 'registered' }" @click="withdrawMode = 'registered'">등록 계좌</button>
-            </div>
-
-            <label v-if="withdrawMode === 'registered'">
-              출금 받을 계좌
-              <select v-model="selectedAccount">
+            <header class="charge-sheet-head">
+              <button type="button" aria-label="송금 화면 닫기" @click="showTransfer = false">×</button>
+              <h2>송금</h2>
+              <span aria-hidden="true" />
+            </header>
+            <label class="withdraw-account-field">
+              <span>송금 받을 계좌</span>
+              <select v-if="wallet.withdrawRegisteredAccounts.length || accounts.length" v-model="selectedAccount">
                 <option
                   v-for="account in (wallet.withdrawRegisteredAccounts.length ? wallet.withdrawRegisteredAccounts : accounts)"
                   :key="account.accountId"
@@ -632,59 +669,18 @@ async function confirmUnlinkTravelCard() {
                   {{ account.name }} · {{ account.number }}
                 </option>
               </select>
+              <small v-else>연결된 계좌가 없어요</small>
             </label>
-
-            <label v-else-if="withdrawMode === 'recent'">
-              최근 사용한 계좌
-              <select v-model="selectedRecentRecipientId">
-                <option v-for="item in wallet.withdrawRecentAccounts" :key="item.recipientId" :value="item.recipientId">
-                  {{ item.bankName }} {{ item.accountNumber }} · {{ item.accountHolderName }}
-                </option>
-              </select>
-              <p v-if="!wallet.withdrawRecentAccounts.length" class="empty-inline-hint">최근 사용한 계좌가 없어요.</p>
+            <label class="withdraw-amount-field">
+              <span>금액</span>
+              <div class="amount-field"><input v-model="amount" inputmode="numeric" placeholder="0"><b>원</b></div>
             </label>
-
-            <template v-else>
-              <label>
-                은행 선택
-                <select v-model="manualBankCode" :disabled="!bankInstitutions.length">
-                  <option value="" disabled>은행을 선택해 주세요</option>
-                  <option v-for="bank in bankInstitutions" :key="bank.organizationCode" :value="bank.organizationCode">
-                    {{ bank.institutionName }}
-                  </option>
-                </select>
-              </label>
-              <p v-if="bankInstitutionsError" class="empty-inline-hint">
-                {{ bankInstitutionsError }}
-                <button type="button" style="margin-left:6px;color:#2f70e9;font-weight:700;text-decoration:underline" @click="loadBankInstitutions">다시 시도</button>
-              </p>
-              <label>
-                계좌번호
-                <div class="amount-field"><input v-model="manualAccountNumber" inputmode="numeric" placeholder="'-' 없이 숫자만 입력"></div>
-              </label>
-              <label>
-                예금주명
-                <div class="amount-field"><input v-model="manualAccountHolderName" placeholder="예금주명을 입력해 주세요"></div>
-              </label>
-            </template>
-          </template>
-
-          <label>
-            금액
-            <div class="amount-field"><input v-model="amount" inputmode="numeric" placeholder="0"><b>원</b></div>
-          </label>
-          <div class="quick-amounts">
-            <button v-for="value in quickAmountValues" :key="value" type="button" @click="applyQuickAmount(value)">+{{ value / 10000 }}만</button>
-            <button type="button" @click="applyQuickAmount('full')">전액</button>
-          </div>
-          <button class="confirm-transfer" type="button" @click="submitTransfer">{{ transferMode === 'charge' ? '채우기' : '빼기' }}</button>
-          <div v-if="transferMode === 'charge'" class="auto-charge-preview compact">
-            <div>
-              <h3>자동 채우기 진행 중</h3>
-              <p>매월 {{ wallet.autoCharge.day }}일 · {{ money(wallet.autoCharge.amount) }}</p>
+            <div class="quick-amounts">
+              <button v-for="value in quickAmountValues" :key="value" type="button" @click="applyQuickAmount(value)">+{{ value / 10000 }}만</button>
+              <button type="button" @click="applyQuickAmount('full')">전액</button>
             </div>
-            <button type="button" @click="openAutoChargeSetting">설정</button>
-          </div>
+            <button class="confirm-transfer" type="button" @click="submitTransfer">송금</button>
+          </template>
         </section>
       </div>
     </Transition>
@@ -694,7 +690,7 @@ async function confirmUnlinkTravelCard() {
       <div v-if="showAutoChargeSetting" class="auto-modal-backdrop" @click.self="showAutoChargeSetting = false">
         <section class="auto-modal">
           <div class="auto-modal-head">
-            <h2>자동 채우기 설정</h2>
+            <h2>자동 충전 설정</h2>
             <button type="button" @click="showAutoChargeSetting = false">×</button>
           </div>
           <label>
@@ -728,11 +724,11 @@ async function confirmUnlinkTravelCard() {
           </div>
           <div class="monthly-detail-summary">
             <div>
-              <span>채우기</span>
+              <span>충전</span>
               <b>+{{ money(monthlyDetail?.chargeAmount) }}</b>
             </div>
             <div>
-              <span>빼기</span>
+              <span>송금</span>
               <b>-{{ money(monthlyDetail?.withdrawAmount) }}</b>
             </div>
           </div>
@@ -959,4 +955,195 @@ async function confirmUnlinkTravelCard() {
 .travel-usage-head h2{font-size:16px;font-weight:750;letter-spacing:-.02em}.travel-budget-progress.exceeded .travel-budget-progress-label b{color:#ff6b6b}.travel-budget-progress.exceeded .travel-budget-track i{background:linear-gradient(90deg,#ff9a8f,#ff5353)}.travel-budget-progress.exceeded .travel-budget-meta span:last-child{color:#ff7777}.currency-row>strong>small{color:#66758c;font-size:10px;font-weight:800}
 .currency-row .flag{width:32px!important;height:24px!important;align-self:center;border-radius:5px!important;background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.18)!important}.wallet-currency-flag{width:27px!important;height:18px!important;border-radius:3px!important;background-size:cover!important}
 .withdraw-mode-tabs{grid-template-columns:1fr}
+.wallet-sheet{width:calc(100% - 24px);max-width:390px}
+
+/* 트립머니 충전 전용 화면 */
+.wallet-sheet.charge-sheet{
+  width:min(calc(100% - 32px),358px);
+  max-width:358px;
+  height:auto;
+  max-height:calc(100dvh - 48px);
+  padding:18px 20px 20px;
+  overflow:auto;
+  border:1px solid #d8e3f5;
+  border-radius:24px;
+  display:flex;
+  flex-direction:column;
+  background:#fbfdff;
+  box-shadow:0 24px 60px rgba(12,42,101,.24);
+}
+.wallet-sheet-backdrop:has(.charge-sheet),
+.wallet-sheet-backdrop:has(.withdraw-sheet){align-items:center;padding:24px 0;background:rgba(15,31,61,.46);backdrop-filter:blur(3px)}
+.charge-sheet-head{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) 34px;
+  align-items:center;
+  min-height:38px;
+}
+.charge-sheet-head button{
+  width:34px;
+  height:34px;
+  border:0;
+  background:transparent;
+  color:#111827;
+  font-size:25px;
+  font-weight:300;
+  line-height:1;
+}
+.charge-sheet-head h2{
+  margin:0;
+  color:#101828;
+  font-size:18px!important;
+  font-weight:800;
+  text-align:center;
+}
+.charge-account-picker{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:18px;
+  min-height:50px;
+}
+.charge-account-content{min-width:0;text-align:center}
+.charge-account-picker select{
+  width:auto;
+  max-width:265px;
+  height:auto;
+  margin:0;
+  padding:0 22px 0 0;
+  border:0;
+  border-radius:0;
+  background-color:transparent;
+  color:#111827;
+  font-size:15px;
+  font-weight:750;
+  line-height:1.35;
+}
+.charge-account-picker small{
+  display:block;
+  margin-top:5px;
+  color:#8b93a1;
+  font-size:11px;
+  letter-spacing:.02em;
+}
+.charge-account-empty{margin:0;color:#8b98ad;font-size:14px;font-weight:650;text-align:center}
+.charge-amount-area{margin-top:14px;text-align:center}
+.charge-amount-display{
+  min-height:52px;
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:4px;
+}
+.charge-amount-display strong{color:#10234a;font-size:30px;font-weight:800;letter-spacing:-.04em}
+.charge-amount-display span{color:#10234a;font-size:16px;font-weight:700}
+.charge-amount-display.empty span{color:#aab5c7;font-size:22px;font-weight:750;letter-spacing:-.03em}
+.charge-amount-area>p{margin:5px 0 0;color:#8a98ad;font-size:11px;font-weight:600}
+.charge-controls{margin-top:20px}
+.charge-quick-amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.charge-quick-amounts button{
+  height:36px;
+  border:1px solid #dbe4f1;
+  border-radius:999px;
+  background:#fff;
+  color:#173f8d;
+  font-size:12px;
+  font-weight:700;
+}
+.charge-keypad{display:grid;grid-template-columns:repeat(3,1fr);margin-top:7px}
+.charge-keypad button{
+  height:43px;
+  border:0;
+  background:transparent;
+  color:#202630;
+  font-size:21px;
+  font-weight:600;
+}
+.charge-keypad button:last-child{font-size:20px}
+.charge-submit{
+  width:100%;
+  height:47px;
+  margin-top:9px;
+  border:0;
+  border-radius:14px;
+  background:#173f8d;
+  color:#fff;
+  font-size:14px;
+  font-weight:800;
+}
+.charge-submit:disabled{background:#f1f2f4;color:#cfd3da}
+
+/* 트립머니 송금 모달 */
+.wallet-sheet.withdraw-sheet{
+  width:min(calc(100% - 32px),358px);
+  max-width:358px;
+  padding:18px 20px 20px;
+  border:1px solid #d8e3f5;
+  border-radius:24px;
+  background:#fbfdff;
+  box-shadow:0 24px 60px rgba(12,42,101,.24);
+}
+.withdraw-sheet .withdraw-account-field,
+.withdraw-sheet .withdraw-amount-field{
+  margin-top:18px;
+  color:#52627a;
+  font-size:11px;
+  font-weight:750;
+}
+.withdraw-sheet label>span{display:block}
+.withdraw-sheet select,
+.withdraw-sheet .amount-field{
+  height:46px;
+  margin-top:7px;
+  padding:0 13px;
+  border:1px solid #d8e3f5;
+  border-radius:13px;
+  background:#fff;
+  color:#17233b;
+  font-size:12px;
+  font-weight:650;
+}
+.withdraw-sheet .withdraw-account-field>small{
+  display:flex;
+  height:46px;
+  align-items:center;
+  margin-top:7px;
+  padding:0 13px;
+  border:1px solid #e2e8f2;
+  border-radius:13px;
+  background:#f6f8fc;
+  color:#9aa6b8;
+  font-size:12px;
+  font-weight:600;
+}
+.withdraw-sheet .amount-field input{
+  color:#10234a;
+  font-size:17px;
+  font-weight:750;
+}
+.withdraw-sheet .amount-field b{font-size:12px;font-weight:700}
+.withdraw-sheet .quick-amounts{gap:6px;margin-top:9px}
+.withdraw-sheet .quick-amounts button{
+  padding:6px 9px;
+  border-color:#dbe4f1;
+  background:#fff;
+  color:#173f8d;
+  font-size:10.5px;
+  font-weight:700;
+}
+.withdraw-sheet .confirm-transfer{
+  height:47px;
+  margin-top:20px;
+  border-radius:14px;
+  background:#173f8d;
+  font-size:14px;
+  font-weight:800;
+}
+@media (max-height:680px){
+  .wallet-sheet.charge-sheet{padding-top:14px;padding-bottom:14px}
+  .charge-account-picker{margin-top:8px;min-height:40px}
+  .charge-amount-area{margin-top:6px}
+  .charge-controls{margin-top:10px}
+  .charge-keypad button{height:38px}
+}
 </style>
