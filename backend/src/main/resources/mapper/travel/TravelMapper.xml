@@ -710,4 +710,23 @@
           AND is_deleted = 0
     </update>
 
+    <update id="syncTripRevertToTraveling">
+        UPDATE trips
+        SET status = 'TRAVELING'
+        WHERE user_id = #{userId}
+          AND status = 'ENDED'
+          AND start_date &lt;= #{today}
+          AND end_date &gt;= #{today}
+          AND is_deleted = 0
+    </update>
+
+    <update id="syncTripRevertToPlanning">
+        UPDATE trips
+        SET status = 'PLANNING'
+        WHERE user_id = #{userId}
+          AND status IN ('TRAVELING', 'ENDED')
+          AND start_date &gt; #{today}
+          AND is_deleted = 0
+    </update>
+
 </mapper>

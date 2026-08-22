@@ -418,6 +418,8 @@ public class TravelService {
     private void syncTripStatusByVirtualDate(Long userId) {
         LocalDate today = devDateUtil.today(userId);
         if (today.equals(java.time.LocalDate.now())) return;
+        travelMapper.syncTripRevertToPlanning(userId, today);
+        travelMapper.syncTripRevertToTraveling(userId, today);
         travelMapper.syncTripStatusForUser(userId, today);
         travelMapper.syncTripEndedForUser(userId, today);
     }

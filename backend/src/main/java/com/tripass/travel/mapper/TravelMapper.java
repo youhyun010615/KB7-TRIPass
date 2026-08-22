@@ -121,4 +121,8 @@ public interface TravelMapper {
     int syncTripStatusForUser(@Param("userId") Long userId, @Param("today") LocalDate today);
 
     int syncTripEndedForUser(@Param("userId") Long userId, @Param("today") LocalDate today);
+
+    int syncTripRevertToTraveling(@Param("userId") Long userId, @Param("today") LocalDate today);
+
+    int syncTripRevertToPlanning(@Param("userId") Long userId, @Param("today") LocalDate today);
 }
