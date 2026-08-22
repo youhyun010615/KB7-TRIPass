@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
-import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
+import { countryPresentation, useTravelStore } from '@/stores/travel'
 import {
   effectiveDate,
   initDevDate,
@@ -63,8 +63,10 @@ function splitCountryNames(joined) {
   return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
 }
 
-function countryCodeOf(countryName) {
-  return countryPresentation[countryName]?.code || ''
+function formatTripName(name) {
+  if (!name) return '여행'
+  // 10글자로 제한 (넘칠 경우 CSS 2줄 line-clamp가 말줄임 처리)
+  return name.length > 10 ? name.slice(0, 10) : name
 }
 
 const homeCountryImages = {
@@ -302,14 +304,9 @@ const myManageItems = computed(() => [
                 <span v-if="!tripCover(trip)" class="trip-cover-fallback" aria-hidden="true"></span>
               </span>
             </span>
-            <span class="trip-circle-flags" :aria-label="`${trip.tripName} 여행 국가`">
-              <span
-                v-for="name in splitCountryNames(trip.countryNames)"
-                :key="name"
-                :class="flagIconClass(countryCodeOf(name))"
-                class="fi-inline"
-              ></span>
-              <small v-if="!splitCountryNames(trip.countryNames).length">국가 미정</small>
+            <!-- 10글자 초과 시 말줄임 처리된 여행명 -->
+            <span class="trip-circle-title" :title="trip.tripName">
+              {{ formatTripName(trip.tripName) }}
             </span>
           </button>
 
@@ -322,7 +319,7 @@ const myManageItems = computed(() => [
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
-            <b>여행 추가</b>
+            <span class="trip-circle-title">여행 추가</span>
           </button>
         </div>
 
@@ -528,15 +525,30 @@ const myManageItems = computed(() => [
 .trip-section-head button { flex:none;border:0;background:transparent;color:#2f70f2;font-size:10px;font-weight:800; }
 .trip-selector { display:flex;gap:13px;overflow-x:auto;padding:5px 4px 10px;scrollbar-width:none;scroll-snap-type:x proximity; }
 .trip-selector::-webkit-scrollbar { display:none; }
-.trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:7px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start;cursor:pointer; }
-.trip-circle-item b { display:block;overflow:hidden;width:100%;font-size:9.5px;font-weight:800;text-align:center;text-overflow:ellipsis;white-space:nowrap; }
-.trip-circle-flags { display:flex;min-height:13px;align-items:center;justify-content:center;gap:3px; }
-.trip-circle-flags .fi-inline { display:block;width:18px;height:12px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(15,34,68,.16); }
-.trip-circle-flags small { color:#9aa5b5;font-size:8px;font-weight:700; }
+.trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start;cursor:pointer; }
+.trip-circle-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;          /* 최대 2줄까지만 표시 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;           /* 단어 단위 자연스러운 줄바꿈 */
+  overflow-wrap: break-word;
+  
+  width: 100%;
+  min-height: 26px;               /* 2줄 기준 높이 확보 (일정하지 않은 줄바꿈 시에도 카드 균형 유지) */
+  max-height: 28px;
+  color: #475467;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.3;
+}
 .trip-circle { position:relative;isolation:isolate;display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
 .trip-circle-item:active .trip-circle { transform:scale(0.96); }
 .trip-circle-item.traveling .trip-circle { border-color:#fff;box-shadow:0 5px 15px rgba(18,167,102,.14); }
 .trip-circle-item.traveling .trip-circle::before { position:absolute;z-index:-1;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
+.trip-circle-item.traveling .trip-circle-title { color: #0da668; font-weight: 900; }
 .trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#dce8f7 center/cover no-repeat; }
 .trip-cover::after { position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,44,99,.03),rgba(15,44,99,.18));content:''; }
 .trip-cover-fallback { position:absolute;inset:0;background:linear-gradient(145deg,#b9d4f4 0%,#dfeafa 42%,#8bb2df 100%); }

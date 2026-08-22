@@ -30,6 +30,9 @@ const currentTimestamp = ref(currentDateTime().getTime());
 const selectedCalendarDate = ref('');
 let scheduleClockTimer = null;
 
+// 국가 순서별 5가지 테마 색상 (1: 파랑, 2: 빨강, 3: 에메랄드 녹색, 4: 보라, 5: 주황)
+const COUNTRY_THEME_COLORS = ['#2662ea', '#e53935', '#0da668', '#8b5cf6', '#ea580c'];
+
 onMounted(async () => {
   scheduleClockTimer = window.setInterval(() => {
     currentTimestamp.value = currentDateTime().getTime();
@@ -173,6 +176,14 @@ const travelDates = computed(() => {
     ].join('-');
     const nextPeriod = periodForDate(nextDate);
 
+    // 국가 목록 내 인덱스를 기반으로 순환 색상 지정
+    const periodIndex = selectedTripPeriods.value.findIndex(
+      (p) => p.code === period?.code && date >= p.startDate && date <= p.endDate,
+    );
+    const periodColor = periodIndex >= 0 
+      ? COUNTRY_THEME_COLORS[periodIndex % COUNTRY_THEME_COLORS.length] 
+      : '#2662ea';
+
     dates.push({
       date,
       day: cursor.getDate(),
@@ -187,6 +198,7 @@ const travelDates = computed(() => {
       countryName: period?.name || '',
       countryStart: Boolean(period?.code && period.code !== previousPeriodCode),
       countryEnd: Boolean(period?.code && (!nextPeriod?.code || period.code !== nextPeriod.code)),
+      periodColor,
     });
     previousPeriodCode = period?.code || '';
     cursor.setDate(cursor.getDate() + 1);
@@ -275,8 +287,7 @@ const currentTravelDay = computed(() => {
   const start = new Date(`${store.travelStart}T00:00:00`).getTime();
   const today = new Date(`${store.today}T00:00:00`).getTime();
   if (![start, today].every(Number.isFinite)) return 0;
-  if (today < start) return 0;
-  return Math.min(travelDays.value, Math.floor((today - start) / 86_400_000) + 1);
+  return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
 });
 
 const openDetail = (id) => {
@@ -287,10 +298,6 @@ const openDetail = (id) => {
   }
   router.push(`/schedule/${id}`);
 };
-const archiveTrip = computed(() => reportStore.tripSummary);
-const archiveStatus = computed(() =>
-  archiveTrip.value?.status === '여행 중' ? '여행중' : archiveTrip.value?.status,
-);
 
 function openScheduleForm() {
   const query = { ...route.query };
@@ -309,7 +316,9 @@ function openScheduleForm() {
 async function positionTimelineAtNext() {
   const list = timelineList.value;
   const todayExists = travelDates.value.some((date) => date.date === store.today);
-  selectedCalendarDate.value = todayExists ? store.today : (nextSchedule.value?.date || '');
+  selectedCalendarDate.value = todayExists
+    ? store.today
+    : (nextSchedule.value?.date || travelDates.value[0]?.date || '');
   if (!list) return;
 
   await nextTick();
@@ -336,7 +345,7 @@ function positionCalendarAtToday() {
   if (!list) return;
   const targetDate = travelDates.value.some((date) => date.date === store.today)
     ? store.today
-    : selectedCalendarDate.value;
+    : (selectedCalendarDate.value || travelDates.value[0]?.date);
   const target = list.querySelector(`[data-calendar-date="${targetDate}"]`);
   if (!target) return;
   list.scrollLeft = Math.max(0, target.offsetLeft - list.offsetLeft - 2);
@@ -363,10 +372,6 @@ async function focusTimelineDate(date) {
     top: Math.max(0, targetTop - 2),
     behavior: 'smooth',
   });
-}
-
-function showPastSchedules() {
-  timelineList.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
 
@@ -428,6 +433,7 @@ function showPastSchedules() {
             v-if="date.countryCode"
             class="country-period-line"
             :class="{ start: date.countryStart, end: date.countryEnd }"
+            :style="{ '--period-color': date.periodColor }"
           >
             <em v-if="date.countryStart" :class="flagIconClass(date.countryCode)" />
             <b v-if="date.countryStart">{{ date.countryName }}</b>
@@ -602,34 +608,7 @@ function showPastSchedules() {
   box-shadow: none;
 }
 .calendar-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  display:none;
-}
-.calendar-heading > div {
-  display: grid;
-  gap: 3px;
-}
-.calendar-heading small {
-  color: #2f6fed;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .15em;
-}
-.calendar-heading b {
-  font-size: 14px;
-  font-weight: 850;
-  letter-spacing: -.02em;
-}
-.calendar-heading em {
-  padding: 7px 13px;
-  border-radius: 99px;
-  background: #eef2ff;
-  color: #173f8d;
-  font-size: 12px;
-  font-weight: 700;
-  font-style: normal;
+  display: none;
 }
 .calendar-strip {
   display: flex;
@@ -664,7 +643,7 @@ function showPastSchedules() {
   transition: .2s ease;
 }
 
-/* 국가별 날짜 범위 전체에 진한 파란색 라인 적용 */
+/* 국가 순서별 동적 색상(--period-color) 반영 */
 .calendar-strip .country-period-line {
   position: absolute;
   top: -15px;
@@ -672,7 +651,7 @@ function showPastSchedules() {
   display: block;
   width: 47px;
   height: 13px;
-  border-top: 2px solid #2662ea;
+  border-top: 2px solid var(--period-color, #2662ea);
   color: #526f9e;
   z-index: 1;
 }
@@ -684,13 +663,13 @@ function showPastSchedules() {
   right: 0;
   width: 6px;
   height: 6px;
-  border: 2px solid #2662ea;
+  border: 2px solid var(--period-color, #2662ea);
   border-radius: 50%;
   background: #f4f5f9;
   content: '';
 }
 
-/* 국가 시작일 (4일) */
+/* 국가 시작일 */
 .calendar-strip .country-period-line.start {
   z-index: 2;
 }
@@ -700,7 +679,7 @@ function showPastSchedules() {
   left: 0;
   width: 6px;
   height: 6px;
-  border: 2px solid #2662ea;
+  border: 2px solid var(--period-color, #2662ea);
   border-radius: 50%;
   background: #fff;
   content: '';
@@ -719,15 +698,15 @@ function showPastSchedules() {
   position: absolute;
   top: -19px;
   left: 17px;
-  color: #284c87;
+  color: var(--period-color, #284c87);
   font-size: 8px;
   font-weight: 900;
   white-space: nowrap;
 }
 
-/* 국가 마지막 날 (9일) */
+/* 국가 마지막 날 */
 .calendar-strip .country-period-line.end::after {
-  background: #2662ea;
+  background: var(--period-color, #2662ea);
 }
 
 .calendar-strip button small {
@@ -772,170 +751,11 @@ function showPastSchedules() {
 .calendar-strip button.active small { color: #d7e6ff; }
 .calendar-strip button.active i { background: #ffd462; }
 .calendar-strip button.today.active {
-  border-color:#ffd462;
-  background:#0b2a6b;
-  box-shadow:0 7px 15px rgba(30,88,181,.25),0 0 0 2px rgba(255,212,98,.42);
+  border-color: #ffd462;
+  background: #0b2a6b;
+  box-shadow: 0 7px 15px rgba(30, 88, 181, .25), 0 0 0 2px rgba(255, 212, 98, .42);
 }
-.today-ticket {
-  position: relative;
-  display: block;
-  width: 100%;
-  margin-top: 18px;
-  overflow: hidden;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 88% 4%, rgba(88, 156, 255, 0.48), transparent 32%),
-    linear-gradient(145deg, #0e3479 0%, #1553aa 58%, #1d64c2 100%);
-  color: #fff;
-  box-shadow: 0 14px 30px rgba(16, 55, 121, 0.26);
-  text-align: left;
-}
-.today-ticket::before,
-.today-ticket::after {
-  position: absolute;
-  top: 94px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #f4f5f9;
-  content: '';
-}
-.today-ticket::before { left: -10px; }
-.today-ticket::after { right: -10px; }
-.ticket-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 19px 20px 16px;
-}
-.ticket-head > div {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.today-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #ffd761;
-  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-}
-.today-eyebrow i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #ffd761;
-  box-shadow: 0 0 0 5px rgba(255, 215, 97, 0.14);
-}
-.ticket-head b {
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: -0.035em;
-}
-.ticket-head time {
-  padding: 7px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #dce9ff;
-  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.cut {
-  display: grid;
-  grid-template-columns: 15px 1fr 15px;
-  align-items: center;
-  height: 0;
-}
-.cut i {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #f4f5f9;
-}
-.cut i:first-child {
-  transform: translateX(-10px);
-}
-.cut i:last-child {
-  transform: translateX(5px);
-}
-.cut span {
-  border-top: 1px dashed #ffffff80;
-}
-.today-summary {
-  padding: 15px 20px 3px;
-}
-.today-summary strong,
-.today-summary small {
-  display: block;
-}
-.today-summary strong {
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-}
-.today-summary small {
-  margin-top: 5px;
-  color: #bcd2f5;
-  font-size: 10px;
-  font-weight: 600;
-}
-.today-ticket :deep(.schedule-card) {
-  width: calc(100% - 32px);
-  margin: 10px 16px 8px;
-}
-.empty-ticket {
-  display: flex;
-  min-height: 150px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-top: 18px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, #103779, #1553a2);
-  color: #fff;
-  box-shadow: 0 10px 22px rgba(16, 41, 92, 0.22);
-}
-.empty-ticket-badge {
-  position: relative;
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  font-size: 19px;
-}
-.empty-ticket-pulse {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(255, 212, 102, 0.32);
-  animation: schedule-beacon 2.4s ease-out infinite;
-}
-@keyframes schedule-beacon {
-  0% { box-shadow: 0 0 0 0 rgba(255, 212, 102, 0.32); }
-  70%, 100% { box-shadow: 0 0 0 12px rgba(255, 212, 102, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .empty-ticket-pulse { animation: none; }
-}
-.empty-ticket b {
-  margin-top: 14px;
-  font-size: 16px;
-  font-weight: 700;
-}
-.empty-ticket small {
-  margin-top: 6px;
-  color: #d7e4fb;
-  font-size: 13px;
-  font-weight: 500;
-}
+
 .upcoming-card {
   margin-top: 14px;
   padding: 0;
@@ -969,33 +789,10 @@ function showPastSchedules() {
   font-weight: 900;
   letter-spacing: -0.035em;
 }
-.section-title p {
-  margin-top: 5px;
-  color: #98a2b3;
-  font-size: 9px;
-  font-weight: 600;
-}
 .section-title > span {
   color: #94a3b8;
   font-size: 13px;
   font-weight: 500;
-}
-.section-title button {
-  display: flex;
-  min-height: 29px;
-  align-items: center;
-  gap: 4px;
-  padding: 0 9px;
-  border-radius: 9px;
-  background: #edf4ff;
-  color: #2868cf;
-  font-size: 9px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-.section-title button span {
-  color: #2868cf;
-  font-size: 11px;
 }
 .upcoming-list {
   position: relative;
@@ -1218,13 +1015,4 @@ function showPastSchedules() {
   font-weight: 700;
   letter-spacing: -0.01em;
 }
-@media (prefers-reduced-motion: reduce){.trip-pass-head em.traveling{animation:none}}
-.today-preview-list {
-  padding-bottom: 12px;
-}
-.today-preview-list :deep(.schedule-card) {
-  width: calc(100% - 36px);
-  margin: 10px 18px;
-}
-.route-flag{display:inline-block;width:27px;height:18px;border-radius:3px;background-size:cover;box-shadow:0 2px 5px rgba(0,0,0,.22);vertical-align:middle}
 </style>
