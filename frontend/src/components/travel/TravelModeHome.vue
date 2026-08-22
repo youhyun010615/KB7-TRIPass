@@ -9,6 +9,7 @@ import {
   flagIconClass,
 } from '@/stores/travel';
 import { useExchangeStore } from '@/stores/exchange';
+import { useTripWalletStore } from '@/stores/tripWallet';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import foodIcon from '@/assets/icons/food.svg';
 import foodIconRaw from '@/assets/icons/food.svg?raw';
@@ -23,6 +24,7 @@ import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
 import livingIcon from '@/assets/icons/home-dollar.svg';
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 import calculatorIcon from '@/assets/icons/calculator.svg';
+import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
@@ -35,6 +37,7 @@ const router = useRouter();
 const travelMode = useTravelModeStore();
 const travelStore = useTravelStore();
 const exchangeStore = useExchangeStore();
+const tripWalletStore = useTripWalletStore();
 const scheduleStore = useTravelScheduleStore();
 
 // 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
@@ -189,12 +192,6 @@ const startDate = computed(() => {
   return new Date(year, month - 1, day);
 });
 
-const endDate = computed(() => {
-  if (!tripInfo.value?.endDate) return null;
-  const [year, month, day] = tripInfo.value.endDate.split('-').map(Number);
-  return new Date(year, month - 1, day);
-});
-
 const currentDay = computed(() => {
   if (!startDate.value) return 0;
 
@@ -204,22 +201,6 @@ const currentDay = computed(() => {
   const diff = today.value - startDate.value;
   return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
 });
-
-const totalTripDays = computed(() => {
-  if (!startDate.value || !endDate.value) return 1;
-  const diff = endDate.value - startDate.value;
-  return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
-});
-
-// 여행 기간이 이미 끝난 국가는 currentDay가 totalTripDays를 넘어서면서
-// 진행률 바/핀이 100%를 넘어 튀어나가지 않도록 0~100 사이로 고정한다.
-const tripProgressPercent = computed(() =>
-  Math.min(100, Math.max(0, (currentDay.value / totalTripDays.value) * 100)),
-);
-
-// 점이 노선 양 끝(국가명/D+N 텍스트)에 바짝 붙지 않도록 실제 표시 위치는
-// 4~90% 범위 안쪽으로만 이동시킨다 (선 자체의 길이/위치는 그대로 둔다).
-const routePinPosition = computed(() => 4 + (tripProgressPercent.value / 100) * 86);
 
 // 카테고리 아이콘 매핑
 const categoryIcons = {
@@ -353,39 +334,6 @@ function todayDateString() {
   return `${y}-${m}-${day}`;
 }
 
-function tripDayDisplay(item) {
-  const arrivalDate = item.arrivalDate;
-  const departureDate = item.departureDate;
-
-  if (!arrivalDate || !departureDate) {
-    return {
-      label: 'TRIP DAY',
-      text: `D+${Math.max(1, currentDay.value)}`,
-      state: 'ongoing',
-    };
-  }
-
-  const todayStr = todayDateString();
-
-  if (todayStr > departureDate) {
-    return { label: 'TRIP STATUS', text: '여행 종료', state: 'ended' };
-  }
-
-  if (todayStr < arrivalDate) {
-    return {
-      label: 'START IN',
-      text: `D-${Math.max(1, daysBetween(todayStr, arrivalDate))}`,
-      state: 'upcoming',
-    };
-  }
-
-  return {
-    label: 'TRIP DAY',
-    text: `D+${daysBetween(arrivalDate, todayStr) + 1}`,
-    state: 'ongoing',
-  };
-}
-
 function findTodayCountryCode(countries) {
   if (!countries.length) return 'all';
   const todayStr = todayDateString();
@@ -406,6 +354,7 @@ onMounted(async () => {
     if (!exchangeStore.currencies.length) {
       exchangeStore.updateExchangeRates().catch(() => {});
     }
+    tripWalletStore.loadForeignBalances().catch(() => {});
     await travelStore.loadActiveGoal();
     if (tripId.value) {
       // 초기 로딩 시 필터링 없이 전체 데이터를 가져와 캐싱
@@ -612,6 +561,30 @@ const countryFlagMap = {
   중국: 'cn',
   괌: 'gu',
 };
+
+function dottedDate(value) {
+  return value ? String(value).replaceAll('-', '.') : '';
+}
+
+function countryDateRange(item) {
+  if (!item?.arrivalDate || !item?.departureDate) return '';
+  return `${dottedDate(item.arrivalDate)} — ${dottedDate(item.departureDate)}`;
+}
+
+const travelMetaCountryCodes = computed(() => persistentCountries.value
+  .map(country => countryFlagMap[country.countryName])
+  .filter(Boolean));
+
+const currentTravelCountry = computed(() => {
+  const todayStr = todayDateString();
+  return persistentCountries.value.find(country =>
+    country.arrivalDate && country.departureDate
+      && country.arrivalDate <= todayStr && todayStr <= country.departureDate,
+  ) || persistentCountries.value[0] || null;
+});
+
+const travelCardBalance = computed(() => tripWalletStore.foreignBalances
+  .reduce((sum, balance) => sum + Number(balance.krwEstimatedAmount || balance.krwAmount || 0), 0));
 
 function parseScheduleDateTime(dateTime) {
   if (Array.isArray(dateTime)) {
@@ -845,48 +818,43 @@ async function switchMode(mode) {
           }"
         >
           <div class="ticket-top">
-            <span>BOARDING PASS</span><span>TRIPASS AIR</span
-            ><span
-              >NO. {{ item.code === 'all' ? 'EUR' : item.code }}-230</span
-            >
+            <div class="ticket-meta-copy">
+              <div class="ticket-meta-title">
+                <strong>{{ tripInfo?.tripName || '나의 여행' }}</strong>
+                <span class="ticket-meta-flags" aria-label="여행 국가">
+                  <i v-for="code in travelMetaCountryCodes" :key="code" :class="flagIconClass(code)" />
+                </span>
+              </div>
+            </div>
+            <span class="ticket-meta-divider" aria-hidden="true" />
+            <span class="ticket-meta-day">DAY {{ currentDay }}</span>
+            <span class="ticket-meta-divider" aria-hidden="true" />
+            <span class="ticket-meta-now">
+              <b>NOW</b>
+              <span>{{ currentTravelCountry?.countryName }}</span>
+              <i v-if="currentTravelCountry" :class="flagIconClass(countryFlagMap[currentTravelCountry.countryName])" />
+            </span>
           </div>
           <div class="perforation"><i /><span /><i /></div>
           <div class="ticket-main">
             <div class="trip-line">
               <div class="trip-destination">
-                <p class="trip-label">DESTINATION</p>
                 <p class="trip-country-name">
-                  <span v-if="item.code !== 'all'" :class="flagIconClass(item.code)" class="fi-inline trip-country-flag" />
                   <span>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</span>
                 </p>
+                <p class="trip-country-dates">{{ countryDateRange(item) }}</p>
               </div>
-              <div class="destination-route" aria-hidden="true">
-                <i class="route-line"></i>
-                <span
-                  class="route-pin"
-                  :style="{ left: `${routePinPosition}%` }"
-                >
-                  <i class="route-pin-pulse"></i>
-                  <i class="route-pin-dot"></i>
-                </span>
-              </div>
-              <div class="trip-departure">
-                <p class="trip-label">{{ tripDayDisplay(item).label }}</p>
-                <p
-                  class="trip-day-count"
-                  :class="`is-${tripDayDisplay(item).state}`"
-                >
-                  {{ tripDayDisplay(item).text }}
-                </p>
+              <div class="travel-card-balance">
+                <span class="travel-card-icon" aria-hidden="true"><i /></span>
+                <small>트래블카드 잔액</small>
+                <strong>{{ formatWon(travelCardBalance) }}</strong>
               </div>
             </div>
-            <p class="trip-description">여행 남은 자산을 한눈에 확인해요 ✨</p>
-            <p class="trip-day-range">{{ item.dayRangeStart }}일차 ~ {{ item.dayRangeEnd }}일차</p>
             <div class="ticket-photo-space" />
 
             <div class="travel-summary-content">
               <div class="summary-title-wrapper">
-                <div class="summary-title">
+                <div v-if="item.code === 'all'" class="summary-title">
                   <span
                     >{{
                       item.code === 'all'
@@ -896,6 +864,7 @@ async function switchMode(mode) {
                     (합산)</span
                   ><strong>{{ formatWon(item.targetBudget - item.spentAmount) }}</strong>
                 </div>
+                <div v-else class="summary-title-spacer" aria-hidden="true" />
                 <button
                   v-if="isReturnPeriod"
                   class="return-checklist-button"
@@ -947,7 +916,7 @@ async function switchMode(mode) {
               </template>
               <div v-else class="fund-progress-box">
                 <div class="fund-progress-head">
-                  <span>예산 사용률</span><strong>{{ fundPercent(item) }}%</strong>
+                  <span>{{ item.name }} 예산 사용률</span><strong>{{ fundPercent(item) }}%</strong>
                 </div>
                 <div class="fund-progress-track">
                   <i :style="{ width: `${fundPercent(item)}%` }" />
@@ -966,7 +935,10 @@ async function switchMode(mode) {
             </div>
           </div>
           <div class="perforation lower"><i /><span /><i /></div>
-          <div class="ticket-stub" aria-hidden="true"></div>
+          <div class="ticket-stub" aria-label="TRIPASS 여행 보딩패스">
+            <span><img :src="tripassTransparentSymbol" alt="" aria-hidden="true"> TRIPASS</span>
+            <b>JOURNEY BOARDING PASS</b>
+          </div>
         </div>
       </article>
     </div>
@@ -2771,4 +2743,10 @@ async function switchMode(mode) {
 .start-report-secondary{margin-top:8px;border:1px solid #ccd8ea;background:#fff;color:#24426f}
 .start-report-modal small{display:block;margin-top:14px;font-size:9px;line-height:1.5;color:#8995a8}
 .start-report-fade-enter-active,.start-report-fade-leave-active{transition:opacity .2s ease}.start-report-fade-enter-from,.start-report-fade-leave-to{opacity:0}
+.ticket-top{display:flex;height:44px;min-height:44px;box-sizing:border-box;align-items:center;gap:9px;padding:6px 12px;color:#fff;letter-spacing:normal}.ticket-meta-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}.ticket-meta-title{display:flex;min-width:0;align-items:center;gap:6px}.ticket-meta-title>strong{overflow:hidden;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.ticket-meta-flags{display:flex;flex:none;gap:2px}.ticket-meta-flags i,.ticket-meta-now i{display:block;width:19px;height:13px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}.ticket-meta-copy>small{overflow:hidden;color:rgba(255,255,255,.68);font-family:'Space Mono',ui-monospace,monospace;font-size:8px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.ticket-meta-divider{width:1px;height:20px;flex:none;background:rgba(255,255,255,.24)}.ticket-meta-day{flex:none;padding:5px 9px;border-radius:999px;color:#173f8d;background:#ffd45e;font-family:'Space Mono',ui-monospace,monospace;font-size:9px;font-weight:950}.ticket-meta-now{display:flex;flex:none;align-items:center;gap:4px;padding:5px 7px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(255,255,255,.12);font-size:9px;font-weight:800}.ticket-meta-now b{color:#ffd45e;font-family:'Space Mono',ui-monospace,monospace;font-size:8px}.ticket-meta-now i{width:20px;height:14px}.perforation:not(.lower){position:relative;top:auto}.trip-country-dates{margin-top:5px;color:rgba(255,255,255,.74);font-family:'Space Mono',ui-monospace,monospace;font-size:9px;font-weight:700}.trip-destination{min-width:0}.trip-country-name{margin-top:0}.summary-title-spacer{height:45px}
+.ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height);box-sizing:border-box}.ticket-stub{display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:rgba(255,255,255,.72);font-family:'Space Mono',ui-monospace,monospace;font-size:8px;font-weight:800;letter-spacing:.08em}.ticket-stub>span{color:#ffd45e}.ticket-stub>b{color:#fff;font-size:8px;letter-spacing:.05em}
+.ticket{--ticket-edge-height:60px;--ticket-perforation-height:15px}.ticket-top{height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height));min-height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height))}.perforation:not(.lower){height:var(--ticket-perforation-height);background:var(--theme)}.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height);padding:0 16px;font-size:10px}.ticket-stub>span{display:flex;align-items:center;gap:6px;font-size:11px}.ticket-stub>span img{width:21px;height:21px;object-fit:contain}.ticket-stub>b{font-size:10px;letter-spacing:.06em}
+.ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height)}.perforation:not(.lower){position:absolute;top:var(--ticket-edge-height);height:0;background:transparent}.perforation.lower{bottom:var(--ticket-edge-height)}.ticket-stub{padding:0 14px;font-size:9px}.ticket-stub>span{font-size:10px}.ticket-stub>span img{width:18px;height:18px}.ticket-stub>b{font-size:9px}
+.perforation:not(.lower),.perforation.lower{transform:translateY(-11px)}
+.travel-card-balance{display:grid;grid-template-columns:31px auto;grid-template-rows:auto auto;align-items:center;column-gap:8px;text-align:right}.travel-card-icon{position:relative;grid-row:1/3;display:block;width:31px;height:21px;border:1px solid rgba(255,255,255,.42);border-radius:5px;background:linear-gradient(145deg,#173f8d,#2f70e9);box-shadow:0 5px 12px rgba(3,16,43,.24)}.travel-card-icon::after{position:absolute;right:4px;bottom:4px;width:8px;height:2px;border-radius:99px;background:#ffd45e;content:''}.travel-card-icon i{position:absolute;top:6px;left:5px;width:7px;height:5px;border-radius:1px;background:#ffd45e}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
 </style>
