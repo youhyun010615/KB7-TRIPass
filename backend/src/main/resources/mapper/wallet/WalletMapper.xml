@@ -1175,6 +1175,7 @@
 
     <select id="findTripWalletSummary" resultType="java.util.HashMap">
         SELECT t.id                                             AS tripId,
+               w.id                                             AS walletId,
                COALESCE(w.balance_amount, 0)                    AS walletBalance,
                t.total_target_amount                            AS targetAmount,
                COALESCE(t.initial_wallet_balance, 0)            AS initialWalletBalance,
@@ -1200,6 +1201,16 @@
         WHERE t.id = #{tripId}
           AND t.user_id = #{userId}
           AND t.is_deleted = 0
+    </select>
+
+    <select id="calcBalanceAsOf" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+            CASE WHEN wl.direction = 'IN' THEN wl.amount
+                 ELSE -wl.amount END
+        ), 0)
+        FROM wallet_ledger wl
+        WHERE wl.wallet_id = #{walletId}
+          AND DATE(wl.created_at) &lt;= #{asOfDate}
     </select>
 
 </mapper>

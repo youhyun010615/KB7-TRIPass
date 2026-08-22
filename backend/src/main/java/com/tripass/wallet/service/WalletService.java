@@ -50,7 +50,16 @@ public class WalletService {
         BigDecimal emergencyInitial = toBigDecimal(row.get("emergencyAmount"));
         BigDecimal externalCharged = toBigDecimal(row.get("externalChargedAmount"));
         BigDecimal totalSpent = toBigDecimal(row.get("totalTripSpentAmount"));
-        BigDecimal walletBalance = toBigDecimal(row.get("walletBalance"));
+
+        LocalDate overrideDate = devDateUtil.today(userId);
+        boolean isVirtualDate = !overrideDate.equals(LocalDate.now());
+        BigDecimal walletBalance;
+        if (isVirtualDate && row.get("walletId") != null) {
+            walletBalance = defaultZero(walletMapper.calcBalanceAsOf(
+                    ((Number) row.get("walletId")).longValue(), overrideDate));
+        } else {
+            walletBalance = toBigDecimal(row.get("walletBalance"));
+        }
 
         BigDecimal targetSpent = totalSpent.min(targetAmount);
         BigDecimal remainingAfterTarget = totalSpent.subtract(targetSpent).max(BigDecimal.ZERO);
@@ -91,7 +100,14 @@ public class WalletService {
             throw new WalletException(WALLET_NOT_FOUND);
         }
 
-        BigDecimal balanceAmount = defaultZero(response.getBalanceAmount());
+        LocalDate overrideDate = devDateUtil.today(userId);
+        boolean isVirtualDate = !overrideDate.equals(LocalDate.now());
+        BigDecimal balanceAmount;
+        if (isVirtualDate) {
+            balanceAmount = defaultZero(walletMapper.calcBalanceAsOf(response.getWalletId(), overrideDate));
+        } else {
+            balanceAmount = defaultZero(response.getBalanceAmount());
+        }
         BigDecimal totalLinkedAccountBalance = defaultZero(response.getTotalLinkedAccountBalance());
         BigDecimal targetAmount = defaultTargetAmount(response.getTargetAmount());
         BigDecimal externalChargeAmount = defaultZero(response.getExternalChargeAmount());
