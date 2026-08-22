@@ -50,7 +50,9 @@ function loadState() {
 
 export const useExchangeStore = defineStore('exchange', () => {
   const saved = loadState();
-  const selectedCode = ref(saved?.selectedCode || 'EUR');
+  // 특정 통화(EUR 등)를 기본값으로 못박으면 DB 데이터 순서에 따라 초기 선택 국가가
+  // 환경마다 달라지므로, 저장된 선택이 없으면 가나다순 첫 국가로 정해지도록 비워둔다.
+  const selectedCode = ref(saved?.selectedCode || '');
   // EUR처럼 여러 국가가 같은 통화를 쓰는 경우 selectedCode만으로는 국가를 구분할 수 없어
   // 국가 단위 API로 선택한 국가를 함께 기억해 정확히 같은 항목을 다시 찾는다.
   const selectedCountryId = ref(saved?.selectedCountryId ?? null);
@@ -64,6 +66,13 @@ export const useExchangeStore = defineStore('exchange', () => {
   const lastUpdateDate = ref('');
 
   const selectedBankId = ref(saved?.selectedBankId || 'kb-gangnam');
+  // 국가명 가나다순으로 정렬된 목록. 초기 기본 선택 및 "전체 국가" 화면에서 공통으로 사용해
+  // 화면마다 기준이 달라지는 일이 없도록 한다.
+  const sortedCurrencies = computed(() =>
+    [...currencies.value].sort((a, b) =>
+      (a.countryName || '').localeCompare(b.countryName || '', 'ko-KR'),
+    ),
+  );
   const selectedCurrency = computed(() => {
     if (selectedCountryId.value != null) {
       const byCountry = currencies.value.find(
@@ -71,11 +80,13 @@ export const useExchangeStore = defineStore('exchange', () => {
       );
       if (byCountry) return byCountry;
     }
-    return (
-      currencies.value.find((item) => item.code === selectedCode.value) ||
-      currencies.value[0] ||
-      {}
-    );
+    if (selectedCode.value) {
+      const byCode = currencies.value.find(
+        (item) => item.code === selectedCode.value,
+      );
+      if (byCode) return byCode;
+    }
+    return sortedCurrencies.value[0] || {};
   });
   const selectedBank = computed(
     () => banks.find((item) => item.id === selectedBankId.value) || banks[0],
@@ -233,6 +244,7 @@ export const useExchangeStore = defineStore('exchange', () => {
 
   return {
     currencies,
+    sortedCurrencies,
     selectedCode,
     selectedCountryId,
     period,
