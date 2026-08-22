@@ -715,7 +715,7 @@
         UPDATE trips
         SET status = 'TRAVELING'
         WHERE user_id = #{userId}
-          AND status = 'ENDED'
+          AND status IN ('ENDED', 'ARCHIVED')
           AND start_date &lt;= #{today}
           AND end_date &gt;= #{today}
           AND is_deleted = 0
@@ -725,7 +725,7 @@
         UPDATE trips
         SET status = 'PLANNING'
         WHERE user_id = #{userId}
-          AND status IN ('TRAVELING', 'ENDED')
+          AND status IN ('TRAVELING', 'ENDED', 'ARCHIVED')
           AND start_date &gt; #{today}
           AND is_deleted = 0
     </update>
