@@ -129,7 +129,7 @@ public class TravelService {
         walletService.resolveWalletReflect(currentUserId, tripId, reflect, targetAccountId);
 
         TripGoalResponseDto trip = travelMapper.findTripGoalById(tripId);
-        BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
+        BigDecimal walletBalance = walletService.getCurrentBalance(currentUserId);
         LocalDate today = devDateUtil.today(currentUserId);
         int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), today);
         BigDecimal monthlySavingTarget = TripSavingCalculator.calculateMonthlySavingTarget(
@@ -441,7 +441,7 @@ public class TravelService {
     public TripHomeDashboardResponseDto getActiveTripHome(Long currentUserId) {
         TripGoalResponseDto trip = getActiveTripGoal(currentUserId);
         BigDecimal totalTarget = defaultZero(trip.getTotalTargetAmount());
-        BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
+        BigDecimal walletBalance = walletService.getCurrentBalance(currentUserId);
         BigDecimal travelCardBalance = defaultZero(travelMapper.findTravelCardKrwBalanceByUserId(currentUserId));
         BigDecimal securedTravelFund = walletBalance.add(travelCardBalance);
         BigDecimal remainingTarget = totalTarget.subtract(securedTravelFund).max(BigDecimal.ZERO);

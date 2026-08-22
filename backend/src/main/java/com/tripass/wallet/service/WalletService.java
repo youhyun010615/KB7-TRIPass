@@ -93,6 +93,23 @@ public class WalletService {
         return new BigDecimal(value.toString());
     }
 
+    /**
+     * 가상 날짜가 설정돼 있으면 해당 시점까지의 ledger 합산으로, 아니면 wallet의
+     * 저장된 잔액을 그대로 반환한다. 여행 홈 대시보드 등 반복 조회되는 화면에서
+     * 날짜 전환에 따라 잔액이 항상 일관되게 보이도록 하기 위한 공통 조회 메서드.
+     */
+    public BigDecimal getCurrentBalance(Long userId) {
+        WalletMainResponseDto response = walletMapper.findWalletMainByUserId(userId);
+        if (response == null) return BigDecimal.ZERO;
+
+        LocalDate overrideDate = devDateUtil.today(userId);
+        boolean isVirtualDate = !overrideDate.equals(LocalDate.now());
+        if (isVirtualDate) {
+            return defaultZero(walletMapper.calcBalanceAsOf(response.getWalletId(), overrideDate));
+        }
+        return defaultZero(response.getBalanceAmount());
+    }
+
     public WalletMainResponseDto getWalletMain(Long userId) {
         WalletMainResponseDto response = walletMapper.findWalletMainByUserId(userId);
 

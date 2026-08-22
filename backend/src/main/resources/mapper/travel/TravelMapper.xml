@@ -600,6 +600,7 @@
               ORDER BY created_at DESC LIMIT 1
           )
           AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(#{today}, '%Y-%m')
+          AND DATE(wl.created_at) &lt;= #{today}
     </select>
 
     <select id="findPrepaidExpenseTotalByTripId" resultType="java.math.BigDecimal">
