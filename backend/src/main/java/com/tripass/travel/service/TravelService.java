@@ -31,7 +31,9 @@ public class TravelService {
     private final com.tripass.wallet.service.WalletService walletService;
     private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
+    @Transactional
     public TripLifecycleResponseDto getCurrentLifecycle(Long currentUserId) {
+        syncTripStatusByVirtualDate(currentUserId);
         Trip trip = travelMapper.selectLatestTripByUserId(currentUserId);
         boolean hasLinkedAccount = travelMapper.countActiveAccountsByUserId(currentUserId) > 0;
         boolean hasLinkedCard = travelMapper.countActiveCardsByUserId(currentUserId) > 0;
@@ -404,6 +406,13 @@ public class TravelService {
     /** 로그인 사용자가 등록한 전체 여행 목록을 조회합니다. */
     public List<TripListItemResponseDto> getMyTrips(Long currentUserId) {
         return travelMapper.findTripsByUserId(currentUserId);
+    }
+
+    private void syncTripStatusByVirtualDate(Long userId) {
+        LocalDate today = devDateUtil.today(userId);
+        if (today.equals(java.time.LocalDate.now())) return;
+        travelMapper.syncTripStatusForUser(userId, today);
+        travelMapper.syncTripEndedForUser(userId, today);
     }
 
     /** 종료일이 지난 여행 중(TRAVELING) 상태를 완료(ENDED)로 일괄 전환합니다. */

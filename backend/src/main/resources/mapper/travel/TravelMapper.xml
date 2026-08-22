@@ -689,4 +689,25 @@
           AND t.is_deleted = 0
     </update>
 
+    <update id="syncTripStatusForUser">
+        UPDATE trips t
+        LEFT JOIN wallet w ON t.user_id = w.user_id
+        SET t.status = 'TRAVELING',
+            t.initial_wallet_balance = COALESCE(w.balance_amount, 0),
+            t.emergency_amount = GREATEST(COALESCE(w.balance_amount, 0) - t.total_target_amount, 0)
+        WHERE t.user_id = #{userId}
+          AND t.status = 'PLANNING'
+          AND t.start_date &lt;= #{today}
+          AND t.is_deleted = 0
+    </update>
+
+    <update id="syncTripEndedForUser">
+        UPDATE trips
+        SET status = 'ENDED'
+        WHERE user_id = #{userId}
+          AND status = 'TRAVELING'
+          AND end_date &lt; #{today}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
