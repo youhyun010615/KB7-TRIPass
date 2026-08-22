@@ -217,6 +217,7 @@
                                    ORDER BY created_at DESC LIMIT 1
                                )
                                AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(mr.month_start, '%Y-%m')
+                               AND DATE(wl.created_at) &lt;= #{today}
         GROUP BY mr.month_start
         ORDER BY mr.month_start
     </select>
