@@ -113,8 +113,8 @@ ON DUPLICATE KEY UPDATE card_name = VALUES(card_name);
 -- ============================================================================
 -- 6. 월렛 연동 계좌
 -- ============================================================================
-INSERT INTO wallet_account (wallet_id, account_id, is_primary, status, created_at)
-VALUES (@wallet_id, @account_id, TRUE, 'LINKED', '2026-08-22 14:30:00')
+INSERT INTO wallet_account (wallet_id, account_id, is_primary, status)
+VALUES (@wallet_id, @account_id, TRUE, 'LINKED')
 ON DUPLICATE KEY UPDATE is_primary = TRUE, status = 'LINKED';
 
 -- ============================================================================
@@ -148,30 +148,30 @@ SET @tc_portugal = (SELECT id FROM trip_countries WHERE trip_id = @trip_id AND d
 INSERT INTO trip_budget_recommendations
     (trip_country_id, traveler_count, travel_style,
      recommended_airfare_amount, recommended_lodging_amount,
-     recommended_activity_amount, recommended_transport_amount,
+     recommended_activity_amount,
      recommended_food_amount, recommended_other_amount,
      confirmed_airfare_amount, confirmed_lodging_amount,
-     confirmed_activity_amount, confirmed_transport_amount,
+     confirmed_activity_amount,
      confirmed_food_amount, confirmed_other_amount,
      ai_reason, ai_model, is_confirmed)
 VALUES
-    -- 프랑스 (5일, 총 250만)
+    -- 프랑스 (5일, 총 250만: 항공110+숙소60+관광31.5+식비40+기타8.5)
     (@tc_france, 1, 'MID_RANGE',
-     1100000, 600000, 225000, 90000, 400000, 85000,
-     1100000, 600000, 225000, 90000, 400000, 85000,
-     '파리 5일 기준: 항공 110만(왕복 직항), 숙소 12만/박×5, 식비 8만/일×5, 관광 4.5만/일×5, 교통 1.8만/일×5, 기타 1.7만/일×5',
+     1100000, 600000, 315000, 400000, 85000,
+     1100000, 600000, 315000, 400000, 85000,
+     '파리 5일 기준: 항공 110만(왕복 직항), 숙소 12만/박×5, 식비 8만/일×5, 관광·교통 6.3만/일×5, 기타 1.7만/일×5',
      'budget-ai-v1', 1),
-    -- 스위스 (5일, 총 170만)
+    -- 스위스 (5일, 총 170만: 숙소85+관광45+식비30+기타10)
     (@tc_swiss, 1, 'MID_RANGE',
-     0, 850000, 250000, 200000, 300000, 100000,
-     0, 850000, 250000, 200000, 300000, 100000,
-     '스위스 5일 기준(항공 프랑스 포함): 숙소 17만/박×5, 식비 6만/일×5, 관광 5만/일×5, 교통 4만/일×5, 기타 2만/일×5',
+     0, 850000, 450000, 300000, 100000,
+     0, 850000, 450000, 300000, 100000,
+     '스위스 5일 기준(항공 프랑스 포함): 숙소 17만/박×5, 식비 6만/일×5, 관광·교통 9만/일×5, 기타 2만/일×5',
      'budget-ai-v1', 1),
-    -- 포르투갈 (4일, 총 60만 — 항공 미포함, 유럽 내 이동)
+    -- 포르투갈 (4일, 총 60만: 숙소28+관광14+식비18)
     (@tc_portugal, 1, 'MID_RANGE',
-     0, 280000, 100000, 40000, 180000, 0,
-     0, 280000, 100000, 40000, 180000, 0,
-     '포르투갈 4일 기준(항공 프랑스 포함): 숙소 7만/박×4, 식비 4.5만/일×4, 관광 2.5만/일×4, 교통 1만/일×4',
+     0, 280000, 140000, 180000, 0,
+     0, 280000, 140000, 180000, 0,
+     '포르투갈 4일 기준(항공 프랑스 포함): 숙소 7만/박×4, 식비 4.5만/일×4, 관광·교통 3.5만/일×4',
      'budget-ai-v1', 1);
 
 -- ============================================================================
