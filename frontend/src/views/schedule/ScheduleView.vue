@@ -275,7 +275,8 @@ const currentTravelDay = computed(() => {
   const start = new Date(`${store.travelStart}T00:00:00`).getTime();
   const today = new Date(`${store.today}T00:00:00`).getTime();
   if (![start, today].every(Number.isFinite)) return 0;
-  return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
+  if (today < start) return 0;
+  return Math.min(travelDays.value, Math.floor((today - start) / 86_400_000) + 1);
 });
 
 const openDetail = (id) => {
