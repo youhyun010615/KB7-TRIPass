@@ -8,6 +8,7 @@ import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
 import { useExchangeStore } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
+import moneyExchangeIcon from '@/assets/icons/money-exchange.svg';
 
 const router = useRouter();
 const exchange = useExchangeStore();
@@ -131,10 +132,7 @@ watch(
             class="action-card-btn"
           >
             <span class="icon-circle primary" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8" />
-                <path d="M9.4 9.25c.5-.75 1.35-1.15 2.55-1.15 1.45 0 2.45.67 2.45 1.75 0 2.65-5 1.1-5 3.9 0 1.15 1.03 1.95 2.7 1.95 1.25 0 2.18-.42 2.72-1.28M12 6.8v10.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-              </svg>
+              <img class="money-exchange-icon" :src="moneyExchangeIcon" alt="">
             </span>
             <div class="btn-text">
               <strong>전체 통화 환율</strong>
@@ -217,13 +215,7 @@ watch(
           <div class="empty-state">
             <div class="empty-exchange-icon" aria-hidden="true">
               <span class="empty-exchange-orbit"></span>
-              <svg viewBox="0 0 64 64" fill="none">
-                <path d="M17 22A19 19 0 0 1 48 18" />
-                <path d="m43 12 6 6-7 4" />
-                <path d="M47 42A19 19 0 0 1 16 46" />
-                <path d="m21 52-6-6 7-4" />
-                <path d="M24 27h16M27 27l2 18m8-18-2 18M24 34h16M23 27l4 18m14-18-4 18" />
-              </svg>
+              <img class="money-exchange-icon" :src="moneyExchangeIcon" alt="">
             </div>
             <div class="empty-copy">
               <strong>
@@ -448,6 +440,18 @@ header h1 {
   width: 18px;
   height: 18px;
 }
+.icon-circle img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.money-exchange-icon {
+  filter: brightness(0) saturate(100%) invert(20%) sepia(66%) saturate(1768%) hue-rotate(202deg) brightness(78%) contrast(96%);
+}
+.icon-circle.secondary svg {
+  width: 22px;
+  height: 22px;
+}
 .icon-circle.primary {
   background: #d8e7ff;
   color: #173f8d;
@@ -628,6 +632,13 @@ header h1 {
   stroke-width: 3.4;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.empty-exchange-icon img {
+  position:relative;
+  z-index:1;
+  width:48px;
+  height:48px;
+  object-fit:contain;
 }
 .empty-exchange-orbit {
   position: absolute;
