@@ -254,7 +254,14 @@ const currentTravelDay = computed(() => {
   if (![start, today].every(Number.isFinite)) return 0;
   return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
 });
-const openDetail = (id) => router.push(`/schedule/${id}`);
+const openDetail = (id) => {
+  if (props.listMode) {
+    const tripId = route.params.id || route.query.tripId;
+    router.push(`/mypage/travel/${tripId}/schedules/${id}`);
+    return;
+  }
+  router.push(`/schedule/${id}`);
+};
 const archiveTrip = computed(() => reportStore.tripSummary);
 const archiveStatus = computed(() =>
   archiveTrip.value?.status === '여행 중' ? '여행중' : archiveTrip.value?.status,
@@ -446,7 +453,7 @@ function showPastSchedules() {
     <section class="upcoming-card" :class="{ 'is-empty': !visibleTimelineGroups.length }">
       <div class="section-title">
         <div>
-          <h2>{{ listMode ? '선택한 날짜 일정' : '전체 일정' }}</h2>
+          <h2>{{ listMode ? '여행 일정' : '전체 일정' }}</h2>
         </div>
         <span>총 {{ listMode ? visibleScheduleCount : store.sortedSchedules.length }}건</span>
       </div>
@@ -482,6 +489,7 @@ function showPastSchedules() {
             v-for="item in group.items"
             :key="item.id"
             :schedule="item"
+            :country-code="countriesForDate(group.date)[0]?.code || item.countryCode"
             :completed="isScheduleCompleted(item)"
             :data-next-anchor="item.id === nextSchedule?.id ? 'true' : null"
             @detail="openDetail"

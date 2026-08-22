@@ -4,6 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelScheduleStore } from '@/stores/travelSchedule'
 
+const props = defineProps({
+  archiveMode: { type: Boolean, default: false },
+})
 const route = useRoute()
 const router = useRouter()
 const store = useTravelScheduleStore()
@@ -18,7 +21,13 @@ const won = computed(() => Math.round((schedule.value?.amount || 0) * (wonRate[s
 const paymentLabel = computed(() => ({ prepaid:'사전결제 완료', onsite:'현장결제 필요', undecided:'미정' })[schedule.value?.paymentStatus] || '미정')
 async function remove() {
   if (!window.confirm('이 여행 일정을 삭제할까요?')) return
-  if (await store.remove(route.params.scheduleId)) router.push('/schedule')
+  if (await store.remove(route.params.scheduleId)) {
+    if (props.archiveMode) {
+      router.push(`/mypage/travel/${route.params.id}/schedules`)
+    } else {
+      router.push('/schedule')
+    }
+  }
 }
 </script>
 
@@ -35,10 +44,10 @@ async function remove() {
         <div><dt>결제 상태</dt><dd><span class="payment-status">{{ paymentLabel }}</span></dd></div>
       </dl></section>
       <section class="memo"><h3>메모</h3><p>{{ schedule.memo || '등록된 메모가 없어요.' }}</p></section>
-      <div class="actions"><button type="button" class="edit" @click="router.push(`/schedule/${schedule.id}/edit`)">수정</button><button type="button" class="delete" @click="remove">삭제</button></div>
+      <div class="actions"><button type="button" class="edit" @click="router.push({ path: `/schedule/${schedule.id}/edit`, query: archiveMode ? { tripId: route.params.id } : {} })">수정</button><button type="button" class="delete" @click="remove">삭제</button></div>
     </template>
     <p v-else class="empty">일정을 찾을 수 없어요.</p>
-    <BottomNav />
+    <BottomNav v-if="!archiveMode" />
   </main>
 </template>
 
