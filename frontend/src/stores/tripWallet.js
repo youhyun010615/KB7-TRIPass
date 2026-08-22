@@ -244,6 +244,7 @@ function normalizeLedger(item) {
     balanceAfter: toNumber(item.balanceAfter),
     memo: item.memo,
     accountName: item.accountName || '',
+    currencyCode: String(item.currencyCode || '').toUpperCase(),
     createdAt: normalizeDateTime(item.createdAt),
   }
 }

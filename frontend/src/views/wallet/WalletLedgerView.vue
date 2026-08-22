@@ -30,6 +30,11 @@ function ledgerTitle(item) {
   return item.memo || transactionTitleMap[item.transactionType] || '거래'
 }
 
+function ledgerCurrencyFlow(item) {
+  if (item.transactionType !== 'CARD_TOPUP' || !item.currencyCode) return ''
+  return `원화 → ${item.currencyCode}`
+}
+
 const filteredLedgers = computed(() => {
   let items = wallet.ledgers
   if (activeTab.value === 'deposit') items = items.filter(item => item.direction === 'IN')
@@ -117,7 +122,10 @@ onMounted(async () => {
         <div v-for="item in group.items" :key="item.ledgerId" class="ledger-line">
           <span :class="item.direction === 'IN' ? 'deposit' : 'withdraw'">{{ item.direction === 'IN' ? '↓' : '↑' }}</span>
           <div>
-            <b>{{ ledgerTitle(item) }}</b>
+            <b>
+              <span>{{ ledgerTitle(item) }}</span>
+              <em v-if="ledgerCurrencyFlow(item)" class="currency-flow">{{ ledgerCurrencyFlow(item) }}</em>
+            </b>
             <small>{{ toTimeLabel(item.createdAt) }}<template v-if="item.accountName"> · {{ item.accountName }}</template></small>
           </div>
           <strong :class="item.direction === 'IN' ? 'deposit' : 'withdraw'">{{ item.direction === 'IN' ? '+' : '-' }}{{ money(item.amount) }}</strong>
@@ -139,5 +147,6 @@ onMounted(async () => {
 .filter-row{gap:7px;margin-top:11px}.date-filter{gap:4px}.date-filter input{min-width:86px;padding:7px 6px;border-radius:9px;font-size:10px}.sort-select{padding:7px 8px;border-radius:9px;font-size:10px;font-weight:600}
 .ledger-day{margin-top:20px}.ledger-day-head h2{font-size:12px;font-weight:600}.ledger-day-head strong{font-size:14px;font-weight:700}
 .ledger-card{margin-top:9px;padding:0 14px;border-radius:18px}.ledger-line{grid-template-columns:34px 1fr auto;gap:10px;padding:12px 0}
-.ledger-line span{width:32px;height:32px;border-radius:10px;font-size:18px}.ledger-line b{font-size:13px}.ledger-line small{margin-top:4px;font-size:10px}.ledger-line strong{font-size:13px}
+.ledger-line>span{width:32px;height:32px;border-radius:10px;font-size:18px}.ledger-line b{display:flex;align-items:center;gap:6px;font-size:13px}.ledger-line b span{display:inline;width:auto;height:auto;border-radius:0;font-size:inherit}.ledger-line small{margin-top:4px;font-size:10px}.ledger-line strong{font-size:13px}
+.currency-flow{flex:none;padding:3px 6px;border-radius:999px;background:#eaf2ff;color:#246bf2;font-size:9px;font-style:normal;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
 </style>

@@ -67,6 +67,17 @@ const budgetCategories = [
 ]
 
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`
+const formattedWonInput = (value) => Number(value || 0).toLocaleString('ko-KR')
+
+function updateWonBudget(countryId, field, event) {
+  const digits = String(event.target.value || '').replace(/[^0-9]/g, '')
+  const amount = Math.min(Number(digits || 0), 100000000)
+
+  store.updateBudget(countryId, field, amount)
+  // 숫자를 직접 입력하는 중에도 모든 원화 금액을 1,000 단위로 표시한다.
+  event.target.value = formattedWonInput(amount)
+}
+
 const dateLabel = (value) => value ? value.replaceAll('-', '.') : '여행 날짜 선택'
 const stepTitle = computed(() => ['여행 계획 등록', '여행 일정 입력', '여행 예산', '여행 목표 확인', '월렛 자금 선택'][step.value - 1])
 const registrationHeroTitle = computed(() => {
@@ -593,7 +604,7 @@ function goToOnboardingHub() {
           <div class="budget-grid prepaid-grid">
             <label v-for="category in budgetCategories.filter((item) => item.prepaid)" :key="category.field">
               <span>{{ category.icon }} {{ category.label }}</span>
-              <div><input type="number" min="0" max="100000000" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="activeBudgetPlan.budget[category.field]" @input="store.updateBudget(activeBudgetPlan.countryId, category.field, $event.target.value)"><em>원</em></div>
+              <div><input type="text" inputmode="numeric" autocomplete="off" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="formattedWonInput(activeBudgetPlan.budget[category.field])" @input="updateWonBudget(activeBudgetPlan.countryId, category.field, $event)"><em>원</em></div>
             </label>
           </div>
           <div class="subtotal prepaid"><span>합계</span><b>{{ money(countryPrepaidTotal(activeBudgetPlan)) }}</b></div>
@@ -601,7 +612,7 @@ function goToOnboardingHub() {
           <div class="budget-grid">
             <label v-for="category in budgetCategories.filter((item) => !item.prepaid)" :key="category.field">
               <span>{{ category.icon }} {{ category.label }}</span>
-              <div><input type="number" min="0" max="100000000" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="activeBudgetPlan.budget[category.field]" @input="store.updateBudget(activeBudgetPlan.countryId, category.field, $event.target.value)"><em>원</em></div>
+              <div><input type="text" inputmode="numeric" autocomplete="off" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="formattedWonInput(activeBudgetPlan.budget[category.field])" @input="updateWonBudget(activeBudgetPlan.countryId, category.field, $event)"><em>원</em></div>
             </label>
           </div>
           <div class="subtotal local-total"><span>{{ activeBudgetPlan.name }} 저축 목표</span><b>{{ money(countryLocalTotal(activeBudgetPlan)) }}</b></div>
