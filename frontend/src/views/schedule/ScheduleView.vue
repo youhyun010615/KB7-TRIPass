@@ -9,6 +9,7 @@ import { useTravelScheduleStore } from '@/stores/travelSchedule';
 import { useTravelStore } from '@/stores/travel';
 import { useTravelReportStore } from '@/stores/travelReport';
 import { flagIconClass } from '@/stores/travel';
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue';
 
 const props = defineProps({
   listMode: {
@@ -373,26 +374,10 @@ function showPastSchedules() {
       <span aria-hidden="true" />
     </header>
 
-    <section v-if="listMode && archiveTrip" class="archive-trip-ticket">
-      <div class="archive-ticket-head">
-        <small>TRIP SCHEDULE</small>
-        <b :class="{ traveling: archiveStatus === '여행중' }">{{ archiveStatus }}</b>
-      </div>
-      <div class="archive-ticket-body">
-        <div class="archive-ticket-title">
-          <h2>{{ archiveTrip.title }}</h2>
-          <div class="archive-ticket-flags" aria-label="여행 국가">
-            <span
-              v-for="code in archiveTrip.countryCodes"
-              :key="code"
-              :class="flagIconClass(code)"
-              class="archive-ticket-flag"
-            />
-          </div>
-        </div>
-        <p>{{ archiveTrip.dateRange }}</p>
-      </div>
-    </section>
+    <TravelArchiveSummaryCard
+      v-if="listMode && (route.params.id || route.query.tripId)"
+      :trip-id="route.params.id || route.query.tripId"
+    />
 
     <section class="calendar-card">
       <div class="calendar-heading">

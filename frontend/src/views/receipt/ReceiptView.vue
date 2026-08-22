@@ -27,6 +27,7 @@ import NotificationBell from '@/components/common/NotificationBell.vue'
 import TravelModeMeta from '@/components/travel/TravelModeMeta.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
 import receiptIcon from '@/assets/icons/receipt.svg'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 
 import {
   getReceiptDates,
@@ -588,6 +589,7 @@ onMounted(loadPage)
       <h1>영수증 보관함</h1>
       <span aria-hidden="true" />
     </header>
+    <TravelArchiveSummaryCard v-if="isArchiveView && tripId" class="receipt-archive-summary" :trip-id="tripId" />
     <div
       v-if="!isArchiveView"
       ref="receiptHeaderEl"

@@ -5,6 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { flagIconClass } from '@/stores/travel'
 import reportIcon from '@/assets/icons/report.svg'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 
 const route=useRoute(); const router=useRouter(); const store=useTravelReportStore()
 const tripId=computed(()=>{
@@ -28,21 +29,7 @@ watch(tripId, id => { if (id) load(id) })
   <p v-else-if="!report && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
   <p v-else-if="!report" class="loading">불러오는 중...</p>
   <template v-else>
-  <section class="ticket">
-    <div class="ticket-head">
-      <small>TRIP REPORT ARCHIVE</small>
-      <b :class="{ traveling: displayStatus === '여행중' }">{{ displayStatus }}</b>
-    </div>
-    <div class="ticket-title-row">
-      <div class="ticket-title-main">
-        <h2>{{ report.title }}</h2>
-        <div class="ticket-flags" aria-label="여행 국가">
-          <span v-for="code in report.countryCodes" :key="code" :class="flagIconClass(code)" class="fi-inline" />
-        </div>
-      </div>
-      <p>{{ report.dateRange }}</p>
-    </div>
-  </section>
+  <TravelArchiveSummaryCard :trip-id="tripId" />
   <div class="report-list-heading">
     <h3>리포트 목록</h3>
     <span>생성된 리포트 {{ reportCount }}개</span>

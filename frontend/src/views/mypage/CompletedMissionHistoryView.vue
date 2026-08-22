@@ -10,8 +10,12 @@ import taxiIcon from '@/assets/icons/taxi.svg'
 import shoppingIcon from '@/assets/icons/shopping-cart.svg'
 import hobbyIcon from '@/assets/icons/hobby_drink.svg'
 import homeIcon from '@/assets/icons/home-dollar.svg'
+import { useRoute } from 'vue-router'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 
 const router = useRouter()
+const route = useRoute()
+const tripId = computed(() => Number(route.query.tripId) || null)
 const loading = ref(true)
 const errorMessage = ref('')
 const monthlyRecords = ref([])
@@ -137,6 +141,8 @@ onMounted(loadHistory)
         <h1>수행 완료 미션</h1>
       </div>
     </header>
+
+    <TravelArchiveSummaryCard v-if="tripId" class="mission-trip-summary" :trip-id="tripId" />
 
     <section v-if="loading" class="state-card loading-state" aria-live="polite">
       <span class="loading-ring" />

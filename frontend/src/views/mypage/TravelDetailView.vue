@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
 import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { getReceipts } from '@/api/receipt'
@@ -141,58 +142,7 @@ onMounted(async () => {
 
     <div v-else class="px-4 flex flex-col gap-6">
 
-      <!-- 여행 요약 카드 -->
-      <div class="trip-summary-card relative rounded-[20px] p-5 overflow-hidden">
-        <div class="absolute rounded-full" style="top:-54px; right:-38px; width:146px; height:146px; background: rgba(255,212,102,0.1)"></div>
-
-        <div class="relative flex items-start justify-between gap-3">
-          <div class="min-w-0 flex-1">
-            <div class="flex min-w-0 items-center gap-2">
-              <p class="truncate text-[17px] font-black">{{ trip.tripName }}</p>
-              <div class="trip-detail-flags flex-shrink-0">
-                <span v-for="(code, i) in countryCodes" :key="`${code}-${i}`" :class="flagIconClass(code)" class="fi-inline trip-detail-flag"></span>
-              </div>
-            </div>
-            <p class="trip-summary-date font-mono text-[11.5px] font-bold mt-2">
-              {{ formatDateRange(trip.startDate, trip.endDate) }} · {{ trip.totalDays }}일
-            </p>
-          </div>
-          <span
-            class="flex-shrink-0 rounded-full px-2.5 py-[5px] text-[10.5px] font-bold"
-            :style="isEnded ? 'background:#fff3c7;color:#8c6500' : isTraveling ? 'background:#dff6ef;color:#07826e' : 'background:rgba(255,255,255,.72);color:#173f8d'"
-          >{{ isEnded ? tripStatusLabel : isTraveling ? '여행 중' : `출국까지 ${dDayLabel}` }}</span>
-        </div>
-
-        <template v-if="!isEnded">
-          <div class="trip-goal-section relative mt-4 pt-4">
-            <div class="flex items-baseline justify-between text-[11px] font-bold">
-              <span>여행 목표 자금</span>
-              <span class="trip-goal-percent">{{ savingsPercent }}%</span>
-            </div>
-            <div class="trip-goal-bar h-1.5 rounded-full mt-2 overflow-hidden">
-              <div class="h-full rounded-full" :style="{ width: `${savingsPercent}%` }"></div>
-            </div>
-            <p class="trip-goal-amount mt-2 text-right font-mono text-[11px] font-bold">{{ formatWon(report?.targetBudget) }}</p>
-          </div>
-        </template>
-
-        <template v-else>
-          <div class="relative mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.16)">
-            <div class="flex items-end justify-between">
-              <div>
-                <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.6)">총 지출</p>
-                <p class="font-mono text-[26px] font-bold mt-1">{{ formatWon(report?.spent) }}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-[11px] font-bold" style="color: rgba(255,255,255,0.6)">예산 대비</p>
-                <p class="text-[13px] font-bold mt-1" style="color:#FFD466">
-                  {{ budgetDiff >= 0 ? '-' : '+' }}{{ formatWon(Math.abs(budgetDiff)) }} {{ budgetDiff >= 0 ? '절약' : '초과' }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
+      <TravelArchiveSummaryCard :trip-id="trip.tripId" />
 
       <!-- 통계 (예정된 여행에서만 노출) -->
       <div v-if="!isEnded" class="grid grid-cols-3 gap-3">
