@@ -389,16 +389,22 @@
         INSERT INTO transactions
         (card_id, external_key, transaction_date, transaction_time, transaction_type,
          transaction_region, amount, balance_after, merchant_name, merchant_type,
+         original_amount, applied_exchange_rate, currency_id,
          category_id, category_source, category_confidence, category_classified_at)
         VALUES
         (#{cardId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
          #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName}, #{merchantType},
+         #{originalAmount}, #{appliedExchangeRate}, #{currencyId},
          #{categoryId}, #{categorySource}, #{categoryConfidence}, #{categoryClassifiedAt})
         ON DUPLICATE KEY UPDATE
             id = LAST_INSERT_ID(id),
             card_id = VALUES(card_id),
             merchant_name = VALUES(merchant_name),
             merchant_type = COALESCE(VALUES(merchant_type), merchant_type),
+            amount = VALUES(amount),
+            original_amount = VALUES(original_amount),
+            applied_exchange_rate = VALUES(applied_exchange_rate),
+            currency_id = VALUES(currency_id),
             category_id = IF(category_source = 'USER', category_id, VALUES(category_id)),
             category_confidence = IF(category_source = 'USER', category_confidence, VALUES(category_confidence)),
             category_classified_at = IF(category_source = 'USER', category_classified_at, VALUES(category_classified_at)),
