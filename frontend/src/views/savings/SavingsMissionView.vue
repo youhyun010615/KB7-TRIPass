@@ -480,8 +480,7 @@ function closeSelectionFlow() {
         <div class="mission-ai-stage" aria-hidden="true"><span class="mission-ai-orbit"></span><span class="mission-ai-core"><img :src="aiIcon" alt="" /></span></div>
         <h2>{{ hasLinkedAccount ? '여행 계획을 등록해야 미션을 진행할 수 있어요' : '여행 계획과 계좌 등록을 해야 미션을 진행할 수 있어요' }}</h2>
         <p>저축 미션은 소비 습관을 분석해 여행 자금을 자연스럽게 모으도록 도와주는 탭이에요.</p>
-        <button v-if="hasLinkedAccount" type="button" @click="goTravelRegister">여행 계획 등록하기</button>
-        <button v-else type="button" @click="goAccountConnection">계좌 등록하기</button>
+        <button type="button" @click="goTravelRegister">여행 계획 등록하기</button>
       </div>
     </section>
 
