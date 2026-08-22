@@ -25,6 +25,116 @@
 
 SET NAMES utf8mb4;
 USE tripass;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ============================================================================
+-- 0. 기존 yuhyun 데이터 클린업 (idempotent 재실행 보장)
+-- ============================================================================
+SET @cleanup_uid = (SELECT id FROM users WHERE login_provider = 'LOCAL' AND login_id = 'yuhyun');
+
+-- 여행 관련
+DELETE tbr FROM trip_budget_recommendations tbr
+  JOIN trip_countries tc ON tbr.trip_country_id = tc.id
+  JOIN trips t ON tc.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE ts FROM trip_schedules ts
+  JOIN trips t ON ts.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE pe FROM pre_expenses pe
+  JOIN trips t ON pe.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE tci FROM trip_checklist_items tci
+  JOIN trips t ON tci.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE tr FROM trip_reports tr
+  JOIN trips t ON tr.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE sp FROM saving_plans sp
+  JOIN trips t ON sp.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE ri FROM receipt_items ri
+  JOIN receipts r ON ri.receipt_id = r.id
+  WHERE @cleanup_uid IS NOT NULL AND r.user_id = @cleanup_uid;
+DELETE rp FROM receipt_participants rp
+  JOIN receipts r ON rp.receipt_id = r.id
+  WHERE @cleanup_uid IS NOT NULL AND r.user_id = @cleanup_uid;
+DELETE FROM receipts WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE txn FROM transactions txn
+  LEFT JOIN accounts a ON txn.account_id = a.id
+  LEFT JOIN cards c ON txn.card_id = c.id
+  WHERE @cleanup_uid IS NOT NULL AND (a.user_id = @cleanup_uid OR c.user_id = @cleanup_uid);
+DELETE tc FROM trip_countries tc
+  JOIN trips t ON tc.trip_id = t.id
+  WHERE @cleanup_uid IS NOT NULL AND t.user_id = @cleanup_uid;
+DELETE FROM trips WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM trip_wallets WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+
+-- 미션/분석
+DELETE wsm FROM weekly_saving_missions wsm
+  JOIN monthly_saving_missions msm ON wsm.monthly_saving_mission_id = msm.id
+  WHERE @cleanup_uid IS NOT NULL AND msm.user_id = @cleanup_uid;
+DELETE FROM monthly_saving_missions WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM mission_category_selections
+  WHERE @cleanup_uid IS NOT NULL AND monthly_spending_analysis_id IN (
+    SELECT id FROM monthly_spending_analyses WHERE user_id = @cleanup_uid
+  );
+DELETE mca FROM monthly_category_analyses mca
+  JOIN monthly_spending_analyses msa ON mca.monthly_spending_analysis_id = msa.id
+  WHERE @cleanup_uid IS NOT NULL AND msa.user_id = @cleanup_uid;
+DELETE FROM monthly_spending_analyses WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+
+-- 월렛
+DELETE wct FROM wallet_card_topup wct
+  JOIN wallet w ON wct.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE wet FROM wallet_exchange_transaction wet
+  JOIN wallet w ON wet.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE tcl FROM travel_card_ledger tcl
+  JOIN wallet_travel_card wtc ON tcl.wallet_travel_card_id = wtc.id
+  JOIN wallet w ON wtc.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE tcb FROM travel_card_balance tcb
+  JOIN wallet_travel_card wtc ON tcb.wallet_travel_card_id = wtc.id
+  JOIN wallet w ON wtc.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE wtc FROM wallet_travel_card wtc
+  JOIN wallet w ON wtc.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE wal FROM wallet_auto_saving_logs wal
+  JOIN wallet w ON wal.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE FROM wallet_auto_saving_rule
+  WHERE @cleanup_uid IS NOT NULL AND wallet_id IN (SELECT id FROM wallet WHERE user_id = @cleanup_uid);
+DELETE wl FROM wallet_ledger wl
+  JOIN wallet w ON wl.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE wa FROM wallet_account wa
+  JOIN wallet w ON wa.wallet_id = w.id
+  WHERE @cleanup_uid IS NOT NULL AND w.user_id = @cleanup_uid;
+DELETE FROM wallet WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM user_travel_cards WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+
+-- 금융 프로필
+DELETE FROM category_budgets WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM financial_schedules WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM fixed_expenses WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM income_sources WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+
+-- 계좌/카드/Codef
+DELETE FROM cards WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM accounts WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE cci FROM codef_connected_institutions cci
+  JOIN codef_connections cc ON cci.codef_connection_id = cc.id
+  WHERE @cleanup_uid IS NOT NULL AND cc.user_id = @cleanup_uid;
+DELETE FROM codef_connections WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+
+-- 기타
+DELETE FROM exchange_rate_alerts WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM notifications WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+DELETE FROM wallet_withdraw_recipient WHERE @cleanup_uid IS NOT NULL AND user_id = @cleanup_uid;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================================
 -- 1. 사용자 계정
