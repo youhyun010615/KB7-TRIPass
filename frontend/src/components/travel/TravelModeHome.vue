@@ -935,7 +935,7 @@ async function switchMode(mode) {
                       <em>{{ balance.krwText }}</em>
                     </div>
                     <div v-if="!allTravelCardBalances.length" class="travel-card-balance-values">
-                      <strong>외화 잔액 없음</strong>
+                      <strong>0</strong>
                     </div>
                   </div>
                   <div v-else class="travel-card-balance-values">

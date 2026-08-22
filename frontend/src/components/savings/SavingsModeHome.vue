@@ -244,12 +244,23 @@ const selectedCountryId = computed({
   get: () => travelStore.homeSelectedCountryId,
   set: (countryId) => travelStore.setHomeSelectedCountry(countryId),
 });
-const selectedCountry = computed(
-  () =>
+const selectedCountry = computed(() => {
+  // 여행 중에는 저축 홈에 재사용한 여행모드 카드의 현재 슬라이드와
+  // 환율 카드가 같은 국가를 바라보게 한다.
+  const travelCardCountryId = travelModeStore.selectedDestination;
+  if (isTraveling.value && travelCardCountryId !== 'all') {
+    const travelCardCountry = countries.value.find(
+      (country) => String(country.id) === String(travelCardCountryId),
+    );
+    if (travelCardCountry) return travelCardCountry;
+  }
+
+  return (
     countries.value.find((country) => country.id === selectedCountryId.value) ||
     countries.value[0] ||
-    defaultPresentation,
-);
+    defaultPresentation
+  );
+});
 
 const homeGoalAmount = computed(() =>
   Number(homeDashboard.value?.totalTargetAmount || 0),
