@@ -12,6 +12,7 @@ import { getCards } from '@/api/card';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
+import TravelModeHome from '@/components/travel/TravelModeHome.vue';
 import aiIcon from '@/assets/icons/ai.svg';
 import { today } from '@/utils/devDate';
 
@@ -64,6 +65,7 @@ const hasLinkedFinancialSources = computed(
   () => linkedAccountCount.value + linkedCardCount.value > 0,
 );
 const savingsTrackingStarted = computed(() => Boolean(travelStore.lifecycle?.savingsTrackingStarted));
+const isTraveling = computed(() => travelStore.lifecycle?.lifecycle === 'TRAVELING');
 const homeReportPending = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING');
 
 async function loadFinancialSources() {
@@ -643,8 +645,11 @@ function closeTripRequiredModal() {
       </div>
       <div :style="{ height: savingsHeaderHeight + 'px' }" aria-hidden="true" />
 
+      <TravelModeHome v-if="isTraveling" card-only />
+
       <!-- BOARDING PASS 카드: 좌우 스와이프로 국가 전환 -->
       <div
+        v-else
         ref="countryCarousel"
         class="country-carousel"
         @scroll.passive="handleCountryScroll"
@@ -818,7 +823,7 @@ function closeTripRequiredModal() {
           </div>
         </article>
       </div>
-      <div v-if="countries.length > 1" class="country-carousel-meta">
+      <div v-if="!isTraveling && countries.length > 1" class="country-carousel-meta">
         <span>옆으로 넘겨 방문 국가를 확인하세요</span>
         <div class="country-carousel-dots" aria-hidden="true">
           <i

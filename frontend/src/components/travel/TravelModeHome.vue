@@ -33,6 +33,7 @@ import { now as currentDateTime, today as currentDate, todayIso } from '@/utils/
 const props = defineProps({
   userName: { type: String, default: '권유현' },
   onSwitchMode: { type: Function, default: null },
+  cardOnly: { type: Boolean, default: false },
 });
 
 const router = useRouter();
@@ -783,7 +784,7 @@ async function switchMode(mode) {
 </script>
 
 <template>
-  <section class="travel-home">
+  <section class="travel-home" :class="{ 'card-only': cardOnly }">
     <Transition name="start-report-fade">
       <div v-if="showStartReportModal" class="start-report-backdrop" role="dialog" aria-modal="true">
         <article class="start-report-modal">
@@ -1166,6 +1167,8 @@ async function switchMode(mode) {
 </template>
 
 <style scoped>
+.travel-home.card-only > :not(.country-carousel):not(.country-carousel-meta) { display: none; }
+.travel-home.card-only { padding-top: 0; }
 .travel-home {
   width: min(100%, 390px);
   min-height: 100vh;
