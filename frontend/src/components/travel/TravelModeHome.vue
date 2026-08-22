@@ -1168,7 +1168,11 @@ async function switchMode(mode) {
 
 <style scoped>
 .travel-home.card-only > :not(.country-carousel):not(.country-carousel-meta) { display: none; }
-.travel-home.card-only { padding-top: 0; }
+.travel-home.card-only {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
 .travel-home {
   width: min(100%, 390px);
   min-height: 100vh;
