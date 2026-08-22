@@ -48,7 +48,7 @@ SET @prep_wid = LAST_INSERT_ID();
 INSERT INTO trip_wallets (user_id, balance) VALUES (@prep_uid, 0.00);
 
 INSERT INTO codef_connections (user_id, connected_id, connection_status)
-VALUES (@prep_uid, 'MOCK-CONNECTED-DEMOPREP', 'ACTIVE');
+VALUES (@prep_uid, 'MOCK-CONNECTED-DEMO-PREP', 'ACTIVE');
 SET @prep_connid = LAST_INSERT_ID();
 
 INSERT INTO codef_connected_institutions (codef_connection_id, organization_code, organization_name, business_type, connection_status)
@@ -226,7 +226,7 @@ SET @trv_wid = LAST_INSERT_ID();
 INSERT INTO trip_wallets (user_id, balance) VALUES (@trv_uid, 0.00);
 
 INSERT INTO codef_connections (user_id, connected_id, connection_status)
-VALUES (@trv_uid, 'MOCK-CONNECTED-DEMOTRAVEL', 'ACTIVE');
+VALUES (@trv_uid, 'MOCK-CONNECTED-DEMO-TRAVEL', 'ACTIVE');
 SET @trv_connid = LAST_INSERT_ID();
 
 INSERT INTO codef_connected_institutions (codef_connection_id, organization_code, organization_name, business_type, connection_status)
@@ -395,7 +395,7 @@ SET @done_wid = LAST_INSERT_ID();
 INSERT INTO trip_wallets (user_id, balance) VALUES (@done_uid, 0.00);
 
 INSERT INTO codef_connections (user_id, connected_id, connection_status)
-VALUES (@done_uid, 'MOCK-CONNECTED-DEMODONE', 'ACTIVE');
+VALUES (@done_uid, 'MOCK-CONNECTED-DEMO-DONE', 'ACTIVE');
 SET @done_connid = LAST_INSERT_ID();
 
 INSERT INTO codef_connected_institutions (codef_connection_id, organization_code, organization_name, business_type, connection_status)
