@@ -469,7 +469,7 @@ async function confirmUnlinkTravelCard() {
       <div class="wallet-card-tab" />
       <div class="wallet-card-inner">
         <div class="wallet-card-top">
-          <b>트립머니</b>
+          <b>월렛 잔액</b>
           <button type="button" class="link-button" @click="router.push('/wallet/accounts')">연결계좌 설정<ChevronRight :size="14" /></button>
         </div>
         <div class="wallet-balance">
@@ -940,10 +940,10 @@ async function confirmUnlinkTravelCard() {
   content:"";
   pointer-events:none;
 }
-.wallet-card-top b{color:#29466f;font-size:13px;font-weight:800;letter-spacing:.1em}
+.wallet-card-top b{color:#29466f;font-size:17px;font-weight:900;letter-spacing:.02em}
 .wallet-card-top button{padding:6px 10px;border-radius:999px;background:#ffd66b;color:#173f8d;font-size:11px;font-weight:800}
 .wallet-balance strong,.wallet-balance span{color:#10192d}
-.emergency{color:#a66c20}
+.emergency{color:#d49a00;font-weight:800}
 .wallet-actions{
   gap:2px;
   padding:4px;

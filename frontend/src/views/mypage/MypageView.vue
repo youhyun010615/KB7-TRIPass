@@ -293,6 +293,7 @@ const myManageItems = computed(() => [
               class="trip-circle-item"
               :class="{
                 traveling: tripStatus(trip) === '여행 중',
+                preparing: tripPhase(trip) === 'UPCOMING',
               }"
               @click="goToTripDetail(trip.tripId)"
           >
@@ -551,6 +552,8 @@ const myManageItems = computed(() => [
 .trip-circle-item:active .trip-circle { transform:scale(0.96); }
 .trip-circle-item.traveling .trip-circle { border-color:#fff;box-shadow:0 5px 15px rgba(18,167,102,.14); }
 .trip-circle-item.traveling .trip-circle::before { position:absolute;z-index:-1;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
+.trip-circle-item.preparing .trip-circle { border-color:#fff;box-shadow:0 5px 15px rgba(18,167,102,.14); }
+.trip-circle-item.preparing .trip-circle::before { position:absolute;z-index:-1;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
 .trip-circle-item.traveling .trip-circle-title { color: #0da668; font-weight: 900; }
 .trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#dce8f7 center/cover no-repeat; }
 .trip-cover::after { position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,44,99,.03),rgba(15,44,99,.18));content:''; }
@@ -566,7 +569,8 @@ const myManageItems = computed(() => [
   to { transform:rotate(360deg); }
 }
 @media (prefers-reduced-motion:reduce) {
-  .trip-circle-item.traveling .trip-circle::before { animation:none; }
+  .trip-circle-item.traveling .trip-circle::before,
+  .trip-circle-item.preparing .trip-circle::before { animation:none; }
 }
 .dev-date-section {
   background: #fff;

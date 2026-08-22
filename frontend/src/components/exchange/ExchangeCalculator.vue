@@ -98,10 +98,10 @@ function updateKrw(event) {
   overflow: hidden;
   margin-top: 18px;
   padding: 18px;
-  border: 1px solid #a9dfcf;
+  border: 1px solid #b9d4fa;
   border-radius: 22px;
-  background: linear-gradient(145deg, #effbf7 0%, #e1f5ee 100%);
-  box-shadow: 0 12px 28px rgba(17, 113, 83, .1);
+  background: linear-gradient(145deg, #eef6ff 0%, #dcecff 100%);
+  box-shadow: 0 12px 28px rgba(36, 105, 232, .1);
 }
 .calculator::after {
   position: absolute;
@@ -110,7 +110,7 @@ function updateKrw(event) {
   width: 145px;
   height: 145px;
   border-radius: 50%;
-  background: rgba(42, 160, 122, .08);
+  background: rgba(47, 112, 242, .08);
   content: '';
   pointer-events: none;
 }
@@ -125,23 +125,23 @@ function updateKrw(event) {
 .calculator-heading small {
   display: block;
   margin-bottom: 3px;
-  color: #15916d;
+  color: #2f70e9;
   font-family: 'Space Mono', monospace;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: .12em;
 }
 .calculator h2 {
-  color: #12664f;
+  color: #173f8d;
   font-size: 15px;
   font-weight: 800;
 }
 .calculator-heading > span {
   padding: 5px 8px;
   border-radius: 999px;
-  border: 1px solid #bfe7da;
+  border: 1px solid #c5daf8;
   background: rgba(255, 255, 255, .64);
-  color: #167b5e;
+  color: #2863bf;
   font-size: 8px;
   font-weight: 700;
   white-space: nowrap;
@@ -159,16 +159,16 @@ function updateKrw(event) {
   display: block;
   min-width: 0;
   padding: 12px;
-  border: 1px solid #c8e5dc;
+  border: 1px solid #c7daf6;
   border-radius: 13px;
   background: rgba(255, 255, 255, .76);
-  color: #6d9185;
-  box-shadow: inset 0 2px 5px rgba(28, 106, 82, .045);
+  color: #6d82a4;
+  box-shadow: inset 0 2px 5px rgba(36, 105, 232, .045);
 }
 .calculator label:focus-within {
-  border-color: #4eba98;
+  border-color: #6699eb;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(39, 163, 124, .1), inset 0 2px 5px rgba(28, 106, 82, .04);
+  box-shadow: 0 0 0 3px rgba(36, 105, 232, .1), inset 0 2px 5px rgba(36, 105, 232, .04);
 }
 .field-label {
   display: block;
@@ -187,7 +187,7 @@ function updateKrw(event) {
   display: block;
   width: 100%;
   min-width: 0;
-  color: #123d32;
+  color: #173f8d;
   font-family: 'Space Mono', monospace;
   font-size: 14px;
   font-weight: 800;
@@ -204,12 +204,12 @@ function updateKrw(event) {
 .calculator input.tiny,
 .calculator strong.tiny { font-size: 10px; }
 .result-field {
-  background: #d9f1e8 !important;
-  border-color: #b6ddcf !important;
+  background: #d8e9ff !important;
+  border-color: #b7d1f5 !important;
 }
 .calculator b {
   flex: 0 0 auto;
-  color: #477668;
+  color: #54709b;
   font-size: 8.5px;
   font-weight: 800;
 }
@@ -219,9 +219,9 @@ function updateKrw(event) {
   height: 32px;
   place-items: center;
   align-self: center;
-  border: 3px solid #effbf7;
+  border: 3px solid #eef6ff;
   border-radius: 50%;
-  background: linear-gradient(145deg, #11815f, #20a078);
+  background: linear-gradient(145deg, #245fc2, #3c82ed);
   color: #fff;
   box-shadow: 0 6px 14px rgba(17, 129, 95, .24);
 }

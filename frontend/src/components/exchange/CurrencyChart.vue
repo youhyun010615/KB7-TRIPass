@@ -213,7 +213,7 @@ nav .active {
   padding: 22px 18px 18px;
   border: 1px solid #bcd2ff;
   border-radius: 22px;
-  background: linear-gradient(150deg, #eff5ff 0%, #e6f0ff 100%);
+  background: #fff;
   box-shadow: 0 10px 26px rgba(23, 43, 77, .055);
 }
 .chart h2 {
