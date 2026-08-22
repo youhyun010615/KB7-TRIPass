@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.saving.mapper.SavingAutomationMapper">
+
+    <!--
+      분석월에 실제 분류 대상 거래가 존재하는 활성 사용자만 가져옵니다.
+      계좌와 카드 거래는 소유 사용자에 도달하는 JOIN 경로가 달라 UNION으로 합칩니다.
+    -->
+    <select id="findMonthlyAnalysisTargetUserIds" resultType="long">
+        SELECT target.user_id
+        FROM (
+            SELECT a.user_id
+            FROM transactions t
+                     JOIN accounts a ON a.id = t.account_id
+                     JOIN users u ON u.id = a.user_id
+            WHERE t.transaction_date BETWEEN #{periodStart} AND #{periodEnd}
+              AND t.transaction_type = 'WITHDRAWAL'
+              AND t.category_id IS NOT NULL
+              AND t.is_deleted = 0
+              AND a.is_deleted = 0
+              AND u.is_deleted = 0
+
+            UNION
+
+            SELECT c.user_id
+            FROM transactions t
+                     JOIN cards c ON c.id = t.card_id
+                     JOIN users u ON u.id = c.user_id
+            WHERE t.transaction_date BETWEEN #{periodStart} AND #{periodEnd}
+              AND t.transaction_type = 'WITHDRAWAL'
+              AND t.category_id IS NOT NULL
+              AND t.is_deleted = 0
+              AND c.is_deleted = 0
+              AND u.is_deleted = 0
+        ) target
+        ORDER BY target.user_id
+    </select>
+
+    <!--
+      아직 판정하지 않은 미션과 성공 판정 후 보상 원장이 누락된 미션을 함께 조회합니다.
+      후자는 장애 복구 시 기존 월렛 멱등키를 이용해 안전하게 재시도하기 위한 조건입니다.
+    -->
+    <select id="findWeeklyEvaluationTargetUserIds" resultType="long">
+        SELECT DISTINCT msm.user_id
+        FROM weekly_saving_missions wsm
+                 JOIN monthly_saving_missions msm ON msm.id = wsm.monthly_saving_mission_id
+                 JOIN users u ON u.id = msm.user_id
+        WHERE msm.target_year_month = #{targetYearMonth}
+          AND wsm.week_number = #{weekNumber}
+          AND wsm.period_end_date &lt; #{runDate}
+          AND u.is_deleted = 0
+          AND (
+                wsm.status = 'PENDING'
+                OR (wsm.status = 'SUCCESS' AND wsm.wallet_ledger_id IS NULL)
+              )
+        ORDER BY msm.user_id
+    </select>
+
+</mapper>

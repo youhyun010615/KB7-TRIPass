@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.auth.mapper.UserFcmTokenMapper">
+
+    <insert id="saveToken" parameterType="com.tripass.auth.model.UserFcmToken" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_fcm_tokens (user_id, device_token, device_type, last_used_at)
+        VALUES (#{userId}, #{deviceToken}, #{deviceType}, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE
+            last_used_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="getTokenByUserId" resultType="com.tripass.auth.model.UserFcmToken">
+        SELECT * FROM user_fcm_tokens WHERE user_id = #{userId}
+    </select>
+
+    <delete id="deleteToken">
+        DELETE FROM user_fcm_tokens WHERE device_token = #{deviceToken}
+    </delete>
+
+</mapper>

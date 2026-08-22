@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.asset.mapper.AssetMapper">
+
+    <insert id = "insertCodefConnection" useGeneratedKeys = "true" keyProperty = "id">
+        INSERT INTO codef_connections (user_id, connected_id, connection_status, created_at, updated_at)
+        VALUES (#{userId}, #{connectedId}, 'ACTIVE', NOW(), NOW())
+    </insert>
+
+    <select id = "findConnectionByUserId"
+            resultType="CodefConnectionDto">
+        SELECT id, user_id, connected_id, connection_status, last_synced_at
+        FROM codef_connections
+        WHERE user_id = #{userId}
+        AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <insert id = "insertConnectedInstitution">
+        INSERT INTO codef_connected_institutions (codef_connection_id, organization_code, organization_name, business_type,
+                                                  connection_status, created_at, updated_at)
+        VALUES
+            (#{codefConnectionId}, #{organizationCode}, #{organizationName}, #{businessType},
+             'CONNECTED', NOW(), NOW())
+    </insert>
+
+    <!-- connection_id + organization_code + business_type로 이미 등록된 기관인지 조회 (카드사 중복 등록 방지) -->
+    <select id = "findConnectedInstitution" resultType="CodefConnectedInstitutionDto">
+        SELECT id, codef_connection_id, organization_code, organization_name, business_type, connection_status
+        FROM codef_connected_institutions
+        WHERE codef_connection_id = #{codefConnectionId}
+          AND organization_code = #{organizationCode}
+          AND business_type = #{businessType}
+          AND is_active = TRUE
+        LIMIT 1
+    </select>
+
+    <insert id = "insertAccount" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO accounts
+        (user_id, codef_connection_id, organization_code, account_name, account_number, account_type,
+         balance, withdrawable_amount, recognized_amount, connection_type, last_synced_at, created_at, updated_at)
+        VALUES
+            (#{userId}, #{codefConnectionId}, #{organizationCode}, #{accountName}, #{accountNumber}, #{accountType},
+             #{balance}, #{withdrawableAmount}, 0, 'CODEF', NOW(), NOW(), NOW())
+    </insert>
+
+    <select id="findAccountByUserIdAndNumber" resultType="AccountDto">
+        SELECT id, account_number, balance
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND organization_code = #{organizationCode}
+          AND account_number = #{accountNumber}
+        LIMIT 1
+    </select>
+
+    <select id="findAccountByUserIdAndNumberOnly" resultType="AccountDto">
+        SELECT id, account_number, balance
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND account_number = #{accountNumber}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <update id="linkCardsToAccountByPaymentNumber">
+        UPDATE cards
+        SET linked_account_id = #{accountId}, updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND payment_account_number = #{accountNumber}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateAccountOnReconnect">
+        UPDATE accounts
+        SET balance = #{balance},
+            withdrawable_amount = #{withdrawableAmount},
+            codef_connection_id = #{codefConnectionId},
+            organization_code = #{organizationCode},
+            is_active = TRUE,
+            is_deleted = 0,
+            deleted_at = NULL,
+            last_synced_at = NOW(),
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND account_number = #{accountNumber}
+    </update>
+
+    <select id = "findAccountsByUserId" resultType = "AccountDto">
+        SELECT id, account_name, account_number, account_type, balance, organization_code,
+               withdrawable_amount, recognized_amount, is_travel_fund_included, last_synced_at
+        FROM accounts
+        WHERE user_id = #{userId}
+        AND is_deleted = 0
+        AND is_active = TRUE
+    </select>
+
+    <select id = "findSupportedInstitutionsByBusinessType"
+            resultType="SupportedInstitutionDto">
+        SELECT id, organization_code, institution_name, business_type, logo_url, display_order
+        FROM supported_institutions
+        WHERE business_type = #{businessType}
+          AND is_active = TRUE
+          AND status = 'ACTIVE'
+        ORDER BY display_order, id
+    </select>
+
+    <!-- 거래내역 저장 — Codef 수시입출 거래내역 조회 결과를 transactions 테이블에 INSERT -->
+    <insert id = "insertTransaction" useGeneratedKeys="true" keyProperty="id">
+        INSERT IGNORE INTO transactions
+        (account_id, external_key, transaction_date, transaction_time, transaction_type,
+         transaction_region, amount, balance_after, merchant_name)
+        VALUES
+            (#{accountId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
+             #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName})
+    </insert>
+
+    <!-- 계좌별 거래내역 조회 — accountId로 해당 계좌의 거래내역을 최신순으로 반환 -->
+    <select id = "findTransactionsByAccountId" resultType = "TransactionDto">
+        SELECT id, account_id, transaction_date, transaction_time,
+               transaction_type, transaction_region, amount, balance_after, merchant_name, merchant_type, memo,
+               category_id, category_source, category_confidence, category_classified_at
+        FROM transactions
+        WHERE account_id = #{accountId}
+        AND is_deleted = 0
+        ORDER BY transaction_date DESC, transaction_time DESC
+    </select>
+
+    <!-- 계좌 ID로 단건 조회 — 거래내역 조회 시 계좌번호, 기관코드 확인용 (userId로 소유권 검증) -->
+    <select id = "findAccountById" resultType="AccountDto">
+        SELECT a.id, a.account_name, a.account_number, a.account_type, a.balance,
+               a.organization_code
+        FROM accounts a
+        WHERE a.id = #{accountId}
+        AND a.user_id = #{userId}
+        AND a.is_deleted = 0
+    </select>
+
+    <!-- 개별 계좌 거래내역 조회 (날짜/타입 필터) -->
+    <select id = "findTransactionsByAccountIdWithFilter" resultType="TransactionDto">
+        SELECT t.id, t.account_id, t.card_id, c.card_type AS source_card_type,
+               t.transaction_date, t.transaction_time,
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after,
+               t.merchant_name, t.merchant_type, t.memo, t.category_id,
+               sc.category_name, COALESCE(c.card_name, a.account_name) AS payment_method_name,
+               t.category_source, t.category_confidence, t.category_classified_at
+        FROM transactions t
+        LEFT JOIN accounts a ON a.id = t.account_id AND a.is_deleted = 0
+        LEFT JOIN cards c ON c.id = t.card_id AND c.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
+        WHERE (t.account_id = #{accountId} OR c.linked_account_id = #{accountId})
+        AND t.is_deleted = 0
+        <if test="startDate != null">
+            AND t.transaction_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND t.transaction_date &lt;= #{endDate}
+        </if>
+        <if test="type != null and type != ''">
+            AND t.transaction_type = #{type}
+        </if>
+        ORDER BY t.transaction_date DESC, t.transaction_time DESC
+    </select>
+
+    <!-- 거래 단건 상세 조회(userId로 소유권 검증) -->
+    <select id = "findTransactionById" resultType="TransactionDto">
+        SELECT t.id, t.account_id, t.card_id, t.transaction_date, t.transaction_time,
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after,
+               t.merchant_name, t.merchant_type, t.memo, t.category_id,
+               sc.category_name, COALESCE(a.account_name, c.card_name) AS payment_method_name,
+               t.category_source, t.category_confidence, t.category_classified_at
+        FROM transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
+        LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
+        WHERE t.id = #{transactionId}
+        AND (a.user_id = #{userId} OR c.user_id = #{userId})
+        AND t.is_deleted = 0
+    </select>
+
+    <!-- 전체 계좌·카드 거래내역 조회(userId 기준) -->
+    <select id = "findTransactionsByUserId" resultType="TransactionDto">
+        SELECT t.id, t.account_id, t.card_id, c.card_type AS source_card_type,
+               t.transaction_date, t.transaction_time,
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after, t.merchant_name, t.merchant_type, t.memo,
+               t.category_id, sc.category_name, t.category_source, t.category_confidence, t.category_classified_at
+        FROM transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
+        LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
+        WHERE (a.user_id = #{userId} OR c.user_id = #{userId})
+        AND t.is_deleted = 0
+        <if test="startDate != null">AND t.transaction_date &gt;= #{startDate}</if>
+        <if test="endDate != null">AND t.transaction_date &lt;= #{endDate}</if>
+        ORDER BY t.transaction_date DESC, t.transaction_time DESC
+    </select>
+
+    <!-- 계좌 delete -->
+    <update id = "deleteAccount">
+        UPDATE accounts
+        SET is_deleted = 1, updated_at = NOW(), deleted_at = NOW()
+        WHERE id = #{accountId}
+        AND user_id = #{userId}
+        AND is_deleted = 0
+    </update>
+
+    <!-- 거래내역 수정 (계좌·카드 소유권 검증, 사용자 카테고리 지정 시 USER 출처 기록) -->
+    <update id = "updateTransaction">
+        UPDATE transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id AND a.is_deleted = 0
+        LEFT JOIN cards c ON t.card_id = c.id AND c.is_deleted = 0
+        SET
+            <if test = "categoryId != null">
+                t.category_id = #{categoryId},
+                t.category_source = 'USER',
+                t.category_confidence = 1.0000,
+                t.category_classified_at = NOW(),
+            </if>
+            <if test = "memo != null">t.memo = #{memo},</if>
+            t.updated_at = NOW()
+        WHERE t.id = #{transactionId}
+        AND (a.user_id = #{userId} OR c.user_id = #{userId})
+        AND t.is_deleted = 0
+    </update>
+
+
+    <!-- 거래내역 캘린더 조회 -->
+    <select id = "findCalendarByMonth" resultType="CalendarDayDto">
+        SELECT
+            DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS date,
+            SUM(CASE WHEN t.transaction_type = 'DEPOSIT' THEN t.amount ELSE 0 END) AS totalDeposit,
+            SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE 0 END) AS totalWithdrawal
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.id
+        WHERE a.user_id = #{userId}
+        AND YEAR(t.transaction_date) = #{year}
+        AND MONTH(t.transaction_date) = #{month}
+        AND t.is_deleted = 0
+        AND a.is_deleted = 0
+        <if test="type != null and type != 'ALL'">
+            AND t.transaction_type = #{type}
+        </if>
+        GROUP BY t.transaction_date
+        ORDER BY t.transaction_date
+    </select>
+
+    <!-- 카드 등록 -->
+    <insert id="insertCard" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cards (user_id, codef_connection_id, card_name, masked_card_number, card_type,
+                           organization_code, payment_account_number, linked_account_id, created_at, updated_at)
+        VALUES (#{userId}, #{codefConnectionId}, #{cardName}, #{maskedCardNumber}, #{cardType},
+                #{organizationCode}, #{paymentAccountNumber}, #{linkedAccountId}, NOW(), NOW())
+    </insert>
+
+    <!-- user_id + masked_card_number로 기존 연동 카드 조회 (재연동 시 중복 저장 방지) -->
+    <select id="findCardByUserIdAndNumber" resultType="CardDto">
+        SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code,
+               payment_account_number, linked_account_id, is_deleted, last_synced_at
+        FROM cards
+        WHERE user_id = #{userId}
+          AND masked_card_number = #{maskedCardNumber}
+        LIMIT 1
+    </select>
+
+    <!-- 재연동 시 기존 카드 정보 갱신 (삭제된 카드도 복구) -->
+    <update id="updateCardOnReconnect">
+        UPDATE cards
+        SET codef_connection_id = #{codefConnectionId},
+            card_name           = #{cardName},
+            card_type           = #{cardType},
+            organization_code   = #{organizationCode},
+            payment_account_number = #{paymentAccountNumber},
+            linked_account_id   = #{linkedAccountId},
+            is_deleted          = 0,
+            deleted_at          = NULL,
+            updated_at          = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 활성 트래블카드 상품 마스터 전체 조회 (Java 매칭용) -->
+    <select id="findAllActiveTravelCards" resultType="java.util.HashMap">
+        SELECT id, card_name AS cardName, card_company AS cardCompany
+        FROM travel_cards
+        WHERE is_active = TRUE AND is_deleted = 0
+    </select>
+
+    <!-- 매칭된 트래블카드를 사용자 보유 카드로 등록 -->
+    <insert id="upsertUserTravelCard">
+        INSERT INTO user_travel_cards
+            (user_id, travel_card_id, card_name, issuer_name, masked_card_number,
+             brand_name, card_color, status, external_card_key, is_deleted, created_at, updated_at)
+        VALUES (#{userId}, #{travelCardId}, #{cardName}, #{issuerName}, #{maskedCardNumber},
+                'CODEF', 'BLUE', 'ACTIVE',
+                CONCAT('CODEF:', #{organizationCode}, ':', #{maskedCardNumber}), FALSE, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            travel_card_id = #{travelCardId},
+            card_name = #{cardName},
+            issuer_name = #{issuerName},
+            masked_card_number = #{maskedCardNumber},
+            status = 'ACTIVE',
+            is_deleted = FALSE,
+            deleted_at = NULL,
+            updated_at = NOW()
+    </insert>
+
+    <!-- 사용자의 연동 카드 목록 조회 -->
+    <select id="findCardsByUserId" resultType="CardDto">
+        SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code,
+               payment_account_number, linked_account_id, last_synced_at
+        FROM cards
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 카드 단건 조회 (소유권 검증) -->
+    <select id="findCardByIdAndUserId" resultType="CardDto">
+        SELECT id, user_id, codef_connection_id, card_name, masked_card_number, card_type, organization_code,
+               payment_account_number, linked_account_id, last_synced_at
+        FROM cards
+        WHERE id = #{cardId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+    <update id="deleteCard">
+        UPDATE cards
+        SET is_deleted = 1, deleted_at = NOW(), updated_at = NOW()
+        WHERE id = #{cardId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="deleteUserTravelCardByCard">
+        UPDATE user_travel_cards
+        SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND masked_card_number = #{maskedCardNumber}
+          AND is_deleted = FALSE
+    </update>
+
+    <!-- CODEF 승인 취소 통보 시 기존 저장된 거래를 external_key로 찾아 논리 삭제 -->
+    <update id="deleteTransactionByExternalKey">
+        UPDATE transactions
+        SET is_deleted = 1, deleted_at = NOW(), updated_at = NOW()
+        WHERE external_key = #{externalKey}
+          AND is_deleted = 0
+    </update>
+
+    <select id="findCategoryIdByCode" resultType="long">
+        SELECT id
+        FROM spending_categories
+        WHERE category_code = #{categoryCode}
+        LIMIT 1
+    </select>
+
+    <!-- 사용자의 기존 미분류 정상 출금 카드 거래 조회 -->
+    <select id="findUnclassifiedCardTransactionsByUserId" resultType="TransactionDto">
+        SELECT t.id, t.card_id, t.merchant_name, t.merchant_type
+        FROM transactions t
+        JOIN cards c ON t.card_id = c.id
+        WHERE c.user_id = #{userId}
+          AND c.is_deleted = 0
+          AND t.card_id IS NOT NULL
+          AND t.transaction_type = 'WITHDRAWAL'
+          AND t.category_id IS NULL
+          AND (t.category_source IS NULL OR t.category_source != 'USER')
+          AND t.is_deleted = 0
+        ORDER BY t.id
+    </select>
+
+    <!-- 동시 수정 및 사용자 지정 카테고리를 보호하며 자동분류 결과 반영 -->
+    <update id="updateAutoClassification">
+        UPDATE transactions
+        SET category_id = #{categoryId},
+            category_source = #{categorySource},
+            category_confidence = #{categoryConfidence},
+            category_classified_at = #{categoryClassifiedAt},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND category_id IS NULL
+          AND (category_source IS NULL OR category_source != 'USER')
+          AND is_deleted = 0
+    </update>
+
+    <!-- 카드 거래내역 저장 — USER 지정 카테고리는 재수집 시 자동분류로 덮어쓰지 않는다. -->
+    <insert id="upsertTransactionFromCard" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO transactions
+        (card_id, external_key, transaction_date, transaction_time, transaction_type,
+         transaction_region, amount, balance_after, merchant_name, merchant_type,
+         category_id, category_source, category_confidence, category_classified_at)
+        VALUES
+        (#{cardId}, #{externalKey}, #{transactionDate}, #{transactionTime}, #{transactionType},
+         #{transactionRegion}, #{amount}, #{balanceAfter}, #{merchantName}, #{merchantType},
+         #{categoryId}, #{categorySource}, #{categoryConfidence}, #{categoryClassifiedAt})
+        ON DUPLICATE KEY UPDATE
+            id = LAST_INSERT_ID(id),
+            card_id = VALUES(card_id),
+            merchant_name = VALUES(merchant_name),
+            merchant_type = COALESCE(VALUES(merchant_type), merchant_type),
+            category_id = IF(category_source = 'USER', category_id, VALUES(category_id)),
+            category_confidence = IF(category_source = 'USER', category_confidence, VALUES(category_confidence)),
+            category_classified_at = IF(category_source = 'USER', category_classified_at, VALUES(category_classified_at)),
+            category_source = IF(category_source = 'USER', category_source, VALUES(category_source)),
+            updated_at = NOW()
+    </insert>
+
+    <!-- 카드별 거래내역 조회 -->
+    <select id="findTransactionsByCardId" resultType="TransactionDto">
+        SELECT t.id, t.card_id, t.transaction_date, t.transaction_time,
+               t.transaction_type, t.transaction_region, t.amount, t.balance_after,
+               t.merchant_name, t.merchant_type, t.memo, t.category_id,
+               sc.category_name, t.category_source, t.category_confidence, t.category_classified_at
+        FROM transactions t
+        LEFT JOIN spending_categories sc ON sc.id = t.category_id
+        WHERE t.card_id = #{cardId}
+          AND t.is_deleted = 0
+        <if test="startDate != null">AND t.transaction_date &gt;= #{startDate}</if>
+        <if test="endDate != null">AND t.transaction_date &lt;= #{endDate}</if>
+        ORDER BY t.transaction_date DESC, t.transaction_time DESC
+    </select>
+
+    <update id="updateCardLastSyncedAt">
+        UPDATE cards
+        SET last_synced_at = NOW(), updated_at = NOW()
+        WHERE id = #{cardId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="findUserIdsWithLinkedAssets" resultType="long">
+        SELECT DISTINCT user_id FROM (
+            SELECT user_id FROM accounts WHERE is_deleted = 0
+            UNION
+            SELECT user_id FROM cards WHERE is_deleted = 0
+        ) linked_users
+    </select>
+
+    <!-- 여행 중인 사용자의 해외 카드 거래에 trip_id / trip_country_id 일괄 할당.
+         날짜가 겹치는 국가가 있으면 display_order가 높은(후순위) 국가로 배정한다. -->
+    <update id="assignTripCountryToCardTransactions">
+        UPDATE transactions t
+        JOIN cards c ON t.card_id = c.id AND c.user_id = #{userId}
+        JOIN trips tr ON tr.user_id = c.user_id
+                     AND tr.status = 'TRAVELING'
+                     AND tr.is_deleted = 0
+        SET t.trip_id = tr.id,
+            t.trip_country_id = (
+                SELECT tc.id
+                FROM trip_countries tc
+                WHERE tc.trip_id = tr.id
+                  AND t.transaction_date BETWEEN tc.arrival_date AND tc.departure_date
+                ORDER BY tc.display_order DESC
+                LIMIT 1
+            )
+        WHERE t.trip_id IS NULL
+          AND t.trip_country_id IS NULL
+          AND t.is_deleted = 0
+          AND t.merchant_type LIKE '해외%'
+          AND t.transaction_date BETWEEN tr.start_date AND tr.end_date
+          AND EXISTS (
+              SELECT 1 FROM trip_countries tc2
+              WHERE tc2.trip_id = tr.id
+                AND t.transaction_date BETWEEN tc2.arrival_date AND tc2.departure_date
+          )
+    </update>
+
+</mapper>

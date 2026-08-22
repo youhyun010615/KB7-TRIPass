@@ -1,0 +1,249 @@
+-- =====================================================
+-- TRIPass 트래블카드 직접 지원 통화 Seed
+--
+-- 원칙
+-- 1) DIRECT         : 직접 보유/차감하는 통화 전체 저장
+-- 2) USD_CONVERSION : USD만 저장
+-- =====================================================
+
+-- 하나 트래블로그 계열 58종
+INSERT INTO travel_card_currencies (card_id, currency_code)
+SELECT tc.id, x.currency_code
+FROM travel_cards tc
+         JOIN (
+    SELECT 'USD' AS currency_code
+    UNION ALL SELECT 'JPY'
+    UNION ALL SELECT 'EUR'
+    UNION ALL SELECT 'GBP'
+    UNION ALL SELECT 'CNH'
+    UNION ALL SELECT 'SGD'
+    UNION ALL SELECT 'CAD'
+    UNION ALL SELECT 'AUD'
+    UNION ALL SELECT 'VND'
+    UNION ALL SELECT 'HKD'
+    UNION ALL SELECT 'THB'
+    UNION ALL SELECT 'CHF'
+    UNION ALL SELECT 'PHP'
+    UNION ALL SELECT 'SEK'
+    UNION ALL SELECT 'IDR'
+    UNION ALL SELECT 'NZD'
+    UNION ALL SELECT 'HUF'
+    UNION ALL SELECT 'CZK'
+    UNION ALL SELECT 'NOK'
+    UNION ALL SELECT 'TWD'
+    UNION ALL SELECT 'DKK'
+    UNION ALL SELECT 'MYR'
+    UNION ALL SELECT 'MXN'
+    UNION ALL SELECT 'AED'
+    UNION ALL SELECT 'TRY'
+    UNION ALL SELECT 'PLN'
+    UNION ALL SELECT 'SAR'
+    UNION ALL SELECT 'ZAR'
+    UNION ALL SELECT 'KWD'
+    UNION ALL SELECT 'BHD'
+    UNION ALL SELECT 'MOP'
+    UNION ALL SELECT 'INR'
+    UNION ALL SELECT 'KHR'
+    UNION ALL SELECT 'BRL'
+    UNION ALL SELECT 'MNT'
+    UNION ALL SELECT 'EGP'
+    UNION ALL SELECT 'QAR'
+    UNION ALL SELECT 'KES'
+    UNION ALL SELECT 'ILS'
+    UNION ALL SELECT 'MMK'
+    UNION ALL SELECT 'FJD'
+    UNION ALL SELECT 'NPR'
+    UNION ALL SELECT 'RON'
+    UNION ALL SELECT 'BDT'
+    UNION ALL SELECT 'BND'
+    UNION ALL SELECT 'LKR'
+    UNION ALL SELECT 'JOD'
+    UNION ALL SELECT 'UZS'
+    UNION ALL SELECT 'CLP'
+    UNION ALL SELECT 'KZT'
+    UNION ALL SELECT 'COP'
+    UNION ALL SELECT 'TZS'
+    UNION ALL SELECT 'PKR'
+    UNION ALL SELECT 'RUB'
+    UNION ALL SELECT 'LYD'
+    UNION ALL SELECT 'DZD'
+    UNION ALL SELECT 'ETB'
+    UNION ALL SELECT 'OMR'
+) x
+WHERE tc.card_name IN (
+                       '트래블로그 체크카드',
+                       '트래블GO 체크카드',
+                       '카카오페이 트래블로그 체크카드',
+                       '삼성월렛 하나 트래블로그 체크카드'
+    );
+
+-- 우리 위비트래블 계열 30종
+INSERT INTO travel_card_currencies (card_id, currency_code)
+SELECT tc.id, x.currency_code
+FROM travel_cards tc
+         JOIN (
+    SELECT 'USD' AS currency_code
+    UNION ALL SELECT 'JPY'
+    UNION ALL SELECT 'EUR'
+    UNION ALL SELECT 'CNH'
+    UNION ALL SELECT 'HKD'
+    UNION ALL SELECT 'AUD'
+    UNION ALL SELECT 'CAD'
+    UNION ALL SELECT 'GBP'
+    UNION ALL SELECT 'SGD'
+    UNION ALL SELECT 'CHF'
+    UNION ALL SELECT 'NZD'
+    UNION ALL SELECT 'NOK'
+    UNION ALL SELECT 'DKK'
+    UNION ALL SELECT 'SEK'
+    UNION ALL SELECT 'PHP'
+    UNION ALL SELECT 'THB'
+    UNION ALL SELECT 'TWD'
+    UNION ALL SELECT 'IDR'
+    UNION ALL SELECT 'AED'
+    UNION ALL SELECT 'VND'
+    UNION ALL SELECT 'MYR'
+    UNION ALL SELECT 'HUF'
+    UNION ALL SELECT 'MXN'
+    UNION ALL SELECT 'TRY'
+    UNION ALL SELECT 'PLN'
+    UNION ALL SELECT 'SAR'
+    UNION ALL SELECT 'KWD'
+    UNION ALL SELECT 'ZAR'
+    UNION ALL SELECT 'RUB'
+    UNION ALL SELECT 'INR'
+) x
+WHERE tc.card_name IN (
+                       '위비트래블 체크카드',
+                       '위비트래블 J 체크카드'
+    );
+
+-- 신한 SOL트래블 외화예금 계열 42종
+INSERT INTO travel_card_currencies (card_id, currency_code)
+SELECT tc.id, x.currency_code
+FROM travel_cards tc
+         JOIN (
+    SELECT 'USD' AS currency_code
+    UNION ALL SELECT 'JPY'
+    UNION ALL SELECT 'EUR'
+    UNION ALL SELECT 'CNH'
+    UNION ALL SELECT 'HKD'
+    UNION ALL SELECT 'AUD'
+    UNION ALL SELECT 'CAD'
+    UNION ALL SELECT 'GBP'
+    UNION ALL SELECT 'SGD'
+    UNION ALL SELECT 'CHF'
+    UNION ALL SELECT 'NZD'
+    UNION ALL SELECT 'NOK'
+    UNION ALL SELECT 'DKK'
+    UNION ALL SELECT 'SEK'
+    UNION ALL SELECT 'PHP'
+    UNION ALL SELECT 'THB'
+    UNION ALL SELECT 'TWD'
+    UNION ALL SELECT 'IDR'
+    UNION ALL SELECT 'AED'
+    UNION ALL SELECT 'VND'
+    UNION ALL SELECT 'MYR'
+    UNION ALL SELECT 'HUF'
+    UNION ALL SELECT 'MXN'
+    UNION ALL SELECT 'TRY'
+    UNION ALL SELECT 'PLN'
+    UNION ALL SELECT 'SAR'
+    UNION ALL SELECT 'KWD'
+    UNION ALL SELECT 'ZAR'
+    UNION ALL SELECT 'QAR'
+    UNION ALL SELECT 'INR'
+    UNION ALL SELECT 'BRL'
+    UNION ALL SELECT 'CZK'
+    UNION ALL SELECT 'MOP'
+    UNION ALL SELECT 'BHD'
+    UNION ALL SELECT 'KZT'
+    UNION ALL SELECT 'PKR'
+    UNION ALL SELECT 'NPR'
+    UNION ALL SELECT 'BDT'
+    UNION ALL SELECT 'CLP'
+    UNION ALL SELECT 'EGP'
+    UNION ALL SELECT 'ILS'
+    UNION ALL SELECT 'KES'
+) x
+WHERE tc.card_name IN (
+                       'SOL트래블 체크카드',
+                       'SOL트래블J 체크',
+                       'SOL트립앤J 체크',
+                       'SOL트립앤샵 체크'
+    );
+
+-- KB 트래블러스 56종
+INSERT INTO travel_card_currencies (card_id, currency_code)
+SELECT tc.id, x.currency_code
+FROM travel_cards tc
+         JOIN (
+    SELECT 'USD' AS currency_code
+    UNION ALL SELECT 'JPY'
+    UNION ALL SELECT 'EUR'
+    UNION ALL SELECT 'GBP'
+    UNION ALL SELECT 'SGD'
+    UNION ALL SELECT 'AUD'
+    UNION ALL SELECT 'VND'
+    UNION ALL SELECT 'THB'
+    UNION ALL SELECT 'CHF'
+    UNION ALL SELECT 'IDR'
+    UNION ALL SELECT 'TWD'
+    UNION ALL SELECT 'MYR'
+    UNION ALL SELECT 'CNH'
+    UNION ALL SELECT 'HKD'
+    UNION ALL SELECT 'CAD'
+    UNION ALL SELECT 'NZD'
+    UNION ALL SELECT 'PHP'
+    UNION ALL SELECT 'AED'
+    UNION ALL SELECT 'DKK'
+    UNION ALL SELECT 'EGP'
+    UNION ALL SELECT 'HUF'
+    UNION ALL SELECT 'INR'
+    UNION ALL SELECT 'KHR'
+    UNION ALL SELECT 'BRL'
+    UNION ALL SELECT 'MNT'
+    UNION ALL SELECT 'MXN'
+    UNION ALL SELECT 'NOK'
+    UNION ALL SELECT 'PLN'
+    UNION ALL SELECT 'QAR'
+    UNION ALL SELECT 'SAR'
+    UNION ALL SELECT 'SEK'
+    UNION ALL SELECT 'TRY'
+    UNION ALL SELECT 'ZAR'
+    UNION ALL SELECT 'BND'
+    UNION ALL SELECT 'KZT'
+    UNION ALL SELECT 'ARS'
+    UNION ALL SELECT 'CLP'
+    UNION ALL SELECT 'CZK'
+    UNION ALL SELECT 'LKR'
+    UNION ALL SELECT 'NPR'
+    UNION ALL SELECT 'RON'
+    UNION ALL SELECT 'BDT'
+    UNION ALL SELECT 'FJD'
+    UNION ALL SELECT 'KES'
+    UNION ALL SELECT 'MOP'
+    UNION ALL SELECT 'RUB'
+    UNION ALL SELECT 'PKR'
+    UNION ALL SELECT 'ILS'
+    UNION ALL SELECT 'ETB'
+    UNION ALL SELECT 'COP'
+    UNION ALL SELECT 'MMK'
+    UNION ALL SELECT 'BHD'
+    UNION ALL SELECT 'JOD'
+    UNION ALL SELECT 'LYD'
+    UNION ALL SELECT 'OMR'
+    UNION ALL SELECT 'KWD'
+) x
+WHERE tc.card_name = '트래블러스 체크카드';
+
+-- USD 환산 결제형 - 직접 차감 통화 USD
+INSERT INTO travel_card_currencies (card_id, currency_code)
+SELECT tc.id, x.currency_code
+FROM travel_cards tc
+         JOIN (
+    SELECT 'USD' AS currency_code
+) x
+WHERE tc.card_name IN (
+                       'FC EXPRESS 체크'
+    );

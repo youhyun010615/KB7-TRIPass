@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.checklist.mapper.ChecklistMapper">
+    <!-- 체크리스트 항목 삭제 (Soft Delete 처리) -->
+    <update id="deleteChecklistItem">
+        UPDATE trip_checklist_items
+        SET is_deleted = 1,
+            deleted_at = NOW()
+        WHERE id = #{itemId}
+          AND is_deleted = 0
+    </update>
+    <!-- 1. 여행 단건 정보 및 소유자 조회 (start_date 포함, 인가/D-Day 연산용) -->
+    <select id="selectTripById" resultType="Trip">
+        SELECT id,
+               user_id             AS userId,
+               trip_name           AS tripName,
+               status,
+               start_date          AS startDate,
+               end_date            AS endDate,
+               total_target_amount AS totalTargetAmount,
+               is_deleted          AS isDeleted,
+               deleted_at          AS deletedAt,
+               created_at          AS createdAt,
+               updated_at          AS updatedAt
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 2. 체크리스트 요약 통계 정보 조회 -->
+    <select id="selectChecklistSummaryByTripId" resultType="ChecklistSummaryResponseDto">
+        SELECT COUNT(*)                                                                                         AS totalItemCount,
+               COALESCE(SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END), 0)                                   AS totalCompletedCount,
+               COALESCE(SUM(CASE WHEN checklist_type = 'PRE_TRAVEL' THEN 1 ELSE 0 END),
+                        0)                                                                                      AS prepItemCount,
+               COALESCE(SUM(CASE WHEN checklist_type = 'PRE_TRAVEL' AND is_completed = 1 THEN 1 ELSE 0 END),
+                        0)                                                                                      AS prepCompletedCount,
+               COALESCE(SUM(CASE WHEN checklist_type = 'RETURN' THEN 1 ELSE 0 END), 0)                          AS returnItemCount,
+               COALESCE(SUM(CASE WHEN checklist_type = 'RETURN' AND is_completed = 1 THEN 1 ELSE 0 END),
+                        0)                                                                                      AS returnCompletedCount
+        FROM trip_checklist_items
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+          AND is_excluded = 0
+    </select>
+
+    <!-- 3. 날짜 차이(daysUntilTrip) 기반 동적 이월 UPDATE 쿼리 -->
+    <update id="updateCarriedOverStatus">
+        UPDATE trip_checklist_items
+        SET is_carried_over = 1
+        WHERE trip_id = #{tripId}
+          AND checklist_type = 'PRE_TRAVEL'
+          AND is_completed = 0
+          AND is_carried_over = 0
+          AND is_deleted = 0
+          AND is_excluded = 0
+          AND (
+              <![CDATA[
+            (#{daysUntilTrip} <= 7 AND dday_stage = 'D30')
+                OR
+            (#{daysUntilTrip} <= 1 AND dday_stage IN ('D30', 'D7'))
+              ]]>
+          )
+    </update>
+
+    <!-- 4. 단계별 체크리스트 상세 목록 조회 -->
+    <select id="selectChecklistsByTripIdAndType" resultType="ChecklistResponseDto">
+        SELECT
+        id,
+        item_name AS itemName,
+        is_completed AS isCompleted,
+        is_custom AS isCustom,
+        is_carried_over AS isCarriedOver,
+        dday_stage AS ddayStage
+        FROM trip_checklist_items
+        WHERE trip_id = #{tripId}
+        AND checklist_type = #{checklistType}
+        AND is_deleted = 0
+        AND is_excluded = 0
+        <if test="ddayStage != null and ddayStage != ''">
+            AND (
+            -- 1. 현재 요청한 탭의 고유 항목
+            dday_stage = #{ddayStage}
+            OR
+            -- 2. 현재 탭(ddayStage)보다 과거 단계에서 밀려온 이월 항목만 제한적으로 허용
+            (
+            is_carried_over = 1 AND is_completed = 0
+            AND (
+            -- D7 탭을 볼 때는 과거 'D30' 이월건만 허용
+            (#{ddayStage} = 'D7' AND dday_stage = 'D30')
+            OR
+            -- D1 탭을 볼 때는 과거 'D30', 'D7' 이월건만 허용 (D30 탭 조회 시엔 이월건 안 걸림!)
+            (#{ddayStage} = 'D1' AND dday_stage IN ('D30', 'D7'))
+            )
+            )
+            )
+        </if>
+        ORDER BY is_carried_over DESC, id ASC
+    </select>
+    <!-- 5. 체크리스트 항목 존재 여부 확인 -->
+    <select id="existsChecklistItem" resultType="boolean">
+        SELECT EXISTS (SELECT 1
+                       FROM trip_checklist_items
+                       WHERE id = #{itemId}
+                         AND trip_id = #{tripId}
+                         AND is_deleted = 0
+                         AND is_excluded = 0)
+    </select>
+
+    <!-- 특정 체크리스트 항목 단건 조회 -->
+    <select id="selectChecklistItemById" resultType="TripChecklistItem">
+        SELECT id,
+               trip_id         AS tripId,
+               template_id     AS templateId,
+               checklist_type  AS checklistType,
+               dday_stage      AS ddayStage,
+               item_name       AS itemName,
+               is_completed    AS isCompleted,
+               is_excluded     AS isExcluded,
+               is_custom       AS isCustom,
+               is_carried_over AS isCarriedOver,
+               is_deleted      AS isDeleted
+        FROM trip_checklist_items
+        WHERE id = #{itemId}
+          AND trip_id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 6. 체크리스트 항목 완료 상태 UPDATE -->
+    <update id="updateChecklistItemCompletion">
+        UPDATE trip_checklist_items
+        SET is_completed = #{isCompleted}
+        WHERE id = #{itemId}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 7. 여행 생성 시 기본 체크리스트 템플릿 일괄 복사/생성 -->
+    <insert id="insertDefaultChecklistsFromTemplate">
+        INSERT INTO trip_checklist_items (trip_id,
+                                          template_id,
+                                          checklist_type,
+                                          dday_stage,
+                                          item_name,
+                                          is_completed,
+                                          is_excluded,
+                                          is_custom,
+                                          is_carried_over)
+        SELECT #{tripId} AS trip_id,
+               id        AS template_id,
+               checklist_type,
+               dday_stage,
+               item_name,
+               0         AS is_completed,
+               0         AS is_excluded,
+               0         AS is_custom,
+               0         AS is_carried_over
+        FROM checklist_templates
+    </insert>
+
+    <!-- 커스텀 체크리스트 항목 생성 -->
+    <insert id="insertChecklistItem" parameterType="TripChecklistItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO trip_checklist_items (trip_id,
+                                          template_id,
+                                          checklist_type,
+                                          dday_stage,
+                                          item_name,
+                                          is_completed,
+                                          is_excluded,
+                                          is_custom,
+                                          is_carried_over,
+                                          is_deleted)
+        VALUES (#{tripId},
+                NULL, -- 사용자 추가 항목은 template_id가 NULL
+                #{checklistType},
+                #{ddayStage},
+                #{itemName},
+                0, -- is_completed 초기값 false (0)
+                0, -- is_excluded 초기값 false (0)
+                1, -- is_custom = 1 (사용자 커스텀)
+                0, -- is_carried_over 초기값 false (0)
+                0 -- is_deleted 초기값 0
+               )
+    </insert>
+
+</mapper>

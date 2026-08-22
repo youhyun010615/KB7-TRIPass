@@ -1,9 +1,27 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import { useTripWalletStore } from '@/stores/tripWallet';
+import { beginLoading, endLoading } from '@/utils/loadingOverlay';
+import { initDevDate, isDevDateInitialized } from '@/utils/devDate';
+
+let routeLoadingKey = null;
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to) {
+    // 월렛 메인 화면은 자체적으로 이전 스크롤 위치를 복원하므로 라우터가 건드리지 않는다.
+    // 그 외 월렛 하위 화면은 이동할 때마다 스크롤을 맨 위로 초기화한다.
+    if (to.path === '/wallet') return
+    if (to.path.startsWith('/wallet')) return { top: 0 }
+  },
   routes: [
+    // ── AUTH (담당: 송형진) ─────────────────────────────────
+    {
+      path: '/onboarding',
+      name: 'Onboarding',
+      component: () => import('@/views/auth/OnboardingView.vue'),
+      meta: { requiresAuth: false },
+    },
     {
       path: '/login',
       name: 'Login',
@@ -17,19 +35,746 @@ const router = createRouter({
       meta: { requiresAuth: false },
     },
     {
+      path: '/find-id',
+      name: 'FindId',
+      component: () => import('@/views/auth/FindIdView.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/find-password',
+      name: 'FindPassword',
+      component: () => import('@/views/auth/FindPasswordView.vue'),
+      meta: { requiresAuth: false },
+    },
+
+    {
+      path: '/oauth/kakao/callback',
+      name: 'KakaoCallback',
+      component: () =>
+          import('@/views/auth/KakaoCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
+    {
+      path: '/oauth/google/callback',
+      name: 'GoogleCallback',
+      component: () =>
+          import('@/views/auth/GoogleCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
+
+    // ── HOME / SAV (담당: 권유현) ───────────────────────────
+    {
       path: '/',
       name: 'Home',
       component: () => import('@/views/HomeView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/setup/trip-onboarding',
+      name: 'TripOnboarding',
+      component: () => import('@/views/travel/TripOnboardingView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings',
+      name: 'Savings',
+      component: () => import('@/views/savings/SavingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/missions',
+      name: 'SavingsMissions',
+      component: () => import('@/views/savings/SavingsMissionView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/analyses/:yearMonth',
+      name: 'MonthlyAnalysisReport',
+      component: () =>
+        import('@/views/savings/MonthlyAnalysisReportView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/analyses/:yearMonth/categories/:categoryCode',
+      name: 'MonthlyAnalysisCategoryDetail',
+      component: () =>
+        import('@/views/savings/MonthlyAnalysisCategoryDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet',
+      name: 'TripWallet',
+      component: () => import('@/views/wallet/TripWalletView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/ledgers',
+      name: 'WalletLedgers',
+      component: () => import('@/views/wallet/WalletLedgerView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/travel-card/transactions',
+      name: 'WalletTravelCardTransactions',
+      component: () => import('@/views/wallet/WalletTravelCardTransactionsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/notifications',
+      name: 'WalletNotifications',
+      component: () => import('@/views/wallet/WalletNotificationsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/foreign-balances',
+      name: 'WalletForeignBalances',
+      component: () => import('@/views/wallet/WalletForeignBalancesView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/auto-charge',
+      name: 'WalletAutoCharge',
+      component: () => import('@/views/wallet/WalletAutoChargeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/accounts',
+      name: 'WalletAccounts',
+      component: () => import('@/views/wallet/WalletAccountsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/travel-card/link',
+      name: 'WalletTravelCardLink',
+      component: () => import('@/views/wallet/WalletTravelCardLinkView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/wallet/travel-card/exchange',
+      name: 'WalletTravelCardExchange',
+      component: () => import('@/views/wallet/WalletTravelCardExchangeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/plan',
+      name: 'SavingsPlanSetup',
+      component: () => import('@/views/savings/SavingsPlanSetupView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/accounts',
+      name: 'SavingsAccounts',
+      component: () => import('@/views/savings/SavingsAccountsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly',
+      name: 'MonthlyFund',
+      component: () => import('@/views/savings/MonthlyFundView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/categories',
+      name: 'MonthlyFundCategoryGoals',
+      component: () => import('@/views/savings/CategoryGoalsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/categories/:categoryId',
+      name: 'MonthlyFundCategoryDetail',
+      component: () => import('@/views/savings/CategoryDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/transactions/:transactionId',
+      name: 'MonthlyFundTransactionDetail',
+      component: () =>
+        import('@/views/savings/MonthlyTransactionDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/transactions/:transactionId/category',
+      name: 'MonthlyFundCategorySelect',
+      component: () => import('@/views/savings/CategorySelectView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/savings/monthly/prepaid/new',
+      name: 'MonthlyFundPrepaidNew',
+      component: () => import('@/views/savings/PrepaidExpenseView.vue'),
+      meta: { requiresAuth: true },
+    },
+
+    // ── PRO (담당: 송형진) ──────────────────────────────────
+    {
+      path: '/profile/financial',
+      name: 'FinancialProfile',
+      component: () => import('@/views/financial/FinancialProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial-schedule',
+      name: 'FinancialSchedule',
+      component: () => import('@/views/financial/FinancialScheduleView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial-schedule/calendar',
+      name: 'FinancialScheduleCalendar',
+      component: () =>
+        import('@/views/financial/FinancialScheduleCalendarView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial-schedule/:eventId',
+      name: 'FinancialScheduleDetail',
+      component: () =>
+        import('@/views/financial/FinancialScheduleDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+
+    // ── GDS (담당: 송형진) ──────────────────────────────────
+    {
+      path: '/financial',
+      name: 'Financial',
+      redirect: '/financial/cards',
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/savings',
+      name: 'FinancialSavings',
+      component: () => import('@/views/financial/FinancialSavingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/savings/:productId',
+      name: 'FinancialSavingsDetail',
+      component: () =>
+        import('@/views/financial/FinancialSavingsDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/cards',
+      name: 'FinancialCards',
+      component: () => import('@/views/financial/FinancialCardsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/cards/compare',
+      name: 'FinancialCardsCompare',
+      component: () =>
+        import('@/views/financial/FinancialCardsCompareView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/financial/cards/:cardId',
+      name: 'FinancialCardDetail',
+      component: () => import('@/views/financial/FinancialCardDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+
+    // ── AST (담당: 이아영) ──────────────────────────────────
+    {
+      path: '/asset',
+      name: 'Asset',
+      component: () => import('@/views/asset/AssetView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/accounts/:accountId',
+      name: 'AssetAccountTransactions',
+      component: () => import('@/views/asset/AccountTransactionsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/transactions',
+      name: 'AssetTransactions',
+      component: () => import('@/views/asset/TransactionListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/transactions/calendar',
+      name: 'AssetTransactionCalendar',
+      component: () => import('@/views/asset/TransactionCalendarView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/transactions/:transactionId',
+      name: 'AssetTransactionDetail',
+      component: () => import('@/views/asset/TransactionDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses',
+      name: 'AssetFixedExpenses',
+      component: () => import('@/views/asset/FixedExpenseListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses/new',
+      name: 'AssetFixedExpenseNew',
+      component: () => import('@/views/asset/FixedExpenseFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/fixed-expenses/:fixedExpenseId',
+      name: 'AssetFixedExpenseDetail',
+      component: () => import('@/views/asset/FixedExpenseDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/prepaid',
+      name: 'AssetPrepaidExpenses',
+      component: () => import('@/views/asset/PrepaidExpenseListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/asset/prepaid/:prepaidExpenseId',
+      name: 'AssetPrepaidExpenseDetail',
+      component: () => import('@/views/asset/PrepaidExpenseDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+
+    // ── FXC (담당: 권원영) ──────────────────────────────────
+    {
+      path: '/exchange',
+      name: 'Exchange',
+      component: () => import('@/views/exchange/ExchangeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/currencies',
+      name: 'CurrencyList',
+      component: () => import('@/views/exchange/CurrencyListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts',
+      name: 'ExchangeAlerts',
+      component: () => import('@/views/exchange/ExchangeAlertsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts/new',
+      name: 'ExchangeAlertNew',
+      component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts/:alertId/edit',
+      name: 'ExchangeAlertEdit',
+      component: () => import('@/views/exchange/ExchangeAlertFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/alerts/:alertId',
+      name: 'ExchangeAlertDetail',
+      component: () => import('@/views/exchange/ExchangeAlertDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/exchange/banks/:bankId',
+      name: 'ExchangeBankDetail',
+      component: () => import('@/views/exchange/BankDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+
+    // ── TRV / BUD (담당: 권원영) ────────────────────────────
+    {
+      path: '/travel/register',
+      name: 'TravelRegister',
+      component: () => import('@/views/travel/TravelRegisterView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/travel/register/schedule',
+      name: 'TravelRegisterSchedule',
+      component: () => import('@/views/travel/TravelRegisterView.vue'),
+      meta: { requiresAuth: true },
+    },
+    // ── SCH (담당: 홍유진) ──────────────────────────────────
+    {
+      path: '/schedule',
+      name: 'Schedule',
+      component: () => import('@/views/schedule/ScheduleView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/new',
+      name: 'ScheduleNew',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/notifications',
+      name: 'ScheduleNotifications',
+      component: () => import('@/views/schedule/ScheduleNotificationView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/:scheduleId/edit',
+      name: 'ScheduleEdit',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/schedule/:scheduleId',
+      name: 'ScheduleDetail',
+      component: () => import('@/views/schedule/ScheduleDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+
+    // ── OCR / EXP (담당: 홍유진) ────────────────────────────
+    {
+      path: '/trips/:tripId/receipts',
+      name: 'Receipt',
+      component: () =>
+          import('@/views/receipt/ReceiptView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/capture',
+      name: 'ReceiptCapture',
+      component: () =>
+          import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/new',
+      name: 'ReceiptManualNew',
+      component: () =>
+          import('@/views/receipt/ReceiptManualView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/ocr-result',
+      name: 'ReceiptOcrResult',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'ocr',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId/edit',
+      name: 'ReceiptEdit',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'edit',
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/settlements',
+      name: 'ReceiptSettlements',
+      component: () =>
+          import('@/views/receipt/ReceiptView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/settlements/:participantName',
+      name: 'ReceiptParticipantSettlement',
+      component: () =>
+          import('@/views/receipt/ReceiptView.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/trips/:tripId/receipts/:receiptId',
+      name: 'ReceiptDetail',
+      component: () =>
+          import('@/views/receipt/ReceiptResultView.vue'),
+      meta: {
+        requiresAuth: true,
+        receiptMode: 'detail',
+      },
+    },
+
+    // ── MYP (담당: 권유현) ──────────────────────────────────
+    {
+      path: '/mypage',
+      name: 'Mypage',
+      component: () => import('@/views/mypage/MypageView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/profile',
+      name: 'MypageProfile',
+      component: () => import('@/views/mypage/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/notification-settings',
+      name: 'MypageNotificationSettings',
+      component: () => import('@/views/mypage/NotificationSettingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/profile/edit',
+      name: 'MypageProfileEdit',
+      redirect: '/mypage/password',
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/password',
+      name: 'MypagePassword',
+      component: () => import('@/views/mypage/PasswordChangeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/financial-profile',
+      name: 'MypageFinancialProfile',
+      component: () => import('@/views/mypage/FinancialProfileDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/financial-profile/edit',
+      name: 'MypageFinancialProfileEdit',
+      component: () => import('@/views/mypage/FinancialProfileEditView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/travel',
+      name: 'MypageTravel',
+      component: () => import('@/views/mypage/TravelManageView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/travel/:id',
+      name: 'MypageTravelDetail',
+      component: () => import('@/views/mypage/TravelDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/missions',
+      name: 'CompletedMissionHistory',
+      component: () => import('@/views/mypage/CompletedMissionHistoryView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/travel/:id/schedules',
+      name: 'TravelScheduleList',
+      component: () => import('@/views/mypage/TravelScheduleListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/travel/:id/schedules/new',
+      name: 'TravelScheduleArchiveNew',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true, scheduleArchive: true },
+    },
+    {
+      path: '/mypage/travel/:id/schedules/:scheduleId',
+      name: 'TravelScheduleArchiveDetail',
+      component: () => import('@/views/mypage/TravelScheduleDetailView.vue'),
+      meta: { requiresAuth: true, scheduleArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts',
+      name: 'TravelReceiptArchive',
+      component: () => import('@/views/receipt/ReceiptView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/capture',
+      name: 'TravelReceiptArchiveCapture',
+      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/new',
+      name: 'TravelReceiptArchiveNew',
+      component: () => import('@/views/receipt/ReceiptManualView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/:receiptId',
+      name: 'TravelReceiptArchiveDetail',
+      component: () => import('@/views/receipt/ReceiptResultView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true, receiptMode: 'detail' },
+    },
+    {
+      path: '/mypage/assets',
+      name: 'AssetLink',
+      component: () => import('@/views/mypage/AssetLinkView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/cards/:cardId/transactions',
+      name: 'CardTransactions',
+      component: () => import('@/views/mypage/CardTransactionsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/reports',
+      name: 'MypageReports',
+      component: () => import('@/views/mypage/TravelReportListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/reports/pre-trip',
+      name: 'MypagePreTripReport',
+      component: () => import('@/views/mypage/PreTripReportView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/reports/post-trip',
+      name: 'MypagePostTripReport',
+      component: () => import('@/views/mypage/PostTripReportView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/checklists',
+      name: 'MypageChecklists',
+      component: () => import('@/views/mypage/checklist/ChecklistListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/checklists/preparation',
+      name: 'MypagePreparationChecklist',
+      component: () =>
+        import('@/views/mypage/checklist/PreparationChecklistView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/mypage/checklists/return',
+      name: 'MypageReturnChecklist',
+      component: () =>
+        import('@/views/mypage/checklist/ReturnChecklistView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/notifications',
+      name: 'NotificationInbox',
+      component: () => import('@/views/mypage/NotificationInboxView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
-})
+});
 
-router.beforeEach((to) => {
-  const authStore = useAuthStore()
+router.beforeEach(async (to) => {
+  if (routeLoadingKey) endLoading(routeLoadingKey);
+  routeLoadingKey = beginLoading(Symbol('route-navigation'));
+  const authStore = useAuthStore();
+
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
-    return { name: 'Login' }
-  }
-})
+    // 첫 방문자에게는 로그인보다 서비스의 여행 자금 관리 흐름을 먼저 소개한다.
+    const hasCompletedOnboarding =
+      localStorage.getItem('tripass-onboarding-complete') === 'true';
 
-export default router
+    return { name: hasCompletedOnboarding ? 'Login' : 'Onboarding' };
+  }
+
+  // 로그인 상태에서 온보딩 URL에 접근하면 홈으로 복귀한다.
+  if (to.name === 'Onboarding' && authStore.isLoggedIn) {
+    return { name: 'Home' };
+  }
+
+  // 새 로그인 직후에도 첫 보호 화면이 렌더링되기 전에 백엔드 기준 날짜를 동기화한다.
+  if (to.meta.requiresAuth && authStore.isLoggedIn && !isDevDateInitialized()) {
+    await initDevDate();
+  }
+
+});
+
+// 계좌 잔액, 환율 등 API 응답이 늦게 도착해 화면에 0이나 빈 값이 잠깐 보이는 문제를 막기 위해,
+// 월렛 화면으로 라우팅이 "완료"되기 전에(= 컴포넌트가 마운트되기 전에) 필요한 데이터를 미리 받아온다.
+// 데이터 요청이 실패해도 라우팅 자체는 막지 않고, 각 화면의 자체 에러 처리에 맡긴다.
+const WALLET_PREFETCH_LOADERS = {
+  TripWallet: wallet => Promise.all([
+    wallet.loadWalletMain(),
+    wallet.loadAccounts(),
+    wallet.loadAutoSaving(),
+    wallet.loadForeignBalances(),
+  ]),
+  WalletAccounts: wallet => Promise.all([
+    wallet.loadAccounts(),
+    wallet.loadAccountOptions(),
+  ]),
+  WalletForeignBalances: wallet => wallet.loadForeignBalances(),
+  WalletTravelCardExchange: wallet => Promise.all([
+    wallet.loadWalletMain(),
+    wallet.loadCurrencies(),
+    wallet.loadForeignBalances(),
+  ]),
+  WalletLedgers: wallet => wallet.loadLedgers(),
+  WalletAutoCharge: wallet => Promise.all([
+    wallet.loadAccounts(),
+    wallet.loadAutoSaving(),
+  ]),
+  WalletTravelCardLink: wallet => wallet.loadTravelCardOptions(),
+  WalletNotifications: wallet => wallet.loadAutoSavingLogs(),
+};
+
+router.beforeResolve(async (to) => {
+  const loader = WALLET_PREFETCH_LOADERS[to.name];
+  if (!loader) return;
+
+  const wallet = useTripWalletStore();
+  try {
+    await loader(wallet);
+  } catch {
+    // 프리페치 실패는 각 화면의 onMounted 에러 처리(재시도/안내 문구)에 맡긴다.
+  }
+});
+
+// 배포로 JS 청크 해시가 바뀐 뒤, 이전 배포 시점에 열려 있던 탭에서 라우트를 이동하면
+// 동적 import가 존재하지 않는 예전 청크 파일을 요청해 실패하면서 화면이 비어 보이는 문제가 있다.
+// 이 경우 한 번만 새로고침해 최신 청크를 다시 받아오도록 한다(무한 새로고침 방지를 위해 세션당 1회로 제한).
+const CHUNK_LOAD_ERROR_PATTERN =
+  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i;
+const CHUNK_RELOAD_FLAG = 'tripass-chunk-reload';
+
+router.onError((error, to) => {
+  if (routeLoadingKey) {
+    endLoading(routeLoadingKey);
+    routeLoadingKey = null;
+  }
+  if (!CHUNK_LOAD_ERROR_PATTERN.test(error?.message || '')) return;
+  if (sessionStorage.getItem(CHUNK_RELOAD_FLAG)) return;
+
+  sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1');
+  window.location.href = to?.fullPath || window.location.href;
+});
+
+const MAIN_TAB_PATHS = new Set(['/', '/missions', '/wallet', '/exchange', '/mypage']);
+
+router.afterEach((to) => {
+  if (routeLoadingKey) {
+    endLoading(routeLoadingKey);
+    routeLoadingKey = null;
+  }
+  sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
+
+  // 모달에서 다른 탭으로 바로 이동했을 때 body 스크롤 잠금이 남지 않게 한다.
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+
+  if (!MAIN_TAB_PATHS.has(to.path)) return;
+
+  // 각 메인 탭은 자신만의 단일 스크롤 영역을 사용하며 진입 시 최상단에서 시작한다.
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      document.querySelector('[data-tab-scroll]')?.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      });
+    });
+  });
+});
+
+export default router;

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.saving.mapper.SavingReadinessMapper">
+
+    <select id="existsRegisteredTravelGoal" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM trips trip
+            WHERE trip.user_id = #{userId}
+              AND trip.status IN ('PLANNING', 'TRAVELING')
+              AND trip.is_deleted = 0
+              AND EXISTS(
+                  SELECT 1
+                  FROM trip_countries country
+                  WHERE country.trip_id = trip.id
+                    AND country.is_deleted = 0
+              )
+        )
+    </select>
+
+    <select id="existsLinkedAccount" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM accounts account
+            WHERE account.user_id = #{userId}
+              AND account.is_active = TRUE
+              AND account.is_deleted = 0
+        )
+    </select>
+
+    <select id="existsLinkedCard" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM cards card
+            WHERE card.user_id = #{userId}
+              AND card.is_deleted = 0
+        )
+    </select>
+
+</mapper>

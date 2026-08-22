@@ -1,0 +1,6680 @@
+[
+  {
+    "resUsedDate": "20260822",
+    "resUsedTime": "105923",
+    "resUsedAmount": "8818",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260822999",
+    "resMemberStoreName": "성심당",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20260823",
+    "resUsedTime": "114230",
+    "resUsedAmount": "1455",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260823662",
+    "resMemberStoreName": "버스",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20260823",
+    "resUsedTime": "141408",
+    "resUsedAmount": "7756",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260823854",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260823",
+    "resUsedTime": "160554",
+    "resUsedAmount": "36128",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260823338",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260823",
+    "resUsedTime": "181023",
+    "resUsedAmount": "14802",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260823463",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260823",
+    "resUsedTime": "185422",
+    "resUsedAmount": "8045",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260823718",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260823",
+    "resUsedTime": "200201",
+    "resUsedAmount": "16738",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260823195",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260824",
+    "resUsedTime": "092424",
+    "resUsedAmount": "6751",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260824710",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260824",
+    "resUsedTime": "111348",
+    "resUsedAmount": "3314",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260824444",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260824",
+    "resUsedTime": "153248",
+    "resUsedAmount": "3495",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260824282",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260824",
+    "resUsedTime": "201359",
+    "resUsedAmount": "38841",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260824652",
+    "resMemberStoreName": "홈플러스",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20260825",
+    "resUsedTime": "073512",
+    "resUsedAmount": "9841",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260825833",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260825",
+    "resUsedTime": "093840",
+    "resUsedAmount": "3252",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260825275",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260825",
+    "resUsedTime": "182857",
+    "resUsedAmount": "10192",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260825629",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20260826",
+    "resUsedTime": "090546",
+    "resUsedAmount": "2262",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260826597",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20260826",
+    "resUsedTime": "105924",
+    "resUsedAmount": "8523",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260826180",
+    "resMemberStoreName": "맘스터치",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260826",
+    "resUsedTime": "192314",
+    "resUsedAmount": "19797",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260826241",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260827",
+    "resUsedTime": "135836",
+    "resUsedAmount": "1791",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260827997",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260827",
+    "resUsedTime": "195658",
+    "resUsedAmount": "5059",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260827758",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260829",
+    "resUsedTime": "074346",
+    "resUsedAmount": "7851",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260829217",
+    "resMemberStoreName": "택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260829",
+    "resUsedTime": "144735",
+    "resUsedAmount": "1461",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260829651",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "081452",
+    "resUsedAmount": "5164",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830132",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "085507",
+    "resUsedAmount": "6660",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830256",
+    "resMemberStoreName": "디즈니플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "155155",
+    "resUsedAmount": "2950",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830106",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "165340",
+    "resUsedAmount": "7778",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830619",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "170718",
+    "resUsedAmount": "2429",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830545",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "183612",
+    "resUsedAmount": "25270",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830821",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260830",
+    "resUsedTime": "191759",
+    "resUsedAmount": "3288",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260830755",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260831",
+    "resUsedTime": "123449",
+    "resUsedAmount": "9389",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260831643",
+    "resMemberStoreName": "롯데시네마",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20260901",
+    "resUsedTime": "221802",
+    "resUsedAmount": "2112",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260901337",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260902",
+    "resUsedTime": "110430",
+    "resUsedAmount": "1670",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260902900",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260902",
+    "resUsedTime": "120428",
+    "resUsedAmount": "1981",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260902453",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260902",
+    "resUsedTime": "212343",
+    "resUsedAmount": "2881",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260902866",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260904",
+    "resUsedTime": "143720",
+    "resUsedAmount": "11013",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260904116",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260904",
+    "resUsedTime": "232315",
+    "resUsedAmount": "3213",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260904495",
+    "resMemberStoreName": "할리스커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260905",
+    "resUsedTime": "152007",
+    "resUsedAmount": "1005",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260905891",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260905",
+    "resUsedTime": "160441",
+    "resUsedAmount": "4922",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260905984",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260906",
+    "resUsedTime": "144206",
+    "resUsedAmount": "13057",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260906462",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260906",
+    "resUsedTime": "150105",
+    "resUsedAmount": "2612",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260906334",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260907",
+    "resUsedTime": "115918",
+    "resUsedAmount": "3661",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260907548",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260907",
+    "resUsedTime": "150200",
+    "resUsedAmount": "9856",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260907441",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260907",
+    "resUsedTime": "160515",
+    "resUsedAmount": "8632",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260907221",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260907",
+    "resUsedTime": "175155",
+    "resUsedAmount": "9727",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260907211",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260907",
+    "resUsedTime": "210407",
+    "resUsedAmount": "12166",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260907956",
+    "resMemberStoreName": "롯데시네마",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20260907",
+    "resUsedTime": "231003",
+    "resUsedAmount": "22050",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260907620",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260908",
+    "resUsedTime": "085521",
+    "resUsedAmount": "6408",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260908172",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260908",
+    "resUsedTime": "134013",
+    "resUsedAmount": "4345",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260908370",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260908",
+    "resUsedTime": "134908",
+    "resUsedAmount": "6490",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260908882",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260908",
+    "resUsedTime": "191659",
+    "resUsedAmount": "3161",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260908902",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "070547",
+    "resUsedAmount": "14313",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909643",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "092706",
+    "resUsedAmount": "21512",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909862",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "141253",
+    "resUsedAmount": "38508",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909120",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "165410",
+    "resUsedAmount": "12404",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909828",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "183237",
+    "resUsedAmount": "26841",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909211",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "202159",
+    "resUsedAmount": "3410",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909906",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260909",
+    "resUsedTime": "232543",
+    "resUsedAmount": "6606",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260909963",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260910",
+    "resUsedTime": "110408",
+    "resUsedAmount": "14580",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260910381",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20260910",
+    "resUsedTime": "134544",
+    "resUsedAmount": "6334",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260910493",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260910",
+    "resUsedTime": "183251",
+    "resUsedAmount": "3330",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260910867",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20260910",
+    "resUsedTime": "194540",
+    "resUsedAmount": "15909",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260910527",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260910",
+    "resUsedTime": "222948",
+    "resUsedAmount": "4763",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260910677",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260911",
+    "resUsedTime": "094355",
+    "resUsedAmount": "2291",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260911340",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260911",
+    "resUsedTime": "113546",
+    "resUsedAmount": "11266",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260911723",
+    "resMemberStoreName": "CGV",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20260911",
+    "resUsedTime": "175906",
+    "resUsedAmount": "9355",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260911959",
+    "resMemberStoreName": "메가박스",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20260912",
+    "resUsedTime": "082858",
+    "resUsedAmount": "4850",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260912929",
+    "resMemberStoreName": "할리스커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260912",
+    "resUsedTime": "144829",
+    "resUsedAmount": "26106",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260912683",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260913",
+    "resUsedTime": "113824",
+    "resUsedAmount": "6212",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260913257",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260913",
+    "resUsedTime": "150244",
+    "resUsedAmount": "30590",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260913479",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260913",
+    "resUsedTime": "182726",
+    "resUsedAmount": "16907",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260913578",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260914",
+    "resUsedTime": "161928",
+    "resUsedAmount": "3018",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260914717",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20260914",
+    "resUsedTime": "232903",
+    "resUsedAmount": "2945",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260914670",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260915",
+    "resUsedTime": "093640",
+    "resUsedAmount": "13808",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260915802",
+    "resMemberStoreName": "네이버페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260915",
+    "resUsedTime": "103701",
+    "resUsedAmount": "16461",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260915419",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260915",
+    "resUsedTime": "111718",
+    "resUsedAmount": "17909",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260915719",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260915",
+    "resUsedTime": "112429",
+    "resUsedAmount": "17332",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260915479",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260915",
+    "resUsedTime": "164343",
+    "resUsedAmount": "14158",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260915707",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260916",
+    "resUsedTime": "121213",
+    "resUsedAmount": "31296",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260916856",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260916",
+    "resUsedTime": "204223",
+    "resUsedAmount": "28088",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260916170",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260917",
+    "resUsedTime": "073618",
+    "resUsedAmount": "6070",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260917580",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260917",
+    "resUsedTime": "120742",
+    "resUsedAmount": "16810",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260917987",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260917",
+    "resUsedTime": "133713",
+    "resUsedAmount": "16047",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260917932",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260917",
+    "resUsedTime": "174726",
+    "resUsedAmount": "4248",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260917279",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260917",
+    "resUsedTime": "213545",
+    "resUsedAmount": "5469",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260917537",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260918",
+    "resUsedTime": "114513",
+    "resUsedAmount": "6672",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260918165",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260919",
+    "resUsedTime": "145228",
+    "resUsedAmount": "3366",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260919457",
+    "resMemberStoreName": "할리스커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260919",
+    "resUsedTime": "163847",
+    "resUsedAmount": "2072",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260919944",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260919",
+    "resUsedTime": "181536",
+    "resUsedAmount": "11320",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260919526",
+    "resMemberStoreName": "메가박스",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20260920",
+    "resUsedTime": "214019",
+    "resUsedAmount": "3796",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260920915",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260921",
+    "resUsedTime": "071147",
+    "resUsedAmount": "4567",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260921440",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260921",
+    "resUsedTime": "124628",
+    "resUsedAmount": "4427",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260921144",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260922",
+    "resUsedTime": "225118",
+    "resUsedAmount": "3727",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260922864",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260923",
+    "resUsedTime": "143235",
+    "resUsedAmount": "10849",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260923953",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260923",
+    "resUsedTime": "153951",
+    "resUsedAmount": "31564",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260923651",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260923",
+    "resUsedTime": "203307",
+    "resUsedAmount": "9628",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260923863",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260923",
+    "resUsedTime": "215817",
+    "resUsedAmount": "1522",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260923285",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260924",
+    "resUsedTime": "101649",
+    "resUsedAmount": "38539",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260924366",
+    "resMemberStoreName": "홈플러스",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20260924",
+    "resUsedTime": "171329",
+    "resUsedAmount": "5818",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260924434",
+    "resMemberStoreName": "맘스터치",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260924",
+    "resUsedTime": "193943",
+    "resUsedAmount": "1332",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260924346",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260924",
+    "resUsedTime": "232304",
+    "resUsedAmount": "17018",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260924638",
+    "resMemberStoreName": "닌텐도e샵",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20260925",
+    "resUsedTime": "121900",
+    "resUsedAmount": "15639",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260925825",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260925",
+    "resUsedTime": "200033",
+    "resUsedAmount": "4766",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260925925",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260925",
+    "resUsedTime": "210542",
+    "resUsedAmount": "29902",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260925317",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260925",
+    "resUsedTime": "212949",
+    "resUsedAmount": "3427",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260925388",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20260926",
+    "resUsedTime": "092811",
+    "resUsedAmount": "31886",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260926830",
+    "resMemberStoreName": "이마트",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20260926",
+    "resUsedTime": "143039",
+    "resUsedAmount": "5266",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260926970",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260926",
+    "resUsedTime": "183332",
+    "resUsedAmount": "2212",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260926379",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260927",
+    "resUsedTime": "153231",
+    "resUsedAmount": "14494",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260927357",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260927",
+    "resUsedTime": "190842",
+    "resUsedAmount": "15028",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260927760",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260928",
+    "resUsedTime": "084720",
+    "resUsedAmount": "7656",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260928158",
+    "resMemberStoreName": "맘스터치",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20260928",
+    "resUsedTime": "145423",
+    "resUsedAmount": "26761",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260928201",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260928",
+    "resUsedTime": "171023",
+    "resUsedAmount": "6083",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260928419",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20260928",
+    "resUsedTime": "181038",
+    "resUsedAmount": "10320",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260928721",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20260929",
+    "resUsedTime": "114006",
+    "resUsedAmount": "4935",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260929742",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260929",
+    "resUsedTime": "180748",
+    "resUsedAmount": "14961",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260929385",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20260930",
+    "resUsedTime": "071754",
+    "resUsedAmount": "18292",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260930248",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20260930",
+    "resUsedTime": "132521",
+    "resUsedAmount": "6065",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM260930385",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261001",
+    "resUsedTime": "170802",
+    "resUsedAmount": "6694",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261001460",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261001",
+    "resUsedTime": "200220",
+    "resUsedAmount": "1731",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261001862",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261001",
+    "resUsedTime": "221355",
+    "resUsedAmount": "3237",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261001510",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261002",
+    "resUsedTime": "210827",
+    "resUsedAmount": "4136",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261002287",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261002",
+    "resUsedTime": "214233",
+    "resUsedAmount": "14477",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261002672",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261002",
+    "resUsedTime": "230525",
+    "resUsedAmount": "6962",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261002991",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261003",
+    "resUsedTime": "073147",
+    "resUsedAmount": "12937",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261003540",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261003",
+    "resUsedTime": "114848",
+    "resUsedAmount": "8865",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261003771",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261003",
+    "resUsedTime": "183559",
+    "resUsedAmount": "6121",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261003205",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261004",
+    "resUsedTime": "144109",
+    "resUsedAmount": "4230",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261004372",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261004",
+    "resUsedTime": "194105",
+    "resUsedAmount": "3845",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261004972",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261005",
+    "resUsedTime": "104612",
+    "resUsedAmount": "16022",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261005423",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261005",
+    "resUsedTime": "205625",
+    "resUsedAmount": "6817",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261005861",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261006",
+    "resUsedTime": "091929",
+    "resUsedAmount": "4848",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261006562",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261006",
+    "resUsedTime": "092851",
+    "resUsedAmount": "5438",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261006982",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261007",
+    "resUsedTime": "175734",
+    "resUsedAmount": "8010",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261007182",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261007",
+    "resUsedTime": "210443",
+    "resUsedAmount": "3254",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261007339",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261008",
+    "resUsedTime": "171051",
+    "resUsedAmount": "7854",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261008732",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261008",
+    "resUsedTime": "223015",
+    "resUsedAmount": "2610",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261008567",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261009",
+    "resUsedTime": "081822",
+    "resUsedAmount": "1591",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261009483",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261009",
+    "resUsedTime": "090029",
+    "resUsedAmount": "5800",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261009736",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261009",
+    "resUsedTime": "220615",
+    "resUsedAmount": "6297",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261009490",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261010",
+    "resUsedTime": "174910",
+    "resUsedAmount": "6275",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261010178",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261011",
+    "resUsedTime": "221602",
+    "resUsedAmount": "9009",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261011871",
+    "resMemberStoreName": "성심당",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261011",
+    "resUsedTime": "230724",
+    "resUsedAmount": "4122",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261011690",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261012",
+    "resUsedTime": "080910",
+    "resUsedAmount": "10554",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261012872",
+    "resMemberStoreName": "택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261013",
+    "resUsedTime": "175512",
+    "resUsedAmount": "2121",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261013814",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261013",
+    "resUsedTime": "225534",
+    "resUsedAmount": "2999",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261013136",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261014",
+    "resUsedTime": "090948",
+    "resUsedAmount": "3118",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261014331",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261014",
+    "resUsedTime": "113642",
+    "resUsedAmount": "9073",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261014510",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261014",
+    "resUsedTime": "170421",
+    "resUsedAmount": "6772",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261014196",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261014",
+    "resUsedTime": "201653",
+    "resUsedAmount": "3701",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261014183",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261015",
+    "resUsedTime": "111506",
+    "resUsedAmount": "17728",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261015249",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261015",
+    "resUsedTime": "172244",
+    "resUsedAmount": "25151",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261015564",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261015",
+    "resUsedTime": "181810",
+    "resUsedAmount": "11600",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261015548",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261016",
+    "resUsedTime": "081838",
+    "resUsedAmount": "7119",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261016419",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261016",
+    "resUsedTime": "130942",
+    "resUsedAmount": "18059",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261016593",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261016",
+    "resUsedTime": "154050",
+    "resUsedAmount": "4195",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261016158",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261017",
+    "resUsedTime": "083809",
+    "resUsedAmount": "1971",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261017795",
+    "resMemberStoreName": "지하철",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20261017",
+    "resUsedTime": "151507",
+    "resUsedAmount": "1234",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261017126",
+    "resMemberStoreName": "지하철",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20261018",
+    "resUsedTime": "094627",
+    "resUsedAmount": "2440",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261018180",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261018",
+    "resUsedTime": "110219",
+    "resUsedAmount": "17961",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261018473",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261018",
+    "resUsedTime": "174207",
+    "resUsedAmount": "11391",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261018520",
+    "resMemberStoreName": "스포티파이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261018",
+    "resUsedTime": "185004",
+    "resUsedAmount": "10660",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261018453",
+    "resMemberStoreName": "성심당",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261019",
+    "resUsedTime": "135138",
+    "resUsedAmount": "6865",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261019241",
+    "resMemberStoreName": "할리스커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261021",
+    "resUsedTime": "085838",
+    "resUsedAmount": "1698",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261021863",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261021",
+    "resUsedTime": "091935",
+    "resUsedAmount": "3766",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261021485",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261021",
+    "resUsedTime": "200855",
+    "resUsedAmount": "4336",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261021572",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261022",
+    "resUsedTime": "113934",
+    "resUsedAmount": "4453",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261022127",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261022",
+    "resUsedTime": "143738",
+    "resUsedAmount": "20299",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261022140",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261022",
+    "resUsedTime": "212603",
+    "resUsedAmount": "2815",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261022292",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261022",
+    "resUsedTime": "222805",
+    "resUsedAmount": "2801",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261022712",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261022",
+    "resUsedTime": "224558",
+    "resUsedAmount": "6318",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261022554",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261023",
+    "resUsedTime": "102455",
+    "resUsedAmount": "7971",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261023139",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261023",
+    "resUsedTime": "105410",
+    "resUsedAmount": "2998",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261023437",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261023",
+    "resUsedTime": "142839",
+    "resUsedAmount": "3423",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261023391",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261023",
+    "resUsedTime": "144430",
+    "resUsedAmount": "9292",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261023761",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261023",
+    "resUsedTime": "195248",
+    "resUsedAmount": "1245",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261023663",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261024",
+    "resUsedTime": "075456",
+    "resUsedAmount": "5957",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261024883",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261024",
+    "resUsedTime": "143114",
+    "resUsedAmount": "29950",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261024379",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261024",
+    "resUsedTime": "212603",
+    "resUsedAmount": "3285",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261024311",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261025",
+    "resUsedTime": "161113",
+    "resUsedAmount": "1843",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261025449",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261025",
+    "resUsedTime": "182802",
+    "resUsedAmount": "4031",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261025844",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261026",
+    "resUsedTime": "102810",
+    "resUsedAmount": "3866",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261026810",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261026",
+    "resUsedTime": "123418",
+    "resUsedAmount": "4188",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261026428",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261026",
+    "resUsedTime": "174243",
+    "resUsedAmount": "13710",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261026917",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261026",
+    "resUsedTime": "203643",
+    "resUsedAmount": "1431",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261026911",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261026",
+    "resUsedTime": "214313",
+    "resUsedAmount": "18467",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261026623",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261026",
+    "resUsedTime": "214509",
+    "resUsedAmount": "31037",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261026545",
+    "resMemberStoreName": "11번가",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261027",
+    "resUsedTime": "123144",
+    "resUsedAmount": "3484",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261027609",
+    "resMemberStoreName": "아이게임랜드",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261027",
+    "resUsedTime": "144941",
+    "resUsedAmount": "2453",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261027475",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261027",
+    "resUsedTime": "174222",
+    "resUsedAmount": "9987",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261027826",
+    "resMemberStoreName": "동탄이비인후과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20261028",
+    "resUsedTime": "084650",
+    "resUsedAmount": "6646",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261028987",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261028",
+    "resUsedTime": "092101",
+    "resUsedAmount": "11974",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261028702",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261028",
+    "resUsedTime": "093608",
+    "resUsedAmount": "1301",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261028642",
+    "resMemberStoreName": "지하철",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20261028",
+    "resUsedTime": "165150",
+    "resUsedAmount": "2568",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261028580",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261028",
+    "resUsedTime": "174505",
+    "resUsedAmount": "7492",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261028616",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261028",
+    "resUsedTime": "201936",
+    "resUsedAmount": "7457",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261028735",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261029",
+    "resUsedTime": "085012",
+    "resUsedAmount": "4591",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261029142",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261029",
+    "resUsedTime": "092754",
+    "resUsedAmount": "9617",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261029208",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261029",
+    "resUsedTime": "102027",
+    "resUsedAmount": "5130",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261029420",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261029",
+    "resUsedTime": "220912",
+    "resUsedAmount": "16891",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261029403",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261030",
+    "resUsedTime": "110445",
+    "resUsedAmount": "5305",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261030894",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261030",
+    "resUsedTime": "113159",
+    "resUsedAmount": "3578",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261030833",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "082214",
+    "resUsedAmount": "7794",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031765",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "113102",
+    "resUsedAmount": "1999",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031229",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "145340",
+    "resUsedAmount": "5490",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031383",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "163242",
+    "resUsedAmount": "3944",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031748",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "175839",
+    "resUsedAmount": "2739",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031326",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "212219",
+    "resUsedAmount": "7444",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031940",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261031",
+    "resUsedTime": "222839",
+    "resUsedAmount": "18973",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261031105",
+    "resMemberStoreName": "닌텐도e샵",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261101",
+    "resUsedTime": "081655",
+    "resUsedAmount": "7765",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261101589",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261101",
+    "resUsedTime": "152054",
+    "resUsedAmount": "8441",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261101351",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261101",
+    "resUsedTime": "233818",
+    "resUsedAmount": "23593",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261101202",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261102",
+    "resUsedTime": "081425",
+    "resUsedAmount": "11110",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261102713",
+    "resMemberStoreName": "택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261102",
+    "resUsedTime": "091814",
+    "resUsedAmount": "10985",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261102514",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261102",
+    "resUsedTime": "110904",
+    "resUsedAmount": "1953",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261102402",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261102",
+    "resUsedTime": "151348",
+    "resUsedAmount": "9345",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261102624",
+    "resMemberStoreName": "택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261102",
+    "resUsedTime": "152117",
+    "resUsedAmount": "39773",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261102710",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261103",
+    "resUsedTime": "075748",
+    "resUsedAmount": "3578",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261103981",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261103",
+    "resUsedTime": "143851",
+    "resUsedAmount": "3417",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261103460",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261103",
+    "resUsedTime": "152916",
+    "resUsedAmount": "1414",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261103782",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261103",
+    "resUsedTime": "233615",
+    "resUsedAmount": "22634",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261103835",
+    "resMemberStoreName": "스팀",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261104",
+    "resUsedTime": "164619",
+    "resUsedAmount": "3518",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261104957",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261104",
+    "resUsedTime": "172544",
+    "resUsedAmount": "20403",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261104402",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261104",
+    "resUsedTime": "205231",
+    "resUsedAmount": "17083",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261104208",
+    "resMemberStoreName": "11번가",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261104",
+    "resUsedTime": "210633",
+    "resUsedAmount": "4535",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261104567",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261104",
+    "resUsedTime": "215710",
+    "resUsedAmount": "4804",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261104861",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261105",
+    "resUsedTime": "221334",
+    "resUsedAmount": "8063",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261105235",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261105",
+    "resUsedTime": "231257",
+    "resUsedAmount": "4976",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261105894",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261106",
+    "resUsedTime": "121728",
+    "resUsedAmount": "4968",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261106625",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261106",
+    "resUsedTime": "152804",
+    "resUsedAmount": "24230",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261106830",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261106",
+    "resUsedTime": "224028",
+    "resUsedAmount": "3843",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261106878",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261107",
+    "resUsedTime": "161519",
+    "resUsedAmount": "6889",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261107224",
+    "resMemberStoreName": "넥슨코리아",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261108",
+    "resUsedTime": "083518",
+    "resUsedAmount": "9833",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261108814",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261108",
+    "resUsedTime": "094258",
+    "resUsedAmount": "4902",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261108438",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261108",
+    "resUsedTime": "105616",
+    "resUsedAmount": "25676",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261108282",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261109",
+    "resUsedTime": "125349",
+    "resUsedAmount": "11132",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261109801",
+    "resMemberStoreName": "성심당",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261109",
+    "resUsedTime": "220240",
+    "resUsedAmount": "5017",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261109496",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261109",
+    "resUsedTime": "230042",
+    "resUsedAmount": "19608",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261109936",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "070445",
+    "resUsedAmount": "10493",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110746",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "070559",
+    "resUsedAmount": "9607",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110871",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "091453",
+    "resUsedAmount": "2604",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110216",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "105608",
+    "resUsedAmount": "24217",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110370",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "142621",
+    "resUsedAmount": "4625",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110947",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "194347",
+    "resUsedAmount": "6404",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110278",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261110",
+    "resUsedTime": "234756",
+    "resUsedAmount": "1632",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261110239",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261111",
+    "resUsedTime": "112105",
+    "resUsedAmount": "4136",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261111696",
+    "resMemberStoreName": "할리스커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261111",
+    "resUsedTime": "113402",
+    "resUsedAmount": "4481",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261111954",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261111",
+    "resUsedTime": "115959",
+    "resUsedAmount": "5240",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261111342",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261111",
+    "resUsedTime": "144933",
+    "resUsedAmount": "19530",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261111489",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261112",
+    "resUsedTime": "133216",
+    "resUsedAmount": "9879",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261112235",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261112",
+    "resUsedTime": "214419",
+    "resUsedAmount": "2663",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261112816",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261113",
+    "resUsedTime": "073859",
+    "resUsedAmount": "6104",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261113773",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261113",
+    "resUsedTime": "130437",
+    "resUsedAmount": "16511",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261113807",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261113",
+    "resUsedTime": "160153",
+    "resUsedAmount": "3709",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261113774",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261113",
+    "resUsedTime": "181948",
+    "resUsedAmount": "4417",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261113499",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261113",
+    "resUsedTime": "223209",
+    "resUsedAmount": "2143",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261113163",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261113",
+    "resUsedTime": "225126",
+    "resUsedAmount": "17476",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261113294",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261114",
+    "resUsedTime": "175540",
+    "resUsedAmount": "6640",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261114423",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261114",
+    "resUsedTime": "202246",
+    "resUsedAmount": "4729",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261114905",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261114",
+    "resUsedTime": "220530",
+    "resUsedAmount": "2437",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261114456",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261115",
+    "resUsedTime": "204416",
+    "resUsedAmount": "3111",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261115567",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261115",
+    "resUsedTime": "213430",
+    "resUsedAmount": "1938",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261115453",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261116",
+    "resUsedTime": "213952",
+    "resUsedAmount": "25840",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261116836",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261117",
+    "resUsedTime": "105441",
+    "resUsedAmount": "3736",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261117766",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261118",
+    "resUsedTime": "071918",
+    "resUsedAmount": "16647",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261118315",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261118",
+    "resUsedTime": "162426",
+    "resUsedAmount": "3118",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261118893",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261118",
+    "resUsedTime": "225420",
+    "resUsedAmount": "15644",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261118286",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "104657",
+    "resUsedAmount": "21483",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119407",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "144319",
+    "resUsedAmount": "12819",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119330",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "152842",
+    "resUsedAmount": "9682",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119534",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "161447",
+    "resUsedAmount": "2521",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119192",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "224207",
+    "resUsedAmount": "9490",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119677",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "231829",
+    "resUsedAmount": "3528",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119617",
+    "resMemberStoreName": "앱스토어",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261119",
+    "resUsedTime": "232059",
+    "resUsedAmount": "8324",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261119367",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261120",
+    "resUsedTime": "165443",
+    "resUsedAmount": "30668",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261120714",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261122",
+    "resUsedTime": "085021",
+    "resUsedAmount": "28914",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261122349",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261122",
+    "resUsedTime": "085541",
+    "resUsedAmount": "5139",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261122439",
+    "resMemberStoreName": "뚜레쥬르",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261122",
+    "resUsedTime": "210237",
+    "resUsedAmount": "2117",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261122473",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261122",
+    "resUsedTime": "212833",
+    "resUsedAmount": "2209",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261122635",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261122",
+    "resUsedTime": "215844",
+    "resUsedAmount": "24383",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261122409",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261122",
+    "resUsedTime": "230541",
+    "resUsedAmount": "3751",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261122786",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261123",
+    "resUsedTime": "080219",
+    "resUsedAmount": "19413",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261123604",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261123",
+    "resUsedTime": "110218",
+    "resUsedAmount": "14797",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261123949",
+    "resMemberStoreName": "메가박스",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261124",
+    "resUsedTime": "070330",
+    "resUsedAmount": "2416",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261124967",
+    "resMemberStoreName": "카카오이모티콘",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261124",
+    "resUsedTime": "123504",
+    "resUsedAmount": "2322",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261124260",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261124",
+    "resUsedTime": "164144",
+    "resUsedAmount": "4666",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261124778",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261125",
+    "resUsedTime": "082701",
+    "resUsedAmount": "9864",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261125570",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261125",
+    "resUsedTime": "114359",
+    "resUsedAmount": "2248",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261125585",
+    "resMemberStoreName": "카카오이모티콘",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261125",
+    "resUsedTime": "115626",
+    "resUsedAmount": "19641",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261125770",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261126",
+    "resUsedTime": "115438",
+    "resUsedAmount": "4767",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261126794",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261126",
+    "resUsedTime": "153602",
+    "resUsedAmount": "3499",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261126881",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261126",
+    "resUsedTime": "180550",
+    "resUsedAmount": "3022",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261126504",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261126",
+    "resUsedTime": "180643",
+    "resUsedAmount": "2989",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261126339",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261127",
+    "resUsedTime": "180325",
+    "resUsedAmount": "15533",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261127382",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261128",
+    "resUsedTime": "154448",
+    "resUsedAmount": "9347",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261128416",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261128",
+    "resUsedTime": "183035",
+    "resUsedAmount": "38023",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261128643",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261129",
+    "resUsedTime": "144510",
+    "resUsedAmount": "1045",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261129418",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261129",
+    "resUsedTime": "231205",
+    "resUsedAmount": "20892",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261129347",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261130",
+    "resUsedTime": "164458",
+    "resUsedAmount": "29322",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261130602",
+    "resMemberStoreName": "홈플러스",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20261130",
+    "resUsedTime": "183214",
+    "resUsedAmount": "13321",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261130224",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20261201",
+    "resUsedTime": "234617",
+    "resUsedAmount": "3047",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261201648",
+    "resMemberStoreName": "할리스커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261202",
+    "resUsedTime": "133013",
+    "resUsedAmount": "6379",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261202990",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261202",
+    "resUsedTime": "143447",
+    "resUsedAmount": "3589",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261202840",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261202",
+    "resUsedTime": "160424",
+    "resUsedAmount": "18893",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261202616",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261202",
+    "resUsedTime": "161452",
+    "resUsedAmount": "10933",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261202849",
+    "resMemberStoreName": "스포티파이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261202",
+    "resUsedTime": "220643",
+    "resUsedAmount": "13959",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261202889",
+    "resMemberStoreName": "네이버페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261203",
+    "resUsedTime": "095930",
+    "resUsedAmount": "3369",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261203132",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261203",
+    "resUsedTime": "154113",
+    "resUsedAmount": "9783",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261203885",
+    "resMemberStoreName": "맘스터치",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261203",
+    "resUsedTime": "223326",
+    "resUsedAmount": "16533",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261203887",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "073830",
+    "resUsedAmount": "4054",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204371",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "081547",
+    "resUsedAmount": "13164",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204145",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "092138",
+    "resUsedAmount": "3142",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204887",
+    "resMemberStoreName": "아이게임랜드",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "141239",
+    "resUsedAmount": "6117",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204639",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "172609",
+    "resUsedAmount": "27681",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204522",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "193308",
+    "resUsedAmount": "25096",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204845",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261204",
+    "resUsedTime": "233156",
+    "resUsedAmount": "2896",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261204237",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "100251",
+    "resUsedAmount": "11261",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205776",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "110013",
+    "resUsedAmount": "1635",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205617",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "122641",
+    "resUsedAmount": "43891",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205999",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "150335",
+    "resUsedAmount": "4561",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205705",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "161036",
+    "resUsedAmount": "6446",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205346",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "192302",
+    "resUsedAmount": "8865",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205510",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "221554",
+    "resUsedAmount": "2252",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205330",
+    "resMemberStoreName": "카카오이모티콘",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "232807",
+    "resUsedAmount": "1552",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205796",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261205",
+    "resUsedTime": "234722",
+    "resUsedAmount": "3537",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261205154",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261206",
+    "resUsedTime": "085255",
+    "resUsedAmount": "24206",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261206129",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261206",
+    "resUsedTime": "142233",
+    "resUsedAmount": "25608",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261206390",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261206",
+    "resUsedTime": "190549",
+    "resUsedAmount": "1282",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261206733",
+    "resMemberStoreName": "버스",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20261206",
+    "resUsedTime": "195031",
+    "resUsedAmount": "3494",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261206290",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261207",
+    "resUsedTime": "220123",
+    "resUsedAmount": "6709",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261207667",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261207",
+    "resUsedTime": "232851",
+    "resUsedAmount": "1009",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261207156",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261208",
+    "resUsedTime": "162943",
+    "resUsedAmount": "26508",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261208836",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261208",
+    "resUsedTime": "201809",
+    "resUsedAmount": "2145",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261208300",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261208",
+    "resUsedTime": "214738",
+    "resUsedAmount": "1768",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261208482",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261209",
+    "resUsedTime": "071641",
+    "resUsedAmount": "2945",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261209468",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261209",
+    "resUsedTime": "100318",
+    "resUsedAmount": "5428",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261209493",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261209",
+    "resUsedTime": "190523",
+    "resUsedAmount": "2441",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261209515",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "083526",
+    "resUsedAmount": "13566",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210526",
+    "resMemberStoreName": "스포티파이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "091709",
+    "resUsedAmount": "52671",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210489",
+    "resMemberStoreName": "이마트",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "114941",
+    "resUsedAmount": "1636",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210846",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "181916",
+    "resUsedAmount": "6324",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210468",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "195227",
+    "resUsedAmount": "3331",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210627",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "205158",
+    "resUsedAmount": "5509",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210283",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261210",
+    "resUsedTime": "222030",
+    "resUsedAmount": "51848",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261210457",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261211",
+    "resUsedTime": "101108",
+    "resUsedAmount": "2946",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261211588",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261211",
+    "resUsedTime": "143135",
+    "resUsedAmount": "2259",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261211770",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261211",
+    "resUsedTime": "153930",
+    "resUsedAmount": "20318",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261211296",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261211",
+    "resUsedTime": "182508",
+    "resUsedAmount": "22559",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261211878",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261211",
+    "resUsedTime": "191528",
+    "resUsedAmount": "2724",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261211871",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261212",
+    "resUsedTime": "164505",
+    "resUsedAmount": "9988",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261212454",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261212",
+    "resUsedTime": "171529",
+    "resUsedAmount": "20881",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261212225",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261212",
+    "resUsedTime": "174426",
+    "resUsedAmount": "6757",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261212518",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261212",
+    "resUsedTime": "184809",
+    "resUsedAmount": "19879",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261212303",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261213",
+    "resUsedTime": "074410",
+    "resUsedAmount": "21577",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261213184",
+    "resMemberStoreName": "스팀",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261213",
+    "resUsedTime": "114155",
+    "resUsedAmount": "3667",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261213456",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261213",
+    "resUsedTime": "134855",
+    "resUsedAmount": "22049",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261213894",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261213",
+    "resUsedTime": "162339",
+    "resUsedAmount": "3226",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261213326",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261214",
+    "resUsedTime": "071513",
+    "resUsedAmount": "25469",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261214168",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261214",
+    "resUsedTime": "134815",
+    "resUsedAmount": "1808",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261214796",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261214",
+    "resUsedTime": "174104",
+    "resUsedAmount": "6232",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261214560",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "074721",
+    "resUsedAmount": "3289",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215909",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "100806",
+    "resUsedAmount": "20594",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215503",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "124908",
+    "resUsedAmount": "17424",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215543",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "132138",
+    "resUsedAmount": "3752",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215247",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "141943",
+    "resUsedAmount": "3480",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215947",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "191652",
+    "resUsedAmount": "3300",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215103",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "213603",
+    "resUsedAmount": "1819",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215672",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261215",
+    "resUsedTime": "224231",
+    "resUsedAmount": "1945",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261215116",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261216",
+    "resUsedTime": "072321",
+    "resUsedAmount": "17638",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261216789",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261216",
+    "resUsedTime": "075406",
+    "resUsedAmount": "18229",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261216541",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261216",
+    "resUsedTime": "092532",
+    "resUsedAmount": "17962",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261216568",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261216",
+    "resUsedTime": "162018",
+    "resUsedAmount": "1680",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261216761",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261216",
+    "resUsedTime": "173654",
+    "resUsedAmount": "11159",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261216197",
+    "resMemberStoreName": "넥슨코리아",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261216",
+    "resUsedTime": "181008",
+    "resUsedAmount": "4260",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261216837",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261217",
+    "resUsedTime": "224853",
+    "resUsedAmount": "6323",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261217427",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261217",
+    "resUsedTime": "230919",
+    "resUsedAmount": "9108",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261217268",
+    "resMemberStoreName": "맘스터치",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261218",
+    "resUsedTime": "083302",
+    "resUsedAmount": "4333",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261218959",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261218",
+    "resUsedTime": "141529",
+    "resUsedAmount": "28715",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261218454",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20261218",
+    "resUsedTime": "141613",
+    "resUsedAmount": "6931",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261218438",
+    "resMemberStoreName": "택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261218",
+    "resUsedTime": "150806",
+    "resUsedAmount": "26928",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261218730",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261218",
+    "resUsedTime": "163015",
+    "resUsedAmount": "20043",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261218924",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261218",
+    "resUsedTime": "195725",
+    "resUsedAmount": "16604",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261218938",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261219",
+    "resUsedTime": "073156",
+    "resUsedAmount": "4159",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261219742",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261219",
+    "resUsedTime": "113956",
+    "resUsedAmount": "16556",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261219188",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261219",
+    "resUsedTime": "171519",
+    "resUsedAmount": "4141",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261219997",
+    "resMemberStoreName": "앱스토어",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261219",
+    "resUsedTime": "172448",
+    "resUsedAmount": "5479",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261219857",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261220",
+    "resUsedTime": "080202",
+    "resUsedAmount": "18330",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261220240",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261220",
+    "resUsedTime": "123737",
+    "resUsedAmount": "16868",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261220257",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261220",
+    "resUsedTime": "143520",
+    "resUsedAmount": "5497",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261220894",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261220",
+    "resUsedTime": "170140",
+    "resUsedAmount": "2752",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261220379",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261221",
+    "resUsedTime": "180534",
+    "resUsedAmount": "11371",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261221841",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261221",
+    "resUsedTime": "192855",
+    "resUsedAmount": "1979",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261221486",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261222",
+    "resUsedTime": "171129",
+    "resUsedAmount": "9081",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261222645",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261223",
+    "resUsedTime": "094359",
+    "resUsedAmount": "3921",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261223387",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261223",
+    "resUsedTime": "102919",
+    "resUsedAmount": "2923",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261223263",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261223",
+    "resUsedTime": "192023",
+    "resUsedAmount": "8681",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261223209",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20261223",
+    "resUsedTime": "225554",
+    "resUsedAmount": "41773",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261223853",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261223",
+    "resUsedTime": "232909",
+    "resUsedAmount": "23620",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261223720",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261224",
+    "resUsedTime": "082722",
+    "resUsedAmount": "4781",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261224817",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261224",
+    "resUsedTime": "123132",
+    "resUsedAmount": "14285",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261224578",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261224",
+    "resUsedTime": "140236",
+    "resUsedAmount": "12927",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261224817",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261224",
+    "resUsedTime": "231335",
+    "resUsedAmount": "37267",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261224432",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261224",
+    "resUsedTime": "231440",
+    "resUsedAmount": "35728",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261224338",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261224",
+    "resUsedTime": "235332",
+    "resUsedAmount": "19349",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261224645",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261225",
+    "resUsedTime": "234523",
+    "resUsedAmount": "3265",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261225179",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261226",
+    "resUsedTime": "094403",
+    "resUsedAmount": "3770",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261226261",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261226",
+    "resUsedTime": "183524",
+    "resUsedAmount": "3969",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261226542",
+    "resMemberStoreName": "아이게임랜드",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20261227",
+    "resUsedTime": "194338",
+    "resUsedAmount": "7694",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261227717",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261228",
+    "resUsedTime": "080525",
+    "resUsedAmount": "15721",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261228488",
+    "resMemberStoreName": "CGV",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261228",
+    "resUsedTime": "084800",
+    "resUsedAmount": "8136",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261228522",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261228",
+    "resUsedTime": "102110",
+    "resUsedAmount": "1227",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261228848",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261228",
+    "resUsedTime": "122656",
+    "resUsedAmount": "3326",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261228957",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261228",
+    "resUsedTime": "125220",
+    "resUsedAmount": "3034",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261228691",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261228",
+    "resUsedTime": "150840",
+    "resUsedAmount": "7124",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261228410",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261229",
+    "resUsedTime": "141357",
+    "resUsedAmount": "29377",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261229988",
+    "resMemberStoreName": "스팀",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20261229",
+    "resUsedTime": "170113",
+    "resUsedAmount": "4089",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261229701",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20261229",
+    "resUsedTime": "171025",
+    "resUsedAmount": "14165",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261229731",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261229",
+    "resUsedTime": "203531",
+    "resUsedAmount": "11998",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261229148",
+    "resMemberStoreName": "스포티파이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20261230",
+    "resUsedTime": "071359",
+    "resUsedAmount": "12638",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261230294",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261230",
+    "resUsedTime": "071936",
+    "resUsedAmount": "3643",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261230717",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261230",
+    "resUsedTime": "200236",
+    "resUsedAmount": "10758",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261230984",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20261230",
+    "resUsedTime": "221312",
+    "resUsedAmount": "10010",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261230947",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261230",
+    "resUsedTime": "231236",
+    "resUsedAmount": "2078",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261230649",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20261231",
+    "resUsedTime": "161419",
+    "resUsedAmount": "37044",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261231889",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261231",
+    "resUsedTime": "180303",
+    "resUsedAmount": "7566",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261231388",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261231",
+    "resUsedTime": "221033",
+    "resUsedAmount": "11535",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261231744",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20261231",
+    "resUsedTime": "224641",
+    "resUsedAmount": "2417",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261231857",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20261231",
+    "resUsedTime": "225815",
+    "resUsedAmount": "4995",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM261231812",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270101",
+    "resUsedTime": "165632",
+    "resUsedAmount": "6783",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270101675",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270101",
+    "resUsedTime": "221206",
+    "resUsedAmount": "18762",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270101126",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270102",
+    "resUsedTime": "085025",
+    "resUsedAmount": "15451",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270102618",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270102",
+    "resUsedTime": "182458",
+    "resUsedAmount": "28655",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270102253",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270102",
+    "resUsedTime": "204408",
+    "resUsedAmount": "23820",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270102589",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270102",
+    "resUsedTime": "234733",
+    "resUsedAmount": "12104",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270102671",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270102",
+    "resUsedTime": "234947",
+    "resUsedAmount": "19419",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270102690",
+    "resMemberStoreName": "닌텐도e샵",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270103",
+    "resUsedTime": "215108",
+    "resUsedAmount": "2426",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270103194",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270104",
+    "resUsedTime": "153304",
+    "resUsedAmount": "34879",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270104369",
+    "resMemberStoreName": "11번가",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270105",
+    "resUsedTime": "184512",
+    "resUsedAmount": "6340",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270105380",
+    "resMemberStoreName": "디즈니플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270105",
+    "resUsedTime": "222656",
+    "resUsedAmount": "5030",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270105663",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270106",
+    "resUsedTime": "122122",
+    "resUsedAmount": "17942",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270106548",
+    "resMemberStoreName": "CGV",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270106",
+    "resUsedTime": "151453",
+    "resUsedAmount": "14276",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270106375",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270107",
+    "resUsedTime": "070344",
+    "resUsedAmount": "6212",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270107218",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270107",
+    "resUsedTime": "085418",
+    "resUsedAmount": "7503",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270107468",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270107",
+    "resUsedTime": "132126",
+    "resUsedAmount": "2484",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270107683",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270107",
+    "resUsedTime": "220903",
+    "resUsedAmount": "29607",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270107469",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270108",
+    "resUsedTime": "200729",
+    "resUsedAmount": "30103",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270108726",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270108",
+    "resUsedTime": "225136",
+    "resUsedAmount": "8878",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270108794",
+    "resMemberStoreName": "롯데시네마",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270109",
+    "resUsedTime": "104600",
+    "resUsedAmount": "2818",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270109149",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270109",
+    "resUsedTime": "122320",
+    "resUsedAmount": "18594",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270109301",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270109",
+    "resUsedTime": "122822",
+    "resUsedAmount": "24164",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270109839",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270109",
+    "resUsedTime": "193520",
+    "resUsedAmount": "15478",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270109977",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270110",
+    "resUsedTime": "100620",
+    "resUsedAmount": "40790",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270110476",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270110",
+    "resUsedTime": "144640",
+    "resUsedAmount": "13623",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270110607",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270110",
+    "resUsedTime": "234328",
+    "resUsedAmount": "9137",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270110109",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270111",
+    "resUsedTime": "113420",
+    "resUsedAmount": "30745",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270111500",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270111",
+    "resUsedTime": "141907",
+    "resUsedAmount": "7229",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270111287",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270111",
+    "resUsedTime": "143633",
+    "resUsedAmount": "33104",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270111273",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270112",
+    "resUsedTime": "081054",
+    "resUsedAmount": "9329",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270112685",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270112",
+    "resUsedTime": "104951",
+    "resUsedAmount": "8787",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270112342",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270112",
+    "resUsedTime": "154459",
+    "resUsedAmount": "4556",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270112998",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270112",
+    "resUsedTime": "185404",
+    "resUsedAmount": "7533",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270112914",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270112",
+    "resUsedTime": "202527",
+    "resUsedAmount": "3820",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270112588",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270112",
+    "resUsedTime": "212348",
+    "resUsedAmount": "8803",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270112376",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270113",
+    "resUsedTime": "192227",
+    "resUsedAmount": "14423",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270113422",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270113",
+    "resUsedTime": "211816",
+    "resUsedAmount": "2230",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270113575",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270113",
+    "resUsedTime": "214952",
+    "resUsedAmount": "3466",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270113428",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270114",
+    "resUsedTime": "202835",
+    "resUsedAmount": "5693",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270114668",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270115",
+    "resUsedTime": "091641",
+    "resUsedAmount": "9525",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270115421",
+    "resMemberStoreName": "넥슨코리아",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270115",
+    "resUsedTime": "104351",
+    "resUsedAmount": "8315",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270115268",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270116",
+    "resUsedTime": "103112",
+    "resUsedAmount": "1382",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270116723",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270117",
+    "resUsedTime": "124357",
+    "resUsedAmount": "5809",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270117443",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270117",
+    "resUsedTime": "231007",
+    "resUsedAmount": "2968",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270117475",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270118",
+    "resUsedTime": "082742",
+    "resUsedAmount": "1451",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270118233",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270118",
+    "resUsedTime": "091535",
+    "resUsedAmount": "36970",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270118715",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270118",
+    "resUsedTime": "122829",
+    "resUsedAmount": "2317",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270118421",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270118",
+    "resUsedTime": "183333",
+    "resUsedAmount": "23394",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270118901",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270118",
+    "resUsedTime": "221816",
+    "resUsedAmount": "4466",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270118528",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270119",
+    "resUsedTime": "145754",
+    "resUsedAmount": "1888",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270119632",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270119",
+    "resUsedTime": "152619",
+    "resUsedAmount": "6530",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270119595",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270120",
+    "resUsedTime": "092838",
+    "resUsedAmount": "4678",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270120590",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270121",
+    "resUsedTime": "131226",
+    "resUsedAmount": "14982",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270121813",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270121",
+    "resUsedTime": "181605",
+    "resUsedAmount": "5060",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270121480",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270121",
+    "resUsedTime": "232508",
+    "resUsedAmount": "14431",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270121899",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270122",
+    "resUsedTime": "200616",
+    "resUsedAmount": "2849",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270122725",
+    "resMemberStoreName": "아이게임랜드",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270123",
+    "resUsedTime": "090137",
+    "resUsedAmount": "12135",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270123169",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270123",
+    "resUsedTime": "110624",
+    "resUsedAmount": "1275",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270123773",
+    "resMemberStoreName": "버스",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20270123",
+    "resUsedTime": "201420",
+    "resUsedAmount": "33353",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270123354",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270123",
+    "resUsedTime": "213547",
+    "resUsedAmount": "3404",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270123663",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270124",
+    "resUsedTime": "211753",
+    "resUsedAmount": "12888",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270124494",
+    "resMemberStoreName": "CGV",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270125",
+    "resUsedTime": "094327",
+    "resUsedAmount": "11414",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270125306",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270125",
+    "resUsedTime": "200259",
+    "resUsedAmount": "2611",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270125748",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270126",
+    "resUsedTime": "074629",
+    "resUsedAmount": "18598",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270126825",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270126",
+    "resUsedTime": "125851",
+    "resUsedAmount": "1570",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270126964",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270126",
+    "resUsedTime": "132245",
+    "resUsedAmount": "2530",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270126519",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270126",
+    "resUsedTime": "191329",
+    "resUsedAmount": "2438",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270126944",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "093054",
+    "resUsedAmount": "19989",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127218",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "095254",
+    "resUsedAmount": "8419",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127914",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "104233",
+    "resUsedAmount": "4624",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127376",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "123150",
+    "resUsedAmount": "3713",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127881",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "172352",
+    "resUsedAmount": "3411",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127155",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "183417",
+    "resUsedAmount": "6843",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127711",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270127",
+    "resUsedTime": "201039",
+    "resUsedAmount": "21910",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270127242",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270128",
+    "resUsedTime": "131741",
+    "resUsedAmount": "13414",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270128519",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270128",
+    "resUsedTime": "215513",
+    "resUsedAmount": "16030",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270128188",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270129",
+    "resUsedTime": "102432",
+    "resUsedAmount": "2549",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270129702",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270129",
+    "resUsedTime": "112147",
+    "resUsedAmount": "4317",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270129179",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270129",
+    "resUsedTime": "150351",
+    "resUsedAmount": "3291",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270129583",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270129",
+    "resUsedTime": "192343",
+    "resUsedAmount": "1365",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270129745",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270129",
+    "resUsedTime": "224542",
+    "resUsedAmount": "3462",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270129472",
+    "resMemberStoreName": "아이게임랜드",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270129",
+    "resUsedTime": "225842",
+    "resUsedAmount": "7399",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270129467",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270130",
+    "resUsedTime": "100013",
+    "resUsedAmount": "4272",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270130588",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270131",
+    "resUsedTime": "093356",
+    "resUsedAmount": "9883",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270131112",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270131",
+    "resUsedTime": "124056",
+    "resUsedAmount": "4850",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270131190",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270131",
+    "resUsedTime": "175951",
+    "resUsedAmount": "2264",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270131502",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270131",
+    "resUsedTime": "194220",
+    "resUsedAmount": "10576",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270131797",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270201",
+    "resUsedTime": "082816",
+    "resUsedAmount": "23397",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270201456",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270201",
+    "resUsedTime": "084319",
+    "resUsedAmount": "3209",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270201366",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270201",
+    "resUsedTime": "110700",
+    "resUsedAmount": "3102",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270201163",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270201",
+    "resUsedTime": "122135",
+    "resUsedAmount": "14717",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270201536",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270203",
+    "resUsedTime": "154656",
+    "resUsedAmount": "10769",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270203220",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270203",
+    "resUsedTime": "165245",
+    "resUsedAmount": "2151",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270203813",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270204",
+    "resUsedTime": "091228",
+    "resUsedAmount": "5961",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270204316",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270204",
+    "resUsedTime": "173536",
+    "resUsedAmount": "23990",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270204233",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270205",
+    "resUsedTime": "075044",
+    "resUsedAmount": "13203",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270205738",
+    "resMemberStoreName": "디즈니플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270205",
+    "resUsedTime": "161209",
+    "resUsedAmount": "16873",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270205629",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270206",
+    "resUsedTime": "204425",
+    "resUsedAmount": "27914",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270206184",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270206",
+    "resUsedTime": "213903",
+    "resUsedAmount": "6372",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270206986",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270207",
+    "resUsedTime": "100421",
+    "resUsedAmount": "2137",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270207274",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270207",
+    "resUsedTime": "114541",
+    "resUsedAmount": "10514",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270207282",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20270207",
+    "resUsedTime": "143124",
+    "resUsedAmount": "39265",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270207215",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270207",
+    "resUsedTime": "161049",
+    "resUsedAmount": "5903",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270207568",
+    "resMemberStoreName": "맘스터치",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270207",
+    "resUsedTime": "225813",
+    "resUsedAmount": "2210",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270207804",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270208",
+    "resUsedTime": "114143",
+    "resUsedAmount": "10874",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270208246",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270208",
+    "resUsedTime": "225444",
+    "resUsedAmount": "2060",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270208801",
+    "resMemberStoreName": "카카오이모티콘",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270208",
+    "resUsedTime": "231247",
+    "resUsedAmount": "45638",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270208501",
+    "resMemberStoreName": "무신사",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270209",
+    "resUsedTime": "081918",
+    "resUsedAmount": "2282",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270209566",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270209",
+    "resUsedTime": "142631",
+    "resUsedAmount": "2445",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270209161",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270209",
+    "resUsedTime": "150541",
+    "resUsedAmount": "27349",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270209657",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270209",
+    "resUsedTime": "152757",
+    "resUsedAmount": "9890",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270209485",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270210",
+    "resUsedTime": "074544",
+    "resUsedAmount": "4659",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270210460",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270211",
+    "resUsedTime": "074046",
+    "resUsedAmount": "1535",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270211354",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270211",
+    "resUsedTime": "114907",
+    "resUsedAmount": "1543",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270211966",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270211",
+    "resUsedTime": "150332",
+    "resUsedAmount": "5361",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270211328",
+    "resMemberStoreName": "뚜레쥬르",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270211",
+    "resUsedTime": "192307",
+    "resUsedAmount": "3709",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270211677",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270211",
+    "resUsedTime": "193109",
+    "resUsedAmount": "11849",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270211691",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270212",
+    "resUsedTime": "080028",
+    "resUsedAmount": "2977",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270212380",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270212",
+    "resUsedTime": "172821",
+    "resUsedAmount": "5594",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270212540",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270212",
+    "resUsedTime": "210310",
+    "resUsedAmount": "2029",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270212687",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270214",
+    "resUsedTime": "074842",
+    "resUsedAmount": "3401",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270214485",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270214",
+    "resUsedTime": "211943",
+    "resUsedAmount": "5210",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270214633",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270215",
+    "resUsedTime": "135224",
+    "resUsedAmount": "6419",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270215675",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270215",
+    "resUsedTime": "151728",
+    "resUsedAmount": "5969",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270215252",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270215",
+    "resUsedTime": "190114",
+    "resUsedAmount": "1829",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270215329",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270215",
+    "resUsedTime": "204347",
+    "resUsedAmount": "11811",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270215961",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20270215",
+    "resUsedTime": "222258",
+    "resUsedAmount": "1553",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270215679",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270216",
+    "resUsedTime": "090649",
+    "resUsedAmount": "26876",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270216354",
+    "resMemberStoreName": "파파존스",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270216",
+    "resUsedTime": "202334",
+    "resUsedAmount": "19756",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270216799",
+    "resMemberStoreName": "11번가",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270217",
+    "resUsedTime": "104301",
+    "resUsedAmount": "6526",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270217347",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270217",
+    "resUsedTime": "125530",
+    "resUsedAmount": "6989",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270217700",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270217",
+    "resUsedTime": "161943",
+    "resUsedAmount": "10955",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270217210",
+    "resMemberStoreName": "택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270217",
+    "resUsedTime": "173700",
+    "resUsedAmount": "9249",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270217989",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270217",
+    "resUsedTime": "203808",
+    "resUsedAmount": "8573",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270217688",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270218",
+    "resUsedTime": "092138",
+    "resUsedAmount": "2134",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270218728",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270218",
+    "resUsedTime": "105330",
+    "resUsedAmount": "3628",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270218907",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "121115",
+    "resUsedAmount": "4718",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219706",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "123510",
+    "resUsedAmount": "2844",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219601",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "125626",
+    "resUsedAmount": "1779",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219604",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "131748",
+    "resUsedAmount": "7564",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219820",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "134623",
+    "resUsedAmount": "3465",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219114",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "192311",
+    "resUsedAmount": "16142",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219556",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270219",
+    "resUsedTime": "223656",
+    "resUsedAmount": "19633",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270219341",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270220",
+    "resUsedTime": "223650",
+    "resUsedAmount": "15830",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270220348",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270221",
+    "resUsedTime": "132146",
+    "resUsedAmount": "7731",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270221830",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270222",
+    "resUsedTime": "093706",
+    "resUsedAmount": "3383",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270222617",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270222",
+    "resUsedTime": "132819",
+    "resUsedAmount": "3291",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270222574",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270222",
+    "resUsedTime": "161516",
+    "resUsedAmount": "15649",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270222774",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270222",
+    "resUsedTime": "185203",
+    "resUsedAmount": "11955",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270222627",
+    "resMemberStoreName": "디즈니플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270223",
+    "resUsedTime": "093623",
+    "resUsedAmount": "22876",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270223222",
+    "resMemberStoreName": "11번가",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270223",
+    "resUsedTime": "112219",
+    "resUsedAmount": "6166",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270223451",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270223",
+    "resUsedTime": "153044",
+    "resUsedAmount": "5244",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270223256",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270223",
+    "resUsedTime": "162954",
+    "resUsedAmount": "13460",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270223220",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270224",
+    "resUsedTime": "115641",
+    "resUsedAmount": "7681",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270224409",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270225",
+    "resUsedTime": "124535",
+    "resUsedAmount": "1679",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270225810",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270225",
+    "resUsedTime": "132837",
+    "resUsedAmount": "2805",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270225539",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270225",
+    "resUsedTime": "194327",
+    "resUsedAmount": "2193",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270225276",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270226",
+    "resUsedTime": "075048",
+    "resUsedAmount": "16143",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270226325",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270226",
+    "resUsedTime": "183901",
+    "resUsedAmount": "14157",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270226983",
+    "resMemberStoreName": "롯데시네마",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270227",
+    "resUsedTime": "140021",
+    "resUsedAmount": "2372",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270227463",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270227",
+    "resUsedTime": "231953",
+    "resUsedAmount": "31974",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270227818",
+    "resMemberStoreName": "이마트",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20270228",
+    "resUsedTime": "122829",
+    "resUsedAmount": "4546",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270228100",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270228",
+    "resUsedTime": "124905",
+    "resUsedAmount": "2985",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270228599",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270228",
+    "resUsedTime": "163650",
+    "resUsedAmount": "2237",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270228411",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270228",
+    "resUsedTime": "165839",
+    "resUsedAmount": "4378",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270228704",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270228",
+    "resUsedTime": "183006",
+    "resUsedAmount": "5592",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270228548",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270228",
+    "resUsedTime": "223340",
+    "resUsedAmount": "12148",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270228420",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270301",
+    "resUsedTime": "121140",
+    "resUsedAmount": "12134",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270301773",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270301",
+    "resUsedTime": "162005",
+    "resUsedAmount": "24376",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270301666",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270302",
+    "resUsedTime": "072152",
+    "resUsedAmount": "3294",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270302912",
+    "resMemberStoreName": "카카오이모티콘",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270302",
+    "resUsedTime": "083236",
+    "resUsedAmount": "9947",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270302629",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270302",
+    "resUsedTime": "093056",
+    "resUsedAmount": "7112",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270302299",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270303",
+    "resUsedTime": "074205",
+    "resUsedAmount": "2362",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270303213",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270303",
+    "resUsedTime": "123856",
+    "resUsedAmount": "2362",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270303544",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270303",
+    "resUsedTime": "154020",
+    "resUsedAmount": "7386",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270303982",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270303",
+    "resUsedTime": "190826",
+    "resUsedAmount": "1675",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270303304",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270305",
+    "resUsedTime": "200235",
+    "resUsedAmount": "3751",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270305662",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "073347",
+    "resUsedAmount": "4798",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306149",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "120120",
+    "resUsedAmount": "3187",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306711",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "120448",
+    "resUsedAmount": "6151",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306603",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "121806",
+    "resUsedAmount": "19145",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306582",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "174507",
+    "resUsedAmount": "13865",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306879",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "193319",
+    "resUsedAmount": "7763",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306523",
+    "resMemberStoreName": "투썸플레이스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "222645",
+    "resUsedAmount": "20400",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306960",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270306",
+    "resUsedTime": "230225",
+    "resUsedAmount": "23791",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270306170",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270307",
+    "resUsedTime": "073058",
+    "resUsedAmount": "10979",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270307235",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270307",
+    "resUsedTime": "092235",
+    "resUsedAmount": "2594",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270307195",
+    "resMemberStoreName": "CU델리",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270307",
+    "resUsedTime": "205803",
+    "resUsedAmount": "10627",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270307383",
+    "resMemberStoreName": "배떡동탄점",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270308",
+    "resUsedTime": "112157",
+    "resUsedAmount": "2840",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270308601",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270309",
+    "resUsedTime": "135303",
+    "resUsedAmount": "11010",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270309355",
+    "resMemberStoreName": "유튜브프리미엄",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270309",
+    "resUsedTime": "141006",
+    "resUsedAmount": "4247",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270309353",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270309",
+    "resUsedTime": "184542",
+    "resUsedAmount": "4789",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270309505",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270310",
+    "resUsedTime": "152441",
+    "resUsedAmount": "5079",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270310597",
+    "resMemberStoreName": "앱스토어",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270310",
+    "resUsedTime": "161836",
+    "resUsedAmount": "3006",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270310373",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270310",
+    "resUsedTime": "205213",
+    "resUsedAmount": "3484",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270310606",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270311",
+    "resUsedTime": "080503",
+    "resUsedAmount": "2073",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270311338",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270311",
+    "resUsedTime": "084846",
+    "resUsedAmount": "17571",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270311551",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270311",
+    "resUsedTime": "104753",
+    "resUsedAmount": "7655",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270311769",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270311",
+    "resUsedTime": "143503",
+    "resUsedAmount": "38543",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270311960",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270311",
+    "resUsedTime": "200114",
+    "resUsedAmount": "3242",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270311654",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270312",
+    "resUsedTime": "131213",
+    "resUsedAmount": "44440",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270312739",
+    "resMemberStoreName": "홈플러스",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20270312",
+    "resUsedTime": "140529",
+    "resUsedAmount": "4428",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270312554",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270312",
+    "resUsedTime": "154753",
+    "resUsedAmount": "13130",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270312805",
+    "resMemberStoreName": "타다택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270312",
+    "resUsedTime": "161915",
+    "resUsedAmount": "17056",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270312198",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270312",
+    "resUsedTime": "225932",
+    "resUsedAmount": "1843",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270312899",
+    "resMemberStoreName": "지하철",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "080206",
+    "resUsedAmount": "27074",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314741",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "100542",
+    "resUsedAmount": "15859",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314452",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "103607",
+    "resUsedAmount": "22875",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314374",
+    "resMemberStoreName": "피자헛",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "135351",
+    "resUsedAmount": "1890",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314604",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "154906",
+    "resUsedAmount": "10729",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314687",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "173333",
+    "resUsedAmount": "8570",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314804",
+    "resMemberStoreName": "뚜레쥬르",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270314",
+    "resUsedTime": "175851",
+    "resUsedAmount": "1864",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270314726",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270315",
+    "resUsedTime": "094932",
+    "resUsedAmount": "4172",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270315176",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270315",
+    "resUsedTime": "095154",
+    "resUsedAmount": "3285",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270315134",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270315",
+    "resUsedTime": "152509",
+    "resUsedAmount": "6236",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270315733",
+    "resMemberStoreName": "디즈니플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270315",
+    "resUsedTime": "211110",
+    "resUsedAmount": "15077",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270315316",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270315",
+    "resUsedTime": "222820",
+    "resUsedAmount": "3217",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270315221",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270315",
+    "resUsedTime": "232303",
+    "resUsedAmount": "14953",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270315611",
+    "resMemberStoreName": "네이버페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270316",
+    "resUsedTime": "105018",
+    "resUsedAmount": "22779",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270316988",
+    "resMemberStoreName": "넷플릭스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270316",
+    "resUsedTime": "192949",
+    "resUsedAmount": "9374",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270316795",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270316",
+    "resUsedTime": "203402",
+    "resUsedAmount": "4623",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270316909",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270317",
+    "resUsedTime": "073006",
+    "resUsedAmount": "14339",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270317402",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270317",
+    "resUsedTime": "110936",
+    "resUsedAmount": "3795",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270317702",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270317",
+    "resUsedTime": "170810",
+    "resUsedAmount": "2781",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270317849",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270317",
+    "resUsedTime": "204654",
+    "resUsedAmount": "12722",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270317344",
+    "resMemberStoreName": "네이버페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270318",
+    "resUsedTime": "071826",
+    "resUsedAmount": "24528",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270318497",
+    "resMemberStoreName": "BBQ치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270318",
+    "resUsedTime": "075454",
+    "resUsedAmount": "24463",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270318774",
+    "resMemberStoreName": "당근마켓",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270318",
+    "resUsedTime": "102222",
+    "resUsedAmount": "4900",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270318965",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270318",
+    "resUsedTime": "111900",
+    "resUsedAmount": "5314",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270318505",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270318",
+    "resUsedTime": "235624",
+    "resUsedAmount": "1567",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270318528",
+    "resMemberStoreName": "버스",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20270319",
+    "resUsedTime": "120700",
+    "resUsedAmount": "27117",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270319824",
+    "resMemberStoreName": "쿠팡",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270319",
+    "resUsedTime": "152521",
+    "resUsedAmount": "38716",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270319401",
+    "resMemberStoreName": "롯데마트",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20270319",
+    "resUsedTime": "170905",
+    "resUsedAmount": "1930",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270319828",
+    "resMemberStoreName": "지에스(GS)25용곡삼",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270319",
+    "resUsedTime": "174415",
+    "resUsedAmount": "3470",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270319150",
+    "resMemberStoreName": "구글플레이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270319",
+    "resUsedTime": "220021",
+    "resUsedAmount": "2771",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270319728",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270320",
+    "resUsedTime": "122419",
+    "resUsedAmount": "2725",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270320851",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270321",
+    "resUsedTime": "073242",
+    "resUsedAmount": "6939",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270321963",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270321",
+    "resUsedTime": "092352",
+    "resUsedAmount": "15633",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270321450",
+    "resMemberStoreName": "메가박스",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270321",
+    "resUsedTime": "103246",
+    "resUsedAmount": "3272",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270321732",
+    "resMemberStoreName": "이디야커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270321",
+    "resUsedTime": "224949",
+    "resUsedAmount": "4370",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270321300",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270322",
+    "resUsedTime": "152058",
+    "resUsedAmount": "22811",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270322844",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270322",
+    "resUsedTime": "192804",
+    "resUsedAmount": "8266",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270322748",
+    "resMemberStoreName": "롯데리아",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270323",
+    "resUsedTime": "111705",
+    "resUsedAmount": "23692",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270323417",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270323",
+    "resUsedTime": "184406",
+    "resUsedAmount": "4152",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270323146",
+    "resMemberStoreName": "아이게임랜드",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270324",
+    "resUsedTime": "071416",
+    "resUsedAmount": "12970",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270324722",
+    "resMemberStoreName": "카카오택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270324",
+    "resUsedTime": "072450",
+    "resUsedAmount": "4970",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270324830",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270324",
+    "resUsedTime": "155852",
+    "resUsedAmount": "3410",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270324176",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270324",
+    "resUsedTime": "175027",
+    "resUsedAmount": "6180",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270324208",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270325",
+    "resUsedTime": "111509",
+    "resUsedAmount": "9869",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270325828",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270325",
+    "resUsedTime": "133020",
+    "resUsedAmount": "7142",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270325281",
+    "resMemberStoreName": "본죽&비빔밥",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270325",
+    "resUsedTime": "144755",
+    "resUsedAmount": "6611",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270325414",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270325",
+    "resUsedTime": "154934",
+    "resUsedAmount": "4950",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270325738",
+    "resMemberStoreName": "스타벅스",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270326",
+    "resUsedTime": "083641",
+    "resUsedAmount": "12462",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270326793",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270326",
+    "resUsedTime": "084814",
+    "resUsedAmount": "3659",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270326689",
+    "resMemberStoreName": "이마트24",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270327",
+    "resUsedTime": "151315",
+    "resUsedAmount": "3350",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270327809",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270327",
+    "resUsedTime": "164644",
+    "resUsedAmount": "2245",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270327873",
+    "resMemberStoreName": "이삭토스트",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270328",
+    "resUsedTime": "080041",
+    "resUsedAmount": "3450",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270328260",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270328",
+    "resUsedTime": "100654",
+    "resUsedAmount": "2822",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270328876",
+    "resMemberStoreName": "빽다방",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270328",
+    "resUsedTime": "212942",
+    "resUsedAmount": "2095",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270328703",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270328",
+    "resUsedTime": "230002",
+    "resUsedAmount": "11740",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270328979",
+    "resMemberStoreName": "네이버페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270329",
+    "resUsedTime": "113058",
+    "resUsedAmount": "20681",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270329599",
+    "resMemberStoreName": "닌텐도e샵",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270329",
+    "resUsedTime": "151917",
+    "resUsedAmount": "3310",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270329604",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270330",
+    "resUsedTime": "074436",
+    "resUsedAmount": "1965",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270330500",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270330",
+    "resUsedTime": "120708",
+    "resUsedAmount": "12399",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270330812",
+    "resMemberStoreName": "넥슨코리아",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270331",
+    "resUsedTime": "143022",
+    "resUsedAmount": "5204",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270331779",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270331",
+    "resUsedTime": "151404",
+    "resUsedAmount": "2990",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270331307",
+    "resMemberStoreName": "CU수원역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270331",
+    "resUsedTime": "160251",
+    "resUsedAmount": "5814",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270331827",
+    "resMemberStoreName": "맥도날드",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270401",
+    "resUsedTime": "084203",
+    "resUsedAmount": "5880",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270401304",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270401",
+    "resUsedTime": "144741",
+    "resUsedAmount": "27182",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270401674",
+    "resMemberStoreName": "쿠팡이츠결제",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270401",
+    "resUsedTime": "150021",
+    "resUsedAmount": "1600",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270401577",
+    "resMemberStoreName": "수원버스",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20270402",
+    "resUsedTime": "091111",
+    "resUsedAmount": "3561",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270402852",
+    "resMemberStoreName": "파리바게뜨",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270402",
+    "resUsedTime": "150953",
+    "resUsedAmount": "16641",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270402163",
+    "resMemberStoreName": "카카오페이",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270402",
+    "resUsedTime": "164442",
+    "resUsedAmount": "4942",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270402148",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270402",
+    "resUsedTime": "173503",
+    "resUsedAmount": "6066",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270402113",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "082252",
+    "resUsedAmount": "2136",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403563",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "134946",
+    "resUsedAmount": "16771",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403298",
+    "resMemberStoreName": "닌텐도e샵",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "163150",
+    "resUsedAmount": "15294",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403686",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "173803",
+    "resUsedAmount": "28437",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403892",
+    "resMemberStoreName": "이마트",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "201735",
+    "resUsedAmount": "3156",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403370",
+    "resMemberStoreName": "롤PC방동탄",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "205100",
+    "resUsedAmount": "23435",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403635",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270403",
+    "resUsedTime": "215314",
+    "resUsedAmount": "1524",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270403748",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270419",
+    "resUsedTime": "080504",
+    "resUsedAmount": "10444",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270419155",
+    "resMemberStoreName": "배민스토어",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270419",
+    "resUsedTime": "230618",
+    "resUsedAmount": "2835",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270419905",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270420",
+    "resUsedTime": "075432",
+    "resUsedAmount": "7923",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270420746",
+    "resMemberStoreName": "동탄피부과",
+    "resMemberStoreType": "의료"
+  },
+  {
+    "resUsedDate": "20270420",
+    "resUsedTime": "160158",
+    "resUsedAmount": "3623",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270420629",
+    "resMemberStoreName": "김밥천국",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270420",
+    "resUsedTime": "222122",
+    "resUsedAmount": "2951",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270420231",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270421",
+    "resUsedTime": "145816",
+    "resUsedAmount": "2930",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270421517",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270421",
+    "resUsedTime": "193435",
+    "resUsedAmount": "13935",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270421187",
+    "resMemberStoreName": "배달의민족",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270421",
+    "resUsedTime": "222928",
+    "resUsedAmount": "3559",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270421467",
+    "resMemberStoreName": "피씨방",
+    "resMemberStoreType": "PC방"
+  },
+  {
+    "resUsedDate": "20270422",
+    "resUsedTime": "085448",
+    "resUsedAmount": "6333",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270422662",
+    "resMemberStoreName": "카카오T택시",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270422",
+    "resUsedTime": "133453",
+    "resUsedAmount": "22833",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270422819",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270422",
+    "resUsedTime": "164009",
+    "resUsedAmount": "2155",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270422405",
+    "resMemberStoreName": "세븐일레븐",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270423",
+    "resUsedTime": "124138",
+    "resUsedAmount": "1509",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270423183",
+    "resMemberStoreName": "지하철",
+    "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20270423",
+    "resUsedTime": "131646",
+    "resUsedAmount": "59086",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270423741",
+    "resMemberStoreName": "이마트",
+    "resMemberStoreType": "마트"
+  },
+  {
+    "resUsedDate": "20270423",
+    "resUsedTime": "181326",
+    "resUsedAmount": "5873",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270423761",
+    "resMemberStoreName": "네이버플러스",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270424",
+    "resUsedTime": "201753",
+    "resUsedAmount": "7616",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270424468",
+    "resMemberStoreName": "뚜레쥬르",
+    "resMemberStoreType": "베이커리"
+  },
+  {
+    "resUsedDate": "20270424",
+    "resUsedTime": "213102",
+    "resUsedAmount": "24720",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270424403",
+    "resMemberStoreName": "도미노피자",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270424",
+    "resUsedTime": "233035",
+    "resUsedAmount": "13945",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270424943",
+    "resMemberStoreName": "교촌치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270425",
+    "resUsedTime": "073010",
+    "resUsedAmount": "2766",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270425646",
+    "resMemberStoreName": "미니스톱",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270425",
+    "resUsedTime": "134221",
+    "resUsedAmount": "7827",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270425439",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270425",
+    "resUsedTime": "202001",
+    "resUsedAmount": "1656",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270425498",
+    "resMemberStoreName": "지에스(GS)25",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270426",
+    "resUsedTime": "164204",
+    "resUsedAmount": "7486",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270426356",
+    "resMemberStoreName": "카카오T",
+    "resMemberStoreType": "택시"
+  },
+  {
+    "resUsedDate": "20270426",
+    "resUsedTime": "164437",
+    "resUsedAmount": "5003",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270426256",
+    "resMemberStoreName": "폴바셋",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270427",
+    "resUsedTime": "091342",
+    "resUsedAmount": "13934",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270427744",
+    "resMemberStoreName": "올리브영온라인",
+    "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20270427",
+    "resUsedTime": "122634",
+    "resUsedAmount": "10938",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270427649",
+    "resMemberStoreName": "서브웨이수원",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270427",
+    "resUsedTime": "143953",
+    "resUsedAmount": "7943",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270427358",
+    "resMemberStoreName": "스포티파이",
+    "resMemberStoreType": "온라인서비스"
+  },
+  {
+    "resUsedDate": "20270427",
+    "resUsedTime": "173314",
+    "resUsedAmount": "11191",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270427288",
+    "resMemberStoreName": "네네치킨",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270428",
+    "resUsedTime": "172458",
+    "resUsedAmount": "13397",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270428915",
+    "resMemberStoreName": "버거킹",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270428",
+    "resUsedTime": "172710",
+    "resUsedAmount": "19615",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270428104",
+    "resMemberStoreName": "스팀",
+    "resMemberStoreType": "엔터테인먼트"
+  },
+  {
+    "resUsedDate": "20270429",
+    "resUsedTime": "073555",
+    "resUsedAmount": "20488",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270429668",
+    "resMemberStoreName": "요기요",
+    "resMemberStoreType": "배달서비스"
+  },
+  {
+    "resUsedDate": "20270429",
+    "resUsedTime": "090610",
+    "resUsedAmount": "4709",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270429891",
+    "resMemberStoreName": "한솥도시락",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270429",
+    "resUsedTime": "094847",
+    "resUsedAmount": "3289",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270429699",
+    "resMemberStoreName": "CU동탄역점",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270429",
+    "resUsedTime": "095712",
+    "resUsedAmount": "1700",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270429425",
+    "resMemberStoreName": "메가커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
+    "resUsedDate": "20270429",
+    "resUsedTime": "164859",
+    "resUsedAmount": "3038",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270429548",
+    "resMemberStoreName": "지에스(GS)25동탄",
+    "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270429",
+    "resUsedTime": "182815",
+    "resUsedAmount": "4496",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270429757",
+    "resMemberStoreName": "맘스터치용곡역",
+    "resMemberStoreType": "일반음식점"
+  },
+  {
+    "resUsedDate": "20270430",
+    "resUsedTime": "094743",
+    "resUsedAmount": "20110",
+    "resCancelYN": "N",
+    "resApprovalNo": "DM270430257",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "온라인쇼핑"
+  }
+]

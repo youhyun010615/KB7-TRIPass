@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.wallet.travelcard.mapper.WalletTravelCardMapper">
+
+    <select id="existsTravelCardById"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_cards
+            WHERE id = #{travelCardId}
+              AND is_active = TRUE
+              AND is_deleted = 0
+        )
+    </select>
+
+    <select id="existsSupportedCardCurrency"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_card_currencies
+            WHERE card_id = #{travelCardId}
+              AND currency_code = #{currencyCode}
+              AND is_deleted = 0
+        )
+    </select>
+
+    <select id="existsTravelCardLedgerIdempotencyKey"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_card_ledger
+            WHERE idempotency_key = #{idempotencyKey}
+        )
+    </select>
+
+    <select id="existsWalletCardTopupIdempotencyKey"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM wallet_card_topup
+            WHERE idempotency_key = #{idempotencyKey}
+        )
+    </select>
+
+    <select id="existsUserTravelCard"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM user_travel_cards
+            WHERE id = #{userTravelCardId}
+              AND user_id = #{userId}
+              AND status = 'ACTIVE'
+              AND is_deleted = 0
+        )
+    </select>
+
+    <select id="findUserTravelCardOptions"
+            resultType="com.tripass.wallet.travelcard.dto.response.UserTravelCardOptionResponseDto">
+        SELECT
+            utc.id AS user_travel_card_id,
+            utc.travel_card_id,
+            utc.card_name,
+            utc.issuer_name,
+            utc.masked_card_number,
+            utc.brand_name,
+            utc.card_color
+        FROM user_travel_cards utc
+        WHERE utc.user_id = #{userId}
+          AND utc.status = 'ACTIVE'
+          AND utc.is_deleted = 0
+        ORDER BY utc.id
+    </select>
+
+    <select id="findLinkedTravelCardByWalletId"
+            resultType="com.tripass.wallet.travelcard.dto.response.WalletTravelCardResponseDto">
+        SELECT
+            wtc.id AS wallet_travel_card_id,
+            wtc.user_travel_card_id,
+            wtc.travel_card_id,
+            wtc.card_name,
+            wtc.issuer_name,
+            wtc.masked_card_number,
+            wtc.status
+        FROM wallet_travel_card wtc
+        WHERE wtc.wallet_id = #{walletId}
+          AND wtc.status = 'LINKED'
+        ORDER BY wtc.linked_at DESC, wtc.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findActiveWalletTravelCardByWalletId"
+            resultType="com.tripass.wallet.travelcard.domain.WalletTravelCard">
+        SELECT
+            id,
+            wallet_id,
+            user_travel_card_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status,
+            linked_at,
+            unlinked_at
+        FROM wallet_travel_card
+        WHERE wallet_id = #{walletId}
+          AND status = 'LINKED'
+        ORDER BY linked_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findWalletTravelCardForUpdate"
+            resultType="com.tripass.wallet.travelcard.domain.WalletTravelCard">
+        SELECT
+            id,
+            wallet_id,
+            user_travel_card_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status,
+            linked_at,
+            unlinked_at
+        FROM wallet_travel_card
+        WHERE wallet_id = #{walletId}
+          AND id = #{walletTravelCardId}
+          AND status = 'LINKED'
+        FOR UPDATE
+    </select>
+
+    <insert id="insertWalletTravelCard"
+            parameterType="com.tripass.wallet.travelcard.domain.WalletTravelCard"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_travel_card (
+            wallet_id,
+            user_travel_card_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status
+        )
+        SELECT
+            #{walletId},
+            utc.id,
+            COALESCE(utc.travel_card_id, tc.id),
+            utc.card_name,
+            utc.issuer_name,
+            COALESCE(#{maskedCardNumber}, utc.masked_card_number),
+            #{status}
+        FROM user_travel_cards utc
+                 LEFT JOIN travel_cards tc
+                           ON tc.id = utc.travel_card_id
+                               AND tc.is_active = TRUE
+                               AND tc.is_deleted = 0
+        WHERE utc.id = #{userTravelCardId}
+          AND utc.travel_card_id = #{travelCardId}
+          AND utc.status = 'ACTIVE'
+          AND utc.is_deleted = 0
+        ON DUPLICATE KEY UPDATE
+            user_travel_card_id = VALUES(user_travel_card_id),
+            card_name = VALUES(card_name),
+            issuer_name = VALUES(issuer_name),
+            masked_card_number = VALUES(masked_card_number),
+            status = 'LINKED',
+            unlinked_at = NULL
+    </insert>
+
+    <update id="unlinkWalletTravelCard">
+        UPDATE wallet_travel_card
+        SET status = 'UNLINKED',
+            unlinked_at = NOW()
+        WHERE wallet_id = #{walletId}
+          AND status = 'LINKED'
+    </update>
+
+    <select id="findTravelCardBalances"
+            resultType="com.tripass.wallet.travelcard.dto.response.TravelCardCurrencyBalanceResponseDto">
+        SELECT
+            currency_code,
+            balance_amount,
+            krw_estimated_amount
+        FROM travel_card_balance
+        WHERE wallet_travel_card_id = #{walletTravelCardId}
+        ORDER BY currency_code
+    </select>
+
+    <select id="findTravelCardLedgers"
+            resultType="com.tripass.wallet.travelcard.dto.response.TravelCardLedgerResponseDto">
+        SELECT
+            id AS ledger_id,
+            currency_code,
+            direction,
+            transaction_type,
+            foreign_amount,
+            balance_before,
+            balance_after,
+            memo,
+            created_at
+        FROM travel_card_ledger
+        WHERE wallet_travel_card_id = #{walletTravelCardId}
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="findTravelCardTransactions"
+            resultType="com.tripass.wallet.travelcard.dto.response.TravelCardTransactionResponseDto">
+        SELECT combined.transaction_id,
+               combined.source_type,
+               combined.transaction_type,
+               combined.direction,
+               combined.currency_code,
+               combined.foreign_amount,
+               combined.krw_amount,
+               combined.balance_before,
+               combined.balance_after,
+               combined.applied_exchange_rate,
+               combined.merchant_name,
+               combined.category_name,
+               combined.country_name,
+               combined.memo,
+               combined.occurred_at
+        FROM (
+            SELECT CONCAT('LEDGER-', tcl.id) AS transaction_id,
+                   'CARD_LEDGER' AS source_type,
+                   tcl.transaction_type,
+                   tcl.direction,
+                   tcl.currency_code,
+                   tcl.foreign_amount,
+                   wet.krw_amount,
+                   tcl.balance_before,
+                   tcl.balance_after,
+                   wet.applied_exchange_rate,
+                   NULL AS merchant_name,
+                   NULL AS category_name,
+                   NULL AS country_name,
+                   tcl.memo,
+                   tcl.created_at AS occurred_at
+            FROM travel_card_ledger tcl
+                     LEFT JOIN wallet_exchange_transaction wet
+                               ON wet.card_ledger_id = tcl.id
+            WHERE tcl.wallet_travel_card_id = #{walletTravelCardId}
+
+            UNION ALL
+
+            SELECT DISTINCT CONCAT('PAYMENT-', tx.id) AS transaction_id,
+                   'CARD_PAYMENT' AS source_type,
+                   CASE WHEN tx.transaction_type = 'DEPOSIT' THEN 'PAYMENT_REFUND' ELSE 'PAYMENT' END AS transaction_type,
+                   CASE WHEN tx.transaction_type = 'DEPOSIT' THEN 'IN' ELSE 'OUT' END AS direction,
+                   COALESCE(cur.currency_code, 'KRW') AS currency_code,
+                   COALESCE(tx.original_amount, tx.amount) AS foreign_amount,
+                   tx.amount AS krw_amount,
+                   NULL AS balance_before,
+                   tx.balance_after,
+                   tx.applied_exchange_rate,
+                   tx.merchant_name,
+                   sc.category_name,
+                   c.country_name,
+                   tx.memo,
+                   TIMESTAMP(tx.transaction_date, COALESCE(tx.transaction_time, '00:00:00')) AS occurred_at
+            FROM wallet w
+                     JOIN wallet_travel_card wtc
+                          ON wtc.wallet_id = w.id
+                              AND wtc.id = #{walletTravelCardId}
+                              AND wtc.status = 'LINKED'
+                     LEFT JOIN user_travel_cards utc
+                               ON utc.id = wtc.user_travel_card_id
+                     JOIN cards card
+                          ON card.user_id = w.user_id
+                              AND card.is_deleted = 0
+                              AND (
+                                  (
+                                      utc.external_card_key IS NOT NULL
+                                      AND utc.external_card_key = CONCAT(
+                                          'CODEF:',
+                                          COALESCE(card.organization_code, ''),
+                                          ':',
+                                          COALESCE(card.masked_card_number, '')
+                                      )
+                                  )
+                                  OR (
+                                      utc.external_card_key IS NULL
+                                      AND (
+                                          card.masked_card_number = COALESCE(utc.masked_card_number, wtc.masked_card_number)
+                                          OR card.card_name = COALESCE(utc.card_name, wtc.card_name)
+                                      )
+                                  )
+                              )
+                     JOIN transactions tx
+                          ON tx.card_id = card.id
+                              AND tx.is_deleted = 0
+                     LEFT JOIN currencies cur ON cur.id = tx.currency_id
+                     LEFT JOIN spending_categories sc ON sc.id = tx.category_id
+                     LEFT JOIN trip_countries tc ON tc.id = tx.trip_country_id
+                     LEFT JOIN countries c ON c.id = tc.country_id
+            WHERE w.id = #{walletId}
+        ) combined
+        ORDER BY combined.occurred_at DESC, combined.transaction_id DESC
+    </select>
+
+    <select id="findTravelCardBalanceForUpdate"
+            resultType="com.tripass.wallet.travelcard.domain.TravelCardBalance">
+        SELECT
+            id,
+            wallet_travel_card_id,
+            currency_code,
+            balance_amount,
+            krw_estimated_amount,
+            updated_at
+        FROM travel_card_balance
+        WHERE wallet_travel_card_id = #{walletTravelCardId}
+          AND currency_code = #{currencyCode}
+        FOR UPDATE
+    </select>
+
+    <insert id="insertTravelCardBalance"
+            parameterType="com.tripass.wallet.travelcard.domain.TravelCardBalance"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO travel_card_balance (
+            wallet_travel_card_id,
+            currency_code,
+            balance_amount,
+            krw_estimated_amount
+        )
+        VALUES (
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{balanceAmount},
+            #{krwEstimatedAmount}
+        )
+    </insert>
+
+    <update id="updateTravelCardBalance">
+        UPDATE travel_card_balance
+        SET balance_amount = #{balanceAmount},
+            krw_estimated_amount = #{krwEstimatedAmount},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{balanceId}
+    </update>
+
+    <insert id="insertTravelCardLedger"
+            parameterType="com.tripass.wallet.travelcard.domain.TravelCardLedger"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO travel_card_ledger (
+            wallet_travel_card_id,
+            currency_code,
+            direction,
+            transaction_type,
+            foreign_amount,
+            balance_before,
+            balance_after,
+            source_type,
+            source_id,
+            target_type,
+            target_id,
+            idempotency_key,
+            memo
+        )
+        VALUES (
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{direction},
+            #{transactionType},
+            #{foreignAmount},
+            #{balanceBefore},
+            #{balanceAfter},
+            #{sourceType},
+            #{sourceId},
+            #{targetType},
+            #{targetId},
+            #{idempotencyKey},
+            #{memo}
+        )
+    </insert>
+
+    <insert id="insertWalletCardTopup"
+            parameterType="com.tripass.wallet.travelcard.domain.WalletCardTopup"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_card_topup (
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            krw_amount,
+            foreign_amount,
+            status,
+            idempotency_key,
+            external_transaction_id,
+            retry_count,
+            last_tried_at,
+            completed_at,
+            wallet_ledger_id,
+            card_ledger_id,
+            refunded
+        )
+        VALUES (
+            #{walletId},
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{krwAmount},
+            #{foreignAmount},
+            #{status},
+            #{idempotencyKey},
+            #{externalTransactionId},
+            #{retryCount},
+            #{lastTriedAt},
+            #{completedAt},
+            #{walletLedgerId},
+            #{cardLedgerId},
+            #{refunded}
+        )
+    </insert>
+
+    <select id="findWalletCardTopupForUpdate"
+            resultType="com.tripass.wallet.travelcard.domain.WalletCardTopup">
+        SELECT
+            id,
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            krw_amount,
+            foreign_amount,
+            status,
+            idempotency_key,
+            external_transaction_id,
+            retry_count,
+            last_tried_at,
+            requested_at,
+            completed_at,
+            failed_at,
+            failure_reason,
+            wallet_ledger_id,
+            card_ledger_id,
+            refunded,
+            created_at,
+            updated_at
+        FROM wallet_card_topup
+        WHERE id = #{topupId}
+        FOR UPDATE
+    </select>
+
+    <select id="findRetryableTopups"
+            resultType="com.tripass.wallet.travelcard.domain.WalletCardTopup">
+        SELECT
+            id,
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            krw_amount,
+            foreign_amount,
+            status,
+            idempotency_key,
+            external_transaction_id,
+            retry_count,
+            last_tried_at,
+            requested_at,
+            completed_at,
+            failed_at,
+            failure_reason,
+            wallet_ledger_id,
+            card_ledger_id,
+            refunded,
+            created_at,
+            updated_at
+        FROM wallet_card_topup
+        WHERE status IN ('REQUESTED', 'PROCESSING', 'FAILED')
+          AND refunded = FALSE
+          AND completed_at IS NULL
+          AND retry_count &lt; 3
+        ORDER BY updated_at ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
+    <update id="updateWalletCardTopupProcessing">
+        UPDATE wallet_card_topup
+        SET status = 'PROCESSING',
+            retry_count = retry_count + 1,
+            last_tried_at = NOW(),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{topupId}
+          AND status IN ('REQUESTED', 'PROCESSING', 'FAILED')
+    </update>
+
+    <update id="updateWalletCardTopupCompleted">
+        UPDATE wallet_card_topup
+        SET status = 'COMPLETED',
+            external_transaction_id = #{externalTransactionId},
+            completed_at = NOW(),
+            failed_at = NULL,
+            failure_reason = NULL,
+            wallet_ledger_id = #{walletLedgerId},
+            card_ledger_id = #{cardLedgerId},
+            refunded = FALSE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{topupId}
+    </update>
+
+    <update id="updateWalletCardTopupFailed">
+        UPDATE wallet_card_topup
+        SET status = 'FAILED',
+            failed_at = NOW(),
+            failure_reason = #{failureReason},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{topupId}
+    </update>
+
+    <update id="updateWalletCardTopupRefunded">
+        UPDATE wallet_card_topup
+        SET status = 'REFUNDED',
+            wallet_ledger_id = COALESCE(wallet_ledger_id, #{walletLedgerId}),
+            refunded = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{topupId}
+    </update>
+
+    <insert id="insertWalletExchangeTransaction"
+            parameterType="com.tripass.wallet.fx.domain.WalletExchangeTransaction"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_exchange_transaction (
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            exchange_type,
+            krw_amount,
+            foreign_amount,
+            base_exchange_rate,
+            applied_exchange_rate,
+            fee_rate,
+            fee_amount,
+            status,
+            completed_at,
+            wallet_ledger_id,
+            card_ledger_id
+        )
+        VALUES (
+            #{walletId},
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{exchangeType},
+            #{krwAmount},
+            #{foreignAmount},
+            #{baseExchangeRate},
+            #{appliedExchangeRate},
+            #{feeRate},
+            #{feeAmount},
+            #{status},
+            #{completedAt},
+            #{walletLedgerId},
+            #{cardLedgerId}
+        )
+    </insert>
+
+    <select id="findLatestDealBaseRate"
+            resultType="java.math.BigDecimal">
+        SELECT er.deal_base_rate
+        FROM exchange_rates er
+                 INNER JOIN currencies c
+                            ON c.id = er.target_currency_id
+        WHERE c.currency_code = #{currencyCode}
+        ORDER BY er.rate_date DESC, er.created_at DESC, er.id DESC
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,33 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: tripass-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-tripass}
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+    volumes:
+      - tripass-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ${DOCKER_IMAGE:-hihyun/tripass}:latest
+    container_name: tripass-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  tripass-db-data:

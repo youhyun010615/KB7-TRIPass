@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.dev.mapper.DevResetMapper">
+
+    <!-- weekly_saving_missions → monthly_saving_missions -->
+    <delete id="deleteWeeklySavingMissionsByUser">
+        DELETE wsm FROM weekly_saving_missions wsm
+        INNER JOIN monthly_saving_missions msm ON wsm.monthly_saving_mission_id = msm.id
+        WHERE msm.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteMonthlySavingMissionsByUser">
+        DELETE FROM monthly_saving_missions WHERE user_id = #{userId}
+    </delete>
+
+    <!-- mission_category_selections → monthly_spending_analyses -->
+    <delete id="deleteMissionCategorySelectionsByUser">
+        DELETE mcs FROM mission_category_selections mcs
+        INNER JOIN monthly_spending_analyses msa ON mcs.monthly_spending_analysis_id = msa.id
+        WHERE msa.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteMonthlyCategoryAnalysesByUser">
+        DELETE mca FROM monthly_category_analyses mca
+        INNER JOIN monthly_spending_analyses msa ON mca.monthly_spending_analysis_id = msa.id
+        WHERE msa.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteMonthlySpendingAnalysesByUser">
+        DELETE FROM monthly_spending_analyses WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteCategoryBudgetsByUser">
+        DELETE FROM category_budgets WHERE user_id = #{userId}
+    </delete>
+
+    <!-- pre_expenses → transactions, trips -->
+    <delete id="deletePreExpensesByUser">
+        DELETE pe FROM pre_expenses pe
+        INNER JOIN trips t ON pe.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <!-- receipts chain -->
+    <delete id="deleteReceiptItemsByUser">
+        DELETE ri FROM receipt_items ri
+        INNER JOIN receipts r ON ri.receipt_id = r.id
+        WHERE r.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteReceiptParticipantsByUser">
+        DELETE rp FROM receipt_participants rp
+        INNER JOIN receipts r ON rp.receipt_id = r.id
+        WHERE r.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteReceiptsByUser">
+        DELETE FROM receipts WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTransactionsByUser">
+        DELETE t FROM transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id
+        LEFT JOIN cards c ON t.card_id = c.id
+        WHERE a.user_id = #{userId} OR c.user_id = #{userId}
+    </delete>
+
+    <!-- wallet travel card chain -->
+    <delete id="deleteWalletCardTopupByUser">
+        DELETE wct FROM wallet_card_topup wct
+        INNER JOIN wallet w ON wct.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletExchangeTransactionByUser">
+        DELETE wet FROM wallet_exchange_transaction wet
+        INNER JOIN wallet w ON wet.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTravelCardLedgerByUser">
+        DELETE tcl FROM travel_card_ledger tcl
+        INNER JOIN wallet_travel_card wtc ON tcl.wallet_travel_card_id = wtc.id
+        INNER JOIN wallet w ON wtc.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTravelCardBalanceByUser">
+        DELETE tcb FROM travel_card_balance tcb
+        INNER JOIN wallet_travel_card wtc ON tcb.wallet_travel_card_id = wtc.id
+        INNER JOIN wallet w ON wtc.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletTravelCardByUser">
+        DELETE wtc FROM wallet_travel_card wtc
+        INNER JOIN wallet w ON wtc.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletAutoSavingLogsByUser">
+        DELETE wasl FROM wallet_auto_saving_logs wasl
+        INNER JOIN wallet w ON wasl.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletAutoSavingRuleByUser">
+        DELETE wasr FROM wallet_auto_saving_rule wasr
+        INNER JOIN wallet w ON wasr.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletLedgerByUser">
+        DELETE wl FROM wallet_ledger wl
+        INNER JOIN wallet w ON wl.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletAccountByUser">
+        DELETE wa FROM wallet_account wa
+        INNER JOIN wallet w ON wa.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletByUser">
+        DELETE FROM wallet WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteUserTravelCardsByUser">
+        DELETE FROM user_travel_cards WHERE user_id = #{userId}
+    </delete>
+
+    <!-- financial -->
+    <delete id="deleteFixedExpensesByUser">
+        DELETE FROM fixed_expenses WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteIncomeSourcesByUser">
+        DELETE FROM income_sources WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteFinancialSchedulesByUser">
+        DELETE FROM financial_schedules WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteSavingPlansByUser">
+        DELETE sp FROM saving_plans sp
+        INNER JOIN trips t ON sp.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <!-- cards, accounts, codef -->
+    <delete id="deleteCardsByUser">
+        DELETE FROM cards WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteAccountsByUser">
+        DELETE FROM accounts WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteCodefConnectedInstitutionsByUser">
+        DELETE cci FROM codef_connected_institutions cci
+        INNER JOIN codef_connections cc ON cci.codef_connection_id = cc.id
+        WHERE cc.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteCodefConnectionsByUser">
+        DELETE FROM codef_connections WHERE user_id = #{userId}
+    </delete>
+
+    <!-- trip chain -->
+    <delete id="deleteTripWalletsByUser">
+        DELETE FROM trip_wallets WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTripReportsByUser">
+        DELETE tr FROM trip_reports tr
+        INNER JOIN trips t ON tr.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTripSchedulesByUser">
+        DELETE ts FROM trip_schedules ts
+        INNER JOIN trips t ON ts.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTripChecklistItemsByUser">
+        DELETE tci FROM trip_checklist_items tci
+        INNER JOIN trips t ON tci.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTripBudgetRecommendationsByUser">
+        DELETE tbr FROM trip_budget_recommendations tbr
+        INNER JOIN trip_countries tc ON tbr.trip_country_id = tc.id
+        INNER JOIN trips t ON tc.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTripCountriesByUser">
+        DELETE tc FROM trip_countries tc
+        INNER JOIN trips t ON tc.trip_id = t.id
+        WHERE t.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTripsByUser">
+        DELETE FROM trips WHERE user_id = #{userId}
+    </delete>
+
+    <!-- misc -->
+    <delete id="deleteExchangeRateAlertsByUser">
+        DELETE FROM exchange_rate_alerts WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteNotificationsByUser">
+        DELETE FROM notifications WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWalletWithdrawRecipientByUser">
+        DELETE FROM wallet_withdraw_recipient WHERE user_id = #{userId}
+    </delete>
+
+    <update id="resetUserOnboarding">
+        UPDATE users
+        SET onboarding_shown_at = NULL,
+            current_view_mode = 'SAVING'
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 데모 시드(DEMO-SEED-*) 이외의 wallet_ledger 삭제 -->
+    <delete id="deleteNonSeedWalletLedgerByUser">
+        DELETE wl FROM wallet_ledger wl
+        INNER JOIN wallet w ON wl.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+          AND (wl.idempotency_key IS NULL OR wl.idempotency_key NOT LIKE 'DEMO-SEED-%')
+    </delete>
+
+    <!-- 환전 거래 전부 삭제 (시드에 환전 데이터 없음) -->
+    <delete id="deleteNonSeedWalletExchangeTransactionByUser">
+        DELETE wet FROM wallet_exchange_transaction wet
+        INNER JOIN wallet w ON wet.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <!-- 카드 탑업 전부 삭제 (시드에 탑업 데이터 없음) -->
+    <delete id="deleteNonSeedWalletCardTopupByUser">
+        DELETE wct FROM wallet_card_topup wct
+        INNER JOIN wallet w ON wct.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <!-- 트래블카드 원장 전부 삭제 (시드에 카드 원장 없음) -->
+    <delete id="deleteNonSeedTravelCardLedgerByUser">
+        DELETE tcl FROM travel_card_ledger tcl
+        INNER JOIN wallet_travel_card wtc ON tcl.wallet_travel_card_id = wtc.id
+        INNER JOIN wallet w ON wtc.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+    </delete>
+
+    <!-- 트래블카드 잔액을 0으로 리셋 -->
+    <update id="resetTravelCardBalanceByUser">
+        UPDATE travel_card_balance tcb
+        INNER JOIN wallet_travel_card wtc ON tcb.wallet_travel_card_id = wtc.id
+        INNER JOIN wallet w ON wtc.wallet_id = w.id
+        SET tcb.balance_amount = 0
+        WHERE w.user_id = #{userId}
+    </update>
+
+    <!-- wallet.balance_amount를 시드 ledger 합산으로 재계산 -->
+    <update id="recalcWalletBalanceFromSeedLedger">
+        UPDATE wallet w
+        SET w.balance_amount = COALESCE((
+            SELECT SUM(CASE WHEN wl.direction = 'IN' THEN wl.amount ELSE -wl.amount END)
+            FROM wallet_ledger wl
+            WHERE wl.wallet_id = w.id
+              AND wl.idempotency_key LIKE 'DEMO-SEED-%'
+        ), 0)
+        WHERE w.user_id = #{userId}
+    </update>
+
+</mapper>

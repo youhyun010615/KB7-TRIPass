@@ -13,7 +13,14 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.client.RestTemplate;
+
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import javax.sql.DataSource;
@@ -30,31 +37,63 @@ import javax.sql.DataSource;
         "com.tripass.financial.service",
         "com.tripass.asset.service",
         "com.tripass.saving.service",
+        "com.tripass.saving.classification",
+        "com.tripass.saving.analysis",
+        "com.tripass.asset.duplicate",
+        "com.tripass.checklist.service",
         "com.tripass.travel.service",
+        "com.tripass.travel.scheduler",
         "com.tripass.exchange.service",
+        "com.tripass.exchange.client",
+        "com.tripass.exchange.scheduler",
+        "com.tripass.bank.service",
+        "com.tripass.bank.client",
         "com.tripass.prepay.service",
         "com.tripass.schedule.service",
         "com.tripass.expense.service",
         "com.tripass.ocr.service",
-        "com.tripass.report.service"
+        "com.tripass.ocr.client",
+        "com.tripass.report.service",
+        "com.tripass.wallet.service",
+        "com.tripass.wallet.scheduler",
+        "com.tripass.wallet.fx.service",
+        "com.tripass.wallet.travelcard.service",
+        "com.tripass.wallet.travelcard.client",
+        "com.tripass.auth.security",
+        "com.tripass.common.util",
+        "com.tripass.common.scheduler",
+        "com.tripass.common.config",
+        "com.tripass.auth.client",
+        "com.tripass.dev.service",
+        "com.tripass.dev.util",
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",
         "com.tripass.mypage.mapper",
         "com.tripass.profile.mapper",
         "com.tripass.financial.mapper",
+        "com.tripass.checklist.mapper",
         "com.tripass.asset.mapper",
         "com.tripass.saving.mapper",
         "com.tripass.travel.mapper",
         "com.tripass.exchange.mapper",
+        "com.tripass.bank.mapper",
         "com.tripass.prepay.mapper",
         "com.tripass.schedule.mapper",
         "com.tripass.expense.mapper",
         "com.tripass.ocr.mapper",
-        "com.tripass.report.mapper"
+        "com.tripass.report.mapper",
+        "com.tripass.wallet.mapper",
+        "com.tripass.wallet.fx.mapper",
+        "com.tripass.wallet.travelcard.mapper",
+        "com.tripass.dev.mapper"
 })
-@PropertySource("classpath:application.properties")
+@PropertySource(value = {
+        "classpath:application.properties",
+        "classpath:application-local.properties"
+}, ignoreResourceNotFound = true)
 @EnableTransactionManagement
+@EnableScheduling
 public class RootConfig {
 
     @Resource
@@ -73,6 +112,36 @@ public class RootConfig {
         config.setConnectionTimeout(30_000);
         config.setIdleTimeout(600_000);
         return new HikariDataSource(config);
+    }
+
+    @Bean
+    @Primary
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    // 카카오 OAuth API 호출 전용 RestTemplate
+    @Bean("kakaoRestTemplate")
+    public RestTemplate kakaoRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(3_000);
+        requestFactory.setReadTimeout(5_000);
+
+        return new RestTemplate(requestFactory);
+    }
+
+    // Google OAuth API 호출 전용 RestTemplate
+    @Bean("googleRestTemplate")
+    public RestTemplate googleRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory =
+                new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(3_000);
+        requestFactory.setReadTimeout(5_000);
+
+        return new RestTemplate(requestFactory);
     }
 
     @Bean
@@ -98,5 +167,10 @@ public class RootConfig {
     @Bean
     public DataSourceTransactionManager transactionManager(DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean
+    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
     }
 }

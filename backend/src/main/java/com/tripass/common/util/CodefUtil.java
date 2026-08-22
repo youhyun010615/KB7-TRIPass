@@ -1,0 +1,88 @@
+package com.tripass.common.util;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+
+import javax.crypto.Cipher;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+
+public class CodefUtil {
+
+    private static final String PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkBRQKFiP1f8XFUwKgI8G3i5EIttN+fIPJE2PKWSG+Im6aeUrzv+0bDs8SUWsO18H7KUUmVH46UN2LtawJtErzuiH0+ADl7OW6AGsp25lx0d9hOJTi1cRIL0jcDo5VmdE6wPdNgbdkZJ/Ee5J4GwseS+VrhwLz/Si72oWJtWYeS0hKl3Lb43BaNuPgOcTKjPUsDlieaFjPgcwrJ5voTxEGJAevjaW7+s9r4GiB9xd5Pmeswi/wuoR59rvpQN8J1YLGKzgmdn67dZoJ8lTN9lQyVHbOQvfIfSBcQOHDBoqJEILfmWoRSmhKBCJJPmwTtEskDFQF6YKDeS6laEvvFWtuwIDAQAB";
+    private static final String SANDBOX_URL = "https://development.codef.io";
+    private static final String TOKEN_URL = "https://oauth.codef.io/oauth/token";
+
+    public static String encryptRSA(String plainText) throws Exception {
+        byte[] keyBytes = Base64.getDecoder().decode(PUBLIC_KEY);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(spec);
+
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    public static String getAccessToken(String clientId, String clientSecret) throws Exception {
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost(TOKEN_URL);
+
+        String credentials = Base64.getEncoder().encodeToString(
+                (clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8)
+        );
+        post.setHeader("Authorization", "Basic " + credentials);
+        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
+        post.setEntity(new StringEntity("grant_type=client_credentials&scope=read", StandardCharsets.UTF_8));
+
+        CloseableHttpResponse response = client.execute(post);
+        String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        client.close();
+
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> result = mapper.readValue(json, Map.class);
+        return (String) result.get("access_token");
+    }
+
+    public static Map<String, Object> callApi(String accessToken, String path, Map<String, Object> body) throws Exception {
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost(SANDBOX_URL + path);
+
+        post.setHeader("Authorization", "Bearer " + accessToken);
+        post.setHeader("Accept", "application/json");
+        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        ObjectMapper mapper = new ObjectMapper();
+        // CODEF 공식 SDK와 동일하게 JSON 전체를 URL 인코딩해서 전송한다.
+        // RSA 암호문의 '+', '/', '=' 문자가 전송 과정에서 변형되는 것을 방지한다.
+        String encodedBody = URLEncoder.encode(
+                mapper.writeValueAsString(body),
+                StandardCharsets.UTF_8
+        );
+        post.setEntity(new StringEntity(encodedBody, StandardCharsets.UTF_8));
+
+        CloseableHttpResponse response = client.execute(post);
+        String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        client.close();
+
+        // CODEF는 요청을 x-www-form-urlencoded로 보내면 응답도 URL 인코딩된 상태로 반환한다.
+        // JSON은 항상 '{' 또는 '['로 시작하므로, 인코딩된 응답은 '%7B'/'%5B'로 시작한다.
+        // 이미 디코딩된 순수 JSON을 무조건 디코딩하면 '+'가 공백으로 바뀌거나 '%' 리터럴에서 예외가 발생하므로 조건부로만 디코딩한다.
+        if (json.startsWith("%7B") || json.startsWith("%5B")) {
+            json = java.net.URLDecoder.decode(json, StandardCharsets.UTF_8);
+        }
+
+        return mapper.readValue(json, Map.class);
+    }
+}

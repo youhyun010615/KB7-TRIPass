@@ -285,3 +285,6 @@ Closes #4
 - Issue 번호 없는 커밋 / PR
 - 1개 PR에 여러 Issue 작업 혼합 (1 Issue = 1 Feature Branch = 1 PR)
 - 테스트 실패 및 빌드 오류 상태에서 PR 생성
+
+
+# CodeRabbit 테스트입니다.

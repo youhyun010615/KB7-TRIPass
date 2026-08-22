@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripass.bank.mapper.BankMapper">
+
+    <delete id="deleteAllBranches">
+        DELETE FROM exchange_bank_branches
+    </delete>
+
+    <insert id="insertBankBranches" parameterType="List">
+        INSERT INTO exchange_bank_branches (
+            bank_name, branch_name, address, latitude, longitude, business_hours, phone_number, is_active
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.bankName},
+                #{item.branchName},
+                #{item.address},
+                #{item.latitude},
+                #{item.longitude},
+                #{item.businessHours},
+                #{item.phoneNumber},
+                #{item.isActive}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findNearbyBanks" resultType="BankBranchDto">
+        SELECT id, bank_name AS bankName, branch_name AS branchName, address, 
+               latitude, longitude, business_hours AS businessHours, 
+               phone_number AS telephone,
+               ST_Distance_Sphere(point(#{lng}, #{lat}), point(longitude, latitude)) AS distance
+        FROM exchange_bank_branches
+        WHERE ST_Distance_Sphere(point(#{lng}, #{lat}), point(longitude, latitude)) &lt;= #{radius}
+        ORDER BY distance
+        LIMIT 20
+    </select>
+
+    <select id="findById" resultType="BankBranchDto">
+        SELECT id, bank_name AS bankName, branch_name AS branchName, address, 
+               latitude, longitude, business_hours AS businessHours, 
+               phone_number AS telephone
+        FROM exchange_bank_branches WHERE id = #{id}
+    </select>
+
+    <select id="findAllByKeyword" resultType="BankBranchDto">
+        SELECT id, bank_name AS bankName, branch_name AS branchName, address, 
+               latitude, longitude, business_hours AS businessHours, 
+               phone_number AS telephone
+        FROM exchange_bank_branches
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (branch_name LIKE CONCAT('%', #{keyword}, '%') OR address LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

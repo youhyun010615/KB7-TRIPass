@@ -1,0 +1,1216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.wallet.mapper.WalletMapper">
+
+    <resultMap id="WalletMainResultMap"
+               type="WalletMainResponseDto">
+        <id property="walletId" column="wallet_id"/>
+        <result property="balanceAmount" column="balance_amount"/>
+        <result property="totalLinkedAccountBalance" column="total_linked_account_balance"/>
+        <result property="targetAmount" column="target_amount"/>
+        <result property="externalChargeAmount" column="external_charge_amount"/>
+        <result property="overTargetSpentAmount" column="over_target_spent_amount"/>
+
+        <association property="primaryAccount"
+                     javaType="WalletPrimaryAccountResponseDto">
+            <id property="accountId" column="account_id"/>
+            <result property="bankName" column="bank_name"/>
+            <result property="accountName" column="account_name"/>
+            <result property="maskedAccountNumber" column="masked_account_number"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="WalletAccountResultMap"
+               type="WalletAccountResponseDto">
+        <id property="accountId" column="account_id"/>
+        <result property="bankName" column="bank_name"/>
+        <result property="accountName" column="account_name"/>
+        <result property="maskedAccountNumber" column="masked_account_number"/>
+        <result property="balance" column="balance"/>
+        <result property="withdrawableAmount" column="withdrawable_amount"/>
+        <result property="linked" column="linked"/>
+        <result property="primary" column="primary_account"/>
+    </resultMap>
+
+    <select id="findWalletByUserIdForUpdate"
+            resultType="Wallet">
+        SELECT
+            id,
+            user_id,
+            balance_amount,
+            status,
+            version,
+            created_at,
+            updated_at
+        FROM wallet
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+        FOR UPDATE
+    </select>
+
+    <select id="findWalletByUserId"
+            resultType="Wallet">
+        SELECT
+            id,
+            user_id,
+            balance_amount,
+            status,
+            version,
+            created_at,
+            updated_at
+        FROM wallet
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+    </select>
+
+    <select id="findWalletById"
+            resultType="Wallet">
+        SELECT
+            id,
+            user_id,
+            balance_amount,
+            status,
+            version,
+            created_at,
+            updated_at
+        FROM wallet
+        WHERE id = #{walletId}
+          AND status = 'ACTIVE'
+    </select>
+
+    <select id="findWalletMainByUserId"
+            resultMap="WalletMainResultMap">
+        SELECT
+            w.id AS wallet_id,
+            w.balance_amount,
+            COALESCE((
+                SELECT SUM(a2.balance)
+                FROM wallet_account wa2
+                         INNER JOIN accounts a2
+                                    ON a2.id = wa2.account_id
+                                        AND a2.user_id = w.user_id
+                                        AND a2.is_deleted = 0
+                                        AND a2.is_active = TRUE
+                WHERE wa2.wallet_id = w.id
+                  AND wa2.status = 'LINKED'
+            ), 0) AS total_linked_account_balance,
+            COALESCE((
+                SELECT t.total_target_amount
+                FROM trips t
+                WHERE t.user_id = w.user_id
+                  AND t.is_deleted = 0
+                  AND t.status IN ('PLANNING', 'TRAVELING')
+                ORDER BY
+                    CASE
+                        WHEN t.start_date IS NULL THEN 1
+                        ELSE 0
+                    END,
+                    t.start_date,
+                    t.id DESC
+                LIMIT 1
+            ), 0) AS target_amount,
+            COALESCE((
+                SELECT SUM(wl.amount)
+                FROM wallet_ledger wl
+                WHERE wl.wallet_id = w.id
+                  AND wl.direction = 'IN'
+                  AND wl.transaction_type = 'CHARGE'
+                  AND wl.transfer_method = 'MANUAL'
+                  AND wl.created_at &gt;= COALESCE((
+                      SELECT active_trip.start_date
+                      FROM trips active_trip
+                      WHERE active_trip.user_id = w.user_id
+                        AND active_trip.status IN ('TRAVELING', 'ENDED')
+                        AND active_trip.is_deleted = 0
+                      ORDER BY active_trip.start_date DESC, active_trip.id DESC
+                      LIMIT 1
+                  ), CURRENT_DATE)
+            ), 0) AS external_charge_amount,
+            GREATEST(COALESCE((
+                SELECT SUM(tx.amount)
+                FROM transactions tx
+                INNER JOIN trips active_trip ON active_trip.id = tx.trip_id
+                WHERE active_trip.user_id = w.user_id
+                  AND active_trip.status IN ('TRAVELING', 'ENDED')
+                  AND active_trip.is_deleted = 0
+                  AND active_trip.id = (
+                      SELECT latest_trip.id
+                      FROM trips latest_trip
+                      WHERE latest_trip.user_id = w.user_id
+                        AND latest_trip.status IN ('TRAVELING', 'ENDED')
+                        AND latest_trip.is_deleted = 0
+                      ORDER BY latest_trip.start_date DESC, latest_trip.id DESC
+                      LIMIT 1
+                  )
+                  AND tx.transaction_type = 'WITHDRAWAL'
+                  AND tx.is_deleted = 0
+            ), 0) - COALESCE((
+                SELECT t.total_target_amount
+                FROM trips t
+                WHERE t.user_id = w.user_id
+                  AND t.is_deleted = 0
+                  AND t.status IN ('TRAVELING', 'ENDED')
+                ORDER BY t.start_date DESC, t.id DESC
+                LIMIT 1
+            ), 0), 0) AS over_target_spent_amount,
+            a.id AS account_id,
+            a.account_name AS account_name,
+            COALESCE(si.institution_name, cci.organization_name, '연동 계좌') AS bank_name,
+            CASE
+                WHEN a.account_number IS NULL THEN NULL
+                ELSE CONCAT('****', RIGHT(a.account_number, 4))
+            END AS masked_account_number
+        FROM wallet w
+                 LEFT JOIN wallet_account wa
+                           ON wa.wallet_id = w.id
+                               AND wa.is_primary = TRUE
+                               AND wa.status = 'LINKED'
+                 LEFT JOIN accounts a
+                           ON a.id = wa.account_id
+                               AND a.user_id = w.user_id
+                               AND a.is_deleted = 0
+                 LEFT JOIN codef_connected_institutions cci
+                           ON cci.codef_connection_id = a.codef_connection_id
+                               AND cci.is_active = TRUE
+                 LEFT JOIN supported_institutions si
+                           ON si.organization_code = cci.organization_code
+                               AND si.is_active = TRUE
+        WHERE w.user_id = #{userId}
+          AND w.status = 'ACTIVE'
+    </select>
+
+    <select id="findMonthlySavings"
+            resultType="WalletMonthlySavingResponseDto">
+        WITH RECURSIVE month_range AS (
+            SELECT
+                CAST(DATE_FORMAT(DATE_SUB(#{today}, INTERVAL 5 MONTH), '%Y-%m-01') AS DATE) AS month_start
+            UNION ALL
+            SELECT
+                DATE_ADD(month_start, INTERVAL 1 MONTH)
+            FROM month_range
+            WHERE month_start <![CDATA[<]]> CAST(DATE_FORMAT(#{today}, '%Y-%m-01') AS DATE)
+        )
+        SELECT
+            DATE_FORMAT(mr.month_start, '%Y-%m') AS month,
+            COALESCE(SUM(
+                CASE
+                    WHEN wl.direction = 'IN' THEN wl.amount
+                    WHEN wl.direction = 'OUT' THEN -wl.amount
+                    ELSE 0
+                END
+            ), 0) AS saved_amount,
+            CASE
+                WHEN DATE_FORMAT(mr.month_start, '%Y-%m') = DATE_FORMAT(#{today}, '%Y-%m') THEN TRUE
+                ELSE FALSE
+            END AS current_month,
+            TRUE AS available
+        FROM month_range mr
+                 LEFT JOIN wallet_ledger wl
+                           ON wl.wallet_id = #{walletId}
+                               AND wl.transaction_type != 'ADJUST'
+                               AND wl.trip_id = (
+                                   SELECT id FROM trips
+                                   WHERE user_id = #{userId} AND is_deleted = 0
+                                     AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+                                   ORDER BY created_at DESC LIMIT 1
+                               )
+                               AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(mr.month_start, '%Y-%m')
+        GROUP BY mr.month_start
+        ORDER BY mr.month_start
+    </select>
+
+    <select id="findMonthlySavingDetailSummary"
+            resultType="WalletMonthlySavingDetailResponseDto">
+        SELECT
+            #{month} AS month,
+            COALESCE(SUM(
+                CASE
+                    WHEN direction = 'IN' THEN amount
+                    WHEN direction = 'OUT' THEN -amount
+                    ELSE 0
+                END
+            ), 0) AS saved_amount,
+            COALESCE(SUM(
+                CASE
+                    WHEN direction = 'IN' THEN amount
+                    ELSE 0
+                END
+            ), 0) AS charge_amount,
+            COALESCE(SUM(
+                CASE
+                    WHEN direction = 'OUT' THEN amount
+                    ELSE 0
+                END
+            ), 0) AS withdraw_amount
+        FROM wallet_ledger
+        WHERE wallet_id = #{walletId}
+          AND transaction_type != 'ADJUST'
+          AND trip_id = (
+              SELECT id FROM trips
+              WHERE user_id = #{userId} AND is_deleted = 0
+                AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+              ORDER BY created_at DESC LIMIT 1
+          )
+          AND DATE_FORMAT(created_at, '%Y-%m') = #{month}
+    </select>
+
+    <select id="findLedgersByWalletIdAndMonth"
+            resultType="WalletLedgerResponseDto">
+        SELECT
+            wl.id AS ledger_id,
+            wl.direction,
+            wl.transaction_type,
+            wl.transfer_method,
+            wl.amount,
+            wl.balance_before,
+            wl.balance_after,
+            wl.memo,
+            wl.created_at,
+            COALESCE(
+                acc.account_name,
+                wtc.card_name,
+                CONCAT(wr.bank_name, ' ****', RIGHT(wr.account_number, 4))
+            ) AS account_name,
+            wct.currency_code
+        FROM wallet_ledger wl
+        LEFT JOIN accounts acc
+            ON acc.id = CASE
+                WHEN wl.source_type = 'ACCOUNT' THEN wl.source_id
+                WHEN wl.target_type = 'ACCOUNT' THEN wl.target_id
+            END
+        LEFT JOIN wallet_travel_card wtc
+            ON wtc.id = CASE
+                WHEN wl.source_type = 'TRAVEL_CARD' THEN wl.source_id
+                WHEN wl.target_type = 'TRAVEL_CARD' THEN wl.target_id
+            END
+        LEFT JOIN wallet_withdraw_recipient wr
+            ON wl.target_type = 'RECIPIENT_ACCOUNT'
+           AND wr.id = wl.target_id
+        LEFT JOIN wallet_card_topup wct
+            ON wct.wallet_ledger_id = wl.id
+        WHERE wl.wallet_id = #{walletId}
+          AND DATE_FORMAT(wl.created_at, '%Y-%m') = #{month}
+        ORDER BY wl.created_at DESC, wl.id DESC
+    </select>
+
+    <select id="findLinkedTravelCardForMain"
+            resultType="WalletLinkedTravelCardResponseDto">
+        SELECT
+            TRUE AS linked,
+            wtc.id AS wallet_travel_card_id,
+            wtc.user_travel_card_id,
+            wtc.travel_card_id,
+            wtc.card_name,
+            wtc.issuer_name,
+            wtc.masked_card_number
+        FROM wallet_travel_card wtc
+        WHERE wtc.wallet_id = #{walletId}
+          AND wtc.status = 'LINKED'
+        ORDER BY wtc.linked_at DESC, wtc.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findForeignBalancesForMain"
+            resultType="WalletForeignBalanceResponseDto">
+        SELECT
+            tcb.currency_code,
+            c.currency_name,
+            c.symbol,
+            tcb.balance_amount,
+            tcb.krw_estimated_amount
+        FROM travel_card_balance tcb
+                 INNER JOIN currencies c
+                            ON c.currency_code = tcb.currency_code
+                 LEFT JOIN (
+                     SELECT
+                         currency_code,
+                         MAX(created_at) AS last_ledger_at
+                     FROM travel_card_ledger
+                     WHERE wallet_travel_card_id = #{walletTravelCardId}
+                     GROUP BY currency_code
+                 ) latest
+                           ON latest.currency_code = tcb.currency_code
+        WHERE tcb.wallet_travel_card_id = #{walletTravelCardId}
+          AND tcb.balance_amount > 0
+        ORDER BY COALESCE(latest.last_ledger_at, tcb.updated_at) DESC,
+                 tcb.updated_at DESC,
+                 tcb.id DESC
+        LIMIT 3
+    </select>
+
+    <select id="findAllForeignBalances"
+            resultType="WalletForeignBalanceResponseDto">
+        SELECT
+            tcb.currency_code,
+            c.currency_name,
+            c.symbol,
+            tcb.balance_amount,
+            tcb.krw_estimated_amount
+        FROM travel_card_balance tcb
+                 INNER JOIN currencies c
+                            ON c.currency_code = tcb.currency_code
+                 LEFT JOIN (
+                     SELECT
+                         currency_code,
+                         MAX(created_at) AS last_ledger_at
+                     FROM travel_card_ledger
+                     WHERE wallet_travel_card_id = #{walletTravelCardId}
+                     GROUP BY currency_code
+                 ) latest
+                           ON latest.currency_code = tcb.currency_code
+        WHERE tcb.wallet_travel_card_id = #{walletTravelCardId}
+          AND tcb.balance_amount > 0
+        ORDER BY COALESCE(latest.last_ledger_at, tcb.updated_at) DESC,
+                 tcb.updated_at DESC,
+                 tcb.currency_code
+    </select>
+
+    <select id="existsWalletByUserId"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM wallet
+            WHERE user_id = #{userId}
+              AND status = 'ACTIVE'
+        )
+    </select>
+
+    <insert id="insertWallet"
+            parameterType="Wallet"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet (
+            user_id,
+            balance_amount,
+            status,
+            version
+        )
+        VALUES (
+            #{userId},
+            #{balanceAmount},
+            #{status},
+            #{version}
+        )
+    </insert>
+
+    <select id="existsLinkedAccount"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM wallet_account wa
+                     INNER JOIN accounts a
+                                ON a.id = wa.account_id
+                                   AND a.is_deleted = 0
+            WHERE wa.wallet_id = #{walletId}
+              AND wa.account_id = #{accountId}
+              AND wa.status = 'LINKED'
+        )
+    </select>
+
+    <select id="existsLinkedAccountByUserId"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM accounts
+            WHERE id = #{accountId}
+              AND user_id = #{userId}
+              AND is_deleted = 0
+        )
+    </select>
+
+    <select id="findAnyLinkedAccountIdByUserId" resultType="long">
+        SELECT id
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = 1
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="existsIdempotencyKey"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM wallet_ledger
+            WHERE idempotency_key = #{idempotencyKey}
+        )
+    </select>
+
+    <select id="existsTravelCardLedgerIdempotencyKey"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_card_ledger
+            WHERE idempotency_key = #{idempotencyKey}
+        )
+    </select>
+
+    <select id="existsTravelCardById"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_cards
+            WHERE id = #{travelCardId}
+              AND is_active = TRUE
+              AND is_deleted = 0
+        )
+    </select>
+
+    <select id="existsSupportedCardCurrency"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM travel_card_currencies
+            WHERE card_id = #{travelCardId}
+              AND currency_code = #{currencyCode}
+              AND is_deleted = 0
+        )
+    </select>
+
+    <insert id="insertWalletAccount"
+            parameterType="WalletAccount"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_account (
+            wallet_id,
+            account_id,
+            is_primary,
+            status
+        )
+        VALUES (
+            #{walletId},
+            #{accountId},
+            #{isPrimary},
+            #{status}
+        )
+        ON DUPLICATE KEY UPDATE
+            is_primary = VALUES(is_primary),
+            status = 'LINKED',
+            unlinked_at = NULL
+    </insert>
+
+    <update id="unlinkWalletAccount">
+        UPDATE wallet_account
+        SET status = 'UNLINKED',
+            is_primary = FALSE,
+            unlinked_at = NOW()
+        WHERE wallet_id = #{walletId}
+          AND account_id = #{accountId}
+          AND status = 'LINKED'
+    </update>
+
+    <update id="resetPrimaryAccount">
+        UPDATE wallet_account
+        SET is_primary = FALSE
+        WHERE wallet_id = #{walletId}
+          AND status = 'LINKED'
+    </update>
+
+    <update id="updatePrimaryAccount">
+        UPDATE wallet_account
+        SET is_primary = TRUE
+        WHERE wallet_id = #{walletId}
+          AND account_id = #{accountId}
+          AND status = 'LINKED'
+    </update>
+
+    <select id="findAccountsByUserId"
+            resultMap="WalletAccountResultMap">
+        SELECT
+            a.id AS account_id,
+            COALESCE(si.institution_name, '연동 계좌') AS bank_name,
+            a.account_name,
+            CASE
+                WHEN a.account_number IS NULL THEN NULL
+                ELSE CONCAT('****', RIGHT(a.account_number, 4))
+            END AS masked_account_number,
+            a.balance,
+            a.withdrawable_amount,
+            CASE WHEN wa.id IS NULL THEN FALSE ELSE TRUE END AS linked,
+            COALESCE(wa.is_primary, FALSE) AS primary_account
+        FROM accounts a
+                 LEFT JOIN wallet w
+                           ON w.user_id = a.user_id
+                               AND w.status = 'ACTIVE'
+                 LEFT JOIN wallet_account wa
+                           ON wa.wallet_id = w.id
+                               AND wa.account_id = a.id
+                               AND wa.status = 'LINKED'
+                 LEFT JOIN supported_institutions si
+                           ON si.organization_code = a.organization_code
+                               AND si.is_active = TRUE
+        WHERE a.user_id = #{userId}
+          AND a.is_deleted = 0
+          AND a.is_active = TRUE
+          AND wa.id IS NOT NULL
+        ORDER BY linked DESC, primary_account DESC, a.id DESC
+    </select>
+
+    <select id="findAccountOptionsByUserId"
+            resultMap="WalletAccountResultMap">
+        SELECT
+            a.id AS account_id,
+            COALESCE(si.institution_name, '등록 계좌') AS bank_name,
+            a.account_name,
+            CASE
+                WHEN a.account_number IS NULL THEN NULL
+                ELSE CONCAT('****', RIGHT(a.account_number, 4))
+            END AS masked_account_number,
+            a.balance,
+            a.withdrawable_amount,
+            FALSE AS linked,
+            FALSE AS primary_account
+        FROM accounts a
+                 LEFT JOIN wallet w
+                           ON w.user_id = a.user_id
+                               AND w.status = 'ACTIVE'
+                 LEFT JOIN wallet_account wa
+                           ON wa.wallet_id = w.id
+                               AND wa.account_id = a.id
+                               AND wa.status = 'LINKED'
+                 LEFT JOIN supported_institutions si
+                           ON si.organization_code = a.organization_code
+                               AND si.is_active = TRUE
+        WHERE a.user_id = #{userId}
+          AND a.is_deleted = 0
+          AND a.is_active = TRUE
+          AND wa.id IS NULL
+        ORDER BY a.id DESC
+    </select>
+
+    <select id="findWithdrawAccountsByUserId" resultMap="WalletAccountResultMap">
+        SELECT a.id AS account_id,
+               COALESCE(si.institution_name, '등록 계좌') AS bank_name,
+               a.account_name,
+               CONCAT('****', RIGHT(a.account_number, 4)) AS masked_account_number,
+               a.balance, a.withdrawable_amount,
+               CASE WHEN wa.id IS NULL THEN FALSE ELSE TRUE END AS linked,
+               COALESCE(wa.is_primary, FALSE) AS primary_account
+        FROM accounts a
+        LEFT JOIN wallet w ON w.user_id = a.user_id AND w.status = 'ACTIVE'
+        LEFT JOIN wallet_account wa ON wa.wallet_id = w.id AND wa.account_id = a.id AND wa.status = 'LINKED'
+        LEFT JOIN supported_institutions si ON si.organization_code = a.organization_code AND si.is_active = TRUE
+        WHERE a.user_id = #{userId} AND a.is_deleted = 0 AND a.is_active = TRUE
+        ORDER BY primary_account DESC, linked DESC, a.id DESC
+    </select>
+
+    <insert id="upsertWithdrawRecipient" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wallet_withdraw_recipient
+            (user_id, bank_code, bank_name, account_number, account_holder_name, last_used_at, use_count)
+        VALUES
+            (#{userId}, #{bankCode}, #{bankName}, #{accountNumber}, #{accountHolderName}, NOW(), 1)
+        ON DUPLICATE KEY UPDATE
+            id = LAST_INSERT_ID(id),
+            bank_name = VALUES(bank_name),
+            account_holder_name = VALUES(account_holder_name),
+            last_used_at = NOW(),
+            use_count = use_count + 1,
+            is_deleted = 0,
+            deleted_at = NULL,
+            updated_at = NOW()
+    </insert>
+
+    <select id="findRecentWithdrawRecipients" resultType="WalletWithdrawRecipientResponseDto">
+        SELECT id AS recipient_id, bank_code, bank_name,
+               CONCAT('****', RIGHT(account_number, 4)) AS masked_account_number,
+               account_holder_name, last_used_at, use_count
+        FROM wallet_withdraw_recipient
+        WHERE user_id = #{userId} AND is_deleted = 0
+        ORDER BY last_used_at DESC, id DESC
+        LIMIT 5
+    </select>
+
+    <select id="findWithdrawRecipientByIdAndUserId" resultType="WalletWithdrawRecipient">
+        SELECT id, user_id, bank_code, bank_name, account_number,
+               account_holder_name, last_used_at, use_count
+        FROM wallet_withdraw_recipient
+        WHERE id = #{recipientId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="findPrimaryAccountByWalletId"
+            resultType="WalletAccountResponseDto">
+        SELECT
+            a.id AS account_id,
+            a.account_name,
+            a.balance,
+            a.withdrawable_amount
+        FROM wallet_account wa
+                 JOIN accounts a ON a.id = wa.account_id
+        WHERE wa.wallet_id = #{walletId}
+          AND wa.is_primary = TRUE
+          AND wa.status = 'LINKED'
+          AND a.is_deleted = 0
+          AND a.is_active = TRUE
+        LIMIT 1
+    </select>
+
+    <update id="decreaseAccountBalance">
+        UPDATE accounts
+        SET balance = COALESCE(balance, 0) - #{amount},
+            withdrawable_amount = COALESCE(withdrawable_amount, 0) - #{amount},
+            updated_at = NOW()
+        WHERE id = #{accountId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = TRUE
+          AND COALESCE(withdrawable_amount, balance, 0) <![CDATA[>=]]> #{amount}
+    </update>
+
+    <update id="increaseAccountBalance">
+        UPDATE accounts
+        SET balance = COALESCE(balance, 0) + #{amount},
+            withdrawable_amount = COALESCE(withdrawable_amount, 0) + #{amount},
+            updated_at = NOW()
+        WHERE id = #{accountId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = TRUE
+    </update>
+
+    <select id="findAccountBalance" resultType="java.math.BigDecimal">
+        SELECT balance
+        FROM accounts
+        WHERE id = #{accountId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = TRUE
+    </select>
+
+    <insert id="insertAccountTransaction">
+        INSERT INTO transactions
+            (account_id, transaction_date, transaction_time, transaction_type,
+             transaction_region, amount, balance_after, merchant_name, external_key)
+        VALUES
+            (#{accountId}, CURDATE(), CURTIME(), #{transactionType},
+             'DOMESTIC', #{amount}, #{balanceAfter}, #{merchantName}, #{externalKey})
+    </insert>
+
+    <update id="updateWalletBalance">
+        UPDATE wallet
+        SET balance_amount = #{balanceAmount},
+            version = version + 1
+        WHERE id = #{walletId}
+          AND version = #{version}
+          AND status = 'ACTIVE'
+    </update>
+
+    <insert id="insertWalletLedger"
+            parameterType="WalletLedger"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_ledger (
+            wallet_id,
+            trip_id,
+            direction,
+            transaction_type,
+            transfer_method,
+            amount,
+            balance_before,
+            balance_after,
+            source_type,
+            source_id,
+            target_type,
+            target_id,
+            idempotency_key,
+            memo
+        )
+        VALUES (
+            #{walletId},
+            #{tripId},
+            #{direction},
+            #{transactionType},
+            #{transferMethod},
+            #{amount},
+            #{balanceBefore},
+            #{balanceAfter},
+            #{sourceType},
+            #{sourceId},
+            #{targetType},
+            #{targetId},
+            #{idempotencyKey},
+            #{memo}
+        )
+    </insert>
+
+    <select id="findWalletLedgerByIdempotencyKey" resultType="WalletLedger">
+        SELECT id, wallet_id, direction, transaction_type, transfer_method, amount,
+               balance_before, balance_after, source_type, source_id,
+               target_type, target_id, idempotency_key, memo, created_at
+        FROM wallet_ledger
+        WHERE idempotency_key = #{idempotencyKey}
+        LIMIT 1
+    </select>
+
+    <select id="findLedgersByWalletId"
+            resultType="WalletLedgerResponseDto">
+        SELECT
+            wl.id AS ledger_id,
+            wl.direction,
+            wl.transaction_type,
+            wl.transfer_method,
+            wl.amount,
+            wl.balance_before,
+            wl.balance_after,
+            wl.memo,
+            wl.created_at,
+            COALESCE(
+                acc.account_name,
+                wtc.card_name,
+                CONCAT(wr.bank_name, ' ****', RIGHT(wr.account_number, 4))
+            ) AS account_name,
+            wct.currency_code
+        FROM wallet_ledger wl
+        LEFT JOIN accounts acc
+            ON acc.id = CASE
+                WHEN wl.source_type = 'ACCOUNT' THEN wl.source_id
+                WHEN wl.target_type = 'ACCOUNT' THEN wl.target_id
+            END
+        LEFT JOIN wallet_travel_card wtc
+            ON wtc.id = CASE
+                WHEN wl.source_type = 'TRAVEL_CARD' THEN wl.source_id
+                WHEN wl.target_type = 'TRAVEL_CARD' THEN wl.target_id
+            END
+        LEFT JOIN wallet_withdraw_recipient wr
+            ON wl.target_type = 'RECIPIENT_ACCOUNT'
+           AND wr.id = wl.target_id
+        LEFT JOIN wallet_card_topup wct
+            ON wct.wallet_ledger_id = wl.id
+        WHERE wl.wallet_id = #{walletId}
+        ORDER BY wl.created_at DESC, wl.id DESC
+    </select>
+
+    <select id="findAutoSavingRuleByWalletId"
+            resultType="WalletAutoSavingRule">
+        SELECT
+            id,
+            wallet_id,
+            source_account_id,
+            amount,
+            day_of_month,
+            enabled,
+            next_transfer_date,
+            created_at,
+            updated_at
+        FROM wallet_auto_saving_rule
+        WHERE wallet_id = #{walletId}
+    </select>
+
+    <select id="findDueAutoSavingRules"
+            resultType="WalletAutoSavingRule">
+        SELECT
+            id,
+            wallet_id,
+            source_account_id,
+            amount,
+            day_of_month,
+            enabled,
+            next_transfer_date,
+            created_at,
+            updated_at
+        FROM wallet_auto_saving_rule
+        WHERE enabled = TRUE
+          AND next_transfer_date IS NOT NULL
+          AND next_transfer_date <![CDATA[<=]]> #{baseDate}
+        ORDER BY next_transfer_date ASC, id ASC
+    </select>
+
+    <select id="findAutoSavingRuleResponseByWalletId"
+            resultType="WalletAutoSavingResponseDto">
+        SELECT
+            wasr.id,
+            wasr.source_account_id,
+            a.account_name AS source_account_name,
+            wasr.amount,
+            wasr.day_of_month,
+            wasr.enabled,
+            wasr.next_transfer_date
+        FROM wallet_auto_saving_rule wasr
+                 INNER JOIN accounts a
+                            ON a.id = wasr.source_account_id
+        WHERE wasr.wallet_id = #{walletId}
+    </select>
+
+    <insert id="upsertAutoSavingRule"
+            parameterType="WalletAutoSavingRule">
+        INSERT INTO wallet_auto_saving_rule (
+            wallet_id,
+            source_account_id,
+            amount,
+            day_of_month,
+            enabled,
+            next_transfer_date
+        )
+        VALUES (
+            #{walletId},
+            #{sourceAccountId},
+            #{amount},
+            #{dayOfMonth},
+            #{enabled},
+            #{nextTransferDate}
+        )
+        ON DUPLICATE KEY UPDATE
+            source_account_id = VALUES(source_account_id),
+            amount = VALUES(amount),
+            day_of_month = VALUES(day_of_month),
+            enabled = VALUES(enabled),
+            next_transfer_date = VALUES(next_transfer_date),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <delete id="deleteAutoSavingRule">
+        DELETE FROM wallet_auto_saving_rule
+        WHERE wallet_id = #{walletId}
+    </delete>
+
+    <update id="updateAutoSavingNextTransferDate">
+        UPDATE wallet_auto_saving_rule
+        SET next_transfer_date = #{nextTransferDate},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{ruleId}
+    </update>
+
+    <select id="findLinkedTravelCardByWalletId"
+            resultType="WalletTravelCardResponseDto">
+        SELECT
+            id AS wallet_travel_card_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status
+        FROM wallet_travel_card
+        WHERE wallet_id = #{walletId}
+          AND status = 'LINKED'
+        ORDER BY linked_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findActiveWalletTravelCardByWalletId"
+            resultType="WalletTravelCard">
+        SELECT
+            id,
+            wallet_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status,
+            linked_at,
+            unlinked_at
+        FROM wallet_travel_card
+        WHERE wallet_id = #{walletId}
+          AND status = 'LINKED'
+        ORDER BY linked_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findWalletTravelCardByIdForUpdate"
+            resultType="WalletTravelCard">
+        SELECT
+            id,
+            wallet_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status,
+            linked_at,
+            unlinked_at
+        FROM wallet_travel_card
+        WHERE wallet_id = #{walletId}
+          AND id = #{walletTravelCardId}
+          AND status = 'LINKED'
+        FOR UPDATE
+    </select>
+
+    <insert id="insertWalletTravelCard"
+            parameterType="WalletTravelCard"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_travel_card (
+            wallet_id,
+            travel_card_id,
+            card_name,
+            issuer_name,
+            masked_card_number,
+            status
+        )
+        SELECT
+            #{walletId},
+            tc.id,
+            tc.card_name,
+            tc.card_company,
+            #{maskedCardNumber},
+            #{status}
+        FROM travel_cards tc
+        WHERE tc.id = #{travelCardId}
+          AND tc.is_active = TRUE
+          AND tc.is_deleted = 0
+        ON DUPLICATE KEY UPDATE
+            card_name = VALUES(card_name),
+            issuer_name = VALUES(issuer_name),
+            masked_card_number = VALUES(masked_card_number),
+            status = 'LINKED',
+            unlinked_at = NULL
+    </insert>
+
+    <update id="unlinkWalletTravelCard">
+        UPDATE wallet_travel_card
+        SET status = 'UNLINKED',
+            unlinked_at = NOW()
+        WHERE wallet_id = #{walletId}
+          AND status = 'LINKED'
+    </update>
+
+    <select id="findTravelCardBalances"
+            resultType="TravelCardCurrencyBalanceResponseDto">
+        SELECT
+            currency_code,
+            balance_amount,
+            krw_estimated_amount
+        FROM travel_card_balance
+        WHERE wallet_travel_card_id = #{walletTravelCardId}
+        ORDER BY currency_code
+    </select>
+
+    <select id="findTravelCardBalanceForUpdate"
+            resultType="TravelCardBalance">
+        SELECT
+            id,
+            wallet_travel_card_id,
+            currency_code,
+            balance_amount,
+            krw_estimated_amount,
+            updated_at
+        FROM travel_card_balance
+        WHERE wallet_travel_card_id = #{walletTravelCardId}
+          AND currency_code = #{currencyCode}
+        FOR UPDATE
+    </select>
+
+    <insert id="insertTravelCardBalance"
+            parameterType="TravelCardBalance"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO travel_card_balance (
+            wallet_travel_card_id,
+            currency_code,
+            balance_amount,
+            krw_estimated_amount
+        )
+        VALUES (
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{balanceAmount},
+            #{krwEstimatedAmount}
+        )
+    </insert>
+
+    <update id="updateTravelCardBalance">
+        UPDATE travel_card_balance
+        SET balance_amount = #{balanceAmount},
+            krw_estimated_amount = #{krwEstimatedAmount}
+        WHERE id = #{balanceId}
+    </update>
+
+    <insert id="insertTravelCardLedger"
+            parameterType="TravelCardLedger"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO travel_card_ledger (
+            wallet_travel_card_id,
+            currency_code,
+            direction,
+            transaction_type,
+            foreign_amount,
+            balance_before,
+            balance_after,
+            source_type,
+            source_id,
+            target_type,
+            target_id,
+            idempotency_key,
+            memo
+        )
+        VALUES (
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{direction},
+            #{transactionType},
+            #{foreignAmount},
+            #{balanceBefore},
+            #{balanceAfter},
+            #{sourceType},
+            #{sourceId},
+            #{targetType},
+            #{targetId},
+            #{idempotencyKey},
+            #{memo}
+        )
+    </insert>
+
+    <insert id="insertWalletCardTopup"
+            parameterType="WalletCardTopup"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_card_topup (
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            krw_amount,
+            foreign_amount,
+            status,
+            idempotency_key,
+            external_transaction_id,
+            retry_count,
+            last_tried_at,
+            completed_at,
+            wallet_ledger_id,
+            card_ledger_id,
+            refunded
+        )
+        VALUES (
+            #{walletId},
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{krwAmount},
+            #{foreignAmount},
+            #{status},
+            #{idempotencyKey},
+            #{externalTransactionId},
+            #{retryCount},
+            #{lastTriedAt},
+            #{completedAt},
+            #{walletLedgerId},
+            #{cardLedgerId},
+            #{refunded}
+        )
+    </insert>
+
+    <insert id="insertWalletExchangeTransaction"
+            parameterType="WalletExchangeTransaction"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_exchange_transaction (
+            wallet_id,
+            wallet_travel_card_id,
+            currency_code,
+            exchange_type,
+            krw_amount,
+            foreign_amount,
+            base_exchange_rate,
+            applied_exchange_rate,
+            fee_rate,
+            fee_amount,
+            status,
+            completed_at,
+            wallet_ledger_id,
+            card_ledger_id
+        )
+        VALUES (
+            #{walletId},
+            #{walletTravelCardId},
+            #{currencyCode},
+            #{exchangeType},
+            #{krwAmount},
+            #{foreignAmount},
+            #{baseExchangeRate},
+            #{appliedExchangeRate},
+            #{feeRate},
+            #{feeAmount},
+            #{status},
+            #{completedAt},
+            #{walletLedgerId},
+            #{cardLedgerId}
+        )
+    </insert>
+
+    <select id="findLatestDealBaseRate"
+            resultType="BigDecimal">
+        SELECT er.deal_base_rate
+        FROM exchange_rates er
+                 INNER JOIN currencies c
+                            ON c.id = er.target_currency_id
+        WHERE c.currency_code = #{currencyCode}
+        ORDER BY er.rate_date DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertAutoSavingLog"
+            parameterType="WalletAutoSavingLog"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO wallet_auto_saving_logs (
+            wallet_id,
+            status,
+            amount,
+            reason
+        )
+        VALUES (
+            #{walletId},
+            #{status},
+            #{amount},
+            #{reason}
+        )
+    </insert>
+
+    <select id="findAutoSavingLogsByWalletId"
+            resultType="WalletAutoSavingLogResponseDto">
+        SELECT
+            id,
+            status,
+            amount,
+            reason,
+            executed_at
+        FROM wallet_auto_saving_logs
+        WHERE wallet_id = #{walletId}
+        ORDER BY executed_at DESC
+    </select>
+
+    <select id="findTripWalletSummary" resultType="java.util.HashMap">
+        SELECT t.id                                             AS tripId,
+               w.id                                             AS walletId,
+               COALESCE(w.balance_amount, 0)                    AS walletBalance,
+               t.total_target_amount                            AS targetAmount,
+               COALESCE(t.initial_wallet_balance, 0)            AS initialWalletBalance,
+               COALESCE(t.emergency_amount, 0)                  AS emergencyAmount,
+               COALESCE(t.external_charge_amount, 0)            AS externalChargedAmount,
+               COALESCE(
+                   (SELECT SUM(tr.amount)
+                    FROM transactions tr
+                    WHERE tr.trip_id = t.id AND tr.is_deleted = 0), 0
+               )                                                AS totalTripSpentAmount,
+               COALESCE(
+                   (SELECT SUM(wl.amount)
+                    FROM wallet_ledger wl
+                    WHERE wl.wallet_id = w.id
+                      AND wl.direction = 'IN'
+                      AND wl.transaction_type = 'CHARGE'
+                      AND wl.created_at >= t.start_date
+                      AND wl.created_at &lt;= DATE_ADD(t.end_date, INTERVAL 1 DAY)
+                   ), 0
+               )                                                AS travelPeriodChargeAmount
+        FROM trips t
+        LEFT JOIN wallet w ON t.user_id = w.user_id
+        WHERE t.id = #{tripId}
+          AND t.user_id = #{userId}
+          AND t.is_deleted = 0
+    </select>
+
+    <select id="calcBalanceAsOf" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+            CASE WHEN wl.direction = 'IN' THEN wl.amount
+                 ELSE -wl.amount END
+        ), 0)
+        FROM wallet_ledger wl
+        WHERE wl.wallet_id = #{walletId}
+          AND DATE(wl.created_at) &lt;= #{asOfDate}
+    </select>
+
+</mapper>

@@ -17,10 +17,11 @@ repositories {
 }
 
 ext {
-    springVersion        = '5.3.37'   // KB 명세 기준
+    springVersion         = '5.3.37'   // KB 명세 기준
     springSecurityVersion = '5.8.14'
-    lombokVersion        = '1.18.30'
-    junitVersion         = '5.10.0'
+    lombokVersion         = '1.18.30'
+    junitVersion          = '5.10.0'
+    jacksonVersion        = '2.13.5'
 }
 
 dependencies {
@@ -58,6 +59,9 @@ dependencies {
     implementation 'org.aspectj:aspectjrt:1.9.20'
     implementation 'org.aspectj:aspectjweaver:1.9.20'
 
+    // Java EE annotations (Java 17 대응)
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
+
     // Servlet / JSP / JSTL (KB 명세 기준 버전)
     implementation 'javax.servlet:javax.servlet-api:4.0.1' // KB 명세: 4.0.1
     compileOnly     'javax.servlet.jsp:jsp-api:2.1'        // KB 명세: 2.3.3 → jsp-api 2.1 은 동일
@@ -70,17 +74,75 @@ dependencies {
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4:1.16'
     implementation 'xerces:xercesImpl:2.12.2'
 
-    // Utilities
+    // Utilities & JSON (LocalDate/LocalDateTime 파싱 필수 모듈 추가)
     compileOnly         "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.5'
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}" // Java 8 Date/Time 지원
+
+    // JavaTimeModule
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.5'
+
+    // HTTP 통신 (Codef API 호출용)
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    
+    // HTML 파싱 및 크롤링
+    implementation 'org.jsoup:jsoup:1.16.1'
+
+    // Validation
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+    implementation 'org.hibernate.validator:hibernate-validator:6.2.5.Final'
+    implementation 'org.glassfish:javax.el:3.0.1-b12'
 
     // Test
     testImplementation          "org.springframework:spring-test:${springVersion}"
+    testImplementation          "org.mockito:mockito-core:4.11.0"
+    testImplementation          'org.mockito:mockito-junit-jupiter:4.11.0'
+    testImplementation          'org.hamcrest:hamcrest:2.2'
+    testImplementation          'com.jayway.jsonpath:json-path:2.8.0'
     testCompileOnly             "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor     "org.projectlombok:lombok:${lombokVersion}"
     testImplementation          "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testRuntimeOnly             "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+
+    // SolAPI 문자 인증용 문자발신 API
+    implementation("com.solapi:sdk:1.1.0")
+
+    // Google Cloud Vision OCR 및 Translation
+    implementation platform('com.google.cloud:libraries-bom:26.83.0')
+    implementation 'com.google.cloud:google-cloud-vision'
+    implementation 'com.google.cloud:google-cloud-translate'
+
+    // Firebase Admin SDK
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+}
+
+// Windows 환경에서도 Java 소스를 UTF-8로 컴파일
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // 출력 디렉터리를 비운 뒤 일부 파일만 증분 컴파일하면 변경되지 않은 클래스가 사라진다.
+    // 중복 클래스 제거와 완전한 빌드 결과를 함께 보장하기 위해 전체 컴파일을 수행한다.
+    options.incremental = false
+
+    // 삭제되거나 이름이 바뀐 소스의 이전 .class가 WAR에 남지 않게 한다.
+    doFirst {
+        delete destinationDirectory.get().asFile
+    }
+}
+
+tasks.named('processResources') {
+    // Gradle Copy 작업은 삭제된 원본의 이전 출력물을 남길 수 있어 매번 동기화한다.
+    doFirst {
+        delete destinationDir
+    }
+}
+
+tasks.named('war') {
+    // macOS 복제 파일(예: AssetMapper 2.xml)이 빌드 캐시에 남아도 배포물에서 제외한다.
+    exclude '**/* 2.class', '**/* 2.xml', '**/* 2.json', '**/.gitkeep 2'
 }
 
 test {

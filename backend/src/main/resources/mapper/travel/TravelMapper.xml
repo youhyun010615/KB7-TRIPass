@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripass.travel.mapper.TravelMapper">
+
+    <resultMap id="DashboardResultMap" type="TravelStatusResponseDto">
+        <result property="totalRemainingFund" column="total_remaining_fund"/>
+        <association property="tripInfo" javaType="TripBasicInfoDto">
+            <result property="tripId" column="trip_id"/>
+            <result property="tripName" column="trip_name"/>
+            <result property="startDate" column="start_date"/>
+            <result property="endDate" column="end_date"/>
+        </association>
+        <collection property="countries" ofType="CountryStatusDto">
+            <result property="tripCountryId" column="id"/>
+            <result property="countryName" column="country_name"/>
+            <result property="targetBudget" column="target_budget"/>
+            <result property="spentAmount" column="spent_amount"/>
+            <result property="totalDays" column="total_days"/>
+            <result property="passedDays" column="passed_days"/>
+            <result property="arrivalDate" column="arrival_date"/>
+            <result property="departureDate" column="departure_date"/>
+        </collection>
+    </resultMap>
+
+    <!-- 1. 여행 대시보드 상태 조회 -->
+    <select id="getTripDashboard" resultMap="DashboardResultMap">
+        WITH TripStats AS (
+            SELECT
+                t.id AS trip_id,
+                t.trip_name,
+                t.start_date,
+                t.end_date,
+                t.total_target_amount,
+                COALESCE(SUM(tr.amount), 0) AS total_spent
+            FROM trips t
+                     LEFT JOIN transactions tr ON t.id = tr.trip_id AND tr.is_deleted = 0
+            WHERE t.id = #{tripId} AND t.is_deleted = 0
+            GROUP BY t.id, t.trip_name, t.start_date, t.end_date
+        )
+        SELECT
+            ts.trip_id,
+            ts.trip_name,
+            ts.start_date,
+            ts.end_date,
+            (ts.total_target_amount - ts.total_spent) AS total_remaining_fund,
+            tc.id AS id,
+            c.country_name,
+            tc.target_budget,
+            COALESCE(SUM(tr.amount), 0) AS spent_amount,
+            tc.arrival_date,
+            tc.departure_date,
+            DATEDIFF(tc.departure_date, tc.arrival_date) + 1 AS total_days,
+            CASE
+                WHEN #{today} <![CDATA[<]]> tc.arrival_date THEN 0
+                WHEN #{today} <![CDATA[>]]> tc.departure_date THEN DATEDIFF(tc.departure_date, tc.arrival_date) + 1
+                ELSE DATEDIFF(#{today}, tc.arrival_date)
+            END AS passed_days
+        FROM TripStats ts
+                 JOIN trip_countries tc ON ts.trip_id = tc.trip_id
+                 JOIN countries c ON tc.country_id = c.id
+                 LEFT JOIN transactions tr ON tc.id = tr.trip_country_id AND tr.is_deleted = 0
+        WHERE tc.is_deleted = 0
+        GROUP BY ts.trip_id, ts.trip_name, ts.start_date, ts.end_date, tc.id, c.country_name, tc.target_budget, tc.arrival_date, tc.departure_date, ts.total_target_amount, ts.total_spent
+    </select>
+
+    <resultMap id="BudgetCheckResultMap" type="BudgetCheckResponseDto">
+        <result property="tripCountryId" column="trip_country_id"/>
+        <result property="countryName" column="country_name"/>
+        <result property="targetBudget" column="target_budget"/>
+        <result property="preExpenseTotal" column="pre_expense_total"/>
+        <result property="travelExpenseTotal" column="travel_expense_total"/>
+        <result property="remainingFund" column="remaining_fund"/>
+        <collection property="categoryBreakdown" ofType="CategoryBreakdownDto">
+            <result property="categoryName" column="category_name"/>
+            <result property="amount" column="amount"/>
+            <result property="percentage" column="percentage"/>
+        </collection>
+    </resultMap>
+
+    <!-- 2. 여행 자금 체크 조회 -->
+    <select id="getTripBudget" resultMap="BudgetCheckResultMap">
+        WITH CountryStats AS (
+            SELECT
+                tc.id AS trip_country_id,
+                c.country_name,
+                tc.target_budget,
+                COALESCE((SELECT SUM(pe.direct_amount)
+                          FROM pre_expenses pe
+                          WHERE pe.trip_country_id = tc.id
+                            AND pe.is_deleted = 0), 0) AS pre_expense_total,
+                COALESCE((SELECT SUM(tr.amount)
+                          FROM transactions tr
+                          WHERE tr.trip_country_id = tc.id
+                            AND tr.is_pre_expense = 0
+                            AND tr.is_deleted = 0), 0) AS travel_expense_total
+            FROM trip_countries tc
+                     JOIN countries c ON tc.country_id = c.id
+            WHERE tc.trip_id = #{tripId}
+              AND tc.is_deleted = 0
+        ),
+             CategoryStats AS (
+                 SELECT
+                     tc.id AS trip_country_id,
+                     sc.category_name,
+                     COALESCE(SUM(tr.amount), 0) AS amount,
+                     (COALESCE(SUM(tr.amount), 0) / NULLIF((SELECT SUM(amount)
+                                                            FROM transactions
+                                                            WHERE trip_country_id = tc.id
+                                                              AND is_pre_expense = 0
+                                                              AND is_deleted = 0), 0) * 100) AS percentage
+                 FROM trip_countries tc
+                          LEFT JOIN transactions tr ON tc.id = tr.trip_country_id
+                     AND tr.is_pre_expense = 0
+                     AND tr.is_deleted = 0
+                          LEFT JOIN spending_categories sc ON tr.category_id = sc.id
+                 WHERE tc.trip_id = #{tripId}
+                   AND tc.is_deleted = 0
+            GROUP BY tc.id, sc.category_name
+            )
+        SELECT
+            cs.trip_country_id,
+            cs.country_name,
+            cs.target_budget,
+            cs.pre_expense_total,
+            cs.travel_expense_total,
+            cats.category_name,
+            cats.amount,
+            cats.percentage
+        FROM CountryStats cs
+                 LEFT JOIN CategoryStats cats ON cs.trip_country_id = cats.trip_country_id
+    </select>
+
+    <!-- 회원의 현재 화면 모드(current_view_mode) 업데이트 -->
+    <update id="updateUserCurrentViewMode">
+        UPDATE users
+        SET current_view_mode = #{currentViewMode},
+            updated_at = NOW()
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+
+    <!-- 여행 단건 정보 조회 (start_date, end_date, user_id 포함) -->
+    <select id="selectTripById" resultType="com.tripass.travel.domain.Trip">
+        SELECT
+            id,
+            user_id AS userId,
+            trip_name AS tripName,
+            status,
+            start_date AS startDate,
+            end_date AS endDate,
+            total_target_amount AS totalTargetAmount,
+            savings_tracking_started_at AS savingsTrackingStartedAt,
+            wallet_reflect_resolved AS walletReflectResolved,
+            is_deleted AS isDeleted,
+            deleted_at AS deletedAt,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 유저의 현재 화면 모드(current_view_mode) 조회 -->
+    <select id="selectUserCurrentViewMode" resultType="java.lang.String">
+        SELECT current_view_mode
+        FROM users
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+
+    <!-- 3. 여행 데이터 존재 여부 확인 -->
+    <select id="existsByTripId" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM trips
+            WHERE id = #{tripId}
+              AND is_deleted = 0
+        )
+    </select>
+
+    <!-- 4. 여행 작성자(유저) ID 조회 -->
+    <select id="selectUserIdByTripId" resultType="Long">
+        SELECT user_id
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="existsActiveTripByUserId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM trips
+            WHERE user_id = #{userId}
+              AND status IN ('PLANNING', 'TRAVELING')
+              AND is_deleted = 0
+        )
+    </select>
+
+    <insert id="insertTripGoal"
+            parameterType="TripGoalCommandDto"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO trips (
+            user_id,
+            trip_name,
+            status,
+            start_date,
+            end_date,
+            total_target_amount
+        ) VALUES (
+            #{userId},
+            #{tripName},
+            'PLANNING',
+            #{startDate},
+            #{endDate},
+            0
+        )
+    </insert>
+
+    <insert id="insertTripCountry" parameterType="TripCountryCommandDto">
+        INSERT INTO trip_countries (
+            trip_id,
+            country_id,
+            arrival_date,
+            departure_date,
+            target_budget,
+            display_order
+        ) VALUES (
+            #{tripId},
+            #{countryId},
+            #{arrivalDate},
+            #{departureDate},
+            #{targetBudget},
+            #{displayOrder}
+        )
+    </insert>
+
+    <select id="findTripGoalById" resultType="TripGoalResponseDto">
+        SELECT id AS tripId,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="findTripGoalCountries" resultType="TripCountryGoalResponseDto">
+        SELECT tc.id AS tripCountryId,
+               c.id AS countryId,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               tc.display_order,
+               tc.target_budget
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC, tc.arrival_date ASC
+    </select>
+
+    <select id="findActiveTripGoalByUserId" resultType="TripGoalResponseDto">
+        SELECT id AS tripId,
+               trip_name,
+               status,
+               start_date,
+               end_date,
+               total_target_amount
+        FROM trips
+        WHERE user_id = #{userId}
+          AND status IN ('PLANNING', 'TRAVELING')
+          AND is_deleted = 0
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectLatestTripByUserId" resultType="Trip">
+        SELECT id, user_id, trip_name, status, start_date, end_date,
+               total_target_amount, is_deleted, deleted_at, created_at, updated_at,
+               start_report_viewed_at, savings_tracking_started_at, wallet_reflect_resolved
+        FROM trips
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+        ORDER BY
+            CASE WHEN status IN ('TRAVELING', 'PLANNING') THEN 0 ELSE 1 END,
+            end_date DESC,
+            id DESC
+        LIMIT 1
+    </select>
+
+    <select id="countActiveAccountsByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM accounts
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+          AND is_active = 1
+    </select>
+
+    <select id="countActiveCardsByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM cards
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+    <update id="activateSavingsTracking">
+        UPDATE trips
+        SET savings_tracking_started_at = NOW()
+        WHERE id = #{tripId}
+          AND savings_tracking_started_at IS NULL
+    </update>
+
+    <update id="markWalletReflectResolved">
+        UPDATE trips
+        SET wallet_reflect_resolved = 1
+        WHERE id = #{tripId}
+    </update>
+
+    <select id="findWalletBalanceByUserId" resultType="java.math.BigDecimal">
+        SELECT balance_amount
+        FROM wallet
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findOnboardingShownAt" resultType="java.time.LocalDateTime">
+        SELECT onboarding_shown_at
+        FROM users
+        WHERE id = #{userId}
+    </select>
+
+    <update id="markOnboardingShown">
+        UPDATE users
+        SET onboarding_shown_at = NOW()
+        WHERE id = #{userId}
+          AND onboarding_shown_at IS NULL
+    </update>
+
+    <update id="archiveTrip">
+        UPDATE trips
+        SET status = 'ARCHIVED'
+        WHERE id = #{tripId}
+          AND user_id = #{userId}
+          AND (status = 'ENDED' OR end_date &lt; #{today})
+          AND is_deleted = 0
+    </update>
+
+    <update id="acknowledgeStartReport">
+        UPDATE trips
+        SET start_report_viewed_at = COALESCE(start_report_viewed_at, CURRENT_TIMESTAMP)
+        WHERE id = #{tripId}
+          AND user_id = #{userId}
+          AND start_date &lt;= #{today}
+          AND end_date &gt;= #{today}
+          AND is_deleted = 0
+    </update>
+
+    <select id="findTripsByUserId" resultType="TripListItemResponseDto">
+        SELECT t.id AS tripId,
+               t.trip_name,
+               t.status,
+               t.start_date,
+               t.end_date,
+               DATEDIFF(t.end_date, t.start_date) + 1                       AS totalDays,
+               GROUP_CONCAT(c.country_name ORDER BY tc.display_order SEPARATOR ' · ') AS countryNames
+        FROM trips t
+                 LEFT JOIN trip_countries tc ON tc.trip_id = t.id AND tc.is_deleted = 0
+                 LEFT JOIN countries c ON c.id = tc.country_id
+        WHERE t.user_id = #{userId}
+          AND t.is_deleted = 0
+        GROUP BY t.id, t.trip_name, t.status, t.start_date, t.end_date
+        ORDER BY t.start_date DESC
+    </select>
+
+    <select id="findCountries" resultType="TripCountryCatalogResponseDto">
+        SELECT COALESCE(
+                   MAX(CASE WHEN cb.id IS NOT NULL THEN c.id END),
+                   MIN(c.id)
+               ) AS countryId,
+               c.country_name,
+               cur.currency_code,
+               cur.currency_name,
+               MAX(c.flag_url) AS flag_url,
+               CASE WHEN MAX(cb.id) IS NOT NULL THEN TRUE ELSE FALSE END AS selectable
+        FROM countries c
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+                 LEFT JOIN country_budget_baselines cb ON cb.country_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (c.country_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR cur.currency_code LIKE CONCAT('%', #{keyword}, '%')
+                 OR cur.currency_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        GROUP BY c.country_name, cur.currency_code, cur.currency_name
+        ORDER BY selectable DESC, c.country_name ASC
+    </select>
+
+    <select id="existsCountryById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM countries WHERE id = #{countryId})
+    </select>
+
+    <select id="existsBudgetBaselineByCountryId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM country_budget_baselines WHERE country_id = #{countryId})
+    </select>
+
+    <select id="findTripStatus" resultType="string">
+        SELECT status
+        FROM trips
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </select>
+
+    <update id="updateTripGoal" parameterType="TripGoalCommandDto">
+        UPDATE trips
+        SET trip_name = #{tripName},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            total_target_amount = 0
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <update id="softDeleteTripCountries">
+        UPDATE trip_countries
+        SET is_deleted = 1,
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="findTripCountryBudgetContexts" resultType="TripCountryBudgetContextDto">
+        SELECT tc.id AS tripCountryId,
+               tc.country_id,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               tc.display_order
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC
+    </select>
+
+    <select id="findCountryBudgetBaseline" resultType="CountryBudgetBaselineDto">
+        SELECT country_id,
+               round_trip_airfare,
+               lodging_per_night,
+               food_per_day,
+               activity_per_day,
+               transport_per_day,
+               misc_per_day,
+               data_source,
+               reference_date
+        FROM country_budget_baselines
+        WHERE country_id = #{countryId}
+    </select>
+
+    <insert id="upsertTripBudgetRecommendation" parameterType="TripBudgetRecommendationCommandDto">
+        INSERT INTO trip_budget_recommendations (
+            trip_country_id, traveler_count, travel_style,
+            recommended_airfare_amount, recommended_lodging_amount,
+            recommended_activity_amount, recommended_transport_amount, recommended_food_amount, recommended_other_amount,
+            ai_reason, ai_model
+        ) VALUES (
+            #{tripCountryId}, #{travelerCount}, #{travelStyle},
+            #{airfareAmount}, #{lodgingAmount},
+            #{activityAmount}, #{transportAmount}, #{foodAmount}, #{otherAmount},
+            #{aiReason}, #{aiModel}
+        )
+        ON DUPLICATE KEY UPDATE
+            traveler_count = VALUES(traveler_count),
+            travel_style = VALUES(travel_style),
+            recommended_airfare_amount = VALUES(recommended_airfare_amount),
+            recommended_lodging_amount = VALUES(recommended_lodging_amount),
+            recommended_activity_amount = VALUES(recommended_activity_amount),
+            recommended_transport_amount = VALUES(recommended_transport_amount),
+            recommended_food_amount = VALUES(recommended_food_amount),
+            recommended_other_amount = VALUES(recommended_other_amount),
+            ai_reason = VALUES(ai_reason),
+            ai_model = VALUES(ai_model),
+            confirmed_airfare_amount = NULL,
+            confirmed_lodging_amount = NULL,
+            confirmed_activity_amount = NULL,
+            confirmed_transport_amount = NULL,
+            confirmed_food_amount = NULL,
+            confirmed_other_amount = NULL,
+            is_confirmed = 0
+    </insert>
+
+    <select id="findBudgetRecommendationsByTripId" resultType="CountryBudgetRecommendationResponseDto">
+        SELECT tc.id AS tripCountryId,
+               c.country_name,
+               cur.currency_code,
+               tc.arrival_date,
+               tc.departure_date,
+               br.recommended_airfare_amount,
+               br.recommended_lodging_amount,
+               br.recommended_activity_amount,
+               br.recommended_transport_amount,
+               br.recommended_food_amount,
+               br.recommended_other_amount,
+               br.confirmed_airfare_amount,
+               br.confirmed_lodging_amount,
+               br.confirmed_activity_amount,
+               br.confirmed_transport_amount,
+               br.confirmed_food_amount,
+               br.confirmed_other_amount,
+               br.ai_reason,
+               br.is_confirmed
+        FROM trip_countries tc
+                 INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
+                 LEFT JOIN trip_budget_recommendations br ON br.trip_country_id = tc.id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+        ORDER BY tc.display_order ASC
+    </select>
+
+    <update id="updateConfirmedTripBudget" parameterType="TripBudgetConfirmCommandDto">
+        UPDATE trip_budget_recommendations
+        SET confirmed_airfare_amount = #{airfareAmount},
+            confirmed_lodging_amount = #{lodgingAmount},
+            confirmed_activity_amount = #{activityAmount},
+            confirmed_transport_amount = #{transportAmount},
+            confirmed_food_amount = #{foodAmount},
+            confirmed_other_amount = #{otherAmount},
+            is_confirmed = 1
+        WHERE trip_country_id = #{tripCountryId}
+    </update>
+
+    <update id="updateTripCountryTargetBudget" parameterType="TripBudgetConfirmCommandDto">
+        UPDATE trip_countries
+        SET target_budget = #{localTravelTarget}
+        WHERE id = #{tripCountryId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateTripTargetAmount">
+        UPDATE trips
+        SET total_target_amount = #{totalTargetAmount}
+        WHERE id = #{tripId}
+          AND is_deleted = 0
+    </update>
+
+    <insert id="insertTripWalletIfAbsent">
+        INSERT INTO trip_wallets (user_id)
+        VALUES (#{userId})
+        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+    </insert>
+
+    <select id="findTripWalletBalanceByUserId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(balance_amount, 0)
+        FROM wallet
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+    </select>
+
+    <select id="findTravelCardKrwBalanceByUserId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(tcb.krw_estimated_amount), 0)
+        FROM wallet w
+                 JOIN wallet_travel_card wtc
+                      ON wtc.wallet_id = w.id
+                     AND wtc.status = 'LINKED'
+                 JOIN travel_card_balance tcb
+                      ON tcb.wallet_travel_card_id = wtc.id
+        WHERE w.user_id = #{userId}
+          AND w.status = 'ACTIVE'
+    </select>
+
+    <select id="findCurrentMonthWalletSaving" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN wl.direction = 'IN' THEN wl.amount
+                WHEN wl.direction = 'OUT' THEN -wl.amount
+                ELSE 0
+            END
+        ), 0)
+        FROM wallet_ledger wl
+                 JOIN wallet w ON wl.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+          AND w.status = 'ACTIVE'
+          AND wl.transaction_type NOT IN ('ADJUST', 'CARD_TOPUP', 'EXCHANGE_SELL')
+          AND wl.trip_id = (
+              SELECT id FROM trips
+              WHERE user_id = #{userId} AND is_deleted = 0
+                AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
+              ORDER BY created_at DESC LIMIT 1
+          )
+          AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(#{today}, '%Y-%m')
+    </select>
+
+    <select id="findPrepaidExpenseTotalByTripId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+                   COALESCE(br.confirmed_airfare_amount, br.recommended_airfare_amount, 0)
+                   + COALESCE(br.confirmed_lodging_amount, br.recommended_lodging_amount, 0)
+               ), 0)
+        FROM trip_countries tc
+                 LEFT JOIN trip_budget_recommendations br ON br.trip_country_id = tc.id
+        WHERE tc.trip_id = #{tripId}
+          AND tc.is_deleted = 0
+    </select>
+
+    <select id="findMonthlySavingAmountByTripId" resultType="java.math.BigDecimal">
+        SELECT monthly_amount
+        FROM saving_plans
+        WHERE trip_id = #{tripId}
+          AND goal_status = 'ACTIVE'
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findSavingPlanIdByTripId" resultType="java.lang.Long">
+        SELECT id
+        FROM saving_plans
+        WHERE trip_id = #{tripId}
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertSavingPlan">
+        INSERT INTO saving_plans (trip_id, account_id, monthly_amount, goal_status)
+        VALUES (#{tripId}, NULL, #{monthlyAmount}, 'ACTIVE')
+    </insert>
+
+    <update id="updateSavingPlanMonthlyAmount">
+        UPDATE saving_plans
+        SET monthly_amount = #{monthlyAmount}
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <select id="findTravelTransactions" resultType="TravelTransactionDto">
+        SELECT
+            t.id AS transactionId,
+            t.trip_id,
+            c.country_name,
+            sc.category_name,
+            t.merchant_name,
+            t.amount,
+            t.original_amount,
+            t.applied_exchange_rate,
+            cur.symbol AS currencySymbol,
+            t.transaction_date,
+            t.transaction_type
+        FROM transactions t
+        LEFT JOIN trip_countries tc ON t.trip_country_id = tc.id
+        LEFT JOIN countries c ON tc.country_id = c.id
+        LEFT JOIN spending_categories sc ON t.category_id = sc.id
+        LEFT JOIN currencies cur ON t.currency_id = cur.id
+        WHERE t.trip_id = #{tripId}
+          AND t.is_deleted = 0
+          AND t.transaction_type = 'WITHDRAWAL'
+          AND (#{countryId} IS NULL OR t.trip_country_id = #{countryId})
+          AND (#{categoryName} IS NULL OR sc.category_name = #{categoryName})
+        ORDER BY t.transaction_date DESC
+    </select>
+
+    <update id="updateEndedTrips">
+        UPDATE trips
+        SET status = 'ENDED'
+        WHERE status = 'TRAVELING'
+          AND end_date &lt; #{today}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateTravelingTrips">
+        UPDATE trips t
+        LEFT JOIN wallet w ON t.user_id = w.user_id
+        SET t.status = 'TRAVELING',
+            t.initial_wallet_balance = COALESCE(w.balance_amount, 0),
+            t.emergency_amount = GREATEST(COALESCE(w.balance_amount, 0) - t.total_target_amount, 0)
+        WHERE t.status = 'PLANNING'
+          AND t.start_date &lt;= #{today}
+          AND t.is_deleted = 0
+    </update>
+
+    <update id="syncTripStatusForUser">
+        UPDATE trips t
+        LEFT JOIN wallet w ON t.user_id = w.user_id
+        SET t.status = 'TRAVELING',
+            t.initial_wallet_balance = COALESCE(w.balance_amount, 0),
+            t.emergency_amount = GREATEST(COALESCE(w.balance_amount, 0) - t.total_target_amount, 0)
+        WHERE t.user_id = #{userId}
+          AND t.status = 'PLANNING'
+          AND t.start_date &lt;= #{today}
+          AND t.is_deleted = 0
+    </update>
+
+    <update id="syncTripEndedForUser">
+        UPDATE trips
+        SET status = 'ENDED'
+        WHERE user_id = #{userId}
+          AND status = 'TRAVELING'
+          AND end_date &lt; #{today}
+          AND is_deleted = 0
+    </update>
+
+    <update id="syncTripRevertToTraveling">
+        UPDATE trips
+        SET status = 'TRAVELING'
+        WHERE user_id = #{userId}
+          AND status = 'ENDED'
+          AND start_date &lt;= #{today}
+          AND end_date &gt;= #{today}
+          AND is_deleted = 0
+    </update>
+
+    <update id="syncTripRevertToPlanning">
+        UPDATE trips
+        SET status = 'PLANNING'
+        WHERE user_id = #{userId}
+          AND status IN ('TRAVELING', 'ENDED')
+          AND start_date &gt; #{today}
+          AND is_deleted = 0
+    </update>
+
+</mapper>

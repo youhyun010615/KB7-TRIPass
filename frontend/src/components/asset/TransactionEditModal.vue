@@ -1,0 +1,259 @@
+<script setup>
+import { ref, watch } from 'vue';
+const props = defineProps({
+  modelValue: Boolean,
+  mode: { type: String, default: 'category' },
+  categories: { type: Array, default: () => [] },
+  selectedCategory: { type: String, default: '' },
+  memo: { type: String, default: '' },
+  showPrepaid: Boolean,
+});
+const emit = defineEmits([
+  'update:modelValue',
+  'save-category',
+  'save-memo',
+  'prepaid',
+]);
+const selected = ref(props.selectedCategory);
+const memoText = ref(props.memo);
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) {
+      selected.value = props.selectedCategory;
+      memoText.value = props.memo;
+    }
+  },
+);
+function save() {
+  if (props.mode === 'category' && selected.value)
+    emit('save-category', selected.value);
+  if (props.mode === 'memo') emit('save-memo', memoText.value.trim());
+  emit('update:modelValue', false);
+}
+</script>
+<template>
+  <Teleport to="body"
+    ><Transition name="sheet"
+      ><div
+        v-if="modelValue"
+        class="modal-wrap"
+        role="dialog"
+        aria-modal="true"
+      >
+        <button
+          class="backdrop"
+          type="button"
+          aria-label="닫기"
+          @click="emit('update:modelValue', false)"
+        />
+        <section class="editor">
+          <header>
+            <div>
+              <h2>{{ mode === 'category' ? '카테고리 수정' : '메모 수정' }}</h2>
+              <p>
+                {{
+                  mode === 'category'
+                    ? '거래에 맞는 카테고리를 선택해 주세요.'
+                    : '거래를 기억할 수 있도록 메모를 남겨보세요.'
+                }}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="닫기"
+              @click="emit('update:modelValue', false)"
+            >
+              ×
+            </button>
+          </header>
+          <div v-if="mode === 'category'" class="category-list">
+            <label
+              v-for="category in categories"
+              :key="category.id"
+              :class="{ selected: selected === category.id }"
+              ><span
+                class="icon"
+                :style="{ background: `${category.color}18` }"
+                >{{ category.icon }}</span
+              ><span
+                ><b>{{ category.name }}</b
+                ><small>{{ category.description }}</small></span
+              ><input
+                v-model="selected"
+                type="radio"
+                :value="category.id" /></label
+            ><button
+              v-if="showPrepaid"
+              class="prepaid"
+              type="button"
+              @click="emit('prepaid')"
+            >
+              <span class="icon">✈️</span
+              ><span
+                ><b>여행비 사전지출</b
+                ><small>여행 전에 결제한 금액으로 관리해요.</small></span
+              ><i>›</i>
+            </button>
+          </div>
+          <div v-else class="memo-field">
+            <textarea
+              v-model="memoText"
+              maxlength="100"
+              placeholder="메모를 입력해 주세요."
+            /><small>{{ memoText.length }}/100</small>
+          </div>
+          <button
+            class="save"
+            type="button"
+            :disabled="mode === 'category' && !selected"
+            @click="save"
+          >
+            수정 완료
+          </button>
+        </section>
+      </div></Transition
+    ></Teleport
+  >
+</template>
+<style scoped>
+.modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: #10182780;
+}
+.editor {
+  position: relative;
+  width: min(100%, 430px);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 22px 20px 26px;
+  border-radius: 24px 24px 0 0;
+  background: #fff;
+  color: #151f33;
+}
+.editor header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+}
+.editor h2 {
+  font-size: 20px;
+  font-weight: 900;
+}
+.editor header p {
+  margin-top: 6px;
+  color: #718096;
+  font-size: 10px;
+}
+.editor header button {
+  font-size: 28px;
+  color: #64748b;
+}
+.category-list {
+  margin-top: 20px;
+}
+.category-list label,
+.prepaid {
+  display: grid;
+  grid-template-columns: 42px 1fr 24px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 9px;
+  padding: 11px 12px;
+  border: 1px solid #e1e7ef;
+  border-radius: 13px;
+  background: #fff;
+  text-align: left;
+}
+.category-list label.selected {
+  border-color: #78aaf2;
+  background: #eef5ff;
+}
+.icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef4ff;
+  font-size: 16px;
+}
+.category-list b,
+.category-list small,
+.prepaid b,
+.prepaid small {
+  display: block;
+}
+.category-list b,
+.prepaid b {
+  font-size: 12px;
+}
+.category-list small,
+.prepaid small {
+  margin-top: 4px;
+  color: #7e8b9e;
+  font-size: 8px;
+}
+.category-list input {
+  width: 18px;
+  height: 18px;
+  accent-color: #286ed8;
+}
+.prepaid i {
+  color: #8795a9;
+  font-size: 20px;
+  font-style: normal;
+}
+.memo-field {
+  position: relative;
+  margin-top: 20px;
+}
+.memo-field textarea {
+  width: 100%;
+  height: 120px;
+  padding: 14px;
+  border: 1px solid #dce4ef;
+  border-radius: 13px;
+  font-size: 11px;
+  resize: none;
+  outline: none;
+}
+.memo-field small {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  color: #94a3b8;
+  font-size: 8px;
+}
+.save {
+  width: 100%;
+  height: 50px;
+  margin-top: 13px;
+  border-radius: 12px;
+  background: #173f8d;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+.save:disabled {
+  background: #aab4c3;
+}
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: opacity 0.2s;
+}
+.sheet-enter-from,
+.sheet-leave-to {
+  opacity: 0;
+}
+</style>
