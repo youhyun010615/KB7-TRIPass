@@ -17,7 +17,7 @@ onMounted(async () => {
   try {
     await wallet.loadAutoSavingLogs()
   } catch {
-    notice.value = '자동 충전 기록을 불러오지 못했어요.'
+    notice.value = '자동 채우기 기록을 불러오지 못했어요.'
   }
 })
 </script>
@@ -26,7 +26,7 @@ onMounted(async () => {
   <main class="notifications-page">
     <header class="page-header">
       <button type="button" class="back-button" @click="router.back()"><ChevronLeft :size="22" /></button>
-      <h1>자동 충전 기록</h1>
+      <h1>자동 채우기 기록</h1>
       <span aria-hidden="true"></span>
     </header>
 
@@ -41,13 +41,13 @@ onMounted(async () => {
           :style="item.isSuccess ? { background: '#e4f8f2', color: '#079b84' } : { background: '#ffece9', color: '#ef4444' }"
         >{{ item.isSuccess ? '✓' : '!' }}</span>
         <div class="notification-body">
-          <b>{{ item.isSuccess ? '자동 충전 성공' : '자동 충전 실패' }}</b>
+          <b>{{ item.isSuccess ? '자동 채우기 성공' : '자동 채우기 실패' }}</b>
           <p>{{ money(item.amount) }}<template v-if="!item.isSuccess && item.reason"> · {{ item.reason }}</template></p>
           <small>{{ toDayLabel(item.executedAt) }} {{ toTimeLabel(item.executedAt) }}</small>
         </div>
       </article>
       <p v-if="notice" class="list-empty">{{ notice }}</p>
-      <p v-else-if="!wallet.autoSavingLogs.length" class="list-empty">아직 자동 충전 기록이 없어요.</p>
+      <p v-else-if="!wallet.autoSavingLogs.length" class="list-empty">아직 자동 채우기 기록이 없어요.</p>
     </section>
 
     <BottomNav />
