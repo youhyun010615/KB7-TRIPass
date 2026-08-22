@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomNav from '@/components/common/BottomNav.vue'
+import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { getReceipts } from '@/api/receipt'
@@ -213,51 +214,7 @@ onMounted(async () => {
       <div class="flex flex-col gap-3">
         <h2 class="text-lg font-black text-gray-900 px-0.5">{{ isEnded ? '여행 기록' : '여행 관리 메뉴' }}</h2>
 
-        <div class="grid grid-cols-2 gap-3">
-          <button
-            v-for="(item, i) in menuItems"
-            :key="item.label"
-            type="button"
-            class="menu-tile text-left active:scale-[0.97]"
-            :class="{ 'col-span-2': i === menuItems.length - 1 && menuItems.length % 2 === 1 }"
-            :style="{ animationDelay: `${i * 70}ms` }"
-            @click="router.push(item.path)"
-          >
-            <div class="flex items-start justify-between">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #EEF2FF">
-                <svg v-if="item.icon === 'report'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M14 2V8H20" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="8" y1="13" x2="16" y2="13" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="8" y1="17" x2="12" y2="17" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <svg v-else-if="item.icon === 'checklist'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 11L12 14L22 4" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <svg v-else-if="item.icon === 'schedule'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M16 2V6M8 2V6M3 10H21" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <svg v-else-if="item.icon === 'receipt'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 3H19V21L16.5 19.5L14 21L11.5 19.5L9 21L5 19V3Z" stroke="#3B5BDB" stroke-width="2" stroke-linejoin="round"/>
-                  <path d="M9 8H15M9 12H15M9 16H13" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <svg v-else-if="item.icon === 'mission'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="9" stroke="#3B5BDB" stroke-width="2"/>
-                  <path d="M9 12L11 14L15.5 9.5" stroke="#3B5BDB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <span
-                v-if="item.badge"
-                class="flex-shrink-0 text-[10.5px] font-bold px-2 py-[3px] rounded-full"
-                :style="item.badge === '준비 중' ? 'background:#EAF1FF; color:#0B2A6B' : 'background:#F4F5F9; color:#111827'"
-              >{{ item.badge }}</span>
-            </div>
-            <p class="text-sm font-semibold text-gray-900 mt-3">{{ item.label }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ item.desc }}</p>
-          </button>
-        </div>
+        <TravelManagementMenu :items="menuItems" @select="router.push($event.path)" />
       </div>
     </div>
 

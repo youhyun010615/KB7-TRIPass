@@ -1,17 +1,18 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
 import { resetAccount as resetAccountApi } from '@/api/mypage'
 import { getAccounts } from '@/api/asset'
 import { fetchMyTrips } from '@/api/travel'
+import { fetchPreTripReport } from '@/api/report'
+import { getReceipts } from '@/api/receipt'
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
+import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
 import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
-import reportIcon from '@/assets/icons/report.svg'
-import checklistIcon from '@/assets/icons/checklist.svg'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -24,6 +25,8 @@ const accounts = ref([])
 const trips = ref([])
 const selectedTripId = ref(null)
 const tripMenuOpen = ref(false)
+const selectedTripReport = ref(null)
+const selectedTripReceiptCount = ref(0)
 
 const selectedTrip = computed(() =>
   trips.value.find((trip) => Number(trip.tripId) === Number(selectedTripId.value)) || trips.value[0] || null,
@@ -103,6 +106,20 @@ function selectTrip(trip) {
   tripMenuOpen.value = false
 }
 
+async function loadSelectedTripMenuStats(trip) {
+  selectedTripReport.value = null
+  selectedTripReceiptCount.value = 0
+  if (!trip?.tripId || trip.status === 'ENDED') return
+  const [reportResult, receiptResult] = await Promise.allSettled([
+    fetchPreTripReport(trip.tripId),
+    getReceipts(trip.tripId),
+  ])
+  if (reportResult.status === 'fulfilled') selectedTripReport.value = reportResult.value
+  if (receiptResult.status === 'fulfilled') {
+    selectedTripReceiptCount.value = receiptResult.value.data?.data?.length ?? 0
+  }
+}
+
 function startNewTrip() {
   if (hasTravelingTrip.value) return
   travelStore.resetGoal()
@@ -112,14 +129,18 @@ function startNewTrip() {
 const travelMenuItems = computed(() => {
   if (!selectedTrip.value) return []
   const id = selectedTrip.value.tripId
+  const ended = selectedTrip.value.status === 'ENDED'
+  const badge = (value) => (ended ? undefined : value)
   return [
-    { label: '여행 리포트', sub: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${id}` },
-    { label: '체크리스트', sub: '여행 전 · 귀국 준비', icon: 'check', path: `/mypage/checklists?tripId=${id}` },
-    { label: '여행 일정', sub: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${id}/schedules?tripId=${id}` },
-    { label: '영수증 보관함', sub: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${id}/receipts` },
-    { label: '완료 미션', sub: '진행했던 미션 기록', icon: 'mission', path: `/mypage/missions?tripId=${id}` },
+    { label: '여행 리포트', desc: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${id}`, badge: badge(tripStatus(selectedTrip.value) === '여행 중' ? '열람 가능' : '준비 중') },
+    { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${id}`, badge: badge(`${selectedTripReport.value?.checklistCompleted ?? 0}/${selectedTripReport.value?.checklistTotal ?? 0}`) },
+    { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${id}/schedules?tripId=${id}`, badge: badge(`${selectedTripReport.value?.scheduleCount ?? 0}개`) },
+    { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${id}/receipts`, badge: badge(`${selectedTripReceiptCount.value}장`) },
+    { label: '완료 미션', desc: '매달 진행했던 미션 기록', icon: 'mission', path: `/mypage/missions?tripId=${id}`, badge: badge('-') },
   ]
 })
+
+watch(selectedTrip, (trip) => loadSelectedTripMenuStats(trip), { immediate: true })
 
 onMounted(async () => {
   try {
@@ -343,23 +364,7 @@ const myManageItems = computed(() => [
 
           <Transition name="trip-menu">
             <div v-if="tripMenuOpen" class="trip-menu-grid">
-              <button
-                  v-for="item in travelMenuItems"
-                  :key="item.label"
-                  type="button"
-                  class="trip-menu-item"
-                  :class="{ wide: item.icon === 'mission' }"
-                  @click="router.push(item.path)"
-              >
-                <span class="trip-menu-icon" aria-hidden="true">
-                  <img v-if="item.icon === 'report'" :src="reportIcon" alt="" />
-                  <img v-else-if="item.icon === 'check'" :src="checklistIcon" alt="" />
-                  <svg v-else-if="item.icon === 'mission'" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <svg v-else-if="item.icon === 'schedule'" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M4 9.5h16M9 3.5v3M15 3.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </span>
-                <span class="trip-menu-copy"><b>{{ item.label }}</b><small>{{ item.sub }}</small></span>
-              </button>
+              <TravelManagementMenu compact :items="travelMenuItems" @select="router.push($event.path)" />
             </div>
           </Transition>
         </article>
@@ -627,7 +632,7 @@ const myManageItems = computed(() => [
 .selected-trip-summary>em.traveling::before { display:inline-block;width:5px;height:5px;margin-right:5px;border-radius:50%;background:#1dbf73;box-shadow:0 0 0 0 rgba(29,191,115,.38);content:'';vertical-align:1px;animation:traveling-dot-pulse 1.4s ease-out infinite; }
 .selected-trip-summary>svg { width:18px;height:18px;color:#9aa6b8;transition:transform .22s ease; }
 .selected-trip-summary>svg.open { transform:rotate(180deg); }
-.trip-menu-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:13px;border-top:1px solid #edf1f7;background:#fff; }
+.trip-menu-grid { display:block;padding:13px;border-top:1px solid #edf1f7;background:#f6f8fc; }
 .trip-menu-item { position:relative;display:flex;min-width:0;min-height:112px;flex-direction:column;align-items:flex-start;padding:13px;border:0;border-radius:16px;background:#f6f8fc;color:#111b30;text-align:left;opacity:0;transform:translateY(16px) scale(.94);animation:trip-menu-card-reveal .46s cubic-bezier(.2,.82,.28,1.18) forwards;will-change:transform,opacity; }
 .trip-menu-item:nth-child(1) { animation-delay:.05s; }
 .trip-menu-item:nth-child(2) { animation-delay:.11s; }
