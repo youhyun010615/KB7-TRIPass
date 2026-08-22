@@ -17,7 +17,9 @@ export function resetAccount() {
 }
 
 export function setOverrideDate(date) {
-    return api.post('/dev/override-date', { date })
+    // 운영 백엔드의 @RequestParam 계약과 body 기반 계약을 모두 지원한다.
+    // 배포 시점에 백엔드 버전이 달라도 같은 날짜가 정상 전달된다.
+    return api.post('/dev/override-date', { date }, { params: { date } })
 }
 
 export function clearOverrideDate() {
