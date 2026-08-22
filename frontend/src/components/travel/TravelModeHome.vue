@@ -25,6 +25,7 @@ import livingIcon from '@/assets/icons/home-dollar.svg';
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 import calculatorIcon from '@/assets/icons/calculator.svg';
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png';
+import tosimiTravelCard from '@/assets/cards/kb-travelers-tosimi.png';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 import { now as currentDateTime, today as currentDate, todayIso } from '@/utils/devDate';
@@ -138,13 +139,13 @@ const destinations = computed(() => {
     code: 'all',
     name: '전체',
     flag: '🌍',
-    theme: '#17485b',
-    progressBg: getTravelCountryColors().progressBg,
-    barColor: getTravelCountryColors().barColor,
+    theme: '#101a39',
+    progressBg: 'rgba(5, 18, 55, 0.82)',
+    barColor: '#ffd466',
     targetBudget: totalTargetBudget,
     spentAmount: totalSpentAmount,
-    arrivalDate: overallStart,
-    departureDate: overallEnd,
+    arrivalDate: overallStart || tripInfo.value?.startDate,
+    departureDate: overallEnd || tripInfo.value?.endDate,
     dayRangeStart: 1,
     dayRangeEnd: overallTotalDays,
   };
@@ -577,13 +578,17 @@ const currentTravelCountry = computed(() => {
   ) || persistentCountries.value[0] || null;
 });
 
-function travelCardBalanceText(item) {
+function travelCardCurrencyCode(item) {
   const currentCountry = currentTravelCountry.value;
-  const currencyCode = item?.code === 'all'
+  return item?.code === 'all'
     ? (currentCountry?.currencyCode || exchangeStore.currencies.find(
       currency => currency.countryName === currentCountry?.countryName,
     )?.code)
     : item?.currency;
+}
+
+function travelCardBalanceText(item) {
+  const currencyCode = travelCardCurrencyCode(item);
   const balance = tripWalletStore.foreignBalances.find(
     entry => String(entry.currencyCode || entry.code).toUpperCase() === String(currencyCode || '').toUpperCase(),
   );
@@ -592,6 +597,22 @@ function travelCardBalanceText(item) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`.trim();
+}
+
+function travelCardBalanceKrwText(item) {
+  const currencyCode = travelCardCurrencyCode(item);
+  const countryName = item?.code === 'all' ? currentTravelCountry.value?.countryName : item?.name;
+  const balance = tripWalletStore.foreignBalances.find(
+    entry => String(entry.currencyCode || entry.code).toUpperCase() === String(currencyCode || '').toUpperCase(),
+  );
+  const currency = exchangeStore.currencies.find(
+    entry => entry.countryName === countryName,
+  ) || exchangeStore.currencies.find(
+    entry => String(entry.code).toUpperCase() === String(currencyCode || '').toUpperCase(),
+  );
+  const amount = Number(balance?.balanceAmount ?? balance?.amount ?? 0);
+  const krwAmount = Math.round((amount / Number(currency?.unit || 1)) * Number(currency?.rate || item?.rate || 0));
+  return `약 ${krwAmount.toLocaleString('ko-KR')}원`;
 }
 
 function parseScheduleDateTime(dateTime) {
@@ -848,26 +869,20 @@ async function switchMode(mode) {
             <div class="trip-line">
               <div class="trip-destination">
                 <p class="trip-country-name">
-                  <span>{{ item.code === 'all' ? (tripInfo?.tripName || '여행') : item.name }}</span>
+                  <span>{{ item.code === 'all' ? '전체 국가' : item.name }}</span>
                 </p>
-                <p class="trip-country-dates">{{ countryDateRange(item) }}</p>
+                <p
+                  v-if="item.arrivalDate && item.departureDate"
+                  class="trip-country-dates"
+                  :class="{ 'country-date-range': item.code !== 'all' }"
+                >{{ countryDateRange(item) }}</p>
               </div>
             </div>
             <div class="ticket-photo-space" />
 
             <div class="travel-summary-content">
               <div class="summary-title-wrapper">
-                <div v-if="item.code === 'all'" class="summary-title">
-                  <span
-                    >{{
-                      item.code === 'all'
-                        ? '전체 남은 여행 자산'
-                        : `${item.name}에서 남은 여행 자산`
-                    }}
-                    (합산)</span
-                  ><strong>{{ formatWon(item.targetBudget - item.spentAmount) }}</strong>
-                </div>
-                <div v-else class="summary-title-spacer" aria-hidden="true" />
+                <div v-if="item.code !== 'all'" class="summary-title-spacer" aria-hidden="true" />
                 <button
                   v-if="isReturnPeriod"
                   class="return-checklist-button"
@@ -886,43 +901,35 @@ async function switchMode(mode) {
                   귀국 체크리스트 확인하기 ›
                 </button>
               </div>
-              <div
-                v-if="item.code === 'all'"
-                class="country-assets"
-                style="grid-template-columns: 1fr 1fr"
-                aria-label="국가별 남은 여행 자산"
-              >
-                <div
-                  v-for="asset in destinations.slice(0, -1)"
-                  :key="asset.code"
-                  class="country-asset-card"
-                  :style="{
-                    '--asset-image': `url(${asset.image})`,
-                    '--asset-theme': asset.theme,
-                  }"
-                >
-                  <span><span :class="flagIconClass(asset.code)" class="fi-inline" style="font-size: 13px" /> {{ asset.name }} 남은 여행 자산</span
-                  ><b>{{ formatWon(asset.targetBudget - asset.spentAmount) }}</b>
-                </div>
-              </div>
-              <template v-if="item.code === 'all'">
-                <div class="fund-label">
-                  <span>예산 사용률</span><b>{{ fundPercent(item) }}%</b>
-                </div>
-                <div class="fund-track">
-                  <i :style="{ width: `${fundPercent(item)}%` }" />
-                </div>
-                <div class="fund-meta">
-                  <span>BUDGET {{ formatWon(item.targetBudget) }}</span
-                  ><span>SPENT {{ formatWon(item.spentAmount) }}</span>
-                </div>
-              </template>
-              <div v-else class="country-fund-section">
+              <div class="travel-card-balance-row">
+                <img class="travel-card-icon-image" :src="tosimiTravelCard" alt="토심이 트래블카드">
                 <div class="travel-card-balance">
                   <small>트래블카드 잔액</small>
-                  <strong>{{ travelCardBalanceText(item) }}</strong>
+                  <div class="travel-card-balance-values">
+                    <strong>{{ travelCardBalanceText(item) }}</strong>
+                    <em>{{ travelCardBalanceKrwText(item) }}</em>
+                  </div>
                 </div>
-                <div class="fund-progress-box">
+              </div>
+              <div v-if="item.code === 'all'" class="fund-progress-box overall-fund-progress-box">
+                <div class="fund-progress-head">
+                  <span>전체 예산 사용률</span><strong>{{ fundPercent(item) }}%</strong>
+                </div>
+                <div class="fund-progress-track">
+                  <i :style="{ width: `${fundPercent(item)}%` }" />
+                </div>
+                <div class="fund-progress-meta">
+                  <div>
+                    <b>{{ formatWon(item.spentAmount) }}</b>
+                    <small>SPENT</small>
+                  </div>
+                  <div class="align-right">
+                    <b>{{ formatWon(item.targetBudget) }}</b>
+                    <small>BUDGET</small>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="fund-progress-box">
                 <div class="fund-progress-head">
                   <span>{{ item.name }} 예산 사용률</span><strong>{{ fundPercent(item) }}%</strong>
                 </div>
@@ -938,7 +945,6 @@ async function switchMode(mode) {
                     <b>{{ formatWon(item.targetBudget) }}</b>
                     <small>BUDGET</small>
                   </div>
-                </div>
                 </div>
               </div>
             </div>
@@ -2753,11 +2759,16 @@ async function switchMode(mode) {
 .start-report-modal small{display:block;margin-top:14px;font-size:9px;line-height:1.5;color:#8995a8}
 .start-report-fade-enter-active,.start-report-fade-leave-active{transition:opacity .2s ease}.start-report-fade-enter-from,.start-report-fade-leave-to{opacity:0}
 .ticket-top{display:flex;height:44px;min-height:44px;box-sizing:border-box;align-items:center;gap:9px;padding:6px 12px;color:#fff;letter-spacing:normal}.ticket-meta-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}.ticket-meta-title{display:flex;min-width:0;align-items:center;gap:6px}.ticket-meta-title>strong{overflow:hidden;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.ticket-meta-flags{display:flex;flex:none;gap:2px}.ticket-meta-flags i,.ticket-meta-now i{display:block;width:19px;height:13px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}.ticket-meta-copy>small{overflow:hidden;color:rgba(255,255,255,.68);font-family:'Space Mono',ui-monospace,monospace;font-size:8px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.ticket-meta-divider{width:1px;height:20px;flex:none;background:rgba(255,255,255,.24)}.ticket-meta-day{flex:none;padding:5px 9px;border-radius:999px;color:#173f8d;background:#ffd45e;font-family:'Space Mono',ui-monospace,monospace;font-size:9px;font-weight:950}.ticket-meta-now{display:flex;flex:none;align-items:center;gap:4px;padding:5px 7px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(255,255,255,.12);font-size:9px;font-weight:800}.ticket-meta-now b{color:#ffd45e;font-family:'Space Mono',ui-monospace,monospace;font-size:8px}.ticket-meta-now i{width:20px;height:14px}.perforation:not(.lower){position:relative;top:auto}.trip-country-dates{margin-top:5px;color:rgba(255,255,255,.74);font-family:'Space Mono',ui-monospace,monospace;font-size:9px;font-weight:700}.trip-destination{min-width:0}.trip-country-name{margin-top:0}.summary-title-spacer{height:45px}
+.country-date-range{display:block}
 .ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height);box-sizing:border-box}.ticket-stub{display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:rgba(255,255,255,.72);font-family:'Space Mono',ui-monospace,monospace;font-size:8px;font-weight:800;letter-spacing:.08em}.ticket-stub>span{color:#ffd45e}.ticket-stub>b{color:#fff;font-size:8px;letter-spacing:.05em}
 .ticket{--ticket-edge-height:60px;--ticket-perforation-height:15px}.ticket-top{height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height));min-height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height))}.perforation:not(.lower){height:var(--ticket-perforation-height);background:var(--theme)}.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height);padding:0 16px;font-size:10px}.ticket-stub>span{display:flex;align-items:center;gap:6px;font-size:11px}.ticket-stub>span img{width:21px;height:21px;object-fit:contain}.ticket-stub>b{font-size:10px;letter-spacing:.06em}
 .ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height)}.perforation:not(.lower){position:absolute;top:var(--ticket-edge-height);height:0;background:transparent}.perforation.lower{bottom:var(--ticket-edge-height)}.ticket-stub{padding:0 14px;font-size:9px}.ticket-stub>span{font-size:10px}.ticket-stub>span img{width:18px;height:18px}.ticket-stub>b{font-size:9px}
 .perforation:not(.lower),.perforation.lower{transform:translateY(-11px)}
 .travel-card-balance{display:flex;flex-direction:column;align-items:flex-start;text-align:left}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
 .ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
-.country-fund-section{display:flex;flex-direction:column;gap:10px}.country-fund-section .travel-card-balance{align-self:flex-start;padding-left:4px}.country-fund-section .travel-card-balance small{font-size:11px}.country-fund-section .travel-card-balance strong{font-size:17px;line-height:1.2}
+.travel-card-balance-values{display:flex;align-items:baseline;gap:8px}.travel-card-balance-values em{color:rgba(255,255,255,.82);font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}
+.combined .ticket-main{display:flex;flex-direction:column;background:linear-gradient(145deg,#0b1635 0%,#152b62 58%,#10224d 100%)}.combined .ticket-photo-space{min-height:24px;height:auto;flex:1}.combined .travel-summary-content{margin-top:auto}.overall-fund-progress-box{margin-top:0;background:rgba(4,14,44,.8);box-shadow:0 12px 28px rgba(0,0,0,.2)}
+.travel-card-balance-row{display:flex;width:fit-content;max-width:100%;align-items:center;gap:13px;margin-bottom:12px;perspective:180px}.travel-card-balance-row .travel-card-icon-image{width:34px;height:48px;flex:none;border:1px solid rgba(255,255,255,.58);border-radius:5px;object-fit:cover;box-shadow:0 5px 12px rgba(3,16,43,.32);transform-origin:center;animation:travel-card-flip 4s ease-in-out infinite}.travel-card-balance-row .travel-card-balance small{color:#ffd466;font-size:15px;font-weight:950;letter-spacing:-.02em}.travel-card-balance-row .travel-card-balance strong{color:#fff;font-size:20px;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.28)}
+@keyframes travel-card-flip{0%,35%{transform:rotateY(0)}50%{transform:rotateY(180deg)}65%,100%{transform:rotateY(360deg)}}
+@media (prefers-reduced-motion:reduce){.travel-card-balance-row .travel-card-icon-image{animation:none}}
 </style>
