@@ -32,6 +32,9 @@ public class TransactionDto {
     private String merchantType;      // CODEF 가맹점 업종
     private String paymentMethodName; // 거래 상세의 계좌명 또는 카드명
     private String memo;
+    private BigDecimal originalAmount;      // 해외결제 시 현지 통화 원금(국내 거래는 null)
+    private BigDecimal appliedExchangeRate; // 해외결제 시 적용 환율(국내 거래는 null)
+    private Long currencyId;                // 해외결제 시 현지 통화 ID(국내 거래는 null)
     private Long categoryId;
     private String categoryName;
     private String categorySource;

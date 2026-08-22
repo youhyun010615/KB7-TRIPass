@@ -6,6 +6,8 @@ import com.tripass.asset.duplicate.MatchCandidate;
 import com.tripass.asset.mapper.AssetMapper;
 import com.tripass.asset.service.codef.CodefClient;
 import com.tripass.common.exception.CustomException;
+import com.tripass.exchange.mapper.ExchangeRateMapper;
+import com.tripass.exchange.service.ExchangeRateService;
 import com.tripass.saving.classification.CategoryClassificationResult;
 import com.tripass.saving.classification.CategorySource;
 import com.tripass.saving.classification.TransactionCategoryClassifier;
@@ -36,6 +38,8 @@ public class AssetService {
     private final MonthlySpendingAnalysisService monthlySpendingAnalysisService;
     private final TravelService travelService;
     private final com.tripass.dev.util.DevDateUtil devDateUtil;
+    private final ExchangeRateService exchangeRateService;
+    private final ExchangeRateMapper exchangeRateMapper;
 
     public AssetService(
             AssetMapper assetMapper,
@@ -44,7 +48,9 @@ public class AssetService {
             CodefClient codefClient,
             MonthlySpendingAnalysisService monthlySpendingAnalysisService,
             TravelService travelService,
-            com.tripass.dev.util.DevDateUtil devDateUtil
+            com.tripass.dev.util.DevDateUtil devDateUtil,
+            ExchangeRateService exchangeRateService,
+            ExchangeRateMapper exchangeRateMapper
     ) {
         this.assetMapper = assetMapper;
         this.transactionCategoryClassifier = transactionCategoryClassifier;
@@ -53,6 +59,28 @@ public class AssetService {
         this.monthlySpendingAnalysisService = monthlySpendingAnalysisService;
         this.travelService = travelService;
         this.devDateUtil = devDateUtil;
+        this.exchangeRateService = exchangeRateService;
+        this.exchangeRateMapper = exchangeRateMapper;
+    }
+
+    /**
+     * 해외결제(현지 통화)면 원화로 환산해 amount에 저장하고, 현지 통화 원금·적용환율·
+     * 통화ID는 별도 컬럼에 남긴다. 국내결제거나 통화코드가 없으면 그대로 둔다.
+     */
+    private void applyForeignCurrencyConversion(TransactionDto dto, String currencyCode) {
+        if (currencyCode == null || currencyCode.isBlank() || "KRW".equals(currencyCode)) {
+            return;
+        }
+        try {
+            var converted = exchangeRateService.convertCurrency(currencyCode, "KRW", dto.getAmount().doubleValue());
+            dto.setOriginalAmount(dto.getAmount());
+            dto.setAmount(BigDecimal.valueOf(converted.getToAmount()));
+            dto.setAppliedExchangeRate(BigDecimal.valueOf(converted.getAppliedRate()));
+            dto.setCurrencyId(exchangeRateMapper.getCurrencyIdByCode(currencyCode));
+            dto.setTransactionRegion("OVERSEAS");
+        } catch (Exception e) {
+            log.warn("해외결제 환율 변환 실패, 원금을 그대로 사용합니다. currencyCode={}, error={}", currencyCode, e.getMessage());
+        }
     }
 
     @Transactional
@@ -590,6 +618,7 @@ public class AssetService {
                 }
                 dto.setMerchantName(merchantName);
                 dto.setMerchantType((String) approval.get("resMemberStoreType"));
+                applyForeignCurrencyConversion(dto, (String) approval.get("resCurrencyCode"));
                 applyAutomaticClassification(dto, categoryIds);
                 assetMapper.upsertTransactionFromCard(dto);
                 saved.add(dto);
