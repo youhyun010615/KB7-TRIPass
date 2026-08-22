@@ -1,0 +1,50 @@
+name: Run Seed SQL on EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      sql_file:
+        description: 'SQL file path (relative to backend/src/main/resources/sql/)'
+        required: true
+        default: 'demo_yuhyun_seed.sql'
+
+jobs:
+  run-seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Copy SQL and execute on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -eu
+            echo "Running seed SQL: ${{ github.event.inputs.sql_file }}"
+
+      - name: Copy SQL file to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/src/main/resources/sql/${{ github.event.inputs.sql_file }}"
+          target: "/tmp/tripass-seed/"
+          strip_components: 5
+
+      - name: Execute SQL in DB container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -eu
+            docker exec -i tripass-db mysql -u ${{ secrets.DB_USERNAME }} -p'${{ secrets.DB_PASSWORD }}' ${{ secrets.DB_NAME }} < /tmp/tripass-seed/${{ github.event.inputs.sql_file }}
+            echo "Seed SQL executed successfully"
+            rm -f /tmp/tripass-seed/${{ github.event.inputs.sql_file }}
