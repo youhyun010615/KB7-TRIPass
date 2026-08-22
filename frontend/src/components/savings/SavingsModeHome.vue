@@ -559,6 +559,24 @@ function closeTripRequiredModal() {
         </div>
       </section>
 
+      <section
+        v-else-if="!financialSourcesLoading && linkedAccountCount > 0 && linkedCardCount === 0"
+        class="analysis-empty-state mx-4 mt-3"
+      >
+        <small class="analysis-empty-label">AI SAVING MISSION</small>
+        <div class="home-mission-setup-body">
+          <div class="home-mission-ai-stage" aria-hidden="true">
+            <span class="home-mission-ai-orbit"></span>
+            <span class="home-mission-ai-spark one">✦</span>
+            <span class="home-mission-ai-spark two">✦</span>
+            <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
+          </div>
+          <b>여행 계획과 카드 등록을 해야 미션을 진행할 수 있어요</b>
+          <small>저축 미션은 소비 습관을 분석해 여행 자금을 자연스럽게 모으도록 도와주는 기능이에요.</small>
+          <button type="button" @click="openCardConnection">카드 등록하기</button>
+        </div>
+      </section>
+
       <HomeSavingMissionCard
         v-if="travelStore.lifecycle?.hasTrip && savingMissionsStore.hasStartedMissions"
         class="mx-4 mt-3"
