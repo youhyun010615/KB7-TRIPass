@@ -22,6 +22,9 @@ VALUES
 ((SELECT id FROM countries WHERE country_name = '일본'),
  400000, 90000, 45000, 35000, 9000, 15000,
  'KAYAK 항공권가, 도쿄메트로 요금·여행 예산 가이드', '2026-08-11'),
+((SELECT id FROM countries WHERE country_name = '포르투갈'),
+ 900000, 80000, 50000, 30000, 12000, 15000,
+ 'KAYAK 항공권가, 리스본 비바비아젠 교통권·여행 예산 가이드', '2026-08-11'),
 ((SELECT id FROM countries WHERE country_name = '홍콩'),
  350000, 130000, 40000, 35000, 7000, 15000,
  'KAYAK 항공권가, MTR·옥토퍼스 요금·여행 예산 가이드', '2026-08-11')
