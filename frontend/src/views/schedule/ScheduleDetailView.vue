@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useTravelStore } from '@/stores/travel';
@@ -51,8 +51,14 @@ const paymentLabel = computed(
       schedule.value?.paymentStatus
     ] || '미정',
 );
-async function remove() {
-  if (!window.confirm('이 여행 일정을 삭제할까요?')) return;
+const showDeleteConfirm = ref(false);
+
+function requestRemove() {
+  showDeleteConfirm.value = true;
+}
+
+async function confirmRemove() {
+  showDeleteConfirm.value = false;
   if (await store.remove(route.params.scheduleId)) {
     if (props.archiveMode) {
       router.push(`/mypage/travel/${route.params.id}/schedules`);
@@ -138,11 +144,22 @@ function handleBack() {
           "
         >
           수정</button
-        ><button type="button" class="delete" @click="remove">삭제</button>
+        ><button type="button" class="delete" @click="requestRemove">삭제</button>
       </div>
     </template>
     <p v-else class="empty">일정을 찾을 수 없어요.</p>
     <BottomNav v-if="!archiveMode" />
+
+    <div v-if="showDeleteConfirm" class="confirm-backdrop" @click.self="showDeleteConfirm = false">
+      <section class="confirm-modal">
+        <h2>이 여행 일정을 삭제할까요?</h2>
+        <p>삭제하면 이 일정 정보를 다시 볼 수 없어요.</p>
+        <div class="confirm-actions">
+          <button type="button" @click="showDeleteConfirm = false">취소</button>
+          <button type="button" class="danger" @click="confirmRemove">삭제하기</button>
+        </div>
+      </section>
+    </div>
   </main>
 </template>
 
@@ -292,5 +309,53 @@ function handleBack() {
   background-position: center;
   background-size: cover;
   box-shadow: 0 1px 4px rgba(15, 35, 70, 0.15);
+}
+.confirm-backdrop {
+  position: fixed;
+  z-index: 130;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(23, 35, 60, 0.42);
+}
+.confirm-modal {
+  width: min(100%, 360px);
+  padding: 20px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(17, 24, 39, 0.22);
+  text-align: center;
+}
+.confirm-modal h2 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.confirm-modal p {
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+.confirm-actions button {
+  height: 48px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 800;
+}
+.confirm-actions .danger {
+  background: #ffe8e8;
+  color: #ef4444;
 }
 </style>
