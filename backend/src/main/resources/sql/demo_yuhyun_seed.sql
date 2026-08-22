@@ -206,71 +206,71 @@ ON DUPLICATE KEY UPDATE updated_at = NOW();
 INSERT INTO wallet_ledger
     (wallet_id, trip_id, direction, transaction_type, transfer_method,
      amount, balance_before, balance_after,
-     source_type, source_id, target_type, target_id, memo, created_at)
+     source_type, source_id, target_type, target_id, idempotency_key, memo, created_at)
 VALUES
     -- 8월 저축 (첫달 D-day 프로레이션)
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'MANUAL',
      193000, 0, 193000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '8월 여행 저축 (D-day 첫달)', '2026-08-25 12:00:00'),
+     'DEMO-SEED-08', '8월 여행 저축 (D-day 첫달)', '2026-08-25 12:00:00'),
 
     -- 9월 저축
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      658000, 193000, 851000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '9월 여행 저축', '2026-09-25 09:00:00'),
+     'DEMO-SEED-09', '9월 여행 저축', '2026-09-25 09:00:00'),
 
     -- 10월 저축 (추가 +150,000)
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      658000, 851000, 1509000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '10월 여행 저축', '2026-10-25 09:00:00'),
+     'DEMO-SEED-10A', '10월 여행 저축', '2026-10-25 09:00:00'),
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'MANUAL',
      150000, 1509000, 1659000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '10월 추가 저축', '2026-10-28 20:00:00'),
+     'DEMO-SEED-10B', '10월 추가 저축', '2026-10-28 20:00:00'),
 
     -- 11월 저축
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      658000, 1659000, 2317000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '11월 여행 저축', '2026-11-25 09:00:00'),
+     'DEMO-SEED-11', '11월 여행 저축', '2026-11-25 09:00:00'),
 
     -- 12월 저축 (목표 미달 -150,000)
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      508000, 2317000, 2825000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '12월 여행 저축 (목표 미달)', '2026-12-25 09:00:00'),
+     'DEMO-SEED-12', '12월 여행 저축 (목표 미달)', '2026-12-25 09:00:00'),
 
     -- 1월 저축 (보충 +200,000)
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      658000, 2825000, 3483000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '1월 여행 저축', '2027-01-25 09:00:00'),
+     'DEMO-SEED-01A', '1월 여행 저축', '2027-01-25 09:00:00'),
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'MANUAL',
      200000, 3483000, 3683000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '1월 보충 저축 (12월 미달분)', '2027-01-28 20:00:00'),
+     'DEMO-SEED-01B', '1월 보충 저축 (12월 미달분)', '2027-01-28 20:00:00'),
 
     -- 2월 저축 (추가 +150,000)
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      658000, 3683000, 4341000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '2월 여행 저축', '2027-02-25 09:00:00'),
+     'DEMO-SEED-02A', '2월 여행 저축', '2027-02-25 09:00:00'),
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'MANUAL',
      150000, 4341000, 4491000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '2월 추가 저축', '2027-02-27 20:00:00'),
+     'DEMO-SEED-02B', '2월 추가 저축', '2027-02-27 20:00:00'),
 
     -- 3월 저축 (추가 +100,000)
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'AUTO_SAVING',
      658000, 4491000, 5149000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '3월 여행 저축', '2027-03-25 09:00:00'),
+     'DEMO-SEED-03A', '3월 여행 저축', '2027-03-25 09:00:00'),
     (@wallet_id, @trip_id, 'IN', 'CHARGE', 'MANUAL',
      100000, 5149000, 5249000,
      'ACCOUNT', @account_id, 'WALLET', @wallet_id,
-     '3월 추가 저축', '2027-03-28 20:00:00');
+     'DEMO-SEED-03B', '3월 추가 저축', '2027-03-28 20:00:00');
 
 -- 월렛 잔액을 최종 저축 완료 상태로 업데이트
 UPDATE wallet SET balance_amount = 5249000, version = 12 WHERE id = @wallet_id;

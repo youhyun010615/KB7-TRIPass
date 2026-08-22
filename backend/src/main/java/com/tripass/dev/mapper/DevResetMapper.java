@@ -85,4 +85,16 @@ public interface DevResetMapper {
     void deleteWalletWithdrawRecipientByUser(@Param("userId") Long userId);
 
     void resetUserOnboarding(@Param("userId") Long userId);
+
+    void deleteNonSeedWalletLedgerByUser(@Param("userId") Long userId);
+
+    void deleteNonSeedWalletExchangeTransactionByUser(@Param("userId") Long userId);
+
+    void deleteNonSeedWalletCardTopupByUser(@Param("userId") Long userId);
+
+    void deleteNonSeedTravelCardLedgerByUser(@Param("userId") Long userId);
+
+    void resetTravelCardBalanceByUser(@Param("userId") Long userId);
+
+    void recalcWalletBalanceFromSeedLedger(@Param("userId") Long userId);
 }
