@@ -284,12 +284,10 @@ public class MockCodefClient implements CodefClient {
         }
 
         if (DEMO_PREP_CONNECTED_ID.equals(connectedId)) {
-            return success(List.of(
-                    mapOf("resCardName", "KB Star 체크카드", "resCardNo", "5412-****-****-3301",
-                            "resCardType", "02", "resPaymentAccount", "44401230001111"),
-                    mapOf("resCardName", "KB국민카드 청춘대로 톡톡카드", "resCardNo", "5412-****-****-7702",
-                            "resCardType", "01", "resPaymentAccount", "44401230001111")
-            ));
+            return success(List.of(mapOf(
+                    "resCardName", "KB Star 체크카드", "resCardNo", "5412-****-****-3301",
+                    "resCardType", "02", "resPaymentAccount", "44401230001111"
+            )));
         }
 
         if (DEMO_TRAVEL_CONNECTED_ID.equals(connectedId)) {
