@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BottomNav from '@/components/common/BottomNav.vue'
 import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
 import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 import { fetchMyTrips } from '@/api/travel'
@@ -123,7 +122,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex flex-col" style="background: #F4F5F9">
+  <div class="min-h-screen pb-8 flex flex-col" style="background: #F4F5F9">
 
     <!-- 헤더 -->
     <div class="flex items-center gap-3 px-5 pt-3.5 pb-3">
@@ -167,8 +166,6 @@ onMounted(async () => {
         <TravelManagementMenu :items="menuItems" @select="router.push($event.path)" />
       </div>
     </div>
-
-    <BottomNav />
   </div>
 </template>
 

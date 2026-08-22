@@ -762,10 +762,20 @@ export const useTravelStore = defineStore('travel', () => {
     if (!lifecycle.value?.tripId) return false;
     await archiveTripApi(lifecycle.value.tripId);
     initialized.value = false;
+    hasTravelGoal.value = false;
     activeTrip.value = null;
     tripId.value = null;
+    tripName.value = '';
     homeDashboard.value = null;
-    lifecycle.value = { lifecycle: 'ARCHIVED' };
+    homeSelectedCountryId.value = null;
+    recommendation.value = null;
+    completion.value = null;
+    clearPlans();
+    lifecycle.value = {
+      lifecycle: 'ARCHIVED',
+      hasTrip: false,
+      endingReviewRequired: false,
+    };
     return true;
   }
 

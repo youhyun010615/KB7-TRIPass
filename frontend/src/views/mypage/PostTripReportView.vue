@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { exportElementToPdf } from '@/utils/pdf'
 
@@ -190,13 +189,11 @@ const categorySegments = computed(() => {
 
     <button class="pdf" type="button" @click="download" :disabled="downloading">{{ downloading ? 'PDF 생성 중...' : '▣ PDF 저장하기' }}</button>
     </template>
-
-    <BottomNav />
   </main>
 </template>
 
 <style scoped>
-.page { min-height: 100vh; padding: 0 16px 96px; background: #f8f6f1; color: #111a2d; }
+.page { min-height: 100vh; padding: 0 16px 32px; background: #f8f6f1; color: #111a2d; }
 .page > header { display: grid; height: 63px; grid-template-columns: 35px 1fr 35px; align-items: end; padding-bottom: 16px; }
 .page > header button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #fff; color: #193d82; font-size: 24px; font-weight: 700; box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07); }
 .page > header h1 { text-align: center; font-size: 15px; font-weight: 900; }
