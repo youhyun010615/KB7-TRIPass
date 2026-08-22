@@ -1,5 +1,10 @@
 package com.tripass.asset.service.codef;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +56,14 @@ public class MockCodefClient implements CodefClient {
     public static final String DEMO_FRESH_LOGIN_ID = "demofresh";
     public static final String DEMO_FRESH_CONNECTED_ID = "MOCK-CONNECTED-DEMO-FRESH";
 
+    // ===== yuhyun 데모 계정 (실제 거래 + 가상 데이터, 8개 체크포인트 시나리오) =====
+    public static final String YUHYUN_LOGIN_ID = "yuhyun";
+    public static final String YUHYUN_PASSWORD = "Mock1234!";
+    public static final String YUHYUN_CONNECTED_ID = "MOCK-CONNECTED-YUHYUN";
+    public static final String YUHYUN_BANK_ACCOUNT = "496501-01-110300";
+    public static final String YUHYUN_NORI_CARD_NO = "5412-****-****-9901";
+    public static final String YUHYUN_TRAVEL_CARD_NO = "5412-****-****-9902";
+
     private static final String ACCESS_TOKEN = "mock-codef-access-token";
 
     // ===== tripassqa 데이터 =====
@@ -76,6 +89,11 @@ public class MockCodefClient implements CodefClient {
     private static final List<Map<String, Object>> FRESH_BANK_TRANSACTIONS = buildFreshBankTransactions();
     private static final List<Map<String, Object>> FRESH_CARD_TRANSACTIONS = buildFreshCardTransactions();
     private static final List<Map<String, Object>> FRESH_TRAVEL_CARD_TRANSACTIONS = buildFreshTravelCardTransactions();
+
+    // ===== yuhyun 데모 데이터 (JSON 파일 로딩) =====
+    private static final List<Map<String, Object>> YUHYUN_BANK_TRANSACTIONS = loadYuhyunBankTransactions();
+    private static final List<Map<String, Object>> YUHYUN_NORI_CARD_TRANSACTIONS = loadYuhyunNoriCardTransactions();
+    private static final List<Map<String, Object>> YUHYUN_TRAVEL_CARD_TRANSACTIONS = loadYuhyunTravelCardTransactions();
 
     @Override
     public String encodePassword(String plainPassword) {
@@ -152,6 +170,9 @@ public class MockCodefClient implements CodefClient {
         }
         if (DEMO_FRESH_LOGIN_ID.equals(loginId) && DEMO_PASSWORD.equals(password)) {
             return success(Map.of("connectedId", DEMO_FRESH_CONNECTED_ID));
+        }
+        if (YUHYUN_LOGIN_ID.equals(loginId) && YUHYUN_PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", YUHYUN_CONNECTED_ID));
         }
 
         return failure("CF-01002", "Mock 금융기관 아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -240,6 +261,15 @@ public class MockCodefClient implements CodefClient {
             return success(data);
         }
 
+        if (YUHYUN_CONNECTED_ID.equals(connectedId)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf("resAccount", YUHYUN_BANK_ACCOUNT, "resAccountName", "KB국민은행 종합통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "990924", "resWithdrawableAmount", "990924")
+            ));
+            return success(data);
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
@@ -313,6 +343,15 @@ public class MockCodefClient implements CodefClient {
             ));
         }
 
+        if (YUHYUN_CONNECTED_ID.equals(connectedId)) {
+            return success(List.of(
+                    mapOf("resCardName", "KB nori 체크카드", "resCardNo", YUHYUN_NORI_CARD_NO,
+                            "resCardType", "02", "resPaymentAccount", YUHYUN_BANK_ACCOUNT),
+                    mapOf("resCardName", "KB 트래블러스 체크카드", "resCardNo", YUHYUN_TRAVEL_CARD_NO,
+                            "resCardType", "02", "resPaymentAccount", YUHYUN_BANK_ACCOUNT)
+            ));
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
     }
 
@@ -352,6 +391,13 @@ public class MockCodefClient implements CodefClient {
             return success(Map.of("resTrHistoryList", List.of()));
         }
 
+        if (YUHYUN_CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> transactions = YUHYUN_BANK_ACCOUNT.equals(account)
+                    ? filterByDate(YUHYUN_BANK_TRANSACTIONS, body, "resAccountTrDate")
+                    : List.of();
+            return success(Map.of("resTrHistoryList", transactions));
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
@@ -388,6 +434,15 @@ public class MockCodefClient implements CodefClient {
             List<Map<String, Object>> source = switch (cardNo) {
                 case "5412-****-****-4401" -> FRESH_CARD_TRANSACTIONS;
                 case "5412-****-****-4402" -> FRESH_TRAVEL_CARD_TRANSACTIONS;
+                default -> List.of();
+            };
+            return success(filterByDate(source, body, "resUsedDate"));
+        }
+
+        if (YUHYUN_CONNECTED_ID.equals(connectedId)) {
+            List<Map<String, Object>> source = switch (cardNo) {
+                case "5412-****-****-9901" -> YUHYUN_NORI_CARD_TRANSACTIONS;
+                case "5412-****-****-9902" -> YUHYUN_TRAVEL_CARD_TRANSACTIONS;
                 default -> List.of();
             };
             return success(filterByDate(source, body, "resUsedDate"));
@@ -793,6 +848,48 @@ public class MockCodefClient implements CodefClient {
         response.put("result", mapOf("code", code, "message", message));
         response.put("data", Map.of());
         return response;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> loadJsonTransactions(String... resourcePaths) {
+        ObjectMapper mapper = new ObjectMapper();
+        List<Map<String, Object>> merged = new ArrayList<>();
+        for (String path : resourcePaths) {
+            try (InputStream is = MockCodefClient.class.getResourceAsStream(path)) {
+                if (is == null) {
+                    throw new RuntimeException("Mock JSON not found: " + path);
+                }
+                List<Map<String, Object>> items = mapper.readValue(is,
+                        mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+                merged.addAll(items);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load mock JSON: " + path, e);
+            }
+        }
+        merged.sort((a, b) -> {
+            String dateA = String.valueOf(a.values().iterator().next());
+            String dateB = String.valueOf(b.values().iterator().next());
+            return dateA.compareTo(dateB);
+        });
+        return List.copyOf(merged);
+    }
+
+    private static List<Map<String, Object>> loadYuhyunBankTransactions() {
+        return loadJsonTransactions(
+                "/mock/demo-bank-transactions.json",
+                "/mock/demo-virtual-bank-transactions.json"
+        );
+    }
+
+    private static List<Map<String, Object>> loadYuhyunNoriCardTransactions() {
+        return loadJsonTransactions(
+                "/mock/demo-card-transactions.json",
+                "/mock/demo-virtual-card-transactions.json"
+        );
+    }
+
+    private static List<Map<String, Object>> loadYuhyunTravelCardTransactions() {
+        return loadJsonTransactions("/mock/demo-travel-card-transactions.json");
     }
 
     private static Map<String, Object> mapOf(Object... entries) {
