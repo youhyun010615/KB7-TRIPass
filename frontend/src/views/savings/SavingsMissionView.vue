@@ -364,6 +364,15 @@ function displayedWeek(mission) {
   )
 }
 
+function eligibleDayCount(week) {
+  const dayCount = Number(week?.eligibleDayCount)
+  return Number.isFinite(dayCount) && dayCount > 0 ? dayCount : 7
+}
+
+function isPartialWeek(week) {
+  return eligibleDayCount(week) < 7
+}
+
 const currentDisplayedWeek = computed(() => {
   const missions = missionStore.missions?.missions || []
   for (const mission of missions) {
@@ -657,9 +666,14 @@ function closeSelectionFlow() {
                 <h3>{{ mission.categoryName }} {{ mission.reductionRate }}% 줄이기</h3>
                 <small v-if="displayedWeek(mission)">{{ displayedWeek(mission).missionMessage }}</small>
               </div>
-              <span :class="['status-chip', statusClass(mission.status)]">
-                {{ statusLabel(mission.status) }}
-              </span>
+              <div class="mission-status-stack">
+                <span v-if="isPartialWeek(displayedWeek(mission))" class="partial-week-chip">
+                  {{ eligibleDayCount(displayedWeek(mission)) }}일 참여
+                </span>
+                <span :class="['status-chip', statusClass(mission.status)]">
+                  {{ statusLabel(mission.status) }}
+                </span>
+              </div>
             </div>
 
             <template v-if="displayedWeek(mission)">
@@ -674,6 +688,9 @@ function closeSelectionFlow() {
                 <span>남은 한도 {{ formatCurrency(remainingLimit(displayedWeek(mission))) }}</span>
                 <span>주간 사용 한도 {{ formatCurrency(displayedWeek(mission).weeklyUsageLimit) }}</span>
               </div>
+              <p v-if="isPartialWeek(displayedWeek(mission))" class="partial-week-note">
+                이번 주는 {{ eligibleDayCount(displayedWeek(mission)) }}일 기준으로 계산된 목표예요.
+              </p>
             </template>
           </article>
 
@@ -903,6 +920,7 @@ function closeSelectionFlow() {
 @keyframes status-pulse{0%,100%{box-shadow:0 0 0 0 rgba(20,148,119,.25)}50%{box-shadow:0 0 0 5px rgba(20,148,119,0)}}
 @keyframes empty-hero-cta-pulse{0%{box-shadow:0 0 0 0 rgba(255,212,102,.5)}70%,100%{box-shadow:0 0 0 9px rgba(255,212,102,0)}}
 @media(prefers-reduced-motion:reduce){.mission-savings-card,.fund-check-card,.active-missions-card,.progress-card,.fund-check-bar>div,.status-chip.in-progress,.start-summary>button,.mission-title-ai-badge,.recommendation-hero .mission-title-ai-badge img{animation:none}}.mission-card-head{display:flex;align-items:center;gap:11px}.status-chip{padding:6px 8px;border-radius:20px;background:#e7edf6;color:#65758e;font-size:9px;font-weight:900}.status-chip.in-progress,.status-chip.success{background:#e4f7f1;color:#149477}.status-chip.failed{background:#ffeded;color:#db5050}.limit-caption{display:flex;justify-content:space-between;gap:8px;margin-top:9px;color:#8290a5;font-size:9px}.mission-card-head h3{font-size:13.5px}.mission-card-head small{display:block;margin-top:3px;color:#5a6478;font-size:10px;font-weight:600;line-height:1.4}.empty-card{margin-bottom:16px}.category-icon-glyph{display:block;width:20px;height:20px}.category-icon-glyph :deep(svg){display:block;width:100%;height:100%}
+.mission-card-head>.mission-status-stack{display:flex;min-width:auto;flex:none;align-items:flex-end;gap:5px}.partial-week-chip{padding:6px 8px;border-radius:20px;background:#fff2c7;color:#a66b00;font-size:9px;font-weight:900}.partial-week-note{margin-top:9px;padding:8px 10px;border-radius:9px;background:#fff8dd;color:#8b6509;font-size:9.5px;font-weight:800;line-height:1.45}
 .dashboard-header{display:flex;align-items:flex-start;justify-content:space-between}
 .dashboard-header p{display:flex;align-items:center;gap:4px;font-family:'Space Mono',monospace;font-size:9.5px;font-weight:800;letter-spacing:.15em;color:#0b2a6b;margin-bottom:4px}
 .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}
