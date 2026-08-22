@@ -38,6 +38,7 @@ public class WalletService {
 
     private final WalletMapper walletMapper;
     private final com.tripass.travel.mapper.TravelMapper travelMapper;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     public TripWalletSummaryResponseDto getTripWalletSummary(Long userId, Long tripId) {
         java.util.Map<String, Object> row = walletMapper.findTripWalletSummary(tripId, userId);
@@ -105,7 +106,7 @@ public class WalletService {
         response.setOverTargetSpentAmount(defaultZero(response.getOverTargetSpentAmount()));
         response.setEmergencyAmount(emergencyAmount.compareTo(BigDecimal.ZERO) > 0 ? emergencyAmount : BigDecimal.ZERO);
         response.setSavingRate(calculateSavingRate(balanceAmount, targetAmount));
-        response.setMonthlySavings(walletMapper.findMonthlySavings(userId, response.getWalletId()));
+        response.setMonthlySavings(walletMapper.findMonthlySavings(userId, response.getWalletId(), devDateUtil.today(userId)));
 
         WalletLinkedTravelCardResponseDto travelCard = walletMapper.findLinkedTravelCardForMain(response.getWalletId());
         if (travelCard == null) {
@@ -493,7 +494,7 @@ public class WalletService {
                 .amount(request.getAmount())
                 .dayOfMonth(request.getDayOfMonth())
                 .enabled(request.getEnabled())
-                .nextTransferDate(calculateNextTransferDate(request.getDayOfMonth()))
+                .nextTransferDate(calculateNextTransferDate(request.getDayOfMonth(), userId))
                 .build();
 
         walletMapper.upsertAutoSavingRule(rule);
@@ -1340,8 +1341,8 @@ public class WalletService {
         );
     }
 
-    private LocalDate calculateNextTransferDate(Integer dayOfMonth) {
-        LocalDate today = LocalDate.now();
+    private LocalDate calculateNextTransferDate(Integer dayOfMonth, Long userId) {
+        LocalDate today = devDateUtil.today(userId);
         LocalDate transferDate = today.withDayOfMonth(dayOfMonth);
 
         if (!transferDate.isAfter(today)) {

@@ -53,9 +53,9 @@
             tc.departure_date,
             DATEDIFF(tc.departure_date, tc.arrival_date) + 1 AS total_days,
             CASE
-                WHEN CURRENT_DATE <![CDATA[<]]> tc.arrival_date THEN 0
-                WHEN CURRENT_DATE <![CDATA[>]]> tc.departure_date THEN DATEDIFF(tc.departure_date, tc.arrival_date) + 1
-                ELSE DATEDIFF(CURRENT_DATE, tc.arrival_date)
+                WHEN #{today} <![CDATA[<]]> tc.arrival_date THEN 0
+                WHEN #{today} <![CDATA[>]]> tc.departure_date THEN DATEDIFF(tc.departure_date, tc.arrival_date) + 1
+                ELSE DATEDIFF(#{today}, tc.arrival_date)
             END AS passed_days
         FROM TripStats ts
                  JOIN trip_countries tc ON ts.trip_id = tc.trip_id
@@ -350,7 +350,7 @@
         SET status = 'ARCHIVED'
         WHERE id = #{tripId}
           AND user_id = #{userId}
-          AND (status = 'ENDED' OR end_date &lt; CURRENT_DATE)
+          AND (status = 'ENDED' OR end_date &lt; #{today})
           AND is_deleted = 0
     </update>
 
@@ -359,8 +359,8 @@
         SET start_report_viewed_at = COALESCE(start_report_viewed_at, CURRENT_TIMESTAMP)
         WHERE id = #{tripId}
           AND user_id = #{userId}
-          AND start_date &lt;= CURRENT_DATE
-          AND end_date &gt;= CURRENT_DATE
+          AND start_date &lt;= #{today}
+          AND end_date &gt;= #{today}
           AND is_deleted = 0
     </update>
 
@@ -599,7 +599,7 @@
                 AND status IN ('PLANNING', 'TRAVELING', 'ENDED')
               ORDER BY created_at DESC LIMIT 1
           )
-          AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m')
+          AND DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(#{today}, '%Y-%m')
     </select>
 
     <select id="findPrepaidExpenseTotalByTripId" resultType="java.math.BigDecimal">

@@ -148,7 +148,8 @@ public class TravelService {
     @Transactional
     public void archiveTrip(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
-        if (travelMapper.archiveTrip(tripId, currentUserId) == 0) {
+        LocalDate today = devDateUtil.today(currentUserId);
+        if (travelMapper.archiveTrip(tripId, currentUserId, today) == 0) {
             throw new TravelException(TravelErrorCode.TRIP_NOT_ARCHIVABLE);
         }
         travelMapper.updateUserCurrentViewMode(currentUserId, "SAVING");
@@ -157,7 +158,8 @@ public class TravelService {
     @Transactional
     public void acknowledgeStartReport(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
-        if (travelMapper.acknowledgeStartReport(tripId, currentUserId) == 0) {
+        LocalDate today = devDateUtil.today(currentUserId);
+        if (travelMapper.acknowledgeStartReport(tripId, currentUserId, today) == 0) {
             throw new TravelException(TravelErrorCode.INVALID_TRIP_PERIOD);
         }
     }
@@ -178,7 +180,8 @@ public class TravelService {
         validateTripOwner(tripId, currentUserId);
 
         // 1. 대시보드 기본 정보 및 전체 국가 목록 조회
-        TravelStatusResponseDto dashboard = travelMapper.getTripDashboard(tripId);
+        LocalDate today = devDateUtil.today(currentUserId);
+        TravelStatusResponseDto dashboard = travelMapper.getTripDashboard(tripId, today);
         if (dashboard == null) {
             Trip trip = travelMapper.selectTripById(tripId);
             dashboard = TravelStatusResponseDto.builder()
@@ -442,7 +445,7 @@ public class TravelService {
                         .min(BigDecimal.valueOf(100));
         int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), devDateUtil.today(currentUserId));
         BigDecimal monthlySavingTarget = defaultZero(travelMapper.findMonthlySavingAmountByTripId(trip.getTripId()));
-        BigDecimal currentMonthSaving = defaultZero(travelMapper.findCurrentMonthWalletSaving(currentUserId));
+        BigDecimal currentMonthSaving = defaultZero(travelMapper.findCurrentMonthWalletSaving(currentUserId, devDateUtil.today(currentUserId)));
         BigDecimal currentMonthRemaining = monthlySavingTarget.subtract(currentMonthSaving).max(BigDecimal.ZERO);
         int currentMonthSavingPercent = monthlySavingTarget.signum() == 0
                 ? 0

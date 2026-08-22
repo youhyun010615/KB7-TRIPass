@@ -29,7 +29,8 @@ public interface WalletMapper {
 
     List<WalletMonthlySavingResponseDto> findMonthlySavings(
             @Param("userId") Long userId,
-            @Param("walletId") Long walletId
+            @Param("walletId") Long walletId,
+            @Param("today") java.time.LocalDate today
     );
 
     WalletMonthlySavingDetailResponseDto findMonthlySavingDetailSummary(

@@ -185,12 +185,12 @@
             resultType="WalletMonthlySavingResponseDto">
         WITH RECURSIVE month_range AS (
             SELECT
-                CAST(DATE_FORMAT(DATE_SUB(CURRENT_DATE, INTERVAL 5 MONTH), '%Y-%m-01') AS DATE) AS month_start
+                CAST(DATE_FORMAT(DATE_SUB(#{today}, INTERVAL 5 MONTH), '%Y-%m-01') AS DATE) AS month_start
             UNION ALL
             SELECT
                 DATE_ADD(month_start, INTERVAL 1 MONTH)
             FROM month_range
-            WHERE month_start <![CDATA[<]]> CAST(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') AS DATE)
+            WHERE month_start <![CDATA[<]]> CAST(DATE_FORMAT(#{today}, '%Y-%m-01') AS DATE)
         )
         SELECT
             DATE_FORMAT(mr.month_start, '%Y-%m') AS month,
@@ -202,7 +202,7 @@
                 END
             ), 0) AS saved_amount,
             CASE
-                WHEN DATE_FORMAT(mr.month_start, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m') THEN TRUE
+                WHEN DATE_FORMAT(mr.month_start, '%Y-%m') = DATE_FORMAT(#{today}, '%Y-%m') THEN TRUE
                 ELSE FALSE
             END AS current_month,
             TRUE AS available

@@ -13,7 +13,7 @@ import java.time.LocalDate;
 
 @Mapper
 public interface TravelMapper {
-    TravelStatusResponseDto getTripDashboard(@Param("tripId") Long tripId);
+    TravelStatusResponseDto getTripDashboard(@Param("tripId") Long tripId, @Param("today") LocalDate today);
     
     List<BudgetCheckResponseDto> getTripBudget(@Param("tripId") Long tripId);
 
@@ -27,9 +27,9 @@ public interface TravelMapper {
 
     Trip selectLatestTripByUserId(@Param("userId") Long userId);
 
-    int archiveTrip(@Param("tripId") Long tripId, @Param("userId") Long userId);
+    int archiveTrip(@Param("tripId") Long tripId, @Param("userId") Long userId, @Param("today") LocalDate today);
 
-    int acknowledgeStartReport(@Param("tripId") Long tripId, @Param("userId") Long userId);
+    int acknowledgeStartReport(@Param("tripId") Long tripId, @Param("userId") Long userId, @Param("today") LocalDate today);
 
     // 유저의 current_view_mode 상태 변경
     int updateUserCurrentViewMode(@Param("userId") Long userId, @Param("currentViewMode") String currentViewMode);
@@ -100,7 +100,7 @@ public interface TravelMapper {
 
     BigDecimal findTravelCardKrwBalanceByUserId(@Param("userId") Long userId);
 
-    BigDecimal findCurrentMonthWalletSaving(@Param("userId") Long userId);
+    BigDecimal findCurrentMonthWalletSaving(@Param("userId") Long userId, @Param("today") LocalDate today);
 
     BigDecimal findPrepaidExpenseTotalByTripId(@Param("tripId") Long tripId);
 
