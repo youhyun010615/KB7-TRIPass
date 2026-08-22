@@ -34,7 +34,7 @@ const selectedTripReceiptCount = ref(0)
 const selectedTrip = computed(() =>
   trips.value.find((trip) => Number(trip.tripId) === Number(selectedTripId.value)) || trips.value[0] || null,
 )
-const hasTravelingTrip = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중'))
+const isTripActive = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중' || tripStatus(trip).startsWith('D-')))
 const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
 const visitedCountryCount = computed(() => {
   const countries = new Set()
@@ -124,7 +124,7 @@ async function loadSelectedTripMenuStats(trip) {
 }
 
 function startNewTrip() {
-  if (hasTravelingTrip.value) return
+  if (isTripActive.value) return
   travelStore.resetGoal()
   router.push({ name: 'TravelRegister' })
 }
@@ -374,13 +374,13 @@ const myManageItems = computed(() => [
           <button
             type="button"
             class="trip-circle-item add-trip"
-            :class="{ blocked: hasTravelingTrip }"
-            :disabled="hasTravelingTrip"
-            :title="hasTravelingTrip ? '이미 진행 중인 여행이 있습니다.' : ''"
+            :class="{ blocked: isTripActive }"
+            :disabled="isTripActive"
+            :title="isTripActive ? '이미 진행 중이거나 준비 중인 여행이 있습니다.' : ''"
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
-            <b>{{ hasTravelingTrip ? '여행 중' : '여행 추가' }}</b>
+            <b>{{ isTripActive ? '여행 진행 중' : '여행 추가' }}</b>
           </button>
         </div>
 
