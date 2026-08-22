@@ -1,11 +1,12 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from '@lucide/vue'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTripWalletStore } from '@/stores/tripWallet'
 import { countryPresentation, useTravelStore } from '@/stores/travel'
 
+const route = useRoute()
 const router = useRouter()
 const wallet = useTripWalletStore()
 const travel = useTravelStore()
@@ -18,7 +19,7 @@ const fallbackCurrencies = [
 ]
 
 const flagClassMap = { EUR: 'fi fi-eu', JPY: 'fi fi-jp', CHF: 'fi fi-ch', USD: 'fi fi-us', GBP: 'fi fi-gb', CNY: 'fi fi-cn' }
-const exchangeMode = ref('BUY')
+const exchangeMode = ref(route.query.mode === 'sell' ? 'SELL' : 'BUY')
 const selectedCurrency = ref('JPY')
 const foreignInput = ref('')
 const krwInput = ref('100000')
