@@ -16,10 +16,7 @@ build/
 *.ipr
 
 ### 로컬 환경 설정 (DB 비밀번호 등 — Git에 올리지 않음) ###
-.env
-.env.local
 src/main/resources/application-local.properties
-src/main/resources/serviceAccountKey.json
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/

@@ -98,11 +98,11 @@
 
 | 요구사항 ID | 기능 | 화면 | API | 테이블 | 상태 |
 |---|---|---|---|---|---|
-| FXC-001 | 전체 환율 목록 조회 | 환율 조회 | `GET /api/v1/exchange-rates` | `exchange_rates` | 예정 |
-| FXC-002 | 특정 통화 환율 조회 | 환율 상세 | `GET /api/v1/exchange-rates/{currency}` | `exchange_rates` | 예정 |
-| FXC-003 | 환전 금액 계산 | 환전 계산기 | `POST /api/v1/exchange-rates/calculator` | `exchange_rates` | 예정 |
-| FXC-004 | 환전 내역 등록 | 환전 완료 | `POST /api/v1/exchange-rates/logs` | `exchange_logs` | 예정 |
-| FXC-005 | 환전 내역 조회 | 환전 내역 목록 | `GET /api/v1/exchange-rates/logs` | `exchange_logs` | 예정 |
+| FXC-001 | 전체 환율 목록 조회 | 환율 조회 | `GET /api/v1/exchange/rates` | `exchange_rates` | 예정 |
+| FXC-002 | 특정 통화 환율 조회 | 환율 상세 | `GET /api/v1/exchange/rates/{currency}` | `exchange_rates` | 예정 |
+| FXC-003 | 환전 금액 계산 | 환전 계산기 | `POST /api/v1/exchange/calculate` | `exchange_rates` | 예정 |
+| FXC-004 | 환전 내역 등록 | 환전 완료 | `POST /api/v1/exchange/logs` | `exchange_logs` | 예정 |
+| FXC-005 | 환전 내역 조회 | 환전 내역 목록 | `GET /api/v1/exchange/logs` | `exchange_logs` | 예정 |
 
 ---
 

@@ -37,7 +37,7 @@
 | 자산 | `/api/v1/assets` |
 | 저축 | `/api/v1/saving` |
 | 여행 | `/api/v1/trips` |
-| 환율/환전 | `/api/v1/exchange-rates` |
+| 환율/환전 | `/api/v1/exchange` |
 | 사전지출 | `/api/v1/prepay` |
 | 일정 | `/api/v1/schedules` |
 | 지출 | `/api/v1/expenses` |
@@ -62,7 +62,7 @@ GET /api/v1/trips/{tripId}/budgets/{budgetId}
 
 ```
 GET /api/v1/expenses?tripId=1&category=FOOD&page=0&size=20&sort=date,desc
-GET /api/v1/exchange-rates?base=KRW&target=USD
+GET /api/v1/exchange/rates?base=KRW&target=USD
 ```
 
 - 필터링, 정렬, 검색, 페이징에 사용
@@ -229,7 +229,7 @@ Authorization: Bearer <JWT_ACCESS_TOKEN>
 
 - 인증이 필요한 모든 API 요청에 포함
 - 토큰 만료 시 `401 Unauthorized` 반환 → 클라이언트에서 `/api/v1/auth/refresh` 호출
-- 인증 불필요 엔드포인트: `/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/exchange-rates`
+- 인증 불필요 엔드포인트: `/api/v1/auth/login`, `/api/v1/auth/register`, `/api/v1/exchange/rates`
 
 ---
 
