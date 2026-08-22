@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 
@@ -16,37 +16,7 @@ const {
   errorMessage,
 } = storeToRefs(travelCardsStore)
 
-const primaryComparisonGroups = [
-  {
-    label: '적용 환율',
-    value: (card) => card.appliedRateInfo,
-    preference: 'max',
-    criteria: '우대율이 높을수록 최고',
-    comparableValue: (value) => {
-      const percentageMatch = String(value ?? '').match(
-          /(\d+(?:\.\d+)?)\s*%/,
-      )
-
-      return percentageMatch
-          ? Number(percentageMatch[1])
-          : null
-    },
-  },
-  {
-    label: '해외 결제 수수료',
-    value: (card) => card.paymentFee,
-    preference: 'min',
-    criteria: '수수료가 낮을수록 최고',
-  },
-  {
-    label: '해외 ATM 수수료',
-    value: (card) => card.withdrawalFee,
-    preference: 'min',
-    criteria: '수수료가 낮을수록 최고',
-  },
-]
-
-const secondaryComparisonGroups = [
+const comparisonRows = [
   {
     label: '발급·연계 은행',
     value: (card) => card.bankName,
@@ -66,6 +36,10 @@ const secondaryComparisonGroups = [
         getSettlementTypeLabel(card.settlementType),
   },
   {
+    label: '적용 환율',
+    value: (card) => card.appliedRateInfo,
+  },
+  {
     label: '외화 보유한도',
     value: (card) => card.foreignCurrencyHoldingLimit,
   },
@@ -76,6 +50,14 @@ const secondaryComparisonGroups = [
   {
     label: '재환전 수수료',
     value: (card) => card.reExchangeFee,
+  },
+  {
+    label: '해외 결제 수수료',
+    value: (card) => card.paymentFee,
+  },
+  {
+    label: '해외 ATM 수수료',
+    value: (card) => card.withdrawalFee,
   },
   {
     label: '자동 충전',
@@ -94,7 +76,10 @@ const secondaryComparisonGroups = [
   },
 ]
 
-const showSecondaryGroups = ref(false)
+const tableGridStyle = computed(() => ({
+  gridTemplateColumns:
+      `84px repeat(${Math.max(comparisonCards.value.length, 1)}, minmax(98px, 1fr))`,
+}))
 
 const canOpenFirstCard = computed(
     () => comparisonCards.value.length > 0,
@@ -110,64 +95,6 @@ function displayValue(value) {
   }
 
   return value
-}
-
-function getCardNameParts(cardName) {
-  return String(cardName ?? '').split(/\s*\+\s*/)
-}
-
-function getBenefitValueParts(value) {
-  return String(displayValue(value)).split(/\s*\+\s*/)
-}
-
-function isLongBenefitValue(value) {
-  return String(displayValue(value)).length >= 18
-}
-
-function getComparableNumber(value) {
-  const normalizedValue = displayValue(value)
-  const normalizedText = String(normalizedValue)
-      .replaceAll(',', '')
-      .trim()
-
-  if (/면제|무료/.test(normalizedText)) {
-    return 0
-  }
-
-  const numericMatch = normalizedText.match(
-      /-?\d+(?:\.\d+)?/,
-  )
-
-  return numericMatch ? Number(numericMatch[0]) : null
-}
-
-function isBestValue(group, card) {
-  if (!group.preference) {
-    return false
-  }
-
-  const comparableValues = comparisonCards.value
-      .map((comparisonCard) => ({
-        cardId: comparisonCard.id,
-        value: group.comparableValue
-            ? group.comparableValue(group.value(comparisonCard))
-            : getComparableNumber(group.value(comparisonCard)),
-      }))
-      .filter(({ value }) => Number.isFinite(value))
-
-  if (comparableValues.length < 2) {
-    return false
-  }
-
-  const bestValue = group.preference === 'max'
-      ? Math.max(...comparableValues.map(({ value }) => value))
-      : Math.min(...comparableValues.map(({ value }) => value))
-
-  const currentValue = comparableValues.find(
-      ({ cardId }) => cardId === card.id,
-  )?.value
-
-  return currentValue === bestValue
 }
 
 
@@ -404,139 +331,46 @@ onMounted(loadComparison)
           </button>
         </div>
 
-        <div class="benefit-card-list">
-          <article
-              v-for="group in primaryComparisonGroups"
-              :key="group.label"
-              class="benefit-card"
-              :class="{
-                'rate-benefit-card': group.label === '적용 환율',
-              }"
-          >
-            <div class="benefit-group-heading">
-              <h3>{{ group.label }}</h3>
-              <small>{{ group.criteria }}</small>
-            </div>
-
-            <button
-                v-for="card in comparisonCards"
-                :key="card.id"
-                type="button"
-                class="benefit-row"
-                @click="openCardDetail(card.id)"
+        <div class="comparison-scroll">
+          <div class="comparison-table">
+            <div
+                class="table-row table-header"
+                :style="tableGridStyle"
             >
-              <span class="benefit-card-name">
-                <template
-                    v-for="(namePart, index) in getCardNameParts(card.cardName)"
-                    :key="`${card.id}-${index}`"
-                >
-                  <span>{{ index ? `+ ${namePart}` : namePart }}</span>
-                </template>
-                <small>{{ card.cardCompany }}</small>
-              </span>
-
-              <span
-                  class="benefit-value-wrap"
-                  :class="{
-                    'long-value': isLongBenefitValue(group.value(card)),
-                  }"
-              >
-                <strong>
-                  <template
-                      v-for="(valuePart, index) in getBenefitValueParts(group.value(card))"
-                      :key="`${card.id}-${group.label}-${index}`"
-                  >
-                    <span>
-                      {{ index ? `+ ${valuePart}` : valuePart }}
-                    </span>
-                  </template>
-                </strong>
-                <em v-if="isBestValue(group, card)">
-                  최고
-                </em>
-              </span>
-            </button>
-          </article>
-
-          <button
-              type="button"
-              class="more-benefit-button"
-              :aria-expanded="showSecondaryGroups"
-              @click="showSecondaryGroups = !showSecondaryGroups"
-          >
-            <span class="more-benefit-label">
-              {{
-                showSecondaryGroups
-                    ? '비교 항목 접기'
-                    : `나머지 ${secondaryComparisonGroups.length}개 항목 비교`
-              }}
-            </span>
-            <svg
-                class="more-benefit-chevron"
-                :class="{ opened: showSecondaryGroups }"
-                viewBox="0 0 20 20"
-                aria-hidden="true"
-            >
-              <path
-                  d="M5 7.5 10 12.5 15 7.5"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-
-          <div
-              v-if="showSecondaryGroups"
-              class="secondary-benefit-list"
-          >
-            <article
-                v-for="group in secondaryComparisonGroups"
-                :key="group.label"
-                class="benefit-card compact-benefit-card"
-            >
-              <h3>{{ group.label }}</h3>
+              <strong>비교 항목</strong>
 
               <button
                   v-for="card in comparisonCards"
                   :key="card.id"
                   type="button"
-                  class="benefit-row"
                   @click="openCardDetail(card.id)"
               >
-                <span class="benefit-card-name">
-                  <template
-                      v-for="(namePart, index) in getCardNameParts(card.cardName)"
-                      :key="`${card.id}-${group.label}-name-${index}`"
-                  >
-                    <span>{{ index ? `+ ${namePart}` : namePart }}</span>
-                  </template>
-                  <small>{{ card.cardCompany }}</small>
-                </span>
-                <span
-                    class="benefit-value-wrap"
-                    :class="{
-                      'long-value': isLongBenefitValue(group.value(card)),
-                    }"
-                >
-                  <strong>
-                    <template
-                        v-for="(valuePart, index) in getBenefitValueParts(group.value(card))"
-                        :key="`${card.id}-${group.label}-${index}`"
-                    >
-                      <span>
-                        {{ index ? `+ ${valuePart}` : valuePart }}
-                      </span>
-                    </template>
-                  </strong>
-                </span>
+                {{ card.cardName }}
               </button>
-            </article>
-          </div>
+            </div>
 
+            <div
+                v-for="row in comparisonRows"
+                :key="row.label"
+                class="table-row"
+                :style="tableGridStyle"
+            >
+              <strong>{{ row.label }}</strong>
+
+              <span
+                  v-for="card in comparisonCards"
+                  :key="card.id"
+              >
+                {{ displayValue(row.value(card)) }}
+              </span>
+            </div>
+          </div>
         </div>
+
+        <p class="comparison-guide">
+          카드명을 누르면 해당 카드의 상세 정보를
+          확인할 수 있습니다.
+        </p>
       </section>
 
       <button
@@ -838,190 +672,83 @@ button {
   font-weight: 700;
 }
 
-.benefit-card-list,
-.secondary-benefit-list {
-  display: grid;
-  gap: 12px;
-}
-
-.benefit-card {
-  padding: 17px 16px 5px;
-  border: 1px solid #e5eaf2;
-  border-radius: 20px;
+.comparison-scroll {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid #e1e6ed;
+  border-radius: 19px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(29, 55, 92, 0.055);
+  box-shadow: 0 8px 22px rgba(38, 62, 101, 0.05);
 }
 
-.benefit-card h3 {
-  margin: 0 0 10px;
-  color: #10192b;
-  font-size: 14px;
-  font-weight: 900;
+.comparison-table {
+  min-width: 100%;
+  width: max-content;
 }
 
-.benefit-group-heading {
-  display: flex;
-  margin-bottom: 10px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.table-row {
+  display: grid;
+  border-top: 1px solid #f1f3f8;
 }
 
-.benefit-group-heading h3 {
-  margin-bottom: 0;
-}
-
-.benefit-group-heading small {
-  color: #8a98ab;
-  font-size: 8.5px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.benefit-row {
-  display: flex;
-  width: 100%;
-  min-height: 61px;
-  padding: 11px 0;
-  align-items: center;
-  border-top: 1px solid #edf0f5;
-  justify-content: space-between;
-  gap: 14px;
-  background: transparent;
-  text-align: left;
-}
-
-.benefit-row:first-of-type {
+.table-row:first-child {
   border-top: 0;
 }
 
-.benefit-card-name {
-  min-width: 112px;
-  max-width: 44%;
-  flex: 0 1 44%;
-  color: #162138;
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.35;
-  word-break: keep-all;
-}
-
-.rate-benefit-card {
-  position: relative;
-  margin-bottom: 6px;
-}
-
-.rate-benefit-card::after {
-  position: absolute;
-  right: 12px;
-  bottom: -10px;
-  left: 12px;
-  height: 1px;
-  background: repeating-linear-gradient(
-    90deg,
-    #bdc9dc 0 7px,
-    transparent 7px 13px
-  );
-  content: '';
-}
-
-.benefit-card-name > span {
-  display: block;
-  white-space: nowrap;
-}
-
-.benefit-card-name small {
-  display: block;
-  margin-top: 4px;
-  color: #96a3b6;
-  font-size: 9.5px;
-  font-weight: 600;
-}
-
-.benefit-value-wrap {
+.table-row > * {
   display: flex;
-  min-width: 0;
-  max-width: 56%;
-  flex: 1 1 56%;
+  min-height: 50px;
+  padding: 9px 7px;
   align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
-}
-
-.benefit-value-wrap strong {
-  color: #173f8d;
-  font-size: 10.5px;
-  font-weight: 500;
-  line-height: 1.35;
-  text-align: right;
-  word-break: keep-all;
-}
-
-.benefit-value-wrap strong > span {
-  display: block;
-  white-space: nowrap;
-}
-
-.benefit-value-wrap.long-value strong {
-  font-size: 8.5px;
-  line-height: 1.45;
-  word-break: keep-all;
-}
-
-.benefit-value-wrap em {
-  flex: 0 0 auto;
-  padding: 4px 7px;
-  border-radius: 999px;
-  background: #e8f8ef;
-  color: #12a36d;
-  font-size: 8.5px;
-  font-style: normal;
-  font-weight: 900;
-}
-
-.secondary-benefit-list {
-  margin-top: 1px;
-}
-
-.compact-benefit-card {
-  padding-top: 15px;
-}
-
-.compact-benefit-card .benefit-row {
-  min-height: 53px;
-}
-
-.more-benefit-button {
-  display: flex;
-  width: 100%;
-  min-height: 55px;
-  margin-top: 1px;
-  align-items: center;
-  border: 1px solid #e5eaf2;
-  border-radius: 18px;
+  border-left: 1px solid #f1f3f8;
   justify-content: center;
-  gap: 7px;
-  background: #fff;
-  color: #173f8d;
-  font-size: 12.5px;
+  font-size: 9.5px;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.table-row > *:first-child {
+  border-left: 0;
+}
+
+.table-row > strong {
+  align-items: flex-start;
+  justify-content: flex-start;
+  color: #5a6478;
+  font-weight: 700;
+  text-align: left;
+}
+
+.table-header {
+  background: #f4f7ff;
+}
+
+.table-header > * {
+  min-height: 56px;
+  color: #10192b;
   font-weight: 900;
-  box-shadow: 0 8px 24px rgba(29, 55, 92, 0.045);
 }
 
-.more-benefit-label {
-  line-height: 1;
+.table-header button {
+  display: -webkit-box;
+  overflow: hidden;
+  background: transparent;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.more-benefit-chevron {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  color: #173f8d;
-  transition: transform 0.2s ease;
+.table-header button:hover {
+  color: #2f6fe9;
+  text-decoration: underline;
 }
 
-.more-benefit-chevron.opened {
-  transform: rotate(180deg);
+.comparison-guide {
+  margin: 10px 3px 0;
+  color: #8090a5;
+  font-size: 10px;
 }
 
 .detail-button {
@@ -1046,5 +773,19 @@ button {
   to {
     transform: rotate(360deg);
   }
+}
+/* 가로 스크롤 중 비교 항목 열 고정 */
+.table-row > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  box-shadow: 5px 0 8px -7px rgba(16, 26, 46, 0.15);
+}
+
+/* 표 헤더의 비교 항목 셀 */
+.table-header > :first-child {
+  z-index: 3;
+  background: #f4f7ff;
 }
 </style>
