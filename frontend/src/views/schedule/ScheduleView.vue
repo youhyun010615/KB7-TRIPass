@@ -152,7 +152,7 @@ const travelDates = computed(() => {
   const end = new Date(`${selectedTravelEnd.value}T00:00:00`);
   const dates = [];
   let previousPeriodCode = '';
-  while (cursor <= end && dates.length < 45) {
+  while (cursor <= end) {
     const date = [
       cursor.getFullYear(),
       String(cursor.getMonth() + 1).padStart(2, '0'),
@@ -587,9 +587,9 @@ function showPastSchedules() {
 .calendar-strip .country-period-line {
   position: absolute;
   top: -15px;
-  left: -4px;
+  left: 0;
   display: block;
-  width: 47px;
+  width: 100%;
   height: 13px;
   border-top: 2px solid #a9c6f6;
   color: #526f9e;
