@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 
@@ -15,6 +15,7 @@ const {
   errorMessage,
 } = storeToRefs(travelCardsStore)
 
+// 처음부터 노출되는 핵심 3항목
 const benefitGroups = [
   {
     key: 'appliedRateInfo',
@@ -35,6 +36,77 @@ const benefitGroups = [
     preference: 'low',
   },
 ]
+
+// "나머지 항목 비교" 버튼을 눌러야 보이는 추가 항목
+const extraBenefitGroups = [
+  {
+    key: 'exchangeFee',
+    title: '환전 수수료',
+    value: (card) => card.exchangeFee,
+    preference: 'high',
+  },
+  {
+    key: 'reExchangeFee',
+    title: '재환전 수수료',
+    value: (card) => card.reExchangeFee,
+    preference: 'high',
+  },
+  {
+    key: 'foreignCurrencyHoldingLimit',
+    title: '외화 보유 한도',
+    value: (card) => card.foreignCurrencyHoldingLimit,
+    preference: 'high',
+  },
+  {
+    key: 'supportedCurrencyCount',
+    title: '지원 통화 개수',
+    value: (card) =>
+        card.supportedCurrencyCount ? `${card.supportedCurrencyCount}종` : null,
+    preference: 'high',
+  },
+  {
+    key: 'instantUse',
+    title: '즉시 사용 가능 여부',
+    value: (card) => (card.instantUse ? '계좌 개설 없이 즉시 사용' : '계좌 개설 필요'),
+    score: (card) => (card.instantUse ? 1 : 0),
+  },
+  {
+    key: 'settlementType',
+    title: '해외 결제 처리 방식',
+    value: (card) =>
+        card.settlementType === 'DIRECT' ? '현지통화 직접 결제' : '달러 환산 후 결제',
+    score: (card) => (card.settlementType === 'DIRECT' ? 1 : 0),
+  },
+  {
+    key: 'autoChargeSupported',
+    title: '자동 충전 지원',
+    value: (card) => (card.autoChargeSupported ? '지원' : '미지원'),
+    score: (card) => (card.autoChargeSupported ? 1 : 0),
+  },
+  {
+    key: 'transitCard',
+    title: '교통카드 지원',
+    value: (card) => (card.transitCard ? '지원' : '미지원'),
+    score: (card) => (card.transitCard ? 1 : 0),
+  },
+  {
+    key: 'requiredAccount',
+    title: '필요 계좌·서비스',
+    value: (card) => card.requiredAccount,
+  },
+]
+
+const isExpanded = ref(false)
+
+const visibleGroups = computed(() =>
+    isExpanded.value
+        ? [...benefitGroups, ...extraBenefitGroups]
+        : benefitGroups,
+)
+
+function toggleExpanded() {
+  isExpanded.value = !isExpanded.value
+}
 
 const canOpenFirstCard = computed(
     () => comparisonCards.value.length > 0,
@@ -71,16 +143,25 @@ function comparisonScore(value, preference) {
 }
 
 function isBestBenefit(card, group) {
-  const scores = comparisonCards.value
-      .map((item) => comparisonScore(group.value(item), group.preference))
-      .filter((score) => score !== null)
-  const cardScore = comparisonScore(group.value(card), group.preference)
+  const scoreOf = (item) =>
+      group.score
+          ? group.score(item)
+          : comparisonScore(group.value(item), group.preference)
 
-  if (cardScore === null || scores.length === 0) {
+  const scores = comparisonCards.value
+      .map(scoreOf)
+      .filter((score) => score !== null && score !== undefined)
+  const cardScore = scoreOf(card)
+
+  if (
+      cardScore === null ||
+      cardScore === undefined ||
+      scores.length === 0
+  ) {
     return false
   }
 
-  const bestScore = group.preference === 'high'
+  const bestScore = (group.score || group.preference === 'high')
       ? Math.max(...scores)
       : Math.min(...scores)
 
@@ -323,7 +404,7 @@ onMounted(loadComparison)
 
         <div class="benefit-card-list">
           <article
-              v-for="group in benefitGroups"
+              v-for="group in visibleGroups"
               :key="group.key"
               class="benefit-card"
           >
@@ -354,6 +435,19 @@ onMounted(loadComparison)
             </button>
           </article>
         </div>
+
+        <button
+            type="button"
+            class="expand-button"
+            @click="toggleExpanded"
+        >
+          {{
+            isExpanded
+                ? '접기'
+                : `나머지 ${extraBenefitGroups.length}개 항목 비교`
+          }}
+          <i :class="{ open: isExpanded }">⌄</i>
+        </button>
 
         <p class="comparison-guide">
           카드명을 누르면 해당 카드의 상세 정보를
@@ -717,7 +811,7 @@ button {
 .benefit-company {
   overflow: hidden;
   color: #8a97aa;
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -748,6 +842,32 @@ button {
 .benefit-row:not(:has(.best-badge))::after {
   width: 35px;
   content: '';
+}
+
+.expand-button {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  background: #fff;
+  color: #52657f;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 9px 24px rgba(38, 62, 101, 0.05);
+}
+
+.expand-button i {
+  font-style: normal;
+  transition: transform 0.2s;
+}
+
+.expand-button i.open {
+  transform: rotate(180deg);
 }
 
 .comparison-guide {
