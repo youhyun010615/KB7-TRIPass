@@ -172,8 +172,11 @@ const travelDates = computed(() => {
       countryCode: period?.code || '',
       countryName: period?.name || '',
       countryStart: Boolean(period?.code && period.code !== previousPeriodCode),
+      countryMiddle: Boolean(period?.code && date > period.startDate && date < period.endDate),
+      countryEnd: Boolean(period?.code && date === period.endDate),
     });
     previousPeriodCode = period?.code || '';
+
     cursor.setDate(cursor.getDate() + 1);
   }
   return dates;
@@ -404,7 +407,7 @@ function showPastSchedules() {
           <span
             v-if="date.countryCode"
             class="country-period-line"
-            :class="{ start: date.countryStart }"
+            :class="{ start: date.countryStart, middle: date.countryMiddle, end: date.countryEnd }"
           >
             <em v-if="date.countryStart" :class="flagIconClass(date.countryCode)" />
             <b v-if="date.countryStart">{{ date.countryName }}</b>
@@ -553,6 +556,7 @@ function showPastSchedules() {
   font-size: 12px;
   font-weight: 700;
   font-style: normal;
+}
 .calendar-strip {
   display: flex;
   align-items: center;
@@ -564,7 +568,6 @@ function showPastSchedules() {
   -webkit-overflow-scrolling: touch;
   position: relative;
 }
-
 .calendar-strip::-webkit-scrollbar { display: none; }
 .calendar-strip button {
   position: relative;
@@ -584,44 +587,21 @@ function showPastSchedules() {
   color: #17233b;
   scroll-snap-align: center;
   transition: .2s ease;
-  margin-right: -4px;
   z-index: 1;
 }
-.calendar-strip button:last-child { margin-right: 0; }
-
 .calendar-strip .country-period-line {
   position: absolute;
   top: -15px;
   left: 50%;
   width: 100%;
-  height: 13px;
-  border-top: 4px solid #a9c6f6;
+  height: 6px;
+  background: #a9c6f6;
   pointer-events: none;
+  z-index: 0;
 }
-.calendar-strip .country-period-line.start { border-top-color: #2662ea; }
-.calendar-strip .country-period-line.middle { border-top-color: #2662ea; }
-.calendar-strip .country-period-line.end { border-top-color: #2662ea; width: 50%; }
-
-.calendar-strip .country-period-line::before,
-.calendar-strip .country-period-line::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  width: 8px;
-  height: 8px;
-  border: 2px solid #a9c6f6;
-  border-radius: 50%;
-  background: #f4f5f9;
-}
-.calendar-strip .country-period-line::after { right: -4px; }
-.calendar-strip .country-period-line.start::before {
-  left: -20px;
-  border-color: #2662ea;
-  background: #fff;
-}
-.calendar-strip .country-period-line.start::after { border-color: #2662ea; }
-.calendar-strip .country-period-line.middle::after { border-color: #2662ea; }
-.calendar-strip .country-period-line.end::after { border-color: #2662ea; }
+.calendar-strip .country-period-line.start { background: #2662ea; left: 50%; width: 50%; border-radius: 0 3px 3px 0; }
+.calendar-strip .country-period-line.middle { background: #2662ea; left: -3.5px; width: calc(100% + 7px); border-radius: 0; }
+.calendar-strip .country-period-line.end { background: #2662ea; left: -3.5px; width: 50%; border-radius: 3px 0 0 3px; }
 .calendar-strip .country-period-line em {
   position: absolute;
   top: -17px;
@@ -1062,4 +1042,4 @@ function showPastSchedules() {
   margin: 10px 18px;
 }
 .route-flag{display:inline-block;width:27px;height:18px;border-radius:3px;background-size:cover;box-shadow:0 2px 5px rgba(0,0,0,.22);vertical-align:middle}
-}</style>
+</style>
