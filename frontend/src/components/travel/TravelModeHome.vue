@@ -25,7 +25,6 @@ import livingIcon from '@/assets/icons/home-dollar.svg';
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 import calculatorIcon from '@/assets/icons/calculator.svg';
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png';
-import tosimiTravelCard from '@/assets/cards/kb-travelers-tosimi.png';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
@@ -859,11 +858,6 @@ async function switchMode(mode) {
                 </p>
                 <p class="trip-country-dates">{{ countryDateRange(item) }}</p>
               </div>
-              <div class="travel-card-balance">
-                <img class="travel-card-icon-image" :src="tosimiTravelCard" alt="토심이 트래블카드">
-                <small>트래블카드 잔액</small>
-                <strong>{{ travelCardBalanceText(item) }}</strong>
-              </div>
             </div>
             <div class="ticket-photo-space" />
 
@@ -929,7 +923,12 @@ async function switchMode(mode) {
                   ><span>SPENT {{ formatWon(item.spentAmount) }}</span>
                 </div>
               </template>
-              <div v-else class="fund-progress-box">
+              <div v-else class="country-fund-section">
+                <div class="travel-card-balance">
+                  <small>트래블카드 잔액</small>
+                  <strong>{{ travelCardBalanceText(item) }}</strong>
+                </div>
+                <div class="fund-progress-box">
                 <div class="fund-progress-head">
                   <span>{{ item.name }} 예산 사용률</span><strong>{{ fundPercent(item) }}%</strong>
                 </div>
@@ -945,6 +944,7 @@ async function switchMode(mode) {
                     <b>{{ formatWon(item.targetBudget) }}</b>
                     <small>BUDGET</small>
                   </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -2763,7 +2763,7 @@ async function switchMode(mode) {
 .ticket{--ticket-edge-height:60px;--ticket-perforation-height:15px}.ticket-top{height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height));min-height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height))}.perforation:not(.lower){height:var(--ticket-perforation-height);background:var(--theme)}.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height);padding:0 16px;font-size:10px}.ticket-stub>span{display:flex;align-items:center;gap:6px;font-size:11px}.ticket-stub>span img{width:21px;height:21px;object-fit:contain}.ticket-stub>b{font-size:10px;letter-spacing:.06em}
 .ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height)}.perforation:not(.lower){position:absolute;top:var(--ticket-edge-height);height:0;background:transparent}.perforation.lower{bottom:var(--ticket-edge-height)}.ticket-stub{padding:0 14px;font-size:9px}.ticket-stub>span{font-size:10px}.ticket-stub>span img{width:18px;height:18px}.ticket-stub>b{font-size:9px}
 .perforation:not(.lower),.perforation.lower{transform:translateY(-11px)}
-.travel-card-balance{display:grid;grid-template-columns:31px auto;grid-template-rows:auto auto;align-items:center;column-gap:8px;text-align:right}.travel-card-icon{position:relative;grid-row:1/3;display:block;width:31px;height:21px;border:1px solid rgba(255,255,255,.42);border-radius:5px;background:linear-gradient(145deg,#173f8d,#2f70e9);box-shadow:0 5px 12px rgba(3,16,43,.24)}.travel-card-icon::after{position:absolute;right:4px;bottom:4px;width:8px;height:2px;border-radius:99px;background:#ffd45e;content:''}.travel-card-icon i{position:absolute;top:6px;left:5px;width:7px;height:5px;border-radius:1px;background:#ffd45e}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
-.travel-card-balance{grid-template-columns:24px auto}.travel-card-icon-image{grid-row:1/3;display:block;width:24px;height:34px;border:1px solid rgba(255,255,255,.5);border-radius:4px;object-fit:cover;box-shadow:0 5px 12px rgba(3,16,43,.28)}
+.travel-card-balance{display:flex;flex-direction:column;align-items:flex-start;text-align:left}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
 .ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
+.country-fund-section{display:flex;flex-direction:column;gap:10px}.country-fund-section .travel-card-balance{align-self:flex-start;padding-left:4px}.country-fund-section .travel-card-balance small{font-size:11px}.country-fund-section .travel-card-balance strong{font-size:17px;line-height:1.2}
 </style>
