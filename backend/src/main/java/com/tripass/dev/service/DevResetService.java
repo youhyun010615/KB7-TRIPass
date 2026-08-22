@@ -75,4 +75,18 @@ public class DevResetService {
 
         log.info("[DEV] 계정 데이터 초기화 완료 - userId: {}", userId);
     }
+
+    @Transactional
+    public void resetDemoState(Long userId) {
+        log.info("[DEV] 데모 상태 리셋 시작 - userId: {}", userId);
+
+        devResetMapper.deleteNonSeedWalletCardTopupByUser(userId);
+        devResetMapper.deleteNonSeedWalletExchangeTransactionByUser(userId);
+        devResetMapper.deleteNonSeedTravelCardLedgerByUser(userId);
+        devResetMapper.resetTravelCardBalanceByUser(userId);
+        devResetMapper.deleteNonSeedWalletLedgerByUser(userId);
+        devResetMapper.recalcWalletBalanceFromSeedLedger(userId);
+
+        log.info("[DEV] 데모 상태 리셋 완료 - userId: {}", userId);
+    }
 }

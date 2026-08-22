@@ -47,6 +47,8 @@ public class DevController {
         Long userId = (Long) authentication.getPrincipal();
         devDateMapper.updateOverrideDate(userId, date);
 
+        devResetService.resetDemoState(userId);
+
         travelMapper.syncTripRevertToPlanning(userId, date);
         travelMapper.syncTripRevertToTraveling(userId, date);
         travelMapper.syncTripStatusForUser(userId, date);

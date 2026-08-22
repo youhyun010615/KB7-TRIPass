@@ -50,6 +50,9 @@ public interface WalletMapper {
 
     List<WalletForeignBalanceResponseDto> findAllForeignBalances(@Param("walletTravelCardId") Long walletTravelCardId);
 
+    BigDecimal calcBalanceAsOf(@Param("walletId") Long walletId,
+                               @Param("asOfDate") LocalDate asOfDate);
+
     boolean existsWalletByUserId(@Param("userId") Long userId);
 
     int insertWallet(Wallet wallet);
