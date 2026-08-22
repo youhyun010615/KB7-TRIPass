@@ -324,6 +324,14 @@ export const useTravelStore = defineStore('travel', () => {
     중국: { code: 'cn', class: 'fi fi-cn', emoji: '🇨🇳' },
     괌: { code: 'gu', class: 'fi fi-gu', emoji: '🇬🇺' },
   };
+  // 위 목록은 16개국만 커버해 나머지 국가(태국·미국·영국 등)의 일정을 등록하면
+  // 국기를 못 찾는다. countryPresentation(전체 국가)로 빠진 나라를 보강한다.
+  Object.entries(countryPresentation).forEach(([name, info]) => {
+    if (info.code && !(name in countryFlagMap)) {
+      const lower = info.code.toLowerCase();
+      countryFlagMap[name] = { code: lower, class: `fi fi-${lower}`, emoji: info.flag };
+    }
+  });
 
   const aggregatedBudget = computed(() => {
     if (!budgetCheckData.value || !Array.isArray(budgetCheckData.value))

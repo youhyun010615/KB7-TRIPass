@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { useTravelStore } from '@/stores/travel'
+import { countryPresentation, useTravelStore } from '@/stores/travel'
 import { createSchedule, deleteSchedule, fetchScheduleDetail, fetchSchedules, updateSchedule } from '@/api/schedule'
 import { isOverridden, todayIso } from '@/utils/devDate'
 
@@ -13,6 +13,14 @@ const countries = [
   { code: 'HK', name: '홍콩', city: '홍콩', flag: '🇭🇰', currency: 'HKD', defaultStart: '2026-09-06', defaultEnd: '2026-09-10' },
 ]
 
+// 위 5개는 데모 여행지 기본값(도시/통화/기간)까지 갖춘 목록이라 그대로 두고,
+// 이 스토어 곳곳의 `countries.find(item => item.code === code)` 조회가 그 외
+// 실제 여행 국가(괌 등)에서도 실패하지 않도록 countryPresentation의 나머지
+// 국가를 코드 기준으로 보강해 넣는다.
+Object.entries(countryPresentation)
+  .filter(([, info]) => info.code && !countries.some(item => item.code === info.code))
+  .forEach(([name, info]) => countries.push({ code: info.code, name, city: info.city, flag: info.flag }))
+
 function loadSaved() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') }
   catch { return null }
@@ -20,8 +28,10 @@ function loadSaved() {
 
 // 백엔드는 국가를 country_name(한글)으로만 구분한다. 화면은 code(FR/CH/...)로 다루므로
 // 응답의 countryName을 우리 쪽 code로 되돌려 매핑한다.
+// countries는 이 스토어의 기본 여행지 5개만 담고 있어(괌 등 다른 국가 없음), 못 찾으면
+// 앱 전체 국가 정보(countryPresentation)에서 마저 찾는다.
 function codeForCountryName(name) {
-  return countries.find(item => item.name === name)?.code || ''
+  return countries.find(item => item.name === name)?.code || countryPresentation[name]?.code || ''
 }
 
 function toLocalPaymentStatus(apiStatus) {

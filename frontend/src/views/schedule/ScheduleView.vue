@@ -503,7 +503,7 @@ async function focusTimelineDate(date) {
             v-for="item in group.items"
             :key="item.id"
             :schedule="item"
-            :country-code="countriesForDate(group.date)[0]?.code || item.countryCode"
+            :country-code="item.countryCode || countriesForDate(group.date)[0]?.code"
             :completed="isScheduleCompleted(item)"
             :data-next-anchor="item.id === nextSchedule?.id ? 'true' : null"
             @detail="openDetail"

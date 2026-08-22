@@ -561,6 +561,11 @@ const countryFlagMap = {
   중국: 'cn',
   괌: 'gu',
 };
+// 위 목록은 16개국만 커버해 나머지 국가(태국·미국·영국 등)의 일정을 등록하면
+// 국기를 못 찾는다. globalCountryPresentation(전체 국가)로 빠진 나라를 보강한다.
+Object.entries(globalCountryPresentation).forEach(([name, info]) => {
+  if (info.code && !(name in countryFlagMap)) countryFlagMap[name] = info.code.toLowerCase()
+})
 
 function dottedDate(value) {
   return value ? String(value).replaceAll('-', '.') : '';
