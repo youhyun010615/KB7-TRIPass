@@ -22,17 +22,17 @@ function parseDateOnly(value, endOfDay = false) {
  * 화면에서는 여행 기간과 현재 가상 날짜를 기준으로 상태를 일관되게 계산한다.
  */
 export function tripPhase(trip, referenceDate = currentDate()) {
-  // 보관된 여행은 가상 날짜와 무관하게 완료된 과거 여행으로 표시한다.
-  if (trip?.status === 'ARCHIVED') return 'ENDED'
-
   const start = parseDateOnly(trip?.startDate)
   const end = parseDateOnly(trip?.endDate, true)
 
+  // 가상 날짜를 앞뒤로 이동하면 서버의 ARCHIVED/ENDED 상태가 이전 날짜 기준으로
+  // 남아 있을 수 있으므로, 유효한 여행 기간이 있으면 날짜를 항상 우선한다.
   if (start && referenceDate < start) return 'PLANNING'
   if (end && referenceDate > end) return 'ENDED'
   if (start && referenceDate >= start && (!end || referenceDate <= end)) return 'TRAVELING'
 
-  if (trip?.status === 'ENDED') return 'ENDED'
+  // 날짜 정보가 없는 예외 데이터만 서버 상태를 보조값으로 사용한다.
+  if (trip?.status === 'ENDED' || trip?.status === 'ARCHIVED') return 'ENDED'
   if (trip?.status === 'TRAVELING') return 'TRAVELING'
   return 'PLANNING'
 }
