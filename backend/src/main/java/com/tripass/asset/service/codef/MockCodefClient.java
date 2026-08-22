@@ -75,6 +75,7 @@ public class MockCodefClient implements CodefClient {
     // ===== demofresh 데이터 (28세 직장인, 2026년 1~8월) =====
     private static final List<Map<String, Object>> FRESH_BANK_TRANSACTIONS = buildFreshBankTransactions();
     private static final List<Map<String, Object>> FRESH_CARD_TRANSACTIONS = buildFreshCardTransactions();
+    private static final List<Map<String, Object>> FRESH_TRAVEL_CARD_TRANSACTIONS = buildFreshTravelCardTransactions();
 
     @Override
     public String encodePassword(String plainPassword) {
@@ -304,10 +305,12 @@ public class MockCodefClient implements CodefClient {
         }
 
         if (DEMO_FRESH_CONNECTED_ID.equals(connectedId)) {
-            return success(List.of(mapOf(
-                    "resCardName", "KB Star 체크카드", "resCardNo", "5412-****-****-4401",
-                    "resCardType", "02", "resPaymentAccount", "44404230001111"
-            )));
+            return success(List.of(
+                    mapOf("resCardName", "KB Star 체크카드", "resCardNo", "5412-****-****-4401",
+                            "resCardType", "02", "resPaymentAccount", "44404230001111"),
+                    mapOf("resCardName", "KB 트래블러스 체크카드", "resCardNo", "5412-****-****-4402",
+                            "resCardType", "02", "resPaymentAccount", "44404230001111")
+            ));
         }
 
         return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
@@ -382,9 +385,11 @@ public class MockCodefClient implements CodefClient {
         }
 
         if (DEMO_FRESH_CONNECTED_ID.equals(connectedId)) {
-            List<Map<String, Object>> source = "5412-****-****-4401".equals(cardNo)
-                    ? FRESH_CARD_TRANSACTIONS
-                    : List.of();
+            List<Map<String, Object>> source = switch (cardNo) {
+                case "5412-****-****-4401" -> FRESH_CARD_TRANSACTIONS;
+                case "5412-****-****-4402" -> FRESH_TRAVEL_CARD_TRANSACTIONS;
+                default -> List.of();
+            };
             return success(filterByDate(source, body, "resUsedDate"));
         }
 
@@ -653,6 +658,10 @@ public class MockCodefClient implements CodefClient {
         }
 
         return List.copyOf(t);
+    }
+
+    private static List<Map<String, Object>> buildFreshTravelCardTransactions() {
+        return List.of();
     }
 
     /**
