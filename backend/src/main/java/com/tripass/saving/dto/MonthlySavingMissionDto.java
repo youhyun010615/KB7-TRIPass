@@ -24,6 +24,8 @@ public class MonthlySavingMissionDto {
     private Integer monthlyUsageTarget;
     private Integer plannedSavingAmount;
     private Integer startWeek;
+    private String selectedAt;
+    private String missionStartDate;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

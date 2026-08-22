@@ -2,6 +2,7 @@ package com.tripass.saving.service;
 
 import com.tripass.common.exception.CustomException;
 import com.tripass.saving.analysis.MissionStartWeekPolicy;
+import com.tripass.saving.analysis.MissionStartWeekPolicy.MissionStartResult;
 import com.tripass.saving.dto.MissionCategorySelectionDto;
 import com.tripass.saving.dto.MonthlyMissionResponseDto;
 import com.tripass.saving.dto.MonthlySavingMissionDto;
@@ -72,10 +73,10 @@ public class SavingMissionService {
             return new CreationResult(false, buildResponse(targetYearMonth, existing));
         }
 
-        int startWeek = resolveStartWeek(targetYearMonth, LocalDate.now(clock));
+        MissionStartResult startResult = resolveStartResult(targetYearMonth, LocalDate.now(clock));
         Long tripId = mapper.findActiveTripIdByUserId(userId);
         for (MissionCategorySelectionDto selection : newSelections) {
-            createCategoryMission(userId, tripId, analysis, targetYearMonth, selection, startWeek);
+            createCategoryMission(userId, tripId, analysis, targetYearMonth, selection, startResult);
         }
         mapper.markReportClosed(userId, analysis.getAnalysisYearMonth());
 
@@ -94,11 +95,18 @@ public class SavingMissionService {
             MonthlySpendingAnalysisDto analysis,
             YearMonth targetYearMonth,
             MissionCategorySelectionDto selection,
-            int startWeek
+            MissionStartResult startResult
     ) {
+        int startWeek = startResult.startWeek();
+        int eligibleDayCount = startResult.eligibleDayCount();
+
         int plannedSavingAmount = 0;
         for (int week = startWeek; week <= LAST_MISSION_WEEK; week++) {
-            plannedSavingAmount += amountForWeek(selection.getMonthlyReductionTarget(), week);
+            int weeklyAmount = amountForWeek(selection.getMonthlyReductionTarget(), week);
+            if (week == startWeek && eligibleDayCount < 7) {
+                weeklyAmount = weeklyAmount * eligibleDayCount / 7;
+            }
+            plannedSavingAmount += weeklyAmount;
         }
 
         MonthlySavingMissionDto monthly = new MonthlySavingMissionDto();
@@ -114,11 +122,16 @@ public class SavingMissionService {
         monthly.setMonthlyUsageTarget(selection.getMonthlyUsageTarget());
         monthly.setPlannedSavingAmount(plannedSavingAmount);
         monthly.setStartWeek(startWeek);
+        monthly.setSelectedAt(LocalDate.now(clock).toString());
+        monthly.setMissionStartDate(startResult.missionStartDate().toString());
         monthly.setStatus("IN_PROGRESS");
         mapper.insertMonthlyMission(monthly);
 
         for (int week = startWeek; week <= LAST_MISSION_WEEK; week++) {
-            mapper.insertWeeklyMission(toWeeklyMission(monthly.getId(), targetYearMonth, selection, week));
+            mapper.insertWeeklyMission(toWeeklyMission(
+                    monthly.getId(), targetYearMonth, selection, week,
+                    week == startWeek ? eligibleDayCount : 7,
+                    week == startWeek ? startResult.missionStartDate() : null));
         }
     }
 
@@ -126,16 +139,29 @@ public class SavingMissionService {
             Long monthlyMissionId,
             YearMonth targetYearMonth,
             MissionCategorySelectionDto selection,
-            int week
+            int week,
+            int eligibleDays,
+            LocalDate overrideStartDate
     ) {
-        int startDay = (week - 1) * 7 + 1;
+        int weekStartDay = (week - 1) * 7 + 1;
+        LocalDate periodStart = overrideStartDate != null ? overrideStartDate : targetYearMonth.atDay(weekStartDay);
+        LocalDate periodEnd = targetYearMonth.atDay(weekStartDay + 6);
+
+        int weeklyLimit = amountForWeek(selection.getMonthlyUsageTarget(), week);
+        int weeklyExpected = amountForWeek(selection.getMonthlyReductionTarget(), week);
+        if (eligibleDays < 7) {
+            weeklyLimit = weeklyLimit * eligibleDays / 7;
+            weeklyExpected = weeklyExpected * eligibleDays / 7;
+        }
+
         WeeklySavingMissionDto weekly = new WeeklySavingMissionDto();
         weekly.setMonthlySavingMissionId(monthlyMissionId);
         weekly.setWeekNumber(week);
-        weekly.setPeriodStartDate(targetYearMonth.atDay(startDay));
-        weekly.setPeriodEndDate(targetYearMonth.atDay(startDay + 6));
-        weekly.setWeeklyUsageLimit(amountForWeek(selection.getMonthlyUsageTarget(), week));
-        weekly.setWeeklyExpectedSaving(amountForWeek(selection.getMonthlyReductionTarget(), week));
+        weekly.setPeriodStartDate(periodStart);
+        weekly.setPeriodEndDate(periodEnd);
+        weekly.setWeeklyUsageLimit(weeklyLimit);
+        weekly.setWeeklyExpectedSaving(weeklyExpected);
+        weekly.setEligibleDayCount(eligibleDays);
         weekly.setStatus("PENDING");
         return weekly;
     }
@@ -146,7 +172,7 @@ public class SavingMissionService {
         return week == LAST_MISSION_WEEK ? base + monthlyAmount % LAST_MISSION_WEEK : base;
     }
 
-    private int resolveStartWeek(YearMonth targetYearMonth, LocalDate selectedDate) {
+    private MissionStartResult resolveStartResult(YearMonth targetYearMonth, LocalDate selectedDate) {
         try {
             return startWeekPolicy.resolve(targetYearMonth, selectedDate);
         } catch (IllegalArgumentException e) {
@@ -200,9 +226,9 @@ public class SavingMissionService {
         String amount = NumberFormat.getNumberInstance(Locale.KOREA).format(weekly.getWeeklyExpectedSaving());
         return new WeeklyMissionResponseDto(
                 weekly.getId(), weekly.getWeekNumber(), weekly.getPeriodStartDate(), weekly.getPeriodEndDate(),
-                weekly.getWeeklyUsageLimit(), weekly.getWeeklyExpectedSaving(), weekly.getActualSpending(),
-                weekly.getActualSaving(), weekly.getRewardAmount(), weekly.getRewardedAt(), weekly.getStatus(),
-                categoryName + " 지출을 " + amount + "원 줄이세요.");
+                weekly.getWeeklyUsageLimit(), weekly.getWeeklyExpectedSaving(), weekly.getEligibleDayCount(),
+                weekly.getActualSpending(), weekly.getActualSaving(), weekly.getRewardAmount(), weekly.getRewardedAt(),
+                weekly.getStatus(), categoryName + " 지출을 " + amount + "원 줄이세요.");
     }
 
     private void validateTripStatusForMission(Long userId) {

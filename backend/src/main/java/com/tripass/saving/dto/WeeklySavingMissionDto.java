@@ -20,6 +20,7 @@ public class WeeklySavingMissionDto {
     private LocalDate periodEndDate;
     private Integer weeklyUsageLimit;
     private Integer weeklyExpectedSaving;
+    private Integer eligibleDayCount;
     private Integer actualSpending;
     private Integer actualSaving;
     private Integer rewardAmount;

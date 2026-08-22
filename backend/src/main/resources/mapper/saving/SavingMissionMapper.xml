@@ -37,21 +37,23 @@
         INSERT INTO monthly_saving_missions (
             user_id, trip_id, monthly_spending_analysis_id, mission_category_selection_id, category_id,
             target_year_month, reduction_rate, baseline_spending_amount,
-            monthly_reduction_target, monthly_usage_target, planned_saving_amount, start_week, status
+            monthly_reduction_target, monthly_usage_target, planned_saving_amount, start_week,
+            selected_at, mission_start_date, status
         ) VALUES (
             #{userId}, #{tripId}, #{monthlySpendingAnalysisId}, #{missionCategorySelectionId}, #{categoryId},
             #{targetYearMonth}, #{reductionRate}, #{baselineSpendingAmount},
-            #{monthlyReductionTarget}, #{monthlyUsageTarget}, #{plannedSavingAmount}, #{startWeek}, #{status}
+            #{monthlyReductionTarget}, #{monthlyUsageTarget}, #{plannedSavingAmount}, #{startWeek},
+            #{selectedAt}, #{missionStartDate}, #{status}
         )
     </insert>
 
     <insert id="insertWeeklyMission" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO weekly_saving_missions (
             monthly_saving_mission_id, week_number, period_start_date, period_end_date,
-            weekly_usage_limit, weekly_expected_saving, status
+            weekly_usage_limit, weekly_expected_saving, eligible_day_count, status
         ) VALUES (
             #{monthlySavingMissionId}, #{weekNumber}, #{periodStartDate}, #{periodEndDate},
-            #{weeklyUsageLimit}, #{weeklyExpectedSaving}, #{status}
+            #{weeklyUsageLimit}, #{weeklyExpectedSaving}, #{eligibleDayCount}, #{status}
         )
     </insert>
 
@@ -59,7 +61,8 @@
         SELECT msm.id, msm.user_id, msm.monthly_spending_analysis_id, msm.mission_category_selection_id,
                msm.category_id, sc.category_code, sc.category_name, msm.target_year_month,
                msm.reduction_rate, msm.baseline_spending_amount, msm.monthly_reduction_target,
-               msm.monthly_usage_target, msm.planned_saving_amount, msm.start_week, msm.status,
+               msm.monthly_usage_target, msm.planned_saving_amount, msm.start_week,
+               msm.selected_at, msm.mission_start_date, msm.status,
                msm.created_at, msm.updated_at
         FROM monthly_saving_missions msm
                  JOIN spending_categories sc ON sc.id = msm.category_id
@@ -70,7 +73,7 @@
 
     <select id="findWeeklyMissions" resultType="WeeklySavingMissionDto">
         SELECT id, monthly_saving_mission_id, week_number, period_start_date, period_end_date,
-               weekly_usage_limit, weekly_expected_saving, actual_spending, actual_saving,
+               weekly_usage_limit, weekly_expected_saving, eligible_day_count, actual_spending, actual_saving,
                reward_amount, wallet_ledger_id, status, evaluated_at, rewarded_at, created_at, updated_at
         FROM weekly_saving_missions
         WHERE monthly_saving_mission_id = #{monthlySavingMissionId}
@@ -82,7 +85,7 @@
         SELECT wsm.id, wsm.monthly_saving_mission_id,
                msm.category_id, sc.category_code, sc.category_name,
                wsm.week_number, wsm.period_start_date, wsm.period_end_date,
-               wsm.weekly_usage_limit, wsm.weekly_expected_saving,
+               wsm.weekly_usage_limit, wsm.weekly_expected_saving, wsm.eligible_day_count,
                wsm.actual_spending, wsm.actual_saving, wsm.reward_amount, wsm.wallet_ledger_id, wsm.status,
                wsm.evaluated_at, wsm.rewarded_at, wsm.created_at, wsm.updated_at
         FROM weekly_saving_missions wsm

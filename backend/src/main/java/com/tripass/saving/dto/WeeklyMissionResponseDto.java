@@ -10,6 +10,7 @@ public record WeeklyMissionResponseDto(
         LocalDate periodEndDate,
         Integer weeklyUsageLimit,
         Integer weeklyExpectedSaving,
+        Integer eligibleDayCount,
         Integer actualSpending,
         Integer actualSaving,
         Integer rewardAmount,
