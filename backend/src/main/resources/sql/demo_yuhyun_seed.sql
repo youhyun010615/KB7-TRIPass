@@ -220,6 +220,25 @@ VALUES
      '0301', '496501-01-110300', @account_id, '2026-08-22 14:30:00', '2026-08-22 14:30:00')
 ON DUPLICATE KEY UPDATE card_name = VALUES(card_name);
 
+-- 트래블러스 체크카드를 travel_cards 마스터와 매칭해 user_travel_cards에 등록
+-- (실제 서비스에서는 /cards/codef/connect 호출 시 registerTravelCardIfMatched()가
+--  자동으로 이 작업을 하지만, seed는 DB에 직접 INSERT하므로 여기서 대신 등록한다.
+--  이게 없으면 지갑 > 트래블카드 연결 화면에서 "연결할 카드가 없어요"로 보인다.)
+SET @travelcard_master_id = (SELECT id FROM travel_cards WHERE card_name = '트래블러스 체크카드' LIMIT 1);
+
+INSERT INTO user_travel_cards
+    (user_id, travel_card_id, card_name, issuer_name, masked_card_number,
+     brand_name, card_color, status, external_card_key, is_deleted, created_at, updated_at)
+VALUES (@user_id, @travelcard_master_id, '트래블러스 체크카드', 'KB국민카드', '5412-****-****-9902',
+        'CODEF', 'BLUE', 'ACTIVE',
+        CONCAT('CODEF:0301:5412-****-****-9902'), FALSE, '2026-08-22 14:30:00', '2026-08-22 14:30:00')
+ON DUPLICATE KEY UPDATE
+    travel_card_id = VALUES(travel_card_id),
+    status = 'ACTIVE',
+    is_deleted = FALSE,
+    deleted_at = NULL,
+    updated_at = NOW();
+
 -- ============================================================================
 -- 6. 월렛 연동 계좌
 -- ============================================================================
