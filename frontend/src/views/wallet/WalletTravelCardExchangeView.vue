@@ -19,7 +19,31 @@ const fallbackCurrencies = [
   { code: 'USD', name: '미국 달러', symbol: '$', rate: 1375, unit: 1, flagClass: 'fi fi-us' },
 ]
 
-const flagClassMap = { EUR: 'fi fi-eu', JPY: 'fi fi-jp', CHF: 'fi fi-ch', USD: 'fi fi-us', GBP: 'fi fi-gb', CNY: 'fi fi-cn' }
+const flagClassMap = {
+  AED: 'fi fi-ae',
+  AUD: 'fi fi-au',
+  BHD: 'fi fi-bh',
+  BND: 'fi fi-bn',
+  CAD: 'fi fi-ca',
+  CHF: 'fi fi-ch',
+  CNH: 'fi fi-cn',
+  CNY: 'fi fi-cn',
+  DKK: 'fi fi-dk',
+  EUR: 'fi fi-eu',
+  GBP: 'fi fi-gb',
+  HKD: 'fi fi-hk',
+  IDR: 'fi fi-id',
+  JPY: 'fi fi-jp',
+  KWD: 'fi fi-kw',
+  MYR: 'fi fi-my',
+  NOK: 'fi fi-no',
+  NZD: 'fi fi-nz',
+  SAR: 'fi fi-sa',
+  SEK: 'fi fi-se',
+  SGD: 'fi fi-sg',
+  THB: 'fi fi-th',
+  USD: 'fi fi-us',
+}
 const exchangeMode = ref(route.query.mode === 'sell' ? 'SELL' : 'BUY')
 const selectedCurrency = ref('JPY')
 const foreignInput = ref('')
