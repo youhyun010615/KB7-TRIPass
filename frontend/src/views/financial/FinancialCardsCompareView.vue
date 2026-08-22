@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 
@@ -95,6 +95,10 @@ const secondaryComparisonGroups = [
 ]
 
 const showSecondaryGroups = ref(false)
+
+const canOpenFirstCard = computed(
+    () => comparisonCards.value.length > 0,
+)
 
 function displayValue(value) {
   if (
@@ -224,6 +228,16 @@ function openCardDetail(cardId) {
   router.push(`/financial/cards/${cardId}`)
 }
 
+function openFirstCardDetail() {
+  const firstCard = comparisonCards.value[0]
+
+  if (!firstCard) {
+    return
+  }
+
+  openCardDetail(firstCard.id)
+}
+
 function clearComparison() {
   travelCardsStore.clearComparison()
 }
@@ -256,20 +270,9 @@ onMounted(loadComparison)
         <div class="selection-heading">
           <strong>비교할 카드 선택</strong>
 
-          <div class="selection-actions">
-            <button
-                v-if="comparisonCards.length"
-                type="button"
-                class="clear-button"
-                @click="clearComparison"
-            >
-              전체 해제
-            </button>
-
-            <span class="selection-count">
-              {{ comparisonCards.length }}/3 선택
-            </span>
-          </div>
+          <span class="selection-count">
+            {{ comparisonCards.length }}/3 선택
+          </span>
         </div>
 
         <div class="selected-card-list">
@@ -388,10 +391,17 @@ onMounted(loadComparison)
           <div>
             <h2>핵심 혜택 비교</h2>
             <p>
-              항목마다 어느 카드가 유리한지 바로 보여드려요.
+              선택한 카드를 좌우로 비교해 보세요.
             </p>
           </div>
 
+          <button
+              type="button"
+              class="clear-button"
+              @click="clearComparison"
+          >
+            전체 해제
+          </button>
         </div>
 
         <div class="benefit-card-list">
@@ -529,6 +539,19 @@ onMounted(loadComparison)
         </div>
       </section>
 
+      <button
+          type="button"
+          class="detail-button"
+          :disabled="!canOpenFirstCard"
+          @click="openFirstCardDetail"
+      >
+        {{
+          comparisonCards.length === 1
+              ? '선택한 카드 상세 보기'
+              : '첫 번째 카드 상세 보기'
+        }}
+      </button>
+
       <BottomNav />
     </div>
   </main>
@@ -599,12 +622,6 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.selection-actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
 }
 
 .selection-heading strong {
@@ -810,9 +827,7 @@ button {
 .comparison-heading p {
   margin: 4px 0 0;
   color: #8190a5;
-  font-size: 9.5px;
-  font-weight: 600;
-  line-height: 1.5;
+  font-size: 10px;
 }
 
 .clear-button {
@@ -1007,6 +1022,24 @@ button {
 
 .more-benefit-chevron.opened {
   transform: rotate(180deg);
+}
+
+.detail-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 20px;
+  border-radius: 14px;
+  background: #173f8d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(23, 63, 141, 0.16);
+}
+
+.detail-button:disabled {
+  background: #adb8c8;
+  box-shadow: none;
+  cursor: default;
 }
 
 @keyframes spin {
