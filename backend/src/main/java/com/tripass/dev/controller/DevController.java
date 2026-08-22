@@ -4,6 +4,7 @@ import com.tripass.common.response.ApiResponse;
 import com.tripass.dev.mapper.DevDateMapper;
 import com.tripass.dev.service.DevResetService;
 import com.tripass.dev.util.DevDateUtil;
+import com.tripass.travel.mapper.TravelMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class DevController {
     private final DevResetService devResetService;
     private final DevDateMapper devDateMapper;
     private final DevDateUtil devDateUtil;
+    private final TravelMapper travelMapper;
 
     @ApiOperation(value = "계정 데이터 초기화")
     @PostMapping("/reset-account")
@@ -44,6 +46,9 @@ public class DevController {
     ) {
         Long userId = (Long) authentication.getPrincipal();
         devDateMapper.updateOverrideDate(userId, date);
+
+        travelMapper.syncTripStatusForUser(userId, date);
+        travelMapper.syncTripEndedForUser(userId, date);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("overrideDate", date.toString());
