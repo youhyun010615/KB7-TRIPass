@@ -376,10 +376,11 @@ const myManageItems = computed(() => [
             class="trip-circle-item add-trip"
             :class="{ blocked: hasTravelingTrip }"
             :disabled="hasTravelingTrip"
+            :title="hasTravelingTrip ? '이미 진행 중인 여행이 있습니다.' : ''"
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
-            <b>여행 추가</b>
+            <b>{{ hasTravelingTrip ? '여행 중' : '여행 추가' }}</b>
           </button>
         </div>
 
