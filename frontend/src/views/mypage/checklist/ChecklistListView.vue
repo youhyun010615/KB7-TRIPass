@@ -67,7 +67,7 @@ watch(tripId, (id) => { if (id) load(id) })
         <em :class="{ scheduled: returnProgress.total === 0 || returnProgress.done === 0 }">{{ returnProgress.total > 0 ? `${returnProgress.done}/${returnProgress.total}` : '예정' }}</em><strong>›</strong>
       </button>
     </template>
-    <BottomNav />
+    <BottomNav flat />
   </main>
 </template>
 

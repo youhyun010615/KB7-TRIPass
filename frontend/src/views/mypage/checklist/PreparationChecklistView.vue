@@ -129,7 +129,7 @@
         ＋ 체크리스트 추가
       </button>
     </div>
-    <BottomNav />
+    <BottomNav flat />
   </main>
 </template>
 
@@ -595,7 +595,6 @@ const handleDelete = async (event, itemId) => {
 </style>
 <style scoped>
 .page{background:#f3f6fc}.pass{background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.pass:before,.pass:after{background:#f3f6fc}.pass small,.pass footer em{color:#cbd9f7}.pass .bar span{background:linear-gradient(90deg,#ffd45e,#ffbe3d)}nav{background:#e8edf7}nav button.active{background:#173f8d;color:#fff}.item-card{border-color:#dfe7f4;background:#fff;box-shadow:0 7px 18px rgba(23,63,141,.05)}.check-icon{border-color:#a9bfe8}.item-card.done .check-icon{border-color:#2662ea;background:#2662ea}.add-button{border-color:#bfd0f1;color:#2662ea;background:#f9fbff}
-.bottom-nav :deep(.nav-background){filter:none}
 .page nav{margin-bottom:11px;border-radius:12px}.page nav button{padding:8px}.pass{padding:16px;border-radius:16px;box-shadow:0 9px 22px rgba(23,63,141,.14)}.pass h2{font-size:15px}.pass .bar{margin-top:13px}.scroll-content h3{margin:16px 2px 8px;font-size:13px}.items{gap:7px}.item-card{gap:8px;padding:11px 12px;border-radius:12px;box-shadow:0 5px 14px rgba(23,63,141,.045)}.item-title{font-size:12px}.check-icon{width:22px;height:22px;font-size:13px}.actions{gap:5px}.status-tag{padding:4px 7px}.add-button{margin-top:10px;padding:11px;border-radius:10px}.add-box{margin-top:10px;padding:10px;border-radius:11px}
 .pass{border:1px solid #bfd2f1;background:linear-gradient(135deg,#dce9fb 0%,#c8daf6 100%);color:#10234a}.pass:before,.pass:after{display:none}.pass small,.pass footer em{color:#6680a8}.pass i{border-color:#a9bfdf}.pass .bar{background:rgba(255,255,255,.72)}.pass .bar span{background:#2662ea}.item-card{border:1px solid #d7e2f2;border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(23,63,141,.06)}.item-card.done{background:#f1f6ff}.item-card.done .check-icon{border-color:#2662ea;background:#2662ea}
 .page nav{

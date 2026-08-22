@@ -565,7 +565,7 @@ function showPastSchedules() {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 27px 2px 3px;
+  padding: 39px 2px 3px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -593,7 +593,7 @@ function showPastSchedules() {
 }
 .calendar-strip .country-period-line {
   position: absolute;
-  top: -22px;
+  top: -15px;
   left: -4px;
   display: block;
   width: 47px;
@@ -629,7 +629,7 @@ function showPastSchedules() {
 .calendar-strip .country-period-line.start::after { border-color: #2662ea; }
 .calendar-strip .country-period-line em {
   position: absolute;
-  top: -18px;
+  top: -17px;
   left: 0;
   width: 13px;
   height: 9px;
@@ -639,10 +639,10 @@ function showPastSchedules() {
 }
 .calendar-strip .country-period-line b {
   position: absolute;
-  top: -20px;
+  top: -19px;
   left: 17px;
   color: #284c87;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 900;
   white-space: nowrap;
 }
