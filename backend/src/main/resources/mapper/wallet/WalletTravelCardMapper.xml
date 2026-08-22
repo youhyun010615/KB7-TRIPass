@@ -205,6 +205,101 @@
         ORDER BY created_at DESC, id DESC
     </select>
 
+    <select id="findTravelCardTransactions"
+            resultType="com.tripass.wallet.travelcard.dto.response.TravelCardTransactionResponseDto">
+        SELECT combined.transaction_id,
+               combined.source_type,
+               combined.transaction_type,
+               combined.direction,
+               combined.currency_code,
+               combined.foreign_amount,
+               combined.krw_amount,
+               combined.balance_before,
+               combined.balance_after,
+               combined.applied_exchange_rate,
+               combined.merchant_name,
+               combined.category_name,
+               combined.country_name,
+               combined.memo,
+               combined.occurred_at
+        FROM (
+            SELECT CONCAT('LEDGER-', tcl.id) AS transaction_id,
+                   'CARD_LEDGER' AS source_type,
+                   tcl.transaction_type,
+                   tcl.direction,
+                   tcl.currency_code,
+                   tcl.foreign_amount,
+                   wet.krw_amount,
+                   tcl.balance_before,
+                   tcl.balance_after,
+                   wet.applied_exchange_rate,
+                   NULL AS merchant_name,
+                   NULL AS category_name,
+                   NULL AS country_name,
+                   tcl.memo,
+                   tcl.created_at AS occurred_at
+            FROM travel_card_ledger tcl
+                     LEFT JOIN wallet_exchange_transaction wet
+                               ON wet.card_ledger_id = tcl.id
+            WHERE tcl.wallet_travel_card_id = #{walletTravelCardId}
+
+            UNION ALL
+
+            SELECT DISTINCT CONCAT('PAYMENT-', tx.id) AS transaction_id,
+                   'CARD_PAYMENT' AS source_type,
+                   CASE WHEN tx.transaction_type = 'DEPOSIT' THEN 'PAYMENT_REFUND' ELSE 'PAYMENT' END AS transaction_type,
+                   CASE WHEN tx.transaction_type = 'DEPOSIT' THEN 'IN' ELSE 'OUT' END AS direction,
+                   COALESCE(cur.currency_code, 'KRW') AS currency_code,
+                   COALESCE(tx.original_amount, tx.amount) AS foreign_amount,
+                   tx.amount AS krw_amount,
+                   NULL AS balance_before,
+                   tx.balance_after,
+                   tx.applied_exchange_rate,
+                   tx.merchant_name,
+                   sc.category_name,
+                   c.country_name,
+                   tx.memo,
+                   TIMESTAMP(tx.transaction_date, COALESCE(tx.transaction_time, '00:00:00')) AS occurred_at
+            FROM wallet w
+                     JOIN wallet_travel_card wtc
+                          ON wtc.wallet_id = w.id
+                              AND wtc.id = #{walletTravelCardId}
+                              AND wtc.status = 'LINKED'
+                     LEFT JOIN user_travel_cards utc
+                               ON utc.id = wtc.user_travel_card_id
+                     JOIN cards card
+                          ON card.user_id = w.user_id
+                              AND card.is_deleted = 0
+                              AND (
+                                  (
+                                      utc.external_card_key IS NOT NULL
+                                      AND utc.external_card_key = CONCAT(
+                                          'CODEF:',
+                                          COALESCE(card.organization_code, ''),
+                                          ':',
+                                          COALESCE(card.masked_card_number, '')
+                                      )
+                                  )
+                                  OR (
+                                      utc.external_card_key IS NULL
+                                      AND (
+                                          card.masked_card_number = COALESCE(utc.masked_card_number, wtc.masked_card_number)
+                                          OR card.card_name = COALESCE(utc.card_name, wtc.card_name)
+                                      )
+                                  )
+                              )
+                     JOIN transactions tx
+                          ON tx.card_id = card.id
+                              AND tx.is_deleted = 0
+                     LEFT JOIN currencies cur ON cur.id = tx.currency_id
+                     LEFT JOIN spending_categories sc ON sc.id = tx.category_id
+                     LEFT JOIN trip_countries tc ON tc.id = tx.trip_country_id
+                     LEFT JOIN countries c ON c.id = tc.country_id
+            WHERE w.id = #{walletId}
+        ) combined
+        ORDER BY combined.occurred_at DESC, combined.transaction_id DESC
+    </select>
+
     <select id="findTravelCardBalanceForUpdate"
             resultType="com.tripass.wallet.travelcard.domain.TravelCardBalance">
         SELECT

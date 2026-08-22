@@ -5,6 +5,7 @@ import com.tripass.wallet.travelcard.dto.request.WalletTravelCardLinkRequestDto;
 import com.tripass.wallet.travelcard.dto.request.WalletTravelCardTopupRequestDto;
 import com.tripass.wallet.travelcard.dto.response.TravelCardCurrencyBalanceResponseDto;
 import com.tripass.wallet.travelcard.dto.response.TravelCardLedgerResponseDto;
+import com.tripass.wallet.travelcard.dto.response.TravelCardTransactionResponseDto;
 import com.tripass.wallet.travelcard.dto.response.UserTravelCardOptionResponseDto;
 import com.tripass.wallet.travelcard.dto.response.WalletCardTopupResponseDto;
 import com.tripass.wallet.travelcard.dto.response.WalletTravelCardResponseDto;
@@ -87,5 +88,13 @@ public class WalletTravelCardController {
     @GetMapping("/ledgers")
     public ApiResponse<List<TravelCardLedgerResponseDto>> getLedgers(@AuthenticationPrincipal Long userId) {
         return ApiResponse.success(walletTravelCardService.getLedgers(userId));
+    }
+
+    @ApiOperation(value = "트래블카드 통합 거래내역 조회", notes = "외화 충전·환전과 실제 카드 결제·환불 내역을 시간순으로 조회합니다.")
+    @GetMapping("/transactions")
+    public ApiResponse<List<TravelCardTransactionResponseDto>> getTransactions(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ApiResponse.success(walletTravelCardService.getTransactions(userId));
     }
 }

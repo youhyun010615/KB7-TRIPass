@@ -21,6 +21,7 @@ import com.tripass.wallet.travelcard.dto.request.WalletTravelCardLinkRequestDto;
 import com.tripass.wallet.travelcard.dto.request.WalletTravelCardTopupRequestDto;
 import com.tripass.wallet.travelcard.dto.response.TravelCardCurrencyBalanceResponseDto;
 import com.tripass.wallet.travelcard.dto.response.TravelCardLedgerResponseDto;
+import com.tripass.wallet.travelcard.dto.response.TravelCardTransactionResponseDto;
 import com.tripass.wallet.travelcard.dto.response.UserTravelCardOptionResponseDto;
 import com.tripass.wallet.travelcard.dto.response.WalletCardTopupResponseDto;
 import com.tripass.wallet.travelcard.dto.response.WalletTravelCardResponseDto;
@@ -133,6 +134,17 @@ public class WalletTravelCardService {
         }
 
         return walletTravelCardMapper.findTravelCardBalances(walletTravelCard.getId());
+    }
+
+    public List<TravelCardTransactionResponseDto> getTransactions(Long userId) {
+        Wallet wallet = getWallet(userId);
+        WalletTravelCard walletTravelCard = walletTravelCardMapper.findActiveWalletTravelCardByWalletId(wallet.getId());
+
+        if (walletTravelCard == null) {
+            return Collections.emptyList();
+        }
+
+        return walletTravelCardMapper.findTravelCardTransactions(wallet.getId(), walletTravelCard.getId());
     }
 
     public List<TravelCardLedgerResponseDto> getLedgers(Long userId) {

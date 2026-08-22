@@ -507,7 +507,10 @@ async function confirmUnlinkTravelCard() {
     <section v-else class="linked-card white-card">
       <div class="linked-title">
         <h2>내 트래블카드</h2>
-        <button type="button" @click="showUnlinkConfirm = true">연결 해제</button>
+        <div class="linked-actions">
+          <button type="button" class="transaction-link" @click="router.push('/wallet/travel-card/transactions')">거래내역</button>
+          <button type="button" @click="showUnlinkConfirm = true">연결 해제</button>
+        </div>
       </div>
       <div class="travel-card-box">
         <div class="card-visual">
@@ -783,7 +786,9 @@ async function confirmUnlinkTravelCard() {
 .empty-hero-actions{margin-top:10px;gap:6px}
 .primary-button,.recommend-link{height:29px;padding:0 12px;border-radius:9px;font-size:10.5px;font-weight:700}
 .linked-card{padding:19px 18px}
+.linked-actions{display:flex;align-items:center;gap:9px}
 .linked-title button{font-size:10.5px}
+.linked-title .transaction-link{color:#2167d8;font-weight:800}
 .travel-card-box{grid-template-columns:112px 1fr;gap:13px;margin-top:17px}
 .card-info h3{font-size:15px}
 .travel-card-meta dt{font-size:9.5px}

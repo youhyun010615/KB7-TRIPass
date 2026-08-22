@@ -7,6 +7,7 @@ import com.tripass.wallet.travelcard.domain.WalletCardTopup;
 import com.tripass.wallet.travelcard.domain.WalletTravelCard;
 import com.tripass.wallet.travelcard.dto.response.TravelCardCurrencyBalanceResponseDto;
 import com.tripass.wallet.travelcard.dto.response.TravelCardLedgerResponseDto;
+import com.tripass.wallet.travelcard.dto.response.TravelCardTransactionResponseDto;
 import com.tripass.wallet.travelcard.dto.response.UserTravelCardOptionResponseDto;
 import com.tripass.wallet.travelcard.dto.response.WalletTravelCardResponseDto;
 import org.apache.ibatis.annotations.Mapper;
@@ -54,6 +55,11 @@ public interface WalletTravelCardMapper {
     List<TravelCardCurrencyBalanceResponseDto> findTravelCardBalances(@Param("walletTravelCardId") Long walletTravelCardId);
 
     List<TravelCardLedgerResponseDto> findTravelCardLedgers(@Param("walletTravelCardId") Long walletTravelCardId);
+
+    List<TravelCardTransactionResponseDto> findTravelCardTransactions(
+            @Param("walletId") Long walletId,
+            @Param("walletTravelCardId") Long walletTravelCardId
+    );
 
     TravelCardBalance findTravelCardBalanceForUpdate(
             @Param("walletTravelCardId") Long walletTravelCardId,

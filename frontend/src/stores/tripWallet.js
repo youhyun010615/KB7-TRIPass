@@ -16,6 +16,7 @@ import {
   fetchWalletMain,
   fetchWalletMonthlySavingDetail,
   fetchWalletTravelCardBalances,
+  fetchWalletTravelCardTransactions,
   fetchWalletWithdrawOptions,
   linkWalletAccount,
   linkWalletTravelCard,
@@ -281,6 +282,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
   const monthlySavings = ref(saved?.monthlySavings ?? initialMonthlySavings)
   const transactions = ref(saved?.transactions ?? [])
   const ledgers = ref(saved?.ledgers ?? [])
+  const travelCardTransactions = ref([])
   const isTravelCardLinked = ref(saved?.isTravelCardLinked ?? false)
   const travelCard = ref(saved?.travelCard ?? normalizeTravelCard(defaultTravelCardOptions[0]))
   const foreignBalances = ref(saved?.foreignBalances ?? [])
@@ -366,6 +368,24 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
       return ledgers.value
     } catch (error) {
       errorMessage.value = error.response?.data?.message || '월렛 내역을 불러오지 못했어요.'
+      throw error
+    }
+  }
+
+  async function loadTravelCardTransactions() {
+    errorMessage.value = ''
+    try {
+      travelCardTransactions.value = (await fetchWalletTravelCardTransactions() ?? []).map(item => ({
+        ...item,
+        foreignAmount: toNumber(item.foreignAmount),
+        krwAmount: toNumber(item.krwAmount),
+        balanceBefore: item.balanceBefore == null ? null : toNumber(item.balanceBefore),
+        balanceAfter: item.balanceAfter == null ? null : toNumber(item.balanceAfter),
+        appliedExchangeRate: item.appliedExchangeRate == null ? null : toNumber(item.appliedExchangeRate),
+      }))
+      return travelCardTransactions.value
+    } catch (error) {
+      errorMessage.value = error.response?.data?.message || '트래블카드 거래내역을 불러오지 못했어요.'
       throw error
     }
   }
@@ -680,6 +700,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     monthlyDeposits,
     transactions,
     ledgers,
+    travelCardTransactions,
     monthDeposit,
     savingRate,
     isTravelCardLinked,
@@ -693,6 +714,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     autoSavingLogs,
     loadWalletMain,
     loadLedgers,
+    loadTravelCardTransactions,
     loadAccounts,
     loadAccountOptions,
     loadWithdrawOptions,
