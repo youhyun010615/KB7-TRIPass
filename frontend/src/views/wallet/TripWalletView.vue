@@ -571,19 +571,21 @@ async function confirmUnlinkTravelCard() {
       <div class="linked-title">
         <h2>내 트래블카드</h2>
         <div class="linked-actions">
-          <button type="button" class="transaction-link" @click="router.push('/wallet/travel-card/transactions')">거래내역</button>
-          <button type="button" @click="showUnlinkConfirm = true">연결 해제</button>
+          <button type="button" class="link-button transaction-link" @click="router.push('/wallet/travel-card/transactions')">거래내역 보기<ChevronRight :size="14" /></button>
         </div>
       </div>
       <div class="travel-card-box">
-        <div class="card-visual">
-          <TravelCardVisual
-            v-model:frozen-index="wallet.travelCard.frozenIndex"
-            :images="walletTravelCardImages"
-            :color="wallet.travelCard.color"
-            :issuer="wallet.travelCard.issuer"
-            :brand="wallet.travelCard.brand"
-          />
+        <div class="card-visual-col">
+          <div class="card-visual">
+            <TravelCardVisual
+              v-model:frozen-index="wallet.travelCard.frozenIndex"
+              :images="walletTravelCardImages"
+              :color="wallet.travelCard.color"
+              :issuer="wallet.travelCard.issuer"
+              :brand="wallet.travelCard.brand"
+            />
+          </div>
+          <button type="button" class="travel-card-history-link" @click="showUnlinkConfirm = true">연결 해제</button>
         </div>
         <div class="card-info">
           <h3>{{ wallet.travelCard.name }}</h3>
@@ -868,7 +870,7 @@ async function confirmUnlinkTravelCard() {
 .linked-card{padding:19px 18px}
 .linked-actions{display:flex;align-items:center;gap:9px}
 .linked-title button{font-size:10.5px}
-.linked-title .transaction-link{color:#2167d8;font-weight:800}
+.card-visual-col{display:flex;flex-direction:column;align-items:center;gap:8px}.travel-card-history-link{color:#94a3b8;font-size:10.5px;font-weight:600}.linked-title .transaction-link{color:#2167d8;font-weight:800}
 .travel-card-box{grid-template-columns:112px 1fr;gap:13px;margin-top:17px}
 .card-info h3{font-size:15px}
 .travel-card-meta dt{font-size:9.5px}
