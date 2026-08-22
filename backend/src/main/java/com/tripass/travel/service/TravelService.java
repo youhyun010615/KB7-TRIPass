@@ -176,7 +176,9 @@ public class TravelService {
     /**
      * 여행 대시보드 상태 조회
      */
+    @Transactional
     public TravelStatusResponseDto getTravelStatus(Long tripId, Long currentUserId, Long countryId) {
+        syncTripStatusByVirtualDate(currentUserId);
         validateTripOwner(tripId, currentUserId);
 
         // 1. 대시보드 기본 정보 및 전체 국가 목록 조회
@@ -407,7 +409,9 @@ public class TravelService {
     }
 
     /** 로그인 사용자가 등록한 전체 여행 목록을 조회합니다. */
+    @Transactional
     public List<TripListItemResponseDto> getMyTrips(Long currentUserId) {
+        syncTripStatusByVirtualDate(currentUserId);
         return travelMapper.findTripsByUserId(currentUserId);
     }
 
