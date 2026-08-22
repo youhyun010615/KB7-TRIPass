@@ -525,7 +525,7 @@ const myManageItems = computed(() => [
 .trip-section-head button { flex:none;border:0;background:transparent;color:#2f70f2;font-size:10px;font-weight:800; }
 .trip-selector { display:flex;gap:13px;overflow-x:auto;padding:5px 4px 10px;scrollbar-width:none;scroll-snap-type:x proximity; }
 .trip-selector::-webkit-scrollbar { display:none; }
-.trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start;cursor:pointer; }
+.trip-circle-item { display:flex;width:66px;padding-bottom: 4px;min-width:66px;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start;cursor:pointer; }
 .trip-circle-title {
   display: -webkit-box;
   -webkit-line-clamp: 2;          /* 최대 2줄까지만 표시 */
@@ -536,13 +536,16 @@ const myManageItems = computed(() => [
   overflow-wrap: break-word;
   
   width: 100%;
-  min-height: 26px;               /* 2줄 기준 높이 확보 (일정하지 않은 줄바꿈 시에도 카드 균형 유지) */
-  max-height: 28px;
+  min-height: 30px;               /* 2줄 기준 최소 높이 */
+  max-height: 36px;               /* 👈 2줄 글자가 잘리지 않도록 넉넉하게 확장 (기존 28px -> 36px) */
+  padding: 1px 2px 2px;           /* 👈 글자 아래쪽(디센더) 잘림 방지용 내부 여백 */
+  box-sizing: border-box;
+  
   color: #475467;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.35;              /* 👈 줄 간격을 1.35로 살짝 넓혀 가독성 향상 */
 }
 .trip-circle { position:relative;isolation:isolate;display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
 .trip-circle-item:active .trip-circle { transform:scale(0.96); }
