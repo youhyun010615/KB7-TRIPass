@@ -388,8 +388,7 @@ onMounted(loadComparison)
   width: min(100%, 430px);
   min-height: 100vh;
   margin: 0 auto;
-  /* 기존 비교 화면의 전체 프레임과 스크롤 여백을 유지한다. */
-  padding: 14px 18px 118px;
+  padding: 14px 18px 32px;
   background: linear-gradient(180deg, #f4f7ff 0%, #edf3fc 100%);
 }
 
