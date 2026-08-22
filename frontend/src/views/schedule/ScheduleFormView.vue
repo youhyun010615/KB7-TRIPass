@@ -149,7 +149,7 @@ async function submit() {
         router.push(`/schedule/${route.params.scheduleId}`);
       } else if (archiveMode.value) {
         const tripId = route.params.id || route.query.tripId;
-        router.push({
+        router.replace({
           path: `/mypage/travel/${tripId}/schedules`,
           query: { tripId },
         });
