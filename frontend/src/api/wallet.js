@@ -105,3 +105,7 @@ export async function fetchWalletTravelCardBalances() {
 export async function fetchWalletTravelCardLedgers() {
   return dataOf(await api.get('/wallet/travel-card/ledgers'))
 }
+
+export async function fetchWalletTravelCardTransactions() {
+  return dataOf(await api.get('/wallet/travel-card/transactions'))
+}

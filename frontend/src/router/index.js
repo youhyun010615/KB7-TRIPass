@@ -114,6 +114,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/wallet/travel-card/transactions',
+      name: 'WalletTravelCardTransactions',
+      component: () => import('@/views/wallet/WalletTravelCardTransactionsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/wallet/notifications',
       name: 'WalletNotifications',
       component: () => import('@/views/wallet/WalletNotificationsView.vue'),
