@@ -32,19 +32,8 @@ public class MockTravelCardClient {
             );
         }
 
-        if ("CHF".equals(topup.getCurrencyCode()) && isFirstAttempt(topup.getFailureReason())) {
-            return TravelCardTopupResult.failed(
-                    "MOCK_TEMPORARY_ERROR",
-                    "CHF 충전은 목 카드사 일시 오류로 1회 실패 처리됩니다."
-            );
-        }
-
         return TravelCardTopupResult.succeeded(
                 "MOCK-TOPUP-" + topup.getId()
         );
-    }
-
-    private boolean isFirstAttempt(String failureReason) {
-        return failureReason == null || failureReason.trim().isEmpty();
     }
 }
