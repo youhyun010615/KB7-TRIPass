@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 
@@ -15,30 +15,103 @@ const {
   errorMessage,
 } = storeToRefs(travelCardsStore)
 
+// 처음부터 노출되는 핵심 3항목
 const benefitGroups = [
   {
     key: 'appliedRateInfo',
     title: '적용 환율',
+    criteria: '환율우대 %가 높을수록 유리해요',
     value: (card) => card.appliedRateInfo,
     preference: 'high',
   },
   {
     key: 'paymentFee',
     title: '해외 결제 수수료',
+    criteria: '수수료가 낮을수록 유리해요',
     value: (card) => card.paymentFee,
     preference: 'low',
   },
   {
     key: 'withdrawalFee',
     title: '해외 ATM 수수료',
+    criteria: '수수료가 낮을수록 유리해요',
     value: (card) => card.withdrawalFee,
     preference: 'low',
   },
 ]
 
-const canOpenFirstCard = computed(
-    () => comparisonCards.value.length > 0,
-)
+// "나머지 항목 비교" 버튼을 눌러야 보이는 추가 항목
+const extraBenefitGroups = [
+  {
+    key: 'exchangeFee',
+    title: '환전 수수료',
+    criteria: '환율우대 %가 높을수록 유리해요',
+    value: (card) => card.exchangeFee,
+    preference: 'high',
+  },
+  {
+    key: 'reExchangeFee',
+    title: '재환전 수수료',
+    criteria: '환율우대 %가 높을수록 유리해요',
+    value: (card) => card.reExchangeFee,
+    preference: 'high',
+  },
+  {
+    key: 'foreignCurrencyHoldingLimit',
+    title: '외화 보유 한도',
+    criteria: '한도가 높을수록 유리해요',
+    value: (card) => card.foreignCurrencyHoldingLimit,
+    preference: 'high',
+  },
+  {
+    key: 'supportedCurrencyCount',
+    title: '지원 통화 개수',
+    criteria: '지원 통화가 많을수록 유리해요',
+    value: (card) =>
+        card.supportedCurrencyCount ? `${card.supportedCurrencyCount}종` : null,
+    preference: 'high',
+  },
+  {
+    key: 'instantUse',
+    title: '즉시 사용 가능 여부',
+    criteria: '계좌 개설 없이 바로 쓸 수 있으면 유리해요',
+    value: (card) => (card.instantUse ? '계좌 개설 없이 즉시 사용' : '계좌 개설 필요'),
+    score: (card) => (card.instantUse ? 1 : 0),
+  },
+  {
+    key: 'settlementType',
+    title: '해외 결제 처리 방식',
+    criteria: '현지통화 직접 결제가 유리해요',
+    value: (card) =>
+        card.settlementType === 'DIRECT' ? '현지통화 직접 결제' : '달러 환산 후 결제',
+    score: (card) => (card.settlementType === 'DIRECT' ? 1 : 0),
+  },
+  {
+    key: 'autoChargeSupported',
+    title: '자동 충전 지원',
+    criteria: '자동 충전을 지원하면 유리해요',
+    value: (card) => (card.autoChargeSupported ? '지원' : '미지원'),
+    score: (card) => (card.autoChargeSupported ? 1 : 0),
+  },
+  {
+    key: 'transitCard',
+    title: '교통카드 지원',
+    criteria: '교통카드 기능을 지원하면 유리해요',
+    value: (card) => (card.transitCard ? '지원' : '미지원'),
+    score: (card) => (card.transitCard ? 1 : 0),
+  },
+  {
+    key: 'requiredAccount',
+    title: '필요 계좌·서비스',
+    value: (card) => card.requiredAccount,
+  },
+]
+
+const isExpanded = ref(false)
+
+function toggleExpanded() {
+  isExpanded.value = !isExpanded.value
+}
 
 function displayValue(value) {
   if (
@@ -50,6 +123,11 @@ function displayValue(value) {
   }
 
   return value
+}
+
+// "A + B" 형태의 문구는 + 기준으로 줄바꿈해서 보여준다.
+function formatResult(value) {
+  return String(displayValue(value)).replace(/\s*\+\s*/g, '\n+ ')
 }
 
 function comparisonScore(value, preference) {
@@ -71,16 +149,25 @@ function comparisonScore(value, preference) {
 }
 
 function isBestBenefit(card, group) {
-  const scores = comparisonCards.value
-      .map((item) => comparisonScore(group.value(item), group.preference))
-      .filter((score) => score !== null)
-  const cardScore = comparisonScore(group.value(card), group.preference)
+  const scoreOf = (item) =>
+      group.score
+          ? group.score(item)
+          : comparisonScore(group.value(item), group.preference)
 
-  if (cardScore === null || scores.length === 0) {
+  const scores = comparisonCards.value
+      .map(scoreOf)
+      .filter((score) => score !== null && score !== undefined)
+  const cardScore = scoreOf(card)
+
+  if (
+      cardScore === null ||
+      cardScore === undefined ||
+      scores.length === 0
+  ) {
     return false
   }
 
-  const bestScore = group.preference === 'high'
+  const bestScore = (group.score || group.preference === 'high')
       ? Math.max(...scores)
       : Math.min(...scores)
 
@@ -145,16 +232,6 @@ function openCardDetail(cardId) {
   router.push(`/financial/cards/${cardId}`)
 }
 
-function openFirstCardDetail() {
-  const firstCard = comparisonCards.value[0]
-
-  if (!firstCard) {
-    return
-  }
-
-  openCardDetail(firstCard.id)
-}
-
 function clearComparison() {
   travelCardsStore.clearComparison()
 }
@@ -190,6 +267,15 @@ onMounted(loadComparison)
           <span class="selection-count">
             {{ comparisonCards.length }}/3 선택
           </span>
+
+          <button
+              v-if="comparisonCards.length > 0"
+              type="button"
+              class="clear-button"
+              @click="clearComparison"
+          >
+            전체 해제
+          </button>
         </div>
 
         <div class="selected-card-list">
@@ -311,14 +397,6 @@ onMounted(loadComparison)
               항목마다 어느 카드가 유리한지 바로 보여드려요.
             </p>
           </div>
-
-          <button
-              type="button"
-              class="clear-button"
-              @click="clearComparison"
-          >
-            전체 해제
-          </button>
         </div>
 
         <div class="benefit-card-list">
@@ -327,7 +405,12 @@ onMounted(loadComparison)
               :key="group.key"
               class="benefit-card"
           >
-            <h3>{{ group.title }}</h3>
+            <div class="benefit-card-head">
+              <h3>{{ group.title }}</h3>
+              <small v-if="group.criteria" class="benefit-criteria">
+                {{ group.criteria }}
+              </small>
+            </div>
 
             <button
                 v-for="card in comparisonCards"
@@ -336,42 +419,75 @@ onMounted(loadComparison)
                 class="benefit-row"
                 @click="openCardDetail(card.id)"
             >
-              <span class="benefit-name">
-                {{ card.cardName }}
+              <span class="benefit-identity">
+                <b class="benefit-name">{{ card.cardName }}</b>
+                <span class="benefit-company-row">
+                  <small class="benefit-company">{{ card.cardCompany }}</small>
+                  <span
+                      v-if="isBestBenefit(card, group)"
+                      class="best-badge"
+                  >
+                    추천
+                  </span>
+                </span>
               </span>
 
-              <span class="benefit-result">
-                {{ displayValue(group.value(card)) }}
-              </span>
-
-              <span
-                  v-if="isBestBenefit(card, group)"
-                  class="best-badge"
-              >
-                최고
-              </span>
+              <span class="benefit-result">{{ formatResult(group.value(card)) }}</span>
             </button>
           </article>
         </div>
 
-        <p class="comparison-guide">
-          카드명을 누르면 해당 카드의 상세 정보를
-          확인할 수 있습니다.
-        </p>
-      </section>
+        <button
+            type="button"
+            class="expand-button"
+            @click="toggleExpanded"
+        >
+          {{
+            isExpanded
+                ? '접기'
+                : `나머지 ${extraBenefitGroups.length}개 항목 비교`
+          }}
+          <i :class="{ open: isExpanded }">⌄</i>
+        </button>
 
-      <button
-          type="button"
-          class="detail-button"
-          :disabled="!canOpenFirstCard"
-          @click="openFirstCardDetail"
-      >
-        {{
-          comparisonCards.length === 1
-              ? '선택한 카드 상세 보기'
-              : '첫 번째 카드 상세 보기'
-        }}
-      </button>
+        <div v-if="isExpanded" class="benefit-card-list extra-benefit-card-list">
+          <article
+              v-for="group in extraBenefitGroups"
+              :key="group.key"
+              class="benefit-card"
+          >
+            <div class="benefit-card-head">
+              <h3>{{ group.title }}</h3>
+              <small v-if="group.criteria" class="benefit-criteria">
+                {{ group.criteria }}
+              </small>
+            </div>
+
+            <button
+                v-for="card in comparisonCards"
+                :key="card.id"
+                type="button"
+                class="benefit-row"
+                @click="openCardDetail(card.id)"
+            >
+              <span class="benefit-identity">
+                <b class="benefit-name">{{ card.cardName }}</b>
+                <span class="benefit-company-row">
+                  <small class="benefit-company">{{ card.cardCompany }}</small>
+                  <span
+                      v-if="isBestBenefit(card, group)"
+                      class="best-badge"
+                  >
+                    추천
+                  </span>
+                </span>
+              </span>
+
+              <span class="benefit-result">{{ formatResult(group.value(card)) }}</span>
+            </button>
+          </article>
+        </div>
+      </section>
 
     </div>
   </main>
@@ -441,10 +557,11 @@ button {
 .selection-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
 }
 
 .selection-heading strong {
+  margin-right: auto;
   font-size: 14px;
   font-weight: 800;
 }
@@ -671,11 +788,23 @@ button {
   box-shadow: 0 9px 24px rgba(38, 62, 101, 0.05);
 }
 
-.benefit-card h3 {
+.benefit-card-head {
   margin: 0 0 8px;
+}
+
+.benefit-card h3 {
+  margin: 0;
   color: #111c34;
   font-size: 14px;
   font-weight: 900;
+}
+
+.benefit-criteria {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 9.5px;
+  font-weight: 600;
 }
 
 .benefit-row {
@@ -683,7 +812,7 @@ button {
   width: 100%;
   min-height: 59px;
   padding: 12px 0;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, auto) 35px;
+  grid-template-columns: minmax(76px, 108px) minmax(0, 1fr);
   gap: 8px;
   align-items: center;
   border-top: 1px solid #edf1f6;
@@ -692,69 +821,95 @@ button {
   text-align: left;
 }
 
-.benefit-card h3 + .benefit-row {
+.benefit-card-head + .benefit-row {
   border-top: 0;
+}
+
+.benefit-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .benefit-name {
   overflow: hidden;
   color: #1c2940;
   font-size: 12.5px;
-  font-weight: 750;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.benefit-company-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.benefit-company {
+  overflow: hidden;
+  color: #8a97aa;
+  font-size: 8px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .benefit-result {
   color: #173f8d;
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
   line-height: 1.45;
   text-align: right;
   word-break: keep-all;
+  white-space: pre-line;
 }
 
 .best-badge {
   display: inline-flex;
-  min-width: 35px;
-  min-height: 25px;
+  flex: none;
+  min-width: 30px;
+  min-height: 16px;
   align-items: center;
   border-radius: 999px;
   background: #e8f8ef;
   color: #0a9b61;
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 900;
   justify-content: center;
 }
 
-.benefit-row:not(:has(.best-badge))::after {
-  width: 35px;
-  content: '';
-}
-
-.comparison-guide {
-  margin: 10px 3px 0;
-  color: #8090a5;
-  font-size: 10px;
-}
-
-.detail-button {
+.expand-button {
+  display: flex;
   width: 100%;
-  min-height: 52px;
-  margin-top: 20px;
+  min-height: 48px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e8edf5;
   border-radius: 14px;
-  background: #173f8d;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 900;
-  box-shadow: 0 10px 22px rgba(23, 63, 141, 0.16);
+  background: #fff;
+  color: #52657f;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 9px 24px rgba(38, 62, 101, 0.05);
 }
 
-.detail-button:disabled {
-  background: #adb8c8;
-  box-shadow: none;
-  cursor: default;
+.expand-button i {
+  font-style: normal;
+  transition: transform 0.2s;
+}
+
+.expand-button i.open {
+  transform: rotate(180deg);
+}
+
+.extra-benefit-card-list {
+  margin-top: 12px;
 }
 
 @keyframes spin {

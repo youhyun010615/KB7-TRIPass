@@ -35,6 +35,7 @@ public class AssetService {
     private final CodefClient codefClient;
     private final MonthlySpendingAnalysisService monthlySpendingAnalysisService;
     private final TravelService travelService;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     public AssetService(
             AssetMapper assetMapper,
@@ -42,7 +43,8 @@ public class AssetService {
             DuplicateTransactionMatcher duplicateTransactionMatcher,
             CodefClient codefClient,
             MonthlySpendingAnalysisService monthlySpendingAnalysisService,
-            TravelService travelService
+            TravelService travelService,
+            com.tripass.dev.util.DevDateUtil devDateUtil
     ) {
         this.assetMapper = assetMapper;
         this.transactionCategoryClassifier = transactionCategoryClassifier;
@@ -50,6 +52,7 @@ public class AssetService {
         this.codefClient = codefClient;
         this.monthlySpendingAnalysisService = monthlySpendingAnalysisService;
         this.travelService = travelService;
+        this.devDateUtil = devDateUtil;
     }
 
     @Transactional
@@ -371,12 +374,28 @@ public class AssetService {
 
             travelService.activateSavingsTrackingIfEligible(userId);
 
+            autoFetchCardTransactions(userId, saved);
+
             return saved;
 
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "CODEF_ERROR", "카드 연동 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    private void autoFetchCardTransactions(Long userId, List<CardDto> cards) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusMonths(8).withDayOfMonth(1);
+        String start = startDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String end = endDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        for (CardDto card : cards) {
+            try {
+                fetchCardTransactions(userId, card.getId(), start, end);
+            } catch (Exception e) {
+                log.warn("카드 연동 후 자동 거래내역 동기화 실패 - cardId: {}, 사유: {}", card.getId(), e.getMessage());
+            }
         }
     }
 
@@ -826,8 +845,8 @@ public class AssetService {
     }
 
     public List<CalendarDayDto> getCalendar(Long userId, Integer year, Integer month, String type) {
-        if (year == null) year = java.time.LocalDate.now().getYear();
-        if (month == null) month = java.time.LocalDate.now().getMonthValue();
+        if (year == null) year = devDateUtil.today(userId).getYear();
+        if (month == null) month = devDateUtil.today(userId).getMonthValue();
 
         if (month < 1 || month > 12) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "INVALID_MONTH", "월은 1~12 사이여야 합니다.");

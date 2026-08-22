@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
-import { resetAccount as resetAccountApi } from '@/api/mypage'
+import { resetAccount as resetAccountApi, setOverrideDate, clearOverrideDate, getCurrentDate } from '@/api/mypage'
 import { getAccounts } from '@/api/asset'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport } from '@/api/report'
@@ -21,6 +21,9 @@ const travelStore = useTravelStore()
 
 const isLoggingOut = ref(false)
 const isResetting = ref(false)
+const overrideDate = ref('')
+const currentDateInfo = ref(null)
+const isSettingDate = ref(false)
 const accounts = ref([])
 const trips = ref([])
 const selectedTripId = ref(null)
@@ -31,7 +34,7 @@ const selectedTripReceiptCount = ref(0)
 const selectedTrip = computed(() =>
   trips.value.find((trip) => Number(trip.tripId) === Number(selectedTripId.value)) || trips.value[0] || null,
 )
-const hasTravelingTrip = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중'))
+const isTripActive = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중' || tripStatus(trip).startsWith('D-')))
 const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
 const visitedCountryCount = computed(() => {
   const countries = new Set()
@@ -121,7 +124,7 @@ async function loadSelectedTripMenuStats(trip) {
 }
 
 function startNewTrip() {
-  if (hasTravelingTrip.value) return
+  if (isTripActive.value) return
   travelStore.resetGoal()
   router.push({ name: 'TravelRegister' })
 }
@@ -150,6 +153,7 @@ onMounted(async () => {
     accounts.value = []
   }
   await cardStore.loadCards()
+  loadCurrentDate()
   try {
     trips.value = (await fetchMyTrips()) || []
     selectedTripId.value = trips.value[0]?.tripId ?? null
@@ -197,6 +201,40 @@ async function resetAccount() {
   } finally {
     isResetting.value = false
   }
+}
+
+async function loadCurrentDate() {
+  try {
+    const res = await getCurrentDate()
+    currentDateInfo.value = res.data?.data ?? null
+    if (currentDateInfo.value?.overrideDate) {
+      overrideDate.value = currentDateInfo.value.overrideDate
+    }
+  } catch { currentDateInfo.value = null }
+}
+
+async function applyOverrideDate() {
+  if (!overrideDate.value || isSettingDate.value) return
+  isSettingDate.value = true
+  try {
+    await setOverrideDate(overrideDate.value)
+    await loadCurrentDate()
+    window.alert(`가상 날짜가 ${overrideDate.value}로 설정되었습니다.`)
+  } catch (e) {
+    window.alert('설정 실패: ' + (e.response?.data?.message || e.message))
+  } finally { isSettingDate.value = false }
+}
+
+async function removeOverrideDate() {
+  isSettingDate.value = true
+  try {
+    await clearOverrideDate()
+    overrideDate.value = ''
+    await loadCurrentDate()
+    window.alert('가상 날짜가 해제되었습니다.')
+  } catch (e) {
+    window.alert('해제 실패: ' + (e.response?.data?.message || e.message))
+  } finally { isSettingDate.value = false }
 }
 
 const myManageItems = computed(() => [
@@ -336,8 +374,9 @@ const myManageItems = computed(() => [
           <button
             type="button"
             class="trip-circle-item add-trip"
-            :class="{ blocked: hasTravelingTrip }"
-            :disabled="hasTravelingTrip"
+            :class="{ blocked: isTripActive }"
+            :disabled="isTripActive"
+            :title="isTripActive ? '이미 진행 중이거나 준비 중인 여행이 있습니다.' : ''"
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
@@ -368,6 +407,21 @@ const myManageItems = computed(() => [
             </div>
           </Transition>
         </article>
+      </section>
+
+      <!-- 개발용: 가상 날짜 설정 -->
+      <section class="dev-date-section">
+        <h3>가상 날짜 설정 <span class="dev-badge">DEV</span></h3>
+        <p class="dev-date-desc">비즈니스 로직에만 적용됩니다 (환율·Codef 등 외부 API 무관)</p>
+        <div v-if="currentDateInfo?.isOverridden" class="dev-date-active">
+          현재 적용: <strong>{{ currentDateInfo.overrideDate }}</strong>
+          <small>(실제: {{ currentDateInfo.realDate }})</small>
+        </div>
+        <div class="dev-date-controls">
+          <input type="date" v-model="overrideDate" class="dev-date-input" />
+          <button type="button" class="dev-date-btn apply" :disabled="!overrideDate || isSettingDate" @click="applyOverrideDate">적용</button>
+          <button type="button" class="dev-date-btn clear" :disabled="isSettingDate || !currentDateInfo?.isOverridden" @click="removeOverrideDate">해제</button>
+        </div>
       </section>
 
       <button
@@ -671,4 +725,68 @@ const myManageItems = computed(() => [
   .trip-menu-item { opacity:1;transform:none;animation:none; }
   .trip-circle-item.selected.traveling .trip-circle::before { animation:none; }
 }
+.dev-date-section {
+  background: #fff;
+  border: 2px dashed #f59e0b;
+  border-radius: 16px;
+  padding: 16px;
+}
+.dev-date-section h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dev-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #f59e0b;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.dev-date-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+.dev-date-active {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+}
+.dev-date-active strong { font-weight: 800; }
+.dev-date-active small { display: block; font-size: 11px; color: #b45309; margin-top: 2px; }
+.dev-date-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+.dev-date-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+}
+.dev-date-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+.dev-date-btn.apply { background: #2563eb; color: #fff; }
+.dev-date-btn.apply:disabled { background: #94a3b8; }
+.dev-date-btn.clear { background: #fee2e2; color: #dc2626; }
+.dev-date-btn.clear:disabled { background: #f1f5f9; color: #cbd5e1; }
 </style>

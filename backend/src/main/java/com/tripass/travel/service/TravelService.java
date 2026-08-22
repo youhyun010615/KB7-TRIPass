@@ -29,6 +29,7 @@ public class TravelService {
     private final ScheduleService scheduleService;
     private final ChecklistService checklistService;
     private final com.tripass.wallet.service.WalletService walletService;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     public TripLifecycleResponseDto getCurrentLifecycle(Long currentUserId) {
         Trip trip = travelMapper.selectLatestTripByUserId(currentUserId);
@@ -48,7 +49,7 @@ public class TravelService {
                     .build();
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = devDateUtil.today(currentUserId);
         String lifecycle;
         if ("ARCHIVED".equals(trip.getStatus())) lifecycle = "ARCHIVED";
         else if (today.isBefore(trip.getStartDate())) lifecycle = "PREPARING";
@@ -127,7 +128,7 @@ public class TravelService {
 
         TripGoalResponseDto trip = travelMapper.findTripGoalById(tripId);
         BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
-        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
+        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), devDateUtil.today(currentUserId));
         BigDecimal monthlySavingTarget = TripSavingCalculator.calculateMonthlySavingTarget(
                 defaultZero(trip.getTotalTargetAmount()), walletBalance, remainingMonths
         );
@@ -306,7 +307,7 @@ public class TravelService {
         Trip trip = validateTripOwnerAndGetTrip(tripId, currentUserId);
 
         // 3. 여행 기간 검증 (start_date <= Today <= end_date)
-        LocalDate today = LocalDate.now();
+        LocalDate today = devDateUtil.today(currentUserId);
         if (today.isBefore(trip.getStartDate()) || today.isAfter(trip.getEndDate())) {
             throw new TravelException(TravelErrorCode.INVALID_TRIP_PERIOD);
         }
@@ -430,7 +431,7 @@ public class TravelService {
                 : securedTravelFund.multiply(BigDecimal.valueOf(100))
                         .divide(totalTarget, 2, RoundingMode.HALF_UP)
                         .min(BigDecimal.valueOf(100));
-        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
+        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), devDateUtil.today(currentUserId));
         BigDecimal monthlySavingTarget = defaultZero(travelMapper.findMonthlySavingAmountByTripId(trip.getTripId()));
         BigDecimal currentMonthSaving = defaultZero(travelMapper.findCurrentMonthWalletSaving(currentUserId));
         BigDecimal currentMonthRemaining = monthlySavingTarget.subtract(currentMonthSaving).max(BigDecimal.ZERO);
@@ -461,7 +462,7 @@ public class TravelService {
                 .status(trip.getStatus())
                 .startDate(trip.getStartDate())
                 .endDate(trip.getEndDate())
-                .daysUntilDeparture(Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate())))
+                .daysUntilDeparture(Math.max(0, ChronoUnit.DAYS.between(devDateUtil.today(currentUserId), trip.getStartDate())))
                 .totalTargetAmount(totalTarget)
                 .prepaidExpenseTotal(defaultZero(travelMapper.findPrepaidExpenseTotalByTripId(trip.getTripId())))
                 .walletBalance(securedTravelFund)
@@ -597,7 +598,7 @@ public class TravelService {
         travelMapper.insertTripWalletIfAbsent(currentUserId);
         BigDecimal walletBalance = defaultZero(travelMapper.findTripWalletBalanceByUserId(currentUserId));
         TripGoalResponseDto trip = travelMapper.findTripGoalById(tripId);
-        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), LocalDate.now());
+        int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), devDateUtil.today(currentUserId));
         BigDecimal monthlySavingTarget = TripSavingCalculator.calculateMonthlySavingTarget(
                 localTravelTargetTotal, walletBalance, remainingMonths
         );

@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelCardsStore } from '@/stores/travelCards'
 import { getTravelCardImage } from '@/utils/travelCard'
 
@@ -472,14 +471,12 @@ onBeforeUnmount(() => {
         <span><b>{{ travelCardsStore.comparedCardCount }}</b>개의 카드가 담겼어요</span>
         <strong>비교하기 ›</strong>
       </button>
-
-      <BottomNav />
     </div>
   </main>
 </template>
 
 <style scoped>
-.page{min-height:100vh;background:#e9eef7;color:#101b33}.shell{width:min(100%,430px);min-height:100vh;margin:auto;padding:14px 18px 118px;background:linear-gradient(180deg,#f4f7ff 0%,#edf3fc 100%)}
+.page{min-height:100vh;background:#e9eef7;color:#101b33}.shell{width:min(100%,430px);min-height:100vh;margin:auto;padding:14px 18px 96px;background:linear-gradient(180deg,#f4f7ff 0%,#edf3fc 100%)}
 .page-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;margin-bottom:17px}.back-button{display:grid;width:36px;height:36px;place-items:center;border:0;border-radius:12px;background:#fff;color:#16366f;font-size:24px;box-shadow:0 5px 16px #24487512}.page-header>div{text-align:center}.page-header small{color:#2f6fd8;font-size:8px;font-weight:900;letter-spacing:.13em}.page-header h1{margin-top:2px;font-size:18px;font-weight:900}
 .finder-hero{position:relative;display:flex;min-height:184px;overflow:hidden;padding:23px 20px;border-radius:25px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 68%,#2f70d9 100%);color:#fff;box-shadow:0 16px 34px #123a8529}.hero-copy{position:relative;z-index:2}.hero-copy small{color:#ffd268;font-size:8px;font-weight:900;letter-spacing:.14em}.hero-copy h2{margin-top:10px;font-size:21px;font-weight:900;line-height:1.3;letter-spacing:-.04em}.hero-copy p{margin-top:9px;color:#c8d9f8;font-size:10px;line-height:1.55}.hero-orbit{position:absolute;top:-70px;right:-60px;width:190px;height:190px;border-radius:50%;background:#ffffff12}.hero-card{position:absolute;right:-21px;bottom:-18px;width:142px;height:91px;padding:17px;border:1px solid #ffffff3a;border-radius:18px;background:linear-gradient(145deg,#ffffff29,#8fb9ff25);box-shadow:0 14px 28px #071c4c50;transform:rotate(-8deg);backdrop-filter:blur(5px)}.hero-card i{display:block;width:24px;height:17px;border-radius:5px;background:linear-gradient(135deg,#ffd76c,#eca82d)}.hero-card b,.hero-card span{display:block}.hero-card b{margin-top:11px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em}.hero-card span{margin-top:3px;color:#cbdcff;font-size:6px;letter-spacing:.16em}
 
@@ -683,6 +680,6 @@ onBeforeUnmount(() => {
 .state-card.error b {
   color: #d44747;
 }
-.floating-compare{position:fixed;bottom:82px;left:50%;z-index:45;display:flex;width:min(calc(100% - 36px),394px);align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ffffff30;border-radius:16px;background:#102f72;color:#fff;box-shadow:0 14px 30px #0d2d7150;transform:translateX(-50%)}.floating-compare span{color:#cbd9f4;font-size:10px}.floating-compare span b{display:inline-grid;width:21px;height:21px;margin-right:5px;place-items:center;border-radius:7px;background:#ffd36b;color:#133575}.floating-compare strong{font-size:11px}
+.floating-compare{position:fixed;bottom:20px;left:50%;z-index:45;display:flex;width:min(calc(100% - 36px),394px);align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ffffff30;border-radius:16px;background:#102f72;color:#fff;box-shadow:0 14px 30px #0d2d7150;transform:translateX(-50%)}.floating-compare span{color:#cbd9f4;font-size:10px}.floating-compare span b{display:inline-grid;width:21px;height:21px;margin-right:5px;place-items:center;border-radius:7px;background:#ffd36b;color:#133575}.floating-compare strong{font-size:11px}
 @media(max-width:360px){.hero-card{right:-38px}.hero-copy h2{font-size:19px}}
 </style>

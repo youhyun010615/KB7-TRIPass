@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class ChecklistService {
 
     private final ChecklistMapper checklistMapper;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     /**
      * 여행 생성 시 기본 체크리스트 항목 초기화 (이미 생성되었으면 스킵)
@@ -72,7 +73,7 @@ public class ChecklistService {
             DDayStage stage = DDayStage.from(ddayStage);
             ddayStage = stage.getValue();
 
-            long daysUntilTrip = ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate());
+            long daysUntilTrip = ChronoUnit.DAYS.between(devDateUtil.today(currentUserId), trip.getStartDate());
             if (daysUntilTrip <= 7) {
                 checklistMapper.updateCarriedOverStatus(tripId, daysUntilTrip);
             }

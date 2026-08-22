@@ -345,6 +345,15 @@ function selectedRate(categoryId) {
   return Number(missionStore.selectedRates[String(categoryId)] || 0)
 }
 
+async function handleStartMissions() {
+  const result = await missionStore.startMissions()
+
+  // 등록에 성공한 경우에만 추천 선택 화면을 닫고 미션 대시보드를 표시한다.
+  if (result) {
+    closeSelectionFlow()
+  }
+}
+
 function displayedWeek(mission) {
   const weeks = mission.weeklyMissions || []
   return (
@@ -786,7 +795,7 @@ function closeSelectionFlow() {
         <button
           type="button"
           :disabled="(missionStore.hasStartedMissions ? missionStore.newSelectedCount : missionStore.selectedCount) === 0 || missionStore.submitting"
-          @click="missionStore.startMissions"
+          @click="handleStartMissions"
         >
           {{ missionStore.submitting ? '미션을 만들고 있어요...' : `${missionStore.hasStartedMissions ? missionStore.newSelectedCount : missionStore.selectedCount}개 미션 ${missionStore.hasStartedMissions ? '추가하기' : '시작하기'}` }}
         </button>
