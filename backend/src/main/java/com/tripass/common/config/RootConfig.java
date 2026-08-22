@@ -64,6 +64,8 @@ import javax.sql.DataSource;
         "com.tripass.common.scheduler",
         "com.tripass.common.config",
         "com.tripass.auth.client",
+        "com.tripass.dev.service",
+        "com.tripass.dev.util",
 })
 @MapperScan(basePackages = {
         "com.tripass.auth.mapper",
@@ -83,7 +85,8 @@ import javax.sql.DataSource;
         "com.tripass.report.mapper",
         "com.tripass.wallet.mapper",
         "com.tripass.wallet.fx.mapper",
-        "com.tripass.wallet.travelcard.mapper"
+        "com.tripass.wallet.travelcard.mapper",
+        "com.tripass.dev.mapper"
 })
 @PropertySource(value = {
         "classpath:application.properties",
