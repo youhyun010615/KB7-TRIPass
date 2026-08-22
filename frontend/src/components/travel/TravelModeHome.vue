@@ -187,8 +187,12 @@ const today = computed(() => {
 });
 
 const startDate = computed(() => {
-  if (!tripInfo.value?.startDate) return null;
-  const [year, month, day] = tripInfo.value.startDate.split('-').map(Number);
+  const overallStart = persistentCountries.value
+    .map(country => country.arrivalDate || country.startDate)
+    .filter(Boolean)
+    .sort()[0] || tripInfo.value?.startDate;
+  if (!overallStart) return null;
+  const [year, month, day] = overallStart.split('-').map(Number);
   return new Date(year, month - 1, day);
 });
 
@@ -615,6 +619,25 @@ function travelCardBalanceKrwText(item) {
   return `약 ${krwAmount.toLocaleString('ko-KR')}원`;
 }
 
+const allTravelCardBalances = computed(() => tripWalletStore.foreignBalances.map((balance) => {
+  const currencyCode = String(balance.currencyCode || balance.code || '').toUpperCase();
+  const amount = Number(balance.balanceAmount ?? balance.amount ?? 0);
+  const currency = exchangeStore.currencies.find(
+    entry => String(entry.code || '').toUpperCase() === currencyCode,
+  );
+  const krwAmount = Math.round(
+    (amount / Number(currency?.unit || 1)) * Number(currency?.rate || 0),
+  );
+  return {
+    currencyCode,
+    foreignText: `${currencyCode} ${amount.toLocaleString('ko-KR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`,
+    krwText: `약 ${krwAmount.toLocaleString('ko-KR')}원`,
+  };
+}).filter(balance => balance.currencyCode));
+
 function parseScheduleDateTime(dateTime) {
   if (Array.isArray(dateTime)) {
     const [year, month, day, hour = 0, minute = 0, second = 0] = dateTime;
@@ -856,13 +879,13 @@ async function switchMode(mode) {
               </div>
             </div>
             <span class="ticket-meta-divider" aria-hidden="true" />
-            <span class="ticket-meta-day">DAY {{ currentDay }}</span>
-            <span class="ticket-meta-divider" aria-hidden="true" />
             <span class="ticket-meta-now">
               <b>NOW</b>
               <span>{{ currentTravelCountry?.countryName }}</span>
               <i v-if="currentTravelCountry" :class="flagIconClass(countryFlagMap[currentTravelCountry.countryName])" />
             </span>
+            <span class="ticket-meta-divider" aria-hidden="true" />
+            <span class="ticket-meta-day">DAY {{ currentDay }}</span>
           </div>
           <div class="perforation"><i /><span /><i /></div>
           <div class="ticket-main">
@@ -905,7 +928,16 @@ async function switchMode(mode) {
                 <img class="travel-card-icon-image" :src="tosimiTravelCard" alt="토심이 트래블카드">
                 <div class="travel-card-balance">
                   <small>트래블카드 잔액</small>
-                  <div class="travel-card-balance-values">
+                  <div v-if="item.code === 'all'" class="all-travel-card-balances">
+                    <div v-for="balance in allTravelCardBalances" :key="balance.currencyCode" class="travel-card-balance-values">
+                      <strong>{{ balance.foreignText }}</strong>
+                      <em>{{ balance.krwText }}</em>
+                    </div>
+                    <div v-if="!allTravelCardBalances.length" class="travel-card-balance-values">
+                      <strong>외화 잔액 없음</strong>
+                    </div>
+                  </div>
+                  <div v-else class="travel-card-balance-values">
                     <strong>{{ travelCardBalanceText(item) }}</strong>
                     <em>{{ travelCardBalanceKrwText(item) }}</em>
                   </div>
@@ -2767,10 +2799,10 @@ async function switchMode(mode) {
 .travel-card-balance{display:flex;flex-direction:column;align-items:flex-start;text-align:left}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
 .ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
 .travel-card-balance-values{display:flex;align-items:baseline;gap:8px}.travel-card-balance-values em{color:rgba(255,255,255,.82);font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}
+.all-travel-card-balances{display:flex;flex-wrap:wrap;gap:3px 12px}.all-travel-card-balances .travel-card-balance-values{flex:0 0 auto}
 .combined .ticket-main{display:flex;flex-direction:column;background:linear-gradient(145deg,#0b1635 0%,#152b62 58%,#10224d 100%)}.combined .ticket-photo-space{min-height:24px;height:auto;flex:1}.combined .travel-summary-content{margin-top:auto}.overall-fund-progress-box{margin-top:0;background:rgba(4,14,44,.8);box-shadow:0 12px 28px rgba(0,0,0,.2)}
 .travel-card-balance-row{display:flex;width:fit-content;max-width:100%;align-items:center;gap:13px;margin-bottom:12px;perspective:180px}.travel-card-balance-row .travel-card-icon-image{width:34px;height:48px;flex:none;border:1px solid rgba(255,255,255,.58);border-radius:5px;object-fit:cover;box-shadow:0 5px 12px rgba(3,16,43,.32);transform-origin:center;animation:travel-card-flip 4s ease-in-out infinite}.travel-card-balance-row .travel-card-balance small{color:#ffd466;font-size:15px;font-weight:950;letter-spacing:-.02em}.travel-card-balance-row .travel-card-balance strong{color:#fff;font-size:20px;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.28)}
 @keyframes travel-card-flip{0%,35%{transform:rotateY(0)}50%{transform:rotateY(180deg)}65%,100%{transform:rotateY(360deg)}}
 @media (prefers-reduced-motion:reduce){.travel-card-balance-row .travel-card-icon-image{animation:none}}
-.ticket .ticket-top{height:45px;min-height:45px;padding:6px 12px;background:#111;gap:9px}.ticket .ticket-meta-title>strong{font-size:12px}.ticket .ticket-meta-day{padding:5px 9px;font-size:9px}.ticket .ticket-meta-now{padding:5px 7px;font-size:9px}
 .fund-progress-meta>div:first-child small{color:#ff9b9b}.fund-progress-meta>div:last-child small{color:#ffd466}.fund-progress-meta b{color:#fff;font-weight:900}.fund-progress-meta small{font-weight:900;opacity:1}
 </style>

@@ -1,18 +1,15 @@
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
 import { resetAccount as resetAccountApi, setOverrideDate, clearOverrideDate } from '@/api/mypage'
 import { getAccounts } from '@/api/asset'
 import { fetchMyTrips } from '@/api/travel'
-import { fetchPreTripReport } from '@/api/report'
-import { getReceipts } from '@/api/receipt'
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/cardStore'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
-import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
-import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
+import { countryPresentation, useTravelStore } from '@/stores/travel'
 import {
   effectiveDate,
   initDevDate,
@@ -32,14 +29,7 @@ const overrideDate = ref('')
 const isSettingDate = ref(false)
 const accounts = ref([])
 const trips = ref([])
-const selectedTripId = ref(null)
-const tripMenuOpen = ref(false)
-const selectedTripReport = ref(null)
-const selectedTripReceiptCount = ref(0)
 
-const selectedTrip = computed(() =>
-  trips.value.find((trip) => Number(trip.tripId) === Number(selectedTripId.value)) || trips.value[0] || null,
-)
 const isTripActive = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중' || tripStatus(trip).startsWith('D-')))
 const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
 const visitedCountryCount = computed(() => {
@@ -73,8 +63,10 @@ function splitCountryNames(joined) {
   return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
 }
 
-function countryCodeOf(countryName) {
-  return countryPresentation[countryName]?.code || ''
+function formatTripName(name) {
+  if (!name) return '여행'
+  // 10글자로 제한 (넘칠 경우 CSS 2줄 line-clamp가 말줄임 처리)
+  return name.length > 10 ? name.slice(0, 10) : name
 }
 
 const homeCountryImages = {
@@ -94,11 +86,6 @@ function tripCover(trip) {
   return ''
 }
 
-function formatDateRange(startDate, endDate) {
-  const format = (date) => (date ? date.replaceAll('-', '.') : '')
-  return `${format(startDate)} - ${format(endDate)}`
-}
-
 function tripStatus(trip) {
   if (trip?.status === 'ENDED') return '완료'
   if (trip?.status === 'TRAVELING') return '여행 중'
@@ -109,24 +96,8 @@ function tripStatus(trip) {
   return days <= 0 ? '여행 중' : `D-${days}`
 }
 
-function selectTrip(trip) {
-  if (Number(selectedTripId.value) === Number(trip.tripId)) return
-  selectedTripId.value = trip.tripId
-  tripMenuOpen.value = false
-}
-
-async function loadSelectedTripMenuStats(trip) {
-  selectedTripReport.value = null
-  selectedTripReceiptCount.value = 0
-  if (!trip?.tripId || trip.status === 'ENDED') return
-  const [reportResult, receiptResult] = await Promise.allSettled([
-    fetchPreTripReport(trip.tripId),
-    getReceipts(trip.tripId),
-  ])
-  if (reportResult.status === 'fulfilled') selectedTripReport.value = reportResult.value
-  if (receiptResult.status === 'fulfilled') {
-    selectedTripReceiptCount.value = receiptResult.value.data?.data?.length ?? 0
-  }
+function goToTripDetail(tripId) {
+  router.push(`/mypage/travel/${tripId}`)
 }
 
 function startNewTrip() {
@@ -134,22 +105,6 @@ function startNewTrip() {
   travelStore.resetGoal()
   router.push({ name: 'TravelRegister' })
 }
-
-const travelMenuItems = computed(() => {
-  if (!selectedTrip.value) return []
-  const id = selectedTrip.value.tripId
-  const ended = selectedTrip.value.status === 'ENDED'
-  const badge = (value) => (ended ? undefined : value)
-  return [
-    { label: '여행 리포트', desc: '저축 기록과 여행 후 지출 분석', icon: 'report', path: `/mypage/reports?tripId=${id}`, badge: badge(tripStatus(selectedTrip.value) === '여행 중' ? '열람 가능' : '준비 중') },
-    { label: '체크리스트', desc: '여행 전 · 귀국 준비', icon: 'checklist', path: `/mypage/checklists?tripId=${id}`, badge: badge(`${selectedTripReport.value?.checklistCompleted ?? 0}/${selectedTripReport.value?.checklistTotal ?? 0}`) },
-    { label: '여행 일정', desc: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${id}/schedules?tripId=${id}`, badge: badge(`${selectedTripReport.value?.scheduleCount ?? 0}개`) },
-    { label: '영수증 보관함', desc: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${id}/receipts`, badge: badge(`${selectedTripReceiptCount.value}장`) },
-    { label: '완료 미션', desc: '매달 진행했던 미션 기록', icon: 'mission', path: `/mypage/missions?tripId=${id}`, badge: badge('-') },
-  ]
-})
-
-watch(selectedTrip, (trip) => loadSelectedTripMenuStats(trip), { immediate: true })
 
 onMounted(async () => {
   try {
@@ -163,7 +118,6 @@ onMounted(async () => {
   if (isOverridden.value) overrideDate.value = effectiveDate.value
   try {
     trips.value = (await fetchMyTrips()) || []
-    selectedTripId.value = trips.value[0]?.tripId ?? null
   } catch (error) {
     console.error('마이페이지 여행 목록 조회 실패:', error)
     trips.value = []
@@ -179,17 +133,11 @@ async function logout() {
   isLoggingOut.value = true
 
   try {
-    // 서버의 Refresh Token을 폐기하고 HttpOnly 쿠키를 삭제한다.
     await logoutApi()
   } catch (error) {
-    // 서버 요청이 실패하더라도 현재 브라우저의 로그인 상태는 제거한다.
   } finally {
-    // Access Token과 사용자 정보를 프론트에서 제거한다.
     authStore.logout()
-
-    // 뒤로 가기로 보호 화면에 돌아가지 않도록 replace를 사용한다.
     await router.replace('/login')
-
     isLoggingOut.value = false
   }
 }
@@ -344,10 +292,9 @@ const myManageItems = computed(() => [
               type="button"
               class="trip-circle-item"
               :class="{
-                selected: Number(selectedTripId) === Number(trip.tripId),
                 traveling: tripStatus(trip) === '여행 중',
               }"
-              @click="selectTrip(trip)"
+              @click="goToTripDetail(trip.tripId)"
           >
             <span class="trip-circle">
               <span
@@ -357,14 +304,9 @@ const myManageItems = computed(() => [
                 <span v-if="!tripCover(trip)" class="trip-cover-fallback" aria-hidden="true"></span>
               </span>
             </span>
-            <span class="trip-circle-flags" :aria-label="`${trip.tripName} 여행 국가`">
-              <span
-                v-for="name in splitCountryNames(trip.countryNames)"
-                :key="name"
-                :class="flagIconClass(countryCodeOf(name))"
-                class="fi-inline"
-              ></span>
-              <small v-if="!splitCountryNames(trip.countryNames).length">국가 미정</small>
+            <!-- 10글자 초과 시 말줄임 처리된 여행명 -->
+            <span class="trip-circle-title" :title="trip.tripName">
+              {{ formatTripName(trip.tripName) }}
             </span>
           </button>
 
@@ -377,33 +319,11 @@ const myManageItems = computed(() => [
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
-            <b>여행 추가</b>
+            <span class="trip-circle-title">여행 추가</span>
           </button>
         </div>
 
         <p v-if="!trips.length" class="trip-empty">등록된 여행이 없어요.</p>
-
-        <article v-else-if="selectedTrip" class="selected-trip-card">
-          <button type="button" class="selected-trip-summary" @click="tripMenuOpen = !tripMenuOpen">
-            <div class="selected-trip-main">
-              <div class="selected-trip-name">
-                <strong>{{ selectedTrip.tripName }}</strong>
-                <span class="selected-flags">
-                  <span v-for="name in splitCountryNames(selectedTrip.countryNames)" :key="name" :class="flagIconClass(countryCodeOf(name))" class="fi-inline"></span>
-                </span>
-              </div>
-              <small>{{ formatDateRange(selectedTrip.startDate, selectedTrip.endDate) }} · {{ selectedTrip.totalDays || '' }}일</small>
-            </div>
-            <em :class="{ traveling: tripStatus(selectedTrip) === '여행 중' }">{{ tripStatus(selectedTrip) }}</em>
-            <svg :class="{ open: tripMenuOpen }" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-
-          <Transition name="trip-menu">
-            <div v-if="tripMenuOpen" class="trip-menu-grid">
-              <TravelManagementMenu compact :items="travelMenuItems" @select="router.push($event.path)" />
-            </div>
-          </Transition>
-        </article>
       </section>
 
       <!-- 개발용: 가상 날짜 설정 -->
@@ -499,10 +419,6 @@ const myManageItems = computed(() => [
   gap: 10px;
   text-align: right;
 }
-.member-card-head strong {
-  font-size: 14px;
-  font-weight: 800;
-}
 .member-card-head span {
   color: #ffd466;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -593,45 +509,6 @@ const myManageItems = computed(() => [
   height: auto;
   object-fit: contain;
 }
-.header-plane {
-  width: 12px;
-  height: 12px;
-  animation: header-plane-fly 2.6s ease-in-out infinite;
-}
-@keyframes header-plane-fly {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-    filter: brightness(1) drop-shadow(0 0 0 rgba(47, 112, 242, 0));
-  }
-  25% {
-    transform: translateY(-1.5px) rotate(-8deg);
-  }
-  50% {
-    transform: translateY(0) rotate(0deg);
-    filter: brightness(1.6) drop-shadow(0 0 3px rgba(47, 112, 242, 0.55));
-  }
-  75% {
-    transform: translateY(1.5px) rotate(6deg);
-  }
-}
-.notification-time-card {
-  padding: 15px 16px;
-  border: 1px solid #e8edf5;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(16,25,43,.055);
-}
-.notification-time-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px; }
-.notification-time-head b,.notification-time-head small { display:block; }
-.notification-time-head b { color:#111827;font-size:12px;font-weight:800; }
-.notification-time-head small { margin-top:3px;color:#9aa5b6;font-size:9px; }
-.notification-time-head>span { padding:4px 7px;border-radius:99px;background:#edf3ff;color:#3970d0;font-family:'Space Mono',monospace;font-size:7px;font-weight:800;letter-spacing:.08em; }
-.notification-time-fields { display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);align-items:end;gap:7px;margin-top:12px; }
-.notification-time-fields label { padding:8px 10px;border:1px solid #e5eaf2;border-radius:12px;background:#f7f9fc; }
-.notification-time-fields label>span { display:block;margin-bottom:3px;color:#8b98ab;font-size:8px;font-weight:700; }
-.notification-time-fields input { width:100%;border:0;outline:0;background:transparent;color:#17387f;font-size:12px;font-weight:800; }
-.notification-time-fields i { padding-bottom:11px;color:#a5afbd;font-style:normal;text-align:center; }
 .reset-button { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;border:1px solid #dde3ed;border-radius:16px;background:#fff;color:#6b7a90;font-size:12px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04); }
 .reset-button:active { background:#f5f7fb; }
 .reset-button:disabled { opacity:.55; }
@@ -648,21 +525,33 @@ const myManageItems = computed(() => [
 .trip-section-head button { flex:none;border:0;background:transparent;color:#2f70f2;font-size:10px;font-weight:800; }
 .trip-selector { display:flex;gap:13px;overflow-x:auto;padding:5px 4px 10px;scrollbar-width:none;scroll-snap-type:x proximity; }
 .trip-selector::-webkit-scrollbar { display:none; }
-.trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:7px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start; }
-.trip-circle-item b { display:block;overflow:hidden;width:100%;font-size:9.5px;font-weight:800;text-align:center;text-overflow:ellipsis;white-space:nowrap; }
-.trip-circle-flags { display:flex;min-height:13px;align-items:center;justify-content:center;gap:3px; }
-.trip-circle-flags .fi-inline { display:block;width:18px;height:12px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(15,34,68,.16); }
-.trip-circle-flags small { color:#9aa5b5;font-size:8px;font-weight:700; }
+.trip-circle-item { display:flex;width:66px;min-width:66px;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start;cursor:pointer; }
+.trip-circle-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;          /* 최대 2줄까지만 표시 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;           /* 단어 단위 자연스러운 줄바꿈 */
+  overflow-wrap: break-word;
+  
+  width: 100%;
+  min-height: 26px;               /* 2줄 기준 높이 확보 (일정하지 않은 줄바꿈 시에도 카드 균형 유지) */
+  max-height: 28px;
+  color: #475467;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.3;
+}
 .trip-circle { position:relative;isolation:isolate;display:grid;width:58px;height:58px;place-items:center;border:3px solid #fff;border-radius:50%;background:#dfe6f0;box-shadow:0 0 0 2px #dfe6f0;transition:transform .22s ease,box-shadow .22s ease; }
-.trip-circle-item.selected { color:#111b30; }
-.trip-circle-item.selected .trip-circle { box-shadow:0 0 0 3px #2f70f2;transform:scale(1.03); }
-.trip-circle-item.selected.traveling .trip-circle { border-color:#fff;box-shadow:0 5px 15px rgba(18,167,102,.14);transform:scale(1.03); }
-.trip-circle-item.selected.traveling .trip-circle::before { position:absolute;z-index:-1;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
+.trip-circle-item:active .trip-circle { transform:scale(0.96); }
+.trip-circle-item.traveling .trip-circle { border-color:#fff;box-shadow:0 5px 15px rgba(18,167,102,.14); }
+.trip-circle-item.traveling .trip-circle::before { position:absolute;z-index:-1;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#0da668 0 58%,#bff5d9 70%,#24ca82 80%,#0da668 100%);content:'';animation:traveling-circle-spin 2.1s linear infinite; }
+.trip-circle-item.traveling .trip-circle-title { color: #0da668; font-weight: 900; }
 .trip-cover { position:relative;display:grid;width:100%;height:100%;place-items:center;overflow:hidden;border-radius:50%;background:#dce8f7 center/cover no-repeat; }
 .trip-cover::after { position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,44,99,.03),rgba(15,44,99,.18));content:''; }
 .trip-cover-fallback { position:absolute;inset:0;background:linear-gradient(145deg,#b9d4f4 0%,#dfeafa 42%,#8bb2df 100%); }
-.circle-flags { position:relative;z-index:1;display:flex;max-width:45px;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px; }
-.circle-flags .fi { width:18px;height:12px;border-radius:2px;box-shadow:0 1px 3px rgba(15,34,68,.18); }
 .add-trip .trip-circle { border:2px dashed #cad5e7;background:#fff;box-shadow:none;color:#2f70f2;font-size:25px;font-weight:400; }
 .add-trip-plus { display:grid;width:100%;height:100%;place-items:center;font-family:Arial,sans-serif;font-size:25px;font-style:normal;font-weight:400;line-height:1;transform:none; }
 .add-trip:active .trip-circle { transform:scale(.96); }
@@ -670,57 +559,11 @@ const myManageItems = computed(() => [
 .add-trip.blocked .trip-circle { border-style:solid;border-color:#d8dee8;background:#e8ebf0;color:#aeb6c2;box-shadow:inset 0 0 0 1px rgba(137,148,164,.08); }
 .add-trip.blocked .add-trip-plus { color:#929dab; }
 .trip-empty { padding:22px 16px;border:1px dashed #cfdbed;border-radius:19px;background:#fff;color:#95a2b5;font-size:10px;text-align:center; }
-.selected-trip-card { overflow:hidden;border:1px solid #e8edf5;border-radius:20px;background:#fff;box-shadow:0 8px 23px rgba(26,51,93,.075); }
-.selected-trip-summary { display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto 18px;align-items:center;gap:9px;padding:16px;border:0;background:#fff;text-align:left; }
-.selected-trip-main { min-width:0; }
-.selected-trip-name { display:flex;align-items:center;gap:7px; }
-.selected-trip-name strong { overflow:hidden;color:#111b30;font-size:14px;font-weight:800;text-overflow:ellipsis;white-space:nowrap; }
-.selected-flags { display:flex;align-items:center;gap:2px; }
-.selected-flags .fi { width:14px;height:10px;border-radius:2px;box-shadow:0 1px 2px rgba(15,34,68,.15); }
-.selected-trip-main small { display:block;margin-top:5px;color:#95a2b5;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700; }
-.selected-trip-summary>em { padding:6px 9px;border-radius:99px;background:#edf3ff;color:#2866d4;font-size:9px;font-style:normal;font-weight:800;white-space:nowrap; }
-.selected-trip-summary>em.traveling { position:relative;background:#e8f8ef;color:#138454;animation:traveling-pill-glow 1.8s ease-in-out infinite; }
-.selected-trip-summary>em.traveling::before { display:inline-block;width:5px;height:5px;margin-right:5px;border-radius:50%;background:#1dbf73;box-shadow:0 0 0 0 rgba(29,191,115,.38);content:'';vertical-align:1px;animation:traveling-dot-pulse 1.4s ease-out infinite; }
-.selected-trip-summary>svg { width:18px;height:18px;color:#9aa6b8;transition:transform .22s ease; }
-.selected-trip-summary>svg.open { transform:rotate(180deg); }
-.trip-menu-grid { display:block;padding:13px;border-top:1px solid #edf1f7;background:#f6f8fc; }
-.trip-menu-item { position:relative;display:flex;min-width:0;min-height:112px;flex-direction:column;align-items:flex-start;padding:13px;border:0;border-radius:16px;background:#f6f8fc;color:#111b30;text-align:left;opacity:0;transform:translateY(16px) scale(.94);animation:trip-menu-card-reveal .46s cubic-bezier(.2,.82,.28,1.18) forwards;will-change:transform,opacity; }
-.trip-menu-item:nth-child(1) { animation-delay:.05s; }
-.trip-menu-item:nth-child(2) { animation-delay:.11s; }
-.trip-menu-item:nth-child(3) { animation-delay:.17s; }
-.trip-menu-item:nth-child(4) { animation-delay:.23s; }
-.trip-menu-item:nth-child(5) { animation-delay:.29s; }
-.trip-menu-item:active { background:#edf3ff;transform:scale(.985); }
-.trip-menu-item.wide { grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:10px; }
-.trip-menu-icon { display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#eaf1ff;color:#2f70f2; }
-.trip-menu-icon svg { width:18px;height:18px; }
-.trip-menu-icon img { width:19px;height:19px;object-fit:contain; }
-.trip-menu-copy { min-width:0; }
-.trip-menu-item:not(.wide) .trip-menu-copy { margin-top:13px; }
-.trip-menu-item b { display:block;font-size:11px;font-weight:800;line-height:1.35; }
-.trip-menu-item small { display:block;margin-top:4px;color:#98a4b6;font-size:8.5px;line-height:1.45; }
-.trip-menu-enter-active,.trip-menu-leave-active { overflow:hidden;transition:max-height .3s ease,opacity .2s ease; }
-.trip-menu-enter-from,.trip-menu-leave-to { max-height:0;opacity:0; }
-.trip-menu-enter-to,.trip-menu-leave-from { max-height:420px;opacity:1; }
-@keyframes traveling-pill-glow {
-  0%,100% { box-shadow:0 0 0 0 rgba(29,191,115,0); }
-  50% { box-shadow:0 0 0 5px rgba(29,191,115,.09); }
-}
-@keyframes traveling-dot-pulse {
-  0% { box-shadow:0 0 0 0 rgba(29,191,115,.42); }
-  70%,100% { box-shadow:0 0 0 6px rgba(29,191,115,0); }
-}
 @keyframes traveling-circle-spin {
   to { transform:rotate(360deg); }
 }
-@keyframes trip-menu-card-reveal {
-  0% { opacity:0;transform:translateY(16px) scale(.94); }
-  68% { opacity:1;transform:translateY(-2px) scale(1.015); }
-  100% { opacity:1;transform:translateY(0) scale(1); }
-}
 @media (prefers-reduced-motion:reduce) {
-  .trip-menu-item { opacity:1;transform:none;animation:none; }
-  .trip-circle-item.selected.traveling .trip-circle::before { animation:none; }
+  .trip-circle-item.traveling .trip-circle::before { animation:none; }
 }
 .dev-date-section {
   background: #fff;

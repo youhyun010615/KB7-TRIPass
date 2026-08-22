@@ -123,7 +123,8 @@ const receiptTravelDay = computed(() => {
   if (!trip.value?.startDate) return 0
   const start = new Date(`${trip.value.startDate}T00:00:00`).getTime()
   const today = currentDate()
-  return Math.max(0, Math.floor((today.getTime() - start) / 86400000))
+  if (today.getTime() < start) return 0
+  return Math.floor((today.getTime() - start) / 86400000) + 1
 })
 const receiptCurrentCountry = computed(() => {
   const today = todayIso()
