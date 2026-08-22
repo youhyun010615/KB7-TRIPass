@@ -144,7 +144,7 @@ INSERT INTO users
      current_view_mode, is_deleted, deleted_at, created_at, updated_at)
 VALUES
     ('yuhyun',
-     '$2a$10$mHASKxszz8B6ioIRz49Y..Y5KrS368Oc.j2AS48HY9xKHYYklFyoW',
+     '$2a$10$pSTZxIVMYVUjMtt2XG5cKujdq3ySpWU2Za2b1raTv9rLuA/m8PQZy',
      '유현',
      '010-9174-0339',
      'LOCAL',
