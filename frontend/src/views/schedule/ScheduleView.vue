@@ -172,11 +172,8 @@ const travelDates = computed(() => {
       countryCode: period?.code || '',
       countryName: period?.name || '',
       countryStart: Boolean(period?.code && period.code !== previousPeriodCode),
-      countryMiddle: Boolean(period?.code && date > period.startDate && date < period.endDate),
-      countryEnd: Boolean(period?.code && date === period.endDate),
     });
     previousPeriodCode = period?.code || '';
-
     cursor.setDate(cursor.getDate() + 1);
   }
   return dates;
@@ -407,7 +404,7 @@ function showPastSchedules() {
           <span
             v-if="date.countryCode"
             class="country-period-line"
-            :class="{ start: date.countryStart, middle: date.countryMiddle, end: date.countryEnd }"
+            :class="{ start: date.countryStart }"
           >
             <em v-if="date.countryStart" :class="flagIconClass(date.countryCode)" />
             <b v-if="date.countryStart">{{ date.countryName }}</b>
@@ -563,10 +560,9 @@ function showPastSchedules() {
   gap: 7px;
   padding: 39px 2px 3px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  position: relative;
 }
 .calendar-strip::-webkit-scrollbar { display: none; }
 .calendar-strip button {
@@ -587,21 +583,43 @@ function showPastSchedules() {
   color: #17233b;
   scroll-snap-align: center;
   transition: .2s ease;
-  z-index: 1;
 }
 .calendar-strip .country-period-line {
   position: absolute;
   top: -15px;
-  left: 50%;
-  width: 100%;
-  height: 6px;
-  background: #a9c6f6;
-  pointer-events: none;
-  z-index: 0;
+  left: -4px;
+  display: block;
+  width: 47px;
+  height: 13px;
+  border-top: 2px solid #a9c6f6;
+  color: #526f9e;
 }
-.calendar-strip .country-period-line.start { background: #2662ea; left: 50%; width: 50%; border-radius: 0 3px 3px 0; }
-.calendar-strip .country-period-line.middle { background: #2662ea; left: -3.5px; width: calc(100% + 7px); border-radius: 0; }
-.calendar-strip .country-period-line.end { background: #2662ea; left: -3.5px; width: 50%; border-radius: 3px 0 0 3px; }
+.calendar-strip .country-period-line::after {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #a9c6f6;
+  border-radius: 50%;
+  background: #f4f5f9;
+  content: '';
+}
+.calendar-strip .country-period-line.start {
+  border-top-color: #2662ea;
+}
+.calendar-strip .country-period-line.start::before {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #2662ea;
+  border-radius: 50%;
+  background: #fff;
+  content: '';
+}
+.calendar-strip .country-period-line.start::after { border-color: #2662ea; }
 .calendar-strip .country-period-line em {
   position: absolute;
   top: -17px;
