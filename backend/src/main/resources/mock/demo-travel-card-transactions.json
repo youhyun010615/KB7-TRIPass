@@ -6,7 +6,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270404243",
     "resMemberStoreName": "Paul Boulangerie",
-    "resMemberStoreType": "베이커리",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -17,7 +17,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270404664",
     "resMemberStoreName": "Tour Eiffel Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -28,7 +28,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270404613",
     "resMemberStoreName": "Pharmacie Lafayette",
-    "resMemberStoreType": "약국",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -39,7 +39,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270404778",
     "resMemberStoreName": "Seine River Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -50,7 +50,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270404252",
     "resMemberStoreName": "Le Bouillon Chartier",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -61,7 +61,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270405595",
     "resMemberStoreName": "Musée d'Orsay",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -72,7 +72,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270405487",
     "resMemberStoreName": "Le Bouillon Chartier",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -83,7 +83,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270405910",
     "resMemberStoreName": "Paul Boulangerie",
-    "resMemberStoreType": "베이커리",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -94,7 +94,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270405140",
     "resMemberStoreName": "Tour Eiffel Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -105,7 +105,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270405370",
     "resMemberStoreName": "Pharmacie Lafayette",
-    "resMemberStoreType": "약국",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -116,7 +116,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270405380",
     "resMemberStoreName": "Uber Paris",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -127,7 +127,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270406524",
     "resMemberStoreName": "Pharmacie Lafayette",
-    "resMemberStoreType": "약국",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -138,7 +138,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270406335",
     "resMemberStoreName": "Boulangerie du Coin",
-    "resMemberStoreType": "베이커리",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -149,7 +149,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270406261",
     "resMemberStoreName": "Seine River Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -160,7 +160,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270406593",
     "resMemberStoreName": "Tour Eiffel Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -171,7 +171,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270406628",
     "resMemberStoreName": "Le Petit Cler",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -182,7 +182,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270406590",
     "resMemberStoreName": "Uber Paris",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -193,7 +193,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270407845",
     "resMemberStoreName": "Seine River Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -204,7 +204,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270407364",
     "resMemberStoreName": "Café de Flore",
-    "resMemberStoreType": "카페",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -215,7 +215,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270407624",
     "resMemberStoreName": "RATP Metro",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -226,7 +226,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270407582",
     "resMemberStoreName": "Galeries Lafayette",
-    "resMemberStoreType": "쇼핑",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -237,7 +237,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270407144",
     "resMemberStoreName": "Musée d'Orsay",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -248,7 +248,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270408729",
     "resMemberStoreName": "RATP Metro",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -259,7 +259,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270408710",
     "resMemberStoreName": "Seine River Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -270,7 +270,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270408116",
     "resMemberStoreName": "Le Petit Cler",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -281,7 +281,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270408913",
     "resMemberStoreName": "Musée d'Orsay",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -292,7 +292,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270408946",
     "resMemberStoreName": "Carrefour Express",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -303,7 +303,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270408195",
     "resMemberStoreName": "Café de Flore",
-    "resMemberStoreType": "카페",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "프랑스"
   },
@@ -314,7 +314,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270409220",
     "resMemberStoreName": "Jungfraujoch Ticket",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -325,7 +325,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270409794",
     "resMemberStoreName": "Sprüngli Confiserie",
-    "resMemberStoreType": "디저트",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -336,7 +336,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270409997",
     "resMemberStoreName": "Swiss Taxi",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -347,7 +347,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270409360",
     "resMemberStoreName": "Restaurant Zeughauskeller",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -358,7 +358,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270409814",
     "resMemberStoreName": "Lindt Chocolate Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -369,7 +369,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270409490",
     "resMemberStoreName": "Migros Take Away",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -380,7 +380,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410699",
     "resMemberStoreName": "Lindt Chocolate Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -391,7 +391,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410902",
     "resMemberStoreName": "Sprüngli Confiserie",
-    "resMemberStoreType": "디저트",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -402,7 +402,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410423",
     "resMemberStoreName": "Coop Supermarket",
-    "resMemberStoreType": "마트",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -413,7 +413,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410816",
     "resMemberStoreName": "Kiosk AG",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -424,7 +424,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410595",
     "resMemberStoreName": "Migros Take Away",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -435,7 +435,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410975",
     "resMemberStoreName": "Lake Lucerne Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -446,7 +446,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270410726",
     "resMemberStoreName": "Jungfraujoch Ticket",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -457,7 +457,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270411751",
     "resMemberStoreName": "Migros Take Away",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -468,7 +468,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270411714",
     "resMemberStoreName": "Coop Supermarket",
-    "resMemberStoreType": "마트",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -479,7 +479,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270411181",
     "resMemberStoreName": "Lindt Chocolate Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -490,7 +490,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270411920",
     "resMemberStoreName": "Migros Zürich",
-    "resMemberStoreType": "마트",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -501,7 +501,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270411728",
     "resMemberStoreName": "Lake Lucerne Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -512,7 +512,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412772",
     "resMemberStoreName": "Sprüngli Confiserie",
-    "resMemberStoreType": "디저트",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -523,7 +523,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412279",
     "resMemberStoreName": "Migros Take Away",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -534,7 +534,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412662",
     "resMemberStoreName": "Coop Supermarket",
-    "resMemberStoreType": "마트",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -545,7 +545,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412898",
     "resMemberStoreName": "Starbucks Zürich",
-    "resMemberStoreType": "카페",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -556,7 +556,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412468",
     "resMemberStoreName": "Manor Department",
-    "resMemberStoreType": "쇼핑",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -567,7 +567,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412713",
     "resMemberStoreName": "Käserei Zürich",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -578,7 +578,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270412305",
     "resMemberStoreName": "Lindt Chocolate Shop",
-    "resMemberStoreType": "기념품",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -589,7 +589,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270413209",
     "resMemberStoreName": "Lake Lucerne Cruise",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -600,7 +600,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270413513",
     "resMemberStoreName": "Starbucks Zürich",
-    "resMemberStoreType": "카페",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -611,7 +611,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270413486",
     "resMemberStoreName": "Jungfraujoch Ticket",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -622,7 +622,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270413922",
     "resMemberStoreName": "Migros Take Away",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -633,7 +633,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270413797",
     "resMemberStoreName": "Swiss Taxi",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -644,7 +644,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270413383",
     "resMemberStoreName": "Manor Department",
-    "resMemberStoreType": "쇼핑",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },
@@ -655,7 +655,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270414375",
     "resMemberStoreName": "TimeOut Market",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -666,7 +666,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270414508",
     "resMemberStoreName": "Cervejaria Ramiro",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -677,7 +677,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270414335",
     "resMemberStoreName": "Uber Lisboa",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -688,7 +688,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270414282",
     "resMemberStoreName": "Sintra Palace",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -699,7 +699,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270414109",
     "resMemberStoreName": "Pastelaria Versailles",
-    "resMemberStoreType": "베이커리",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -710,7 +710,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270414169",
     "resMemberStoreName": "Tram 28 Ticket",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -721,7 +721,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270415180",
     "resMemberStoreName": "Tram 28 Ticket",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -732,7 +732,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270415304",
     "resMemberStoreName": "Cervejaria Ramiro",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -743,7 +743,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270415307",
     "resMemberStoreName": "Pingo Doce",
-    "resMemberStoreType": "마트",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -754,7 +754,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270415422",
     "resMemberStoreName": "Minipreço Express",
-    "resMemberStoreType": "편의점",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -765,7 +765,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270415882",
     "resMemberStoreName": "Sintra Palace",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -776,7 +776,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270416315",
     "resMemberStoreName": "TimeOut Market",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -787,7 +787,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270416503",
     "resMemberStoreName": "Uber Lisboa",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -798,7 +798,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270416918",
     "resMemberStoreName": "Metro Lisboa",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -809,7 +809,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270416369",
     "resMemberStoreName": "Café A Brasileira",
-    "resMemberStoreType": "카페",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -820,7 +820,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270416630",
     "resMemberStoreName": "Sintra Palace",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -831,7 +831,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270416623",
     "resMemberStoreName": "Tram 28 Ticket",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -842,7 +842,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270417109",
     "resMemberStoreName": "Pingo Doce",
-    "resMemberStoreType": "마트",
+    "resMemberStoreType": "해외쇼핑",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -853,7 +853,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270417334",
     "resMemberStoreName": "TimeOut Market",
-    "resMemberStoreType": "레스토랑",
+    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -864,7 +864,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270417976",
     "resMemberStoreName": "Café A Brasileira",
-    "resMemberStoreType": "카페",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -875,7 +875,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270417610",
     "resMemberStoreName": "Metro Lisboa",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -886,7 +886,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270417510",
     "resMemberStoreName": "Uber Lisboa",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -897,7 +897,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270418442",
     "resMemberStoreName": "Metro Lisboa",
-    "resMemberStoreType": "교통",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -908,7 +908,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270418933",
     "resMemberStoreName": "Pastelaria Belém",
-    "resMemberStoreType": "베이커리",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -919,7 +919,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270418521",
     "resMemberStoreName": "Torre de Belém",
-    "resMemberStoreType": "관광",
+    "resMemberStoreType": "해외관광",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -930,7 +930,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270418681",
     "resMemberStoreName": "Pastelaria Versailles",
-    "resMemberStoreType": "베이커리",
+    "resMemberStoreType": "해외카페",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   },
@@ -941,7 +941,7 @@
     "resCancelYN": "N",
     "resApprovalNo": "TV270418423",
     "resMemberStoreName": "Uber Lisboa",
-    "resMemberStoreType": "택시",
+    "resMemberStoreType": "해외교통",
     "resCurrencyCode": "EUR",
     "resCountry": "포르투갈"
   }
