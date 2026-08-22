@@ -164,6 +164,7 @@ async function applyOverrideDate() {
   try {
     await setOverrideDate(overrideDate.value)
     await initDevDate()
+    trips.value = (await fetchMyTrips()) || []
     window.alert(`가상 날짜가 ${overrideDate.value}로 설정되었습니다.`)
   } catch (e) {
     window.alert('설정 실패: ' + (e.response?.data?.message || e.message))
@@ -176,6 +177,7 @@ async function removeOverrideDate() {
     await clearOverrideDate()
     overrideDate.value = ''
     await initDevDate()
+    trips.value = (await fetchMyTrips()) || []
     window.alert('가상 날짜가 해제되었습니다.')
   } catch (e) {
     window.alert('해제 실패: ' + (e.response?.data?.message || e.message))
