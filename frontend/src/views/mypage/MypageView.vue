@@ -117,7 +117,7 @@ const travelMenuItems = computed(() => {
     { label: '체크리스트', sub: '여행 전 · 귀국 준비', icon: 'check', path: `/mypage/checklists?tripId=${id}` },
     { label: '여행 일정', sub: '등록한 일정 확인', icon: 'schedule', path: `/mypage/travel/${id}/schedules?tripId=${id}` },
     { label: '영수증 보관함', sub: 'OCR 영수증과 지출 기록', icon: 'receipt', path: `/mypage/travel/${id}/receipts` },
-    { label: '완료 미션', sub: '진행했던 미션 기록', icon: 'mission', path: `/mypage/travel/${id}` },
+    { label: '완료 미션', sub: '진행했던 미션 기록', icon: 'mission', path: `/mypage/missions?tripId=${id}` },
   ]
 })
 
