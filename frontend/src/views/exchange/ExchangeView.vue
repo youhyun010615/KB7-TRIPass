@@ -215,15 +215,34 @@ watch(
         </template>
         <template v-else>
           <div class="empty-state">
-            <div class="empty-icon">💸</div>
-            <p>
-              <template v-if="travel.tripId || travel.activeTrip?.tripId">
-                등록한 여행 국가의 환율 정보가 아직 없어요.<br />잠시 후 다시 확인해 주세요.
-              </template>
-              <template v-else>
-                아직 관심 있는 환율이 없어요!<br />여행을 계획하거나 직접 통화를 추가해보세요.
-              </template>
-            </p>
+            <div class="empty-exchange-icon" aria-hidden="true">
+              <span class="empty-exchange-orbit"></span>
+              <svg viewBox="0 0 64 64" fill="none">
+                <path d="M17 22A19 19 0 0 1 48 18" />
+                <path d="m43 12 6 6-7 4" />
+                <path d="M47 42A19 19 0 0 1 16 46" />
+                <path d="m21 52-6-6 7-4" />
+                <path d="M24 27h16M27 27l2 18m8-18-2 18M24 34h16M23 27l4 18m14-18-4 18" />
+              </svg>
+            </div>
+            <div class="empty-copy">
+              <strong>
+                <template v-if="travel.tripId || travel.activeTrip?.tripId">
+                  여행 국가 환율을 준비하고 있어요
+                </template>
+                <template v-else>
+                  확인할 여행 국가를 등록해 주세요
+                </template>
+              </strong>
+              <p>
+                <template v-if="travel.tripId || travel.activeTrip?.tripId">
+                  등록한 여행 국가의 환율 정보가 아직 없어요.<br />잠시 후 다시 확인해 주세요.
+                </template>
+                <template v-else>
+                  여행을 등록하거나 전체 통화 환율에서<br />원하는 통화를 먼저 확인할 수 있어요.
+                </template>
+              </p>
+            </div>
             <div class="empty-actions">
               <button
                 @click="router.push('/travel/register')"
@@ -579,18 +598,69 @@ header h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  margin-top: 18px;
+  padding: 38px 20px 34px;
   text-align: center;
-  gap: 24px;
+  gap: 20px;
+  border: 1px solid #d5e3fb;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+  box-shadow: 0 12px 30px rgba(31, 78, 156, 0.08);
 }
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 8px;
+.empty-exchange-icon {
+  position: relative;
+  display: grid;
+  width: 88px;
+  height: 88px;
+  place-items: center;
+  border-radius: 28px;
+  color: #2464d8;
+  background: #e8f1ff;
+  box-shadow: inset 0 0 0 1px rgba(36, 100, 216, 0.08);
+  animation: empty-exchange-float 2.8s ease-in-out infinite;
+}
+.empty-exchange-icon svg {
+  position: relative;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  stroke: currentColor;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.empty-exchange-orbit {
+  position: absolute;
+  inset: -9px;
+  border: 1.5px dashed #9cbbef;
+  border-radius: 34px;
+  animation: empty-exchange-spin 8s linear infinite;
+}
+.empty-exchange-orbit::after {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffd568;
+  box-shadow: 0 0 0 4px #fff;
+  content: '';
+}
+.empty-copy {
+  display: grid;
+  gap: 8px;
+}
+.empty-copy strong {
+  color: #14213a;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .empty-state p {
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.5;
+  color: #7b8ba5;
+  font-size: 13px;
+  line-height: 1.65;
   margin: 0;
 }
 .empty-actions {
@@ -623,5 +693,16 @@ header h1 {
 }
 .btn-secondary:hover {
   background: #f1f5f9;
+}
+@keyframes empty-exchange-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes empty-exchange-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .empty-exchange-icon,
+  .empty-exchange-orbit { animation: none; }
 }
 </style>
