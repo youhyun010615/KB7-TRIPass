@@ -811,6 +811,7 @@ function goToOnboardingHub() {
 .register-page.budget-summary-step{padding-bottom:0}
 .budget-fixed-summary{position:sticky;z-index:30;bottom:0;box-sizing:border-box;width:100%;margin-top:18px;padding:12px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #e4e9f2;background:#fff;box-shadow:0 -10px 28px rgba(16,25,43,.07)}
 .onboarding-register .budget-fixed-summary{width:calc(100% + 32px);margin-right:-16px;margin-bottom:-26px;margin-left:-16px}
+.edit-register .budget-fixed-summary{width:100%;margin-right:0;margin-left:0}
 .budget-fixed-summary .total-preview{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 .budget-fixed-summary .total-preview div{display:flex;align-items:center;justify-content:space-between;color:#8891a0;font-size:11px;font-weight:700;line-height:1.35}
 .budget-fixed-summary .total-preview div>b{color:#10192b;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;font-weight:700;letter-spacing:-.025em}
