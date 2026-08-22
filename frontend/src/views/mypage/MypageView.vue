@@ -380,7 +380,7 @@ const myManageItems = computed(() => [
             @click="startNewTrip"
           >
             <span class="trip-circle"><span class="add-trip-plus">+</span></span>
-            <b>{{ isTripActive ? '여행 진행 중' : '여행 추가' }}</b>
+            <b>여행 추가</b>
           </button>
         </div>
 
