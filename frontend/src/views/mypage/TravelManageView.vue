@@ -5,7 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
-import { today as currentDate } from '@/utils/devDate'
+import { daysUntilTrip, tripPhase } from '@/utils/tripLifecycle'
 
 const router = useRouter()
 const travelStore = useTravelStore()
@@ -41,14 +41,11 @@ function daysUntilStart(trip) {
     const reportDays = Number(trip.report.daysUntilTrip)
     if (Number.isFinite(reportDays)) return reportDays
   }
-  if (!trip.startDate) return null
-  const today = currentDate()
-  const startDate = new Date(`${trip.startDate}T00:00:00`)
-  return Math.ceil((startDate - today) / 86400000)
+  return daysUntilTrip(trip)
 }
 
 function isTraveling(trip) {
-  return trip.status === 'TRAVELING' || (trip.status !== 'ENDED' && daysUntilStart(trip) !== null && daysUntilStart(trip) <= 0)
+  return tripPhase(trip) === 'TRAVELING'
 }
 
 function statusLabel(trip) {
@@ -73,7 +70,7 @@ onMounted(async () => {
 
     const uniqueCountries = new Set()
     trips
-      .filter((t) => t.status === 'ENDED' || isTraveling(t))
+      .filter((t) => ['ENDED', 'TRAVELING'].includes(tripPhase(t)))
       .forEach((t) =>
         splitCountryNames(t.countryNames).forEach((name) => uniqueCountries.add(name)),
       )
@@ -81,14 +78,16 @@ onMounted(async () => {
     visitedCountryCodes.value = [...uniqueCountries].slice(0, 4).map(countryCodeOf).filter(Boolean)
 
     const upcomingBase = trips
-      .filter((t) => t.status !== 'ENDED')
+      .filter((t) => tripPhase(t) !== 'ENDED')
       .sort((a, b) => {
-        if (a.status !== b.status) return a.status === 'TRAVELING' ? -1 : 1
+        const aPhase = tripPhase(a)
+        const bPhase = tripPhase(b)
+        if (aPhase !== bPhase) return aPhase === 'TRAVELING' ? -1 : 1
         return (a.startDate || '').localeCompare(b.startDate || '')
       })
 
     const pastBase = trips
-      .filter((t) => t.status === 'ENDED')
+      .filter((t) => tripPhase(t) === 'ENDED')
       .sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''))
 
     const [upcomingDetails, pastDetails] = await Promise.all([

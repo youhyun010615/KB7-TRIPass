@@ -15,8 +15,8 @@ import {
   initDevDate,
   isOverridden,
   realDate,
-  today as currentDate,
 } from '@/utils/devDate'
+import { daysUntilTrip, tripPhase } from '@/utils/tripLifecycle'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -31,11 +31,11 @@ const accounts = ref([])
 const trips = ref([])
 
 const isTripActive = computed(() => trips.value.some((trip) => tripStatus(trip) === '여행 중' || tripStatus(trip).startsWith('D-')))
-const completedTripCount = computed(() => trips.value.filter((trip) => trip.status === 'ENDED').length)
+const completedTripCount = computed(() => trips.value.filter((trip) => tripPhase(trip) === 'ENDED').length)
 const visitedCountryCount = computed(() => {
   const countries = new Set()
   trips.value
-    .filter((trip) => trip.status === 'ENDED' || tripStatus(trip) === '여행 중')
+    .filter((trip) => ['ENDED', 'TRAVELING'].includes(tripPhase(trip)))
     .forEach((trip) => splitCountryNames(trip.countryNames).forEach((name) => countries.add(name)))
   return countries.size
 })
@@ -87,13 +87,11 @@ function tripCover(trip) {
 }
 
 function tripStatus(trip) {
-  if (trip?.status === 'ENDED') return '완료'
-  if (trip?.status === 'TRAVELING') return '여행 중'
-  if (!trip?.startDate) return '준비 중'
-  const today = currentDate()
-  const start = new Date(`${trip.startDate}T00:00:00`)
-  const days = Math.ceil((start - today) / 86400000)
-  return days <= 0 ? '여행 중' : `D-${days}`
+  const phase = tripPhase(trip)
+  if (phase === 'ENDED') return '완료'
+  if (phase === 'TRAVELING') return '여행 중'
+  const days = daysUntilTrip(trip)
+  return days === null ? '준비 중' : `D-${Math.max(0, days)}`
 }
 
 function goToTripDetail(tripId) {
