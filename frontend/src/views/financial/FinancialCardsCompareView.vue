@@ -109,12 +109,6 @@ const extraBenefitGroups = [
 
 const isExpanded = ref(false)
 
-const visibleGroups = computed(() =>
-    isExpanded.value
-        ? [...benefitGroups, ...extraBenefitGroups]
-        : benefitGroups,
-)
-
 function toggleExpanded() {
   isExpanded.value = !isExpanded.value
 }
@@ -129,6 +123,11 @@ function displayValue(value) {
   }
 
   return value
+}
+
+// "A + B" 형태의 문구는 + 기준으로 줄바꿈해서 보여준다.
+function formatResult(value) {
+  return String(displayValue(value)).replace(/\s*\+\s*/g, '\n+ ')
 }
 
 function comparisonScore(value, preference) {
@@ -402,7 +401,7 @@ onMounted(loadComparison)
 
         <div class="benefit-card-list">
           <article
-              v-for="group in visibleGroups"
+              v-for="group in benefitGroups"
               :key="group.key"
               class="benefit-card"
           >
@@ -433,9 +432,7 @@ onMounted(loadComparison)
                 </span>
               </span>
 
-              <span class="benefit-result">
-                {{ displayValue(group.value(card)) }}
-              </span>
+              <span class="benefit-result">{{ formatResult(group.value(card)) }}</span>
             </button>
           </article>
         </div>
@@ -453,10 +450,43 @@ onMounted(loadComparison)
           <i :class="{ open: isExpanded }">⌄</i>
         </button>
 
-        <p class="comparison-guide">
-          카드명을 누르면 해당 카드의 상세 정보를
-          확인할 수 있습니다.
-        </p>
+        <div v-if="isExpanded" class="benefit-card-list extra-benefit-card-list">
+          <article
+              v-for="group in extraBenefitGroups"
+              :key="group.key"
+              class="benefit-card"
+          >
+            <div class="benefit-card-head">
+              <h3>{{ group.title }}</h3>
+              <small v-if="group.criteria" class="benefit-criteria">
+                {{ group.criteria }}
+              </small>
+            </div>
+
+            <button
+                v-for="card in comparisonCards"
+                :key="card.id"
+                type="button"
+                class="benefit-row"
+                @click="openCardDetail(card.id)"
+            >
+              <span class="benefit-identity">
+                <b class="benefit-name">{{ card.cardName }}</b>
+                <span class="benefit-company-row">
+                  <small class="benefit-company">{{ card.cardCompany }}</small>
+                  <span
+                      v-if="isBestBenefit(card, group)"
+                      class="best-badge"
+                  >
+                    추천
+                  </span>
+                </span>
+              </span>
+
+              <span class="benefit-result">{{ formatResult(group.value(card)) }}</span>
+            </button>
+          </article>
+        </div>
       </section>
 
     </div>
@@ -806,7 +836,7 @@ button {
   overflow: hidden;
   color: #1c2940;
   font-size: 12.5px;
-  font-weight: 750;
+  font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -830,11 +860,12 @@ button {
 
 .benefit-result {
   color: #173f8d;
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
   line-height: 1.45;
   text-align: right;
   word-break: keep-all;
+  white-space: pre-line;
 }
 
 .best-badge {
@@ -877,10 +908,8 @@ button {
   transform: rotate(180deg);
 }
 
-.comparison-guide {
-  margin: 10px 3px 0;
-  color: #8090a5;
-  font-size: 10px;
+.extra-benefit-card-list {
+  margin-top: 12px;
 }
 
 @keyframes spin {
