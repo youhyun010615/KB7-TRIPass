@@ -52,13 +52,22 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   const tripSummary = computed(() => {
     const r = preTripReport.value
     if (!r) return null
+    const basicCountries = tripBasic.value?.countries || []
+    const countryNames = basicCountries.length
+      ? basicCountries.map(country => country.countryName || country.name).filter(Boolean)
+      : (r.countryNames || [])
+    const countryCodes = basicCountries.length
+      ? basicCountries.map(country => {
+          const name = country.countryName || country.name
+          const catalog = travelStore.countries.find(item => Number(item.countryId) === Number(country.countryId))
+          return catalog?.code || travelStore.countryFlagMap[name]?.code
+        }).filter(Boolean)
+      : countryNames.map(name => travelStore.countryFlagMap[name]?.code).filter(Boolean)
     return {
       title: r.tripName,
-      flags: flagsFor(r.countryNames),
-      countryCodes: (r.countryNames || [])
-        .map(name => travelStore.countryFlagMap[name]?.code)
-        .filter(Boolean),
-      countries: (r.countryNames || []).join(' · '),
+      flags: flagsFor(countryNames),
+      countryCodes: [...new Set(countryCodes)],
+      countries: countryNames.join(' · '),
       dateRange: formatDateRange(r.startDate, r.endDate),
       dDay: r.daysUntilTrip,
       status: statusLabel(tripBasic.value?.status),

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useExchangeStore } from '@/stores/exchange';
 import { useMonthlyAnalysisStore } from '@/stores/monthlyAnalysis';
 import { useSavingMissionsStore } from '@/stores/savingMissions';
@@ -24,6 +24,7 @@ const savingMissionsStore = useSavingMissionsStore();
 const savingReadinessStore = useSavingReadinessStore();
 const travelStore = useTravelStore();
 const travelModeStore = useTravelModeStore();
+const route = useRoute();
 const router = useRouter();
 
 // 앱 전체를 감싸는 프레임(App.vue)에 overflow:hidden이 걸려 있어
@@ -58,21 +59,9 @@ const linkedAccountCount = ref(0);
 const linkedCardCount = ref(0);
 const financialSourcesLoading = ref(false);
 const financialSourcesError = ref('');
-const hasLinkedAccount = computed(
-  () => travelStore.lifecycle?.hasLinkedAccount ?? linkedAccountCount.value > 0,
-);
-const hasLinkedCard = computed(
-  () => travelStore.lifecycle?.hasLinkedCard ?? linkedCardCount.value > 0,
-);
 const hasLinkedFinancialSources = computed(
-  () => hasLinkedAccount.value && hasLinkedCard.value,
+  () => linkedAccountCount.value + linkedCardCount.value > 0,
 );
-const missingFinancialSourceCopy = computed(() => {
-  if (!hasLinkedAccount.value) {
-    return '저축 기록을 시작하려면 계좌를 연결해 주세요. 카드까지 연결하면 소비 분석과 맞춤 미션도 받을 수 있어요.';
-  }
-  return '저축 기록은 시작됐어요. 카드를 연결하면 소비 내역을 분석해 맞춤 저축 미션을 추천해 드려요.';
-});
 const savingsTrackingStarted = computed(() => Boolean(travelStore.lifecycle?.savingsTrackingStarted));
 const homeReportPending = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING');
 
@@ -100,14 +89,12 @@ async function loadFinancialSources() {
 }
 
 async function loadHomeInsights({ force = false } = {}) {
+  await loadFinancialSources();
   if (!travelStore.lifecycle?.hasTrip || !savingsTrackingStarted.value) {
     monthlyAnalysisStore.resetAnalysis();
     return;
   }
-  await Promise.all([
-    loadFinancialSources(),
-    savingMissionsStore.loadMissionStatus(),
-  ]);
+  await savingMissionsStore.loadMissionStatus();
 
   if (financialSourcesError.value || !hasLinkedFinancialSources.value) {
     monthlyAnalysisStore.resetAnalysis();
@@ -422,6 +409,20 @@ function openFinancialSources() {
   router.push('/profile/financial?step=1');
 }
 
+function openAccountConnection() {
+  router.push({
+    path: '/profile/financial',
+    query: { step: 2, from: 'home', returnTo: route.fullPath },
+  });
+}
+
+function openCardConnection() {
+  router.push({
+    path: '/profile/financial',
+    query: { step: 9, from: 'home', returnTo: route.fullPath },
+  });
+}
+
 function openMonthlyAnalysis() {
   const yearMonth = monthlyAnalysisStore.report?.analysisYearMonth;
   if (!yearMonth) return;
@@ -564,9 +565,12 @@ function startTripRegistration() {
             <span class="home-mission-ai-spark two">✦</span>
             <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
           </div>
-          <b>AI 추천 미션을 받아보세요!</b>
-          <small>{{ missingFinancialSourceCopy }}</small>
-          <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
+          <b>금융 자산을 연결해야 미션을 진행할 수 있어요</b>
+          <small>금융 자산의 소비 내역을 분석해 실천 가능한 여행 저축 미션을 추천해 드려요.</small>
+          <div class="financial-connect-actions">
+            <button type="button" @click="openAccountConnection">계좌 등록</button>
+            <button type="button" @click="openCardConnection">카드 등록</button>
+          </div>
         </div>
       </section>
 
@@ -831,7 +835,7 @@ function startTripRegistration() {
       </section>
 
       <section
-        v-if="savingsTrackingStarted && homeInsightLoading"
+        v-if="financialSourcesLoading || (savingsTrackingStarted && homeInsightLoading)"
         class="analysis-summary-skeleton mx-4 mt-3"
         aria-label="월간 분석 및 미션 정보를 불러오는 중"
       >
@@ -839,7 +843,7 @@ function startTripRegistration() {
       </section>
 
       <section
-        v-else-if="savingsTrackingStarted && financialSourcesError"
+        v-else-if="financialSourcesError"
         class="analysis-load-error mx-4 mt-3"
       >
         <span>AI</span>
@@ -850,15 +854,8 @@ function startTripRegistration() {
         <button type="button" @click="retryMonthlyAnalysis">다시 시도</button>
       </section>
 
-      <HomeSavingMissionCard
-        v-else-if="savingsTrackingStarted && savingMissionsStore.hasStartedMissions && !homeReportPending"
-        class="mx-4 mt-3"
-        :mission-data="savingMissionsStore.missions"
-        @open="openSavingMissions"
-      />
-
       <section
-        v-else-if="savingsTrackingStarted && !financialSourcesLoading && !hasLinkedFinancialSources"
+        v-else-if="!hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -869,11 +866,21 @@ function startTripRegistration() {
             <span class="home-mission-ai-spark two">✦</span>
             <span class="home-mission-ai-core"><img :src="aiIcon" alt="" /></span>
           </div>
-          <b>AI 추천 미션을 받아보세요!</b>
-          <small>{{ missingFinancialSourceCopy }}</small>
-          <button type="button" @click="openFinancialSources">금융 데이터 연결하기</button>
+          <b>금융 자산을 연결해야 미션을 진행할 수 있어요</b>
+          <small>금융 자산의 소비 내역을 분석해 실천 가능한 여행 저축 미션을 추천해 드려요.</small>
+          <div class="financial-connect-actions">
+            <button type="button" @click="openAccountConnection">계좌 등록</button>
+            <button type="button" @click="openCardConnection">카드 등록</button>
+          </div>
         </div>
       </section>
+
+      <HomeSavingMissionCard
+        v-else-if="savingsTrackingStarted && savingMissionsStore.hasStartedMissions && !homeReportPending"
+        class="mx-4 mt-3"
+        :mission-data="savingMissionsStore.missions"
+        @open="openSavingMissions"
+      />
 
       <section
         v-else-if="savingsTrackingStarted && !financialSourcesLoading && hasLinkedFinancialSources && !homeReportPending"
@@ -1267,6 +1274,7 @@ function startTripRegistration() {
   text-align: center;
 }
 .home-mission-setup-body{display:flex;min-height:210px;padding:22px 18px 18px;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #c9d8ef;border-radius:17px;background:linear-gradient(180deg,#f7faff,#f3f7fd);text-align:center}.home-mission-flight{position:relative;width:126px;height:45px;margin-bottom:13px}.home-mission-flight-route{position:absolute;top:22px;left:8px;right:8px;border-top:2px dashed #b9ccef}.home-mission-flight-start,.home-mission-flight-end{position:absolute;top:18px;width:10px;height:10px;border:2px solid #8eafe5;border-radius:50%;background:#f6f9ff}.home-mission-flight-start{left:2px}.home-mission-flight-end{right:2px}.home-mission-flight-end::after{position:absolute;inset:-6px;border:1px solid rgb(40 108 224 / 28%);border-radius:50%;content:'';animation:home-mission-destination-pulse 1.9s ease-out infinite}.home-mission-flight img{position:absolute;z-index:2;top:10px;left:7px;width:25px;height:25px;filter:drop-shadow(0 5px 5px rgb(40 108 224 / 22%));animation:home-mission-plane-travel 2.8s ease-in-out infinite}.home-mission-setup-body b{color:#26334d;font-size:14px;font-weight:900}.home-mission-setup-body>small{max-width:290px;margin-top:7px;color:#8190a9;font-size:10px;line-height:1.55;word-break:keep-all}.home-mission-setup-body>button{margin-top:17px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}
+.financial-connect-actions{display:grid;width:min(100%,260px);grid-template-columns:1fr 1fr;gap:9px;margin-top:17px}.financial-connect-actions button{min-height:42px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900;box-shadow:0 7px 16px rgb(36 94 196 / 16%)}.financial-connect-actions button+button{background:#173f8d}
 .home-mission-ai-stage{position:relative;width:82px;height:72px;margin-bottom:10px}.home-mission-ai-core{position:absolute;top:8px;left:13px;z-index:2;display:grid;width:56px;height:56px;place-items:center;border-radius:20px;background:linear-gradient(145deg,#dbe8ff,#fff);box-shadow:0 10px 24px rgb(40 108 224 / 20%);animation:home-ai-float 2.6s ease-in-out infinite}.home-mission-ai-core img{width:30px;height:30px;filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%)}.home-mission-ai-orbit{position:absolute;inset:0;border:1.5px dashed #9fb9e8;border-radius:50%;animation:home-ai-orbit 7s linear infinite}.home-mission-ai-spark{position:absolute;z-index:3;color:#4a82df;font-size:13px;animation:home-ai-spark 1.8s ease-in-out infinite}.home-mission-ai-spark.one{top:0;right:2px}.home-mission-ai-spark.two{bottom:2px;left:0;animation-delay:.8s}
 .analysis-empty-plus {
   display: grid;

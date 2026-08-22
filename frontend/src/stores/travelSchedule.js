@@ -50,6 +50,7 @@ function normalizeApiSchedule(row) {
   return {
     id: row.id,
     tripCountryId: row.tripCountryId,
+    countryName: row.countryName || '',
     countryCode: codeForCountryName(row.countryName),
     timeZone: row.timeZone || '',
     title: row.scheduleName,
@@ -121,9 +122,10 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
     await travel.loadActiveGoal({ force: true }).catch(() => {})
   }
 
-  async function loadSchedules() {
-    await ensureTripLoaded()
-    if (!travel.tripId) {
+  async function loadSchedules(tripIdOverride = null) {
+    if (!tripIdOverride) await ensureTripLoaded()
+    const targetTripId = Number(tripIdOverride || travel.tripId)
+    if (!targetTripId) {
       schedules.value = []
       return schedules.value
     }
@@ -131,7 +133,7 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
     isLoading.value = true
     errorMessage.value = ''
     try {
-      const rows = await fetchSchedules(travel.tripId)
+      const rows = await fetchSchedules(targetTripId)
       schedules.value = (rows ?? []).map(normalizeApiSchedule)
       return schedules.value
     } catch (error) {
@@ -144,18 +146,28 @@ export const useTravelScheduleStore = defineStore('travelSchedule', () => {
 
   // 목록 조회 API(findAllByTripId)는 memo를 내려주지 않는다(ScheduleListResponseDto에 필드 자체가 없음).
   // 상세 화면에서는 이 함수로 상세 조회 API를 한 번 더 불러 memo를 포함한 전체 정보로 덮어써야 한다.
-  async function loadScheduleDetail(id) {
+  async function loadScheduleDetail(id, tripIdOverride = null) {
     await ensureTripLoaded()
-    if (!travel.tripId) return null
+    const targetTripId = Number(tripIdOverride || travel.tripId)
+    if (!targetTripId) return null
 
     errorMessage.value = ''
     try {
-      const row = await fetchScheduleDetail(travel.tripId, Number(id))
+      const row = await fetchScheduleDetail(targetTripId, Number(id))
       const normalized = normalizeApiSchedule(row)
       const index = schedules.value.findIndex(item => item.id === normalized.id)
-      if (index >= 0) schedules.value[index] = { ...schedules.value[index], ...normalized }
+      if (index >= 0) {
+        const existing = schedules.value[index]
+        schedules.value[index] = {
+          ...existing,
+          ...normalized,
+          countryCode: normalized.countryCode || existing.countryCode || '',
+          countryName: normalized.countryName || existing.countryName || '',
+          tripCountryId: normalized.tripCountryId || existing.tripCountryId,
+        }
+      }
       else schedules.value.push(normalized)
-      return normalized
+      return getSchedule(normalized.id)
     } catch (error) {
       errorMessage.value = error.response?.data?.message || '여행 일정 상세 정보를 불러오지 못했어요.'
       throw error

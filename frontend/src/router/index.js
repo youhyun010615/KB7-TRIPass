@@ -557,16 +557,52 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/missions',
+      name: 'CompletedMissionHistory',
+      component: () => import('@/views/mypage/CompletedMissionHistoryView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/mypage/travel/:id/schedules',
       name: 'TravelScheduleList',
       component: () => import('@/views/mypage/TravelScheduleListView.vue'),
       meta: { requiresAuth: true },
     },
     {
+      path: '/mypage/travel/:id/schedules/new',
+      name: 'TravelScheduleArchiveNew',
+      component: () => import('@/views/schedule/ScheduleFormView.vue'),
+      meta: { requiresAuth: true, scheduleArchive: true },
+    },
+    {
+      path: '/mypage/travel/:id/schedules/:scheduleId',
+      name: 'TravelScheduleArchiveDetail',
+      component: () => import('@/views/mypage/TravelScheduleDetailView.vue'),
+      meta: { requiresAuth: true, scheduleArchive: true },
+    },
+    {
       path: '/mypage/travel/:tripId/receipts',
       name: 'TravelReceiptArchive',
       component: () => import('@/views/receipt/ReceiptView.vue'),
       meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/capture',
+      name: 'TravelReceiptArchiveCapture',
+      component: () => import('@/views/receipt/ReceiptCaptureView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/new',
+      name: 'TravelReceiptArchiveNew',
+      component: () => import('@/views/receipt/ReceiptManualView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true },
+    },
+    {
+      path: '/mypage/travel/:tripId/receipts/:receiptId',
+      name: 'TravelReceiptArchiveDetail',
+      component: () => import('@/views/receipt/ReceiptResultView.vue'),
+      meta: { requiresAuth: true, receiptArchive: true, receiptMode: 'detail' },
     },
     {
       path: '/mypage/assets',

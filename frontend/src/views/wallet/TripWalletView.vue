@@ -10,6 +10,7 @@ import TravelModeMeta from '@/components/travel/TravelModeMeta.vue'
 import { useTripWalletStore } from '@/stores/tripWallet'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { countryPresentation, useTravelStore } from '@/stores/travel'
+import { getAccountInstitutions } from '@/api/asset'
 import { flagClassMap } from '@/stores/exchange'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
 
@@ -126,6 +127,13 @@ const amount = ref('')
 const autoChargeDay = ref(wallet.autoCharge.day)
 const autoChargeAmount = ref(wallet.autoCharge.amount)
 const selectedAccount = ref(null)
+const withdrawMode = ref('registered') // 'registered' | 'recent' | 'manual'
+const selectedRecentRecipientId = ref(null)
+const bankInstitutions = ref([])
+const bankInstitutionsError = ref('')
+const manualBankCode = ref('')
+const manualAccountNumber = ref('')
+const manualAccountHolderName = ref('')
 const notice = ref('')
 let noticeTimer
 const accounts = computed(() => wallet.linkedAccounts)
@@ -211,6 +219,12 @@ function cardNumberLines(number) {
 async function openTransfer(mode) {
   transferMode.value = mode
   amount.value = ''
+  withdrawMode.value = 'registered'
+  selectedRecentRecipientId.value = null
+  manualBankCode.value = ''
+  manualAccountNumber.value = ''
+  manualAccountHolderName.value = ''
+  bankInstitutionsError.value = ''
 
   // linkedAccounts는 페이지 진입 시 로컬 캐시로 먼저 채워지고 잠시 뒤 최신 데이터로 교체된다.
   // 그 사이에 시트를 열면 오래된 잔액으로 주계좌가 선택될 수 있어, 열기 전에 최신 계좌 정보를 받아온다.
@@ -218,6 +232,8 @@ async function openTransfer(mode) {
     await wallet.loadAccounts()
     if (mode === 'withdraw') {
       await wallet.loadWithdrawOptions()
+      selectedRecentRecipientId.value = wallet.withdrawRecentAccounts[0]?.recipientId ?? null
+      await loadBankInstitutions()
     }
   } catch {
     // 최신 데이터를 못 받아오면 캐시된 값으로라도 계속 진행한다.
@@ -228,6 +244,17 @@ async function openTransfer(mode) {
     : accounts.value
   selectedAccount.value = accountsForSelection.find(account => account.isPrimary)?.accountId ?? accountsForSelection[0]?.accountId ?? null
   showTransfer.value = true
+}
+
+async function loadBankInstitutions() {
+  if (bankInstitutions.value.length) return
+  try {
+    const res = await getAccountInstitutions()
+    bankInstitutions.value = res.data?.data ?? []
+    bankInstitutionsError.value = ''
+  } catch {
+    bankInstitutionsError.value = '은행 목록을 불러오지 못했어요.'
+  }
 }
 
 const quickAmountValues = [10000, 50000, 100000, 1000000]
@@ -346,6 +373,18 @@ async function submitTransfer() {
     let ok
     if (transferMode.value === 'charge') {
       ok = await wallet.deposit(amount.value, selectedAccount.value)
+    } else if (withdrawMode.value === 'recent') {
+      ok = await wallet.withdraw({ mode: 'recent', amount: amount.value, recipientId: selectedRecentRecipientId.value })
+    } else if (withdrawMode.value === 'manual') {
+      const bank = bankInstitutions.value.find(item => item.organizationCode === manualBankCode.value)
+      ok = await wallet.withdraw({
+        mode: 'manual',
+        amount: amount.value,
+        bankCode: manualBankCode.value,
+        bankName: bank?.institutionName ?? '',
+        accountNumber: manualAccountNumber.value,
+        accountHolderName: manualAccountHolderName.value,
+      })
     } else {
       ok = await wallet.withdraw({ mode: 'registered', amount: amount.value, targetAccountId: selectedAccount.value })
     }
@@ -578,7 +617,11 @@ async function confirmUnlinkTravelCard() {
           </label>
 
           <template v-else>
-            <label>
+            <div class="withdraw-mode-tabs">
+              <button type="button" :class="{ active: withdrawMode === 'registered' }" @click="withdrawMode = 'registered'">등록 계좌</button>
+            </div>
+
+            <label v-if="withdrawMode === 'registered'">
               출금 받을 계좌
               <select v-model="selectedAccount">
                 <option
@@ -590,6 +633,40 @@ async function confirmUnlinkTravelCard() {
                 </option>
               </select>
             </label>
+
+            <label v-else-if="withdrawMode === 'recent'">
+              최근 사용한 계좌
+              <select v-model="selectedRecentRecipientId">
+                <option v-for="item in wallet.withdrawRecentAccounts" :key="item.recipientId" :value="item.recipientId">
+                  {{ item.bankName }} {{ item.accountNumber }} · {{ item.accountHolderName }}
+                </option>
+              </select>
+              <p v-if="!wallet.withdrawRecentAccounts.length" class="empty-inline-hint">최근 사용한 계좌가 없어요.</p>
+            </label>
+
+            <template v-else>
+              <label>
+                은행 선택
+                <select v-model="manualBankCode" :disabled="!bankInstitutions.length">
+                  <option value="" disabled>은행을 선택해 주세요</option>
+                  <option v-for="bank in bankInstitutions" :key="bank.organizationCode" :value="bank.organizationCode">
+                    {{ bank.institutionName }}
+                  </option>
+                </select>
+              </label>
+              <p v-if="bankInstitutionsError" class="empty-inline-hint">
+                {{ bankInstitutionsError }}
+                <button type="button" style="margin-left:6px;color:#2f70e9;font-weight:700;text-decoration:underline" @click="loadBankInstitutions">다시 시도</button>
+              </p>
+              <label>
+                계좌번호
+                <div class="amount-field"><input v-model="manualAccountNumber" inputmode="numeric" placeholder="'-' 없이 숫자만 입력"></div>
+              </label>
+              <label>
+                예금주명
+                <div class="amount-field"><input v-model="manualAccountHolderName" placeholder="예금주명을 입력해 주세요"></div>
+              </label>
+            </template>
           </template>
 
           <label>
@@ -881,4 +958,5 @@ async function confirmUnlinkTravelCard() {
 .travel-usage-card{padding:21px 18px}.travel-usage-head{display:flex;align-items:flex-end;justify-content:space-between}.travel-usage-head small{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f6fed}.travel-usage-head h2{margin-top:2px;font-size:20px;font-weight:800}.travel-usage-head>strong{color:#17499c;font-size:25px;font-weight:900}.travel-budget-progress{margin-top:17px;padding:17px 15px;border-radius:17px;background:linear-gradient(145deg,#123c84,#1c5dbd);color:#fff;box-shadow:0 10px 22px rgba(24,77,164,.17)}.travel-budget-progress-label{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800}.travel-budget-progress-label b{color:#ffd466;font-size:17px}.travel-budget-track{height:8px;margin-top:11px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.25)}.travel-budget-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6fe1c7,#fff1a7,#ffce58);transition:width .55s ease}.travel-budget-meta{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px;font-size:12px;font-weight:800}.travel-budget-meta span{display:grid;gap:2px}.travel-budget-meta span:last-child{text-align:right}.travel-budget-meta small{color:#b8cef2;font-size:8px;letter-spacing:.1em}.travel-fund-usage-list{display:grid;gap:9px;margin-top:12px}.travel-fund-usage-list article{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;padding:13px;border:1px solid #edf1f7;border-radius:15px;background:#f8faff}.travel-fund-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:12px;font-size:9px;font-weight:900}.travel-fund-icon.reserve{background:#fff3cf;color:#a96d00}.travel-fund-icon.charge{background:#e4f6f1;color:#087a69;font-size:18px}.travel-fund-usage-list div{display:grid;gap:3px}.travel-fund-usage-list b{font-size:12px}.travel-fund-usage-list small{color:#8a97aa;font-size:8.5px;line-height:1.35}.travel-fund-usage-list strong{color:#173f8d;font-size:12px;white-space:nowrap}
 .travel-usage-head h2{font-size:16px;font-weight:750;letter-spacing:-.02em}.travel-budget-progress.exceeded .travel-budget-progress-label b{color:#ff6b6b}.travel-budget-progress.exceeded .travel-budget-track i{background:linear-gradient(90deg,#ff9a8f,#ff5353)}.travel-budget-progress.exceeded .travel-budget-meta span:last-child{color:#ff7777}.currency-row>strong>small{color:#66758c;font-size:10px;font-weight:800}
 .currency-row .flag{width:32px!important;height:24px!important;align-self:center;border-radius:5px!important;background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.18)!important}.wallet-currency-flag{width:27px!important;height:18px!important;border-radius:3px!important;background-size:cover!important}
+.withdraw-mode-tabs{grid-template-columns:1fr}
 </style>

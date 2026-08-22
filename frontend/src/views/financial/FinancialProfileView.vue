@@ -146,9 +146,32 @@ function formatNumber(value) {
   return toNumber(value).toLocaleString('ko-KR')
 }
 
+function getSafeReturnPath() {
+  const rawReturnTo = Array.isArray(route.query.returnTo)
+    ? route.query.returnTo[0]
+    : route.query.returnTo
+
+  if (typeof rawReturnTo !== 'string') return ''
+  if (!rawReturnTo.startsWith('/') || rawReturnTo.startsWith('//')) return ''
+  return rawReturnTo
+}
+
 function backFromInstitutionSelect(defaultStep) {
+  const returnPath = getSafeReturnPath()
+  if (returnPath) {
+    router.replace(returnPath)
+    return
+  }
   if (route.query.from === 'asset') {
     router.push('/mypage/assets')
+    return
+  }
+  if (route.query.from === 'home') {
+    router.replace({ name: 'Home' })
+    return
+  }
+  if (route.query.from === 'mission') {
+    router.replace({ name: 'SavingsMissions' })
     return
   }
   if (isOnboarding.value) {

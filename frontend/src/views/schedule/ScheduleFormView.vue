@@ -1,35 +1,46 @@
 <script setup>
 import {
   computed,
+  onBeforeUnmount,
   onMounted,
   reactive,
   ref,
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
+import { createSchedule } from '@/api/schedule';
+import { fetchTripGoal } from '@/api/travel';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
-import { useTravelStore } from '@/stores/travel';
+import { flagIconClass, useTravelStore } from '@/stores/travel';
 
 const route = useRoute();
 const router = useRouter();
 const store = useTravelScheduleStore();
 const travel = useTravelStore();
 const editing = computed(() => Boolean(route.params.scheduleId));
+const archiveMode = computed(() => Boolean(route.meta.scheduleArchive));
+const requestedDate = computed(() => String(route.query.date || ''));
+const archiveCountries = ref([]);
+const countrySelectEl = ref(null);
+const countryDropdownOpen = ref(false);
+const availableCountries = computed(() =>
+  (archiveMode.value ? archiveCountries.value : travel.selectedPlans).map((plan) => ({
+    ...plan,
+    code: String(plan.code || '').toUpperCase(),
+    currency: plan.currencyCode || plan.currency || '',
+  })),
+);
 const original = editing.value
   ? store.getSchedule(route.params.scheduleId)
   : null;
-const initialCountryCode =
-  original?.countryCode || store.countries[0]?.code || '';
-const requestedDate = !editing.value && typeof route.query.date === 'string'
-  ? route.query.date
-  : '';
+const initialCountryCode = original?.countryCode || '';
 const form = reactive(
   original
     ? { ...original }
     : {
         title: '',
         countryCode: initialCountryCode,
-        date: requestedDate || store.period(initialCountryCode).startDate,
+        date: requestedDate.value || '',
         time: '10:00',
         currency:
           store.countries.find((item) => item.code === initialCountryCode)
@@ -42,11 +53,11 @@ const form = reactive(
       },
 );
 const country = computed(() =>
-  store.countries.find((item) => item.code === form.countryCode),
+  availableCountries.value.find((item) => item.code === form.countryCode),
 );
-const selectedPeriod = computed(() =>
-  country.value ? store.period(country.value.code) : null,
-);
+const selectedPeriod = computed(() => country.value
+  ? { startDate: country.value.startDate, endDate: country.value.endDate }
+  : null);
 const dateInCountry = computed(
   () =>
     selectedPeriod.value &&
@@ -74,7 +85,7 @@ const wonAmount = computed(() =>
   Math.round(Number(form.amount || 0) * (wonRates[form.currency] || 1)),
 );
 const tripDateRange = computed(() => {
-  const plans = travel.selectedPlans || [];
+  const plans = availableCountries.value;
   const starts = plans.map((item) => item.startDate).filter(Boolean).sort();
   const ends = plans.map((item) => item.endDate).filter(Boolean).sort();
   return starts.length && ends.length ? `${starts[0].replaceAll('-', '.')} ~ ${ends.at(-1).replaceAll('-', '.')}` : '';
@@ -83,6 +94,14 @@ function applyCountry() {
   if (!country.value) return;
   form.currency = country.value.currency;
   if (!dateInCountry.value) form.date = selectedPeriod.value.startDate;
+}
+function selectCountry(item) {
+  form.countryCode = item.code;
+  applyCountry();
+  countryDropdownOpen.value = false;
+}
+function closeCountryDropdown(event) {
+  if (!countrySelectEl.value?.contains(event.target)) countryDropdownOpen.value = false;
 }
 
 const isSubmitting = ref(false);
@@ -99,36 +118,108 @@ async function submit() {
     memo: form.memo.trim(),
   };
   try {
-    const success = editing.value
-      ? await store.update(route.params.scheduleId, payload)
-      : await store.save(payload);
-    if (success)
-      router.push(
-        editing.value
-          ? `/schedule/${route.params.scheduleId}`
-          : { path: '/schedule', query: route.query },
-      );
+    let success;
+    if (!editing.value && archiveMode.value) {
+      const tripId = Number(route.params.id || route.query.tripId);
+      const tripCountryId = country.value?.tripCountryId;
+      if (!tripId || !tripCountryId) {
+        store.errorMessage = '선택한 여행의 국가 정보를 불러오지 못했어요.';
+        success = false;
+      } else {
+        await createSchedule(tripId, {
+          tripCountryId,
+          scheduleName: payload.title,
+          scheduledAt: `${payload.date}T${payload.time}:00`,
+          amount: payload.amount,
+          currencyCode: payload.currency || undefined,
+          paymentStatus: String(payload.paymentStatus || 'undecided').toUpperCase(),
+          placeName: payload.placeName,
+          placeAddress: '',
+          memo: payload.memo,
+        });
+        success = true;
+      }
+    } else {
+      success = editing.value
+        ? await store.update(route.params.scheduleId, payload)
+        : await store.save(payload);
+    }
+    if (success) {
+      if (editing.value) {
+        router.push(`/schedule/${route.params.scheduleId}`);
+      } else if (archiveMode.value) {
+        const tripId = route.params.id || route.query.tripId;
+        router.push({
+          path: `/mypage/travel/${tripId}/schedules`,
+          query: { tripId },
+        });
+      } else {
+        router.push({ path: '/schedule', query: route.query });
+      }
+    }
+  } catch (error) {
+    store.errorMessage = error.response?.data?.message || '여행 일정을 등록하지 못했어요.';
   } finally {
     isSubmitting.value = false;
   }
 }
 
-onMounted(() => {
-  store.ensureTripLoaded().then(() => {
-    if (!editing.value && requestedDate) {
-      const dateCountry = store.countryForDate(requestedDate);
-      if (dateCountry) {
-        form.countryCode = dateCountry.code;
-        form.currency = dateCountry.currency;
-        form.date = requestedDate;
-      }
+onMounted(async () => {
+  document.addEventListener('pointerdown', closeCountryDropdown);
+  if (archiveMode.value) {
+    const tripId = Number(route.params.id || route.query.tripId);
+    try {
+      if (!travel.countries.length) await travel.loadCountries();
+      const trip = await fetchTripGoal(tripId);
+      archiveCountries.value = (trip?.countries || []).map((item) => {
+        const catalog = travel.countries.find(
+          (entry) => Number(entry.countryId) === Number(item.countryId),
+        );
+        const name = item.countryName || catalog?.name || '';
+        const presentation = travel.countryFlagMap[name] || {};
+        return {
+          ...catalog,
+          ...item,
+          code: catalog?.code || presentation.code || '',
+          name,
+          flag: catalog?.flag || presentation.emoji || '🌍',
+          currencyCode: item.currencyCode || catalog?.currencyCode || '',
+          startDate: item.arrivalDate || item.startDate || '',
+          endDate: item.departureDate || item.endDate || '',
+        };
+      });
+    } catch {
+      archiveCountries.value = [];
+      store.errorMessage = '선택한 여행의 국가 정보를 불러오지 못했어요.';
     }
-  }).catch(() => {});
+  } else {
+    await store.ensureTripLoaded().catch(() => {});
+  }
+  if (!editing.value && availableCountries.value.length) {
+    const isConfiguredCountry = availableCountries.value.some(
+      (item) => item.code === form.countryCode,
+    );
+    if (!isConfiguredCountry) {
+      form.countryCode = availableCountries.value[0].code;
+      applyCountry();
+    }
+  }
+  if (!editing.value && requestedDate.value) {
+    const requestedCountry = availableCountries.value.find(
+      (item) => requestedDate.value >= item.startDate && requestedDate.value <= item.endDate,
+    );
+    if (requestedCountry) {
+      form.countryCode = requestedCountry.code;
+      form.currency = requestedCountry.currency;
+      form.date = requestedDate.value;
+    }
+  }
 });
+onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDropdown));
 </script>
 
 <template>
-  <main class="form-page">
+  <main class="form-page" :class="{ 'archive-form': archiveMode }">
     <header>
       <button type="button" @click="router.back()">‹</button>
       <h1>여행일정 {{ editing ? '수정' : '추가' }}</h1>
@@ -146,18 +237,34 @@ onMounted(() => {
           v-model="form.title"
           placeholder="예: 루브르 박물관 가이드 투어"
       /></label>
-      <label
-        ><span>국가</span
-        ><select v-model="form.countryCode" @change="applyCountry">
-          <option
-            v-for="item in store.countries"
+      <label ref="countrySelectEl" class="country-field">
+        <span>국가</span>
+        <button
+          type="button"
+          class="country-trigger"
+          :class="{ open: countryDropdownOpen }"
+          @click="countryDropdownOpen = !countryDropdownOpen"
+        >
+          <span class="country-value">
+            <i v-if="country" :class="flagIconClass(country.code)" class="country-flag" />
+            {{ country?.name || '국가를 선택해 주세요' }}
+          </span>
+          <b aria-hidden="true">⌄</b>
+        </button>
+        <div v-if="countryDropdownOpen" class="country-options">
+          <button
+            v-for="item in availableCountries"
             :key="item.code"
-            :value="item.code"
+            type="button"
+            :class="{ selected: item.code === form.countryCode }"
+            @click="selectCountry(item)"
           >
-            {{ item.flag }} {{ item.name }}
-          </option>
-        </select></label
-      >
+            <i :class="flagIconClass(item.code)" class="country-flag" />
+            <span>{{ item.name }}</span>
+            <b v-if="item.code === form.countryCode">✓</b>
+          </button>
+        </div>
+      </label>
       <label
         ><span>일시</span>
         <div class="split">
@@ -231,7 +338,7 @@ onMounted(() => {
     >
       {{ isSubmitting ? '처리 중...' : editing ? '수정 완료' : '등록하기' }}
     </button>
-    <BottomNav />
+    <BottomNav v-if="!archiveMode" />
   </main>
 </template>
 
@@ -267,12 +374,13 @@ onMounted(() => {
   font-weight: 900;
 }
 .form-card {
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #dce4ee;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 8px 22px rgba(23, 63, 141, 0.07);
 }
+.country-field{position:relative;z-index:8}.country-trigger{display:flex;width:100%;height:45px;align-items:center;justify-content:space-between;padding:0 13px;border:1px solid #e0e6ef;border-radius:9px;background:#fff;color:#10192d;font-size:12px;font-weight:800}.country-trigger.open{border-color:#3477e9;box-shadow:0 0 0 2px rgba(52,119,233,.1)}.country-value{display:flex!important;align-items:center;gap:9px;margin:0!important;font-size:12px!important}.country-trigger>b{color:#64748b;font-size:18px}.country-flag{display:inline-block;width:23px;height:15px;flex:none;border-radius:3px;background-position:center;background-size:cover;box-shadow:0 1px 4px rgba(15,35,70,.16)}.country-options{position:absolute;top:82px;right:14px;left:14px;z-index:50;overflow:hidden;padding:6px;border:1px solid #d9e2ef;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(16,38,78,.18)}.country-options button{display:flex;width:100%;height:43px;align-items:center;gap:10px;padding:0 11px;border-radius:8px;background:#fff;color:#17233a;font-size:12px;font-weight:800;text-align:left}.country-options button:hover,.country-options button.selected{background:#edf4ff;color:#1f64d5}.country-options button span{margin:0!important;font-size:12px!important}.country-options button b{margin-left:auto;color:#246dd7}
 .trip-summary{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:17px 18px;border:1px solid #d5e1f3;border-radius:18px;background:#fff;box-shadow:0 8px 20px rgba(23,63,141,.07)}
 .trip-summary div{min-width:0}.trip-summary b,.trip-summary small{display:block}.trip-summary b{overflow:hidden;font-size:15px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.trip-summary small{margin-top:6px;color:#8493a9;font-size:10px}.trip-summary>span{flex:none;padding:7px 12px;border-radius:999px;background:#214d97;color:#fff;font-size:9px;font-weight:900}
 .section-title{padding:18px 14px 4px}.section-title h2{font-size:17px;font-weight:900}.section-title p{margin-top:6px;color:#8493a9;font-size:10px}
@@ -392,4 +500,5 @@ onMounted(() => {
 .submit:disabled {
   background: #a7b2c6;
 }
+.archive-form{padding-bottom:92px}.archive-form .submit{bottom:18px}
 </style>

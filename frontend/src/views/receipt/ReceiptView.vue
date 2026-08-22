@@ -14,6 +14,7 @@ import {
   CalendarRange,
   Camera,
   Check,
+  ChevronLeft,
   ChevronRight,
   HandCoins,
   PenLine,
@@ -26,6 +27,7 @@ import NotificationBell from '@/components/common/NotificationBell.vue'
 import TravelModeMeta from '@/components/travel/TravelModeMeta.vue'
 import ReceiptSettlementView from '@/views/receipt/ReceiptSettlementView.vue'
 import receiptIcon from '@/assets/icons/receipt.svg'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 
 import {
   getReceiptDates,
@@ -509,7 +511,7 @@ function openReceipt(receiptId) {
   }
 
   router.push({
-    name: 'ReceiptDetail',
+    name: isArchiveView.value ? 'TravelReceiptArchiveDetail' : 'ReceiptDetail',
 
     params: {
       tripId:
@@ -526,7 +528,7 @@ function openCapture() {
   }
 
   router.push({
-    name: 'ReceiptCapture',
+    name: isArchiveView.value ? 'TravelReceiptArchiveCapture' : 'ReceiptCapture',
 
     params: {
       tripId:
@@ -541,7 +543,7 @@ function openManualEntry() {
   }
 
   router.push({
-    name: 'ReceiptManualNew',
+    name: isArchiveView.value ? 'TravelReceiptArchiveNew' : 'ReceiptManualNew',
 
     params: {
       tripId:
@@ -580,17 +582,19 @@ onMounted(loadPage)
 
 <template>
   <main class="receipt-page">
+    <header v-if="isArchiveView" class="archive-page-header">
+      <button type="button" aria-label="여행 관리로 돌아가기" @click="router.back()">
+        <ChevronLeft :size="24" />
+      </button>
+      <h1>영수증 보관함</h1>
+      <span aria-hidden="true" />
+    </header>
+    <TravelArchiveSummaryCard v-if="isArchiveView && tripId" class="receipt-archive-summary" :trip-id="tripId" />
     <div
+      v-if="!isArchiveView"
       ref="receiptHeaderEl"
       class="receipt-header-fixed"
-      :class="{ 'archive-header-fixed': isArchiveView }"
     >
-      <header v-if="isArchiveView" class="archive-header">
-        <button type="button" aria-label="여행 관리로 돌아가기" @click="router.back()">‹</button>
-        <h1>영수증 보관함</h1>
-        <span aria-hidden="true"></span>
-      </header>
-      <template v-else>
       <header class="receipt-header">
         <div>
           <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
@@ -606,9 +610,8 @@ onMounted(loadPage)
         :country-code="receiptCurrentCountry.code"
         :country-codes="tripCountryCodes"
       />
-      </template>
     </div>
-    <div class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
+    <div v-if="!isArchiveView" class="receipt-header-spacer" :style="{ height: `${receiptHeaderHeight}px` }" aria-hidden="true" />
 
     <nav class="vault-tabs" aria-label="영수증 보관함 메뉴">
       <button
@@ -877,6 +880,33 @@ onMounted(loadPage)
   padding: 0 18px 150px;
   background: #f8f6f1;
   color: #111a2d
+}
+
+.archive-page-header {
+  display: grid;
+  min-height: 76px;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.archive-page-header button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  color: #173f8d;
+  box-shadow: 0 7px 20px rgba(26, 63, 132, 0.09);
+}
+
+.archive-page-header h1 {
+  color: #10192b;
+  font-size: 20px;
+  font-weight: 950;
+  text-align: center;
+  letter-spacing: -0.04em;
 }
 
 .receipt-page > header {

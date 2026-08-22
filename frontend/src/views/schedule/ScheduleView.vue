@@ -1,12 +1,15 @@
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import TravelModeMeta from '@/components/travel/TravelModeMeta.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 import { useTravelStore } from '@/stores/travel';
+import { useTravelReportStore } from '@/stores/travelReport';
+import { flagIconClass } from '@/stores/travel';
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue';
 
 const props = defineProps({
   listMode: {
@@ -16,8 +19,10 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const route = useRoute();
 const store = useTravelScheduleStore();
 const travel = useTravelStore();
+const reportStore = useTravelReportStore();
 const timelineList = ref(null);
 const calendarStrip = ref(null);
 const currentTimestamp = ref(Date.now());
@@ -28,7 +33,19 @@ onMounted(async () => {
   scheduleClockTimer = window.setInterval(() => {
     currentTimestamp.value = Date.now();
   }, 60_000);
-  await store.loadSchedules().catch(() => {});
+  if (props.listMode) {
+    const id = Number(route.params.id || route.query.tripId);
+    if (Number.isFinite(id) && id > 0) {
+      if (!travel.countries.length) await travel.loadCountries().catch(() => {});
+      await Promise.allSettled([
+        reportStore.loadPreTripReport(id),
+        reportStore.loadTripBasic(id),
+      ]);
+      await store.loadSchedules(id).catch(() => {});
+    }
+  } else {
+    await store.loadSchedules().catch(() => {});
+  }
   await nextTick();
   await positionTimelineAtNext();
   positionCalendarAtToday();
@@ -82,8 +99,16 @@ const timelineGroups = computed(() => {
 const featuredSchedule = computed(() => nextSchedule.value || null);
 const upcomingTimelineGroups = computed(() =>
   timelineGroups.value
-    .filter((group) => !props.listMode || !selectedCalendarDate.value || group.date === selectedCalendarDate.value)
     .sort((a, b) => a.date.localeCompare(b.date)),
+);
+const visibleTimelineGroups = computed(() => {
+  if (!props.listMode || !selectedCalendarDate.value) return upcomingTimelineGroups.value;
+  return upcomingTimelineGroups.value.filter(
+    (group) => group.date === selectedCalendarDate.value,
+  );
+});
+const visibleScheduleCount = computed(() =>
+  visibleTimelineGroups.value.reduce((total, group) => total + group.items.length, 0),
 );
 const scheduleCountByDate = computed(() => {
   const counts = new Map();
@@ -92,17 +117,48 @@ const scheduleCountByDate = computed(() => {
   });
   return counts;
 });
+const selectedTripPeriods = computed(() => {
+  if (!props.listMode) return store.configuredPeriods;
+  return (reportStore.tripBasic?.countries || [])
+    .map((item) => {
+      const catalog = travel.countries.find(
+        (country) => Number(country.countryId) === Number(item.countryId),
+      );
+      const name = item.countryName || item.name || catalog?.name || '';
+      return {
+        code: catalog?.code || travel.countryFlagMap[name]?.code || '',
+        name,
+        startDate: item.arrivalDate || item.startDate || '',
+        endDate: item.departureDate || item.endDate || '',
+      };
+    })
+    .filter((item) => item.code && item.startDate && item.endDate)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+});
+const selectedTravelStart = computed(() => {
+  if (selectedTripPeriods.value.length) return selectedTripPeriods.value[0].startDate;
+  return props.listMode ? reportStore.preTripReport?.startDate : store.travelStart;
+});
+const selectedTravelEnd = computed(() => {
+  if (selectedTripPeriods.value.length) return selectedTripPeriods.value.at(-1).endDate;
+  return props.listMode ? reportStore.preTripReport?.endDate : store.travelEnd;
+});
+const periodForDate = (date) => selectedTripPeriods.value.find(
+  (period) => date >= period.startDate && date <= period.endDate,
+);
 const travelDates = computed(() => {
-  if (!store.travelStart || !store.travelEnd) return [];
-  const cursor = new Date(`${store.travelStart}T00:00:00`);
-  const end = new Date(`${store.travelEnd}T00:00:00`);
+  if (!selectedTravelStart.value || !selectedTravelEnd.value) return [];
+  const cursor = new Date(`${selectedTravelStart.value}T00:00:00`);
+  const end = new Date(`${selectedTravelEnd.value}T00:00:00`);
   const dates = [];
+  let previousPeriodCode = '';
   while (cursor <= end && dates.length < 45) {
     const date = [
       cursor.getFullYear(),
       String(cursor.getMonth() + 1).padStart(2, '0'),
       String(cursor.getDate()).padStart(2, '0'),
     ].join('-');
+    const period = periodForDate(date);
     dates.push({
       date,
       day: cursor.getDate(),
@@ -113,7 +169,11 @@ const travelDates = computed(() => {
         store.sortedSchedules
           .filter((item) => item.date === date)
           .every(isScheduleCompleted),
+      countryCode: period?.code || '',
+      countryName: period?.name || '',
+      countryStart: Boolean(period?.code && period.code !== previousPeriodCode),
     });
+    previousPeriodCode = period?.code || '';
     cursor.setDate(cursor.getDate() + 1);
   }
   return dates;
@@ -125,6 +185,35 @@ const dateLabel = (date) =>
     day: '2-digit',
     weekday: 'short',
   }).format(new Date(`${date}T00:00:00`));
+const countriesForDate = (date) => {
+  const archivedCountries = props.listMode
+    ? (reportStore.tripBasic?.countries || []).filter((item) => {
+        const start = item.arrivalDate || item.startDate || '';
+        const end = item.departureDate || item.endDate || '';
+        return start && end && date >= start && date <= end;
+      }).map((item) => {
+        const catalog = travel.countries.find(
+          (country) => Number(country.countryId) === Number(item.countryId),
+        );
+        const name = item.countryName || catalog?.name || '';
+        return {
+          code: catalog?.code || travel.countryFlagMap[name]?.code || '',
+          name,
+        };
+      })
+    : [];
+  // 여행 관리의 일정 목록에서는 현재 활성 여행 데이터를 절대 섞지 않는다.
+  if (props.listMode) return archivedCountries;
+  const codes = store.configuredPeriods
+    .filter((period) => date >= period.startDate && date <= period.endDate)
+    .map((period) => period.code);
+  const scheduleCodes = store.sortedSchedules
+    .filter((item) => item.date === date)
+    .map((item) => item.countryCode);
+  return [...new Set([...codes, ...scheduleCodes])]
+    .map((code) => store.countries.find((country) => country.code === code))
+    .filter(Boolean);
+};
 const shortDateLabel = (date) => {
   if (!date) return '';
   const value = new Date(`${date}T00:00:00`);
@@ -134,14 +223,14 @@ const travelDays = computed(() =>
   Math.max(
     1,
     Math.floor(
-      (new Date(`${store.travelEnd}T00:00:00`) -
-        new Date(`${store.travelStart}T00:00:00`)) /
+      (new Date(`${selectedTravelEnd.value}T00:00:00`) -
+        new Date(`${selectedTravelStart.value}T00:00:00`)) /
         86_400_000,
     ) + 1,
   ),
 );
 const tripCountries = computed(() => {
-  const codes = store.configuredPeriods.map((period) => period.code);
+  const codes = selectedTripPeriods.value.map((period) => period.code);
   return codes.map((code) => store.countries.find((country) => country.code === code)).filter(Boolean);
 });
 const currentCountry = computed(() => {
@@ -166,7 +255,32 @@ const currentTravelDay = computed(() => {
   if (![start, today].every(Number.isFinite)) return 0;
   return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
 });
-const openDetail = (id) => router.push(`/schedule/${id}`);
+const openDetail = (id) => {
+  if (props.listMode) {
+    const tripId = route.params.id || route.query.tripId;
+    router.push(`/mypage/travel/${tripId}/schedules/${id}`);
+    return;
+  }
+  router.push(`/schedule/${id}`);
+};
+const archiveTrip = computed(() => reportStore.tripSummary);
+const archiveStatus = computed(() =>
+  archiveTrip.value?.status === '여행 중' ? '여행중' : archiveTrip.value?.status,
+);
+
+function openScheduleForm() {
+  const query = { ...route.query };
+  if (selectedCalendarDate.value) query.date = selectedCalendarDate.value;
+  if (props.listMode) {
+    const tripId = route.params.id || route.query.tripId;
+    router.push({
+      path: `/mypage/travel/${tripId}/schedules/new`,
+      query: { ...query, tripId },
+    });
+    return;
+  }
+  router.push({ path: '/schedule/new', query });
+}
 
 async function positionTimelineAtNext() {
   const list = timelineList.value;
@@ -260,11 +374,16 @@ function showPastSchedules() {
       <span aria-hidden="true" />
     </header>
 
+    <TravelArchiveSummaryCard
+      v-if="listMode && (route.params.id || route.query.tripId)"
+      :trip-id="route.params.id || route.query.tripId"
+    />
+
     <section class="calendar-card">
       <div class="calendar-heading">
         <div>
           <small>TRIP CALENDAR</small>
-          <b>{{ store.travelStart }} — {{ store.travelEnd }}</b>
+          <b>{{ selectedTravelStart }} — {{ selectedTravelEnd }}</b>
         </div>
         <em>{{ travelDays }}일</em>
       </div>
@@ -282,6 +401,14 @@ function showPastSchedules() {
           :data-calendar-date="date.date"
           @click="focusTimelineDate(date.date)"
         >
+          <span
+            v-if="date.countryCode"
+            class="country-period-line"
+            :class="{ start: date.countryStart }"
+          >
+            <em v-if="date.countryStart" :class="flagIconClass(date.countryCode)" />
+            <b v-if="date.countryStart">{{ date.countryName }}</b>
+          </span>
           <small>{{ date.weekday }}</small>
           <strong>{{ date.day }}</strong>
           <span :aria-label="`${date.count}개 일정`">
@@ -308,16 +435,16 @@ function showPastSchedules() {
       </div>
     </section>
 
-    <section class="upcoming-card" :class="{ 'is-empty': !timelineGroups.length }">
+    <section class="upcoming-card" :class="{ 'is-empty': !visibleTimelineGroups.length }">
       <div class="section-title">
         <div>
-          <h2>{{ listMode && selectedCalendarDate ? dateLabel(selectedCalendarDate) : '전체 일정' }}</h2>
+          <h2>{{ listMode ? '여행 일정' : '전체 일정' }}</h2>
         </div>
-        <span>총 {{ listMode ? upcomingTimelineGroups.reduce((sum, group) => sum + group.items.length, 0) : store.sortedSchedules.length }}건</span>
+        <span>총 {{ listMode ? visibleScheduleCount : store.sortedSchedules.length }}건</span>
       </div>
       <div ref="timelineList" class="upcoming-list">
         <div
-          v-for="group in upcomingTimelineGroups"
+          v-for="group in visibleTimelineGroups"
           :key="group.date"
           class="date-group"
           :class="{ completed: group.isCompleted }"
@@ -325,27 +452,38 @@ function showPastSchedules() {
           :data-next-group="groupHasNextSchedule(group) ? 'true' : null"
         >
           <p
-            v-if="completedScheduleCount && groupHasNextSchedule(group)"
+            v-if="!listMode && completedScheduleCount && groupHasNextSchedule(group)"
             class="completed-count-note"
           >
             완료된 일정 {{ completedScheduleCount }}건
           </p>
           <h3>
-            {{ dateLabel(group.date) }}
+            <span>{{ dateLabel(group.date) }}</span>
+            <span v-if="countriesForDate(group.date).length" class="date-countries">
+              <span
+                v-for="item in countriesForDate(group.date)"
+                :key="item.code || item.name"
+                class="date-country"
+              >
+                <i :class="flagIconClass(item.code)" />
+                {{ item.name }}
+              </span>
+            </span>
           </h3>
           <ScheduleCard
             v-for="item in group.items"
             :key="item.id"
             :schedule="item"
+            :country-code="countriesForDate(group.date)[0]?.code || item.countryCode"
             :completed="isScheduleCompleted(item)"
             :data-next-anchor="item.id === nextSchedule?.id ? 'true' : null"
             @detail="openDetail"
           />
         </div>
-        <div v-if="!timelineGroups.length" class="empty-state">
+        <div v-if="!visibleTimelineGroups.length" class="empty-state">
           <span class="empty-calendar-icon" aria-hidden="true">＋</span>
-          <b>아직 등록된 일정이 없어요</b>
-          <small>첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.</small>
+          <b>{{ listMode ? '선택한 날짜에 등록된 일정이 없어요' : '아직 등록된 일정이 없어요' }}</b>
+          <small>{{ listMode ? '아래 버튼을 눌러 이 날짜에 일정을 추가해 보세요.' : '첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.' }}</small>
         </div>
       </div>
     </section>
@@ -353,15 +491,7 @@ function showPastSchedules() {
     <button
       class="add-button"
       type="button"
-      @click="
-        router.push({
-          path: '/schedule/new',
-          query: {
-            ...router.currentRoute.value.query,
-            ...(selectedCalendarDate ? { date: selectedCalendarDate } : {}),
-          },
-        })
-      "
+      @click="openScheduleForm"
     >
       <span class="add-button-icon" aria-hidden="true">+</span>
       <span class="add-button-label">여행 일정 추가</span>
@@ -383,6 +513,8 @@ function showPastSchedules() {
 .schedule-header-spacer{height:142px}
 .schedule-list-mode{padding-bottom:48px}
 .schedule-list-header{display:grid;height:64px;align-items:center;grid-template-columns:40px 1fr 40px;margin-bottom:12px;padding-top:4px}.schedule-list-header button{display:grid;width:36px;height:36px;padding:0;border:0;background:transparent;color:#10192d;font-size:36px;font-weight:400;line-height:1;place-items:center}.schedule-list-header h1{margin:0;text-align:center;font-size:20px;font-weight:900;letter-spacing:-.04em}
+.archive-trip-ticket{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%);color:#fff;box-shadow:0 12px 26px rgba(24,51,99,.2)}
+.archive-ticket-head{display:flex;align-items:center;justify-content:space-between}.archive-ticket-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.archive-ticket-head b{padding:5px 9px;border:1px solid rgba(255,212,94,.62);border-radius:999px;background:rgba(255,212,94,.13);color:#ffd466;font-family:'Space Mono',monospace;font-size:9px;font-weight:900;letter-spacing:.06em}.archive-ticket-head b.traveling{animation:archive-status-pulse 1.8s ease-in-out infinite}.archive-ticket-body{display:flex;align-items:flex-start;flex-direction:column;gap:7px;margin-top:15px}.archive-ticket-title{display:flex;min-width:0;align-items:center;gap:8px}.archive-ticket-title h2{min-width:0;overflow:hidden;margin:0;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.archive-ticket-flags{display:flex;flex:0 0 auto;gap:3px}.archive-ticket-flag{width:13px;height:9px;border-radius:2px;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.18)}.archive-ticket-body>p{color:rgba(255,255,255,.72);font-family:'Space Mono',monospace;font-size:9px;font-weight:700}@keyframes archive-status-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,212,94,.35)}50%{box-shadow:0 0 0 5px rgba(255,212,94,0)}}
 .trip-timeline-pass{overflow:hidden;margin-bottom:14px;padding:15px 16px 16px;border-radius:18px;background:linear-gradient(145deg,#1f5ab9 0%,#14357f 62%,#102d6d 100%);color:#fff;box-shadow:0 12px 26px rgba(24,51,99,.2)}.trip-pass-head{display:flex;align-items:center;justify-content:space-between}.trip-pass-head small{color:#ffd466;font-family:'Space Mono',monospace;font-size:8px;font-weight:800;letter-spacing:.13em}.trip-pass-head strong{padding:5px 9px;border:1px solid rgba(255,255,255,.42);border-radius:999px;background:#ffd45e;color:#173f8d;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.06em;animation:day-badge-glow 2s ease-in-out infinite}.trip-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}.trip-title-row h2{min-width:0;overflow:hidden;font-size:17px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.current-country{position:relative;display:flex;overflow:hidden;flex:0 0 auto;align-items:center;gap:5px;padding:6px 9px;border:1px solid rgba(255,212,94,.72);border-radius:999px;background:#4169af;animation:now-country-pulse 1.8s ease-in-out infinite}.current-country::after{position:absolute;top:-8px;bottom:-8px;left:-20px;width:10px;background:rgba(255,255,255,.5);content:'';filter:blur(3px);transform:rotate(18deg);animation:now-country-shine 2.4s ease-in-out infinite}.current-country small{color:#ffd466;font-family:'Space Mono',monospace;font-size:10px;font-weight:950;letter-spacing:.08em}.current-country strong{font-size:10px;font-weight:900}.current-country-flag{width:22px;height:15px;border-radius:3px;background-size:cover;box-shadow:0 1px 4px rgba(0,0,0,.18)}.trip-period-row{display:flex;align-items:center;margin-top:9px}.trip-period-row p{color:rgba(255,255,255,.72);font-size:10px;font-weight:650}@keyframes day-badge-glow{0%,100%{box-shadow:0 3px 8px rgba(255,212,94,.2)}50%{box-shadow:0 4px 15px rgba(255,212,94,.55)}}@keyframes header-now-pulse{0%,100%{box-shadow:0 0 0 0 rgba(38,98,234,.12)}50%{box-shadow:0 0 0 4px rgba(38,98,234,0)}}@keyframes now-country-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,94,.35)}50%{transform:scale(1.045);box-shadow:0 0 0 6px rgba(255,212,94,0)}}@keyframes now-country-shine{0%,45%{left:-20px;opacity:0}60%{opacity:1}85%,100%{left:calc(100% + 20px);opacity:0}}@media(prefers-reduced-motion:reduce){.current-country,.current-country::after,.trip-pass-head strong,.schedule-travel-meta .header-now{animation:none}}
 .calendar-card {
   overflow: hidden;
@@ -426,7 +558,7 @@ function showPastSchedules() {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 0 2px 3px;
+  padding: 39px 2px 3px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -434,6 +566,7 @@ function showPastSchedules() {
 }
 .calendar-strip::-webkit-scrollbar { display: none; }
 .calendar-strip button {
+  position: relative;
   display: grid;
   flex: 0 0 40px;
   width: 40px;
@@ -451,6 +584,61 @@ function showPastSchedules() {
   scroll-snap-align: center;
   transition: .2s ease;
 }
+.calendar-strip .country-period-line {
+  position: absolute;
+  top: -15px;
+  left: -4px;
+  display: block;
+  width: 47px;
+  height: 13px;
+  border-top: 2px solid #a9c6f6;
+  color: #526f9e;
+}
+.calendar-strip .country-period-line::after {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #a9c6f6;
+  border-radius: 50%;
+  background: #f4f5f9;
+  content: '';
+}
+.calendar-strip .country-period-line.start {
+  border-top-color: #2662ea;
+}
+.calendar-strip .country-period-line.start::before {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #2662ea;
+  border-radius: 50%;
+  background: #fff;
+  content: '';
+}
+.calendar-strip .country-period-line.start::after { border-color: #2662ea; }
+.calendar-strip .country-period-line em {
+  position: absolute;
+  top: -17px;
+  left: 0;
+  width: 13px;
+  height: 9px;
+  border-radius: 2px;
+  background-size: cover;
+  font-style: normal;
+}
+.calendar-strip .country-period-line b {
+  position: absolute;
+  top: -19px;
+  left: 17px;
+  color: #284c87;
+  font-size: 8px;
+  font-weight: 900;
+  white-space: nowrap;
+}
 .calendar-strip button small {
   color: #8c98aa;
   font-size: 8px;
@@ -461,7 +649,7 @@ function showPastSchedules() {
   font-size: 13px;
   font-weight: 900;
 }
-.calendar-strip button > span {
+.calendar-strip button > span:not(.country-period-line) {
   display: flex;
   height: 3px;
   align-items: center;
@@ -751,6 +939,7 @@ function showPastSchedules() {
 .date-group:first-child h3 {
   margin-top: 2px;
 }
+.date-countries{display:flex;align-items:center;justify-content:flex-end;gap:5px}.date-country{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:999px;background:#edf4ff;color:#355b91;font-size:9px;font-weight:900;white-space:nowrap}.date-country i{display:inline-block;width:16px;height:11px;border-radius:2px;background-position:center;background-size:cover;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .date-group {
   position: relative;
   padding-left: 9px;

@@ -272,7 +272,8 @@
                 acc.account_name,
                 wtc.card_name,
                 CONCAT(wr.bank_name, ' ****', RIGHT(wr.account_number, 4))
-            ) AS account_name
+            ) AS account_name,
+            wct.currency_code
         FROM wallet_ledger wl
         LEFT JOIN accounts acc
             ON acc.id = CASE
@@ -287,6 +288,8 @@
         LEFT JOIN wallet_withdraw_recipient wr
             ON wl.target_type = 'RECIPIENT_ACCOUNT'
            AND wr.id = wl.target_id
+        LEFT JOIN wallet_card_topup wct
+            ON wct.wallet_ledger_id = wl.id
         WHERE wl.wallet_id = #{walletId}
           AND DATE_FORMAT(wl.created_at, '%Y-%m') = #{month}
         ORDER BY wl.created_at DESC, wl.id DESC
@@ -760,7 +763,8 @@
                 acc.account_name,
                 wtc.card_name,
                 CONCAT(wr.bank_name, ' ****', RIGHT(wr.account_number, 4))
-            ) AS account_name
+            ) AS account_name,
+            wct.currency_code
         FROM wallet_ledger wl
         LEFT JOIN accounts acc
             ON acc.id = CASE
@@ -775,6 +779,8 @@
         LEFT JOIN wallet_withdraw_recipient wr
             ON wl.target_type = 'RECIPIENT_ACCOUNT'
            AND wr.id = wl.target_id
+        LEFT JOIN wallet_card_topup wct
+            ON wct.wallet_ledger_id = wl.id
         WHERE wl.wallet_id = #{walletId}
         ORDER BY wl.created_at DESC, wl.id DESC
     </select>

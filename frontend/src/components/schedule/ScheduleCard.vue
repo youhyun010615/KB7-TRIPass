@@ -8,11 +8,13 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
   completed: { type: Boolean, default: false },
   today: { type: Boolean, default: false },
+  countryCode: { type: String, default: '' },
 })
 const emit = defineEmits(['detail'])
 const store = useTravelScheduleStore()
 const item = computed(() => store.normalizeSchedule(props.schedule))
-const country = computed(() => store.countries.find(entry => entry.code === item.value.countryCode))
+const displayCountryCode = computed(() => props.countryCode || item.value.countryCode)
+const country = computed(() => store.countries.find(entry => entry.code === displayCountryCode.value))
 const paymentLabel = computed(() => ({ prepaid: '사전결제 완료', onsite: '현장결제 필요', undecided: '미정' })[item.value.paymentStatus] || '미정')
 const hasAmount = computed(() => Number(item.value.amount) > 0)
 </script>
@@ -27,7 +29,7 @@ const hasAmount = computed(() => Number(item.value.amount) > 0)
     @keydown.enter="emit('detail', item.id)"
   >
     <span class="schedule-flag-wrap" aria-hidden="true">
-      <span v-if="country" :class="flagIconClass(country.code)" class="fi-inline schedule-flag" />
+      <span v-if="displayCountryCode" :class="flagIconClass(displayCountryCode)" class="fi-inline schedule-flag" />
       <span v-else class="schedule-flag-fallback">🌐</span>
     </span>
     <div class="schedule-copy">

@@ -1,4 +1,6 @@
 <script setup>
+import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
+
 defineProps({
   title: {
     type: String,
@@ -22,10 +24,8 @@ defineProps({
 
     <header class="auth-hero">
       <div class="brand">
+        <img :src="tripassTransparentSymbol" alt="" />
         <span>TRIPASS</span>
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M21.7 11.2 14 7.1V3.6a2 2 0 0 0-4 0v3.5l-7.7 4.1a1.5 1.5 0 0 0-.8 1.3v1.2l8.5-2.2v4.2l-2.3 1.8v1l4.3-1 4.3 1v-1L14 15.7v-4.2l8.5 2.2v-1.2a1.5 1.5 0 0 0-.8-1.3Z" />
-        </svg>
       </div>
       <h1>{{ title }}</h1>
       <p>{{ description }}</p>
@@ -97,14 +97,20 @@ defineProps({
 .brand {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   color: white;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.16em;
 }
 
-.brand svg,
+.brand img {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
 .ticket-band svg {
   width: 15px;
   height: 15px;

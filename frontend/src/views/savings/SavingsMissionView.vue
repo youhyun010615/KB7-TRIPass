@@ -33,14 +33,13 @@ const monthlyAnalysisStore = useMonthlyAnalysisStore()
 const isTraveling = computed(() => travelStore.lifecycle?.lifecycle === 'TRAVELING')
 const hasTrip = computed(() => Boolean(travelStore.lifecycle?.hasTrip))
 const hasLinkedAccount = computed(() => Boolean(travelStore.lifecycle?.hasLinkedAccount))
-const hasLinkedCard = computed(() => Boolean(travelStore.lifecycle?.hasLinkedCard))
 const reportNeedsViewing = computed(() => monthlyAnalysisStore.reportStatus === 'PENDING')
 const linkedAccountCount = ref(0)
 const linkedCardCount = ref(0)
 const financialSourcesLoading = ref(true)
 const financialSourcesError = ref('')
 const hasLinkedFinancialSources = computed(
-  () => hasLinkedAccount.value && hasLinkedCard.value,
+  () => linkedAccountCount.value + linkedCardCount.value > 0,
 )
 
 // 앱 프레임(App.vue)의 overflow:hidden 때문에 sticky 대신 fixed로 헤더를 고정한다.
@@ -233,10 +232,12 @@ const targetMonthLabel = computed(() => monthLabel(missionStore.targetYearMonth)
 
 onMounted(async () => {
   await travelStore.loadLifecycle()
-  if (hasTrip.value && hasLinkedAccount.value) {
+  if (hasTrip.value) {
     await Promise.all([
       loadFinancialSourcesAndMissions(),
-      monthlyAnalysisStore.loadLatestAnalysis({ force: true }),
+      ...(hasLinkedAccount.value
+        ? [monthlyAnalysisStore.loadLatestAnalysis({ force: true })]
+        : []),
     ])
   } else {
     financialSourcesLoading.value = false
@@ -283,6 +284,20 @@ function retryReadiness() {
 
 function goFinancialSources() {
   router.push('/profile/financial?step=1')
+}
+
+function goAccountConnection() {
+  router.push({
+    path: '/profile/financial',
+    query: { step: 2, from: 'mission', returnTo: route.fullPath },
+  })
+}
+
+function goCardConnection() {
+  router.push({
+    path: '/profile/financial',
+    query: { step: 9, from: 'mission', returnTo: route.fullPath },
+  })
 }
 
 function goTravelRegister() {
@@ -460,13 +475,16 @@ function closeSelectionFlow() {
       </div>
     </section>
 
-    <section v-else-if="!hasLinkedAccount" class="mission-home-setup">
+    <section v-else-if="!financialSourcesLoading && !hasLinkedFinancialSources" class="mission-home-setup">
       <span class="mission-home-label">AI SAVING MISSION</span>
       <div class="mission-home-setup-body">
         <div class="mission-ai-stage" aria-hidden="true"><span class="mission-ai-orbit"></span><span class="mission-ai-core"><img :src="aiIcon" alt="" /></span></div>
-        <h2>계좌를 등록해야 미션을 진행할 수 있어요</h2>
-        <p>연결한 계좌의 소비 내역을 분석해 실천 가능한 여행 저축 미션을 추천해 드려요.</p>
-        <button type="button" @click="goFinancialSources">계좌 등록하기</button>
+        <h2>금융 자산을 연결해야 미션을 진행할 수 있어요</h2>
+        <p>금융 자산의 소비 내역을 분석해 실천 가능한 여행 저축 미션을 추천해 드려요.</p>
+        <div class="mission-financial-actions">
+          <button type="button" @click="goAccountConnection">계좌 등록</button>
+          <button type="button" @click="goCardConnection">카드 등록</button>
+        </div>
       </div>
     </section>
 
@@ -517,8 +535,7 @@ function closeSelectionFlow() {
           <span class="mission-ai-core"><img :src="aiIcon" alt="" /></span>
         </div>
         <h2>AI 추천 미션을 받아보세요!</h2>
-        <p v-if="!hasLinkedAccount">먼저 계좌를 연결하면 여행 저축 집계를 시작할 수 있어요.</p>
-        <p v-else>카드를 연결하면 소비 내역을 분석해 맞춤 저축 미션을 추천해 드려요.</p>
+        <p>계좌나 카드를 연결하면 거래내역을 분석해 맞춤 저축 미션을 추천해 드려요.</p>
         <button type="button" @click="goFinancialSources">금융 데이터 연결하기</button>
       </div>
     </section>
@@ -945,6 +962,7 @@ function closeSelectionFlow() {
 .active-missions-empty{font-size:12.5px;font-weight:600;color:#5a6478;line-height:1.5}
 .dashboard-cta{border-radius:99px;padding:13px;text-align:center;font-size:13px;font-weight:800;background:#0b2a6b;color:#fff}
 .mission-home-setup{position:relative;margin-top:28px;padding:18px;border:1px solid #d6e3fa;border-radius:22px;background:#fff;box-shadow:0 10px 24px rgb(36 80 153 / 7%)}.mission-home-label{display:block;margin-bottom:10px;color:#286ce0;font-size:9px;font-weight:950;letter-spacing:.12em}.mission-home-setup-body{display:flex;min-height:210px;padding:22px 18px 18px;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #c9d8ef;border-radius:17px;background:linear-gradient(180deg,#f7faff,#f3f7fd);text-align:center}.mission-flight{position:relative;width:126px;height:45px;margin-bottom:13px}.mission-flight-route{position:absolute;top:22px;left:8px;right:8px;border-top:2px dashed #b9ccef}.mission-flight-start,.mission-flight-end{position:absolute;top:18px;width:10px;height:10px;border:2px solid #8eafe5;border-radius:50%;background:#f6f9ff}.mission-flight-start{left:2px}.mission-flight-end{right:2px}.mission-flight-end::after{position:absolute;inset:-6px;border:1px solid rgb(40 108 224 / 28%);border-radius:50%;content:'';animation:mission-destination-pulse 1.9s ease-out infinite}.mission-flight img{position:absolute;z-index:2;top:10px;left:7px;width:25px;height:25px;filter:drop-shadow(0 5px 5px rgb(40 108 224 / 22%));animation:mission-plane-travel 2.8s ease-in-out infinite}.mission-home-setup-body h2{color:#26334d;font-size:14px;font-weight:900}.mission-home-setup-body p{max-width:290px;margin-top:7px;color:#8190a9;font-size:10px;line-height:1.55;word-break:keep-all}.mission-home-setup-body button{margin-top:17px;padding:11px 22px;border-radius:12px;background:#245ec4;color:#fff;font-size:12px;font-weight:900}@keyframes mission-plane-travel{0%{opacity:.35;transform:translate(0,4px) rotate(-8deg)}18%{opacity:1}50%{transform:translate(47px,-5px) rotate(2deg)}82%{opacity:1}100%{opacity:.35;transform:translate(94px,2px) rotate(9deg)}}@keyframes mission-destination-pulse{0%{opacity:.8;transform:scale(.55)}100%{opacity:0;transform:scale(1.45)}}@media(prefers-reduced-motion:reduce){.mission-flight img,.mission-flight-end::after{animation:none}.mission-flight img{left:50%;transform:translateX(-50%)}}
+.mission-financial-actions{display:grid;width:min(100%,260px);grid-template-columns:1fr 1fr;gap:9px;margin-top:17px}.mission-home-setup-body .mission-financial-actions button{width:100%;margin-top:0;padding:11px 10px}.mission-home-setup-body .mission-financial-actions button+button{background:#173f8d}
 .mission-ai-stage{position:relative;width:82px;height:72px;margin-bottom:10px}.mission-ai-core{position:absolute;top:8px;left:13px;z-index:2;display:grid;width:56px;height:56px;place-items:center;border-radius:20px;background:linear-gradient(145deg,#dbe8ff,#fff);box-shadow:0 10px 24px rgb(40 108 224 / 20%);animation:mission-ai-float 2.6s ease-in-out infinite}.mission-ai-core img{width:30px;height:30px;filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%)}.mission-ai-orbit{position:absolute;inset:0;border:1.5px dashed #9fb9e8;border-radius:50%;animation:mission-ai-orbit 7s linear infinite}.mission-ai-spark{position:absolute;z-index:3;color:#4a82df;font-size:13px;animation:mission-ai-spark 1.8s ease-in-out infinite}.mission-ai-spark.one{top:0;right:2px}.mission-ai-spark.two{bottom:2px;left:0;animation-delay:.8s}@keyframes mission-ai-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}@keyframes mission-ai-orbit{to{transform:rotate(360deg)}}@keyframes mission-ai-spark{0%,100%{opacity:.2;transform:scale(.65) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(90deg)}}@media(prefers-reduced-motion:reduce){.mission-ai-core,.mission-ai-orbit,.mission-ai-spark{animation:none}}
 .mission-page{max-width:390px;margin:0 auto}
 .option-card.locked{border-color:#dce5f3;background:#f8fafe;box-shadow:none}.option-card.locked .option-toggle{cursor:default}.option-card.locked .option-toggle>i{width:auto;min-width:27px;padding:0 7px;border-radius:12px;background:#e4f7f1;color:#149477;font-size:9px}.add-mission-button{display:flex;width:100%;margin-top:18px;padding:15px 16px;align-items:center;gap:12px;border:1px dashed #8badde;border-radius:18px;background:#f7faff;color:#1d4f9f;text-align:left;transition:transform .2s ease,background .2s ease}.add-mission-button:hover{background:#edf4ff;transform:translateY(-2px)}.add-mission-button>span{display:grid;flex:0 0 38px;height:38px;place-items:center;border-radius:12px;background:#e4eeff;font-size:20px;font-weight:800}.add-mission-button>div{min-width:0;flex:1}.add-mission-button small{display:block;color:#7284a2;font-size:10px}.add-mission-button strong{display:block;margin-top:3px;font-size:14px;font-weight:900}.add-mission-button>b{font-size:24px}</style>

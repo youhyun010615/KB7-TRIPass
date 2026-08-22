@@ -24,4 +24,6 @@ public class WalletLedgerResponseDto {
     private String memo;
     private LocalDateTime createdAt;
     private String accountName;
+    /** 트래블카드 외화 충전 거래의 대상 통화 코드입니다. */
+    private String currencyCode;
 }

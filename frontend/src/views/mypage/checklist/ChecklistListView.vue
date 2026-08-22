@@ -6,6 +6,7 @@ import { useChecklistStore } from '@/stores/checklist'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { flagIconClass } from '@/stores/travel'
 import checklistIcon from '@/assets/icons/checklist.svg'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -42,16 +43,7 @@ watch(tripId, (id) => { if (id) load(id) })
     <p v-if="!tripId" class="loading error">여행 정보를 찾을 수 없어요.</p>
     <p v-else-if="!trip" class="loading">불러오는 중...</p>
     <template v-else>
-      <section class="ticket">
-        <div class="ticket-head"><small>TRIP CHECKLIST</small><b :class="{ traveling: displayStatus === '여행중' }">{{ displayStatus }}</b></div>
-        <div class="ticket-title-row">
-          <div class="ticket-title-main">
-            <h2>{{ trip.title }}</h2>
-            <div class="ticket-flags" aria-label="여행 국가"><span v-for="code in trip.countryCodes" :key="code" :class="flagIconClass(code)" class="fi-inline" /></div>
-          </div>
-          <p>{{ trip.dateRange }}</p>
-        </div>
-      </section>
+      <TravelArchiveSummaryCard :trip-id="tripId" />
 
       <div class="list-heading"><h3>체크리스트 목록</h3><span>{{ totalProgress.done }}/{{ totalProgress.total }} 완료</span></div>
       <p class="list-description">완료하지 못한 준비 항목은 다음 단계로 이월돼요.<br>체크리스트는 직접 추가할 수도 있어요.</p>
@@ -67,7 +59,7 @@ watch(tripId, (id) => { if (id) load(id) })
         <em :class="{ scheduled: returnProgress.total === 0 || returnProgress.done === 0 }">{{ returnProgress.total > 0 ? `${returnProgress.done}/${returnProgress.total}` : '예정' }}</em><strong>›</strong>
       </button>
     </template>
-    <BottomNav />
+    <BottomNav flat />
   </main>
 </template>
 

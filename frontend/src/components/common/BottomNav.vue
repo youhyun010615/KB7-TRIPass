@@ -14,6 +14,13 @@ import ExchangeRateIcon from '@/components/common/ExchangeRateIcon.vue'
 import { useTravelModeStore } from '@/stores/travelMode'
 import { useTravelStore } from '@/stores/travel'
 
+defineProps({
+  flat: {
+    type: Boolean,
+    default: false,
+  },
+})
+
 const router = useRouter()
 const route = useRoute()
 const travelModeStore = useTravelModeStore()
@@ -213,7 +220,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <nav class="bottom-nav" aria-label="주요 메뉴">
+  <nav class="bottom-nav" :class="{ flat }" aria-label="주요 메뉴">
     <div class="nav-shell">
       <svg
           class="nav-background"
@@ -292,6 +299,9 @@ onBeforeUnmount(() => {
   height: 100%;
   overflow: visible;
   filter: drop-shadow(0 -7px 14px rgba(35, 55, 90, .14));
+}
+.bottom-nav.flat .nav-background {
+  filter: none;
 }
 .moving-notch {
   position: absolute;
