@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { fetchMyTrips } from '@/api/travel'
 import { countryPresentation, flagIconClass } from '@/stores/travel'
-import { today as currentDate } from '@/utils/devDate'
+import { daysUntilTrip, tripPhase } from '@/utils/tripLifecycle'
 
 const props = defineProps({
   tripId: { type: [Number, String], required: true },
@@ -24,14 +24,13 @@ const countryCodes = computed(() => {
 })
 
 const daysUntilStart = computed(() => {
-  if (!trip.value?.startDate) return null
-  const today = currentDate()
-  return Math.ceil((new Date(`${trip.value.startDate}T00:00:00`) - today) / 86400000)
+  return daysUntilTrip(trip.value)
 })
 
 const statusLabel = computed(() => {
-  if (trip.value?.status === 'ENDED') return '여행 완료'
-  if (trip.value?.status === 'TRAVELING' || (daysUntilStart.value !== null && daysUntilStart.value <= 0)) return '여행 중'
+  const phase = tripPhase(trip.value)
+  if (phase === 'ENDED') return '여행 완료'
+  if (phase === 'TRAVELING') return '여행 중'
   return daysUntilStart.value === null ? '여행 전' : `출국까지 D-${Math.max(0, daysUntilStart.value)}`
 })
 

@@ -13,6 +13,7 @@ import ibkBankLogo from '@/assets/bank-logos/ibk-bank-official.svg'
 import kbankLogo from '@/assets/bank-logos/kbank-user.png'
 import imBankLogo from '@/assets/bank-logos/im-user.jpg'
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
+import lockIcon from '@/assets/icons/lock.svg'
 import kbCardLogo from '@/assets/card-company-logos/kb-card.jpg'
 import hyundaiCardLogo from '@/assets/card-company-logos/hyundai-card.svg'
 import samsungCardLogo from '@/assets/card-company-logos/samsung-card.png'
@@ -532,7 +533,7 @@ onMounted(() => {
                   <input v-model="password" type="password" placeholder="비밀번호를 입력해 주세요" autocomplete="off" />
                 </label>
               </div>
-              <div class="security-note"><span>▣</span><strong>인증 정보는 연결 과정에서만 암호화하여 사용해요</strong></div>
+              <div class="security-note"><img class="security-lock-icon" :src="lockIcon" alt=""><strong>비밀번호는 연동 요청 과정에서만 암호화하여 사용해요</strong></div>
               <button class="primary-button" style="margin-top:18px" :disabled="!loginId || !password" @click="startConnection">다음</button>
             </div>
           </div>
@@ -745,7 +746,7 @@ onMounted(() => {
                 <label class="full-field">카드사 홈페이지 아이디<input v-model.trim="cardLoginId" placeholder="아이디를 입력해 주세요" autocomplete="username"></label>
                 <label class="full-field">카드사 홈페이지 비밀번호<input v-model="cardPassword" type="password" placeholder="비밀번호를 입력해 주세요" autocomplete="current-password" @keyup.enter="startCardConnection"></label>
               </div>
-              <div class="security-note"><span>▣</span><strong>비밀번호는 연동 요청 과정에서만 암호화하여 사용해요</strong></div>
+              <div class="security-note"><img class="security-lock-icon" :src="lockIcon" alt=""><strong>비밀번호는 연동 요청 과정에서만 암호화하여 사용해요</strong></div>
               <button class="primary-button" style="margin-top:18px" :disabled="!cardLoginId.trim() || !cardPassword || isCardConnecting" @click="startCardConnection">{{ isCardConnecting ? '연동 중...' : '다음' }}</button>
             </div>
           </div>
@@ -893,7 +894,7 @@ button { border: 0; cursor: pointer; }
 .card-body { padding: 18px 22px 22px; }
 .page-content { padding: 25px 20px 100px; }.page-content h2 { font-size: 22px; }.subcopy { margin: 7px 0 0; color: #64748b; font-size: 11px; }
 .account-intro { padding-top: 42px; }.load-bank-card { width: 100%; padding: 13px 14px; display: flex; align-items: center; gap: 13px; text-align: left; border: 1px solid #eceff5; border-radius: 14px; background: white; }.load-bank-card > span:nth-child(2) { flex: 1; }.load-bank-card strong, .load-bank-card small { display: block; }.load-bank-card strong { font-size: 13px; color: #10192b; }.load-bank-card small { margin-top: 2px; color: #98a2b3; font-size: 10.5px; }.load-bank-card b { color: #98a2b3; font-size: 18px; font-weight: 400; }.bank-building { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; color: #2f6fed; background: #eaf1ff; }
-.security-note { margin-top: 16px; padding: 18px; display: flex; gap: 12px; border-radius: 14px; background: #eaf1ff; }.security-note > span { color: #2f6fed; }.security-note strong { font-size: 11px; }.security-note p { margin: 4px 0 0; color: #64748b; font-size: 9px; }
+.security-note { margin-top: 16px; padding: 18px; display: flex; align-items:center; gap: 12px; border-radius: 14px; background: #eaf1ff; }.security-note > span { color: #2f6fed; }.security-lock-icon{width:18px;height:18px;flex:none;object-fit:contain}.security-note strong { font-size: 11px; }.security-note p { margin: 4px 0 0; color: #64748b; font-size: 9px; }
 .bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.bank-option { position: relative; height: 88px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid transparent; border-radius: 14px; background: #f4f5f9; }.bank-option.selected { border-color: #2f6fed; background: #fff; box-shadow: 0 4px 12px rgba(47,111,237,.12); }.bank-option.pending { opacity: .6; cursor: not-allowed; }.bank-option strong { font-size: 11px; color: #10192b; }.bank-option i { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; color: white; background: #2f6fed; font-size: 11px; font-style: normal; display: grid; place-items: center; }.bank-option small { position: absolute; top: 10px; right: 9px; color: #e5484d; font-size: 8px; }.bank-mark, .certificate-mark { display: grid; place-items: center; border-radius: 9px; font-weight: 900; }.bank-mark { width: 30px; height: 30px; font-size: 11px; }.bank-mark.mint { color: #047857; background: #d1fae5; }.bank-mark.yellow { color: #3f3100; background: #ffe44d; }.bank-mark.blue { color: white; background: #1688e8; }.bank-mark.green { color: white; background: #10b981; }.bank-mark.navy { color: white; background: #263f8c; }
 .bank-logo-mark { position: relative; display: block; width: 38px; height: 40px; overflow: hidden; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .bank-logo-mark img { position: absolute; top: 50%; left: 0; width: auto; max-width: none; height: 34px; object-fit: initial; background: transparent; transform: translateY(-50%); }

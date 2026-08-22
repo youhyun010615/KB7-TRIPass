@@ -1,10 +1,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft } from '@lucide/vue'
+import { ChevronDown, ChevronLeft } from '@lucide/vue'
 import BottomNav from '@/components/common/BottomNav.vue'
 import { useTripWalletStore } from '@/stores/tripWallet'
 import { countryPresentation, useTravelStore } from '@/stores/travel'
+import { todayIso } from '@/utils/devDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,13 +19,38 @@ const fallbackCurrencies = [
   { code: 'USD', name: '미국 달러', symbol: '$', rate: 1375, unit: 1, flagClass: 'fi fi-us' },
 ]
 
-const flagClassMap = { EUR: 'fi fi-eu', JPY: 'fi fi-jp', CHF: 'fi fi-ch', USD: 'fi fi-us', GBP: 'fi fi-gb', CNY: 'fi fi-cn' }
+const flagClassMap = {
+  AED: 'fi fi-ae',
+  AUD: 'fi fi-au',
+  BHD: 'fi fi-bh',
+  BND: 'fi fi-bn',
+  CAD: 'fi fi-ca',
+  CHF: 'fi fi-ch',
+  CNH: 'fi fi-cn',
+  CNY: 'fi fi-cn',
+  DKK: 'fi fi-dk',
+  EUR: 'fi fi-eu',
+  GBP: 'fi fi-gb',
+  HKD: 'fi fi-hk',
+  IDR: 'fi fi-id',
+  JPY: 'fi fi-jp',
+  KWD: 'fi fi-kw',
+  MYR: 'fi fi-my',
+  NOK: 'fi fi-no',
+  NZD: 'fi fi-nz',
+  SAR: 'fi fi-sa',
+  SEK: 'fi fi-se',
+  SGD: 'fi fi-sg',
+  THB: 'fi fi-th',
+  USD: 'fi fi-us',
+}
 const exchangeMode = ref(route.query.mode === 'sell' ? 'SELL' : 'BUY')
 const selectedCurrency = ref('JPY')
 const foreignInput = ref('')
 const krwInput = ref('100000')
 const lastEdited = ref('krw')
-let countUpFrame
+const currencyMenuOpen = ref(false)
+const currencySelectRef = ref(null)
 const notice = ref('')
 const estimate = ref(null)
 let noticeTimer
@@ -39,8 +65,21 @@ const activeCountryCurrencies = computed(() => {
       countryName,
       currencyCode: String(country.currencyCode || country.currency || '').toUpperCase(),
       flagClass: country.flagClass || (presentation.code ? `fi fi-${String(presentation.code).toLowerCase()}` : ''),
+      arrivalDate: country.arrivalDate || country.startDate || '',
+      departureDate: country.departureDate || country.endDate || '',
     }
   }).filter(item => item.currencyCode && item.currencyCode !== 'KRW')
+})
+
+// 여러 국가를 도는 여행 중 "오늘" 머무는 국가의 통화를 기본 선택값으로 쓰기 위한 인덱스.
+// activeCountryCurrencies와 currencies는 동일한 필터를 거쳐 순서가 1:1로 맞는다.
+const currentTravelCurrencyKey = computed(() => {
+  if (!activeCountryCurrencies.value.length) return null
+  const todayStr = todayIso()
+  const idx = activeCountryCurrencies.value.findIndex(country =>
+    country.arrivalDate && country.departureDate && country.arrivalDate <= todayStr && todayStr <= country.departureDate
+  )
+  return currencies.value[idx >= 0 ? idx : 0]?.key || null
 })
 
 const currencies = computed(() => {
@@ -130,21 +169,15 @@ function syncFromForeign() {
   krwInput.value = foreignValue.value ? String(Math.round(next)) : ''
 }
 
-function animateForeignCountUp(target, duration = 600) {
-  window.cancelAnimationFrame(countUpFrame)
-  const numericTarget = Number(target) || 0
-  if (numericTarget <= 0) {
-    foreignInput.value = ''
-    return
+function selectCurrency(key) {
+  selectedCurrency.value = key
+  currencyMenuOpen.value = false
+}
+
+function handleOutsideClick(event) {
+  if (currencyMenuOpen.value && currencySelectRef.value && !currencySelectRef.value.contains(event.target)) {
+    currencyMenuOpen.value = false
   }
-  const start = performance.now()
-  const step = (now) => {
-    const progress = Math.min((now - start) / duration, 1)
-    const eased = 1 - Math.pow(1 - progress, 3)
-    foreignInput.value = progress >= 1 ? formatForeign(numericTarget) : formatForeign(numericTarget * eased)
-    if (progress < 1) countUpFrame = window.requestAnimationFrame(step)
-  }
-  countUpFrame = window.requestAnimationFrame(step)
 }
 
 function fillAll() {
@@ -165,7 +198,7 @@ function scheduleEstimate() {
   estimateTimer = window.setTimeout(requestEstimate, 250)
 }
 
-async function requestEstimate(animate = false) {
+async function requestEstimate() {
   const amount = lastEdited.value === 'foreign' ? foreignValue.value : krwValue.value
   if (!amount || !selected.value?.code) return
 
@@ -182,19 +215,13 @@ async function requestEstimate(animate = false) {
     estimate.value = null
   }
 
-  if (lastEdited.value === 'foreign') {
-    syncFromForeign()
-  } else if (animate) {
-    animateForeignCountUp(estimate.value?.foreignAmount ?? calcForeignFromKrw(krwValue.value))
-  } else {
-    syncFromKrw()
-  }
+  lastEdited.value === 'foreign' ? syncFromForeign() : syncFromKrw()
 }
 
 onBeforeUnmount(() => {
   window.clearTimeout(noticeTimer)
   window.clearTimeout(estimateTimer)
-  window.cancelAnimationFrame(countUpFrame)
+  document.removeEventListener('click', handleOutsideClick)
 })
 
 async function submitExchange() {
@@ -255,21 +282,21 @@ watch(exchangeMode, async () => {
   estimate.value = null
   lastEdited.value = 'krw'
   if (!krwInput.value) krwInput.value = '100000'
-  // 원화 입력을 기준으로 실제 환율이 도착한 뒤에만 한 번 카운팅 연출로 보여준다.
-  await requestEstimate(true)
+  await requestEstimate()
 })
 
 onMounted(async () => {
+  document.addEventListener('click', handleOutsideClick)
   try {
     await Promise.all([wallet.loadWalletMain(), wallet.loadCurrencies(), wallet.loadForeignBalances(), travel.loadActiveGoal({ force: true })])
   } catch {
     showNotice(wallet.errorMessage || '외화 충전 정보를 불러오지 못했어요.')
   }
   if (!currencies.value.find(item => item.code === selectedCurrency.value)) {
-    selectedCurrency.value = currencies.value[0]?.key || 'EUR'
+    // 여행 중이면 오늘 머무는 국가의 통화를 우선 자동 선택한다.
+    selectedCurrency.value = currentTravelCurrencyKey.value || currencies.value[0]?.key || 'EUR'
   }
-  // BUY/SELL 모두 원화 10만원 기본값을 기준으로 실제 환율이 도착한 뒤 카운팅 연출로 보여준다.
-  await requestEstimate(true)
+  await requestEstimate()
 })
 </script>
 
@@ -327,18 +354,24 @@ onMounted(async () => {
 
       <div class="money-box foreign-box" :class="{ emphasized: exchangeMode === 'SELL' }">
         <div class="money-head">
-          <div class="currency-select">
-            <span :class="selected.flagClass" />
-            <label>
-              <b>{{ selected.code }}</b>
-              <small>{{ selected.name }}</small>
-              <i class="dropdown-arrow">▾</i>
-              <select v-model="selectedCurrency">
-                <option v-for="item in currencies" :key="item.key" :value="item.key">
-                  {{ item.code }} {{ item.name }}
-                </option>
-              </select>
-            </label>
+          <div class="currency-select" :class="{ open: currencyMenuOpen }" ref="currencySelectRef">
+            <button type="button" class="currency-select-trigger" @click="currencyMenuOpen = !currencyMenuOpen">
+              <span :class="selected.flagClass" />
+              <span class="currency-select-text">
+                <b>{{ selected.code }}</b>
+                <small>{{ selected.name }}</small>
+              </span>
+              <span class="dropdown-arrow" aria-hidden="true"><ChevronDown :size="14" :stroke-width="3" /></span>
+            </button>
+            <ul v-if="currencyMenuOpen" class="currency-option-list">
+              <li v-for="item in currencies" :key="item.key">
+                <button type="button" :class="{ active: item.key === selectedCurrency }" @click="selectCurrency(item.key)">
+                  <span :class="item.flagClass" />
+                  <b>{{ item.code }}</b>
+                  <small>{{ item.name }}</small>
+                </button>
+              </li>
+            </ul>
           </div>
           <input
             :value="foreignInput"
@@ -379,8 +412,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.exchange-page{max-width:430px;min-height:100vh;margin:0 auto;padding:46px 18px 96px;background:#f2f5fa;color:#111827}.exchange-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center}.exchange-header button{display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#fff;color:#193d82;box-shadow:0 5px 16px rgba(36,72,117,.07)}.exchange-header p{color:#1f5ab9;font-size:11px;font-weight:800;letter-spacing:.04em;text-align:center}.exchange-header h1{margin-top:2px;font-size:26px;font-weight:800;letter-spacing:-.04em;text-align:center}.intro-card{margin-top:22px}.intro-card>p{display:inline-flex;padding:9px 13px;border-radius:999px;background:#eef5ff;color:#2764d7;font-size:13px;font-weight:700;line-height:1.35}.rate-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:18px;border:1px solid #dce6f3;border-radius:18px;background:#fff;box-shadow:0 8px 18px rgba(18,43,82,.04)}.rate-strip strong{font-size:20px;font-weight:700;letter-spacing:-.04em}.rate-skeleton{display:inline-block;width:72px;height:.9em;border-radius:6px;background:linear-gradient(90deg,#e5eaf2 25%,#eef2f8 37%,#e5eaf2 63%);background-size:400% 100%;animation:rate-skeleton-shimmer 1.4s ease infinite;vertical-align:middle}@keyframes rate-skeleton-shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}.rate-strip em{flex:none;padding:9px 13px;border-radius:12px;background:#7a45ee;color:#fff;font-size:13px;font-style:normal;font-weight:800}.charge-card{margin-top:18px;padding:22px 18px;border-radius:28px;background:#fff;box-shadow:0 12px 28px rgba(18,43,82,.08)}.money-box{padding:15px 13px 14px;border-radius:18px;background:#f7f9fd;border:1px solid transparent;transition:background .2s ease,border-color .2s ease}.money-box.emphasized{background:#eaf1ff;border-color:#a9c8fb}.money-box.emphasized .wallet-label b,.money-box.emphasized .currency-select label b{color:#1257c9}.money-head{display:grid;width:100%;min-width:0;align-items:center;gap:8px}.krw-box .money-head{grid-template-columns:118px minmax(0,1fr) 18px}.foreign-box .money-head{grid-template-columns:132px minmax(0,1fr)}.currency-select{display:flex;width:132px;min-width:0;align-items:center;gap:8px;overflow:visible}.currency-select>span{flex:0 0 26px;width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px #d9e1ec}.currency-select label{position:relative;display:flex;min-width:0;flex:1;align-items:baseline;gap:4px;overflow:visible;white-space:nowrap}.currency-select label b{color:#1f2937;font-size:15px;font-weight:800}.currency-select small{color:#8b98ad;font-size:10px;font-weight:600;white-space:nowrap}.currency-select .dropdown-arrow{flex:none;color:#8b98ad;font-size:11px;font-style:normal;line-height:1;pointer-events:none}.currency-select select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.wallet-label{display:flex;min-width:0;width:100%;align-items:center;gap:9px;overflow:hidden}.wallet-label i{display:grid;flex:0 0 30px;width:30px;height:30px;place-items:center;border-radius:50%;background:#ffd429;color:#111827;font-size:11px;font-style:normal;font-weight:800}.wallet-label b{min-width:0;overflow:hidden;font-size:17px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.money-head input{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;color:#111827;font-size:clamp(17px,5vw,23px);font-weight:800;text-align:right;outline:0}.money-head input::placeholder{color:#c7ccd5;font-size:clamp(13px,3.4vw,16px);font-weight:700}.money-head strong{font-size:17px;font-weight:800}.money-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px}.money-foot small{min-width:0;color:#5f6775;font-size:14px;font-weight:500}.money-foot button{flex:none;padding:6px 11px;border-radius:999px;background:#edf4ff;color:#1768f2;font-size:12px;font-weight:800}.flow-arrow{display:flex;justify-content:center;padding:14px 0;color:#64748b;text-align:center}.flow-arrow b{display:grid;width:42px;height:42px;place-items:center;border-radius:50%;background:#eef5ff;color:#1768f2;font-size:24px}.summary{display:grid;gap:12px;margin-top:18px;padding:16px;border-radius:18px;background:#f7f9fd}.summary div{display:flex;align-items:center;justify-content:space-between}.summary dt{color:#7b8798;font-size:13px;font-weight:600}.summary dd{font-size:15px;font-weight:800}.guide{margin-top:16px;color:#8b98ad;font-size:12px;font-weight:600;line-height:1.5}.submit-button{width:100%;height:58px;margin-top:18px;border-radius:17px;background:#1768f2;color:#fff;font-size:18px;font-weight:800;box-shadow:0 12px 24px rgba(23,104,242,.22)}.exchange-toast{position:fixed;bottom:78px;left:50%;z-index:120;width:max-content;max-width:calc(100% - 40px);transform:translateX(-50%);padding:11px 15px;border-radius:99px;background:#172644;color:#fff;font-size:12px;box-shadow:0 5px 18px rgba(17,24,39,.2)}@media(max-width:380px){.rate-strip{align-items:flex-start;flex-direction:column}.krw-box .money-head{grid-template-columns:104px minmax(0,1fr) 16px}.foreign-box .money-head{grid-template-columns:122px minmax(0,1fr)}.currency-select{width:122px}.currency-select>span{flex-basis:24px;width:24px;height:24px}.currency-select label b{font-size:14px}.currency-select small{font-size:9px}.wallet-label b{font-size:15px}.money-head input{font-size:17px}}
+.exchange-page{max-width:430px;min-height:100vh;margin:0 auto;padding:46px 18px 96px;background:#f2f5fa;color:#111827}.exchange-header{display:grid;grid-template-columns:36px 1fr 36px;align-items:center}.exchange-header button{display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#fff;color:#193d82;box-shadow:0 5px 16px rgba(36,72,117,.07)}.exchange-header p{color:#1f5ab9;font-size:11px;font-weight:800;letter-spacing:.04em;text-align:center}.exchange-header h1{margin-top:2px;font-size:26px;font-weight:800;letter-spacing:-.04em;text-align:center}.intro-card{margin-top:22px}.intro-card>p{display:inline-flex;padding:9px 13px;border-radius:999px;background:#eef5ff;color:#2764d7;font-size:13px;font-weight:700;line-height:1.35}.rate-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:18px;border:1px solid #dce6f3;border-radius:18px;background:#fff;box-shadow:0 8px 18px rgba(18,43,82,.04)}.rate-strip strong{font-size:20px;font-weight:700;letter-spacing:-.04em}.rate-skeleton{display:inline-block;width:72px;height:.9em;border-radius:6px;background:linear-gradient(90deg,#e5eaf2 25%,#eef2f8 37%,#e5eaf2 63%);background-size:400% 100%;animation:rate-skeleton-shimmer 1.4s ease infinite;vertical-align:middle}@keyframes rate-skeleton-shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}.rate-strip em{flex:none;padding:9px 13px;border-radius:12px;background:#7a45ee;color:#fff;font-size:13px;font-style:normal;font-weight:800}.charge-card{margin-top:18px;padding:22px 18px;border-radius:28px;background:#fff;box-shadow:0 12px 28px rgba(18,43,82,.08)}.money-box{padding:15px 13px 14px;border-radius:18px;background:#f7f9fd;border:1px solid transparent;transition:background .2s ease,border-color .2s ease}.money-box.emphasized{background:#eaf1ff;border-color:#a9c8fb}.money-box.emphasized .wallet-label b,.money-box.emphasized .currency-select-text b{color:#1257c9}.money-head{display:grid;width:100%;min-width:0;align-items:center;gap:8px}.krw-box .money-head{grid-template-columns:118px minmax(0,1fr) 18px}.foreign-box .money-head{grid-template-columns:148px minmax(0,1fr)}.currency-select{position:relative;box-sizing:border-box;width:148px;min-width:0}.currency-select-trigger{display:flex;width:100%;align-items:center;gap:7px;padding:7px 9px;border:1px solid #e0e7f1;border-radius:14px;background:#fff;box-shadow:0 4px 10px rgba(23,43,77,.05);cursor:pointer}.currency-select.open .currency-select-trigger{border-color:#a9c8fb}.currency-select-trigger>span:first-child{flex:0 0 24px;width:24px;height:24px;border-radius:50%;box-shadow:0 0 0 1px #d9e1ec}.currency-select-text{display:flex;min-width:0;flex:1;align-items:center;gap:4px;overflow:hidden;white-space:nowrap}.currency-select-text b{color:#1f2937;font-size:15px;font-weight:800}.currency-select-text small{overflow:hidden;color:#8b98ad;font-size:10px;font-weight:600;white-space:nowrap;text-overflow:ellipsis}.currency-select .dropdown-arrow{display:grid;flex:none;place-items:center;width:20px;height:20px;margin-left:auto;border-radius:50%;background:#eaf1ff;color:#1768f2;transition:transform .2s ease}.currency-select.open .dropdown-arrow{transform:rotate(180deg)}.currency-option-list{position:absolute;top:calc(100% + 8px);left:0;z-index:30;width:max-content;min-width:100%;max-height:264px;margin:0;padding:6px;overflow-y:auto;border:1px solid #e0e7f1;border-radius:14px;background:#fff;box-shadow:0 14px 30px rgba(18,43,82,.14);list-style:none}.currency-option-list li+li{margin-top:2px}.currency-option-list li button{display:flex;width:100%;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;text-align:left;white-space:nowrap}.currency-option-list li button:hover,.currency-option-list li button.active{background:#eef5ff}.currency-option-list li button>span{flex:0 0 20px;width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 1px #d9e1ec}.currency-option-list li button b{font-size:14px;font-weight:800;color:#1f2937}.currency-option-list li button small{color:#8b98ad;font-size:11px;font-weight:600}.wallet-label{display:flex;min-width:0;width:100%;align-items:center;gap:9px;overflow:hidden}.wallet-label i{display:grid;flex:0 0 30px;width:30px;height:30px;place-items:center;border-radius:50%;background:#ffd429;color:#111827;font-size:11px;font-style:normal;font-weight:800}.wallet-label b{min-width:0;overflow:hidden;font-size:17px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.money-head input{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;color:#111827;font-size:clamp(17px,5vw,23px);font-weight:800;text-align:right;outline:0}.money-head input::placeholder{color:#c7ccd5;font-size:clamp(13px,3.4vw,16px);font-weight:700}.money-head strong{font-size:17px;font-weight:800}.money-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px}.money-foot small{min-width:0;color:#5f6775;font-size:14px;font-weight:500}.money-foot button{flex:none;padding:6px 11px;border-radius:999px;background:#edf4ff;color:#1768f2;font-size:12px;font-weight:800}.flow-arrow{display:flex;justify-content:center;padding:14px 0;color:#64748b;text-align:center}.flow-arrow b{display:grid;width:42px;height:42px;place-items:center;border-radius:50%;background:#eef5ff;color:#1768f2;font-size:24px}.summary{display:grid;gap:12px;margin-top:18px;padding:16px;border-radius:18px;background:#f7f9fd}.summary div{display:flex;align-items:center;justify-content:space-between}.summary dt{color:#7b8798;font-size:13px;font-weight:600}.summary dd{font-size:15px;font-weight:800}.guide{margin-top:16px;color:#8b98ad;font-size:12px;font-weight:600;line-height:1.5}.submit-button{width:100%;height:58px;margin-top:18px;border-radius:17px;background:#1768f2;color:#fff;font-size:18px;font-weight:800;box-shadow:0 12px 24px rgba(23,104,242,.22)}.exchange-toast{position:fixed;bottom:78px;left:50%;z-index:120;width:max-content;max-width:calc(100% - 40px);transform:translateX(-50%);padding:11px 15px;border-radius:99px;background:#172644;color:#fff;font-size:12px;box-shadow:0 5px 18px rgba(17,24,39,.2)}@media(max-width:380px){.rate-strip{align-items:flex-start;flex-direction:column}.krw-box .money-head{grid-template-columns:104px minmax(0,1fr) 16px}.foreign-box .money-head{grid-template-columns:134px minmax(0,1fr)}.currency-select{width:134px}.currency-select-trigger{padding:6px 8px}.currency-select-trigger>span:first-child{flex-basis:22px;width:22px;height:22px}.currency-select .dropdown-arrow{width:18px;height:18px}.currency-select-text b{font-size:14px}.currency-select-text small{font-size:9px}.wallet-label b{font-size:15px}.money-head input{font-size:17px}}
 .exchange-page{word-break:keep-all}.exchange-page h1,.exchange-page h2,.exchange-page h3{text-wrap:balance}.exchange-page p{text-wrap:pretty}
 .exchange-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:18px;padding:4px;border-radius:16px;background:#e6ebf4}.exchange-mode-tabs button{height:44px;border-radius:13px;color:#8290a6;font-size:13px;font-weight:800}.exchange-mode-tabs button.active{background:#fff;color:#174496;box-shadow:0 5px 14px rgba(20,54,105,.1)}
-.exchange-page{padding:14px 16px 88px;background:#f2f5fa}.exchange-header button{width:36px;height:36px}.exchange-header h1{color:#29466f;font-size:20px;font-weight:700;letter-spacing:-.025em}.exchange-header p{font-size:9.5px}.intro-card{margin-top:17px}.intro-card>p{padding:7px 10px;font-size:10.5px}.rate-strip{margin-top:11px;padding:13px;border-radius:14px}.rate-strip strong{font-size:16px}.rate-strip em{padding:7px 10px;border-radius:9px;font-size:10.5px}.charge-card{margin-top:14px;padding:17px 15px;border-radius:21px}.money-box{padding:11px 11px}.currency-select label b{font-size:13px}.wallet-label b{font-size:14px}.money-head input{font-size:clamp(15px,4.4vw,19px)}.money-head strong{font-size:14px}.money-foot{margin-top:9px}.money-foot small{font-size:11px}.money-foot button{padding:5px 9px;font-size:10px}.flow-arrow{padding:10px 0}.flow-arrow b{width:34px;height:34px;font-size:19px}.summary{gap:9px;margin-top:14px;padding:13px;border-radius:14px}.summary dt{font-size:10.5px}.summary dd{font-size:12px}.guide{margin-top:12px;font-size:10.5px}.submit-button{height:44px;margin-top:15px;border-radius:13px;font-size:13px;font-weight:700}
+.exchange-page{padding:14px 16px 88px;background:#f2f5fa}.exchange-header button{width:36px;height:36px}.exchange-header h1{color:#29466f;font-size:20px;font-weight:700;letter-spacing:-.025em}.exchange-header p{font-size:9.5px}.intro-card{margin-top:17px}.intro-card>p{padding:7px 10px;font-size:10.5px}.rate-strip{margin-top:11px;padding:13px;border-radius:14px}.rate-strip strong{font-size:16px}.rate-strip em{padding:7px 10px;border-radius:9px;font-size:10.5px}.charge-card{margin-top:14px;padding:17px 15px;border-radius:21px}.money-box{padding:11px 11px}.currency-select-text b{font-size:13px}.wallet-label b{font-size:14px}.money-head input{font-size:clamp(15px,4.4vw,19px)}.money-head strong{font-size:14px}.money-foot{margin-top:9px}.money-foot small{font-size:11px}.money-foot button{padding:5px 9px;font-size:10px}.flow-arrow{padding:10px 0}.flow-arrow b{width:34px;height:34px;font-size:19px}.summary{gap:9px;margin-top:14px;padding:13px;border-radius:14px}.summary dt{font-size:10.5px}.summary dd{font-size:12px}.guide{margin-top:12px;font-size:10.5px}.submit-button{height:44px;margin-top:15px;border-radius:13px;font-size:13px;font-weight:700}
 </style>

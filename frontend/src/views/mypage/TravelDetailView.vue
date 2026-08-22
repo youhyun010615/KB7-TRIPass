@@ -7,7 +7,7 @@ import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { getReceipts } from '@/api/receipt'
 import { countryPresentation, flagIconClass } from '@/stores/travel'
-import { today as currentDate } from '@/utils/devDate'
+import { daysUntilTrip, tripPhase } from '@/utils/tripLifecycle'
 
 const router = useRouter()
 const route = useRoute()
@@ -25,7 +25,7 @@ function countryCodeOf(countryName) {
   return countryPresentation[countryName]?.code || ''
 }
 
-const isEnded = computed(() => trip.value?.status === 'ENDED')
+const isEnded = computed(() => tripPhase(trip.value) === 'ENDED')
 const countryCodes = computed(() => splitCountryNames(trip.value?.countryNames).map(countryCodeOf).filter(Boolean))
 const countryLabel = computed(() => splitCountryNames(trip.value?.countryNames).join(' · '))
 const daysUntilStart = computed(() => {
@@ -33,14 +33,9 @@ const daysUntilStart = computed(() => {
     const reportDays = Number(report.value.daysUntilTrip)
     if (Number.isFinite(reportDays)) return reportDays
   }
-  if (!trip.value?.startDate) return null
-  const today = currentDate()
-  const startDate = new Date(`${trip.value.startDate}T00:00:00`)
-  return Math.ceil((startDate - today) / 86400000)
+  return daysUntilTrip(trip.value)
 })
-const isTraveling = computed(() =>
-  trip.value?.status === 'TRAVELING' || (!isEnded.value && daysUntilStart.value !== null && daysUntilStart.value <= 0),
-)
+const isTraveling = computed(() => tripPhase(trip.value) === 'TRAVELING')
 const tripStatusLabel = computed(() => {
   if (isEnded.value) return '여행 완료'
   return isTraveling.value ? '여행 중' : '준비 중'
@@ -105,7 +100,7 @@ onMounted(async () => {
     trip.value = trips.find((t) => String(t.tripId) === String(tripId)) || null
 
     if (trip.value) {
-      if (trip.value.status === 'ENDED') {
+      if (tripPhase(trip.value) === 'ENDED') {
         report.value = await fetchPostTripReport(tripId)
       } else {
         report.value = await fetchPreTripReport(tripId)

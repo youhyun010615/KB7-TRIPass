@@ -8,7 +8,7 @@ import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
 import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
-import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
+import kbNori2GlobalImage from '@/assets/cards/kb-nori2-global.png'
 import { today as currentDate } from '@/utils/devDate'
 
 const route = useRoute()
@@ -44,7 +44,7 @@ const cardImage = computed(() => {
   const isKb = resolveCardMeta(value).name === 'KB국민은행' || name.includes('KB') || name.includes('국민')
   if (isKb && name.includes('트래블')) return kbTravelersTosimiImage
   if (name.includes('트래블')) return getTravelCardImage(name) || getTravelCardImage(resolveCardMeta(value).name) || kbTravelersImage
-  if (isKb && value.cardType === 'CHECK') return kbCheckGenericImage
+  if (isKb && value.cardType === 'CHECK') return kbNori2GlobalImage
   return value.cardImageUrl || value.imageUrl || null
 })
 

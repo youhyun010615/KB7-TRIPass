@@ -9,7 +9,7 @@ import { bankPresentationByCode, bankPresentationByName } from '@/stores/asset'
 import { getTravelCardImage } from '@/utils/travelCard'
 import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
-import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
+import kbNori2GlobalImage from '@/assets/cards/kb-nori2-global.png'
 
 const router = useRouter()
 const cardStore = useCardStore()
@@ -195,7 +195,7 @@ function cardVisualImage(card) {
     return getTravelCardImage(name) || getTravelCardImage(resolveCardMeta(card).name) || kbTravelersImage
   }
   if (isKb && card.cardType === 'CHECK') {
-    return kbCheckGenericImage
+    return kbNori2GlobalImage
   }
   return null
 }
