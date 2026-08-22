@@ -345,6 +345,15 @@ function selectedRate(categoryId) {
   return Number(missionStore.selectedRates[String(categoryId)] || 0)
 }
 
+async function handleStartMissions() {
+  const result = await missionStore.startMissions()
+
+  // 등록에 성공한 경우에만 추천 선택 화면을 닫고 미션 대시보드를 표시한다.
+  if (result) {
+    closeSelectionFlow()
+  }
+}
+
 function displayedWeek(mission) {
   const weeks = mission.weeklyMissions || []
   return (
@@ -471,7 +480,8 @@ function closeSelectionFlow() {
         <div class="mission-ai-stage" aria-hidden="true"><span class="mission-ai-orbit"></span><span class="mission-ai-core"><img :src="aiIcon" alt="" /></span></div>
         <h2>{{ hasLinkedAccount ? '여행 계획을 등록해야 미션을 진행할 수 있어요' : '여행 계획과 계좌 등록을 해야 미션을 진행할 수 있어요' }}</h2>
         <p>저축 미션은 소비 습관을 분석해 여행 자금을 자연스럽게 모으도록 도와주는 탭이에요.</p>
-        <button type="button" @click="goTravelRegister">여행 계획 등록하기</button>
+        <button v-if="hasLinkedAccount" type="button" @click="goTravelRegister">여행 계획 등록하기</button>
+        <button v-else type="button" @click="goAccountConnection">계좌 등록하기</button>
       </div>
     </section>
 
@@ -786,7 +796,7 @@ function closeSelectionFlow() {
         <button
           type="button"
           :disabled="(missionStore.hasStartedMissions ? missionStore.newSelectedCount : missionStore.selectedCount) === 0 || missionStore.submitting"
-          @click="missionStore.startMissions"
+          @click="handleStartMissions"
         >
           {{ missionStore.submitting ? '미션을 만들고 있어요...' : `${missionStore.hasStartedMissions ? missionStore.newSelectedCount : missionStore.selectedCount}개 미션 ${missionStore.hasStartedMissions ? '추가하기' : '시작하기'}` }}
         </button>
