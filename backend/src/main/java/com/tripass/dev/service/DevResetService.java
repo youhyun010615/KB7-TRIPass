@@ -1,6 +1,7 @@
 package com.tripass.dev.service;
 
 import com.tripass.dev.mapper.DevResetMapper;
+import com.tripass.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DevResetService {
 
     private final DevResetMapper devResetMapper;
+    private final WalletService walletService;
 
     @Transactional
     public void resetAccount(Long userId) {
@@ -40,6 +42,11 @@ public class DevResetService {
         devResetMapper.deleteWalletLedgerByUser(userId);
         devResetMapper.deleteWalletAccountByUser(userId);
         devResetMapper.deleteWalletByUser(userId);
+        // 삭제 직후 새 월렛을 다시 만들어둔다. 그렇지 않으면 첫 충전/출금 등 쓰기 작업
+        // 전까지는 월렛 행이 없는 상태라, 홈/월렛 화면의 조회 API가 지갑을 못 찾고
+        // "월렛을 찾을 수 없습니다" 오류를 낸다(가입 직후에는 회원가입 로직이 항상
+        // 월렛을 만들어주므로 이 상태가 재현되지 않는다).
+        walletService.createWalletForUser(userId);
 
         devResetMapper.deleteUserTravelCardsByUser(userId);
         devResetMapper.deleteFinancialSchedulesByUser(userId);

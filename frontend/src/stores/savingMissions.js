@@ -261,9 +261,9 @@ export const useSavingMissionsStore = defineStore('savingMissions', () => {
         ACCOUNT_REQUIRED_FOR_MISSION: '계좌를 등록해야 미션을 진행할 수 있어요',
         MISSION_REPORT_NOT_VIEWED: '이번 달 분석 리포트를 먼저 확인해 주세요',
       };
-      errorMessage.value = guardedMessages[code] || errorMessageOf(
+      errorMessage.value = errorMessageOf(
         error,
-        '저축 미션을 시작하지 못했어요.',
+        guardedMessages[code] || '저축 미션을 시작하지 못했어요.',
       );
       return null;
     } finally {

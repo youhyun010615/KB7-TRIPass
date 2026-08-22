@@ -50,6 +50,15 @@ function currentWeek(mission) {
   );
 }
 
+function eligibleDayCount(week) {
+  const dayCount = Number(week?.eligibleDayCount);
+  return Number.isFinite(dayCount) && dayCount > 0 ? dayCount : 7;
+}
+
+function isPartialWeek(week) {
+  return eligibleDayCount(week) < 7;
+}
+
 function spendingPercent(mission) {
   const week = currentWeek(mission);
   const limit = Number(week?.weeklyUsageLimit || 0);
@@ -105,14 +114,22 @@ function formatCurrency(value) {
           <template v-else>{{ metaOf(mission.categoryCode).icon }}</template>
         </span>
         <div class="mission-info">
-          <div>
+          <div class="mission-heading-row">
             <strong>{{ mission.categoryName }} {{ mission.reductionRate }}% 줄이기</strong>
-            <span>{{ statusLabel(currentWeek(mission)?.status || mission.status) }}</span>
+            <div class="mission-badges">
+              <span v-if="isPartialWeek(currentWeek(mission))" class="partial-week-badge">
+                {{ eligibleDayCount(currentWeek(mission)) }}일 참여
+              </span>
+              <span class="status-badge">{{ statusLabel(currentWeek(mission)?.status || mission.status) }}</span>
+            </div>
           </div>
           <div class="mission-progress">
             <i :style="{ width: `${spendingPercent(mission)}%` }" />
           </div>
           <small>남은 한도 {{ formatCurrency(remainingLimit(mission)) }}</small>
+          <small v-if="isPartialWeek(currentWeek(mission))" class="partial-week-copy">
+            이번 주는 {{ eligibleDayCount(currentWeek(mission)) }}일 기준 목표예요.
+          </small>
         </div>
       </article>
     </div>
@@ -120,5 +137,5 @@ function formatCurrency(value) {
 </template>
 
 <style scoped>
-.home-mission-card{position:relative;overflow:hidden;padding:19px;border:1px solid #bcd2ff;border-radius:24px;background:linear-gradient(150deg,#eff5ff 0%,#e6f0ff 100%);box-shadow:0 13px 30px #1a489a1f;color:#173f8d;animation:mission-enter .48s cubic-bezier(.22,1,.36,1) both}.home-mission-card::after{position:absolute;top:-65px;right:-58px;width:170px;height:170px;border-radius:50%;background:#5688e51a;content:''}.home-mission-card header{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.home-mission-card header small{color:#f06a2a;font-size:8px;font-weight:950;letter-spacing:.14em}.home-mission-card h2{display:flex;align-items:center;gap:2px;margin-top:5px;font-size:17px;font-weight:950;letter-spacing:-.05em}.mission-title-ai-badge{display:inline-flex;flex:none;align-items:center;animation:mission-title-ai-pulse 1.6s ease-in-out infinite}.mission-title-ai-badge img{width:22px;height:22px;object-fit:contain}@keyframes mission-title-ai-pulse{0%,100%{opacity:.6;transform:scale(.85) rotate(-3deg);filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%) drop-shadow(0 0 0 rgba(23,104,242,0))}50%{opacity:1;transform:scale(1.25) rotate(3deg);filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%) drop-shadow(0 0 7px rgba(23,104,242,.6))}}@media(prefers-reduced-motion:reduce){.mission-title-ai-badge{animation:none}}.home-mission-card header p{margin-top:4px;color:#6f83a8;font-size:10px}.home-mission-card header button{flex:none;color:#286ce0;font-size:10px;font-weight:900}.home-mission-card header button b{font-size:15px}.mission-list{position:relative;z-index:1;display:grid;gap:9px;margin-top:16px}.mission-list article{display:flex;align-items:center;gap:11px;padding:13px;border:1px solid #d5e1f5;border-radius:16px;background:#fff}.mission-icon{display:grid;flex:0 0 39px;height:39px;place-items:center;border-radius:13px;background:color-mix(in srgb,var(--mission-color) 12%,white);font-size:18px}.mission-icon img{width:19px;height:19px}.mission-info{min-width:0;flex:1}.mission-info>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px}.mission-info strong{overflow:hidden;color:#233b68;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.mission-info>div:first-child span{flex:none;padding:4px 7px;border-radius:99px;background:#e2f7f1;color:#119278;font-size:8px;font-weight:900}.mission-info small{display:block;margin-top:6px;color:#7485a1;font-size:8px}.mission-progress{height:5px;margin-top:8px;overflow:hidden;border-radius:99px;background:#e8eef8}.mission-progress i{display:block;height:100%;border-radius:inherit;background:var(--mission-color);transition:width .55s ease}@keyframes mission-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.home-mission-card{position:relative;overflow:hidden;padding:19px;border:1px solid #bcd2ff;border-radius:24px;background:linear-gradient(150deg,#eff5ff 0%,#e6f0ff 100%);box-shadow:0 13px 30px #1a489a1f;color:#173f8d;animation:mission-enter .48s cubic-bezier(.22,1,.36,1) both}.home-mission-card::after{position:absolute;top:-65px;right:-58px;width:170px;height:170px;border-radius:50%;background:#5688e51a;content:''}.home-mission-card header{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.home-mission-card header small{color:#f06a2a;font-size:8px;font-weight:950;letter-spacing:.14em}.home-mission-card h2{display:flex;align-items:center;gap:2px;margin-top:5px;font-size:17px;font-weight:950;letter-spacing:-.05em}.mission-title-ai-badge{display:inline-flex;flex:none;align-items:center;animation:mission-title-ai-pulse 1.6s ease-in-out infinite}.mission-title-ai-badge img{width:22px;height:22px;object-fit:contain}@keyframes mission-title-ai-pulse{0%,100%{opacity:.6;transform:scale(.85) rotate(-3deg);filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%) drop-shadow(0 0 0 rgba(23,104,242,0))}50%{opacity:1;transform:scale(1.25) rotate(3deg);filter:invert(34%) sepia(94%) saturate(1272%) hue-rotate(199deg) brightness(91%) drop-shadow(0 0 7px rgba(23,104,242,.6))}}@media(prefers-reduced-motion:reduce){.mission-title-ai-badge{animation:none}}.home-mission-card header p{margin-top:4px;color:#6f83a8;font-size:10px}.home-mission-card header button{flex:none;color:#286ce0;font-size:10px;font-weight:900}.home-mission-card header button b{font-size:15px}.mission-list{position:relative;z-index:1;display:grid;gap:9px;margin-top:16px}.mission-list article{display:flex;align-items:center;gap:11px;padding:13px;border:1px solid #d5e1f5;border-radius:16px;background:#fff}.mission-icon{display:grid;flex:0 0 39px;height:39px;place-items:center;border-radius:13px;background:color-mix(in srgb,var(--mission-color) 12%,white);font-size:18px}.mission-icon img{width:19px;height:19px}.mission-info{min-width:0;flex:1}.mission-heading-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.mission-info strong{overflow:hidden;color:#233b68;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.mission-badges{display:flex;flex:none;align-items:center;gap:4px}.mission-badges span{flex:none;padding:4px 7px;border-radius:99px;font-size:8px;font-weight:900}.mission-info .mission-badges .status-badge{background:#e2f7f1;color:#119278}.mission-info .mission-badges .partial-week-badge{background:#fff2c7;color:#a66b00}.mission-info small{display:block;margin-top:6px;color:#7485a1;font-size:8px}.mission-info .partial-week-copy{color:#9a6b00;font-weight:800}.mission-progress{height:5px;margin-top:8px;overflow:hidden;border-radius:99px;background:#e8eef8}.mission-progress i{display:block;height:100%;border-radius:inherit;background:var(--mission-color);transition:width .55s ease}@keyframes mission-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 </style>
