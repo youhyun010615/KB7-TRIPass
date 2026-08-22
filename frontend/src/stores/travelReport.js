@@ -19,7 +19,7 @@ function formatShortDate(dateStr) {
 }
 
 function statusLabel(status) {
-  if (status === 'ENDED') return '여행 완료'
+  if (status === 'ENDED' || status === 'ARCHIVED') return '여행 완료'
   if (status === 'TRAVELING') return '여행 중'
   return '여행 전'
 }
