@@ -264,6 +264,12 @@ const keypadKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'bac
 const selectedChargeAccount = computed(() => accounts.value.find(account => account.accountId === selectedAccount.value))
 const transferAmountNumber = computed(() => Number(String(amount.value).replace(/[^0-9]/g, '')) || 0)
 const formattedTransferAmount = computed(() => transferAmountNumber.value.toLocaleString('ko-KR'))
+const formattedTransferAmountInput = computed({
+  get: () => amount.value ? formattedTransferAmount.value : '',
+  set: value => {
+    amount.value = String(value ?? '').replace(/[^0-9]/g, '')
+  },
+})
 
 const maxTransferAmount = computed(() => {
   if (transferMode.value === 'withdraw') return wallet.balance
@@ -673,7 +679,7 @@ async function confirmUnlinkTravelCard() {
             </label>
             <label class="withdraw-amount-field">
               <span>금액</span>
-              <div class="amount-field"><input v-model="amount" inputmode="numeric" placeholder="0"><b>원</b></div>
+              <div class="amount-field"><input v-model="formattedTransferAmountInput" inputmode="numeric" placeholder="0"><b>원</b></div>
             </label>
             <div class="quick-amounts">
               <button v-for="value in quickAmountValues" :key="value" type="button" @click="applyQuickAmount(value)">+{{ value / 10000 }}만</button>
