@@ -82,9 +82,9 @@ const dateLabel = (value) => value ? value.replaceAll('-', '.') : '여행 날짜
 const stepTitle = computed(() => ['여행 계획 등록', '여행 일정 입력', '여행 예산', '여행 목표 확인', '월렛 자금 선택'][step.value - 1])
 const registrationHeroTitle = computed(() => {
   if (step.value === 5) return '마지막으로 월렛 자금을 정해 주세요'
-  if (step.value === 3) return '국가별 예산을 확인해 주세요'
+  if (step.value === 3) return 'AI가 추천한 국가별 예산을 확인해 주세요'
   if (isEditMode.value) {
-    return step.value === 4 ? '수정할 여행 목표를 최종 확인해 주세요' : '현재 여행 계획을 다시 확인해 볼까요?'
+    return step.value === 4 ? '여행 목표를 최종 확인해 주세요' : '현재 여행 계획을 다시 확인해 볼까요?'
   }
   return step.value === 4 ? '여행 목표를 최종 확인해 주세요' : '나만의 여행 계획을 만들어 볼까요?'
 })
@@ -528,10 +528,10 @@ function goToOnboardingHub() {
     <template v-else-if="step === 2">
       <section class="plan-guide">
         <div><b>{{ store.tripName }}</b><span>{{ store.selectedPlans.length }}개국 여행</span></div>
-        <button @click="goToTripInfo">국가 수정</button>
       </section>
       <section class="ai-guide">
-        <div><b>방문 순서대로 일정을 입력해 주세요</b><p>국가 간 일정은 겹치지 않아야 하며, 같은 날 다음 국가로 이동할 수 있어요.</p></div>
+        <img :src="alertFilledIcon" alt="" aria-hidden="true">
+        <div><b>방문 순서대로 일정을 입력해 주세요</b></div>
       </section>
       <section
         v-for="(plan, index) in store.selectedPlans"
@@ -581,15 +581,11 @@ function goToOnboardingHub() {
             <strong>{{ activeBudgetPlan.name }}</strong>
             <small>{{ dateLabel(activeBudgetPlan.startDate) }} ~ {{ dateLabel(activeBudgetPlan.endDate) }}</small>
           </div>
-          <span class="budget-recommendation-status">
-            <i class="budget-ai-motion"><b>AI</b></i>
-            추천 완료
-          </span>
         </header>
 
         <section class="budget-recommendation-panel">
           <header class="budget-recommendation-title">
-            <i aria-hidden="true">AI</i>
+            <i class="budget-ai-motion" aria-hidden="true"><b>AI</b></i>
             <b>AI 추천 예산</b>
           </header>
           <div class="budget-recommendation-summary">
@@ -599,23 +595,27 @@ function goToOnboardingHub() {
         </section>
 
         <section class="editable-budget">
-          <div class="manual-heading"><div><b><i>✎</i> 아래 금액을 눌러 직접 수정할 수 있어요</b></div><button type="button" @click="store.resetBudgetToRecommendation(activeBudgetPlan.countryId)">추천값 복원</button></div>
-          <div class="budget-section-title"><b>사전 지출</b><span>저축 목표 제외</span></div>
-          <div class="budget-grid prepaid-grid">
-            <label v-for="category in budgetCategories.filter((item) => item.prepaid)" :key="category.field">
-              <span>{{ category.icon }} {{ category.label }}</span>
-              <div><input type="text" inputmode="numeric" autocomplete="off" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="formattedWonInput(activeBudgetPlan.budget[category.field])" @input="updateWonBudget(activeBudgetPlan.countryId, category.field, $event)"><em>원</em></div>
-            </label>
-          </div>
-          <div class="subtotal prepaid"><span>합계</span><b>{{ money(countryPrepaidTotal(activeBudgetPlan)) }}</b></div>
-          <div class="budget-section-title local"><b>현지 여행 자금</b><span>TRIP 월렛 저축</span></div>
-          <div class="budget-grid">
-            <label v-for="category in budgetCategories.filter((item) => !item.prepaid)" :key="category.field">
-              <span>{{ category.icon }} {{ category.label }}</span>
-              <div><input type="text" inputmode="numeric" autocomplete="off" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="formattedWonInput(activeBudgetPlan.budget[category.field])" @input="updateWonBudget(activeBudgetPlan.countryId, category.field, $event)"><em>원</em></div>
-            </label>
-          </div>
-          <div class="subtotal local-total"><span>{{ activeBudgetPlan.name }} 저축 목표</span><b>{{ money(countryLocalTotal(activeBudgetPlan)) }}</b></div>
+          <div class="manual-heading"><div><b><i><img :src="alertFilledIcon" alt=""></i> 아래 금액을 눌러 직접 수정할 수 있어요</b></div><button type="button" @click="store.resetBudgetToRecommendation(activeBudgetPlan.countryId)">추천값 복원</button></div>
+          <section class="prepaid-budget-box">
+            <div class="budget-section-title"><b>사전 지출</b><span>사전 지출은 저축 목표에서 제외돼요</span></div>
+            <div class="budget-grid prepaid-grid">
+              <label v-for="category in budgetCategories.filter((item) => item.prepaid)" :key="category.field">
+                <span>{{ category.icon }} {{ category.label }}</span>
+                <div><input type="text" inputmode="numeric" autocomplete="off" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="formattedWonInput(activeBudgetPlan.budget[category.field])" @input="updateWonBudget(activeBudgetPlan.countryId, category.field, $event)"><em>원</em></div>
+              </label>
+            </div>
+            <div class="subtotal prepaid"><span>사전 지출 합계</span><b>{{ money(countryPrepaidTotal(activeBudgetPlan)) }}</b></div>
+          </section>
+          <section class="local-budget-box">
+            <div class="budget-section-title local"><b>현지 여행 자금</b></div>
+            <div class="budget-grid local-budget-grid">
+              <label v-for="category in budgetCategories.filter((item) => !item.prepaid)" :key="category.field">
+                <span>{{ category.icon }} {{ category.label }}</span>
+                <div><input type="text" inputmode="numeric" autocomplete="off" :aria-label="`${activeBudgetPlan.name} ${category.label} 예산`" :value="formattedWonInput(activeBudgetPlan.budget[category.field])" @input="updateWonBudget(activeBudgetPlan.countryId, category.field, $event)"><em>원</em></div>
+              </label>
+            </div>
+            <div class="subtotal local-total"><span>{{ activeBudgetPlan.name }} 저축 목표</span><b>{{ money(countryLocalTotal(activeBudgetPlan)) }}</b></div>
+          </section>
         </section>
       </section>
       <section class="budget-fixed-summary">
@@ -643,9 +643,9 @@ function goToOnboardingHub() {
         </article>
       </section>
       <section class="goal-total-summary" aria-label="총 여행 저축 목표">
-        <p>사전 지출 총액 · {{ money(livePrepaidExpenseTotal) }}은 별도로 기록돼요</p>
         <strong><span aria-hidden="true">✈</span> 여행 저축 목표 · {{ store.selectedPlans.length }}개국 합산</strong>
         <b>{{ money(liveTargetAmount) }}</b>
+        <p>사전 지출 총액 · {{ money(livePrepaidExpenseTotal) }}은 별도로 기록돼요</p>
       </section>
       <section class="goal-review-note">
         <b>이 금액으로 여행 목표를 만들까요?</b>
@@ -832,10 +832,35 @@ function goToOnboardingHub() {
 .budget-card-active .budget-section-title b{font-size:12px}
 .budget-card-active .subtotal{align-items:center;font-size:12px}
 .budget-card-active .subtotal b{font-size:12px}
+.budget-card-active .prepaid-budget-box{margin-top:13px;padding:0 13px 5px;border:1px solid #efc36f;border-radius:14px;background:#fffaf0;box-shadow:0 6px 16px rgba(166,101,8,.07)}
+.budget-card-active .prepaid-budget-box .budget-section-title{margin-top:0;padding:12px 0 9px}
+.budget-card-active .prepaid-grid{gap:0;margin-top:0}
+.budget-card-active .budget-grid.prepaid-grid label{padding:12px 2px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.budget-card-active .budget-grid.prepaid-grid label+label{border-top:1px dashed #e4c489}
+.budget-card-active .budget-grid.prepaid-grid label div{background:transparent}
+.budget-card-active .subtotal.prepaid{margin-top:0;padding:11px 2px 8px;border-top:1px dashed #d9ae61;font-weight:900}
+.budget-card-active .subtotal.prepaid span,.budget-card-active .subtotal.prepaid b{font-weight:900}
+.budget-card-active .subtotal.local-total span,.budget-card-active .subtotal.local-total b{font-weight:900}
+.plan-guide div{align-items:baseline;flex-direction:row;gap:8px}
+.plan-guide div span{font-size:10px;font-weight:800}
+.budget-card-active .manual-heading{border-color:#ef5350;background:transparent}
+.budget-card-active .manual-heading b{display:flex;align-items:center;gap:6px;color:#d83b3b}
+.budget-card-active .manual-heading b i{display:grid;width:20px;height:20px;place-items:center}
+.budget-card-active .manual-heading b i img{width:18px;height:18px;object-fit:contain}
+.budget-card-active .local-budget-box{margin-top:14px;padding:0 13px 5px;border:1px solid #82aff6;border-radius:14px;background:#f7faff;box-shadow:0 6px 16px rgba(36,105,232,.07)}
+.budget-card-active .local-budget-box .budget-section-title{margin-top:0;padding:12px 0 7px}
+.budget-card-active .local-budget-grid{gap:4px 10px;margin-top:0}
+.budget-card-active .local-budget-grid label{padding:8px 0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.budget-card-active .local-budget-grid label div{margin-top:6px;padding:7px 8px;border:1px solid #a9c8f8;border-radius:9px;background:#fff;box-shadow:inset 0 1px 2px rgba(23,59,134,.04)}
+.budget-card-active .local-budget-grid label:focus-within{border-color:transparent;box-shadow:none}
+.budget-card-active .local-budget-grid label:focus-within div{border-color:#2469e8;box-shadow:0 0 0 3px rgba(36,105,232,.12)}
+.budget-card-active .local-total{margin-top:4px;padding:11px 2px 8px;border-top:1px dashed #a9c8f8}
+.goal-total-summary>strong{margin-top:0}
+.goal-total-summary>p{margin-top:13px}
 .wallet-plan-summary{margin-top:2px;padding:18px;border:1px solid #e0e7f0;border-radius:20px;background:#fff;box-shadow:0 10px 24px rgba(12,42,107,.1)}
 .wallet-summary-row{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-top:1px solid #edf0f5;color:#8a97ab;font-size:10px;font-weight:800}.wallet-summary-row.primary-row{padding-top:0;border-top:0;color:#10192b;font-size:12px}.wallet-summary-row strong{color:#10192b;font-family:'Space Mono',ui-monospace,monospace;font-size:13px}.wallet-summary-row.primary-row strong{font-size:20px}
 .wallet-monthly-box{margin-top:8px;padding:15px;border-radius:14px;background:#f5f7fb}.wallet-monthly-box>div{display:flex;align-items:center;justify-content:space-between;color:#173b86;font-size:10px}.wallet-monthly-box small{color:#99a5b8;font-size:8px}.wallet-monthly-box>strong{display:block;margin-top:11px;color:#173b86;font-family:'Space Mono',ui-monospace,monospace;font-size:24px}.wallet-monthly-box em{color:#8b97aa;font-size:10px;font-style:normal}.wallet-monthly-box p{margin-top:8px;color:#07966e;font-size:9px;font-weight:800}.prepaid-caption{margin-top:11px;color:#98a5b8;font-size:8px}
-.wallet-zero-notice{display:flex;align-items:flex-start;gap:15px;margin-top:14px;padding:17px 16px;border:1px solid rgba(255,255,255,.22);border-radius:15px;color:#fff;background:#284d96}.wallet-zero-notice>i{display:grid;flex:0 0 24px;height:24px;place-items:center;border-radius:50%;background:rgba(255,255,255,.15);font-style:normal}.wallet-zero-notice>i img{width:17px;height:17px;object-fit:contain}.wallet-zero-notice>div{min-width:0;flex:1}.wallet-zero-notice b{font-size:13px;line-height:1.4}.wallet-zero-notice p{margin-top:7px;color:rgba(255,255,255,.72);font-size:10px;line-height:1.6}
+.wallet-zero-notice{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:start;gap:0 15px;margin-top:14px;padding:17px 16px;border:1px solid rgba(255,255,255,.22);border-radius:15px;color:#fff;background:#284d96}.wallet-zero-notice>i{display:grid;width:24px;height:24px;place-items:center;border-radius:50%;background:rgba(255,255,255,.15);font-style:normal}.wallet-zero-notice>i img{width:17px;height:17px;object-fit:contain}.wallet-zero-notice>div{display:contents}.wallet-zero-notice b{font-size:13px;line-height:1.4}.wallet-zero-notice p{grid-column:1/-1;margin-top:9px;color:rgba(255,255,255,.72);font-size:10px;line-height:1.6}
 .wallet-choice-section{margin-top:14px}.wallet-choice-section h2{margin-bottom:9px;color:#10192b;font-size:11px}.wallet-choice-card{display:flex;width:100%;align-items:flex-start;gap:10px;margin-top:8px;padding:14px;border:1px solid #e0e7f0;border-radius:15px;color:#10192b;background:#f5f7fb;text-align:left}.wallet-choice-card>i,.wallet-inline-account-list button>i{flex:0 0 20px;height:20px;border:2px solid #89a3d6;border-radius:50%}.wallet-choice-card.selected{border:2px solid #ffd45e;color:#10192b;background:#fff}.wallet-choice-card.selected>i,.wallet-inline-account-list button.selected>i{border:6px solid #173b86}.wallet-choice-card div{min-width:0;flex:1}.wallet-choice-card b{font-size:11px}.wallet-choice-card p{margin-top:5px;color:#7a879a;font-size:8px;line-height:1.55}.wallet-choice-card.selected p{color:#7a879a}.wallet-choice-card>strong{color:#c58f00;font-size:10px;white-space:nowrap}.wallet-choice-card.selected>strong{color:#173b86}
 .wallet-choice-section h2{margin-bottom:12px;font-size:13px}.wallet-choice-card{gap:12px;margin-top:10px;padding:17px 16px;border-color:#c9dcf6;background:#eef5ff}.wallet-choice-card.selected{border-color:#7da8e8;background:#e4f0ff;box-shadow:0 0 0 2px rgba(36,105,232,.08)}.wallet-choice-card>i{margin-top:1px}.wallet-choice-copy{min-width:0;flex:1}.wallet-choice-title{display:flex;align-items:center;justify-content:space-between;gap:10px}.wallet-choice-card b{font-size:13px;line-height:1.45}.wallet-choice-card p{margin-top:7px;color:#697d9d;font-size:10px;line-height:1.6}.wallet-choice-card.selected p{color:#607798}.wallet-choice-title>strong{flex:none;color:#d09300;font-size:12px;white-space:nowrap}.wallet-choice-card.selected .wallet-choice-title>strong{color:#173b86}
 .wallet-choice-card{border-color:#cbdaf2;background:#f4f8ff}.wallet-choice-card.selected{border-color:#89a9df;background:#f4f8ff;box-shadow:0 0 0 2px rgba(36,105,232,.07)}.wallet-choice-card b{color:#173b86;font-size:12px}.wallet-choice-card p,.wallet-choice-card.selected p{color:#70809a;font-size:9px;line-height:1.55}.wallet-choice-title>strong{font-size:11px}.wallet-transfer-flow{margin-top:16px;padding-top:2px}.wallet-transfer-flow .wallet-transfer-summary{margin-top:0}
@@ -844,4 +869,21 @@ function goToOnboardingHub() {
 .wallet-register-step{min-height:100dvh}
 .country-summary{margin-top:7px}.country-summary h2{margin-bottom:12px;font-size:16px;font-weight:900;letter-spacing:-.025em}
 .edit-register.schedule-register-step .plan-guide{padding:18px;border:2px solid #8eb4ee;border-radius:17px;background:linear-gradient(135deg,#e5f0ff,#f2f7ff);box-shadow:0 9px 22px rgba(36,105,232,.14)}.edit-register.schedule-register-step .plan-guide b{color:#173b86;font-size:17px;font-weight:950;letter-spacing:-.025em}.edit-register.schedule-register-step .plan-guide span{font-size:11px;font-weight:700}.edit-register.schedule-register-step .plan-guide button{font-size:11px}
+.schedule-register-step .plan-guide,.edit-register.schedule-register-step .plan-guide{margin-top:0;padding:4px 0 10px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.schedule-register-step .ai-guide{gap:9px;margin-top:4px;padding:8px 0;border:0;border-radius:0;background:transparent}
+.schedule-register-step .ai-guide>img{width:22px;height:22px;flex:none;object-fit:contain}
+.schedule-register-step .ai-guide b{color:#173b86;font-size:13px;font-weight:900}
+.budget-recommendation-title .budget-ai-motion{position:relative;display:grid;width:25px;height:25px;place-items:center;border:2px dotted #4384f1;border-radius:50%;color:#2469e8;background:transparent;box-shadow:none;animation:budget-ai-spin 2.4s linear infinite}
+.budget-recommendation-title .budget-ai-motion::after{position:absolute;top:-3px;right:-2px;width:5px;height:5px;border-radius:50%;background:#2469e8;box-shadow:0 0 0 3px rgba(36,105,232,.14);content:''}
+.budget-recommendation-title .budget-ai-motion b{font-size:7px;animation:budget-ai-counter-spin 2.4s linear infinite}
+.budget-card-active .manual-heading{padding:5px 0;border:0;border-radius:0;background:transparent}
+.budget-card-active .manual-heading button{font-size:11px;font-weight:900}
+.budget-card-active .budget-grid.prepaid-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+.budget-card-active .budget-grid.prepaid-grid label{display:block;padding:8px 0;border:0;background:transparent}
+.budget-card-active .budget-grid.prepaid-grid label+label{border-top:0}
+.budget-card-active .budget-grid.prepaid-grid label div{width:100%;margin-top:6px;padding:7px 8px;border:1px solid #e3b867;border-radius:9px;background:#fff}
+.budget-card-active .budget-grid.prepaid-grid label:focus-within{border-color:transparent;box-shadow:none}
+.budget-card-active .budget-grid.prepaid-grid label:focus-within div{border-color:#d99a28;box-shadow:0 0 0 3px rgba(217,154,40,.13)}
+.wallet-zero-notice b{grid-column:2;grid-row:1;align-self:center}
+.edit-register.schedule-register-step .plan-guide b{font-size:17px}
 </style>

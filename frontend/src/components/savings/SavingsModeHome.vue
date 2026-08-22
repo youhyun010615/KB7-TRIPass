@@ -14,6 +14,8 @@ import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSumm
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
 import TravelModeHome from '@/components/travel/TravelModeHome.vue';
 import aiIcon from '@/assets/icons/ai.svg';
+import checklistIcon from '@/assets/icons/checklist.svg';
+import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png';
 import { today } from '@/utils/devDate';
 
 const props = defineProps({
@@ -666,7 +668,7 @@ function closeTripRequiredModal() {
         @scroll.passive="handleCountryScroll"
       >
         <article
-          v-for="country in countries"
+          v-for="(country, countryIndex) in countries"
           :key="country.id"
           class="country-slide"
           :class="{ active: selectedCountry.id === country.id }"
@@ -676,21 +678,21 @@ function closeTripRequiredModal() {
             class="country-ticket overflow-hidden"
             :style="`background:${country.headerBg}`"
           >
-            <!-- ① 기존 탑승권 헤더 -->
-            <div
-              class="px-5 pt-4 pb-3 h-[49px] flex items-center justify-between"
-              :style="`background:${country.headerBg}`"
-            >
-              <span
-                class="text-white/70 text-[10px] font-bold tracking-widest"
-                >BOARDING PASS</span
-              >
-              <RouterLink
-                class="inline-flex items-center gap-[1px] whitespace-nowrap rounded-full bg-[#ffd66b] px-[10px] py-[3px] text-[11px] font-extrabold text-[#173f8d]"
-                :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
-              >
-                여행 계획 수정하기 ›
-              </RouterLink>
+            <div class="saving-ticket-top" :style="`background:${country.headerBg}`">
+              <div class="saving-ticket-trip">
+                <strong>{{ travelStore.tripName || '나의 여행' }}</strong>
+                <span aria-label="여행 국가">
+                  <i v-for="item in countries" :key="item.id" :class="flagIconClass(item.code)" />
+                </span>
+                <RouterLink
+                  class="saving-ticket-edit"
+                  :to="{ name: 'TravelRegister', query: { mode: 'edit' } }"
+                >
+                  여행 계획 수정
+                </RouterLink>
+              </div>
+              <span class="saving-ticket-divider" aria-hidden="true" />
+              <strong class="saving-ticket-dday">D-{{ daysUntilDeparture }}</strong>
             </div>
 
             <!-- 헤더와 사진 섹션 사이 절취선(탑승권 펀칭 구멍) -->
@@ -715,19 +717,23 @@ function closeTripRequiredModal() {
               />
 
               <div class="relative z-10 px-5 pt-6 ticket-photo-content">
-                <!-- DESTINATION / DEPARTURE / 설명 -->
+                <!-- DEPARTURE / DESTINATION -->
                 <div class="flex items-center gap-2">
                   <div class="flex-none">
                     <p
                       class="text-white/65 text-[10px] uppercase tracking-widest mb-1"
                     >
-                      Destination
+                      Departure
                     </p>
                     <p
                       class="text-white text-[22px] font-extrabold leading-none flex items-center gap-2"
                     >
-                      <span :class="flagIconClass(country.code)" class="fi-inline" style="font-size: 17px" />
-                      {{ country.name }}
+                      <span
+                        :class="flagIconClass(countryIndex === 0 ? 'KR' : countries[countryIndex - 1].code)"
+                        class="fi-inline"
+                        style="font-size: 17px"
+                      />
+                      {{ countryIndex === 0 ? '한국' : countries[countryIndex - 1].name }}
                     </p>
                   </div>
                   <div class="flex-1 mt-3.5 destination-route" aria-hidden="true">
@@ -738,20 +744,14 @@ function closeTripRequiredModal() {
                     <p
                       class="text-white/65 text-[10px] uppercase tracking-widest mb-1"
                     >
-                      Departure
+                      Destination
                     </p>
-                    <p
-                      class="text-[22px] font-extrabold leading-none"
-                      style="color: #ffd466"
-                    >
-                      D-{{ daysUntilDeparture }}
+                    <p class="text-white text-[22px] font-extrabold leading-none flex items-center justify-end gap-2">
+                      <span :class="flagIconClass(country.code)" class="fi-inline" style="font-size: 17px" />
+                      {{ country.name }}
                     </p>
                   </div>
                 </div>
-                <p class="ticket-description text-white/90 text-[12px] mt-3">
-                  {{ country.desc }}
-                </p>
-
                 <span class="ticket-checklist-spacer" aria-hidden="true"></span>
 
                 <!-- 체크리스트 버튼: 여행 저축 목표 박스 왼쪽 위 -->
@@ -760,7 +760,8 @@ function closeTripRequiredModal() {
                   class="checklist-btn"
                   @click="goToPreparationChecklist"
                 >
-                  {{ checklistInfo.label }} ›
+                  <img :src="checklistIcon" alt="" aria-hidden="true">
+                  <span>CHECKLIST</span>
                 </button>
 
                 <!-- 진행 박스 (반투명, 사진 위에 떠있음) -->
@@ -787,7 +788,7 @@ function closeTripRequiredModal() {
                       <p class="text-white text-[14px] font-bold">
                         {{ formatCurrency(homeSavedAmount) }}
                       </p>
-                      <p class="text-white/65 text-[9px] tracking-wider mt-1">
+                      <p class="saving-amount-label saved text-[9px] tracking-wider mt-1">
                         {{ ticketSavingCopy.amountLabel || 'SAVED' }}
                       </p>
                     </div>
@@ -795,7 +796,7 @@ function closeTripRequiredModal() {
                       <p class="text-white text-[14px] font-bold">
                         {{ formatCurrency(homeGoalAmount) }}
                       </p>
-                      <p class="text-white/60 text-[9px] tracking-wider mt-1">
+                      <p class="saving-amount-label goal text-[9px] tracking-wider mt-1">
                         GOAL
                       </p>
                     </div>
@@ -810,25 +811,15 @@ function closeTripRequiredModal() {
                 <div class="ticket-notch ticket-notch-right" />
               </div>
 
-              <!-- ④ 국가 컬러 스텁 -->
+              <!-- ④ 여행모드와 동일한 탑승권 하단 -->
               <div
                 class="relative z-10"
                 :style="`background:${country.headerBg}`"
               >
-                <button
-                  class="ticket-stub w-full px-5 flex items-center justify-between active:bg-gray-50"
-                  @click="goWallet"
-                >
-                  <span class="text-[13px] font-bold text-white">송금하기</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M9 18L15 12L9 6"
-                      stroke="#FFFFFF"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                </button>
+                <div class="ticket-stub saving-ticket-stub" aria-label="TRIPASS 여행 보딩패스">
+                  <span><img :src="tripassTransparentSymbol" alt="" aria-hidden="true"> TRIPASS</span>
+                  <b>JOURNEY BOARDING PASS</b>
+                </div>
               </div>
             </div>
           </div>
@@ -1447,6 +1438,95 @@ function closeTripRequiredModal() {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(22, 39, 78, 0.15);
 }
+.saving-ticket-top {
+  display: flex;
+  height: 45px;
+  min-height: 45px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  color: #fff;
+}
+.saving-ticket-trip {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+}
+.saving-ticket-trip > strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.saving-ticket-trip > span {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+.saving-ticket-trip i {
+  display: block;
+  width: 19px;
+  height: 13px;
+  border-radius: 2px;
+  background-size: cover;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.saving-ticket-divider {
+  width: 1px;
+  height: 20px;
+  flex: none;
+  background: rgba(255, 255, 255, 0.24);
+}
+.saving-ticket-edit {
+  flex: none;
+  margin-left: auto;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffd45e;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.saving-ticket-dday {
+  flex: none;
+  padding: 0;
+  color: #ffd45e;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+.saving-ticket-stub {
+  display: flex;
+  height: 45px;
+  min-height: 45px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.saving-ticket-stub > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffd45e;
+  font-size: 10px;
+}
+.saving-ticket-stub img { width: 18px; height: 18px; object-fit: contain; }
+.saving-ticket-stub b { color: #fff; font-size: 9px; letter-spacing: 0.05em; }
+.saving-amount-label.saved { color: #8cebbf; font-weight: 900; }
+.saving-amount-label.goal { color: #ffd466; font-weight: 900; }
 .ticket-description {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2033,17 +2113,32 @@ function closeTripRequiredModal() {
   background: #2469e8;
 }
 .checklist-btn {
-  display: inline-block;
+  display: inline-flex;
   align-self: flex-start;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
   margin: 14px 0 12px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  background: #ffb800;
-  color: #173f8d;
-  font-size: 11px;
+  padding: 9px 12px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 13px;
+  background: rgba(7, 22, 55, 0.76);
+  color: #ffd466;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  font-size: 9px;
   font-weight: 900;
-  box-shadow: 0 4px 12px rgba(255, 184, 0, 0.3);
+  letter-spacing: 0.04em;
+  box-shadow: 0 7px 16px rgba(3, 17, 45, 0.24);
+  backdrop-filter: blur(7px);
   animation: checklist-btn-float 2.4s ease-in-out infinite;
+}
+.checklist-btn img {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border-radius: 9px;
+  background: #fff;
+  object-fit: contain;
 }
 .checklist-btn:active {
   transform: scale(0.96);

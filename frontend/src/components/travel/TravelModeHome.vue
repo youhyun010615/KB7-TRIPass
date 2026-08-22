@@ -940,7 +940,8 @@ async function switchMode(mode) {
                       <em>{{ balance.krwText }}</em>
                     </div>
                     <div v-if="!allTravelCardBalances.length" class="travel-card-balance-values">
-                      <strong>0</strong>
+                      <strong>0.00</strong>
+                      <em>약 0원</em>
                     </div>
                   </div>
                   <div v-else class="travel-card-balance-values">
@@ -2817,4 +2818,5 @@ async function switchMode(mode) {
 @keyframes travel-card-flip{0%,35%{transform:rotateY(0)}50%{transform:rotateY(180deg)}65%,100%{transform:rotateY(360deg)}}
 @media (prefers-reduced-motion:reduce){.travel-card-balance-row .travel-card-icon-image{animation:none}}
 .fund-progress-meta>div:first-child small{color:#ff9b9b}.fund-progress-meta>div:last-child small{color:#ffd466}.fund-progress-meta b{color:#fff;font-weight:900}.fund-progress-meta small{font-weight:900;opacity:1}
+.ticket-meta-day{padding:0;border-radius:0;color:#ffd45e;background:transparent;font-size:20px;line-height:1;white-space:nowrap}
 </style>
