@@ -338,7 +338,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
     >
       {{ isSubmitting ? '처리 중...' : editing ? '수정 완료' : '등록하기' }}
     </button>
-    <BottomNav v-if="!archiveMode" />
+    <!-- <BottomNav v-if="!archiveMode" /> -->
   </main>
 </template>
 
