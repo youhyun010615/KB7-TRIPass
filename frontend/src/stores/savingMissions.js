@@ -11,6 +11,7 @@ import {
   fetchMonthlyAnalysis,
   generateMonthlyAnalysis,
 } from '@/api/monthlyAnalysis';
+import { today } from '@/utils/devDate';
 
 function isAnalysisNotFound(error) {
   return (
@@ -33,7 +34,7 @@ async function ensureAnalysisExists(yearMonth) {
   return analysis;
 }
 
-function previousYearMonth(baseDate = new Date()) {
+function previousYearMonth(baseDate = today()) {
   const previousMonth = new Date(
     baseDate.getFullYear(),
     baseDate.getMonth() - 1,

@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useTravelStore } from '@/stores/travel'
 import { createSchedule, deleteSchedule, fetchScheduleDetail, fetchSchedules, updateSchedule } from '@/api/schedule'
+import { isOverridden, todayIso } from '@/utils/devDate'
 
 const STORAGE_KEY = 'tripass-travel-schedules-v2'
 const countries = [
@@ -42,6 +43,7 @@ function splitScheduledAt(scheduledAt) {
 // new Date().toISOString()은 항상 UTC라서 한국 자정~오전 9시 사이엔 실제 날짜보다 하루 이전으로 계산되는
 // 문제가 있었다. Intl.DateTimeFormat으로 해당 시간대의 실제 달력 날짜를 구한다.
 function todayInZone(timeZone) {
+  if (isOverridden.value) return todayIso()
   return new Intl.DateTimeFormat('en-CA', { timeZone: timeZone || 'Asia/Seoul' }).format(new Date())
 }
 

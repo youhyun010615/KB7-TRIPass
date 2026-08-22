@@ -5,6 +5,7 @@ import TransactionGroups from '@/components/asset/TransactionGroups.vue'
 import TransactionFilterSheet from '@/components/asset/TransactionFilterSheet.vue'
 import { useAssetStore, bankPresentationByName } from '@/stores/asset'
 import api from '@/api'
+import { today as currentDate } from '@/utils/devDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -45,8 +46,9 @@ function threeMonthsAgoFrom(base) {
   return d
 }
 
-const today = toLocalDateStr(new Date())
-const threeMonthsAgo = toLocalDateStr(threeMonthsAgoFrom(new Date()))
+const dateToday = currentDate()
+const today = toLocalDateStr(dateToday)
+const threeMonthsAgo = toLocalDateStr(threeMonthsAgoFrom(dateToday))
 const startDate = ref(isReal ? threeMonthsAgo : '2026-06-20')
 const endDate = ref(isReal ? today : '2026-07-19')
 const realAccount = ref({ name: '', number: '', type: '', bank: '', balance: 0 })

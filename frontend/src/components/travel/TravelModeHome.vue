@@ -27,6 +27,7 @@ import calculatorIcon from '@/assets/icons/calculator.svg';
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
+import { now as currentDateTime, today as currentDate, todayIso } from '@/utils/devDate';
 
 const props = defineProps({
   userName: { type: String, default: '권유현' },
@@ -45,7 +46,7 @@ const scheduleStore = useTravelScheduleStore();
 // 실제 렌더 높이를 측정해 뒤에 그만큼의 여백을 확보한다. (저축모드 홈과 동일한 방식)
 const travelHeaderEl = ref(null);
 const travelHeaderHeight = ref(0);
-const scheduleNow = ref(Date.now());
+const scheduleNow = ref(currentDateTime().getTime());
 let travelHeaderResizeObserver = null;
 let lowerCardRevealObserver = null;
 let scheduleClockTimer = null;
@@ -181,9 +182,7 @@ const destinations = computed(() => {
 
 // 날짜 계산
 const today = computed(() => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return currentDate();
 });
 
 const startDate = computed(() => {
@@ -305,8 +304,7 @@ const categoryList = computed(() => {
 const isReturnPeriod = computed(() => {
   if (!travelStore.homeDashboard?.endDate) return false;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // 시간을 00:00:00으로 초기화
+  const today = currentDate();
 
   // 실제 API에서 가져온 endDate 사용 (배열 또는 문자열 형태 처리)
   const endDateArray = travelStore.homeDashboard.endDate;
@@ -327,11 +325,7 @@ const isReturnPeriod = computed(() => {
 // 오늘 날짜(YYYY-MM-DD)가 arrivalDate~departureDate 범위에 포함되는 국가를 찾는다.
 // 해당하는 국가가 없으면(모두 지났거나 아직 시작 전) 첫 번째 국가로 대체한다.
 function todayDateString() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return todayIso();
 }
 
 function findTodayCountryCode(countries) {
@@ -345,7 +339,7 @@ function findTodayCountryCode(countries) {
 
 onMounted(async () => {
   scheduleClockTimer = window.setInterval(() => {
-    scheduleNow.value = Date.now();
+    scheduleNow.value = currentDateTime().getTime();
   }, 60_000);
 
   try {

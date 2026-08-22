@@ -10,6 +10,7 @@ import { useTravelStore } from '@/stores/travel';
 import { useTravelReportStore } from '@/stores/travelReport';
 import { flagIconClass } from '@/stores/travel';
 import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue';
+import { now as currentDateTime } from '@/utils/devDate';
 
 const props = defineProps({
   listMode: {
@@ -25,13 +26,13 @@ const travel = useTravelStore();
 const reportStore = useTravelReportStore();
 const timelineList = ref(null);
 const calendarStrip = ref(null);
-const currentTimestamp = ref(Date.now());
+const currentTimestamp = ref(currentDateTime().getTime());
 const selectedCalendarDate = ref('');
 let scheduleClockTimer = null;
 
 onMounted(async () => {
   scheduleClockTimer = window.setInterval(() => {
-    currentTimestamp.value = Date.now();
+    currentTimestamp.value = currentDateTime().getTime();
   }, 60_000);
   if (props.listMode) {
     const id = Number(route.params.id || route.query.tripId);
@@ -239,7 +240,7 @@ const currentCountry = computed(() => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  }).format(new Date());
+  }).format(currentDateTime());
   const startedSchedule = [...todaySchedules]
     .filter((item) => (item.time || '00:00') <= currentTime)
     .at(-1);

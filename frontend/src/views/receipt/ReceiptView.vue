@@ -37,6 +37,7 @@ import {
 import {
   fetchTripGoal,
 } from '@/api/travel'
+import { today as currentDate, todayIso } from '@/utils/devDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -121,11 +122,11 @@ const tripCountryCodes = computed(() =>
 const receiptTravelDay = computed(() => {
   if (!trip.value?.startDate) return 0
   const start = new Date(`${trip.value.startDate}T00:00:00`).getTime()
-  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const today = currentDate()
   return Math.max(0, Math.floor((today.getTime() - start) / 86400000))
 })
 const receiptCurrentCountry = computed(() => {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayIso()
   const item = (trip.value?.countries || []).find(country => {
     const start = country.arrivalDate || country.startDate
     const end = country.departureDate || country.endDate

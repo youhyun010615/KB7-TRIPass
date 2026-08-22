@@ -139,6 +139,7 @@ import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useChecklistStore } from '@/stores/checklist';
 import ChecklistAddBox from '@/components/checklist/ChecklistAddBox.vue';
+import { today as currentDate } from '@/utils/devDate';
 
 const route = useRoute();
 const router = useRouter();
@@ -163,8 +164,7 @@ const stageMeta = {
 function getDynamicStageMeta(departureDateStr) {
   if (!departureDateStr) return stageMeta;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = currentDate();
 
   const formattedDate = String(departureDateStr).replace(/\./g, '-');
   const departureDate = new Date(formattedDate);

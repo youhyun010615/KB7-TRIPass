@@ -23,6 +23,7 @@ import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw'
 import taxiIconRaw from '@/assets/icons/taxi.svg?raw'
 import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw'
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw'
+import { today as currentDate } from '@/utils/devDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -138,10 +139,10 @@ const showFundCheckModal = ref(false)
 const selectedFundMonthIndex = ref(0)
 const fundDropdownOpen = ref(false)
 
-const currentFundMonthLabel = computed(() => `${new Date().getMonth() + 1}월`)
+const currentFundMonthLabel = computed(() => `${currentDate().getMonth() + 1}월`)
 
 const fundHistoryMonths = computed(() => {
-  const now = new Date()
+  const now = currentDate()
   return Array.from({ length: FUND_HISTORY_MONTHS }, (_, monthsAgo) => {
     const date = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1)
     const summaries = monthlyFundStore.categorySummariesForMonth(monthsAgo)

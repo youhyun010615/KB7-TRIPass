@@ -2,6 +2,7 @@ import { defineStore, storeToRefs } from 'pinia';
 import { ref, computed } from 'vue';
 import { switchTravelMode } from '@/api/travel';
 import { useTravelStore } from './travel';
+import { today as currentDate } from '@/utils/devDate';
 
 export const useTravelModeStore = defineStore('travelMode', () => {
   // 'savings' | 'travel'
@@ -27,7 +28,7 @@ export const useTravelModeStore = defineStore('travelMode', () => {
   const isSavingsMode = computed(() => mode.value === 'savings');
   const isWithinTravelPeriod = computed(() => {
     const travelStore = useTravelStore();
-    const today = new Date();
+    const today = currentDate();
     const startValue = travelStore.activeTrip?.startDate || travelStartDate.value;
     const endValue = travelStore.activeTrip?.endDate || travelEndDate.value;
     const start = new Date(`${startValue}T00:00:00`);

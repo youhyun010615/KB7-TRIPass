@@ -17,7 +17,7 @@ export function resetAccount() {
 }
 
 export function setOverrideDate(date) {
-    return api.post(`/dev/override-date?date=${date}`)
+    return api.post('/dev/override-date', { date })
 }
 
 export function clearOverrideDate() {

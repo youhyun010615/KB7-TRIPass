@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { fetchMyTrips } from '@/api/travel'
 import { countryPresentation, flagIconClass } from '@/stores/travel'
+import { today as currentDate } from '@/utils/devDate'
 
 const props = defineProps({
   tripId: { type: [Number, String], required: true },
@@ -24,8 +25,7 @@ const countryCodes = computed(() => {
 
 const daysUntilStart = computed(() => {
   if (!trip.value?.startDate) return null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = currentDate()
   return Math.ceil((new Date(`${trip.value.startDate}T00:00:00`) - today) / 86400000)
 })
 

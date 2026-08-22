@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import TransactionGroups from '@/components/asset/TransactionGroups.vue';
 import api from '@/api';
+import { today as currentDate, todayIso } from '@/utils/devDate';
 
 const router = useRouter();
 const tabs = [
@@ -12,11 +13,14 @@ const tabs = [
   { id: 'withdrawal', label: '출금' },
 ];
 const filter = ref('all');
-const today = new Date().toISOString().slice(0, 10);
+const today = todayIso();
 const threeMonthsAgo = (() => {
-  const d = new Date();
+  const d = currentDate();
   d.setMonth(d.getMonth() - 3);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 })();
 const startDate = ref(threeMonthsAgo);
 const endDate = ref(today);

@@ -13,6 +13,7 @@ import { fetchTripGoal } from '@/api/travel'
 import { Users } from '@lucide/vue'
 import receiptIcon from '@/assets/icons/receipt.svg'
 import currencySymbols from '@/assets/currencySymbols.json'
+import { todayIso } from '@/utils/devDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,13 +33,7 @@ const loadError = ref('')
 
 
 function getToday() {
-  const current = new Date()
-  const offset =
-      current.getTimezoneOffset() * 60 * 1000
-
-  return new Date(current.getTime() - offset)
-      .toISOString()
-      .slice(0, 10)
+  return todayIso()
 }
 
 function createEmptyItem(displayOrder) {

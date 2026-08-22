@@ -9,6 +9,7 @@ import { getTravelCardImage } from '@/utils/travelCard'
 import kbTravelersImage from '@/assets/travel-cards/kb-travelers.png'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
 import kbCheckGenericImage from '@/assets/cards/kb-check-generic.png'
+import { today as currentDate } from '@/utils/devDate'
 
 const route = useRoute()
 const router = useRouter()
@@ -78,7 +79,7 @@ function threeMonthsAgoFrom(base) {
   return date
 }
 
-const now = new Date()
+const now = currentDate()
 const initialSyncStartDate = toLocalDateStr(threeMonthsAgoFrom(now))
 const startDate = ref(initialSyncStartDate)
 const endDate = ref(toLocalDateStr(now))

@@ -7,6 +7,7 @@ import router from './router';
 import 'flag-icons/css/flag-icons.min.css';
 import { refreshAccessToken } from '@/api/auth';
 import { useAuthStore } from '@/stores/auth';
+import { initDevDate } from '@/utils/devDate';
 
 async function initializeApp() {
   const app = createApp(App);
@@ -29,6 +30,7 @@ async function initializeApp() {
       }
 
       authStore.setToken(refreshData.accessToken);
+      await initDevDate();
     } catch (error) {
       // Refresh Token이 없거나 만료·폐기된 경우 로그인 정보를 제거한다.
       authStore.logout();

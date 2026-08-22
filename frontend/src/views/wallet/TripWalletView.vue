@@ -13,6 +13,7 @@ import { countryPresentation, useTravelStore } from '@/stores/travel'
 import { getAccountInstitutions } from '@/api/asset'
 import { flagClassMap } from '@/stores/exchange'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
+import { today as currentDate, todayIso } from '@/utils/devDate'
 
 const sampleTravelCardImage = kbTravelersTosimiImage
 
@@ -31,11 +32,11 @@ const walletTravelDateRange = computed(() => walletTravelStart.value && walletTr
 const walletTravelDay = computed(() => {
   if (!walletTravelStart.value) return 0
   const start = new Date(`${walletTravelStart.value}T00:00:00`).getTime()
-  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const today = currentDate()
   return Math.max(0, Math.floor((today.getTime() - start) / 86400000))
 })
 const walletCurrentCountry = computed(() => {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayIso()
   const item = walletTripCountries.value.find(country => {
     const start = country.arrivalDate || country.startDate
     const end = country.departureDate || country.endDate
