@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout as logoutApi } from '@/api/auth'
-import { resetAccount as resetAccountApi, setOverrideDate, clearOverrideDate, getCurrentDate } from '@/api/mypage'
+import { resetAccount as resetAccountApi, setOverrideDate, clearOverrideDate } from '@/api/mypage'
 import { getAccounts } from '@/api/asset'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport } from '@/api/report'
@@ -13,6 +13,13 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
 import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
+import {
+  effectiveDate,
+  initDevDate,
+  isOverridden,
+  realDate,
+  today as currentDate,
+} from '@/utils/devDate'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -22,7 +29,6 @@ const travelStore = useTravelStore()
 const isLoggingOut = ref(false)
 const isResetting = ref(false)
 const overrideDate = ref('')
-const currentDateInfo = ref(null)
 const isSettingDate = ref(false)
 const accounts = ref([])
 const trips = ref([])
@@ -97,7 +103,7 @@ function tripStatus(trip) {
   if (trip?.status === 'ENDED') return '완료'
   if (trip?.status === 'TRAVELING') return '여행 중'
   if (!trip?.startDate) return '준비 중'
-  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const today = currentDate()
   const start = new Date(`${trip.startDate}T00:00:00`)
   const days = Math.ceil((start - today) / 86400000)
   return days <= 0 ? '여행 중' : `D-${days}`
@@ -153,7 +159,8 @@ onMounted(async () => {
     accounts.value = []
   }
   await cardStore.loadCards()
-  loadCurrentDate()
+  await initDevDate()
+  if (isOverridden.value) overrideDate.value = effectiveDate.value
   try {
     trips.value = (await fetchMyTrips()) || []
     selectedTripId.value = trips.value[0]?.tripId ?? null
@@ -203,22 +210,12 @@ async function resetAccount() {
   }
 }
 
-async function loadCurrentDate() {
-  try {
-    const res = await getCurrentDate()
-    currentDateInfo.value = res.data?.data ?? null
-    if (currentDateInfo.value?.overrideDate) {
-      overrideDate.value = currentDateInfo.value.overrideDate
-    }
-  } catch { currentDateInfo.value = null }
-}
-
 async function applyOverrideDate() {
   if (!overrideDate.value || isSettingDate.value) return
   isSettingDate.value = true
   try {
     await setOverrideDate(overrideDate.value)
-    await loadCurrentDate()
+    await initDevDate()
     window.alert(`가상 날짜가 ${overrideDate.value}로 설정되었습니다.`)
   } catch (e) {
     window.alert('설정 실패: ' + (e.response?.data?.message || e.message))
@@ -230,7 +227,7 @@ async function removeOverrideDate() {
   try {
     await clearOverrideDate()
     overrideDate.value = ''
-    await loadCurrentDate()
+    await initDevDate()
     window.alert('가상 날짜가 해제되었습니다.')
   } catch (e) {
     window.alert('해제 실패: ' + (e.response?.data?.message || e.message))
@@ -413,14 +410,14 @@ const myManageItems = computed(() => [
       <section class="dev-date-section">
         <h3>가상 날짜 설정 <span class="dev-badge">DEV</span></h3>
         <p class="dev-date-desc">비즈니스 로직에만 적용됩니다 (환율·Codef 등 외부 API 무관)</p>
-        <div v-if="currentDateInfo?.isOverridden" class="dev-date-active">
-          현재 적용: <strong>{{ currentDateInfo.overrideDate }}</strong>
-          <small>(실제: {{ currentDateInfo.realDate }})</small>
+        <div v-if="isOverridden" class="dev-date-active">
+          현재 적용: <strong>{{ effectiveDate }}</strong>
+          <small>(실제: {{ realDate }})</small>
         </div>
         <div class="dev-date-controls">
           <input type="date" v-model="overrideDate" class="dev-date-input" />
           <button type="button" class="dev-date-btn apply" :disabled="!overrideDate || isSettingDate" @click="applyOverrideDate">적용</button>
-          <button type="button" class="dev-date-btn clear" :disabled="isSettingDate || !currentDateInfo?.isOverridden" @click="removeOverrideDate">해제</button>
+          <button type="button" class="dev-date-btn clear" :disabled="isSettingDate || !isOverridden" @click="removeOverrideDate">해제</button>
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
+import { today as currentDate } from '@/utils/devDate'
 
 const router = useRouter()
 const travelStore = useTravelStore()
@@ -41,8 +42,7 @@ function daysUntilStart(trip) {
     if (Number.isFinite(reportDays)) return reportDays
   }
   if (!trip.startDate) return null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = currentDate()
   const startDate = new Date(`${trip.startDate}T00:00:00`)
   return Math.ceil((startDate - today) / 86400000)
 }

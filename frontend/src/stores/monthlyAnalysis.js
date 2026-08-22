@@ -6,8 +6,9 @@ import {
   generateMonthlyAnalysis,
   markMonthlyAnalysisViewed,
 } from '@/api/monthlyAnalysis';
+import { today } from '@/utils/devDate';
 
-function previousYearMonth(baseDate = new Date()) {
+function previousYearMonth(baseDate = today()) {
   const previousMonth = new Date(
     baseDate.getFullYear(),
     baseDate.getMonth() - 1,
@@ -16,7 +17,7 @@ function previousYearMonth(baseDate = new Date()) {
   return `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function currentYearMonth(baseDate = new Date()) {
+function currentYearMonth(baseDate = today()) {
   return `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
 }
 

@@ -12,6 +12,7 @@ import hobbyIcon from '@/assets/icons/hobby_drink.svg'
 import homeIcon from '@/assets/icons/home-dollar.svg'
 import { useRoute } from 'vue-router'
 import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
+import { today as currentDate } from '@/utils/devDate'
 
 const router = useRouter()
 const route = useRoute()
@@ -34,7 +35,7 @@ const iconByCategory = {
 }
 
 function recentYearMonths(count = 12) {
-  const now = new Date()
+  const now = currentDate()
   return Array.from({ length: count }, (_, index) => {
     const date = new Date(now.getFullYear(), now.getMonth() - index, 1)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -100,7 +101,7 @@ function normalizeMonth(yearMonth, response) {
 
 const totalSaved = computed(() => monthlyRecords.value.reduce((sum, month) => sum + month.savedAmount, 0))
 const totalCompleted = computed(() => monthlyRecords.value.reduce((sum, month) => sum + month.completedCount, 0))
-const displayYear = computed(() => monthlyRecords.value[0]?.year || new Date().getFullYear())
+const displayYear = computed(() => monthlyRecords.value[0]?.year || currentDate().getFullYear())
 
 function monthLabel(record) {
   return record.year === displayYear.value ? `${record.month}월` : `${record.year}년 ${record.month}월`

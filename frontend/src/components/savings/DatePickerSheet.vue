@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import calendarIcon from '@/assets/icons/calendar.svg'
+import { today as currentDate } from '@/utils/devDate'
 
 const props = defineProps({
   open: Boolean,
@@ -9,8 +10,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'confirm'])
 
-const today = new Date()
-today.setHours(0, 0, 0, 0)
+const today = currentDate()
 const start = ref('')
 const end = ref('')
 const viewDate = ref(new Date(today.getFullYear(), today.getMonth(), 1))

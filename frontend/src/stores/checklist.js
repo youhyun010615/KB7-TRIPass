@@ -9,6 +9,7 @@ import {
 } from '@/api/checklist';
 
 import { fetchTripGoal } from '@/api/travel';
+import { today as currentDate } from '@/utils/devDate';
 
 export const useChecklistStore = defineStore('checklist', () => {
   // ----------------------------------------------------
@@ -162,8 +163,7 @@ export const useChecklistStore = defineStore('checklist', () => {
       const targetDate = new Date(year, month - 1, day);
 
       // 2. 현재 날짜의 시간(시/분/초)을 0으로 맞추기
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = currentDate();
 
       // 3. 밀리초(ms) 단위 차이를 일(day) 단위로 변환
       const diffTime = targetDate.getTime() - today.getTime();

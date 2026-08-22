@@ -13,6 +13,7 @@ import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
 import aiIcon from '@/assets/icons/ai.svg';
+import { today } from '@/utils/devDate';
 
 const props = defineProps({
   onSwitchMode: { type: Function, default: null },
@@ -275,7 +276,7 @@ const checklistInfo = computed(() => {
   return null;
 });
 
-const currentMonthLabel = computed(() => `${new Date().getMonth() + 1}월`);
+const currentMonthLabel = computed(() => `${today().getMonth() + 1}월`);
 const monthlySavedAmount = computed(() =>
   Number(homeDashboard.value?.currentMonthSaving || 0),
 );

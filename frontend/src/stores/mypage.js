@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as api from '@/api/notificationApi'
+import { now as currentDateTime } from '@/utils/devDate'
 
 export const useMypageStore = defineStore('mypage', () => {
   const notifications = ref([])
@@ -24,7 +25,7 @@ export const useMypageStore = defineStore('mypage', () => {
         
         // 시간 포맷팅 (예: "오늘 14:30" 또는 "08월 14일")
         const date = new Date(item.createdAt);
-        const now = new Date();
+        const now = currentDateTime();
         let timeStr = '';
         
         if (date.toDateString() === now.toDateString()) {

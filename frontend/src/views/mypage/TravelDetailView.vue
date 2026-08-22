@@ -7,6 +7,7 @@ import { fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { getReceipts } from '@/api/receipt'
 import { countryPresentation, flagIconClass } from '@/stores/travel'
+import { today as currentDate } from '@/utils/devDate'
 
 const router = useRouter()
 const route = useRoute()
@@ -33,8 +34,7 @@ const daysUntilStart = computed(() => {
     if (Number.isFinite(reportDays)) return reportDays
   }
   if (!trip.value?.startDate) return null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = currentDate()
   const startDate = new Date(`${trip.value.startDate}T00:00:00`)
   return Math.ceil((startDate - today) / 86400000)
 })

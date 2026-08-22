@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useTripWalletStore } from '@/stores/tripWallet';
 import { beginLoading, endLoading } from '@/utils/loadingOverlay';
+import { initDevDate, isDevDateInitialized } from '@/utils/devDate';
 
 let routeLoadingKey = null;
 
@@ -679,6 +680,11 @@ router.beforeEach(async (to) => {
   // 로그인 상태에서 온보딩 URL에 접근하면 홈으로 복귀한다.
   if (to.name === 'Onboarding' && authStore.isLoggedIn) {
     return { name: 'Home' };
+  }
+
+  // 새 로그인 직후에도 첫 보호 화면이 렌더링되기 전에 백엔드 기준 날짜를 동기화한다.
+  if (to.meta.requiresAuth && authStore.isLoggedIn && !isDevDateInitialized()) {
+    await initDevDate();
   }
 
 });
