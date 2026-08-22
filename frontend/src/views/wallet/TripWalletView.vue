@@ -196,20 +196,41 @@ const currencyMeta = {
   CHF: { country: '스위스', name: '프랑', flag: '🇨🇭', rate: 1606 },
   USD: { country: '미국', name: '달러', flag: '🇺🇸', rate: 1375 },
 }
+// currencyMeta는 통화 코드 하나에 나라 하나만 고정돼 있어(USD→미국) 괌처럼 같은 통화를
+// 쓰는 다른 여행지에서는 항상 틀린 나라로 보인다. 실제 여행 국가 데이터가 있으면 그걸
+// 최우선으로 쓰고, currencyMeta에도 없는 통화(NOK 등)는 "국가 미지정" 대신 대표 국가로 보여준다.
+const currencyCountryFallback = {
+  AED: '아랍에미리트', AUD: '호주', BHD: '바레인', BND: '브루나이', CAD: '캐나다',
+  CHF: '스위스', CNH: '중국', CNY: '중국', DKK: '덴마크', EUR: '유럽연합', GBP: '영국',
+  HKD: '홍콩', IDR: '인도네시아', JPY: '일본', KWD: '쿠웨이트', MYR: '말레이시아',
+  NOK: '노르웨이', NZD: '뉴질랜드', SAR: '사우디아라비아', SEK: '스웨덴', SGD: '싱가포르',
+  THB: '태국', USD: '미국',
+}
 const normalizeCurrencyCode = value => String(value || '')
   .replace(/\(100\)/g, '')
   .trim()
   .toUpperCase()
-const foreignBalances = computed(() => wallet.foreignBalances.map(item => ({
-  ...item,
-  code: normalizeCurrencyCode(item.code || item.currencyCode),
-  countryName: item.countryName || currencyMeta[normalizeCurrencyCode(item.code || item.currencyCode)]?.country || '국가 미지정',
-  name: item.name || item.currencyName || currencyMeta[normalizeCurrencyCode(item.code || item.currencyCode)]?.name || normalizeCurrencyCode(item.code || item.currencyCode),
-  flag: item.flag || currencyMeta[normalizeCurrencyCode(item.code || item.currencyCode)]?.flag || '🌐',
-  amount: item.amount ?? item.balanceAmount,
-  krwAmount: item.krwAmount ?? item.krwEstimatedAmount,
-  rate: item.rate || currencyMeta[item.code || item.currencyCode]?.rate || Math.round((item.krwAmount || item.krwEstimatedAmount || 0) / Math.max(Number(item.amount || item.balanceAmount || 1), 1)),
-})))
+const tripCountryByCurrency = computed(() => {
+  const map = {}
+  walletTripCountries.value.forEach((country) => {
+    const code = normalizeCurrencyCode(country.currencyCode || country.currency)
+    if (code && !map[code]) map[code] = country.countryName || country.name || ''
+  })
+  return map
+})
+const foreignBalances = computed(() => wallet.foreignBalances.map((item) => {
+  const code = normalizeCurrencyCode(item.code || item.currencyCode)
+  return {
+    ...item,
+    code,
+    countryName: item.countryName || tripCountryByCurrency.value[code] || currencyMeta[code]?.country || currencyCountryFallback[code] || '국가 미지정',
+    name: item.name || item.currencyName || currencyMeta[code]?.name || code,
+    flag: item.flag || currencyMeta[code]?.flag || '🌐',
+    amount: item.amount ?? item.balanceAmount,
+    krwAmount: item.krwAmount ?? item.krwEstimatedAmount,
+    rate: item.rate || currencyMeta[code]?.rate || Math.round((item.krwAmount || item.krwEstimatedAmount || 0) / Math.max(Number(item.amount || item.balanceAmount || 1), 1)),
+  }
+}))
 const recentForeignBalances = computed(() => foreignBalances.value.slice(0, 3))
 
 function cardNumberLines(number) {
