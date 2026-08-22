@@ -25,6 +25,7 @@ import livingIcon from '@/assets/icons/home-dollar.svg';
 import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 import calculatorIcon from '@/assets/icons/calculator.svg';
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png';
+import tosimiTravelCard from '@/assets/cards/kb-travelers-tosimi.png';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
 import { useTravelScheduleStore } from '@/stores/travelSchedule';
 
@@ -171,7 +172,7 @@ const destinations = computed(() => {
       departureDate: c.departureDate,
       dayRangeStart: overallStart ? daysBetween(overallStart, c.arrivalDate) + 1 : 1,
       dayRangeEnd: overallStart ? daysBetween(overallStart, c.departureDate) + 1 : 1,
-      currency: currencyInfo?.code || '',
+      currency: c.currencyCode || currencyInfo?.code || '',
       rate: currencyInfo?.rate || 0,
     };
   });
@@ -583,8 +584,22 @@ const currentTravelCountry = computed(() => {
   ) || persistentCountries.value[0] || null;
 });
 
-const travelCardBalance = computed(() => tripWalletStore.foreignBalances
-  .reduce((sum, balance) => sum + Number(balance.krwEstimatedAmount || balance.krwAmount || 0), 0));
+function travelCardBalanceText(item) {
+  const currentCountry = currentTravelCountry.value;
+  const currencyCode = item?.code === 'all'
+    ? (currentCountry?.currencyCode || exchangeStore.currencies.find(
+      currency => currency.countryName === currentCountry?.countryName,
+    )?.code)
+    : item?.currency;
+  const balance = tripWalletStore.foreignBalances.find(
+    entry => String(entry.currencyCode || entry.code).toUpperCase() === String(currencyCode || '').toUpperCase(),
+  );
+  const amount = Number(balance?.balanceAmount ?? balance?.amount ?? 0);
+  return `${currencyCode || ''} ${amount.toLocaleString('ko-KR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`.trim();
+}
 
 function parseScheduleDateTime(dateTime) {
   if (Array.isArray(dateTime)) {
@@ -845,9 +860,9 @@ async function switchMode(mode) {
                 <p class="trip-country-dates">{{ countryDateRange(item) }}</p>
               </div>
               <div class="travel-card-balance">
-                <span class="travel-card-icon" aria-hidden="true"><i /></span>
+                <img class="travel-card-icon-image" :src="tosimiTravelCard" alt="토심이 트래블카드">
                 <small>트래블카드 잔액</small>
-                <strong>{{ formatWon(travelCardBalance) }}</strong>
+                <strong>{{ travelCardBalanceText(item) }}</strong>
               </div>
             </div>
             <div class="ticket-photo-space" />
@@ -2749,4 +2764,6 @@ async function switchMode(mode) {
 .ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height)}.perforation:not(.lower){position:absolute;top:var(--ticket-edge-height);height:0;background:transparent}.perforation.lower{bottom:var(--ticket-edge-height)}.ticket-stub{padding:0 14px;font-size:9px}.ticket-stub>span{font-size:10px}.ticket-stub>span img{width:18px;height:18px}.ticket-stub>b{font-size:9px}
 .perforation:not(.lower),.perforation.lower{transform:translateY(-11px)}
 .travel-card-balance{display:grid;grid-template-columns:31px auto;grid-template-rows:auto auto;align-items:center;column-gap:8px;text-align:right}.travel-card-icon{position:relative;grid-row:1/3;display:block;width:31px;height:21px;border:1px solid rgba(255,255,255,.42);border-radius:5px;background:linear-gradient(145deg,#173f8d,#2f70e9);box-shadow:0 5px 12px rgba(3,16,43,.24)}.travel-card-icon::after{position:absolute;right:4px;bottom:4px;width:8px;height:2px;border-radius:99px;background:#ffd45e;content:''}.travel-card-icon i{position:absolute;top:6px;left:5px;width:7px;height:5px;border-radius:1px;background:#ffd45e}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
+.travel-card-balance{grid-template-columns:24px auto}.travel-card-icon-image{grid-row:1/3;display:block;width:24px;height:34px;border:1px solid rgba(255,255,255,.5);border-radius:4px;object-fit:cover;box-shadow:0 5px 12px rgba(3,16,43,.28)}
+.ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
 </style>
