@@ -66,6 +66,8 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -eu
+
             cat > ~/tripass.env << 'ENVEOF'
             DB_HOST=tripass-db
             DB_PORT=${{ secrets.DB_PORT }}
@@ -130,6 +132,25 @@ jobs:
             DCEOF
 
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/tripass:latest
-            docker compose down
-            docker compose up -d
+            docker compose up -d db
+
+            # 과거 compose 프로젝트가 남긴 동일 이름 컨테이너가 있어도
+            # 새 백엔드를 확실히 기동할 수 있도록 명시적으로 교체한다.
+            docker rm -f tripass-backend 2>/dev/null || true
+            docker compose up -d backend
+
+            # 컨테이너 생성만으로 배포 성공 처리하지 않고 실제 API 응답을 확인한다.
+            attempt=1
+            until curl -fsS \
+              'http://localhost:8080/api/v1/auth/check-id?loginId=healthcheck' \
+              >/dev/null
+            do
+              if [ "$attempt" -ge 30 ]; then
+                docker compose logs --tail=200 backend
+                exit 1
+              fi
+              attempt=$((attempt + 1))
+              sleep 2
+            done
+
             docker image prune -f
