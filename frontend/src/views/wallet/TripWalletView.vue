@@ -13,7 +13,7 @@ import { countryPresentation, useTravelStore } from '@/stores/travel'
 import { getAccountInstitutions } from '@/api/asset'
 import { flagClassMap } from '@/stores/exchange'
 import kbTravelersTosimiImage from '@/assets/cards/kb-travelers-tosimi.png'
-import { today as currentDate, todayIso } from '@/utils/devDate'
+import { today as currentDate, todayIso, effectiveDate, isOverridden } from '@/utils/devDate'
 
 const sampleTravelCardImage = kbTravelersTosimiImage
 
@@ -125,6 +125,18 @@ const showUnlinkConfirm = ref(false)
 const showAutoChargeRemoveConfirm = ref(false)
 const showMonthlyDetail = ref(false)
 const monthlyDetail = ref(null)
+
+const filteredLedgers = computed(() => {
+  if (!monthlyDetail.value?.ledgers) return []
+  return monthlyDetail.value.ledgers.filter(item => !isOverridden.value || item.createdAt.slice(0, 10) <= effectiveDate.value)
+})
+
+const filteredSummary = computed(() => {
+  const ledgers = filteredLedgers.value
+  const chargeAmount = ledgers.filter(l => l.direction === 'IN').reduce((sum, l) => sum + l.amount, 0)
+  const withdrawAmount = ledgers.filter(l => l.direction === 'OUT').reduce((sum, l) => sum + l.amount, 0)
+  return { chargeAmount, withdrawAmount, savedAmount: chargeAmount - withdrawAmount }
+})
 const transferMode = ref('charge')
 const amount = ref('')
 const autoChargeDay = ref(wallet.autoCharge.day)
@@ -774,22 +786,22 @@ async function confirmUnlinkTravelCard() {
           </div>
           <div class="monthly-detail-total">
             <span>모은 금액</span>
-            <strong>{{ money(monthlyDetail?.savedAmount) }}</strong>
+            <strong>{{ money(filteredSummary.savedAmount) }}</strong>
           </div>
           <div class="monthly-detail-summary">
             <div>
               <span>충전</span>
-              <b>+{{ money(monthlyDetail?.chargeAmount) }}</b>
+              <b>+{{ money(filteredSummary.chargeAmount) }}</b>
             </div>
             <div>
               <span>송금</span>
-              <b>-{{ money(monthlyDetail?.withdrawAmount) }}</b>
+              <b>-{{ money(filteredSummary.withdrawAmount) }}</b>
             </div>
           </div>
           <div class="monthly-ledger-list">
             <p v-if="wallet.isMonthlyDetailLoading">내역을 불러오는 중이에요.</p>
             <p v-else-if="!monthlyDetail?.ledgers?.length">이 달에는 월렛 자금 이동 내역이 없어요.</p>
-            <article v-for="item in monthlyDetail?.ledgers || []" :key="item.ledgerId">
+            <article v-for="item in (monthlyDetail?.ledgers || []).filter(item => !isOverridden || item.createdAt.slice(0, 10) <= effectiveDate)" :key="item.ledgerId">
               <div>
                 <b>{{ ledgerTitle(item) }}</b>
                 <span>{{ ledgerDate(item.createdAt) }}<template v-if="item.accountName"> · {{ item.accountName }}</template></span>
