@@ -148,6 +148,39 @@
         ORDER BY tc.display_order ASC
     </select>
 
+    <select id="findCountryTopCategories" resultType="CountryTopCategoryDto">
+        WITH category_totals AS (
+            SELECT tc.id AS trip_country_id,
+                   c.country_name,
+                   sc.category_name,
+                   SUM(t.amount) AS amount,
+                   SUM(SUM(t.amount)) OVER (PARTITION BY tc.id) AS country_total,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY tc.id
+                       ORDER BY SUM(t.amount) DESC, sc.category_name ASC
+                   ) AS category_rank,
+                   tc.display_order
+            FROM trip_countries tc
+                     INNER JOIN countries c ON c.id = tc.country_id
+                     INNER JOIN transactions t
+                                ON t.trip_country_id = tc.id
+                                    AND t.is_pre_expense = 0
+                                    AND t.transaction_type = 'WITHDRAWAL'
+                                    AND t.is_deleted = 0
+                     INNER JOIN spending_categories sc ON sc.id = t.category_id
+            WHERE tc.trip_id = #{tripId}
+              AND tc.is_deleted = 0
+            GROUP BY tc.id, c.country_name, sc.category_name, tc.display_order
+        )
+        SELECT country_name,
+               category_name,
+               amount,
+               country_total
+        FROM category_totals
+        WHERE category_rank = 1
+        ORDER BY display_order ASC
+    </select>
+
     <select id="findReceiptCount" resultType="int">
         SELECT COUNT(*)
         FROM receipts

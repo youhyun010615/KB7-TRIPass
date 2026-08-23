@@ -30,6 +30,7 @@ public class PostTripReportResponseDto {
     private List<DailySpendingDto> dailySpending;
     private List<CategorySpendingDto> categorySpending;
     private List<CountrySpendingDto> countrySpending;
+    private List<CountryTopCategoryDto> countryTopCategories;
 
     private Integer receiptCount;
     private BigDecimal nextTripMonthlySuggestion;

@@ -34,5 +34,7 @@ public interface ReportMapper {
 
     List<CountrySpendingDto> findCountrySpending(Long tripId);
 
+    List<CountryTopCategoryDto> findCountryTopCategories(Long tripId);
+
     int findReceiptCount(Long tripId);
 }

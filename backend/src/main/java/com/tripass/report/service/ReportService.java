@@ -88,6 +88,7 @@ public class ReportService {
         List<DailySpendingDto> dailySpending = reportMapper.findDailySpending(tripId);
         List<CategorySpendingDto> categorySpending = reportMapper.findCategorySpending(tripId);
         List<CountrySpendingDto> countrySpending = reportMapper.findCountrySpending(tripId);
+        List<CountryTopCategoryDto> countryTopCategories = reportMapper.findCountryTopCategories(tripId);
         int receiptCount = reportMapper.findReceiptCount(tripId);
 
         BigDecimal nextTripMonthly = spent
@@ -110,6 +111,7 @@ public class ReportService {
                 .dailySpending(dailySpending)
                 .categorySpending(categorySpending)
                 .countrySpending(countrySpending)
+                .countryTopCategories(countryTopCategories)
                 .receiptCount(receiptCount)
                 .nextTripMonthlySuggestion(nextTripMonthly)
                 .nextTripMonths(NEXT_TRIP_SAVING_MONTHS)
