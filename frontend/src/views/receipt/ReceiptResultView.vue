@@ -5,6 +5,7 @@ import {
   onMounted,
   reactive,
   ref,
+  watch,
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useReceiptStore } from '@/stores/receipt'
@@ -157,6 +158,27 @@ const form = reactive({
   memo:
       draft?.memo ?? '',
 })
+
+// 품목 전체의 (수량 × 금액) 합산 계산
+const calculatedTotalAmount = computed(() => {
+  const sum = form.items.reduce((acc, item) => {
+    const qty = Number(item.quantity) || 0
+    const amt = Number(item.amount) || 0
+    return acc + qty * amt
+  }, 0)
+
+  // 부동소수점 오차 방지 (소수점 2자리)
+  return Number(sum.toFixed(2))
+})
+
+// items 변경(수량, 금액, 추가/삭제) 시 form.totalAmount 자동 갱신
+watch(
+  () => form.items,
+  () => {
+    form.totalAmount = calculatedTotalAmount.value
+  },
+  { deep: true }
+)
 
 /*
  * OCR에서 품목을 인식하지 못한 경우에도
