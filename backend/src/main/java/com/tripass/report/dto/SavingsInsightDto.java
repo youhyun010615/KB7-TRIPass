@@ -5,15 +5,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReportCountryBudgetDto {
-    private String countryName;
-    private BigDecimal budget;
-    private String currencyCode;
-    private BigDecimal foreignAmount;
+public class SavingsInsightDto {
+    private String icon;
+    private String title;
+    private String message;
 }

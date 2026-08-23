@@ -33,4 +33,9 @@ public class PreTripReportResponseDto {
     private Integer scheduleCount;
     private Integer prepaidScheduleCount;
     private Integer onsiteScheduleCount;
+
+    private BigDecimal emergencyFund;
+    private List<ChecklistStageProgressDto> checklistStages;
+    private List<MonthlySavingsTrendDto> savingsTrend;
+    private List<SavingsInsightDto> insights;
 }

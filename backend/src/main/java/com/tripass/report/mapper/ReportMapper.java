@@ -26,6 +26,10 @@ public interface ReportMapper {
 
     ScheduleCountRowDto findScheduleCounts(Long tripId);
 
+    List<ChecklistStageProgressRowDto> findChecklistStageProgress(Long tripId);
+
+    List<MonthlySavingsTrendDto> findSavingsTrend(@Param("userId") Long userId, @Param("walletId") Long walletId, @Param("tripId") Long tripId);
+
     BigDecimal findTravelExpenseTotal(Long tripId);
 
     List<DailySpendingDto> findDailySpending(Long tripId);

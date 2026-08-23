@@ -28,12 +28,59 @@
 
     <select id="findCountryBudgets" resultType="ReportCountryBudgetDto">
         SELECT c.country_name,
-               tc.target_budget AS budget
+               tc.target_budget AS budget,
+               cur.currency_code
         FROM trip_countries tc
                  INNER JOIN countries c ON c.id = tc.country_id
+                 INNER JOIN currencies cur ON cur.id = c.currency_id
         WHERE tc.trip_id = #{tripId}
           AND tc.is_deleted = 0
         ORDER BY tc.display_order ASC
+    </select>
+
+    <select id="findChecklistStageProgress" resultType="ChecklistStageProgressRowDto">
+        SELECT dday_stage AS stage,
+               COUNT(*) AS total,
+               SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) AS completed
+        FROM trip_checklist_items
+        WHERE trip_id = #{tripId}
+          AND checklist_type = 'PRE_TRAVEL'
+          AND is_excluded = 0
+          AND is_deleted = 0
+        GROUP BY dday_stage
+    </select>
+
+    <select id="findSavingsTrend" resultType="MonthlySavingsTrendDto">
+        WITH RECURSIVE month_range AS (
+            SELECT DATE_FORMAT(
+                       COALESCE(
+                           (SELECT savings_tracking_started_at FROM trips WHERE id = #{tripId}),
+                           (SELECT created_at FROM trips WHERE id = #{tripId})
+                       ), '%Y-%m-01') AS month_start
+            UNION ALL
+            SELECT DATE_ADD(month_start, INTERVAL 1 MONTH)
+            FROM month_range
+            WHERE month_start &lt; DATE_SUB(
+                (SELECT DATE_FORMAT(start_date, '%Y-%m-01') FROM trips WHERE id = #{tripId}),
+                INTERVAL 1 MONTH
+            )
+        )
+        SELECT DATE_FORMAT(mr.month_start, '%Y-%m') AS month,
+               COALESCE(SUM(
+                   CASE
+                       WHEN wl.direction = 'IN' THEN wl.amount
+                       WHEN wl.direction = 'OUT' THEN -wl.amount
+                       ELSE 0
+                   END
+               ), 0) AS saved_amount
+        FROM month_range mr
+                 LEFT JOIN wallet_ledger wl
+                           ON DATE_FORMAT(wl.created_at, '%Y-%m') = DATE_FORMAT(mr.month_start, '%Y-%m')
+                               AND wl.wallet_id = #{walletId}
+                               AND wl.trip_id = #{tripId}
+                               AND wl.transaction_type NOT IN ('ADJUST', 'CARD_TOPUP', 'EXCHANGE_SELL')
+        GROUP BY mr.month_start
+        ORDER BY mr.month_start ASC
     </select>
 
     <select id="findWalletBalanceByUserId" resultType="java.math.BigDecimal">
