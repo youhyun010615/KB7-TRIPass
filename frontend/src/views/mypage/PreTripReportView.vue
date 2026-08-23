@@ -14,8 +14,7 @@ const tripId = computed(() => {
   return route.query.tripId && Number.isFinite(parsed) && parsed > 0 ? parsed : null
 })
 const r = computed(() => store.preTripView)
-const savingPercent = computed(() => Math.min(100, r.value?.savingsPercent ?? 0))
-const goalFilledAmount = computed(() => Math.min(r.value?.securedFund ?? 0, r.value?.targetBudget ?? 0))
+const savingPercent = computed(() => r.value?.savingsPercent ?? 0)
 const downloading = ref(false)
 const reportContent = ref(null)
 
@@ -122,7 +121,7 @@ const budgetSegments = computed(() => {
 
     <section class="card highlight anim-in">
       <p class="label"><PiggyBank :size="14" />여행 저축 목표</p>
-      <p class="big">{{ money(goalFilledAmount) }} <small>/ {{ money(r.targetBudget) }}</small></p>
+      <p class="big">{{ money(r.securedFund) }} <small>/ {{ money(r.targetBudget) }}</small></p>
       <div class="bar"><span :style="{ width: `${Math.min(100, savingPercent)}%` }" /></div>
       <p class="sub">달성률 {{ savingPercent }}%</p>
       <div v-if="r.emergencyFund > 0" class="emergency-block">
