@@ -53,7 +53,7 @@ curl --fail-with-body --silent --show-error -o /dev/null -X POST \
 curl --fail-with-body --silent --show-error -o /dev/null -X POST \
   -H "Authorization: Bearer $access_token" \
   -H 'Content-Type: application/json' \
-  -d "{\"accountId\":$account_id,\"startDate\":\"2026-04-01\",\"endDate\":\"2027-04-12\"}" \
+  -d "{\"accountId\":$account_id,\"startDate\":\"2026-04-01\",\"endDate\":\"2027-04-19\"}" \
   "$DEMO_API_BASE/api/v1/accounts/transactions"
 
 curl --fail-with-body --silent --show-error -o /dev/null -X POST \
@@ -62,7 +62,7 @@ curl --fail-with-body --silent --show-error -o /dev/null -X POST \
 
 curl --fail-with-body --silent --show-error -o /dev/null -X POST \
   -H "Authorization: Bearer $access_token" \
-  "$DEMO_API_BASE/api/v1/cards/$travel_card_id/transactions/fetch?startDate=2027-04-04&endDate=2027-04-12"
+  "$DEMO_API_BASE/api/v1/cards/$travel_card_id/transactions/fetch?startDate=2027-04-04&endDate=2027-04-18"
 
 # 촬영 시작 체크포인트로 복귀한다. 미래 거래는 가상 날짜 필터로 노출되지 않는다.
 curl --fail-with-body --silent --show-error -o /dev/null -X POST \

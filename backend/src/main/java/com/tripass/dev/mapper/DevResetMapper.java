@@ -96,6 +96,8 @@ public interface DevResetMapper {
 
     void deleteNonSeedTravelCardLedgerByUser(@Param("userId") Long userId);
 
+    void restoreDemoTripLifecycle(@Param("userId") Long userId, @Param("virtualDate") LocalDate virtualDate);
+
     void recalcTravelCardBalanceFromSeedLedger(@Param("userId") Long userId, @Param("virtualDate") LocalDate virtualDate);
 
     void recalcWalletBalanceFromSeedLedger(@Param("userId") Long userId, @Param("virtualDate") LocalDate virtualDate);

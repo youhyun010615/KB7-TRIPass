@@ -153,8 +153,8 @@ VALUES
      'SAVING',
      FALSE,
      NULL,
-     '2026-08-22 14:00:00',
-     '2026-08-22 14:00:00')
+     '2026-08-26 09:00:00',
+     '2026-08-26 09:00:00')
 ON DUPLICATE KEY UPDATE
     password = VALUES(password),
     name = VALUES(name),
@@ -162,6 +162,7 @@ ON DUPLICATE KEY UPDATE
     current_view_mode = 'SAVING',
     is_deleted = FALSE,
     deleted_at = NULL,
+    created_at = VALUES(created_at),
     updated_at = NOW();
 
 SET @user_id = (SELECT id FROM users WHERE login_provider = 'LOCAL' AND login_id = 'yuhyun');
@@ -170,7 +171,7 @@ SET @user_id = (SELECT id FROM users WHERE login_provider = 'LOCAL' AND login_id
 -- 2. 월렛 (가입 시 자동 생성)
 -- ============================================================================
 INSERT INTO wallet (user_id, balance_amount, status, version, created_at, updated_at)
-VALUES (@user_id, 0, 'ACTIVE', 0, '2026-08-22 14:00:00', '2026-08-22 14:00:00')
+VALUES (@user_id, 0, 'ACTIVE', 0, '2026-08-26 09:00:00', '2026-08-26 09:00:00')
 ON DUPLICATE KEY UPDATE
     status = 'ACTIVE',
     updated_at = NOW();
@@ -266,11 +267,11 @@ VALUES
 -- 8. 여행 (PLANNING 상태)
 -- ============================================================================
 INSERT INTO trips (user_id, trip_name, status, start_date, end_date,
-                   total_target_amount,
+                   total_target_amount, savings_tracking_started_at, wallet_reflect_resolved,
                    created_at, updated_at)
 VALUES (@user_id, '유럽 3국 여행', 'PLANNING', '2027-04-04', '2027-04-18',
-        2843000,
-        '2026-08-22 15:00:00', '2026-08-22 15:00:00');
+        2843000, '2026-08-26 09:30:00', 1,
+        '2026-08-26 09:30:00', '2026-08-26 09:30:00');
 
 SET @trip_id = LAST_INSERT_ID();
 
@@ -649,20 +650,25 @@ VALUES
     (@trip_id, @tc_portugal, @eur_id, '공항 이동',             '2027-04-18 16:00:00', NULL,   'UNDECIDED', 'UPCOMING', 'Aeroporto de Lisboa',    NULL);
 
 -- ============================================================================
--- 19. 월간 소비 분석 (7개월: 2026-08 ~ 2027-02)
+-- 19. 월간 소비 분석 (9개월: 2026-07 ~ 2027-03)
 -- ============================================================================
 -- analysis_year_month = 분석 대상 월(지난달), target_year_month = 미션 적용 월(이번달)
 INSERT INTO monthly_spending_analyses
     (user_id, analysis_year_month, target_year_month, total_spending, report_status, created_at)
 VALUES
+    -- 가입 직후에는 연동 카드의 과거 거래(4~7월)를 바탕으로 7월 리포트를 보여준다.
+    (@user_id, '2026-07', '2026-08', 1373180, 'PENDING', '2026-08-26 09:40:00'),
     (@user_id, '2026-08', '2026-09', 1350000, 'CLOSED', '2026-09-01 08:00:00'),
     (@user_id, '2026-09', '2026-10', 1420000, 'CLOSED', '2026-10-01 08:00:00'),
     (@user_id, '2026-10', '2026-11', 1380000, 'CLOSED', '2026-11-01 08:00:00'),
     (@user_id, '2026-11', '2026-12', 1290000, 'CLOSED', '2026-12-01 08:00:00'),
     (@user_id, '2026-12', '2027-01', 1450000, 'CLOSED', '2027-01-01 08:00:00'),
     (@user_id, '2027-01', '2027-02', 1310000, 'CLOSED', '2027-02-01 08:00:00'),
-    (@user_id, '2027-02', '2027-03', 1360000, 'CLOSED', '2027-03-01 08:00:00');
+    (@user_id, '2027-02', '2027-03', 1360000, 'CLOSED', '2027-03-01 08:00:00'),
+    -- 여행 직전 마지막 국내 소비 분석. 4월에는 이 리포트를 홈에서 확인할 수 있다.
+    (@user_id, '2027-03', '2027-04', 979073, 'PENDING', '2027-04-01 08:00:00');
 
+SET @msa_07 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2026-07');
 SET @msa_08 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2026-08');
 SET @msa_09 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2026-09');
 SET @msa_10 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2026-10');
@@ -670,6 +676,7 @@ SET @msa_11 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id
 SET @msa_12 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2026-12');
 SET @msa_01 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2027-01');
 SET @msa_02 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2027-02');
+SET @msa_03 = (SELECT id FROM monthly_spending_analyses WHERE user_id = @user_id AND analysis_year_month = '2027-03');
 
 -- ============================================================================
 -- 20. 월간 카테고리별 분석 (각 분석당 7개 카테고리)
@@ -679,6 +686,14 @@ INSERT INTO monthly_category_analyses
     (monthly_spending_analysis_id, category_id, spending_amount, spending_ratio, transaction_count,
      mission_period_spending, mission_transaction_count)
 VALUES
+    -- Jul: 실제 2026년 7월 카드 거래를 분류한 결과
+    (@msa_07, 1, 660500, 48.10, 32, 629410, 29),
+    (@msa_07, 2, 129600, 9.44, 10, 129600, 10),
+    (@msa_07, 4, 229700, 16.73, 12, 221300, 11),
+    (@msa_07, 6, 43400, 3.16, 2, 43400, 2),
+    (@msa_07, 7, 44650, 3.25, 12, 38250, 10),
+    (@msa_07, 8, 220530, 16.06, 30, 200030, 27),
+    (@msa_07, 9, 44800, 3.26, 12, 44800, 12),
     -- Aug (total 1,350,000)
     (@msa_08, 1, 607000, 44.96, 45, 560000, 40),
     (@msa_08, 2, 108000, 8.00, 22, 100000, 20),
@@ -734,7 +749,15 @@ VALUES
     (@msa_02, 6, 68000, 5.00, 5, 63000, 4),
     (@msa_02, 7, 68000, 5.00, 15, 63000, 13),
     (@msa_02, 8, 272000, 20.00, 12, 251000, 11),
-    (@msa_02, 9, 68000, 5.00, 4, 63000, 3);
+    (@msa_02, 9, 68000, 5.00, 4, 63000, 3),
+    -- Mar: 실제 소비 패턴을 유지해 생성한 여행 직전 마지막 달
+    (@msa_03, 1, 373979, 38.20, 31, 364855, 29),
+    (@msa_03, 2, 80570, 8.23, 9, 80570, 9),
+    (@msa_03, 4, 273290, 27.91, 13, 260891, 12),
+    (@msa_03, 6, 34546, 3.53, 2, 34546, 2),
+    (@msa_03, 7, 72159, 7.37, 16, 68549, 15),
+    (@msa_03, 8, 124098, 12.68, 29, 119143, 27),
+    (@msa_03, 9, 20431, 2.09, 2, 20431, 2);
 
 -- ============================================================================
 -- 21. 미션 카테고리 선택 (매월 FOOD=30% 절감)
@@ -773,7 +796,7 @@ VALUES
     (@user_id, @msa_11, @mcs_11, 1, '2026-12', 30, 536000, 160800, 375200, 160800, 1, 'COMPLETED', '2026-12-01 08:00:00'),
     (@user_id, @msa_12, @mcs_12, 1, '2027-01', 30, 602000, 180600, 421400, 180600, 1, 'COMPLETED', '2027-01-01 08:00:00'),
     (@user_id, @msa_01, @mcs_01, 1, '2027-02', 30, 545000, 163500, 381500, 163500, 1, 'COMPLETED', '2027-02-01 08:00:00'),
-    (@user_id, @msa_02, @mcs_02, 1, '2027-03', 30, 565000, 169500, 395500, 169500, 1, 'IN_PROGRESS', '2027-03-01 08:00:00');
+    (@user_id, @msa_02, @mcs_02, 1, '2027-03', 30, 565000, 169500, 395500, 169500, 1, 'COMPLETED', '2027-03-01 08:00:00');
 
 SET @msm_09 = (SELECT id FROM monthly_saving_missions WHERE user_id = @user_id AND target_year_month = '2026-09');
 SET @msm_10 = (SELECT id FROM monthly_saving_missions WHERE user_id = @user_id AND target_year_month = '2026-10');
@@ -823,11 +846,11 @@ VALUES
     (@msm_02, 2, '2027-02-08', '2027-02-14', 95375, 40875, 83000, 53250, 'SUCCESS', '2027-02-15 00:00:00'),
     (@msm_02, 3, '2027-02-15', '2027-02-21', 95375, 40875, 112000, 0, 'FAILED', '2027-02-22 00:00:00'),
     (@msm_02, 4, '2027-02-22', '2027-02-28', 95375, 40875, 78000, 58250, 'SUCCESS', '2027-03-01 00:00:00'),
-    -- Mar (baseline 565000, limit=98875/wk): S,S (only weeks 1-2 completed before trip)
+    -- Mar (baseline 565000, limit=98875/wk): S,S,F,S
     (@msm_03, 1, '2027-03-01', '2027-03-07', 98875, 42375, 82000, 59250, 'SUCCESS', '2027-03-08 00:00:00'),
     (@msm_03, 2, '2027-03-08', '2027-03-14', 98875, 42375, 86000, 55250, 'SUCCESS', '2027-03-15 00:00:00'),
-    (@msm_03, 3, '2027-03-15', '2027-03-21', 98875, 42375, NULL, NULL, 'PENDING', NULL),
-    (@msm_03, 4, '2027-03-22', '2027-03-28', 98875, 42375, NULL, NULL, 'PENDING', NULL);
+    (@msm_03, 3, '2027-03-15', '2027-03-21', 98875, 42375, 118000, 0, 'FAILED', '2027-03-22 00:00:00'),
+    (@msm_03, 4, '2027-03-22', '2027-03-28', 98875, 42375, 84000, 57250, 'SUCCESS', '2027-03-29 00:00:00');
 
 -- ============================================================================
 -- 24. 환율 알림

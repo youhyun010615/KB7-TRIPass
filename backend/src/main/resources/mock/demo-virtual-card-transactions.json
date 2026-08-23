@@ -171,6 +171,15 @@
     "resMemberStoreType": "편의점"
   },
   {
+    "resUsedDate": "20260828",
+    "resUsedTime": "081500",
+    "resUsedAmount": "1800",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG26082801",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
     "resUsedDate": "20260829",
     "resUsedTime": "074346",
     "resUsedAmount": "7851",
@@ -295,6 +304,15 @@
     "resApprovalNo": "DM260902866",
     "resMemberStoreName": "지에스(GS)25동탄",
     "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20260903",
+    "resUsedTime": "123500",
+    "resUsedAmount": "7000",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG26090301",
+    "resMemberStoreName": "오늘의한끼",
+    "resMemberStoreType": "일반음식점"
   },
   {
     "resUsedDate": "20260904",
@@ -1449,6 +1467,15 @@
     "resMemberStoreType": "커피전문점"
   },
   {
+    "resUsedDate": "20261020",
+    "resUsedTime": "184000",
+    "resUsedAmount": "4900",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG26102001",
+    "resMemberStoreName": "GS25",
+    "resMemberStoreType": "편의점"
+  },
+  {
     "resUsedDate": "20261021",
     "resUsedTime": "085838",
     "resUsedAmount": "1698",
@@ -2455,6 +2482,15 @@
     "resApprovalNo": "DM261120714",
     "resMemberStoreName": "무신사",
     "resMemberStoreType": "온라인쇼핑"
+  },
+  {
+    "resUsedDate": "20261121",
+    "resUsedTime": "203000",
+    "resUsedAmount": "8900",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG26112101",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
   },
   {
     "resUsedDate": "20261122",
@@ -3586,7 +3622,7 @@
     "resUsedTime": "140236",
     "resUsedAmount": "12927",
     "resCancelYN": "N",
-    "resApprovalNo": "DM261224817",
+    "resApprovalNo": "DM261224818",
     "resMemberStoreName": "쿠팡이츠",
     "resMemberStoreType": "온라인쇼핑"
   },
@@ -4653,6 +4689,15 @@
     "resMemberStoreType": "일반음식점"
   },
   {
+    "resUsedDate": "20270202",
+    "resUsedTime": "081500",
+    "resUsedAmount": "1800",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG27020201",
+    "resMemberStoreName": "컴포즈커피",
+    "resMemberStoreType": "커피전문점"
+  },
+  {
     "resUsedDate": "20270203",
     "resUsedTime": "154656",
     "resUsedAmount": "10769",
@@ -4912,6 +4957,15 @@
     "resApprovalNo": "DM270212687",
     "resMemberStoreName": "CU동탄역점",
     "resMemberStoreType": "편의점"
+  },
+  {
+    "resUsedDate": "20270213",
+    "resUsedTime": "123500",
+    "resUsedAmount": "7000",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG27021301",
+    "resMemberStoreName": "오늘의한끼",
+    "resMemberStoreType": "일반음식점"
   },
   {
     "resUsedDate": "20270214",
@@ -5418,6 +5472,15 @@
     "resMemberStoreType": "편의점"
   },
   {
+    "resUsedDate": "20270304",
+    "resUsedTime": "184000",
+    "resUsedAmount": "4900",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG27030401",
+    "resMemberStoreName": "GS25",
+    "resMemberStoreType": "편의점"
+  },
+  {
     "resUsedDate": "20270305",
     "resUsedTime": "200235",
     "resUsedAmount": "3751",
@@ -5677,6 +5740,15 @@
     "resApprovalNo": "DM270312899",
     "resMemberStoreName": "지하철",
     "resMemberStoreType": "대중교통"
+  },
+  {
+    "resUsedDate": "20270313",
+    "resUsedTime": "203000",
+    "resUsedAmount": "8900",
+    "resCancelYN": "N",
+    "resApprovalNo": "DG27031301",
+    "resMemberStoreName": "쿠팡이츠",
+    "resMemberStoreType": "배달서비스"
   },
   {
     "resUsedDate": "20270314",
