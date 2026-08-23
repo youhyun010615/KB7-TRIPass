@@ -75,6 +75,22 @@
         LIMIT 1
     </select>
 
+    <select id="findActualSavingAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN wl.direction = 'IN' THEN wl.amount
+                WHEN wl.direction = 'OUT' THEN -wl.amount
+                ELSE 0
+            END
+        ), 0)
+        FROM wallet_ledger wl
+                 JOIN wallet w ON w.id = wl.wallet_id
+        WHERE w.user_id = #{userId}
+          AND w.status = 'ACTIVE'
+          AND wl.transaction_type != 'ADJUST'
+          AND DATE_FORMAT(wl.created_at, '%Y-%m') = #{analysisYearMonth}
+    </select>
+
     <!-- ===== 월간 분석 저장·조회 ===== -->
 
     <select id="findMonthlyAnalysis" resultType="MonthlySpendingAnalysisDto">

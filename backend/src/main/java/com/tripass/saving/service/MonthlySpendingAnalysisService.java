@@ -83,7 +83,15 @@ public class MonthlySpendingAnalysisService {
         this.savingResultCalculator = savingResultCalculator;
     }
 
+    @Transactional
     public MonthlyAnalysisResponseDto getMonthlyAnalysis(Long userId, YearMonth analysisYearMonth) {
+        MonthlySpendingAnalysisDto existing = mapper.findMonthlyAnalysis(userId, analysisYearMonth.toString());
+        if (existing != null
+                && existing.getSavingTargetAmount() != null
+                && existing.getActualSavingAmount() == null) {
+            // 실제 저축액을 저장하지 않던 이전 버전에서 생성된 리포트는 최초 조회 시 한 번 재집계한다.
+            return generateMonthlyAnalysis(userId, analysisYearMonth);
+        }
         return buildResponse(userId, analysisYearMonth);
     }
 
@@ -378,8 +386,8 @@ public class MonthlySpendingAnalysisService {
                 ? existing.getSavingTargetAmount()
                 : mapper.findActiveSavingTargetAmount(userId);
 
-        // 실제 저축액을 산출할 TRIP 월렛 거래 원장이 아직 없으므로 항상 null(UNAVAILABLE)로 저장한다(후속 이슈).
-        SavingResultResponseDto savingResult = savingResultCalculator.calculate(savingTargetAmount, null);
+        BigDecimal actualSavingAmount = mapper.findActualSavingAmount(userId, analysisYearMonth.toString());
+        SavingResultResponseDto savingResult = savingResultCalculator.calculate(savingTargetAmount, actualSavingAmount);
 
         Long monthlySpendingAnalysisId = saveMonthlyAnalysis(
                 userId, analysisYearMonth, targetYearMonth, totalSpending, savingResult, existing);

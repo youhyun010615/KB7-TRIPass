@@ -84,6 +84,8 @@ class MonthlySpendingAnalysisServiceTest {
     @DisplayName("정상 분석 생성 시 카테고리별 집계와 TOP3 추천 순위가 저장된다")
     void generate_savesAggregatesAndTopRecommendations() {
         stubFirstCreation(new BigDecimal("700000"));
+        when(mapper.findActualSavingAmount(USER_ID, ANALYSIS_MONTH.toString()))
+                .thenReturn(new BigDecimal("500000"));
 
         List<TransactionDto> accountTxns = List.of(
                 txn(1L, FOOD_ID, LocalDate.of(2026, 7, 1), "20000"),
@@ -136,6 +138,9 @@ class MonthlySpendingAnalysisServiceTest {
 
         MonthlySpendingAnalysisDto analysis = captureInsertedAnalysis();
         assertEquals(new BigDecimal("300000"), analysis.getTotalSpending()); // 120000+90000+40000+50000
+        assertEquals(new BigDecimal("500000"), analysis.getActualSavingAmount());
+        assertEquals(new BigDecimal("-200000"), analysis.getSavingDifferenceAmount());
+        assertEquals("목표보다 200,000원 덜 저축했어요.", analysis.getSavingResultMessage());
     }
 
     @Test
@@ -349,8 +354,8 @@ class MonthlySpendingAnalysisServiceTest {
     // ===== getMonthlyAnalysis =====
 
     @Test
-    @DisplayName("실제 저축액이 없으면 UNAVAILABLE 상태로 응답한다")
-    void get_actualSavingAmountNull_returnsUnavailable() {
+    @DisplayName("이전 버전에서 실제 저축액 없이 저장된 리포트는 조회 시 다시 집계한다")
+    void get_legacyReportWithoutActualSavingAmount_recalculates() {
         MonthlySpendingAnalysisDto analysis = new MonthlySpendingAnalysisDto();
         analysis.setId(1L);
         analysis.setAnalysisYearMonth("2026-07");
@@ -361,14 +366,26 @@ class MonthlySpendingAnalysisServiceTest {
         analysis.setReportStatus("PENDING");
 
         when(mapper.findMonthlyAnalysis(USER_ID, "2026-07")).thenReturn(analysis);
+        when(mapper.findActualSavingAmount(USER_ID, "2026-07")).thenReturn(new BigDecimal("500000"));
+        when(mapper.updateMonthlyAnalysisPreservingStatus(any())).thenAnswer(invocation -> {
+            MonthlySpendingAnalysisDto updated = invocation.getArgument(0);
+            analysis.setActualSavingAmount(updated.getActualSavingAmount());
+            analysis.setSavingDifferenceAmount(updated.getSavingDifferenceAmount());
+            analysis.setSavingResultMessage(updated.getSavingResultMessage());
+            return 1;
+        });
+        stubConsumptionCategoryIds();
+        when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
+        when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
+        when(mapper.findCreditCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
         when(mapper.findCategoryAnalyses(1L)).thenReturn(List.of());
         when(mapper.findRecommendedCategoryAnalyses(1L)).thenReturn(List.of());
 
         MonthlyAnalysisResponseDto response = service.getMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
 
-        assertEquals(SavingResultStatus.UNAVAILABLE, response.savingResult().status());
-        assertNull(response.savingResult().actualAmount());
-        assertNull(response.savingResult().differenceAmount());
+        assertEquals(SavingResultStatus.AVAILABLE, response.savingResult().status());
+        assertEquals(new BigDecimal("500000"), response.savingResult().actualAmount());
+        assertEquals(new BigDecimal("-200000"), response.savingResult().differenceAmount());
     }
 
     @Test
