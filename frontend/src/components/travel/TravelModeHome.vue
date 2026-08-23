@@ -1064,7 +1064,10 @@ async function switchMode(mode) {
       class="card budget-card reveal-card"
       style="--card-delay: 0ms"
     >
-      <div class="card-title budget-card-title">
+      <div
+        class="card-title budget-card-title"
+        :class="{ 'overall-budget-title': selected.code === 'all' }"
+      >
         <h2>여행자금 체크</h2>
         <div class="legend" v-if="countries.length > 0">
           <span
@@ -1992,6 +1995,33 @@ async function switchMode(mode) {
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.03em;
+}
+.budget-card-title.overall-budget-title {
+  align-items: center;
+  gap: 8px;
+}
+.overall-budget-title h2 {
+  flex: none;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.overall-budget-title .legend {
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 3px;
+}
+.overall-budget-title .country-badge {
+  min-height: 24px;
+  gap: 4px;
+  padding: 3px 6px;
+}
+.overall-budget-title .country-badge i {
+  width: 20px;
+  height: 13px;
+  border-radius: 2px;
+}
+.overall-budget-title .country-badge b {
+  font-size: 9px;
 }
 .budget-total-block {
   display: flex;
