@@ -51,13 +51,19 @@ onMounted(async () => {
     await store.loadSchedules().catch(() => {});
   }
   await nextTick();
+  updateListMaxHeight();
   await positionTimelineAtNext();
   positionCalendarAtToday();
+  window.addEventListener('resize', updateListMaxHeight);
 });
 
-onBeforeUnmount(() => window.clearInterval(scheduleClockTimer));
+onBeforeUnmount(() => {
+  window.clearInterval(scheduleClockTimer);
+  window.removeEventListener('resize', updateListMaxHeight);
+});
 
 onActivated(async () => {
+  updateListMaxHeight();
   await positionTimelineAtNext();
   positionCalendarAtToday();
 });
@@ -85,6 +91,7 @@ watch(
   () => nextSchedule.value?.id,
   async () => {
     await nextTick();
+    updateListMaxHeight();
     await positionTimelineAtNext();
   },
 );
@@ -311,6 +318,19 @@ function openScheduleForm() {
     return;
   }
   router.push({ path: '/schedule/new', query });
+}
+
+// "여행 일정 추가" 플로팅 버튼(48px)+하단 여백(78px)+여유 공간 만큼은
+// 리스트가 절대 침범하지 않도록, 화면에 남은 공간에 맞춰 리스트 스크롤 영역
+// 자체의 높이를 매번 다시 계산한다(버튼에 가려지는 대신 그 위에서 끝난다).
+const LIST_BOTTOM_CLEARANCE = 150;
+
+function updateListMaxHeight() {
+  const list = timelineList.value;
+  if (!list) return;
+  const top = list.getBoundingClientRect().top;
+  const available = window.innerHeight - top - LIST_BOTTOM_CLEARANCE;
+  list.style.maxHeight = `${Math.max(available, 200)}px`;
 }
 
 async function positionTimelineAtNext() {
