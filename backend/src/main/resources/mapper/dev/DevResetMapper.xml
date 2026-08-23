@@ -280,4 +280,44 @@
         WHERE w.user_id = #{userId}
     </update>
 
+    <!-- 라이브 월렛 충전/출금/자동저축이 연동계좌에서 뺀·넣은 금액을 되돌린다.
+         (WALLET_CHARGE_/WALLET_WITHDRAW_/WALLET_AUTO_ 태그가 붙은 transactions만 대상.
+         DEMO-SEED 시드는 계좌 balance를 직접 세팅할 뿐 이 경로로 transactions를
+         생성하지 않으므로, 이 태그가 붙은 행은 전부 라이브 조작으로 확정할 수 있다.) -->
+    <update id="restoreAccountBalanceFromNonSeedWalletTransactions">
+        UPDATE accounts a
+        INNER JOIN wallet_account wa ON wa.account_id = a.id
+        INNER JOIN wallet w ON wa.wallet_id = w.id
+        SET a.balance = a.balance + COALESCE((
+                SELECT SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE -t.amount END)
+                FROM transactions t
+                WHERE t.account_id = a.id
+                  AND t.is_deleted = 0
+                  AND (t.external_key LIKE 'WALLET_CHARGE_%'
+                       OR t.external_key LIKE 'WALLET_WITHDRAW_%'
+                       OR t.external_key LIKE 'WALLET_AUTO_%')
+            ), 0),
+            a.withdrawable_amount = a.withdrawable_amount + COALESCE((
+                SELECT SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE -t.amount END)
+                FROM transactions t
+                WHERE t.account_id = a.id
+                  AND t.is_deleted = 0
+                  AND (t.external_key LIKE 'WALLET_CHARGE_%'
+                       OR t.external_key LIKE 'WALLET_WITHDRAW_%'
+                       OR t.external_key LIKE 'WALLET_AUTO_%')
+            ), 0)
+        WHERE w.user_id = #{userId}
+    </update>
+
+    <delete id="deleteNonSeedWalletAccountTransactions">
+        DELETE t FROM transactions t
+        INNER JOIN accounts a ON t.account_id = a.id
+        INNER JOIN wallet_account wa ON wa.account_id = a.id
+        INNER JOIN wallet w ON wa.wallet_id = w.id
+        WHERE w.user_id = #{userId}
+          AND (t.external_key LIKE 'WALLET_CHARGE_%'
+               OR t.external_key LIKE 'WALLET_WITHDRAW_%'
+               OR t.external_key LIKE 'WALLET_AUTO_%')
+    </delete>
+
 </mapper>

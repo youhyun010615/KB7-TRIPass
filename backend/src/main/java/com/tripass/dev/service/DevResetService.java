@@ -84,6 +84,10 @@ public class DevResetService {
         devResetMapper.deleteNonSeedWalletExchangeTransactionByUser(userId);
         devResetMapper.deleteNonSeedTravelCardLedgerByUser(userId);
         devResetMapper.resetTravelCardBalanceByUser(userId);
+        // 연동계좌 balance 복원은 되돌릴 대상 transactions가 아직 남아있는 상태에서
+        // 먼저 계산해야 하므로, 삭제보다 반드시 앞서 실행한다.
+        devResetMapper.restoreAccountBalanceFromNonSeedWalletTransactions(userId);
+        devResetMapper.deleteNonSeedWalletAccountTransactions(userId);
         devResetMapper.deleteNonSeedWalletLedgerByUser(userId);
         devResetMapper.recalcWalletBalanceFromSeedLedger(userId);
 
