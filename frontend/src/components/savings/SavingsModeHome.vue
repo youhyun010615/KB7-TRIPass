@@ -21,6 +21,7 @@ import { today } from '@/utils/devDate';
 const props = defineProps({
   onSwitchMode: { type: Function, default: null },
 });
+const emit = defineEmits(['ready']);
 
 const exchangeStore = useExchangeStore();
 const monthlyAnalysisStore = useMonthlyAnalysisStore();
@@ -110,17 +111,21 @@ async function loadHomeInsights({ force = false } = {}) {
 }
 
 onMounted(async () => {
-  await travelStore.loadLifecycle();
-  await nextTick();
-  restoreCountryPosition();
-  await Promise.all([
-    travelStore.loadHomeDashboard({ force: true }),
-    exchangeStore.updateExchangeRates(),
-    savingReadinessStore.load({ force: true }),
-    loadHomeInsights({ force: true }),
-  ]);
-  await nextTick();
-  restoreCountryPosition();
+  try {
+    await travelStore.loadLifecycle();
+    await nextTick();
+    restoreCountryPosition();
+    await Promise.all([
+      travelStore.loadHomeDashboard({ force: true }),
+      exchangeStore.updateExchangeRates(),
+      savingReadinessStore.load({ force: true }),
+      loadHomeInsights({ force: true }),
+    ]);
+    await nextTick();
+    restoreCountryPosition();
+  } finally {
+    emit('ready');
+  }
 });
 
 onBeforeUnmount(() => {

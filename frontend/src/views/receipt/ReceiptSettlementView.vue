@@ -124,7 +124,7 @@ onMounted(loadSettlement)
         <span>예정 정산 금액</span>
         <div class="amount-stack hero-amounts">
           <strong v-for="amount in summary.totalAmounts" :key="amount.currencyCode">{{ amountLabel(amount) }}</strong>
-          <strong v-if="!summary.totalAmounts.length">—</strong>
+          <strong v-if="!summary.totalAmounts.length">0</strong>
         </div>
       </div>
     </section>

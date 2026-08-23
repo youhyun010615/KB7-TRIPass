@@ -535,8 +535,8 @@ async function confirmUnlinkTravelCard() {
           <i :style="{ width: `${travelUsageBarPercent}%` }" />
         </div>
         <div class="travel-budget-meta">
-          <span><small>BUDGET</small>{{ money(travelTargetAmount) }}</span>
           <span><small>SPENT</small>{{ money(travelSpentAmount) }}</span>
+          <span><small>BUDGET</small>{{ money(travelTargetAmount) }}</span>
         </div>
       </div>
 
