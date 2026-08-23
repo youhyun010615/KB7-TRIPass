@@ -81,6 +81,9 @@ public interface MonthlySpendingAnalysisMapper {
      */
     int updateMonthlyAnalysisPreservingStatus(MonthlySpendingAnalysisDto dto);
 
+    /** 이전 버전 리포트의 저축 결과만 보정하고 소비·카테고리 분석은 유지한다. */
+    int updateSavingResult(MonthlySpendingAnalysisDto dto);
+
     // ===== 카테고리 분석 저장·조회 =====
 
     void deleteCategoryAnalyses(@Param("monthlySpendingAnalysisId") Long monthlySpendingAnalysisId);

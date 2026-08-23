@@ -367,17 +367,13 @@ class MonthlySpendingAnalysisServiceTest {
 
         when(mapper.findMonthlyAnalysis(USER_ID, "2026-07")).thenReturn(analysis);
         when(mapper.findActualSavingAmount(USER_ID, "2026-07")).thenReturn(new BigDecimal("500000"));
-        when(mapper.updateMonthlyAnalysisPreservingStatus(any())).thenAnswer(invocation -> {
+        when(mapper.updateSavingResult(any())).thenAnswer(invocation -> {
             MonthlySpendingAnalysisDto updated = invocation.getArgument(0);
             analysis.setActualSavingAmount(updated.getActualSavingAmount());
             analysis.setSavingDifferenceAmount(updated.getSavingDifferenceAmount());
             analysis.setSavingResultMessage(updated.getSavingResultMessage());
             return 1;
         });
-        stubConsumptionCategoryIds();
-        when(mapper.findAccountWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
-        when(mapper.findCheckCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
-        when(mapper.findCreditCardWithdrawalTransactions(eq(USER_ID), any(), any())).thenReturn(List.of());
         when(mapper.findCategoryAnalyses(1L)).thenReturn(List.of());
         when(mapper.findRecommendedCategoryAnalyses(1L)).thenReturn(List.of());
 
@@ -386,6 +382,8 @@ class MonthlySpendingAnalysisServiceTest {
         assertEquals(SavingResultStatus.AVAILABLE, response.savingResult().status());
         assertEquals(new BigDecimal("500000"), response.savingResult().actualAmount());
         assertEquals(new BigDecimal("-200000"), response.savingResult().differenceAmount());
+        verify(mapper, never()).deleteCategoryAnalyses(anyLong());
+        verify(mapper, never()).updateMonthlyAnalysisPreservingStatus(any());
     }
 
     @Test
