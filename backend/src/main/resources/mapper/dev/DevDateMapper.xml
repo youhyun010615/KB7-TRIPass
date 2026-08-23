@@ -25,4 +25,18 @@
           AND is_deleted = 0
     </update>
 
+    <select id="selectDemoRecordingMode" resultType="boolean">
+        SELECT demo_recording_mode
+        FROM users
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+    <update id="updateDemoRecordingMode">
+        UPDATE users
+        SET demo_recording_mode = #{enabled}
+        WHERE id = #{userId}
+          AND is_deleted = 0
+    </update>
+
 </mapper>
