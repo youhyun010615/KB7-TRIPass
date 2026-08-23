@@ -2962,7 +2962,6 @@ async function switchMode(mode) {
 .fund-amount-line.align-right{align-items:flex-end}
 .fund-amount-line em{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
 .overall-fund-stat{width:50%;min-width:0}
-.overall-fund-stat.align-right{border-left:1px solid rgba(255,255,255,.24);padding-left:14px}
 .overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:6px;white-space:nowrap}
 .overall-currency-breakdown.align-right{align-items:flex-end}
 .overall-currency-breakdown em{color:#8cebbf;font-size:9px;font-style:normal;font-weight:850}
