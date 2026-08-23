@@ -40,14 +40,16 @@ class WeeklyMissionEvaluationServiceTest {
     @Mock private SavingMissionMapper missionMapper;
     @Mock private MonthlySpendingAnalysisMapper analysisMapper;
     @Mock private MissionWalletRewardService walletRewardService;
+    @Mock private com.tripass.dev.util.DevDateUtil devDateUtil;
     private WeeklyMissionEvaluationService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         Clock clock = Clock.fixed(Instant.parse("2026-08-08T00:00:00Z"), ZoneId.of("Asia/Seoul"));
+        when(devDateUtil.today(USER_ID)).thenReturn(LocalDate.now(clock));
         service = new WeeklyMissionEvaluationService(
-                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), walletRewardService, clock);
+                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), walletRewardService, clock, devDateUtil);
     }
 
     @Test
@@ -146,8 +148,9 @@ class WeeklyMissionEvaluationServiceTest {
     @Test
     void cannotEvaluateBeforePeriodEnds() {
         Clock earlyClock = Clock.fixed(Instant.parse("2026-08-07T00:00:00Z"), ZoneId.of("Asia/Seoul"));
+        when(devDateUtil.today(USER_ID)).thenReturn(LocalDate.now(earlyClock));
         service = new WeeklyMissionEvaluationService(
-                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), walletRewardService, earlyClock);
+                missionMapper, analysisMapper, new DuplicateTransactionMatcher(), walletRewardService, earlyClock, devDateUtil);
         givenMissions(mission(11L, 2L, 30_000));
 
         CustomException error = assertThrows(CustomException.class,

@@ -34,16 +34,27 @@ public class SavingMissionService {
     private final SavingMissionMapper mapper;
     private final MissionStartWeekPolicy startWeekPolicy;
     private final Clock clock;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     @Autowired
-    public SavingMissionService(SavingMissionMapper mapper, MissionStartWeekPolicy startWeekPolicy) {
-        this(mapper, startWeekPolicy, Clock.systemDefaultZone());
+    public SavingMissionService(
+            SavingMissionMapper mapper,
+            MissionStartWeekPolicy startWeekPolicy,
+            com.tripass.dev.util.DevDateUtil devDateUtil
+    ) {
+        this(mapper, startWeekPolicy, Clock.systemDefaultZone(), devDateUtil);
     }
 
-    SavingMissionService(SavingMissionMapper mapper, MissionStartWeekPolicy startWeekPolicy, Clock clock) {
+    SavingMissionService(
+            SavingMissionMapper mapper,
+            MissionStartWeekPolicy startWeekPolicy,
+            Clock clock,
+            com.tripass.dev.util.DevDateUtil devDateUtil
+    ) {
         this.mapper = mapper;
         this.startWeekPolicy = startWeekPolicy;
         this.clock = clock;
+        this.devDateUtil = devDateUtil;
     }
 
     /**
@@ -73,7 +84,7 @@ public class SavingMissionService {
             return new CreationResult(false, buildResponse(targetYearMonth, existing));
         }
 
-        MissionStartResult startResult = resolveStartResult(targetYearMonth, LocalDate.now(clock));
+        MissionStartResult startResult = resolveStartResult(targetYearMonth, devDateUtil.today(userId));
         Long tripId = mapper.findActiveTripIdByUserId(userId);
         for (MissionCategorySelectionDto selection : newSelections) {
             createCategoryMission(userId, tripId, analysis, targetYearMonth, selection, startResult);
@@ -122,7 +133,7 @@ public class SavingMissionService {
         monthly.setMonthlyUsageTarget(selection.getMonthlyUsageTarget());
         monthly.setPlannedSavingAmount(plannedSavingAmount);
         monthly.setStartWeek(startWeek);
-        monthly.setSelectedAt(LocalDate.now(clock).toString());
+        monthly.setSelectedAt(devDateUtil.today(userId).toString());
         monthly.setMissionStartDate(startResult.missionStartDate().toString());
         monthly.setStatus("IN_PROGRESS");
         mapper.insertMonthlyMission(monthly);
