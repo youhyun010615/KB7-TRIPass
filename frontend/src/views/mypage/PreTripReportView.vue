@@ -53,25 +53,31 @@ function insightIcon(icon) {
   return insightIconMap[icon] || TrendingUp
 }
 
-// 월렛 저축 내역 — 저축 시작 달부터 여행 전달까지의 누적 추이 SVG 좌표 계산
+// 월렛 저축 내역 — 저축 시작 달부터 여행 전달까지 월별로 얼마씩 저축했는지 SVG 좌표 계산
 const CHART_WIDTH = 300
 const CHART_HEIGHT = 84
 const trendChart = computed(() => {
   const trend = r.value?.savingsTrend || []
   if (!trend.length) return null
-  const max = Math.max(...trend.map(m => m.cumulativeAmount), 1)
+  const max = Math.max(...trend.map(m => m.savedAmount), 1)
   const stepX = trend.length > 1 ? CHART_WIDTH / (trend.length - 1) : 0
   const coords = trend.map((m, i) => ({
     x: trend.length > 1 ? i * stepX : CHART_WIDTH / 2,
-    y: CHART_HEIGHT - Math.max(0, (m.cumulativeAmount / max) * CHART_HEIGHT),
+    y: CHART_HEIGHT - Math.max(0, (m.savedAmount / max) * CHART_HEIGHT),
     ...m,
   }))
   const points = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')
   const areaPath = `M0,${CHART_HEIGHT} ${coords.map(c => `L${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')} L${CHART_WIDTH},${CHART_HEIGHT} Z`
 
-  // 누적 금액 기준 최고(맨 오른쪽)/최저(맨 왼쪽) 지점 표시 — 누적 그래프이므로 항상 마지막이 최고, 처음이 최저
-  const best = coords[coords.length - 1]
-  const worst = coords.length > 1 ? coords[0] : null
+  // 월별 저축액 기준 최고/최저 달 표시
+  let bestIdx = 0
+  let worstIdx = 0
+  coords.forEach((c, i) => {
+    if (c.savedAmount > coords[bestIdx].savedAmount) bestIdx = i
+    if (c.savedAmount < coords[worstIdx].savedAmount) worstIdx = i
+  })
+  const best = coords[bestIdx]
+  const worst = coords.length > 1 && worstIdx !== bestIdx ? coords[worstIdx] : null
 
   return { coords, points, areaPath, max, best, worst }
 })
@@ -148,7 +154,7 @@ const budgetSegments = computed(() => {
 
     <section class="card anim-in delay-2">
       <h3>월렛 저축 내역</h3>
-      <p class="chart-sub">저축 시작부터 여행 전달까지 모은 금액의 흐름이에요.</p>
+      <p class="chart-sub">저축 시작부터 여행 전달까지 매달 얼마씩 저축했는지 보여드려요.</p>
       <div v-if="trendChart" class="trend-chart-wrap">
         <svg viewBox="0 0 300 84" class="trend-chart" preserveAspectRatio="none">
           <path :d="trendChart.areaPath" class="trend-area" />
@@ -160,8 +166,8 @@ const budgetSegments = computed(() => {
           <span v-for="m in r.savingsTrend" :key="m.month">{{ m.monthLabel }}</span>
         </div>
         <div class="trend-minmax">
-          <span v-if="trendChart.worst" class="worst"><i />최저 {{ trendChart.worst.monthLabel }} {{ money(trendChart.worst.cumulativeAmount) }}</span>
-          <span class="best"><i />최고 {{ trendChart.best.monthLabel }} {{ money(trendChart.best.cumulativeAmount) }}</span>
+          <span v-if="trendChart.worst" class="worst"><i />최저 {{ trendChart.worst.monthLabel }} {{ money(trendChart.worst.savedAmount) }}</span>
+          <span class="best"><i />최고 {{ trendChart.best.monthLabel }} {{ money(trendChart.best.savedAmount) }}</span>
         </div>
       </div>
       <p v-else class="chart-empty">아직 저축 내역이 없어요.</p>
@@ -281,7 +287,7 @@ const budgetSegments = computed(() => {
 .trend-marker.best { fill: #18a77d; stroke: #fff; stroke-width: 1.2; }
 .trend-marker.worst { fill: #e5484d; stroke: #fff; stroke-width: 1.2; }
 .trend-labels { display: flex; justify-content: space-between; margin-top: 6px; color: #97a6bc; font-size: 8.5px; }
-.trend-minmax { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: var(--fs-caption); font-weight: var(--w-bold); }
+.trend-minmax { display: flex; gap: 14px; margin-top: 10px; font-size: var(--fs-caption); font-weight: var(--w-bold); }
 .trend-minmax span { display: flex; align-items: center; gap: 4px; }
 .trend-minmax i { width: 6px; height: 6px; border-radius: 50%; }
 .trend-minmax .best { color: #18a77d; }
