@@ -1033,8 +1033,11 @@ async function switchMode(mode) {
           <span
             v-for="c in countries"
             :key="c.countryName"
-            :style="{ color: getCountryColor(c.countryName) }"
-          >● {{ c.countryName }}</span
+            class="country-badge"
+          >
+            <i :class="flagIconClass(countryFlagMap[c.countryName])" />
+            <b>{{ c.countryName }}</b>
+          </span
           >
         </div>
       </div>
@@ -1910,7 +1913,31 @@ async function switchMode(mode) {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+}
+.legend .country-badge {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #315b91;
+  white-space: nowrap;
+}
+.legend .country-badge i {
+  display: block;
+  width: 28px;
+  height: 18px;
+  flex: none;
+  border-radius: 3px;
+  background-size: cover;
+  box-shadow: 0 1px 2px rgba(16, 25, 43, 0.12);
+}
+.legend .country-badge b {
+  font-size: 11px;
+  font-weight: 900;
 }
 .budget-card {
   padding: 20px;
@@ -2810,7 +2837,7 @@ async function switchMode(mode) {
 .ticket{--ticket-edge-height:60px;--ticket-perforation-height:15px}.ticket-top{height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height));min-height:calc(var(--ticket-edge-height) - var(--ticket-perforation-height))}.perforation:not(.lower){height:var(--ticket-perforation-height);background:var(--theme)}.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height);padding:0 16px;font-size:10px}.ticket-stub>span{display:flex;align-items:center;gap:6px;font-size:11px}.ticket-stub>span img{width:21px;height:21px;object-fit:contain}.ticket-stub>b{font-size:10px;letter-spacing:.06em}
 .ticket{--ticket-edge-height:45px}.ticket-top,.ticket-stub{height:var(--ticket-edge-height);min-height:var(--ticket-edge-height)}.perforation:not(.lower){position:absolute;top:var(--ticket-edge-height);height:0;background:transparent}.perforation.lower{bottom:var(--ticket-edge-height)}.ticket-stub{padding:0 14px;font-size:9px}.ticket-stub>span{font-size:10px}.ticket-stub>span img{width:18px;height:18px}.ticket-stub>b{font-size:9px}
 .perforation:not(.lower),.perforation.lower{transform:translateY(-11px)}
-.travel-card-balance{display:flex;flex-direction:column;align-items:flex-start;text-align:left}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:900}
+.travel-card-balance{display:flex;flex-direction:column;align-items:flex-start;text-align:left}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:inherit;font-size:11px;font-weight:900}
 .ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
 .travel-card-balance-values{display:flex;align-items:baseline;gap:8px}.travel-card-balance-values em{color:#8cebbf;font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}
 .all-travel-card-balances{display:flex;flex-wrap:wrap;gap:3px 12px}.all-travel-card-balances .travel-card-balance-values{flex:0 0 auto}
