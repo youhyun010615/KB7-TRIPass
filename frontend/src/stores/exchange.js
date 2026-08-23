@@ -113,6 +113,7 @@ export const useExchangeStore = defineStore('exchange', () => {
       alerts.value = data.map((item) => ({
         id: item.id,
         countryId: item.countryId,
+        countryName: item.countryName,
         currencyCode: item.currencyCode,
         targetRate: item.targetRate,
       }));

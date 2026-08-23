@@ -89,6 +89,7 @@
         SELECT
             era.id AS id,
             era.country_id AS countryId,
+            co.country_name AS countryName,
             c.currency_code AS currencyCode,
             era.target_rate AS targetRate
         FROM exchange_rate_alerts era

@@ -28,8 +28,8 @@ async function remove() {
     <section v-if="alert" class="ticket">
       <div class="ticket-head"><small>TRIPASS RATE ALERT</small><b>ACTIVE</b></div>
       <div class="identity">
-        <span :class="currency?.flagClass" class="flag" />
-        <div><small>{{ currency?.countryName }}</small><h2>{{ currency?.name }} · {{ alert.currencyCode }}</h2></div>
+        <span :class="exchange.getCurrencyByCountryId(alert.countryId)?.flagClass" class="flag" />
+        <div><small>{{ alert.countryName }}</small><h2>{{ alert.countryName }} · {{ alert.currencyCode }}</h2></div>
       </div>
       <div class="rate-row"><span>목표 환율</span><strong>{{ format(alert.targetRate) }}원</strong></div>
       <div class="rate-row current"><span>현재 환율</span><strong>{{ format(currency?.rate) }}원</strong></div>

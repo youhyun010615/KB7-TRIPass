@@ -49,12 +49,10 @@ const reachedAlerts = computed(() => {
           ></span>
 
           <div class="info">
-            <b
-              >{{ alert.currencyCode }}({{
+            <b>{{ alert.countryName }} ({{
                 exchange.getCurrencyByCountryId(alert.countryId)?.symbol || ''
-              }})</b
-            >
-            <small>{{ exchange.getCurrencyByCountryId(alert.countryId)?.name }}</small>
+              }})</b>
+            <small>{{ alert.currencyCode }}</small>
           </div>
 
           <div class="rates">
