@@ -258,7 +258,7 @@ async function submitExchange() {
         })
 
     if (!result) {
-      showNotice(exchangeMode.value === 'BUY' ? '외화 충전에 실패했어요.' : '외화 빼기에 실패했어요.')
+      showNotice(wallet.errorMessage || (exchangeMode.value === 'BUY' ? '외화 충전에 실패했어요.' : '외화 빼기에 실패했어요.'))
       return
     }
 

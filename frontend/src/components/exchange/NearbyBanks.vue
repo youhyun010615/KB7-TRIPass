@@ -207,6 +207,8 @@ const moveToCurrentLocation = () => {
 };
 
 const mapLoadError = ref(false);
+const mapLoadErrorMessage = ref('');
+const isMapRetrying = ref(false);
 const kakaoMapKey = import.meta.env.VITE_KAKAO_MAP_KEY?.trim();
 
 const loadKakaoMap = () => {
@@ -232,18 +234,9 @@ const loadKakaoMap = () => {
     );
 
     if (existingScript) {
-      const handleLoad = () => {
-        cleanup();
-        resolve();
-      };
-      const handleError = () => {
-        cleanup();
-        reject(new Error('기존 지도 스크립트 로드 실패'));
-      };
-
-      existingScript.addEventListener('load', handleLoad);
-      existingScript.addEventListener('error', handleError);
-      return;
+      // 이전 로딩이 실패한 script 태그가 남아 있으면 load 이벤트가 다시 발생하지 않아
+      // 화면을 재진입해도 계속 시간 초과된다. 실패 흔적을 제거하고 새로 로드한다.
+      existingScript.remove();
     }
 
     const script = document.createElement('script');
@@ -443,8 +436,11 @@ const initMap = (lat, lng) => {
   });
 };
 
-onMounted(async () => {
+const initializeNearbyMap = async () => {
   exchange.selectedBankId = null;
+  mapLoadError.value = false;
+  mapLoadErrorMessage.value = '';
+  isMapRetrying.value = true;
   try {
     const [_, userPos] = await Promise.all([loadKakaoMap(), getUserPosition()]);
 
@@ -452,13 +448,27 @@ onMounted(async () => {
       throw new Error('카카오 지도 객체 생성 실패');
     }
 
-    window.kakao.maps.load(() => {
-      initMap(userPos.lat, userPos.lng);
+    await new Promise((resolve, reject) => {
+      window.kakao.maps.load(() => {
+        try {
+          initMap(userPos.lat, userPos.lng);
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      });
     });
   } catch (error) {
     console.error('카카오 지도 로드 실패:', error);
     mapLoadError.value = true;
+    mapLoadErrorMessage.value = error?.message || '지도 서비스 초기화에 실패했습니다.';
+  } finally {
+    isMapRetrying.value = false;
   }
+};
+
+onMounted(async () => {
+  await initializeNearbyMap();
 });
 
 function selectBank(bank) {
@@ -499,9 +509,15 @@ function goToDetail(bank) {
       <div v-if="mapLoadError" class="map-error-overlay">
         <span class="error-icon">⚠️</span>
         <p class="error-msg">지도 서비스를 불러올 수 없습니다.</p>
-        <small class="error-sub"
-          >네트워크 상태 및 카카오 지도 API 키 설정을 확인해 주세요.</small
+        <small class="error-sub">{{ mapLoadErrorMessage }}</small>
+        <button
+          type="button"
+          class="map-retry-btn"
+          :disabled="isMapRetrying"
+          @click="initializeNearbyMap"
         >
+          {{ isMapRetrying ? '다시 연결 중...' : '다시 시도' }}
+        </button>
       </div>
 
       <button
@@ -848,5 +864,20 @@ function goToDetail(bank) {
   font-size: 10px;
   color: #64748b;
   margin-top: 4px;
+}
+.map-retry-btn {
+  margin-top: 12px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #17428f;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.map-retry-btn:disabled {
+  opacity: .55;
+  cursor: wait;
 }
 </style>
