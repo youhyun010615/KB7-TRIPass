@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { CalendarDays } from '@lucide/vue';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
@@ -51,13 +52,19 @@ onMounted(async () => {
     await store.loadSchedules().catch(() => {});
   }
   await nextTick();
+  updateListMaxHeight();
   await positionTimelineAtNext();
   positionCalendarAtToday();
+  window.addEventListener('resize', updateListMaxHeight);
 });
 
-onBeforeUnmount(() => window.clearInterval(scheduleClockTimer));
+onBeforeUnmount(() => {
+  window.clearInterval(scheduleClockTimer);
+  window.removeEventListener('resize', updateListMaxHeight);
+});
 
 onActivated(async () => {
+  updateListMaxHeight();
   await positionTimelineAtNext();
   positionCalendarAtToday();
 });
@@ -85,6 +92,7 @@ watch(
   () => nextSchedule.value?.id,
   async () => {
     await nextTick();
+    updateListMaxHeight();
     await positionTimelineAtNext();
   },
 );
@@ -287,7 +295,8 @@ const currentTravelDay = computed(() => {
   const start = new Date(`${store.travelStart}T00:00:00`).getTime();
   const today = new Date(`${store.today}T00:00:00`).getTime();
   if (![start, today].every(Number.isFinite)) return 0;
-  return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
+  if (today < start) return 0;
+  return Math.min(travelDays.value, Math.floor((today - start) / 86_400_000) + 1);
 });
 
 const openDetail = (id) => {
@@ -311,6 +320,19 @@ function openScheduleForm() {
     return;
   }
   router.push({ path: '/schedule/new', query });
+}
+
+// "여행 일정 추가" 플로팅 버튼(48px)+하단 여백(78px)+여유 공간 만큼은
+// 리스트가 절대 침범하지 않도록, 화면에 남은 공간에 맞춰 리스트 스크롤 영역
+// 자체의 높이를 매번 다시 계산한다(버튼에 가려지는 대신 그 위에서 끝난다).
+const LIST_BOTTOM_CLEARANCE = 150;
+
+function updateListMaxHeight() {
+  const list = timelineList.value;
+  if (!list) return;
+  const top = list.getBoundingClientRect().top;
+  const available = window.innerHeight - top - LIST_BOTTOM_CLEARANCE;
+  list.style.maxHeight = `${Math.max(available, 200)}px`;
 }
 
 async function positionTimelineAtNext() {
@@ -510,7 +532,7 @@ async function focusTimelineDate(date) {
           />
         </div>
         <div v-if="!visibleTimelineGroups.length" class="empty-state">
-          <span class="empty-calendar-icon" aria-hidden="true">＋</span>
+          <span class="empty-calendar-icon" aria-hidden="true"><CalendarDays :size="28" :stroke-width="2.2" /></span>
           <b>{{ listMode ? '선택한 날짜에 등록된 일정이 없어요' : '아직 등록된 일정이 없어요' }}</b>
           <small>{{ listMode ? '아래 버튼을 눌러 이 날짜에 일정을 추가해 보세요.' : '첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.' }}</small>
         </div>

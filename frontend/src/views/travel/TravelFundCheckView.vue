@@ -329,23 +329,32 @@ function ratio(item) {
 }
 .page-header label {
   display: flex;
-  height: 34px;
+  height: 30px;
   align-items: center;
-  gap: 3px;
-  padding: 0 7px;
-  border: 1px solid #dce3ed;
-  border-radius: 13px;
-  background: #fff;
+  justify-content:center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #eef5ff;
 }
 .page-header label span {
+  display:block;
+  width:22px;
+  height:15px;
+  border-radius:2px;
+  background-size:cover;
   font-size: 13px;
 }
 .page-header select {
   min-width: 0;
-  width: 58px;
+  width:auto;
+  max-width:58px;
+  appearance:none;
   background: transparent;
+  color:#315b91;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 900;
   outline: none;
 }
 .summary-ticket {

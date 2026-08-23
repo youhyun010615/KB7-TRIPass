@@ -23,6 +23,8 @@ const requestedDate = computed(() => String(route.query.date || ''));
 const archiveCountries = ref([]);
 const countrySelectEl = ref(null);
 const countryDropdownOpen = ref(false);
+const currencySelectEl = ref(null);
+const currencyDropdownOpen = ref(false);
 const availableCountries = computed(() =>
   (archiveMode.value ? archiveCountries.value : travel.selectedPlans).map((plan) => ({
     ...plan,
@@ -79,8 +81,25 @@ const error = computed(() =>
     ? `${country.value?.name || '선택 국가'}의 여행 기간 안에서 날짜를 선택해 주세요.`
     : '',
 );
-const currencies = ['EUR', 'USD', 'CHF', 'JPY', 'HKD'];
-const wonRates = { EUR: 1486.2, USD: 1380, CHF: 1704.6, JPY: 9.23, HKD: 184.2 };
+// 일정 통화는 "원화"와 "이 일정이 속한 국가의 통화" 두 가지만 고르면 되므로,
+// 선택된 국가가 바뀔 때마다 옵션도 그 국가 통화 기준으로 다시 좁힌다.
+const currencies = computed(() =>
+  [...new Set(['KRW', country.value?.currency].filter(Boolean))],
+);
+const currencyNames = {
+  KRW: '대한민국 원', AED: '아랍에미리트 디르함', AUD: '호주 달러', BHD: '바레인 디나르',
+  BND: '브루나이 달러', CAD: '캐나다 달러', CHF: '스위스 프랑', CNH: '중국 위안화(역외)',
+  CNY: '중국 위안화', DKK: '덴마크 크로네', EUR: '유로', GBP: '영국 파운드',
+  HKD: '홍콩 달러', IDR: '인도네시아 루피아', JPY: '일본 엔', KWD: '쿠웨이트 디나르',
+  MYR: '말레이시아 링깃', NOK: '노르웨이 크로네', NZD: '뉴질랜드 달러', SAR: '사우디아라비아 리얄',
+  SEK: '스웨덴 크로나', SGD: '싱가포르 달러', THB: '태국 바트', USD: '미국 달러',
+};
+const wonRates = {
+  EUR: 1486.2, USD: 1380, CHF: 1704.6, JPY: 9.23, HKD: 184.2, GBP: 1750,
+  AED: 375.8, AUD: 900, BHD: 3670, BND: 1022, CAD: 1010, CNH: 190, CNY: 190,
+  DKK: 199, IDR: 0.087, KWD: 4480, MYR: 295, NOK: 130, NZD: 830, SAR: 368,
+  SEK: 130, SGD: 1020, THB: 38.9,
+};
 const wonAmount = computed(() =>
   Math.round(Number(form.amount || 0) * (wonRates[form.currency] || 1)),
 );
@@ -100,8 +119,13 @@ function selectCountry(item) {
   applyCountry();
   countryDropdownOpen.value = false;
 }
-function closeCountryDropdown(event) {
+function closeDropdowns(event) {
   if (!countrySelectEl.value?.contains(event.target)) countryDropdownOpen.value = false;
+  if (!currencySelectEl.value?.contains(event.target)) currencyDropdownOpen.value = false;
+}
+function selectCurrency(item) {
+  form.currency = item;
+  currencyDropdownOpen.value = false;
 }
 
 const isSubmitting = ref(false);
@@ -165,7 +189,7 @@ async function submit() {
 }
 
 onMounted(async () => {
-  document.addEventListener('pointerdown', closeCountryDropdown);
+  document.addEventListener('pointerdown', closeDropdowns);
   if (archiveMode.value) {
     const tripId = Number(route.params.id || route.query.tripId);
     try {
@@ -215,7 +239,7 @@ onMounted(async () => {
     }
   }
 });
-onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDropdown));
+onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns));
 </script>
 
 <template>
@@ -284,11 +308,34 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
       <label
         ><span>금액</span>
         <div class="money">
-          <select v-model="form.currency">
-            <option v-for="item in currencies" :key="item">
-              {{ item }}
-            </option></select
-          ><input v-model.number="form.amount" type="number" min="0" /><em>{{
+          <div ref="currencySelectEl" class="currency-field">
+            <button
+              type="button"
+              class="currency-trigger"
+              :class="{ open: currencyDropdownOpen }"
+              @click="currencyDropdownOpen = !currencyDropdownOpen"
+            >
+              <span class="currency-trigger-value">
+                <span class="currency-code">{{ form.currency }}</span>
+                <span class="currency-name">{{ currencyNames[form.currency] }}</span>
+              </span>
+              <b aria-hidden="true">⌄</b>
+            </button>
+            <div v-if="currencyDropdownOpen" class="currency-options">
+              <button
+                v-for="item in currencies"
+                :key="item"
+                type="button"
+                :class="{ selected: item === form.currency }"
+                @click="selectCurrency(item)"
+              >
+                <span class="currency-code">{{ item }}</span>
+                <span class="currency-name">{{ currencyNames[item] }}</span>
+                <b v-if="item === form.currency">✓</b>
+              </button>
+            </div>
+          </div>
+          <input v-model.number="form.amount" type="number" min="0" /><em>{{
             form.currency
           }}</em>
         </div>
@@ -345,7 +392,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
 <style scoped>
 .form-page {
   min-height: 100vh;
-  padding: 0 16px 150px;
+  padding: 0 16px 24px;
   background: #f3f6fc;
   color: #10192d;
 }
@@ -381,6 +428,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
   box-shadow: 0 8px 22px rgba(23, 63, 141, 0.07);
 }
 .country-field{position:relative;z-index:8}.country-trigger{display:flex;width:100%;height:45px;align-items:center;justify-content:space-between;padding:0 13px;border:1px solid #e0e6ef;border-radius:9px;background:#fff;color:#10192d;font-size:12px;font-weight:800}.country-trigger.open{border-color:#3477e9;box-shadow:0 0 0 2px rgba(52,119,233,.1)}.country-value{display:flex!important;align-items:center;gap:9px;margin:0!important;font-size:12px!important}.country-trigger>b{color:#64748b;font-size:18px}.country-flag{display:inline-block;width:23px;height:15px;flex:none;border-radius:3px;background-position:center;background-size:cover;box-shadow:0 1px 4px rgba(15,35,70,.16)}.country-options{position:absolute;top:82px;right:14px;left:14px;z-index:50;overflow:hidden;padding:6px;border:1px solid #d9e2ef;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(16,38,78,.18)}.country-options button{display:flex;width:100%;height:43px;align-items:center;gap:10px;padding:0 11px;border-radius:8px;background:#fff;color:#17233a;font-size:12px;font-weight:800;text-align:left}.country-options button:hover,.country-options button.selected{background:#edf4ff;color:#1f64d5}.country-options button span{margin:0!important;font-size:12px!important}.country-options button b{margin-left:auto;color:#246dd7}
+.currency-field{position:relative;z-index:7}.currency-trigger{display:flex;width:100%;height:100%;min-height:44px;align-items:center;justify-content:space-between;gap:6px;padding:0 10px;border:1px solid #e0e6ef;border-radius:9px;background:#fff;color:#10192d;font-size:11px;font-weight:800}.currency-trigger.open{border-color:#3477e9;box-shadow:0 0 0 2px rgba(52,119,233,.1)}.currency-trigger>b{flex:none;color:#64748b;font-size:16px}.currency-trigger-value{display:flex;min-width:0;align-items:baseline;gap:5px;overflow:hidden}.currency-code{flex:none;font-size:11px;font-weight:800;color:#10192d}.currency-name{overflow:hidden;color:#94a3b8;font-size:9px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}.currency-options{position:absolute;top:calc(100% + 6px);left:0;z-index:50;width:170px;overflow:hidden;padding:6px;border:1px solid #d9e2ef;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(16,38,78,.18)}.currency-options button{display:flex;width:100%;height:38px;align-items:center;gap:5px;padding:0 10px;border-radius:8px;background:#fff;color:#17233a;font-size:11px;font-weight:800;text-align:left}.currency-options button:hover,.currency-options button.selected{background:#edf4ff}.currency-options button:hover .currency-code,.currency-options button.selected .currency-code{color:#1f64d5}.currency-options button .currency-name{color:#94a3b8;font-size:9px;font-weight:600}.currency-options button b{margin-left:auto;flex:none;color:#246dd7}
 .trip-summary{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:17px 18px;border:1px solid #d5e1f3;border-radius:18px;background:#fff;box-shadow:0 8px 20px rgba(23,63,141,.07)}
 .trip-summary div{min-width:0}.trip-summary b,.trip-summary small{display:block}.trip-summary b{overflow:hidden;font-size:15px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.trip-summary small{margin-top:6px;color:#8493a9;font-size:10px}.trip-summary>span{flex:none;padding:7px 12px;border-radius:999px;background:#214d97;color:#fff;font-size:9px;font-weight:900}
 .section-title{padding:18px 14px 4px}.section-title h2{font-size:17px;font-weight:900}.section-title p{margin-top:6px;color:#8493a9;font-size:10px}
@@ -418,7 +466,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
 }
 .money {
   display: grid;
-  grid-template-columns: 75px 1fr 40px;
+  grid-template-columns: 130px 1fr 40px;
   align-items: center;
   gap: 6px;
 }
@@ -485,11 +533,8 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
   font-weight: 800;
 }
 .submit {
-  position: fixed;
-  right: max(calc((100vw - 390px) / 2 + 16px), 16px);
-  bottom: 78px;
-  left: max(calc((100vw - 390px) / 2 + 16px), 16px);
-  z-index: 40;
+  width: 100%;
+  margin: 20px 0 24px;
   height: 52px;
   border-radius: 13px;
   background: #19489c;
@@ -500,5 +545,4 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeCountryDr
 .submit:disabled {
   background: #a7b2c6;
 }
-.archive-form{padding-bottom:92px}.archive-form .submit{bottom:18px}
 </style>

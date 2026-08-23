@@ -30,7 +30,6 @@ onMounted(() => mypageStore.fetchSettings())
     <header class="page-header">
       <button type="button" aria-label="뒤로 가기" @click="router.back()">‹</button>
       <div>
-        <small>MY NOTIFICATION</small>
         <h1>알림 설정</h1>
       </div>
       <span aria-hidden="true"></span>
@@ -79,7 +78,6 @@ onMounted(() => mypageStore.fetchSettings())
     <section class="time-card">
       <div class="time-heading">
         <div><h2>알림 수신 시간</h2><p>설정한 시간 안에서 알림을 받아요.</p></div>
-        <span>TIME</span>
       </div>
       <div class="time-fields">
         <label><span>시작</span><input v-model="notificationStartTime" type="time" aria-label="알림 시작 시간"></label>
