@@ -85,7 +85,6 @@ public class DevResetService {
         devResetMapper.deleteNonSeedWalletCardTopupByUser(userId);
         devResetMapper.deleteNonSeedWalletExchangeTransactionByUser(userId);
         devResetMapper.deleteNonSeedTravelCardLedgerByUser(userId);
-        devResetMapper.restoreDemoTripLifecycle(userId, virtualDate);
         devResetMapper.recalcTravelCardBalanceFromSeedLedger(userId, virtualDate);
         devResetMapper.restoreAccountBalanceFromNonSeedWalletTransactions(userId);
         devResetMapper.deleteNonSeedWalletAccountTransactions(userId);
