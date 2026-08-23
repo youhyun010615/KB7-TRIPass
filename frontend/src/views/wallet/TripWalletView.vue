@@ -593,7 +593,7 @@ async function confirmUnlinkTravelCard() {
           <span :class="chartColorClass(item)">{{ item.month }}</span>
         </button>
       </div>
-      <p class="saving-hint">최근 6개월간 월렛 입출금 합계예요.</p>
+      <p class="saving-hint">이번 달부터 6개월간 월렛 입출금 합계예요.</p>
     </section>
 
     <section v-if="!wallet.isTravelCardLinked" class="empty-card">
