@@ -4,6 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTravelFundStore } from '@/stores/travelFund';
 import { useTravelStore } from '@/stores/travel';
 import { fetchTripTransactions } from '@/api/travel';
+import foodIconRaw from '@/assets/icons/food.svg?raw';
+import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
+import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
+import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
+import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
+import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 
 const route = useRoute();
 const router = useRouter();
@@ -25,6 +31,21 @@ const requestedCategoryName = computed(() =>
 );
 const displayCategoryName = computed(() =>
   String(route.query.categoryName || category.value.name).replace('취미여가', '취미·여가'),
+);
+const categoryPresentations = {
+  식비: { color: '#e0613d', soft: '#fff0ec', iconRaw: foodIconRaw },
+  교통: { color: '#3478e5', soft: '#edf4ff', iconRaw: taxiIconRaw },
+  쇼핑: { color: '#7449ad', soft: '#f3effd', iconRaw: shoppingIconRaw },
+  카페: { color: '#a66c12', soft: '#fff5e8', iconRaw: cafeIconRaw },
+  생활비: { color: '#19a88b', soft: '#e7f6f5', iconRaw: livingIconRaw },
+  '취미·여가': { color: '#8b5cf6', soft: '#f3effd', iconRaw: leisureIconRaw },
+  기타: { color: '#718096', soft: '#f0f3f8', iconRaw: null },
+};
+const categoryPresentation = computed(() =>
+  categoryPresentations[displayCategoryName.value] || categoryPresentations.기타,
+);
+const coloredCategoryIcon = computed(() =>
+  categoryPresentation.value.iconRaw?.replaceAll('black', categoryPresentation.value.color) || '',
 );
 
 // 데이터 가져오는 함수
@@ -84,9 +105,18 @@ const dateLabel = (value) =>
       <h1>{{ displayCategoryName }} 상세</h1>
       <span aria-hidden="true"></span>
     </header>
-    <section class="category-summary" :style="{ '--accent': category.color }">
+    <section
+      class="category-summary"
+      :style="{
+        '--accent': categoryPresentation.color,
+        '--accent-soft': categoryPresentation.soft,
+      }"
+    >
       <div class="title">
-        <span>{{ category.icon }}</span>
+        <span class="category-icon">
+          <i v-if="coloredCategoryIcon" v-html="coloredCategoryIcon"></i>
+          <b v-else aria-hidden="true">•••</b>
+        </span>
         <div>
           <b
             >{{ countryName === '전체 여행' ? '🌍 전체 여행' : countryName }}
@@ -111,7 +141,10 @@ const dateLabel = (value) =>
         type="button"
         @click="router.push(`/travel/funds/transactions/${item.transactionId}`)"
       >
-        <span class="merchant-icon">{{ item.categoryName?.[0] || '?' }}</span>
+        <span class="merchant-icon" :style="{ background: categoryPresentation.soft }">
+          <i v-if="coloredCategoryIcon" v-html="coloredCategoryIcon"></i>
+          <b v-else aria-hidden="true">•••</b>
+        </span>
         <span class="merchant"
           ><small>{{ dateLabel(item.transactionDate) }}</small
           ><b>{{ item.merchantName }}</b></span
@@ -133,7 +166,7 @@ const dateLabel = (value) =>
 .detail-page {
   min-height: 100vh;
   padding: 14px 16px 30px;
-  background: #f8f6f1;
+  background: #f3f6fc;
   color: #151f33;
 }
 header {
@@ -160,24 +193,41 @@ h1 {
 .category-summary {
   margin-top: 17px;
   padding: 17px 15px;
-  border: 1px solid color-mix(in srgb, var(--accent) 24%, white);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, white);
   border-radius: 17px;
-  background: color-mix(in srgb, var(--accent) 7%, white);
-  box-shadow: 0 7px 16px #1e346212;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(31, 64, 119, 0.08);
 }
 .title {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.title > span {
+.category-icon {
   display: grid;
   width: 40px;
   height: 40px;
   place-items: center;
-  border-radius: 50%;
-  background: #fff;
-  font-size: 18px;
+  border-radius: 13px;
+  background: var(--accent-soft);
+}
+.category-icon i,
+.merchant-icon i {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+.category-icon i :deep(svg),
+.merchant-icon i :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.category-icon b,
+.merchant-icon b {
+  color: var(--accent, #718096);
+  font-size: 13px;
+  letter-spacing: 1px;
 }
 .title div > * {
   display: block;
@@ -226,9 +276,10 @@ h1 {
 }
 .transaction-list {
   padding: 12px;
-  border: 1px solid #e5eaf2;
+  border: 1px solid #dbe5f4;
   border-radius: 20px;
   background: #fff;
+  box-shadow: 0 8px 22px rgba(31, 64, 119, 0.06);
 }
 .transaction-list button {
   display: grid;
@@ -248,8 +299,7 @@ h1 {
   width: 34px;
   height: 34px;
   place-items: center;
-  border-radius: 50%;
-  background: #f1eaff;
+  border-radius: 11px;
 }
 .merchant small,
 .merchant b,
