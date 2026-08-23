@@ -81,10 +81,15 @@ const error = computed(() =>
         ? `${country.value?.name || '선택 국가'}의 여행 기간 안에서 날짜를 선택해 주세요.`
         : '',
 );
-// 일정 통화는 "원화"와 "이 일정이 속한 국가의 통화" 두 가지만 고르면 되므로,
-// 선택된 국가가 바뀔 때마다 옵션도 그 국가 통화 기준으로 다시 좁힌다.
+// 원화와 사용자가 이번 여행에 등록한 모든 국가의 통화를 노출한다.
+// 같은 통화를 사용하는 국가가 여럿이어도 선택 목록에는 한 번만 표시한다.
 const currencies = computed(() =>
-    [...new Set(['KRW', country.value?.currency].filter(Boolean))],
+    [...new Set([
+      'KRW',
+      ...availableCountries.value
+          .map((item) => String(item.currency || '').toUpperCase())
+          .filter(Boolean),
+    ])],
 );
 const currencyNames = {
   KRW: '대한민국 원', AED: '아랍에미리트 디르함', AUD: '호주 달러', BHD: '바레인 디나르',
@@ -342,7 +347,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
             >
               <span class="currency-trigger-value">
                 <span class="currency-code">{{ form.currency }}</span>
-                <span class="currency-name">{{ currencyNames[form.currency] }}</span>
+                <span class="currency-name">{{ currencyNames[form.currency] || form.currency }}</span>
               </span>
               <b aria-hidden="true">⌄</b>
             </button>
@@ -355,7 +360,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
                   @click="selectCurrency(item)"
               >
                 <span class="currency-code">{{ item }}</span>
-                <span class="currency-name">{{ currencyNames[item] }}</span>
+                <span class="currency-name">{{ currencyNames[item] || item }}</span>
                 <b v-if="item === form.currency">✓</b>
               </button>
             </div>
