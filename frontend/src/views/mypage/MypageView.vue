@@ -206,7 +206,6 @@ const myManageItems = computed(() => [
       <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 14px">
         <div>
           <p class="mypage-header-eyebrow">
-            <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" />
             <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
           </p>
           <h1 class="mypage-header-title">MyPage</h1>
@@ -511,7 +510,6 @@ const myManageItems = computed(() => [
   height: auto;
   object-fit: contain;
 }
-.mypage-header-eyebrow{display:flex;align-items:center;gap:5px}.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .reset-button { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;border:1px solid #dde3ed;border-radius:16px;background:#fff;color:#6b7a90;font-size:12px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04); }
 .reset-button:active { background:#f5f7fb; }
 .reset-button:disabled { opacity:.55; }

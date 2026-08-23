@@ -454,7 +454,6 @@ function closeSelectionFlow() {
         <header class="dashboard-header">
           <div>
             <p>
-              <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" />
               <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
             </p>
             <h1>MISSION</h1>
@@ -926,7 +925,6 @@ function closeSelectionFlow() {
 .dashboard-header{display:flex;align-items:flex-start;justify-content:space-between}
 .dashboard-header p{display:flex;align-items:center;gap:4px;font-family:'Space Mono',monospace;font-size:9.5px;font-weight:800;letter-spacing:.15em;color:#0b2a6b;margin-bottom:4px}
 .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}
-.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .header-plane{width:12px;height:12px;animation:header-plane-fly 2.6s ease-in-out infinite}
 @keyframes header-plane-fly{0%,100%{transform:translateY(0) rotate(0deg);filter:brightness(1) drop-shadow(0 0 0 rgba(47,112,242,0))}25%{transform:translateY(-1.5px) rotate(-8deg)}50%{transform:translateY(0) rotate(0deg);filter:brightness(1.6) drop-shadow(0 0 3px rgba(47,112,242,.55))}75%{transform:translateY(1.5px) rotate(6deg)}}
 .dashboard-header h1{margin-top:2px;font-size:17px;font-weight:400;color:#29466f}

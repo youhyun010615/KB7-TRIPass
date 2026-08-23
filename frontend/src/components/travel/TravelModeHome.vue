@@ -815,7 +815,6 @@ async function switchMode(mode) {
         <NotificationBell />
       </div>
       <h1 class="home-header-title">
-        <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="home-brand-symbol" alt="" aria-hidden="true" />
         <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
       </h1>
     </div>
@@ -1046,7 +1045,6 @@ async function switchMode(mode) {
       <div class="budget-divider"></div>
       <div class="budget-heading">
         <span>카테고리별 지출</span>
-        <span>여행 기간</span>
       </div>
       <div
         v-for="(cat, index) in categoryList"
@@ -1521,7 +1519,6 @@ async function switchMode(mode) {
   height: auto;
   object-fit: contain;
 }
-.home-header-title{display:flex;align-items:center;gap:5px}.home-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .mode-switch-control {
   position: relative;
   display: grid;

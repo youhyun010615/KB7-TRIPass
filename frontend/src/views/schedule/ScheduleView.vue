@@ -402,7 +402,7 @@ async function focusTimelineDate(date) {
     <div v-if="!listMode" class="schedule-header-fixed">
       <header class="schedule-header">
         <div>
-          <span class="header-brand-lockup"><img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" /><img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" /></span>
+          <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
           <h1>SCHEDULE</h1>
         </div>
         <NotificationBell />
@@ -580,7 +580,6 @@ async function focusTimelineDate(date) {
   height: auto;
   object-fit: contain;
 }
-.header-brand-lockup{display:flex;align-items:center;gap:5px}.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .schedule-header h1 {
   margin-top: 6px;
   color: #29466f;

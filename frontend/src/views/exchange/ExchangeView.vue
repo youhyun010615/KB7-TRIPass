@@ -99,7 +99,6 @@ watch(
           <div class="exchange-header-top">
             <div>
               <p class="exchange-header-eyebrow">
-                <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" />
                 <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
               </p>
               <h1>EXCHANGE</h1>
@@ -337,7 +336,6 @@ watch(
   height: auto;
   object-fit: contain;
 }
-.exchange-header-eyebrow{display:flex;align-items:center;gap:5px}.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .header-plane {
   width: 12px;
   height: 12px;
