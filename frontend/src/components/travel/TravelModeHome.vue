@@ -1016,7 +1016,6 @@ async function switchMode(mode) {
                 </div>
                 <div class="fund-progress-meta">
                   <div class="overall-fund-stat">
-                    <b>{{ formatWon(item.spentAmount) }}</b>
                     <span class="overall-currency-breakdown">
                       <em
                         v-for="currency in overallCurrencyBreakdown"
@@ -1026,7 +1025,6 @@ async function switchMode(mode) {
                     <small>SPENT</small>
                   </div>
                   <div class="overall-fund-stat align-right">
-                    <b>{{ formatWon(item.targetBudget) }}</b>
                     <span class="overall-currency-breakdown align-right">
                       <em
                         v-for="currency in overallCurrencyBreakdown"
@@ -2962,8 +2960,8 @@ async function switchMode(mode) {
 .fund-amount-line.align-right{align-items:flex-end}
 .fund-amount-line em{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
 .overall-fund-stat{width:50%;min-width:0}
-.overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:6px;white-space:nowrap}
+.overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
 .overall-currency-breakdown.align-right{align-items:flex-end}
-.overall-currency-breakdown em{color:#8cebbf;font-size:9px;font-style:normal;font-weight:850}
+.overall-currency-breakdown em{color:#fff;font-size:14px;font-style:normal;font-weight:900}
 .overall-fund-stat>small{margin-top:7px}
 </style>
