@@ -273,7 +273,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
       <h1>여행일정 {{ editing ? '수정' : '추가' }}</h1>
       <span/>
     </header>
-    <section class="trip-summary">
+    <section v-if="editing" class="trip-summary">
       <div><b>{{ travel.tripName || '여행 일정' }}</b><small>{{ tripDateRange }}</small></div>
       <span>여행 중</span>
     </section>
