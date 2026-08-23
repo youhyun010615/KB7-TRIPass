@@ -13,12 +13,18 @@ const isEditMode = computed(() => !!route.params.alertId);
 
 const form = reactive({
   id: null,
+  countryId: route.query.countryId || null,
   currencyCode: route.query.code || exchange.selectedCode || 'EUR',
   targetRate: 0,
   enabled: true,
 });
 
-const currency = computed(() => exchange.getCurrency(form.currencyCode));
+const currency = computed(() => {
+  if (form.countryId) {
+    return exchange.getCurrencyByCountryId(form.countryId);
+  }
+  return exchange.getCurrency(form.currencyCode);
+});
 
 // 금융 숫자 포맷팅 (입력용)
 const targetRateDisplay = computed({
@@ -44,10 +50,11 @@ function save() {
   }
 }
 
-function selectCurrency(code) {
-  form.currencyCode = code;
+function selectCurrency(c) {
+  form.countryId = c.countryId;
+  form.currencyCode = c.code;
   isModalOpen.value = false;
-  form.targetRate = exchange.getCurrency(code)?.rate || 0;
+  form.targetRate = c.rate || 0;
 }
 
 onMounted(async () => {
@@ -65,18 +72,24 @@ onMounted(async () => {
       form.id = existing.id;
       form.currencyCode = existing.currencyCode;
       form.targetRate = existing.targetRate;
+      
+      // 알림 정보에서 통화 코드로 countryId 찾기
+      const currency = exchange.getCurrency(existing.currencyCode);
+      if (currency) {
+        form.countryId = currency.countryId;
+      }
     }
   } else {
     // 신규 모드일 경우 이미 알림이 있는 통화는 제외
     if (availableCurrencies.value.length > 0) {
-      const alertCodes = exchange.alerts.map((a) => a.currencyCode);
-      if (alertCodes.includes(form.currencyCode)) {
+      if (!form.countryId && !form.currencyCode) {
+        form.countryId = availableCurrencies.value[0].countryId;
         form.currencyCode = availableCurrencies.value[0].code;
       }
     }
     // 신규 모드일 경우 초기 환율 설정
-    if (form.targetRate === 0) {
-      form.targetRate = exchange.getCurrency(form.currencyCode)?.rate || 0;
+    if (form.targetRate === 0 && currency.value) {
+      form.targetRate = currency.value.rate || 0;
     }
   }
 });
@@ -132,8 +145,8 @@ onMounted(async () => {
         <ul v-if="isModalOpen && !isEditMode" class="custom-dropdown">
           <li
             v-for="c in availableCurrencies"
-            :key="c.code"
-            @click.stop.prevent="selectCurrency(c.code)"
+            :key="c.countryId"
+            @click.stop.prevent="selectCurrency(c)"
           >
             <span :class="c.flagClass" class="flag-icon"></span>
             <span class="currency-identity">

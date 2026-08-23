@@ -161,6 +161,9 @@ export const useExchangeStore = defineStore('exchange', () => {
   function getCurrency(code) {
     return currencies.value.find((item) => item.code === code);
   }
+  function getCurrencyByCountryId(countryId) {
+    return currencies.value.find((item) => String(item.countryId) === String(countryId));
+  }
   function getBank(id) {
     return banks.find((item) => item.id === id);
   }
@@ -266,6 +269,7 @@ export const useExchangeStore = defineStore('exchange', () => {
     toggleInterest,
     getCurrency,
     getBank,
+    getCurrencyByCountryId,
     updateExchangeRates,
   };
 });
