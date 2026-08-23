@@ -9,6 +9,11 @@ import { useTravelStore, countryPresentation as globalCountryPresentation, flagI
 import { useTravelModeStore } from '@/stores/travelMode';
 import { getAccounts } from '@/api/asset';
 import { getCards } from '@/api/card';
+import {
+  linkedAccountCount,
+  linkedCardCount,
+  financialSourcesLoadedOnce,
+} from '@/composables/homeFinancialSourcesCache';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import MonthlyAnalysisSummaryCard from '@/components/savings/MonthlyAnalysisSummaryCard.vue';
 import HomeSavingMissionCard from '@/components/savings/HomeSavingMissionCard.vue';
@@ -60,12 +65,15 @@ watch(savingsHeaderEl, (el) => {
     savingsHeaderResizeObserver.observe(el);
   }
 });
-const linkedAccountCount = ref(0);
-const linkedCardCount = ref(0);
 const financialSourcesLoading = ref(false);
 const financialSourcesError = ref('');
 const hasLinkedFinancialSources = computed(
   () => linkedAccountCount.value + linkedCardCount.value > 0,
+);
+// 다른 탭에 갔다가 돌아와 재조회하는 중에는(이미 한 번 로드된 적이 있다면) 로딩
+// 상태로 화면을 덮지 않는다 — 이미 알고 있던 계좌/카드 수를 그대로 보여준다.
+const financialSourcesPending = computed(
+  () => financialSourcesLoading.value && !financialSourcesLoadedOnce.value,
 );
 const savingsTrackingStarted = computed(() => Boolean(travelStore.lifecycle?.savingsTrackingStarted));
 const isTraveling = computed(() => travelStore.lifecycle?.lifecycle === 'TRAVELING');
@@ -90,6 +98,8 @@ async function loadFinancialSources() {
 
   if (accountResult.status === 'rejected' && cardResult.status === 'rejected') {
     financialSourcesError.value = '금융 데이터 연결 상태를 확인하지 못했어요.';
+  } else {
+    financialSourcesLoadedOnce.value = true;
   }
   financialSourcesLoading.value = false;
 }
@@ -195,12 +205,14 @@ const defaultPresentation = {
 };
 
 const homeDashboard = computed(() => travelStore.homeDashboard);
+// 이미 불러온 대시보드 데이터가 있으면(예: 다른 탭 갔다가 돌아와 재조회할 때)
+// homeLoading이 다시 true가 되어도 화면을 스피너로 덮지 않고 기존 데이터를 유지한다.
+// 완전히 처음 불러오는 중일 때만(데이터가 아예 없을 때만) 로딩 상태를 보여준다.
 const isHomePending = computed(
   () =>
-    travelStore.homeLoading ||
-    (!homeDashboard.value &&
-      !travelStore.homeError &&
-      (!travelStore.initialized || travelStore.hasTravelGoal)),
+    !homeDashboard.value &&
+    (travelStore.homeLoading ||
+      (!travelStore.homeError && (!travelStore.initialized || travelStore.hasTravelGoal))),
 );
 // 위 countryPresentation에 없는 국가는 stores/travel.js의 공용 국가 정보(accent, image)로 대체한다.
 function hexToRgba(hex, alpha) {
@@ -318,7 +330,7 @@ const homeInsightLoading = computed(
     (!savingMissionsStore.hasStartedMissions && monthlyAnalysisStore.loading) ||
     (!savingMissionsStore.hasStartedMissions &&
       !monthlyAnalysisStore.hasVisibleReport &&
-      financialSourcesLoading.value),
+      financialSourcesPending.value),
 );
 const selectedExchangeRate = computed(() =>
   exchangeStore.getCurrency(selectedCountry.value.currency),
@@ -563,7 +575,7 @@ function closeTripRequiredModal() {
       </div>
 
       <section
-        v-if="!financialSourcesLoading && linkedCardCount > 0 && linkedAccountCount === 0"
+        v-if="!financialSourcesPending && linkedCardCount > 0 && linkedAccountCount === 0"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -581,7 +593,7 @@ function closeTripRequiredModal() {
       </section>
 
       <section
-        v-else-if="!financialSourcesLoading && linkedAccountCount > 0 && linkedCardCount === 0"
+        v-else-if="!financialSourcesPending && linkedAccountCount > 0 && linkedCardCount === 0"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -606,7 +618,7 @@ function closeTripRequiredModal() {
       />
 
       <section
-        v-else-if="travelStore.lifecycle?.hasTrip && !financialSourcesLoading && !hasLinkedFinancialSources"
+        v-else-if="travelStore.lifecycle?.hasTrip && !financialSourcesPending && !hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -627,7 +639,7 @@ function closeTripRequiredModal() {
       </section>
 
       <section
-        v-else-if="travelStore.lifecycle?.hasTrip && !financialSourcesLoading && hasLinkedFinancialSources"
+        v-else-if="travelStore.lifecycle?.hasTrip && !financialSourcesPending && hasLinkedFinancialSources"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -879,7 +891,7 @@ function closeTripRequiredModal() {
       </section>
 
       <section
-        v-if="financialSourcesLoading || (savingsTrackingStarted && homeInsightLoading)"
+        v-if="financialSourcesPending || (savingsTrackingStarted && homeInsightLoading)"
         class="analysis-summary-skeleton mx-4 mt-3"
         aria-label="월간 분석 및 미션 정보를 불러오는 중"
       >
@@ -920,7 +932,7 @@ function closeTripRequiredModal() {
       </section>
 
       <section
-        v-else-if="!financialSourcesLoading && linkedAccountCount > 0 && linkedCardCount === 0"
+        v-else-if="!financialSourcesPending && linkedAccountCount > 0 && linkedCardCount === 0"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>
@@ -945,7 +957,7 @@ function closeTripRequiredModal() {
       />
 
       <section
-        v-else-if="savingsTrackingStarted && !financialSourcesLoading && hasLinkedFinancialSources && !homeReportPending"
+        v-else-if="savingsTrackingStarted && !financialSourcesPending && hasLinkedFinancialSources && !homeReportPending"
         class="analysis-empty-state mx-4 mt-3"
       >
         <small class="analysis-empty-label">AI SAVING MISSION</small>

@@ -85,17 +85,19 @@ onBeforeUnmount(() => {
 <template>
   <TravelEndingView v-if="lifecycleReady && travelStore.lifecycle?.endingReviewRequired" />
   <main v-else class="app-home-shell tab-scroll-surface pb-20" data-tab-scroll>
-    <SavingsModeHome
-      v-if="travelModeStore.isSavingsMode"
-      :on-switch-mode="switchMode"
-      @ready="handleModeReady('savings')"
-    />
-    <TravelModeHome
-      v-else
-      :user-name="userName"
-      :on-switch-mode="switchMode"
-      @ready="handleModeReady('travel')"
-    />
+    <template v-if="lifecycleReady || travelModeStore.lifecycleChecked">
+      <SavingsModeHome
+        v-if="travelModeStore.isSavingsMode"
+        :on-switch-mode="switchMode"
+        @ready="handleModeReady('savings')"
+      />
+      <TravelModeHome
+        v-else
+        :user-name="userName"
+        :on-switch-mode="switchMode"
+        @ready="handleModeReady('travel')"
+      />
+    </template>
 
     <Transition name="flight-fade">
       <div

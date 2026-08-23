@@ -8,6 +8,7 @@ import ExchangeCalculator from '@/components/exchange/ExchangeCalculator.vue';
 import NearbyBanks from '@/components/exchange/NearbyBanks.vue';
 import { useExchangeStore } from '@/stores/exchange';
 import { useTravelStore } from '@/stores/travel';
+import { todayIso } from '@/utils/devDate';
 import moneyExchangeIcon from '@/assets/icons/money-exchange.svg';
 
 const router = useRouter();
@@ -15,6 +16,7 @@ const exchange = useExchangeStore();
 const travel = useTravelStore();
 const countryDropdownOpen = ref(false);
 const travelGoalLoading = ref(true);
+const persistentCountries = ref([]);
 
 const currentTab = computed({
   get: () => exchange.currentTab,
@@ -29,9 +31,22 @@ onMounted(async () => {
   await Promise.all([
     exchange.updateExchangeRates(),
     travel.loadActiveGoal({ force: true }),
+    travel.loadLifecycle(),
   ]);
+
+  // 여행 중일 때만 국가별 arrivalDate/departureDate가 필요하므로 이 경우에만 조회한다.
+  // travelGoalLoading을 내리기 전에 끝내야 아래 기본 선택 watch가 처음 실행될 때
+  // persistentCountries가 이미 준비되어 있다(경쟁 조건 방지).
+  const activeTripId = travel.tripId || travel.activeTrip?.tripId;
+  if (activeTripId && travel.lifecycle?.lifecycle === 'TRAVELING') {
+    const status = await travel.loadTripStatus(activeTripId, null);
+    persistentCountries.value = status?.countries || [];
+  }
+
   travelGoalLoading.value = false;
 });
+
+const hasActiveTravelGoal = computed(() => Boolean(travel.tripId || travel.activeTrip?.tripId));
 
 // 여행 미등록 시 전체 국가, 등록 시 여행에 등록된 국가만 표시한다.
 // /exchange-rates/countries는 항상 전체 국가를 내려주므로 필터링은 FE 책임이다.
@@ -40,14 +55,14 @@ onMounted(async () => {
 const displayCurrencies = computed(() => {
   if (travelGoalLoading.value) return [];
 
-  const hasActiveTravelGoal = Boolean(travel.tripId || travel.activeTrip?.tripId);
-  if (!hasActiveTravelGoal) {
+  if (!hasActiveTravelGoal.value) {
     return exchange.currencies;
   }
 
   // 백엔드 응답에서 countryId가 문자열/숫자로 달라도 매칭되게 정규화하고,
   // 이전 데이터처럼 ID가 맞지 않는 경우에는 국가명으로 한 번 더 매칭한다.
   // 여행 목표가 존재할 때는 매칭 실패 시에도 전체 국가로 돌아가지 않는다.
+  // travel.selectedPlans는 여행에 등록한 국가 순서(여행 국가 순)를 그대로 유지한다.
   return travel.selectedPlans
     .map((plan) => exchange.currencies.find((currency) => (
       (plan.countryId != null
@@ -59,31 +74,70 @@ const displayCurrencies = computed(() => {
 });
 
 const filteredCurrencies = computed(() => {
-  return displayCurrencies.value
-    .map((currency) => ({
-      ...currency,
-      // /exchange-rates/countries가 국가 단위로 내려주므로 countryName을 그대로 쓴다.
-      countryName: currency.countryName || currency.name || currency.code,
-    }))
-    .sort((a, b) => a.countryName.localeCompare(b.countryName, 'ko-KR'));
+  const list = displayCurrencies.value.map((currency) => ({
+    ...currency,
+    // /exchange-rates/countries가 국가 단위로 내려주므로 countryName을 그대로 쓴다.
+    countryName: currency.countryName || currency.name || currency.code,
+  }));
+  // 여행에 등록된 국가는 여행 국가 순서를 그대로 유지하고,
+  // 여행 미등록 시 전체 국가 목록만 가나다순으로 보여준다.
+  return hasActiveTravelGoal.value
+    ? list
+    : list.sort((a, b) => a.countryName.localeCompare(b.countryName, 'ko-KR'));
 });
+
+// 여행 중일 때 오늘 날짜가 arrivalDate~departureDate 범위에 포함되는 국가를 찾는다.
+// 이동일(전 국가 출국일 = 다음 국가 입국일)에는 두 국가 모두 범위에 걸치므로,
+// 여행 순서상 더 나중 국가(방금 도착한 국가)를 우선한다.
+const currentTravelCountryName = computed(() => {
+  if (travel.lifecycle?.lifecycle !== 'TRAVELING') return null;
+  const todayStr = todayIso();
+  const countries = persistentCountries.value;
+  for (let i = countries.length - 1; i >= 0; i -= 1) {
+    const c = countries[i];
+    if (c.arrivalDate && c.departureDate && c.arrivalDate <= todayStr && todayStr <= c.departureDate) {
+      return c.countryName;
+    }
+  }
+  return null;
+});
+
+// exchange.selectedCode/selectedCountryId는 localStorage에 저장되어 이전 방문 때
+// 고른 국가가 남아있을 수 있다. 그 값이 이번 여행 국가 목록에 여전히 존재하면
+// "유효하다"고 보고 넘어가 버리면, 여행 중 국가가 바뀌어도(예: 일본→홍콩 이동)
+// 탭을 다시 열었을 때 예전 선택이 그대로 남는 문제가 생긴다. 그래서 이 탭에
+// 처음 진입했을 때 한 번은 저장된 값과 무관하게 현재 여행 중인 국가를 강제로
+// 기본 선택하고, 그 이후(같은 방문 내에서)는 사용자가 고른 선택을 존중한다.
+let hasAppliedInitialDefault = false;
 
 watch(
   filteredCurrencies,
   (newList) => {
-    if (newList && newList.length > 0) {
-      const isSelectedValid = newList.some((c) =>
-        exchange.selectedCountryId != null
-          ? String(c.countryId) === String(exchange.selectedCountryId)
-          : c.code === exchange.selectedCode,
-      );
-      if (!isSelectedValid) {
-        // 여행 국가만 가나다순으로 정렬한 목록의 첫 국가를 기본값으로 사용한다.
-        // 이전에 저장한 동일 통화 국가(예: 그리스 EUR)가 여행 목록에 없으면
-        // 통화 코드만으로 되살리지 않고 현재 여행 국가로 교체한다.
-        exchange.selectedCode = newList[0].code;
-        exchange.selectedCountryId = newList[0].countryId ?? null;
+    if (!newList || newList.length === 0) return;
+
+    if (!hasAppliedInitialDefault) {
+      hasAppliedInitialDefault = true;
+      const travelingName = currentTravelCountryName.value;
+      const travelingCountry = travelingName && newList.find((c) => c.countryName === travelingName);
+      if (travelingCountry) {
+        exchange.selectedCode = travelingCountry.code;
+        exchange.selectedCountryId = travelingCountry.countryId ?? null;
+        return;
       }
+    }
+
+    const isSelectedValid = newList.some((c) =>
+      exchange.selectedCountryId != null
+        ? String(c.countryId) === String(exchange.selectedCountryId)
+        : c.code === exchange.selectedCode,
+    );
+    if (!isSelectedValid) {
+      // 여행 중이 아니면(저축 모드 등) 여행 국가 순서상 첫 번째 국가를 기본값으로 사용한다.
+      // 이전에 저장한 동일 통화 국가(예: 그리스 EUR)가 여행 목록에 없으면 통화 코드만으로
+      // 되살리지 않고 목록의 첫 국가로 교체한다.
+      const defaultCountry = newList[0];
+      exchange.selectedCode = defaultCountry.code;
+      exchange.selectedCountryId = defaultCountry.countryId ?? null;
     }
   },
   { immediate: true },

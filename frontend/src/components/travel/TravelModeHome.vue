@@ -428,16 +428,26 @@ const isReturnPeriod = computed(() => {
 
 // 오늘 날짜(YYYY-MM-DD)가 arrivalDate~departureDate 범위에 포함되는 국가를 찾는다.
 // 해당하는 국가가 없으면(모두 지났거나 아직 시작 전) 첫 번째 국가로 대체한다.
+// 이동일(전 국가 출국일 = 다음 국가 입국일)에는 두 국가 모두 범위에 걸치므로,
+// 여행 순서상 더 나중 국가(방금 도착한 국가)를 우선한다.
 function todayDateString() {
   return todayIso();
 }
 
+function findTodayCountry(countries) {
+  const todayStr = todayDateString();
+  for (let i = countries.length - 1; i >= 0; i -= 1) {
+    const c = countries[i];
+    if (c.arrivalDate && c.departureDate && c.arrivalDate <= todayStr && todayStr <= c.departureDate) {
+      return c;
+    }
+  }
+  return null;
+}
+
 function findTodayCountryCode(countries) {
   if (!countries.length) return 'all';
-  const todayStr = todayDateString();
-  const match = countries.find(
-    (c) => c.arrivalDate && c.departureDate && c.arrivalDate <= todayStr && todayStr <= c.departureDate,
-  );
+  const match = findTodayCountry(countries);
   return (match || countries[0]).tripCountryId.toString();
 }
 
@@ -557,7 +567,14 @@ function handleCountryScroll(event) {
 
 function restoreCountryPosition() {
   const carousel = countryCarousel.value;
-  if (!carousel?.clientWidth || !destinations.value.length) return;
+  if (!carousel?.clientWidth || !destinations.value.length) {
+    // 카드 레이아웃(이미지 로딩 등)이 아직 안정되지 않아 clientWidth가 0일 수 있으므로,
+    // 다음 프레임에 다시 시도해 자동 선택된 국가로 스크롤이 어긋나지 않게 한다.
+    if (carousel && !carousel.clientWidth && destinations.value.length) {
+      requestAnimationFrame(restoreCountryPosition);
+    }
+    return;
+  }
 
   const savedIndex = destinations.value.findIndex((item) => item.code === selectedCountryId.value);
   const idx = savedIndex >= 0 ? savedIndex : 0;
@@ -685,13 +702,9 @@ const travelMetaCountryCodes = computed(() => persistentCountries.value
   .map(country => countryFlagMap[country.countryName])
   .filter(Boolean));
 
-const currentTravelCountry = computed(() => {
-  const todayStr = todayDateString();
-  return persistentCountries.value.find(country =>
-    country.arrivalDate && country.departureDate
-      && country.arrivalDate <= todayStr && todayStr <= country.departureDate,
-  ) || persistentCountries.value[0] || null;
-});
+const currentTravelCountry = computed(() =>
+  findTodayCountry(persistentCountries.value) || persistentCountries.value[0] || null,
+);
 
 function travelCardCurrencyCode(item) {
   const currentCountry = currentTravelCountry.value;
