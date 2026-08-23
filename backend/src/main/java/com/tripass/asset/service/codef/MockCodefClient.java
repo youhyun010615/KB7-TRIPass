@@ -64,6 +64,31 @@ public class MockCodefClient implements CodefClient {
     public static final String YUHYUN_NORI_CARD_NO = "5412-****-****-9901";
     public static final String YUHYUN_TRAVEL_CARD_NO = "5412-****-****-9902";
 
+    // ===== yuhyun 데모 계정 복제본 (동일 계정 동시 QA 충돌 방지용, yuhyun2~yuhyun5) =====
+    // 로그인 ID/비밀번호/연동 정보만 다르고 거래 데이터는 yuhyun과 동일한 것을 그대로 재사용한다.
+    private record YuhyunClone(String loginId, String connectedId, String bankAccount,
+                                String noriCardNo, String travelCardNo) {
+    }
+
+    private static final List<YuhyunClone> YUHYUN_CLONES = List.of(
+            new YuhyunClone("yuhyun2", "MOCK-CONNECTED-YUHYUN2", "496501-01-110301",
+                    "5412-****-****-9903", "5412-****-****-9904"),
+            new YuhyunClone("yuhyun3", "MOCK-CONNECTED-YUHYUN3", "496501-01-110302",
+                    "5412-****-****-9905", "5412-****-****-9906"),
+            new YuhyunClone("yuhyun4", "MOCK-CONNECTED-YUHYUN4", "496501-01-110303",
+                    "5412-****-****-9907", "5412-****-****-9908"),
+            new YuhyunClone("yuhyun5", "MOCK-CONNECTED-YUHYUN5", "496501-01-110304",
+                    "5412-****-****-9909", "5412-****-****-9910")
+    );
+
+    private static YuhyunClone findCloneByLoginId(String loginId) {
+        return YUHYUN_CLONES.stream().filter(c -> c.loginId().equals(loginId)).findFirst().orElse(null);
+    }
+
+    private static YuhyunClone findCloneByConnectedId(String connectedId) {
+        return YUHYUN_CLONES.stream().filter(c -> c.connectedId().equals(connectedId)).findFirst().orElse(null);
+    }
+
     private static final String ACCESS_TOKEN = "mock-codef-access-token";
 
     // ===== tripassqa 데이터 =====
@@ -174,6 +199,10 @@ public class MockCodefClient implements CodefClient {
         if (YUHYUN_LOGIN_ID.equals(loginId) && YUHYUN_PASSWORD.equals(password)) {
             return success(Map.of("connectedId", YUHYUN_CONNECTED_ID));
         }
+        YuhyunClone clone = findCloneByLoginId(loginId);
+        if (clone != null && YUHYUN_PASSWORD.equals(password)) {
+            return success(Map.of("connectedId", clone.connectedId()));
+        }
 
         return failure("CF-01002", "Mock 금융기관 아이디 또는 비밀번호가 올바르지 않습니다.");
     }
@@ -270,6 +299,16 @@ public class MockCodefClient implements CodefClient {
             return success(data);
         }
 
+        YuhyunClone clone = findCloneByConnectedId(connectedId);
+        if (clone != null) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resDepositTrust", List.of(
+                    mapOf("resAccount", clone.bankAccount(), "resAccountName", "KB국민은행 종합통장",
+                            "resAccountKind", "입출금", "resAccountBalance", "990924", "resWithdrawableAmount", "990924")
+            ));
+            return success(data);
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
     }
 
@@ -352,6 +391,18 @@ public class MockCodefClient implements CodefClient {
             ));
         }
 
+        {
+            YuhyunClone clone = findCloneByConnectedId(connectedId);
+            if (clone != null) {
+                return success(List.of(
+                        mapOf("resCardName", "KB nori 체크카드", "resCardNo", clone.noriCardNo(),
+                                "resCardType", "02", "resPaymentAccount", clone.bankAccount()),
+                        mapOf("resCardName", "KB 트래블러스 체크카드", "resCardNo", clone.travelCardNo(),
+                                "resCardType", "02", "resPaymentAccount", clone.bankAccount())
+                ));
+            }
+        }
+
         return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
     }
 
@@ -396,6 +447,16 @@ public class MockCodefClient implements CodefClient {
                     ? filterByDate(YUHYUN_BANK_TRANSACTIONS, body, "resAccountTrDate")
                     : List.of();
             return success(Map.of("resTrHistoryList", transactions));
+        }
+
+        {
+            YuhyunClone clone = findCloneByConnectedId(connectedId);
+            if (clone != null) {
+                List<Map<String, Object>> transactions = clone.bankAccount().equals(account)
+                        ? filterByDate(YUHYUN_BANK_TRANSACTIONS, body, "resAccountTrDate")
+                        : List.of();
+                return success(Map.of("resTrHistoryList", transactions));
+            }
         }
 
         return failure("CF-01004", "연동되지 않은 Mock 은행입니다.");
@@ -446,6 +507,16 @@ public class MockCodefClient implements CodefClient {
                 default -> List.of();
             };
             return success(filterByDate(source, body, "resUsedDate"));
+        }
+
+        {
+            YuhyunClone clone = findCloneByConnectedId(connectedId);
+            if (clone != null) {
+                List<Map<String, Object>> source = List.of();
+                if (clone.noriCardNo().equals(cardNo)) source = YUHYUN_NORI_CARD_TRANSACTIONS;
+                else if (clone.travelCardNo().equals(cardNo)) source = YUHYUN_TRAVEL_CARD_TRANSACTIONS;
+                return success(filterByDate(source, body, "resUsedDate"));
+            }
         }
 
         return failure("CF-01004", "연동되지 않은 Mock 카드사입니다.");
