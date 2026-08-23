@@ -110,6 +110,7 @@ export const useExchangeStore = defineStore('exchange', () => {
   async function fetchAlerts() {
     try {
       const data = await getExchangeAlerts();
+      console.log('API Response (getExchangeAlerts):', data); // Debugging
       alerts.value = data.map((item) => ({
         id: item.id,
         countryId: item.countryId,
