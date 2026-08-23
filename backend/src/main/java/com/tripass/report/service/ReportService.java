@@ -202,14 +202,6 @@ public class ReportService {
             }
         }
 
-        if (savingsPercent >= 100) {
-            insights.add(SavingsInsightDto.builder()
-                    .icon("trophy")
-                    .title("목표를 다 채웠을까요?")
-                    .message("여행 저축 목표를 이미 다 모았어요. 남는 금액은 비상금으로 쓸 수 있어요.")
-                    .build());
-        }
-
         if (!savingsTrend.isEmpty()) {
             insights.add(SavingsInsightDto.builder()
                     .icon("journey")

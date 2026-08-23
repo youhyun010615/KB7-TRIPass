@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { exportElementToPdf } from '@/utils/pdf'
 import { flagIconClass } from '@/stores/travel'
-import { TrendingUp, Star, Trophy, Plane, PiggyBank, ClipboardCheck, Flame, Route } from '@lucide/vue'
+import { TrendingUp, Star, Trophy, Plane, PiggyBank, ClipboardCheck, Flame } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,7 +14,8 @@ const tripId = computed(() => {
   return route.query.tripId && Number.isFinite(parsed) && parsed > 0 ? parsed : null
 })
 const r = computed(() => store.preTripView)
-const savingPercent = computed(() => r.value?.savingsPercent ?? 0)
+const savingPercent = computed(() => Math.min(100, r.value?.savingsPercent ?? 0))
+const goalFilledAmount = computed(() => Math.min(r.value?.securedFund ?? 0, r.value?.targetBudget ?? 0))
 const downloading = ref(false)
 const reportContent = ref(null)
 
@@ -48,10 +49,12 @@ function goChecklist(stage) {
 }
 
 // 분석/인사이트 아이콘 매핑
-const insightIconMap = { trend: TrendingUp, star: Star, trophy: Trophy, streak: Flame, journey: Route }
+const insightIconMap = { trend: TrendingUp, star: Star, trophy: Trophy, streak: Flame }
 function insightIcon(icon) {
   return insightIconMap[icon] || TrendingUp
 }
+const mainInsights = computed(() => (r.value?.insights || []).filter(i => i.icon !== 'journey'))
+const summaryInsight = computed(() => (r.value?.insights || []).find(i => i.icon === 'journey'))
 
 // 월렛 저축 내역 — 저축 시작 달부터 여행 전달까지 월별로 얼마씩 저축했는지 SVG 좌표 계산
 const CHART_WIDTH = 300
@@ -119,7 +122,7 @@ const budgetSegments = computed(() => {
 
     <section class="card highlight anim-in">
       <p class="label"><PiggyBank :size="14" />여행 저축 목표</p>
-      <p class="big">{{ money(r.securedFund) }} <small>/ {{ money(r.targetBudget) }}</small></p>
+      <p class="big">{{ money(goalFilledAmount) }} <small>/ {{ money(r.targetBudget) }}</small></p>
       <div class="bar"><span :style="{ width: `${Math.min(100, savingPercent)}%` }" /></div>
       <p class="sub">달성률 {{ savingPercent }}%</p>
       <div v-if="r.emergencyFund > 0" class="emergency-block">
@@ -175,8 +178,8 @@ const budgetSegments = computed(() => {
 
     <section class="card anim-in delay-3">
       <h3>분석 및 인사이트</h3>
-      <ul v-if="r.insights?.length" class="insight-list">
-        <li v-for="(insight, i) in r.insights" :key="i">
+      <ul v-if="mainInsights.length" class="insight-list">
+        <li v-for="(insight, i) in mainInsights" :key="i">
           <span class="insight-icon"><component :is="insightIcon(insight.icon)" :size="16" /></span>
           <div>
             <b>{{ insight.title }}</b>
@@ -184,7 +187,11 @@ const budgetSegments = computed(() => {
           </div>
         </li>
       </ul>
-      <p v-else class="chart-empty">아직 분석할 데이터가 부족해요.</p>
+      <p v-else-if="!summaryInsight" class="chart-empty">아직 분석할 데이터가 부족해요.</p>
+      <div v-if="summaryInsight" class="insight-summary">
+        <b>{{ summaryInsight.title }}</b>
+        <p>{{ summaryInsight.message }}</p>
+      </div>
     </section>
 
     <section class="card anim-in delay-4">
@@ -290,16 +297,20 @@ const budgetSegments = computed(() => {
 .trend-minmax { display: flex; gap: 14px; margin-top: 10px; font-size: var(--fs-caption); font-weight: var(--w-bold); }
 .trend-minmax span { display: flex; align-items: center; gap: 4px; }
 .trend-minmax i { width: 6px; height: 6px; border-radius: 50%; }
-.trend-minmax .best { color: #18a77d; }
+.trend-minmax .best { margin-left: auto; color: #18a77d; }
 .trend-minmax .best i { background: #18a77d; }
 .trend-minmax .worst { color: #e5484d; }
 .trend-minmax .worst i { background: #e5484d; }
 
 .insight-list { display: flex; flex-direction: column; gap: 11px; margin-top: 12px; }
 .insight-list li { display: flex; align-items: flex-start; gap: 9px; }
-.insight-icon { display: grid; flex-shrink: 0; width: 28px; height: 28px; place-items: center; border-radius: 10px; background: #eaf1ff; color: #176be0; }
+.insight-icon { display: grid; flex-shrink: 0; width: 28px; height: 28px; place-items: center; border-radius: 10px; background: #eaf1ff; color: #176be0; line-height: 0; }
 .insight-list b { font-size: var(--fs-body); font-weight: var(--w-bold); }
 .insight-list p { margin-top: 2px; color: #66748d; font-size: var(--fs-caption); line-height: 1.5; }
+
+.insight-summary { margin-top: 14px; padding: 12px 13px; border: 1px solid #c9d9fa; border-radius: 14px; background: linear-gradient(145deg, #edf3ff, #f8faff); }
+.insight-summary b { color: #123a82; font-size: var(--fs-body); font-weight: var(--w-black); }
+.insight-summary p { margin-top: 2px; color: #3970ad; font-size: var(--fs-caption); font-weight: var(--w-bold); line-height: 1.5; }
 
 .prep-head { display: flex; align-items: center; justify-content: space-between; }
 .stage-grid { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
