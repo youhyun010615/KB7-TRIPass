@@ -59,22 +59,32 @@ function requestRemove() {
 
 async function confirmRemove() {
   showDeleteConfirm.value = false;
+
   if (await store.remove(route.params.scheduleId)) {
-    if (props.archiveMode) {
-      router.push(`/mypage/travel/${route.params.id}/schedules`);
-    } else {
-      router.push('/schedule');
-    }
+    goToScheduleList();
+  }
+}
+
+function goToScheduleList() {
+  const tripId = route.params.id || route.query.tripId;
+
+  const listPath = props.archiveMode
+      ? `/mypage/travel/${tripId}/schedules`
+      : '/schedule';
+
+  const previousPath = String(
+      window.history.state?.back || '',
+  ).split('?')[0];
+
+  if (previousPath === listPath) {
+    router.back();
+  } else {
+    router.replace(listPath);
   }
 }
 
 function handleBack() {
-  if (props.archiveMode) {
-    const tripId = route.params.id || route.query.tripId;
-    router.push(`/mypage/travel/${tripId}/schedules`);
-    return;
-  }
-  router.push('/schedule');
+  goToScheduleList();
 }
 </script>
 
