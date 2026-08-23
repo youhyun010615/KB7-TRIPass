@@ -38,16 +38,18 @@ public class WeeklyMissionEvaluationService {
     private final DuplicateTransactionMatcher duplicateMatcher;
     private final MissionWalletRewardService walletRewardService;
     private final Clock clock;
+    private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     @Autowired
     public WeeklyMissionEvaluationService(
             SavingMissionMapper missionMapper,
             MonthlySpendingAnalysisMapper analysisMapper,
             DuplicateTransactionMatcher duplicateMatcher,
-            MissionWalletRewardService walletRewardService
+            MissionWalletRewardService walletRewardService,
+            com.tripass.dev.util.DevDateUtil devDateUtil
     ) {
         this(missionMapper, analysisMapper, duplicateMatcher, walletRewardService,
-                Clock.system(ZoneId.of("Asia/Seoul")));
+                Clock.system(ZoneId.of("Asia/Seoul")), devDateUtil);
     }
 
     WeeklyMissionEvaluationService(
@@ -55,13 +57,15 @@ public class WeeklyMissionEvaluationService {
             MonthlySpendingAnalysisMapper analysisMapper,
             DuplicateTransactionMatcher duplicateMatcher,
             MissionWalletRewardService walletRewardService,
-            Clock clock
+            Clock clock,
+            com.tripass.dev.util.DevDateUtil devDateUtil
     ) {
         this.missionMapper = missionMapper;
         this.analysisMapper = analysisMapper;
         this.duplicateMatcher = duplicateMatcher;
         this.walletRewardService = walletRewardService;
         this.clock = clock;
+        this.devDateUtil = devDateUtil;
     }
 
     @Transactional
@@ -75,7 +79,7 @@ public class WeeklyMissionEvaluationService {
         }
 
         LocalDate periodEnd = missions.get(0).getPeriodEndDate();
-        if (!LocalDate.now(clock).isAfter(periodEnd)) {
+        if (!devDateUtil.today(userId).isAfter(periodEnd)) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "WEEKLY_MISSION_NOT_ENDED",
                     "주간 미션 기간이 종료된 후 판정할 수 있습니다.");
         }

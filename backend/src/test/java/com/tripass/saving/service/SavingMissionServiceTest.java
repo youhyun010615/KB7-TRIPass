@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.YearMonth;
 import java.util.List;
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,12 +40,16 @@ class SavingMissionServiceTest {
     @Mock
     private SavingMissionMapper mapper;
 
+    @Mock
+    private com.tripass.dev.util.DevDateUtil devDateUtil;
+
     private SavingMissionService service;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-08-15T03:00:00Z"), ZoneId.of("Asia/Seoul"));
-        service = new SavingMissionService(mapper, new MissionStartWeekPolicy(), clock);
+        lenient().when(devDateUtil.today(USER_ID)).thenReturn(LocalDate.now(clock));
+        service = new SavingMissionService(mapper, new MissionStartWeekPolicy(), clock, devDateUtil);
     }
 
     @Test
@@ -148,7 +154,8 @@ class SavingMissionServiceTest {
     @Test
     void rejectsCreationAfterDay22() {
         Clock lateClock = Clock.fixed(Instant.parse("2026-08-23T03:00:00Z"), ZoneId.of("Asia/Seoul"));
-        service = new SavingMissionService(mapper, new MissionStartWeekPolicy(), lateClock);
+        when(devDateUtil.today(USER_ID)).thenReturn(LocalDate.now(lateClock));
+        service = new SavingMissionService(mapper, new MissionStartWeekPolicy(), lateClock, devDateUtil);
         when(mapper.findAnalysisByTargetMonth(USER_ID, "2026-08")).thenReturn(analysis());
         when(mapper.findMonthlyMissions(USER_ID, "2026-08")).thenReturn(List.of());
         when(mapper.findSelections(ANALYSIS_ID)).thenReturn(List.of(selection()));
