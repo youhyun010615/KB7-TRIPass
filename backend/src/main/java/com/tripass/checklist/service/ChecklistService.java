@@ -40,8 +40,10 @@ public class ChecklistService {
     /**
      * 1. 여행 체크리스트 전체 현황 요약 조회
      */
+    @Transactional
     public ChecklistSummaryResponseDto getChecklistSummary(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
+        initializeChecklist(tripId);
 
         ChecklistSummaryResponseDto summary = checklistMapper.selectChecklistSummaryByTripId(tripId);
 
@@ -65,6 +67,7 @@ public class ChecklistService {
     @Transactional
     public ChecklistGroupResponseDto getChecklists(Long tripId, String type, String ddayStage, Long currentUserId) {
         Trip trip = validateTripOwnerAndGetTrip(tripId, currentUserId);
+        initializeChecklist(tripId);
         String checklistType = "PREV_TRAVEL".equals(type) ? "PRE_TRAVEL" : type;
 
         // 1. 타입별 ddayStage 검증 및 정규화
