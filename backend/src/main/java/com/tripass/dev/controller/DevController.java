@@ -48,7 +48,7 @@ public class DevController {
         devDateMapper.updateOverrideDate(userId, date);
 
         if (!devDateMapper.selectDemoRecordingMode(userId)) {
-            devResetService.resetDemoState(userId, date);
+            devResetService.resetDemoState(userId);
         }
 
         travelMapper.syncTripRevertToPlanning(userId, date);
@@ -113,8 +113,7 @@ public class DevController {
             @ApiIgnore Authentication authentication
     ) {
         Long userId = (Long) authentication.getPrincipal();
-        LocalDate virtualDate = devDateUtil.today(userId);
-        devResetService.resetDemoState(userId, virtualDate);
+        devResetService.resetDemoState(userId);
         return ApiResponse.success("데모 상태를 시드 기준으로 리셋했습니다.", null);
     }
 }

@@ -12,6 +12,7 @@ const travel = useTravelStore();
 const categoryConfig = {
   식비: { key: 'food', icon: '🍴', color: '#2378ea' },
   교통: { key: 'transport', icon: '🚆', color: '#ea5455' },
+  숙박: { key: 'lodging', icon: '🏨', color: '#ffb400' },
   카페: { key: 'cafe', icon: '☕', color: '#7248df' },
   생활비: { key: 'living', icon: '📦', color: '#22ad6f' },
   쇼핑: { key: 'shopping', icon: '🛍️', color: '#ef3b86' },
@@ -19,15 +20,10 @@ const categoryConfig = {
   기타: { key: 'other', icon: '•••', color: '#98a7ba' },
 };
 
-const travelCategoryAliases = {
-  관광: '취미여가',
-  숙박: '기타',
-  '취미·여가': '취미여가',
-};
-
 const defaultCategories = [
   { key: 'food', name: '식비', icon: '🍴', color: '#2378ea' },
   { key: 'transport', name: '교통', icon: '🚆', color: '#ea5455' },
+  { key: 'lodging', name: '숙박', icon: '🏨', color: '#ffb400' },
   { key: 'cafe', name: '카페', icon: '☕', color: '#7248df' },
   { key: 'living', name: '생활비', icon: '📦', color: '#22ad6f' },
   { key: 'shopping', name: '쇼핑', icon: '🛍️', color: '#ef3b86' },
@@ -134,14 +130,12 @@ const categoryRows = computed(() => {
     percent: 0,
   }));
 
-  selectedBudget.value.categoryBreakdown.forEach((breakdown) => {
-    const normalizedName =
-      travelCategoryAliases[breakdown.categoryName] || breakdown.categoryName;
-    const conf = categoryConfig[normalizedName];
+  selectedBudget.value.categoryBreakdown.forEach((b) => {
+    const conf = categoryConfig[b.categoryName];
     const key = conf ? conf.key : 'other';
-    let targetCat = result.find((item) => item.key === key);
-    if (!targetCat) targetCat = result.find((item) => item.key === 'other');
-    targetCat.amount += Number(breakdown.amount || 0);
+    let targetCat = result.find((r) => r.key === key);
+    if (!targetCat) targetCat = result.find((r) => r.key === 'other');
+    targetCat.amount += b.amount;
   });
 
   const total = result.reduce((sum, cat) => sum + cat.amount, 0);

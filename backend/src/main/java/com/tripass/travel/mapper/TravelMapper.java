@@ -15,10 +15,7 @@ import java.time.LocalDate;
 public interface TravelMapper {
     TravelStatusResponseDto getTripDashboard(@Param("tripId") Long tripId, @Param("today") LocalDate today);
     
-    List<BudgetCheckResponseDto> getTripBudget(
-            @Param("tripId") Long tripId,
-            @Param("today") LocalDate today
-    );
+    List<BudgetCheckResponseDto> getTripBudget(@Param("tripId") Long tripId);
 
     // 여행 존재 여부 확인
     boolean existsByTripId(@Param("tripId") Long tripId);
@@ -83,12 +80,7 @@ public interface TravelMapper {
 
     List<TripCountryBudgetContextDto> findTripCountryBudgetContexts(@Param("tripId") Long tripId);
 
-    List<TravelTransactionDto> findTravelTransactions(
-            @Param("tripId") Long tripId,
-            @Param("countryId") Long countryId,
-            @Param("categoryName") String categoryName,
-            @Param("today") LocalDate today
-    );
+    List<TravelTransactionDto> findTravelTransactions(@Param("tripId") Long tripId, @Param("countryId") Long countryId, @Param("categoryName") String categoryName);
 
     CountryBudgetBaselineDto findCountryBudgetBaseline(@Param("countryId") Long countryId);
 

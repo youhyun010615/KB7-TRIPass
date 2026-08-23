@@ -193,8 +193,7 @@ public interface WalletMapper {
 
     java.util.Map<String, Object> findTripWalletSummary(
             @Param("tripId") Long tripId,
-            @Param("userId") Long userId,
-            @Param("asOfDate") java.time.LocalDate asOfDate
+            @Param("userId") Long userId
     );
 
     java.math.BigDecimal findAccountBalance(

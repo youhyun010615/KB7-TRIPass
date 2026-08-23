@@ -81,8 +81,7 @@ public class SavingMissionService {
                 .filter(selection -> !startedCategoryIds.contains(selection.getCategoryId()))
                 .toList();
         if (newSelections.isEmpty()) {
-            return new CreationResult(false, buildResponse(
-                    targetYearMonth, existing, devDateUtil.today(userId)));
+            return new CreationResult(false, buildResponse(targetYearMonth, existing));
         }
 
         MissionStartResult startResult = resolveStartResult(targetYearMonth, devDateUtil.today(userId));
@@ -93,16 +92,12 @@ public class SavingMissionService {
         mapper.markReportClosed(userId, analysis.getAnalysisYearMonth());
 
         SavingMissionsResponseDto response =
-                buildResponse(targetYearMonth,
-                        mapper.findMonthlyMissions(userId, targetYearMonth.toString()),
-                        devDateUtil.today(userId));
+                buildResponse(targetYearMonth, mapper.findMonthlyMissions(userId, targetYearMonth.toString()));
         return new CreationResult(true, response);
     }
 
     public SavingMissionsResponseDto getMissions(Long userId, YearMonth targetYearMonth) {
-        return buildResponse(targetYearMonth,
-                mapper.findMonthlyMissions(userId, targetYearMonth.toString()),
-                devDateUtil.today(userId));
+        return buildResponse(targetYearMonth, mapper.findMonthlyMissions(userId, targetYearMonth.toString()));
     }
 
     private void createCategoryMission(
@@ -211,12 +206,10 @@ public class SavingMissionService {
     }
 
     private SavingMissionsResponseDto buildResponse(
-            YearMonth targetYearMonth,
-            List<MonthlySavingMissionDto> monthlyMissions,
-            LocalDate today
+            YearMonth targetYearMonth, List<MonthlySavingMissionDto> monthlyMissions
     ) {
         List<MonthlyMissionResponseDto> missions = monthlyMissions.stream()
-                .map(monthly -> toMonthlyResponse(monthly, today))
+                .map(this::toMonthlyResponse)
                 .toList();
         long totalPlanned = missions.stream().mapToLong(MonthlyMissionResponseDto::plannedSavingAmount).sum();
         long totalReward = missions.stream().mapToLong(MonthlyMissionResponseDto::rewardAmount).sum();
@@ -224,42 +217,29 @@ public class SavingMissionService {
                 targetYearMonth.toString(), missions.size(), totalPlanned, totalReward, missions);
     }
 
-    private MonthlyMissionResponseDto toMonthlyResponse(
-            MonthlySavingMissionDto monthly, LocalDate today
-    ) {
+    private MonthlyMissionResponseDto toMonthlyResponse(MonthlySavingMissionDto monthly) {
         List<WeeklyMissionResponseDto> weekly = mapper.findWeeklyMissions(monthly.getId()).stream()
-                .map(item -> toWeeklyResponse(monthly.getCategoryName(), item, today))
+                .map(item -> toWeeklyResponse(monthly.getCategoryName(), item))
                 .toList();
         int rewardAmount = weekly.stream()
                 .map(WeeklyMissionResponseDto::rewardAmount)
                 .filter(java.util.Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .sum();
-        String visibleMonthlyStatus = weekly.stream()
-                .allMatch(item -> today.isAfter(item.periodEndDate()))
-                ? monthly.getStatus()
-                : "IN_PROGRESS";
         return new MonthlyMissionResponseDto(
                 monthly.getId(), monthly.getCategoryId(), monthly.getCategoryCode(), monthly.getCategoryName(),
                 monthly.getReductionRate(), monthly.getBaselineSpendingAmount(), monthly.getMonthlyReductionTarget(),
                 monthly.getMonthlyUsageTarget(), monthly.getPlannedSavingAmount(), rewardAmount, monthly.getStartWeek(),
-                visibleMonthlyStatus, weekly);
+                monthly.getStatus(), weekly);
     }
 
-    private WeeklyMissionResponseDto toWeeklyResponse(
-            String categoryName, WeeklySavingMissionDto weekly, LocalDate today
-    ) {
+    private WeeklyMissionResponseDto toWeeklyResponse(String categoryName, WeeklySavingMissionDto weekly) {
         String amount = NumberFormat.getNumberInstance(Locale.KOREA).format(weekly.getWeeklyExpectedSaving());
-        boolean evaluatedAtCheckpoint = today.isAfter(weekly.getPeriodEndDate());
         return new WeeklyMissionResponseDto(
                 weekly.getId(), weekly.getWeekNumber(), weekly.getPeriodStartDate(), weekly.getPeriodEndDate(),
                 weekly.getWeeklyUsageLimit(), weekly.getWeeklyExpectedSaving(), weekly.getEligibleDayCount(),
-                evaluatedAtCheckpoint ? weekly.getActualSpending() : null,
-                evaluatedAtCheckpoint ? weekly.getActualSaving() : null,
-                evaluatedAtCheckpoint ? weekly.getRewardAmount() : null,
-                evaluatedAtCheckpoint ? weekly.getRewardedAt() : null,
-                evaluatedAtCheckpoint ? weekly.getStatus() : "PENDING",
-                categoryName + " 지출을 " + amount + "원 줄이세요.");
+                weekly.getActualSpending(), weekly.getActualSaving(), weekly.getRewardAmount(), weekly.getRewardedAt(),
+                weekly.getStatus(), categoryName + " 지출을 " + amount + "원 줄이세요.");
     }
 
     private void validateTripStatusForMission(Long userId) {

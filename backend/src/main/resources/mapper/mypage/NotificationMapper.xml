@@ -5,9 +5,7 @@
     <select id="getNotificationsByUserId" resultType="com.tripass.mypage.dto.response.NotificationResponseDto">
         SELECT id, notification_type as notificationType, title, message, is_read as isRead, created_at as createdAt, url
         FROM notifications
-        WHERE user_id = #{userId}
-          AND is_deleted = 0
-          AND DATE(created_at) &lt;= #{asOfDate}
+        WHERE user_id = #{userId} AND is_deleted = 0
         ORDER BY created_at DESC
     </select>
 

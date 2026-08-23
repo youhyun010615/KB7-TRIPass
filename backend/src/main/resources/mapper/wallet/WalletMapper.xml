@@ -1187,11 +1187,7 @@
                COALESCE(
                    (SELECT SUM(tr.amount)
                     FROM transactions tr
-                    WHERE tr.trip_id = t.id
-                      AND tr.is_deleted = 0
-                      AND (tr.transaction_date &lt; #{asOfDate}
-                           OR (tr.transaction_date = #{asOfDate}
-                               AND #{asOfDate} &lt;&gt; t.start_date))), 0
+                    WHERE tr.trip_id = t.id AND tr.is_deleted = 0), 0
                )                                                AS totalTripSpentAmount,
                COALESCE(
                    (SELECT SUM(wl.amount)

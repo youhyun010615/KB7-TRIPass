@@ -27,8 +27,4 @@ public class DevDateUtil {
         LocalTime currentTime = LocalTime.now();
         return LocalDateTime.of(effectiveDate, currentTime);
     }
-
-    public boolean isOverridden(Long userId) {
-        return userId != null && devDateMapper.selectOverrideDate(userId) != null;
-    }
 }

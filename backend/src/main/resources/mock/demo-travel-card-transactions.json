@@ -431,7 +431,7 @@
   {
     "resUsedDate": "20270410",
     "resUsedTime": "194708",
-    "resUsedAmount": "25.14",
+    "resUsedAmount": "39.39",
     "resCancelYN": "N",
     "resApprovalNo": "TV270410975",
     "resMemberStoreName": "Lake Lucerne Cruise",
@@ -442,7 +442,7 @@
   {
     "resUsedDate": "20270410",
     "resUsedTime": "203623",
-    "resUsedAmount": "45.5",
+    "resUsedAmount": "80.5",
     "resCancelYN": "N",
     "resApprovalNo": "TV270410726",
     "resMemberStoreName": "Jungfraujoch Ticket",
@@ -552,7 +552,7 @@
   {
     "resUsedDate": "20270412",
     "resUsedTime": "124302",
-    "resUsedAmount": "29.1",
+    "resUsedAmount": "49.1",
     "resCancelYN": "N",
     "resApprovalNo": "TV270412468",
     "resMemberStoreName": "Manor Department",
@@ -579,17 +579,6 @@
     "resApprovalNo": "TV270412305",
     "resMemberStoreName": "Lindt Chocolate Shop",
     "resMemberStoreType": "해외쇼핑",
-    "resCurrencyCode": "CHF",
-    "resCountry": "스위스"
-  },
-  {
-    "resUsedDate": "20270412",
-    "resUsedTime": "203500",
-    "resUsedAmount": "54.50",
-    "resCancelYN": "N",
-    "resApprovalNo": "TV270412545",
-    "resMemberStoreName": "Restaurant Baren",
-    "resMemberStoreType": "해외음식점",
     "resCurrencyCode": "CHF",
     "resCountry": "스위스"
   },

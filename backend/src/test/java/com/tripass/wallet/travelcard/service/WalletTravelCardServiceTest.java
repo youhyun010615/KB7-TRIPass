@@ -313,7 +313,7 @@ class WalletTravelCardServiceTest {
         List<?> result = walletTravelCardService.getLedgers(1L);
 
         assertTrue(result.isEmpty());
-        verify(walletTravelCardMapper, never()).findTravelCardLedgers(anyLong(), any());
+        verify(walletTravelCardMapper, never()).findTravelCardLedgers(anyLong());
     }
 
     private Wallet createWallet() {

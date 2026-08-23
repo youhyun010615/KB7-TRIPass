@@ -1,7 +1,6 @@
 package com.tripass.schedule.service;
 
 import com.tripass.schedule.dto.*;
-import com.tripass.dev.util.DevDateUtil;
 import com.tripass.schedule.exception.ScheduleException;
 import com.tripass.schedule.mapper.ScheduleMapper;
 import com.tripass.schedule.enums.SchedulePaymentStatus;
@@ -30,7 +29,6 @@ import static com.tripass.schedule.exception.ScheduleErrorCode.TRIP_NOT_FOUND;
 public class ScheduleService {
 
     private final ScheduleMapper scheduleMapper;
-    private final DevDateUtil devDateUtil;
 
     /** 여행에 등록된 일정 목록을 조회합니다. */
     public List<ScheduleListResponseDto> getSchedules(
@@ -41,7 +39,7 @@ public class ScheduleService {
 
         return scheduleMapper.findAllByTripId(tripId)
                 .stream()
-                .map(row -> toListResponse(row, devDateUtil.today(userId)))
+                .map(this::toListResponse)
                 .toList();
     }
 
@@ -202,17 +200,11 @@ public class ScheduleService {
 
     /** 목록 조회 결과를 API 응답으로 변환합니다. */
     private ScheduleListResponseDto toListResponse(
-            ScheduleListRowDto row,
-            LocalDate today
+            ScheduleListRowDto row
     ) {
         ZoneId zoneId = row.getTimeZone() != null
                 ? ZoneId.of(row.getTimeZone())
                 : ZoneId.of("Asia/Seoul");
-
-        OffsetDateTime scheduledAt = toOffsetDateTime(row.getScheduledAt(), zoneId);
-        ScheduleStatus visibleStatus = scheduledAt.toLocalDate().isBefore(today)
-                ? ScheduleStatus.DONE
-                : ScheduleStatus.UPCOMING;
 
         return ScheduleListResponseDto.builder()
                 .id(row.getId())
@@ -223,7 +215,12 @@ public class ScheduleService {
                 .countryName(row.getCountryName())
                 .timeZone(row.getTimeZone())
                 .scheduleName(row.getScheduleName())
-                .scheduledAt(scheduledAt)
+                .scheduledAt(
+                        toOffsetDateTime(
+                                row.getScheduledAt(),
+                                zoneId
+                        )
+                )
                 .amount(row.getAmount())
                 .currencyCode(row.getCurrencyCode())
                 .currencySymbol(
@@ -234,7 +231,11 @@ public class ScheduleService {
                                 row.getPaymentStatus()
                         )
                 )
-                .scheduleStatus(visibleStatus)
+                .scheduleStatus(
+                        ScheduleStatus.valueOf(
+                                row.getScheduleStatus()
+                        )
+                )
                 .placeName(row.getPlaceName())
                 .placeAddress(row.getPlaceAddress())
                 .build();

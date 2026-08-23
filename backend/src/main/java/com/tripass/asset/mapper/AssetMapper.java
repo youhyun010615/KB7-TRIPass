@@ -135,8 +135,7 @@ public interface AssetMapper {
             @org.apache.ibatis.annotations.Param("userId") Long userId,
             @org.apache.ibatis.annotations.Param("year") int year,
             @org.apache.ibatis.annotations.Param("month") int month,
-            @org.apache.ibatis.annotations.Param("type") String type,
-            @org.apache.ibatis.annotations.Param("asOfDate") LocalDate asOfDate
+            @org.apache.ibatis.annotations.Param("type") String type
     );
 
     List<Long> findUserIdsWithLinkedAssets();

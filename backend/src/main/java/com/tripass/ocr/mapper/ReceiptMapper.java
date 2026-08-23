@@ -9,7 +9,6 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
-import java.time.LocalDate;
 
 // 해외 영수증, 품목 및 공동결제 참여자 테이블에 접근하는 Mapper
 @Mapper
@@ -17,11 +16,6 @@ public interface ReceiptMapper {
 
     // 선택한 여행이 로그인 회원의 여행인지 확인
     boolean existsTripByIdAndUserId(
-            @Param("tripId") Long tripId,
-            @Param("userId") Long userId
-    );
-
-    LocalDate findTripStartDate(
             @Param("tripId") Long tripId,
             @Param("userId") Long userId
     );
@@ -163,8 +157,7 @@ public interface ReceiptMapper {
     // 참여자별 정산 요약 조회
     List<java.util.Map<String, Object>> findParticipantSettlements(
             @Param("userId") Long userId,
-            @Param("tripId") Long tripId,
-            @Param("asOfDate") LocalDate asOfDate
+            @Param("tripId") Long tripId
     );
 
     // 참여자 정산 완료 토글
@@ -178,16 +171,14 @@ public interface ReceiptMapper {
     // 영수증이 등록된 날짜 목록 조회
     List<String> findReceiptDates(
             @Param("userId") Long userId,
-            @Param("tripId") Long tripId,
-            @Param("asOfDate") LocalDate asOfDate
+            @Param("tripId") Long tripId
     );
 
     // 특정 참여자의 영수증 목록 조회
     List<ReceiptSummaryRow> findReceiptsByParticipantName(
             @Param("userId") Long userId,
             @Param("tripId") Long tripId,
-            @Param("participantName") String participantName,
-            @Param("asOfDate") LocalDate asOfDate
+            @Param("participantName") String participantName
     );
 
     // 수정 요청에서 제거된 공동결제 참여자만 논리 삭제
