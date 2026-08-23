@@ -5,7 +5,6 @@ import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { flagIconClass } from '@/stores/travel'
 import reportIcon from '@/assets/icons/report.svg'
-import postTripReportIcon from '@/assets/icons/post-trip-report.svg'
 import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 
 const route=useRoute(); const router=useRouter(); const store=useTravelReportStore()
@@ -37,7 +36,7 @@ watch(tripId, id => { if (id) load(id) })
   </div>
   <p class="report-list-description">여행 전후의 자금 흐름을 리포트를 통해 확인해보세요.<br>여행 후 리포트는 여행 후에 볼 수 있어요.</p>
   <button class="report-card" :class="{disabled:report.status==='여행 전'}" :disabled="report.status==='여행 전'" @click="router.push(`/mypage/reports/pre-trip?tripId=${tripId}`)"><span class="blue"><img :src="reportIcon" alt="" /></span><div><b>여행 저축 리포트</b><small>여행 시작일부터 확인할 수 있어요</small></div><em>{{ report.status==='여행 전'?'준비 중':'확인' }}</em><strong>›</strong></button>
-  <button class="report-card" :class="{disabled:report.status!=='여행 완료'}" :disabled="report.status!=='여행 완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange"><img :src="postTripReportIcon" alt="" /></span><div><b>여행 후 리포트</b></div><em class="after">{{ report.status==='여행 완료'?'확인':'준비 중' }}</em><strong>›</strong></button>
+  <button class="report-card" :class="{disabled:report.status!=='여행 완료'}" :disabled="report.status!=='여행 완료'" @click="router.push(`/mypage/reports/post-trip?tripId=${tripId}`)"><span class="orange"><img :src="reportIcon" alt="" /></span><div><b>여행 후 리포트</b></div><em class="after">{{ report.status==='여행 완료'?'확인':'준비 중' }}</em><strong>›</strong></button>
   </template>
   <BottomNav/></main></template>
 
