@@ -14,6 +14,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /** 트래블카드 연동, 외화 잔액, 카드 충전 내역 데이터 접근 메서드를 정의하는 MyBatis Mapper입니다. */
@@ -54,11 +55,15 @@ public interface WalletTravelCardMapper {
 
     List<TravelCardCurrencyBalanceResponseDto> findTravelCardBalances(@Param("walletTravelCardId") Long walletTravelCardId);
 
-    List<TravelCardLedgerResponseDto> findTravelCardLedgers(@Param("walletTravelCardId") Long walletTravelCardId);
+    List<TravelCardLedgerResponseDto> findTravelCardLedgers(
+            @Param("walletTravelCardId") Long walletTravelCardId,
+            @Param("asOfDate") LocalDate asOfDate
+    );
 
     List<TravelCardTransactionResponseDto> findTravelCardTransactions(
             @Param("walletId") Long walletId,
-            @Param("walletTravelCardId") Long walletTravelCardId
+            @Param("walletTravelCardId") Long walletTravelCardId,
+            @Param("asOfDate") LocalDate asOfDate
     );
 
     TravelCardBalance findTravelCardBalanceForUpdate(

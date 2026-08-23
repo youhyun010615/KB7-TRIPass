@@ -1,3 +1,4 @@
+USE tripass;
 
 -- 1. 여행 준비 (PRE_TRAVEL) - D30 단계
 INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
@@ -38,3 +39,31 @@ INSERT INTO checklist_templates (checklist_type, dday_stage, item_name) VALUES
 ('RETURN', NULL, '트래블카드 자동충전 OFF'),
 ('RETURN', NULL, '지인 선물 및 기념품 챙기기'),
 ('RETURN', NULL, '남은 외화 처리하기');
+
+-- 이 파일을 여러 번 실행해도 동일 항목이 늘어나지 않도록 중복을 정규화한다.
+-- 이미 만들어진 여행 체크리스트는 유지되는 canonical 템플릿 ID로 참조를 옮긴다.
+UPDATE trip_checklist_items item
+JOIN checklist_templates duplicate_template
+  ON duplicate_template.id = item.template_id
+JOIN (
+    SELECT MIN(id) AS keep_id, checklist_type, dday_stage, item_name
+    FROM checklist_templates
+    GROUP BY checklist_type, dday_stage, item_name
+) canonical
+  ON canonical.checklist_type = duplicate_template.checklist_type
+ AND canonical.dday_stage <=> duplicate_template.dday_stage
+ AND canonical.item_name = duplicate_template.item_name
+SET item.template_id = canonical.keep_id
+WHERE duplicate_template.id <> canonical.keep_id;
+
+DELETE duplicate_template
+FROM checklist_templates duplicate_template
+JOIN (
+    SELECT MIN(id) AS keep_id, checklist_type, dday_stage, item_name
+    FROM checklist_templates
+    GROUP BY checklist_type, dday_stage, item_name
+) canonical
+  ON canonical.checklist_type = duplicate_template.checklist_type
+ AND canonical.dday_stage <=> duplicate_template.dday_stage
+ AND canonical.item_name = duplicate_template.item_name
+WHERE duplicate_template.id <> canonical.keep_id;

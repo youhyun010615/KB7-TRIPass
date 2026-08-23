@@ -1,6 +1,7 @@
 package com.tripass.ocr.service;
 
 import com.tripass.common.exception.CustomException;
+import com.tripass.dev.util.DevDateUtil;
 import com.tripass.ocr.dto.internal.ReceiptDetailRow;
 import com.tripass.ocr.dto.internal.ReceiptImageData;
 import com.tripass.ocr.dto.internal.ReceiptSummaryRow;
@@ -58,6 +59,7 @@ public class ReceiptServiceImpl
     private final ReceiptMapper receiptMapper;
     private final ReceiptImageValidator receiptImageValidator;
     private final ReceiptFileStorage receiptFileStorage;
+    private final DevDateUtil devDateUtil;
 
     // 이미지 파일과 영수증 정보를 특정 여행에 저장한다.
     @Override
@@ -159,7 +161,7 @@ public class ReceiptServiceImpl
                         userId,
                         tripId,
                         null,
-                        null
+                        demoEndExclusive(userId, tripId)
                 );
 
         if (rows == null || rows.isEmpty()) {
@@ -419,8 +421,11 @@ public class ReceiptServiceImpl
 
         LocalDateTime startDateTime = startDate != null
                 ? startDate.atStartOfDay() : null;
-        LocalDateTime endDateTime = endDate != null
+        LocalDateTime requestedEnd = endDate != null
                 ? endDate.plusDays(1).atStartOfDay() : null;
+        LocalDateTime demoEnd = demoEndExclusive(userId, tripId);
+        LocalDateTime endDateTime = requestedEnd == null || requestedEnd.isAfter(demoEnd)
+                ? demoEnd : requestedEnd;
 
         List<ReceiptSummaryRow> rows =
                 receiptMapper.findAllByUserIdAndTripId(
@@ -454,7 +459,8 @@ public class ReceiptServiceImpl
         }
 
         List<Map<String, Object>> rows =
-                receiptMapper.findParticipantSettlements(userId, tripId);
+                receiptMapper.findParticipantSettlements(
+                        userId, tripId, devDateUtil.today(userId));
 
         if (rows == null || rows.isEmpty()) {
             return new SettlementSummaryResponse(
@@ -545,7 +551,8 @@ public class ReceiptServiceImpl
         }
 
         List<ReceiptSummaryRow> rows =
-                receiptMapper.findReceiptsByParticipantName(userId, tripId, participantName);
+                receiptMapper.findReceiptsByParticipantName(
+                        userId, tripId, participantName, devDateUtil.today(userId));
 
         List<ReceiptSummaryResponse> receipts = (rows == null || rows.isEmpty())
                 ? Collections.emptyList()
@@ -610,8 +617,17 @@ public class ReceiptServiceImpl
             );
         }
 
-        List<String> dates = receiptMapper.findReceiptDates(userId, tripId);
+        List<String> dates = receiptMapper.findReceiptDates(
+                userId, tripId, devDateUtil.today(userId));
         return dates != null ? dates : Collections.emptyList();
+    }
+
+    private LocalDateTime demoEndExclusive(Long userId, Long tripId) {
+        LocalDate today = devDateUtil.today(userId);
+        LocalDate tripStart = receiptMapper.findTripStartDate(tripId, userId);
+        return today.equals(tripStart)
+                ? today.atStartOfDay()
+                : today.plusDays(1).atStartOfDay();
     }
 
     // 영수증 저장 모델을 생성한다.

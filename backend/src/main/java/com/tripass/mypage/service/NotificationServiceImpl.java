@@ -4,6 +4,7 @@ import com.tripass.mypage.domain.NotificationSetting;
 import com.tripass.mypage.dto.response.NotificationResponseDto;
 import com.tripass.mypage.mapper.NotificationMapper;
 import com.tripass.mypage.mapper.NotificationSettingMapper;
+import com.tripass.dev.util.DevDateUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +17,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationMapper notificationMapper;
     private final NotificationSettingMapper notificationSettingMapper;
+    private final DevDateUtil devDateUtil;
 
     @Override
     public List<NotificationResponseDto> getNotifications(Long userId) {
-        return notificationMapper.getNotificationsByUserId(userId);
+        return notificationMapper.getNotificationsByUserId(userId, devDateUtil.today(userId));
     }
 
     @Override

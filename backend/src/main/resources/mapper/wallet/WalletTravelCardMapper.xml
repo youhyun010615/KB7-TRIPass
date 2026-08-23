@@ -202,6 +202,7 @@
             created_at
         FROM travel_card_ledger
         WHERE wallet_travel_card_id = #{walletTravelCardId}
+          AND DATE(created_at) &lt;= #{asOfDate}
         ORDER BY created_at DESC, id DESC
     </select>
 
@@ -242,6 +243,7 @@
                      LEFT JOIN wallet_exchange_transaction wet
                                ON wet.card_ledger_id = tcl.id
             WHERE tcl.wallet_travel_card_id = #{walletTravelCardId}
+              AND DATE(tcl.created_at) &lt;= #{asOfDate}
 
             UNION ALL
 
@@ -296,6 +298,13 @@
                      LEFT JOIN trip_countries tc ON tc.id = tx.trip_country_id
                      LEFT JOIN countries c ON c.id = tc.country_id
             WHERE w.id = #{walletId}
+              AND (tx.transaction_date &lt; #{asOfDate}
+                   OR (tx.transaction_date = #{asOfDate}
+                       AND NOT EXISTS (
+                           SELECT 1 FROM trips trip
+                           WHERE trip.id = tx.trip_id
+                             AND trip.start_date = #{asOfDate}
+                       )))
         ) combined
         ORDER BY combined.occurred_at DESC, combined.transaction_id DESC
     </select>

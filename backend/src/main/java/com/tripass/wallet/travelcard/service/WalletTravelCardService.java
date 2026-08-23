@@ -148,7 +148,8 @@ public class WalletTravelCardService {
             return Collections.emptyList();
         }
 
-        return walletTravelCardMapper.findTravelCardTransactions(wallet.getId(), walletTravelCard.getId());
+        return walletTravelCardMapper.findTravelCardTransactions(
+                wallet.getId(), walletTravelCard.getId(), devDateUtil.today(userId));
     }
 
     public List<TravelCardLedgerResponseDto> getLedgers(Long userId) {
@@ -159,7 +160,8 @@ public class WalletTravelCardService {
             return Collections.emptyList();
         }
 
-        return walletTravelCardMapper.findTravelCardLedgers(walletTravelCard.getId());
+        return walletTravelCardMapper.findTravelCardLedgers(
+                walletTravelCard.getId(), devDateUtil.today(userId));
     }
 
     private WalletCardTopup createTopupRequest(

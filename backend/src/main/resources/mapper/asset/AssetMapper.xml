@@ -239,6 +239,7 @@
         WHERE a.user_id = #{userId}
         AND YEAR(t.transaction_date) = #{year}
         AND MONTH(t.transaction_date) = #{month}
+        AND t.transaction_date &lt;= #{asOfDate}
         AND t.is_deleted = 0
         AND a.is_deleted = 0
         <if test="type != null and type != 'ALL'">

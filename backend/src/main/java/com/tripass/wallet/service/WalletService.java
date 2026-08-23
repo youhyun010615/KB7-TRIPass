@@ -41,7 +41,9 @@ public class WalletService {
     private final com.tripass.dev.util.DevDateUtil devDateUtil;
 
     public TripWalletSummaryResponseDto getTripWalletSummary(Long userId, Long tripId) {
-        java.util.Map<String, Object> row = walletMapper.findTripWalletSummary(tripId, userId);
+        LocalDate asOfDate = devDateUtil.today(userId);
+        java.util.Map<String, Object> row = walletMapper.findTripWalletSummary(
+                tripId, userId, asOfDate);
         if (row == null) {
             throw new WalletException(WALLET_NOT_FOUND);
         }
@@ -51,8 +53,8 @@ public class WalletService {
         BigDecimal externalCharged = toBigDecimal(row.get("externalChargedAmount"));
         BigDecimal totalSpent = toBigDecimal(row.get("totalTripSpentAmount"));
 
-        LocalDate overrideDate = devDateUtil.today(userId);
-        boolean isVirtualDate = !overrideDate.equals(LocalDate.now());
+        LocalDate overrideDate = asOfDate;
+        boolean isVirtualDate = devDateUtil.isOverridden(userId);
         BigDecimal walletBalance;
         if (isVirtualDate && row.get("walletId") != null) {
             walletBalance = defaultZero(walletMapper.calcBalanceAsOf(
@@ -103,7 +105,7 @@ public class WalletService {
         if (response == null) return BigDecimal.ZERO;
 
         LocalDate overrideDate = devDateUtil.today(userId);
-        boolean isVirtualDate = !overrideDate.equals(LocalDate.now());
+        boolean isVirtualDate = devDateUtil.isOverridden(userId);
         if (isVirtualDate) {
             return defaultZero(walletMapper.calcBalanceAsOf(response.getWalletId(), overrideDate));
         }
@@ -118,7 +120,7 @@ public class WalletService {
         }
 
         LocalDate overrideDate = devDateUtil.today(userId);
-        boolean isVirtualDate = !overrideDate.equals(LocalDate.now());
+        boolean isVirtualDate = devDateUtil.isOverridden(userId);
         BigDecimal balanceAmount;
         if (isVirtualDate) {
             balanceAmount = defaultZero(walletMapper.calcBalanceAsOf(response.getWalletId(), overrideDate));

@@ -414,7 +414,7 @@ public class AssetService {
     }
 
     private void autoFetchCardTransactions(Long userId, List<CardDto> cards) {
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = devDateUtil.today(userId);
         LocalDate startDate = endDate.minusMonths(8).withDayOfMonth(1);
         String start = startDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         String end = endDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -745,6 +745,10 @@ public class AssetService {
         }
         LocalDate start = parseDateOrNull(startDate);
         LocalDate end = parseDateOrNull(endDate);
+        LocalDate today = devDateUtil.today(userId);
+        if (end == null || end.isAfter(today)) {
+            end = today;
+        }
         return assetMapper.findTransactionsByCardId(cardId, start, end);
     }
 
@@ -765,6 +769,10 @@ public class AssetService {
         AccountDto account = assetMapper.findAccountById(accountId, userId);
         if (account == null) {
             throw new CustomException(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다.");
+        }
+        LocalDate today = devDateUtil.today(userId);
+        if (endDate == null || endDate.isAfter(today)) {
+            endDate = today;
         }
         List<TransactionDto> transactions = new ArrayList<>(
                 assetMapper.findTransactionsByAccountIdWithFilter(accountId, startDate, endDate, type));
@@ -839,6 +847,10 @@ public class AssetService {
     public List<TransactionDto> getAllTransactions(Long userId, String startDate, String endDate) {
         LocalDate start = parseDateOrNull(startDate);
         LocalDate end = parseDateOrNull(endDate);
+        LocalDate today = devDateUtil.today(userId);
+        if (end == null || end.isAfter(today)) {
+            end = today;
+        }
         List<TransactionDto> transactions = assetMapper.findTransactionsByUserId(userId, start, end);
         List<TransactionDto> accountWithdrawals = transactions.stream()
                 .filter(transaction -> transaction.getAccountId() != null)
@@ -885,7 +897,7 @@ public class AssetService {
             type = null;
         }
 
-        return assetMapper.findCalendarByMonth(userId, year, month, type);
+        return assetMapper.findCalendarByMonth(userId, year, month, type, devDateUtil.today(userId));
     }
 
     private void tryAutoGenerateAnalysis(Long userId) {

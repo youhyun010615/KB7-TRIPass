@@ -25,15 +25,38 @@ const loadTransactions = async () => {
 
   // route.query에서 tripCountryId를 직접 가져옴
   const countryId = route.query.tripCountryId || null;
-  const categoryName = category.value.name === '취미·여가' ? '취미여가' : category.value.name;
-
-  
+  const categoryNames =
+    category.value.name === '취미·여가'
+      ? ['취미여가', '관광']
+      : category.value.name === '기타'
+        ? ['기타', '숙박']
+        : [category.value.name];
 
   try {
-    transactions.value = await fetchTripTransactions(
-      tripId,
-      countryId,
-      categoryName,
+    const responses = await Promise.all(
+      categoryNames.map(async (categoryName) => {
+        try {
+          return await fetchTripTransactions(tripId, countryId, categoryName);
+        } catch {
+          return [];
+        }
+      }),
+    );
+    const merged = responses.flat();
+
+    transactions.value = Array.from(
+      new Map(
+        merged.map((item) => [
+          item.transactionId ??
+            item.id ??
+            `${item.transactionDate}-${item.merchantName}-${item.amount}`,
+          item,
+        ]),
+      ).values(),
+    ).sort(
+      (a, b) =>
+        new Date(b.transactionDate).getTime() -
+        new Date(a.transactionDate).getTime(),
     );
   } catch (error) {
     console.error('거래 내역 조회 실패:', error);

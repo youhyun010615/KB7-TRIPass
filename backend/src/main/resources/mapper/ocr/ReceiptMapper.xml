@@ -128,6 +128,14 @@
           AND is_deleted = 0
     </select>
 
+    <select id="findTripStartDate" resultType="java.time.LocalDate">
+        SELECT start_date
+        FROM trips
+        WHERE id = #{tripId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+    </select>
+
     <!-- 선택한 국가가 로그인 회원의 해당 여행에 포함되는지 확인 -->
     <select id="existsTripCountryByUserId"
             resultType="boolean">
@@ -641,6 +649,9 @@
           AND r.trip_id = #{tripId}
           AND r.is_deleted = 0
           AND p.is_deleted = 0
+          AND (DATE(r.payment_datetime) &lt; #{asOfDate}
+               OR (DATE(r.payment_datetime) = #{asOfDate}
+                   AND #{asOfDate} &lt;&gt; (SELECT start_date FROM trips WHERE id = r.trip_id)))
         GROUP BY p.participant_name, currency.currency_code, currency.symbol
         ORDER BY p.participant_name, owedAmount DESC
     </select>
@@ -681,6 +692,9 @@
           AND receipt.is_deleted = 0
           AND p.is_deleted = 0
           AND p.participant_name = #{participantName}
+          AND (DATE(receipt.payment_datetime) &lt; #{asOfDate}
+               OR (DATE(receipt.payment_datetime) = #{asOfDate}
+                   AND #{asOfDate} &lt;&gt; (SELECT start_date FROM trips WHERE id = receipt.trip_id)))
         ORDER BY receipt.payment_datetime DESC,
                  receipt.id DESC
     </select>
@@ -705,6 +719,9 @@
         WHERE user_id = #{userId}
           AND trip_id = #{tripId}
           AND is_deleted = 0
+          AND (DATE(payment_datetime) &lt; #{asOfDate}
+               OR (DATE(payment_datetime) = #{asOfDate}
+                   AND #{asOfDate} &lt;&gt; (SELECT start_date FROM trips WHERE id = #{tripId})))
         ORDER BY receipt_date DESC
     </select>
 

@@ -312,12 +312,64 @@ function getCountryColor(countryName) {
   return getCountryPresentation(countryName).headerBg;
 }
 
-// 여행자금 체크를 위한 데이터 가공
-const categorySummary = computed(() => tripStatus.value?.categorySummary || []);
-
 // 거래가 없는 국가/기간이라도 카테고리 표 자체는 항상 노출한다 — 응답에 없는
 // 카테고리는 0원으로 채운다.
 const CATEGORY_ORDER = ['식비', '교통', '쇼핑', '카페', '생활비', '취미·여가', '기타'];
+const TRAVEL_CATEGORY_ALIASES = {
+  관광: '취미·여가',
+  숙박: '기타',
+  취미여가: '취미·여가',
+};
+
+const normalizeTravelCategoryName = (name) =>
+  TRAVEL_CATEGORY_ALIASES[name] ||
+  (CATEGORY_ORDER.includes(name) ? name : '기타');
+
+// 여행자금 체크를 위한 데이터 가공. 기존 관광/숙박 지출은 각각 취미·여가/기타에
+// 합산해 카테고리를 없애더라도 과거 지출 금액이 누락되지 않게 한다.
+const categorySummary = computed(() => {
+  const merged = new Map();
+
+  for (const category of tripStatus.value?.categorySummary || []) {
+    const categoryName = normalizeTravelCategoryName(category.categoryName);
+    const current = merged.get(categoryName) || {
+      ...category,
+      categoryName,
+      totalAmount: 0,
+      countryDetails: [],
+    };
+
+    current.totalAmount += Number(category.totalAmount || 0);
+
+    const detailsByCountry = new Map(
+      current.countryDetails.map((detail) => [
+        detail.tripCountryId ?? detail.countryId ?? detail.countryName,
+        { ...detail },
+      ]),
+    );
+
+    for (const detail of category.countryDetails || []) {
+      const key =
+        detail.tripCountryId ?? detail.countryId ?? detail.countryName;
+      const existing = detailsByCountry.get(key);
+
+      if (existing) {
+        existing.amount =
+          Number(existing.amount || 0) + Number(detail.amount || 0);
+      } else {
+        detailsByCountry.set(key, {
+          ...detail,
+          amount: Number(detail.amount || 0),
+        });
+      }
+    }
+
+    current.countryDetails = [...detailsByCountry.values()];
+    merged.set(categoryName, current);
+  }
+
+  return [...merged.values()];
+});
 
 const totalCategorySpending = computed(() =>
   categorySummary.value.reduce(

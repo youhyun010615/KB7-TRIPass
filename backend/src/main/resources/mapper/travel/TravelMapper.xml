@@ -35,7 +35,10 @@
                 t.total_target_amount,
                 COALESCE(SUM(tr.amount), 0) AS total_spent
             FROM trips t
-                     LEFT JOIN transactions tr ON t.id = tr.trip_id AND tr.is_deleted = 0
+                     LEFT JOIN transactions tr ON t.id = tr.trip_id
+                         AND tr.is_deleted = 0
+                         AND (tr.transaction_date &lt; #{today}
+                              OR (tr.transaction_date = #{today} AND #{today} &lt;&gt; t.start_date))
             WHERE t.id = #{tripId} AND t.is_deleted = 0
             GROUP BY t.id, t.trip_name, t.start_date, t.end_date
         )
@@ -60,7 +63,10 @@
         FROM TripStats ts
                  JOIN trip_countries tc ON ts.trip_id = tc.trip_id
                  JOIN countries c ON tc.country_id = c.id
-                 LEFT JOIN transactions tr ON tc.id = tr.trip_country_id AND tr.is_deleted = 0
+                 LEFT JOIN transactions tr ON tc.id = tr.trip_country_id
+                     AND tr.is_deleted = 0
+                     AND (tr.transaction_date &lt; #{today}
+                          OR (tr.transaction_date = #{today} AND #{today} &lt;&gt; ts.start_date))
         WHERE tc.is_deleted = 0
         GROUP BY ts.trip_id, ts.trip_name, ts.start_date, ts.end_date, tc.id, c.country_name, tc.target_budget, tc.arrival_date, tc.departure_date, ts.total_target_amount, ts.total_spent
     </select>
@@ -89,12 +95,16 @@
                 COALESCE((SELECT SUM(pe.direct_amount)
                           FROM pre_expenses pe
                           WHERE pe.trip_country_id = tc.id
-                            AND pe.is_deleted = 0), 0) AS pre_expense_total,
+                            AND pe.is_deleted = 0
+                            AND DATE(pe.created_at) &lt;= #{today}), 0) AS pre_expense_total,
                 COALESCE((SELECT SUM(tr.amount)
                           FROM transactions tr
                           WHERE tr.trip_country_id = tc.id
                             AND tr.is_pre_expense = 0
-                            AND tr.is_deleted = 0), 0) AS travel_expense_total
+                            AND tr.is_deleted = 0
+                            AND (tr.transaction_date &lt; #{today}
+                                 OR (tr.transaction_date = #{today}
+                                     AND #{today} &lt;&gt; (SELECT start_date FROM trips WHERE id = tc.trip_id)))), 0) AS travel_expense_total
             FROM trip_countries tc
                      JOIN countries c ON tc.country_id = c.id
             WHERE tc.trip_id = #{tripId}
@@ -109,11 +119,17 @@
                                                             FROM transactions
                                                             WHERE trip_country_id = tc.id
                                                               AND is_pre_expense = 0
-                                                              AND is_deleted = 0), 0) * 100) AS percentage
+                                                              AND is_deleted = 0
+                                                              AND (transaction_date &lt; #{today}
+                                                                   OR (transaction_date = #{today}
+                                                                       AND #{today} &lt;&gt; (SELECT start_date FROM trips WHERE id = tc.trip_id)))), 0) * 100) AS percentage
                  FROM trip_countries tc
                           LEFT JOIN transactions tr ON tc.id = tr.trip_country_id
                      AND tr.is_pre_expense = 0
                      AND tr.is_deleted = 0
+                     AND (tr.transaction_date &lt; #{today}
+                          OR (tr.transaction_date = #{today}
+                              AND #{today} &lt;&gt; (SELECT start_date FROM trips WHERE id = tc.trip_id)))
                           LEFT JOIN spending_categories sc ON tr.category_id = sc.id
                  WHERE tc.trip_id = #{tripId}
                    AND tc.is_deleted = 0
@@ -666,6 +682,9 @@
         WHERE t.trip_id = #{tripId}
           AND t.is_deleted = 0
           AND t.transaction_type = 'WITHDRAWAL'
+          AND (t.transaction_date &lt; #{today}
+               OR (t.transaction_date = #{today}
+                   AND #{today} &lt;&gt; (SELECT start_date FROM trips WHERE id = t.trip_id)))
           AND (#{countryId} IS NULL OR t.trip_country_id = #{countryId})
           AND (#{categoryName} IS NULL OR sc.category_name = #{categoryName})
         ORDER BY t.transaction_date DESC

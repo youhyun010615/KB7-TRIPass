@@ -171,7 +171,8 @@ public class TravelService {
      */
     public List<TravelTransactionDto> getTripTransactions(Long tripId, Long currentUserId, Long countryId, String categoryName) {
         validateTripOwner(tripId, currentUserId);
-        return travelMapper.findTravelTransactions(tripId, countryId, categoryName);
+        return travelMapper.findTravelTransactions(
+                tripId, countryId, categoryName, devDateUtil.today(currentUserId));
     }
 
     /**
@@ -244,7 +245,8 @@ public class TravelService {
         result.setUpcomingSchedules(upcomingSchedules);
 
         // 3. 여행 거래 내역 조회 (Mapper 활용 - countryId 전달)
-        List<TravelTransactionDto> allTransactions = travelMapper.findTravelTransactions(tripId, countryId, null);
+        List<TravelTransactionDto> allTransactions = travelMapper.findTravelTransactions(
+                tripId, countryId, null, today);
 
         // 4. 카테고리/국가별 지출 집계
         Map<String, Map<String, Long>> categoryAndCountrySpent = allTransactions.stream()
@@ -298,7 +300,7 @@ public class TravelService {
     public List<BudgetCheckResponseDto> getTripBudget(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
 
-        return travelMapper.getTripBudget(tripId);
+        return travelMapper.getTripBudget(tripId, devDateUtil.today(currentUserId));
     }
 
     /**

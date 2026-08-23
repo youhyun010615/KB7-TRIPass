@@ -2,6 +2,8 @@ package com.tripass.dev.mapper;
 
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDate;
+
 public interface DevResetMapper {
 
     void deleteWeeklySavingMissionsByUser(@Param("userId") Long userId);
@@ -94,9 +96,9 @@ public interface DevResetMapper {
 
     void deleteNonSeedTravelCardLedgerByUser(@Param("userId") Long userId);
 
-    void resetTravelCardBalanceByUser(@Param("userId") Long userId);
+    void recalcTravelCardBalanceFromSeedLedger(@Param("userId") Long userId, @Param("virtualDate") LocalDate virtualDate);
 
-    void recalcWalletBalanceFromSeedLedger(@Param("userId") Long userId);
+    void recalcWalletBalanceFromSeedLedger(@Param("userId") Long userId, @Param("virtualDate") LocalDate virtualDate);
 
     void restoreAccountBalanceFromNonSeedWalletTransactions(@Param("userId") Long userId);
 
