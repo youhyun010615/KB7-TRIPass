@@ -184,6 +184,31 @@ const destinations = computed(() => {
   return [...apiCountries, all];
 });
 
+const overallCurrencyBreakdown = computed(() => {
+  const grouped = new Map();
+
+  destinations.value
+    .filter((item) => item.code !== 'all' && item.currency && item.rate > 0)
+    .forEach((item) => {
+      const code = String(item.currency).toUpperCase();
+      const unit = Number(item.unit || 1);
+      const rate = Number(item.rate || 0);
+      const current = grouped.get(code) || { code, spent: 0, budget: 0 };
+      current.spent += (Number(item.spentAmount || 0) / rate) * unit;
+      current.budget += (Number(item.targetBudget || 0) / rate) * unit;
+      grouped.set(code, current);
+    });
+
+  return [...grouped.values()];
+});
+
+function formatForeignBreakdown(code, amount) {
+  return `${code} ${Number(amount || 0).toLocaleString('ko-KR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 // 날짜 계산
 const today = computed(() => {
   return currentDate();
@@ -990,12 +1015,24 @@ async function switchMode(mode) {
                   <i :style="{ width: `${fundPercent(item)}%` }" />
                 </div>
                 <div class="fund-progress-meta">
-                  <div>
+                  <div class="overall-fund-stat">
                     <b>{{ formatWon(item.spentAmount) }}</b>
+                    <span class="overall-currency-breakdown">
+                      <em
+                        v-for="currency in overallCurrencyBreakdown"
+                        :key="`spent-${currency.code}`"
+                      >{{ formatForeignBreakdown(currency.code, currency.spent) }}</em>
+                    </span>
                     <small>SPENT</small>
                   </div>
-                  <div class="align-right">
+                  <div class="overall-fund-stat align-right">
                     <b>{{ formatWon(item.targetBudget) }}</b>
+                    <span class="overall-currency-breakdown align-right">
+                      <em
+                        v-for="currency in overallCurrencyBreakdown"
+                        :key="`budget-${currency.code}`"
+                      >{{ formatForeignBreakdown(currency.code, currency.budget) }}</em>
+                    </span>
                     <small>BUDGET</small>
                   </div>
                 </div>
@@ -2924,4 +2961,10 @@ async function switchMode(mode) {
 .fund-amount-line{display:flex;flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap}
 .fund-amount-line.align-right{align-items:flex-end}
 .fund-amount-line em{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
+.overall-fund-stat{width:50%;min-width:0}
+.overall-fund-stat.align-right{border-left:1px solid rgba(255,255,255,.24);padding-left:14px}
+.overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:6px;white-space:nowrap}
+.overall-currency-breakdown.align-right{align-items:flex-end}
+.overall-currency-breakdown em{color:#8cebbf;font-size:9px;font-style:normal;font-weight:850}
+.overall-fund-stat>small{margin-top:7px}
 </style>
