@@ -578,6 +578,12 @@ function countryDateRange(item) {
   return `${dottedDate(item.arrivalDate)} — ${dottedDate(item.departureDate)}`;
 }
 
+function isCountryComplete(item) {
+  return item?.code !== 'all'
+    && Boolean(item?.departureDate)
+    && todayDateString() > item.departureDate;
+}
+
 const travelMetaCountryCodes = computed(() => persistentCountries.value
   .map(country => countryFlagMap[country.countryName])
   .filter(Boolean));
@@ -901,6 +907,7 @@ async function switchMode(mode) {
               <div class="trip-destination">
                 <p class="trip-country-name">
                   <span>{{ item.code === 'all' ? '전체 국가' : item.name }}</span>
+                  <em v-if="isCountryComplete(item)" class="trip-complete-badge">여행 완료</em>
                 </p>
                 <p
                   v-if="item.arrivalDate && item.departureDate"
@@ -912,6 +919,15 @@ async function switchMode(mode) {
             <div class="ticket-photo-space" />
 
             <div class="travel-summary-content">
+              <section v-if="isCountryComplete(item)" class="completed-country-panel">
+                <h3>{{ item.name }} 여행 종료</h3>
+                <p>{{ countryDateRange(item) }}</p>
+                <div>
+                  <span>{{ item.name }} 총 지출</span>
+                  <strong>{{ formatWon(item.spentAmount) }}</strong>
+                </div>
+              </section>
+              <template v-else>
               <div class="summary-title-wrapper">
                 <div v-if="item.code !== 'all'" class="summary-title-spacer" aria-hidden="true" />
                 <button
@@ -988,6 +1004,7 @@ async function switchMode(mode) {
                   </div>
                 </div>
               </div>
+              </template>
             </div>
           </div>
           <div class="perforation lower"><i /><span /><i /></div>
@@ -2847,4 +2864,11 @@ async function switchMode(mode) {
 @media (prefers-reduced-motion:reduce){.travel-card-balance-row .travel-card-icon-image{animation:none}}
 .fund-progress-meta>div:first-child small{color:#ff9b9b}.fund-progress-meta>div:last-child small{color:#ffd466}.fund-progress-meta b{color:#fff;font-weight:900}.fund-progress-meta small{font-weight:900;opacity:1}
 .ticket-meta-day{padding:0;border-radius:0;color:#ffd45e;background:transparent;font-size:17px;line-height:1;white-space:nowrap}
+.trip-complete-badge{display:inline-flex;align-items:center;margin-left:8px;padding:5px 9px;border-radius:999px;background:#cce7ff;color:#173f75;font-size:9px;font-style:normal;font-weight:900;vertical-align:middle}
+.completed-country-panel{padding:22px 18px 16px;border:1px solid rgba(151,190,255,.72);border-radius:18px;background:rgba(8,35,91,.86);box-shadow:0 12px 28px rgba(0,0,0,.25);text-align:center;backdrop-filter:blur(3px)}
+.completed-country-panel h3{color:#fff;font-size:27px;font-weight:950;letter-spacing:-.04em;line-height:1.15;text-shadow:0 2px 8px rgba(0,0,0,.25)}
+.completed-country-panel>p{margin-top:9px;color:#9dc8f4;font-family:'Space Mono',ui-monospace,monospace;font-size:10px;font-weight:800}
+.completed-country-panel>div{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.48);text-align:left}
+.completed-country-panel span{font-size:12px;font-weight:850}
+.completed-country-panel strong{font-size:22px;font-weight:950}
 </style>
