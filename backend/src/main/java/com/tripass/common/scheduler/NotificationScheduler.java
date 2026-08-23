@@ -81,8 +81,10 @@ public class NotificationScheduler {
         java.util.List<com.tripass.exchange.domain.ExchangeRateAlert> alerts = exchangeRateService.findAllActiveAlerts();
         
         for (com.tripass.exchange.domain.ExchangeRateAlert alert : alerts) {
-            java.math.BigDecimal rate = latestRates.get(alert.getCurrencyId());
-            
+            Long currencyId = exchangeRateService.getCurrencyIdByCountryId(alert.getCountryId());
+            if (currencyId == null) continue;
+            java.math.BigDecimal rate = latestRates.get(currencyId);
+
             if (rate != null && rate.compareTo(java.math.BigDecimal.valueOf(alert.getTargetRate())) <= 0) {
                 sendExchangeRateNotification(alert, rate);
             }
@@ -95,7 +97,8 @@ public class NotificationScheduler {
         if (setting == null || !setting.isAllEnabled() || !setting.isExchangeRateEnabled()) return; 
 
         // 통화 코드 가져오기
-        String currencyCode = exchangeRateService.getCurrencyCodeById(alert.getCurrencyId());
+        Long currencyId = exchangeRateService.getCurrencyIdByCountryId(alert.getCountryId());
+        String currencyCode = currencyId != null ? exchangeRateService.getCurrencyCodeById(currencyId) : "UNKNOWN";
 
         String title = "관심 환율 알림";
         String body = String.format("[%s] 설정하신 환율(%s원) 이하로 도달했습니다: %s원", currencyCode, alert.getTargetRate(), rate);

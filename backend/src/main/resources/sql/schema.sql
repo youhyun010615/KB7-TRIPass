@@ -363,7 +363,7 @@ CREATE TABLE exchange_rates (
 CREATE TABLE exchange_rate_alerts (
     id            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '관심 환율 알림 ID',
     user_id       BIGINT         NOT NULL                COMMENT '회원 ID',
-    currency_id   BIGINT         NOT NULL                COMMENT '관심 통화 ID',
+    country_id    BIGINT         NOT NULL                COMMENT '국가 ID',
     target_rate   DECIMAL(20, 8) NULL                    COMMENT '목표 환율',
     target_amount DECIMAL(18, 2) NULL                    COMMENT '환전 희망 금액',
     is_deleted    TINYINT(1)     NOT NULL DEFAULT 0      COMMENT '삭제 여부',
@@ -371,8 +371,8 @@ CREATE TABLE exchange_rate_alerts (
     created_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일자',
     updated_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일자',
     PRIMARY KEY (id),
-    CONSTRAINT fk_exchange_rate_alerts_user     FOREIGN KEY (user_id)     REFERENCES users (id),
-    CONSTRAINT fk_exchange_rate_alerts_currency FOREIGN KEY (currency_id) REFERENCES currencies (id)
+    CONSTRAINT fk_exchange_rate_alerts_user    FOREIGN KEY (user_id)    REFERENCES users (id),
+    CONSTRAINT fk_exchange_rate_alerts_country FOREIGN KEY (country_id) REFERENCES countries (id)
 ) COMMENT '관심 환율 알림';
 
 

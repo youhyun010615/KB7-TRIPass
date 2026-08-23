@@ -13,6 +13,7 @@ public class ExchangeRateAlertResponseDto {
     private Long id;
     private Long countryId;
     private String countryName;
+    private String flagUrl;
     private String currencyCode;
     private Double targetRate;
 }

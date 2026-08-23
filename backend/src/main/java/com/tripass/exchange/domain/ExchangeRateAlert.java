@@ -8,7 +8,7 @@ import lombok.Setter;
 public class ExchangeRateAlert {
     private Long id;
     private Long userId;
-    private Long currencyId;
+    private Long countryId;
     private Double targetRate;
     private Boolean isDeleted;
 }

@@ -15,10 +15,10 @@ import java.time.LocalDateTime;
 public class ExchangeRateAlertUpdateResponseDto {
     private Long id;
     private Long userId;
+    private Long countryId;
     private String currencyCode;
     private Double targetRate;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
-    }
-
+}
