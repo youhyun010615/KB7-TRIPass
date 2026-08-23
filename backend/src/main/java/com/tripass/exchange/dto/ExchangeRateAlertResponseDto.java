@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExchangeRateAlertResponseDto {
     private Long id;
+    private Long countryId;
     private String currencyCode;
     private Double targetRate;
 }

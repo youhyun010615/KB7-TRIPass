@@ -81,28 +81,35 @@
             c.currency_code
     </select>
 
+    <select id="getCurrencyIdByCountryId" resultType="Long">
+        SELECT currency_id FROM countries WHERE id = #{countryId}
+    </select>
+
     <select id="getAlertsByUserId" resultType="ExchangeRateAlertResponseDto">
         SELECT
             era.id AS id,
+            era.country_id AS countryId,
             c.currency_code AS currencyCode,
             era.target_rate AS targetRate
         FROM exchange_rate_alerts era
-        INNER JOIN currencies c ON era.currency_id = c.id
+        INNER JOIN countries co ON era.country_id = co.id
+        INNER JOIN currencies c ON co.currency_id = c.id
         WHERE era.user_id = #{userId}
           AND era.is_deleted = 0
     </select>
 
     <insert id="insertAlert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, is_deleted)
-        VALUES (#{userId}, #{currencyId}, #{targetRate}, 0)
+        INSERT INTO exchange_rate_alerts (user_id, country_id, target_rate, is_deleted)
+        VALUES (#{userId}, #{countryId}, #{targetRate}, 0)
     </insert>
 
     <select id="countAlertByUserAndCurrency" resultType="int">
         SELECT COUNT(*)
-        FROM exchange_rate_alerts
-        WHERE user_id = #{userId}
-          AND currency_id = #{currencyId}
-          AND is_deleted = 0
+        FROM exchange_rate_alerts era
+        INNER JOIN countries co ON era.country_id = co.id
+        WHERE era.user_id = #{userId}
+          AND co.currency_id = #{currencyId}
+          AND era.is_deleted = 0
     </select>
 
     <select id="getHistoryRates" resultType="com.tripass.exchange.dto.ExchangeRateHistoryResponseDto$RateInfo">

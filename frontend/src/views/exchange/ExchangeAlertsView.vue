@@ -21,7 +21,8 @@ onMounted(async () => {
 const reachedAlerts = computed(() => {
   return exchange.alerts.filter((alert) => {
     if (!alert.enabled) return false;
-    const currentRate = exchange.getCurrency(alert.currencyCode)?.rate || 0;
+    // countryId를 사용하여 정확한 국가의 환율 조회
+    const currentRate = exchange.getCurrencyByCountryId(alert.countryId)?.rate || 0;
     return currentRate > 0 && currentRate <= alert.targetRate;
   });
 });
@@ -43,17 +44,17 @@ const reachedAlerts = computed(() => {
           class="alert-item"
         >
           <span
-            :class="exchange.getCurrency(alert.currencyCode)?.flagClass"
+            :class="exchange.getCurrencyByCountryId(alert.countryId)?.flagClass"
             class="flag"
           ></span>
 
           <div class="info">
             <b
               >{{ alert.currencyCode }}({{
-                exchange.getCurrency(alert.currencyCode)?.symbol || ''
+                exchange.getCurrencyByCountryId(alert.countryId)?.symbol || ''
               }})</b
             >
-            <small>{{ exchange.getCurrency(alert.currencyCode)?.name }}</small>
+            <small>{{ exchange.getCurrencyByCountryId(alert.countryId)?.name }}</small>
           </div>
 
           <div class="rates">
@@ -62,7 +63,7 @@ const reachedAlerts = computed(() => {
             </strong>
             <b
               >현재
-              {{ format(exchange.getCurrency(alert.currencyCode)?.rate) }}원</b
+              {{ format(exchange.getCurrencyByCountryId(alert.countryId)?.rate) }}원</b
             >
           </div>
           <i class="arrow">›</i>

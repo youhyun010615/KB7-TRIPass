@@ -7,7 +7,7 @@ const route = useRoute()
 const router = useRouter()
 const exchange = useExchangeStore()
 const alert = computed(() => exchange.alerts.find(item => String(item.id) === String(route.params.alertId)))
-const currency = computed(() => exchange.getCurrency(alert.value?.currencyCode))
+const currency = computed(() => exchange.getCurrencyByCountryId(alert.value?.countryId))
 const format = value => Number(value || 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 })
 
 onMounted(async () => {

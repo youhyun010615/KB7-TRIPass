@@ -6,6 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ExchangeRateAlertRequestDto {
-    private String currencyCode;
+    private Long countryId;
     private Double targetRate;
 }
