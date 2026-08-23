@@ -177,6 +177,7 @@ const destinations = computed(() => {
       dayRangeEnd: overallStart ? daysBetween(overallStart, c.departureDate) + 1 : 1,
       currency: c.currencyCode || currencyInfo?.code || '',
       rate: currencyInfo?.rate || 0,
+      unit: currencyInfo?.unit || 1,
     };
   });
   // 캐러셀 순서: 국가별 카드 먼저, "전체" 보딩패스는 맨 뒤로
@@ -633,6 +634,19 @@ function travelCardBalanceKrwText(item) {
   return `약 ${krwAmount.toLocaleString('ko-KR')}원`;
 }
 
+function foreignBudgetText(item, krwAmount) {
+  const code = String(item?.currency || '').toUpperCase();
+  const rate = Number(item?.rate || 0);
+  const unit = Number(item?.unit || 1);
+  if (!code || rate <= 0) return formatWon(krwAmount);
+
+  const foreignAmount = (Number(krwAmount || 0) / rate) * unit;
+  return `${code} ${foreignAmount.toLocaleString('ko-KR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 const allTravelCardBalances = computed(() => tripWalletStore.foreignBalances.map((balance) => {
   const currencyCode = String(balance.currencyCode || balance.code || '').toUpperCase();
   const amount = Number(balance.balanceAmount ?? balance.amount ?? 0);
@@ -995,11 +1009,17 @@ async function switchMode(mode) {
                 </div>
                 <div class="fund-progress-meta">
                   <div>
-                    <b>{{ formatWon(item.spentAmount) }}</b>
+                    <span class="fund-amount-line">
+                      <b>{{ foreignBudgetText(item, item.spentAmount) }}</b>
+                      <em>약 {{ formatWon(item.spentAmount) }}</em>
+                    </span>
                     <small>SPENT</small>
                   </div>
                   <div class="align-right">
-                    <b>{{ formatWon(item.targetBudget) }}</b>
+                    <span class="fund-amount-line align-right">
+                      <b>{{ foreignBudgetText(item, item.targetBudget) }}</b>
+                      <em>약 {{ formatWon(item.targetBudget) }}</em>
+                    </span>
                     <small>BUDGET</small>
                   </div>
                 </div>
@@ -2871,4 +2891,7 @@ async function switchMode(mode) {
 .completed-country-panel>div{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.48);text-align:left}
 .completed-country-panel span{font-size:12px;font-weight:850}
 .completed-country-panel strong{font-size:22px;font-weight:950}
+.fund-amount-line{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+.fund-amount-line.align-right{justify-content:flex-end}
+.fund-amount-line em{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
 </style>
