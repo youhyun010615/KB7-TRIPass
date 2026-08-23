@@ -184,10 +184,6 @@
         WHERE era.id = #{id} AND era.is_deleted = 0
     </select>
 
-    <select id="getCurrencyIdByCountryId" resultType="Long">
-        SELECT currency_id FROM countries WHERE id = #{countryId}
-    </select>
-
     <select id="getLatestRatesByCountry" resultType="com.tripass.exchange.dto.CountryExchangeRateDto">
         SELECT
             co.id AS countryId,
