@@ -489,7 +489,7 @@
         UPDATE wallet_card_topup
         SET status = 'COMPLETED',
             external_transaction_id = #{externalTransactionId},
-            completed_at = NOW(),
+            completed_at = #{completedAt},
             failed_at = NULL,
             failure_reason = NULL,
             wallet_ledger_id = #{walletLedgerId},
@@ -502,7 +502,7 @@
     <update id="updateWalletCardTopupFailed">
         UPDATE wallet_card_topup
         SET status = 'FAILED',
-            failed_at = NOW(),
+            failed_at = #{failedAt},
             failure_reason = #{failureReason},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{topupId}

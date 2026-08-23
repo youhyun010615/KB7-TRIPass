@@ -88,12 +88,14 @@ public interface WalletTravelCardMapper {
             @Param("topupId") Long topupId,
             @Param("walletLedgerId") Long walletLedgerId,
             @Param("cardLedgerId") Long cardLedgerId,
-            @Param("externalTransactionId") String externalTransactionId
+            @Param("externalTransactionId") String externalTransactionId,
+            @Param("completedAt") java.time.LocalDateTime completedAt
     );
 
     int updateWalletCardTopupFailed(
             @Param("topupId") Long topupId,
-            @Param("failureReason") String failureReason
+            @Param("failureReason") String failureReason,
+            @Param("failedAt") java.time.LocalDateTime failedAt
     );
 
     int updateWalletCardTopupRefunded(

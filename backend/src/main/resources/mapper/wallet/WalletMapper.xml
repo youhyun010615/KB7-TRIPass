@@ -719,7 +719,8 @@
             target_type,
             target_id,
             idempotency_key,
-            memo
+            memo,
+            created_at
         )
         VALUES (
             #{walletId},
@@ -735,7 +736,8 @@
             #{targetType},
             #{targetId},
             #{idempotencyKey},
-            #{memo}
+            #{memo},
+            #{createdAt}
         )
     </insert>
 

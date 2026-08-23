@@ -121,13 +121,13 @@ public class WalletTravelCardService {
     @Transactional
     public WalletCardTopupResponseDto processTopup(Long topupId) {
         WalletCardTopup topup = walletTravelCardMapper.findWalletCardTopupForUpdate(topupId);
-
         if (topup == null) {
             throw new WalletException(WALLET_TRAVEL_CARD_NOT_FOUND);
         }
 
         return processTopup(topup.getId(), topup.getIdempotencyKey());
     }
+
 
     public List<TravelCardCurrencyBalanceResponseDto> getBalances(Long userId) {
         Wallet wallet = getWallet(userId);
@@ -219,9 +219,11 @@ public class WalletTravelCardService {
         TravelCardTopupResult result = mockTravelCardClient.requestTopup(topup, idempotencyKey);
 
         if (!result.isSuccess()) {
+            Wallet wallet = walletMapper.findWalletById(topup.getWalletId());
             walletTravelCardMapper.updateWalletCardTopupFailed(
                     topup.getId(),
-                    buildFailureReason(result, topup.getRetryCount())
+                    buildFailureReason(result, topup.getRetryCount()),
+                    devDateUtil.getEffectiveDateTime(wallet.getUserId())
             );
 
             WalletCardTopup failedTopup = walletTravelCardMapper.findWalletCardTopupForUpdate(topup.getId());
@@ -293,7 +295,8 @@ public class WalletTravelCardService {
                 topup.getId(),
                 walletLedger.getId(),
                 cardLedger.getId(),
-                externalTransactionId
+                externalTransactionId,
+                devDateUtil.getEffectiveDateTime(wallet.getUserId())
         );
 
         insertExchangeTransaction(topup, baseRate, walletLedger.getId(), cardLedger.getId());

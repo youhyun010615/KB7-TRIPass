@@ -1174,6 +1174,7 @@ public class WalletService {
                 .targetId(targetId)
                 .idempotencyKey(idempotencyKey)
                 .memo(memo)
+                .createdAt(devDateUtil.getEffectiveDateTime(walletMapper.findWalletById(walletId).getUserId()))
                 .build();
 
         walletMapper.insertWalletLedger(ledger);
