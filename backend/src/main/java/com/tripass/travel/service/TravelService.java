@@ -452,8 +452,11 @@ public class TravelService {
                         .min(BigDecimal.valueOf(100));
         LocalDate today = devDateUtil.today(currentUserId);
         int remainingMonths = TripSavingCalculator.calculateRemainingMonths(trip.getStartDate(), today);
-        BigDecimal monthlySavingTarget = TripSavingCalculator.calculateCurrentMonthSavingTarget(
-                totalTarget, walletBalance, today, trip.getStartDate());
+        BigDecimal persistedMonthlyTarget = travelMapper.findMonthlySavingAmountByTripId(trip.getTripId());
+        BigDecimal monthlySavingTarget = persistedMonthlyTarget != null
+                ? persistedMonthlyTarget
+                : TripSavingCalculator.calculateCurrentMonthSavingTarget(
+                        totalTarget, walletBalance, today, trip.getStartDate());
         BigDecimal currentMonthSaving = defaultZero(travelMapper.findCurrentMonthWalletSaving(currentUserId, today));
         BigDecimal currentMonthRemaining = monthlySavingTarget.subtract(currentMonthSaving).max(BigDecimal.ZERO);
         int currentMonthSavingPercent = monthlySavingTarget.signum() == 0
