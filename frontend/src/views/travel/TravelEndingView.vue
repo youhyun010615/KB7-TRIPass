@@ -124,27 +124,29 @@ onMounted(async () => {
       </div>
 
       <div class="fund-options">
-        <button type="button" :class="{ selected: fundChoice === 'transfer' }" @click="fundChoice = 'transfer'">
-          <i aria-hidden="true" />
-          <span>
-            <b>내 계좌로 보내기</b>
-            <small>연결된 주계좌로 남은 원화를 안전하게 보내요.</small>
-          </span>
-        </button>
+        <div class="fund-option-group" :class="{ selected: fundChoice === 'transfer' }">
+          <button type="button" @click="fundChoice = 'transfer'">
+            <i aria-hidden="true" />
+            <span>
+              <b>내 계좌로 보내기</b>
+              <small>연결된 주계좌로 남은 원화를 안전하게 보내요.</small>
+            </span>
+          </button>
 
-        <div v-if="fundChoice === 'transfer' && primaryAccount" class="receiving-account">
-          <span>₩</span>
-          <div>
-            <b>{{ primaryAccount.bankName }} {{ primaryAccount.name }}</b>
-            <small>{{ primaryAccount.number }}</small>
+          <div v-if="fundChoice === 'transfer' && primaryAccount" class="receiving-account">
+            <span>₩</span>
+            <div>
+              <b>{{ primaryAccount.bankName }} {{ primaryAccount.name }}</b>
+              <small>{{ primaryAccount.number }}</small>
+            </div>
+            <em>주계좌</em>
           </div>
-          <em>주계좌</em>
         </div>
 
         <button type="button" :class="{ selected: fundChoice === 'keep' }" @click="fundChoice = 'keep'">
           <i aria-hidden="true" />
           <span>
-            <b>다음 여행을 위해 보관</b>
+            <b>트립월렛으로 보내기</b>
             <small>트립월렛에 보관하고 다음 여행 자금으로 이어가요.</small>
           </span>
         </button>
@@ -159,7 +161,6 @@ onMounted(async () => {
     </section>
 
     <section class="ending-actions">
-      <button type="button" class="primary" :disabled="busy" @click="finish('register')">새 여행 목표 설정하기</button>
       <button type="button" class="secondary" :disabled="busy" @click="finish('home')">홈으로 가기</button>
     </section>
   </main>
@@ -167,5 +168,5 @@ onMounted(async () => {
 
 <style scoped>
 .ending-page{min-height:100vh;padding:58px 20px 36px;background:linear-gradient(180deg,#0b2a6b 0,#174ca7 43%,#eef3fb 43%);color:#10192b}.ending-hero{text-align:center;color:#fff}.eyebrow{font-size:10px;font-weight:900;letter-spacing:.18em;color:#ffd466}.plane{width:74px;height:74px;margin:20px auto 14px;display:grid;place-items:center;border-radius:50%;font-size:32px;background:#ffffff18;border:1px solid #ffffff35;box-shadow:0 14px 36px #061c4c66}.ending-hero h1{font-size:27px;font-weight:950}.ending-hero p{margin-top:10px;font-size:13px;line-height:1.75;color:#dce8ff}.report-stack{margin-top:34px;display:grid;gap:12px}.report-stack button{width:100%;display:grid;grid-template-columns:50px 1fr 18px;align-items:center;gap:13px;padding:17px;border:0;border-radius:20px;background:#fff;text-align:left;box-shadow:0 9px 25px #18386b18}.report-stack button>span:nth-child(2){display:grid;gap:2px}.report-stack small{font-size:9px;font-weight:900;letter-spacing:.12em;color:#2f6fed}.report-stack strong{font-size:15px}.report-stack em{font-size:11px;font-style:normal;color:#8a96aa}.report-stack b{font-size:24px;color:#9aa7bb}.report-icon{width:48px;height:48px;display:grid!important;place-items:center!important;border-radius:15px;background:#eaf1ff;color:#174ca7;font-size:21px;font-weight:900}.report-icon.yellow{background:#fff5d8;color:#d89b00}.report-icon.pale{background:#eef2f7;color:#607086}
-.fund-settlement{margin-top:24px;padding:21px 16px 18px;border:1px solid #d8e4f5;border-radius:23px;background:#fff;box-shadow:0 12px 30px #18386b14}.fund-section-heading small{color:#2f6fed;font-size:8px;font-weight:950;letter-spacing:.15em}.fund-section-heading h2{margin-top:4px;font-size:18px;font-weight:950}.fund-section-heading p{margin-top:5px;color:#7c899e;font-size:10px}.remaining-balance{margin-top:15px;padding:17px;border:1px solid #d9e3f1;border-radius:17px;background:linear-gradient(145deg,#f8fbff,#fff)}.remaining-balance span{display:block;color:#8593a8;font-size:9px;font-weight:800}.remaining-balance strong{display:block;margin-top:7px;color:#10192b;font-family:'Space Mono',ui-monospace,monospace;font-size:26px;font-weight:950}.remaining-balance .balance-loading{font-family:inherit;font-size:15px;color:#8a96aa}.fund-options{display:grid;gap:9px;margin-top:12px}.fund-options>button{display:grid;grid-template-columns:22px 1fr;align-items:start;gap:10px;width:100%;padding:14px;border:1px solid #dde5f1;border-radius:16px;background:#f7f9fc;text-align:left}.fund-options>button.selected{border:2px solid #6da4f1;background:#eef5ff;box-shadow:0 5px 15px #2d6fc51a}.fund-options>button>i{width:19px;height:19px;border:2px solid #9db3d7;border-radius:50%}.fund-options>button.selected>i{border:6px solid #17499c}.fund-options>button span{display:grid;gap:4px}.fund-options>button b{font-size:12px}.fund-options>button small{color:#7c899d;font-size:9px;line-height:1.45}.receiving-account{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:-2px 8px 2px;padding:12px;border:1px solid #dce5f2;border-radius:14px;background:#fff}.receiving-account>span{display:grid;width:32px;height:32px;place-items:center;border-radius:10px;background:#eaf2ff;color:#17499c;font-size:14px;font-weight:950}.receiving-account b{font-size:10px}.receiving-account small{display:block;margin-top:3px;color:#91a0b5;font-size:8px}.receiving-account em{padding:5px 7px;border-radius:999px;background:#fff0bd;color:#173b86;font-size:8px;font-style:normal;font-weight:900}.fund-error{margin-top:10px;padding:9px 11px;border-radius:10px;background:#fff0f1;color:#c5353b;font-size:9px;line-height:1.5}.settlement-primary{width:100%;height:50px;margin-top:14px;border:0;border-radius:15px;background:#17499c;color:#fff;font-size:12px;font-weight:950}.settlement-primary:disabled{opacity:.55}.settlement-later{display:block;margin:10px auto 0;padding:5px 9px;color:#55709c;background:transparent;font-size:10px;font-weight:850}.ending-actions{margin-top:22px}.ending-actions button{width:100%;height:52px;border-radius:16px;font-size:14px;font-weight:900}.primary{border:0;background:#17499c;color:#fff}.secondary{margin-top:9px;border:1px solid #cfdaea;background:#fff;color:#24426f}
+.fund-settlement{overflow-anchor:none;margin-top:24px;padding:21px 16px 18px;border:1px solid #d8e4f5;border-radius:23px;background:#fff;box-shadow:0 12px 30px #18386b14}.fund-section-heading small{color:#2f6fed;font-size:8px;font-weight:950;letter-spacing:.15em}.fund-section-heading h2{margin-top:4px;font-size:18px;font-weight:950}.fund-section-heading p{margin-top:5px;color:#7c899e;font-size:10px}.remaining-balance{margin-top:15px;padding:17px;border:1px solid #d9e3f1;border-radius:17px;background:linear-gradient(145deg,#f8fbff,#fff)}.remaining-balance span{display:block;color:#8593a8;font-size:9px;font-weight:800}.remaining-balance strong{display:block;margin-top:7px;color:#10192b;font-family:'Space Mono',ui-monospace,monospace;font-size:26px;font-weight:950}.remaining-balance .balance-loading{font-family:inherit;font-size:15px;color:#8a96aa}.fund-options{display:grid;gap:9px;margin-top:12px}.fund-options>button,.fund-option-group{width:100%;border:2px solid #dde5f1;border-radius:16px;background:#f7f9fc}.fund-options>button,.fund-option-group>button{display:grid;grid-template-columns:22px 1fr;align-items:start;gap:10px;width:100%;padding:13px;border:0;border-radius:14px;background:transparent;text-align:left}.fund-options>button.selected,.fund-option-group.selected{border-color:#6da4f1;background:#eef5ff;box-shadow:0 5px 15px #2d6fc51a}.fund-options>button>i,.fund-option-group>button>i{width:19px;height:19px;border:2px solid #9db3d7;border-radius:50%}.fund-options>button.selected>i,.fund-option-group.selected>button>i{border:6px solid #17499c}.fund-options>button span,.fund-option-group>button span{display:grid;gap:4px}.fund-options>button b,.fund-option-group>button b{font-size:12px}.fund-options>button small,.fund-option-group>button small{color:#7c899d;font-size:9px;line-height:1.45}.receiving-account{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:0 10px 11px;padding:12px;border:1px solid #dce5f2;border-radius:14px;background:#fff}.receiving-account>span{display:grid;width:32px;height:32px;place-items:center;border-radius:10px;background:#eaf2ff;color:#17499c;font-size:14px;font-weight:950}.receiving-account b{font-size:10px}.receiving-account small{display:block;margin-top:3px;color:#91a0b5;font-size:8px}.receiving-account em{padding:5px 7px;border-radius:999px;background:#fff0bd;color:#173b86;font-size:8px;font-style:normal;font-weight:900}.fund-error{margin-top:10px;padding:9px 11px;border-radius:10px;background:#fff0f1;color:#c5353b;font-size:9px;line-height:1.5}.settlement-primary{width:100%;height:50px;margin-top:14px;border:0;border-radius:15px;background:#17499c;color:#fff;font-size:12px;font-weight:950}.settlement-primary:disabled{opacity:.55}.settlement-later{display:block;margin:10px auto 0;padding:5px 9px;color:#55709c;background:transparent;font-size:10px;font-weight:850}.ending-actions{margin-top:22px}.ending-actions button{width:100%;height:52px;border-radius:16px;font-size:14px;font-weight:900}.secondary{margin-top:0;border:1px solid #cfdaea;background:#fff;color:#24426f}
 </style>
