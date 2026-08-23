@@ -54,6 +54,15 @@ public interface MonthlySpendingAnalysisMapper {
      */
     BigDecimal findActiveSavingTargetAmount(@Param("userId") Long userId);
 
+    /**
+     * 분석 월의 월렛 순저축액(IN - OUT)을 조회한다.
+     * 월렛 원장이 없는 달은 실제 저축액 0원으로 반환하며, 잔액 보정(ADJUST)은 저축에서 제외한다.
+     */
+    BigDecimal findActualSavingAmount(
+            @Param("userId") Long userId,
+            @Param("analysisYearMonth") String analysisYearMonth
+    );
+
     // ===== 월간 분석 저장·조회 =====
 
     MonthlySpendingAnalysisDto findMonthlyAnalysis(
