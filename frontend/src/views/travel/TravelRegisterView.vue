@@ -621,7 +621,9 @@ function goToOnboardingHub() {
             <div><span>현지 여행 자금 <small>(AI 추천)</small></span><b>{{ money(recommendedLocalTotal(activeBudgetPlan)) }}</b></div>
           </div>
           <button type="button" class="budget-basis-toggle" :aria-expanded="budgetBasisOpen" @click="budgetBasisOpen = !budgetBasisOpen">
-            <span class="budget-basis-alert" :style="{ maskImage: `url(${alertFilledIcon})`, WebkitMaskImage: `url(${alertFilledIcon})` }" aria-hidden="true"></span><b>AI 예산 산정 기준 보기</b><i :class="{ open: budgetBasisOpen }" aria-hidden="true">⌄</i>
+            <span class="budget-basis-alert" :style="{ maskImage: `url(${alertFilledIcon})`, WebkitMaskImage: `url(${alertFilledIcon})` }" aria-hidden="true"></span>
+            <span class="budget-ai-motion budget-basis-ai" aria-hidden="true"><b>AI</b></span>
+            <b>AI 예산 산정 기준 보기</b><i :class="{ open: budgetBasisOpen }" aria-hidden="true">⌄</i>
           </button>
           <section v-if="budgetBasisOpen" class="budget-basis-detail">
             <header>
@@ -630,35 +632,35 @@ function goToOnboardingHub() {
               <p>국가별 조사 단가에 여행 일수와 숙박일 수를 적용했어요.</p>
             </header>
             <section class="basis-group basis-prepaid">
-              <h3><img :src="preMoneyIcon" alt="">사전 지출 <b>{{ money(recommendedPrepaidTotal(activeBudgetPlan)) }}</b></h3>
+              <h3><img class="basis-group-icon basis-group-icon-prepaid" :src="preMoneyIcon" alt="">사전 지출 <b>{{ money(recommendedPrepaidTotal(activeBudgetPlan)) }}</b></h3>
               <article>
                 <div class="basis-row"><strong><span class="basis-category-icon"><img :src="airplaneIcon" alt=""></span>항공</strong><b>{{ money(activeBudgetPlan.recommendedBudget.airfareAmount) }}</b></div>
                 <em><img :src="internetIcon" alt="웹사이트 출처">KAYAK · Skyscanner 항공 검색</em>
                 <p>인천(ICN) 출발–{{ activeBudgetPlan.name }} 일반석 왕복을 유연한 날짜로 교차 조회했어요.<br>프로모션 최저가는 제외하고 통상 왕복 가격대를 적용했어요.</p>
               </article>
               <article>
-                <div class="basis-row"><strong><span class="basis-category-icon"><img :src="hotelIcon" alt=""></span>숙박</strong><b>{{ money(recommendedNightlyAmount(activeBudgetPlan)) }} × {{ recommendationStayNights(activeBudgetPlan) }}박 = {{ money(activeBudgetPlan.recommendedBudget.lodgingAmount) }}</b></div>
+                <div class="basis-row"><strong><span class="basis-category-icon basis-category-hotel"><img :src="hotelIcon" alt=""></span>숙박</strong><b>{{ money(recommendedNightlyAmount(activeBudgetPlan)) }} × {{ recommendationStayNights(activeBudgetPlan) }}박 = {{ money(activeBudgetPlan.recommendedBudget.lodgingAmount) }}</b></div>
                 <em><img :src="internetIcon" alt="웹사이트 출처">Budget Your Trip · 대표 도시 숙박 자료</em>
                 <p>{{ activeBudgetPlan.name }} 대표 도시의 중급 2인실에서 성인 1명이 부담하는 1박 비용을 적용했어요.</p>
               </article>
             </section>
             <section class="basis-group basis-local">
               <div class="basis-local-head">
-                <h3><img :src="moneyTripIcon" alt="">현지 여행 자금 <b>{{ money(recommendedLocalTotal(activeBudgetPlan)) }}</b></h3>
+                <h3><img class="basis-group-icon basis-group-icon-local" :src="moneyTripIcon" alt="">현지 여행 자금 <b>{{ money(recommendedLocalTotal(activeBudgetPlan)) }}</b></h3>
                 <p class="basis-formula">1일 기준 {{ money(recommendedLocalDailyTotal(activeBudgetPlan)) }} × {{ recommendationTravelDays(activeBudgetPlan) }}일</p>
               </div>
               <article>
-                <div class="basis-row"><strong><span class="basis-category-icon"><img :src="foodIcon" alt=""></span>식비</strong><b>{{ money(recommendedDailyAmount(activeBudgetPlan, 'foodAmount')) }} / 일</b></div>
+                <div class="basis-row"><strong><span class="basis-category-icon basis-category-food"><img :src="foodIcon" alt=""></span>식비</strong><b>{{ money(recommendedDailyAmount(activeBudgetPlan, 'foodAmount')) }} / 일</b></div>
                 <em><img :src="internetIcon" alt="웹사이트 출처">Budget Your Trip · 실제 여행자 식비 지출</em>
                 <p>여행자가 기록한 식사·음료 지출 비중을 대표 도시의 전체 일평균과 비교해 과대값을 보정했어요.</p>
               </article>
               <article>
-                <div class="basis-row"><strong><span class="basis-category-icon"><img :src="tourIcon" alt=""></span>관광</strong><b>{{ money(recommendedDailyAmount(activeBudgetPlan, 'activityAmount')) }} / 일</b></div>
+                <div class="basis-row"><strong><span class="basis-category-icon basis-category-tour"><img :src="tourIcon" alt=""></span>관광</strong><b>{{ money(recommendedDailyAmount(activeBudgetPlan, 'activityAmount')) }} / 일</b></div>
                 <em><img :src="internetIcon" alt="웹사이트 출처">Budget Your Trip · 관광·엔터테인먼트 지출</em>
                 <p>입장권·투어·액티비티에 실제 사용한 일평균을 비교해 서비스 기준 단가로 보정했어요.</p>
               </article>
               <article>
-                <div class="basis-row"><strong><span class="basis-category-icon"><img :src="taxiIcon" alt=""></span>교통</strong><b>{{ money(recommendedDailyAmount(activeBudgetPlan, 'transportAmount')) }} / 일</b></div>
+                <div class="basis-row"><strong><span class="basis-category-icon basis-category-transport"><img :src="taxiIcon" alt=""></span>교통</strong><b>{{ money(recommendedDailyAmount(activeBudgetPlan, 'transportAmount')) }} / 일</b></div>
                 <em><img :src="internetIcon" alt="웹사이트 출처">Budget Your Trip · 현지 교통 지출</em>
                 <em><span aria-hidden="true">▤</span>{{ transportSourceLabel(activeBudgetPlan) }}</em>
                 <p>실제 여행자의 현지 교통 지출과 현지 교통권 가격을 함께 비교했어요.</p>
@@ -909,8 +911,10 @@ function goToOnboardingHub() {
 .budget-recommendation-panel .budget-recommendation-summary>div{border-radius:11px;background:#fff}
 .budget-recommendation-panel .budget-recommendation-summary>div+div{margin-left:7px;border-left:0}
 .budget-basis-toggle{display:flex;width:100%;align-items:center;gap:7px;margin-top:10px;padding:9px 11px;border:0;border-radius:11px;color:#174fae;background:#dfeaff;font-size:10px;text-align:left}.budget-basis-alert{flex:none;width:16px;height:16px;background:#2469e8;mask-position:center;mask-repeat:no-repeat;mask-size:contain;-webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:contain}.budget-basis-toggle>b{font-size:10px}.budget-basis-toggle>i{margin-left:auto;font-size:15px;font-style:normal;transition:transform .2s}.budget-basis-toggle>i.open{transform:rotate(180deg)}
+.budget-basis-ai{flex:none;width:20px;height:20px;color:#2469e8;background:#fff;border-color:#4384f1}.budget-basis-ai b{font-size:6px}
 .budget-basis-detail{margin-top:9px;padding:14px;border-radius:13px;background:#fff;color:#17233b}.budget-basis-detail>header{display:block!important}.budget-basis-detail>header>b{display:block;white-space:nowrap;font-size:16px;line-height:1.35}.budget-basis-detail>header>div{display:flex!important;gap:7px;margin-top:10px}.budget-basis-detail>header>div span{padding:6px 9px;border:1px solid #b9d1f7;border-radius:999px;color:#174fae;font-size:11px;font-weight:800}.budget-basis-detail>header>p{margin-top:9px;padding:9px 10px;border-radius:9px;color:#2469e8;background:#f0f5ff;font-size:11px;line-height:1.5}
 .basis-group{margin-top:13px;padding:13px;border:1px solid;border-radius:14px}.basis-prepaid{border-color:#f1d39b;background:#fffaf2}.basis-local{border-color:#b8d2f8;background:#f6f9ff}.basis-group h3{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(96,120,160,.16);font-size:14px}.basis-group h3>img{width:22px;height:22px;object-fit:contain}.basis-group h3>b{margin-left:auto;font-size:15px}.basis-prepaid h3>b{color:#d8780c}.basis-local h3{padding-bottom:0;border-bottom:0}.basis-local h3>b{color:#1857bd}.basis-local-head{display:block!important;padding-bottom:10px;border-bottom:1px solid rgba(96,120,160,.16)}.basis-group article{padding:12px 1px}.basis-group article+article{border-top:1px dashed rgba(96,120,160,.2)}.basis-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.basis-row strong{display:flex;align-items:center;gap:7px;font-size:13px}.basis-category-icon{display:inline-grid;flex:none;width:24px;height:24px;place-items:center;border-radius:7px;color:#174fae;background:#eaf2ff;font-size:13px;font-weight:900}.basis-category-icon img{width:17px;height:17px;object-fit:contain}.basis-row b{font-size:13px;text-align:right}.basis-group article em{display:flex;width:max-content;max-width:100%;align-items:center;gap:4px;margin-top:8px;padding:5px 7px;border-radius:7px;color:#1857bd;background:#eaf2ff;font-size:10px;font-style:normal;font-weight:800}.basis-group article em>img{width:13px;height:13px;object-fit:contain}.basis-group article p{margin-top:8px;color:#68758b;font-size:10.5px;line-height:1.65}.basis-formula{margin-top:5px;color:#2469e8;font-size:11px}.budget-basis-detail>footer{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:10px;border-radius:8px;color:#738099;background:#f3f5f8;font-size:9.5px;line-height:1.45;text-align:center}.budget-basis-detail>footer>b{color:#5f6f89;font-size:10px}.budget-basis-detail>footer>span{display:block}
+.basis-group h3>.basis-group-icon{box-sizing:content-box;padding:5px;border-radius:9px}.basis-group-icon-prepaid{background:#fff0d8}.basis-group-icon-local{background:#e4efff}.basis-category-hotel{background:#f0e9ff}.basis-category-hotel img{filter:brightness(0) saturate(100%) invert(38%) sepia(88%) saturate(1135%) hue-rotate(231deg) brightness(88%)}.basis-category-food{background:#fff0df}.basis-category-food img{filter:brightness(0) saturate(100%) invert(56%) sepia(94%) saturate(1516%) hue-rotate(351deg) brightness(100%)}.basis-category-tour{background:#e5f7ed}.basis-category-tour img{filter:brightness(0) saturate(100%) invert(52%) sepia(65%) saturate(613%) hue-rotate(103deg) brightness(90%)}.basis-category-transport{background:#e5f0ff}.basis-category-transport img{filter:brightness(0) saturate(100%) invert(39%) sepia(82%) saturate(1755%) hue-rotate(204deg) brightness(94%)}
 .budget-card-active .budget-section-title b{font-size:12px}
 .budget-card-active .subtotal{align-items:center;font-size:12px}
 .budget-card-active .subtotal b{font-size:12px}
