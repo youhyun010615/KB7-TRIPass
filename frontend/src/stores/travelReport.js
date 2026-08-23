@@ -145,15 +145,20 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     postTripReport.value = null
     postTripBudgetCheck.value = []
     try {
-      const [report, budgetCheck] = await Promise.all([
+      const [report, budgetCheck, basic] = await Promise.all([
         fetchPostTripReport(tripId),
         fetchBudgetCheck(tripId).catch(error => {
           console.error('국가별 지출 분석 조회 실패:', error)
           return []
         }),
+        fetchTripGoal(tripId).catch(error => {
+          console.error('여행 국가 일정 조회 실패:', error)
+          return null
+        }),
       ])
       postTripReport.value = report
       postTripBudgetCheck.value = budgetCheck || []
+      tripBasic.value = basic
     } catch (error) {
       errorMessage.value = '여행 후 리포트를 불러오지 못했습니다.'
       console.error('여행 후 리포트 조회 실패:', error)
@@ -194,8 +199,20 @@ export const useTravelReportStore = defineStore('travelReport', () => {
       savingsRate: r.savingsRate,
       daily: (r.dailySpending || []).map(d => ({
         date: formatShortDate(d.date),
+        rawDate: d.date,
         amount: d.amount,
       })),
+      countryPeriods: (tripBasic.value?.countries || []).map((country, i) => {
+        const name = country.countryName || country.name
+        return {
+          name,
+          flag: travelStore.countryFlagMap[name]?.emoji || '🌍',
+          startDate: country.arrivalDate || country.startDate,
+          endDate: country.departureDate || country.endDate,
+          color: COUNTRY_COLORS[i % COUNTRY_COLORS.length],
+        }
+      }).filter(country => country.name && country.startDate && country.endDate)
+        .sort((a, b) => a.startDate.localeCompare(b.startDate)),
       categories: (r.categorySpending || []).map((c, i) => ({
         name: c.categoryName,
         amount: c.amount,
