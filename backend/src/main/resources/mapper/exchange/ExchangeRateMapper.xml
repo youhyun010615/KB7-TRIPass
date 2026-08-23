@@ -71,8 +71,12 @@
             er.rate_date AS rateDate
         FROM exchange_rates er
         JOIN currencies c ON er.target_currency_id = c.id
-        WHERE er.rate_date = (SELECT MAX(rate_date) FROM exchange_rates)
-        ORDER BY 
+        WHERE er.rate_date = (
+            SELECT MAX(er2.rate_date) FROM exchange_rates er2
+            WHERE er2.target_currency_id = er.target_currency_id
+              AND er2.rate_date &lt;= CURDATE()
+        )
+        ORDER BY
             CASE 
                 WHEN c.currency_code IN ('JPY', 'EUR', 'CHF', 'THB', 'USD') THEN 0
                 WHEN c.currency_code IN ('GBP', 'CAD', 'AUD', 'CNH', 'HKD') THEN 1
@@ -121,6 +125,7 @@
         JOIN currencies c ON er.target_currency_id = c.id
         WHERE c.currency_code = #{currencyCode}
           AND er.rate_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+          AND er.rate_date &lt;= CURDATE()
         ORDER BY er.rate_date ASC
     </select>
 
@@ -198,7 +203,11 @@
         FROM countries co
         INNER JOIN currencies cur ON co.currency_id = cur.id
         INNER JOIN exchange_rates er ON er.target_currency_id = cur.id
-            AND er.rate_date = (SELECT MAX(rate_date) FROM exchange_rates)
+            AND er.rate_date = (
+                SELECT MAX(er2.rate_date) FROM exchange_rates er2
+                WHERE er2.target_currency_id = cur.id
+                  AND er2.rate_date &lt;= CURDATE()
+            )
         ORDER BY
             CASE
                 WHEN cur.currency_code IN ('JPY', 'EUR', 'CHF', 'THB', 'USD') THEN 0
