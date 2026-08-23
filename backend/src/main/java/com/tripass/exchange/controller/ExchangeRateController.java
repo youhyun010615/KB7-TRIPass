@@ -70,6 +70,15 @@ public class ExchangeRateController {
         return ApiResponse.success("환율 동기화 완료", result);
     }
 
+    /**
+     * [초기 데이터 적재/복구용] 과거 90일치 환율 일괄 수집 (1회 실행)
+     */
+    @PostMapping("/init-history")
+    public ApiResponse<SyncResultDto> initPast90Days() {
+        SyncResultDto result = exchangeRateService.initPast90DaysRates();
+        return ApiResponse.success("과거 90일치 환율 초기화 및 복구 완료", result);
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/alerts")
     public ApiResponse<Map<String, Long>> registerAlert(@RequestBody ExchangeRateAlertRequestDto request, Authentication authentication) {
