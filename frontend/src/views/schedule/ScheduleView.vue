@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { CalendarDays } from '@lucide/vue';
 import BottomNav from '@/components/common/BottomNav.vue';
 import NotificationBell from '@/components/common/NotificationBell.vue';
 import ScheduleCard from '@/components/schedule/ScheduleCard.vue';
@@ -294,7 +295,8 @@ const currentTravelDay = computed(() => {
   const start = new Date(`${store.travelStart}T00:00:00`).getTime();
   const today = new Date(`${store.today}T00:00:00`).getTime();
   if (![start, today].every(Number.isFinite)) return 0;
-  return Math.min(travelDays.value - 1, Math.max(0, Math.floor((today - start) / 86_400_000)));
+  if (today < start) return 0;
+  return Math.min(travelDays.value, Math.floor((today - start) / 86_400_000) + 1);
 });
 
 const openDetail = (id) => {
@@ -400,7 +402,7 @@ async function focusTimelineDate(date) {
     <div v-if="!listMode" class="schedule-header-fixed">
       <header class="schedule-header">
         <div>
-          <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
+          <span class="header-brand-lockup"><img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" /><img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" /></span>
           <h1>SCHEDULE</h1>
         </div>
         <NotificationBell />
@@ -530,7 +532,7 @@ async function focusTimelineDate(date) {
           />
         </div>
         <div v-if="!visibleTimelineGroups.length" class="empty-state">
-          <span class="empty-calendar-icon" aria-hidden="true">＋</span>
+          <span class="empty-calendar-icon" aria-hidden="true"><CalendarDays :size="28" :stroke-width="2.2" /></span>
           <b>{{ listMode ? '선택한 날짜에 등록된 일정이 없어요' : '아직 등록된 일정이 없어요' }}</b>
           <small>{{ listMode ? '아래 버튼을 눌러 이 날짜에 일정을 추가해 보세요.' : '첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.' }}</small>
         </div>
@@ -578,6 +580,7 @@ async function focusTimelineDate(date) {
   height: auto;
   object-fit: contain;
 }
+.header-brand-lockup{display:flex;align-items:center;gap:5px}.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .schedule-header h1 {
   margin-top: 6px;
   color: #29466f;

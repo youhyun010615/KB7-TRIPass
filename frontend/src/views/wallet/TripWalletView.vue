@@ -483,6 +483,7 @@ async function confirmUnlinkTravelCard() {
       <header class="wallet-header">
         <div>
           <p>
+            <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" />
             <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
           </p>
           <h1>WALLET</h1>
@@ -845,6 +846,7 @@ async function confirmUnlinkTravelCard() {
 .wallet-page{height:100vh;height:100dvh;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-width:none;word-break:keep-all}.wallet-page::-webkit-scrollbar{display:none}.wallet-page h1,.wallet-page h2,.wallet-page h3{text-wrap:balance}.wallet-page p{text-wrap:pretty}
 .chart-amount{display:block;font-size:11px;font-weight:700;color:#2563eb;white-space:nowrap}.chart-amount.current,.chart-item>span.current{color:#b8860b}.chart-amount.negative,.chart-item>span.negative{color:#ef4444}.chart-amount.zero,.chart-item>span.zero{color:#4b5563}.chart-amount.disabled,.chart-item>span.disabled{color:#b6c1d1}
 .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}
+.wallet-header p{display:flex;align-items:center;gap:5px}.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .wallet-header h1{font-size:17px;font-weight:400;color:#29466f;letter-spacing:normal}
 
 /* Compact wallet visual */

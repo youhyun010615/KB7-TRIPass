@@ -528,6 +528,7 @@ function closeTripRequiredModal() {
           <NotificationBell />
         </div>
         <h1 class="home-header-title">
+          <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="home-brand-symbol" alt="" aria-hidden="true" />
           <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
         </h1>
       </div>
@@ -658,6 +659,7 @@ function closeTripRequiredModal() {
           <NotificationBell />
         </div>
         <h1 class="home-header-title">
+          <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="home-brand-symbol" alt="" aria-hidden="true" />
           <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
         </h1>
       </div>
@@ -2687,6 +2689,7 @@ function closeTripRequiredModal() {
   height: auto;
   object-fit: contain;
 }
+.home-header-title{display:flex;align-items:center;gap:5px}.home-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .mode-switch-control {
   flex: none;
   width: 112px;

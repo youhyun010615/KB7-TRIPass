@@ -815,6 +815,7 @@ async function switchMode(mode) {
         <NotificationBell />
       </div>
       <h1 class="home-header-title">
+        <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="home-brand-symbol" alt="" aria-hidden="true" />
         <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
       </h1>
     </div>
@@ -1520,6 +1521,7 @@ async function switchMode(mode) {
   height: auto;
   object-fit: contain;
 }
+.home-header-title{display:flex;align-items:center;gap:5px}.home-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .mode-switch-control {
   position: relative;
   display: grid;

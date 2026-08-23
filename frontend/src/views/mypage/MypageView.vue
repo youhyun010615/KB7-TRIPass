@@ -206,6 +206,7 @@ const myManageItems = computed(() => [
       <div class="flex items-start justify-between px-5 pb-3" style="padding-top: 14px">
         <div>
           <p class="mypage-header-eyebrow">
+            <img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" />
             <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
           </p>
           <h1 class="mypage-header-title">MyPage</h1>
@@ -282,7 +283,7 @@ const myManageItems = computed(() => [
             <h2>내 여행</h2>
             <span>방문 국가 {{ visitedCountryCount }} · 완료 여행 {{ completedTripCount }}</span>
           </div>
-          <button type="button" @click="router.push('/mypage/travel')">전체보기 ›</button>
+          <button type="button" @click="router.push('/mypage/travel')">전체 여행 관리 <span aria-hidden="true">›</span></button>
         </header>
 
         <div class="trip-selector">
@@ -477,8 +478,8 @@ const myManageItems = computed(() => [
   text-align: left;
 }
 .member-link span { font-size: 11px; font-weight: 600; }
-.member-link b { color: #ffd466; font-size: 11px; font-weight: 800; }
-.member-link i { color: #ffd466; font-size: 18px; font-style: normal; line-height: 1; }
+.member-link b { justify-self:end;color: #ffd466; font-size: 11px; font-weight: 800; }
+.member-link i { margin-left:-4px;color: #ffd466; font-size: 18px; font-style: normal; line-height: 1; }
 .mypage-header-fixed {
   position: relative;
   z-index: 60;
@@ -510,6 +511,7 @@ const myManageItems = computed(() => [
   height: auto;
   object-fit: contain;
 }
+.mypage-header-eyebrow{display:flex;align-items:center;gap:5px}.header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .reset-button { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;border:1px solid #dde3ed;border-radius:16px;background:#fff;color:#6b7a90;font-size:12px;font-weight:800;box-shadow:0 5px 14px rgba(16,25,43,.04); }
 .reset-button:active { background:#f5f7fb; }
 .reset-button:disabled { opacity:.55; }
@@ -523,7 +525,8 @@ const myManageItems = computed(() => [
 .trip-section-head>div { display:flex;min-width:0;align-items:baseline;gap:8px; }
 .trip-section-head h2 { margin:0;color:#111b30;font-size:15px;font-weight:800;letter-spacing:-.03em; }
 .trip-section-head>div>span { overflow:hidden;color:#98a4b6;font-size:9px;font-weight:700;text-overflow:ellipsis;white-space:nowrap; }
-.trip-section-head button { flex:none;border:0;background:transparent;color:#2f70f2;font-size:10px;font-weight:800; }
+.trip-section-head button { display:flex;flex:none;align-items:center;gap:5px;padding:7px 9px;border:1px solid #cfe0fb;border-radius:10px;background:#f4f8ff;color:#2f70f2;font-size:10px;font-weight:850; }
+.trip-section-head button span{font-size:15px;line-height:.7}
 .trip-selector { display:flex;gap:13px;overflow-x:auto;padding:5px 4px 10px;scrollbar-width:none;scroll-snap-type:x proximity; }
 .trip-selector::-webkit-scrollbar { display:none; }
 .trip-circle-item { display:flex;width:66px;padding-bottom: 4px;min-width:66px;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:#9aa5b5;scroll-snap-align:start;cursor:pointer; }

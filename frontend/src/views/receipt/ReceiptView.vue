@@ -599,7 +599,7 @@ onMounted(loadPage)
     >
       <header class="receipt-header">
         <div>
-          <img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" />
+          <span class="header-brand-lockup"><img src="@/assets/brand/tripass-symbol-transparent-v2.png" class="header-brand-symbol" alt="" aria-hidden="true" /><img src="@/assets/brand/tripass-text.png" class="header-wordmark" alt="TRIPASS" /></span>
           <h1>RECEIPT</h1>
         </div>
         <NotificationBell />
@@ -1312,6 +1312,7 @@ onMounted(loadPage)
 .archive-header button { display: grid; width: 36px; height: 36px; padding: 0; place-items: center; border: 0; border-radius: 12px; color: #173f8d; background: #fff; font-size: 30px; font-weight: 500; line-height: 1; }
 .archive-header h1 { margin: 0; color: #10192b; font-size: 20px; font-weight: 900; text-align: center; }
 .receipt-header{display:flex;align-items:flex-start;justify-content:space-between}.receipt-header .header-wordmark{display:block;width:88px;height:auto;object-fit:contain}.receipt-header h1{margin-top:6px;color:#29466f;font-size:17px;font-weight:400;letter-spacing:normal}.receipt-header-spacer{height:132px}
+.receipt-header .header-brand-lockup{display:flex;align-items:center;gap:5px}.receipt-header .header-brand-symbol{display:block;width:18px;height:18px;object-fit:contain}
 .receipt-page {
   min-height: 100vh;
   padding: 0 18px 164px;
