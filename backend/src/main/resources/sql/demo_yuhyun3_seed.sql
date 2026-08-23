@@ -832,17 +832,8 @@ VALUES
 -- ============================================================================
 -- 24. 환율 알림
 -- ============================================================================
-SET @alert_country_france = (SELECT id FROM countries WHERE country_name = '프랑스' LIMIT 1);
-SET @insert_exchange_alert_sql = IF(
-    (SELECT COUNT(*) FROM information_schema.columns
-      WHERE table_schema = DATABASE() AND table_name = 'exchange_rate_alerts'
-        AND column_name = 'country_id') > 0,
-    'INSERT INTO exchange_rate_alerts (user_id, country_id, target_rate, is_deleted) VALUES (@user_id, @alert_country_france, 1580.00, 0)',
-    'INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, is_deleted) VALUES (@user_id, @eur_id, 1580.00, 0)'
-);
-PREPARE insert_exchange_alert_stmt FROM @insert_exchange_alert_sql;
-EXECUTE insert_exchange_alert_stmt;
-DEALLOCATE PREPARE insert_exchange_alert_stmt;
+INSERT INTO exchange_rate_alerts (user_id, currency_id, target_rate, is_deleted)
+VALUES (@user_id, @eur_id, 1580.00, 0);
 
 -- ============================================================================
 -- 25. 알림
