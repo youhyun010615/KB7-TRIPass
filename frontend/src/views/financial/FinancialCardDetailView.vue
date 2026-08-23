@@ -2,7 +2,6 @@
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import BottomNav from '@/components/common/BottomNav.vue'
 import { useTravelCardsStore } from '@/stores/travelCards'
 import { getSettlementTypeLabel, getTravelCardImage, getTravelCardBackImage } from '@/utils/travelCard'
 
@@ -421,7 +420,6 @@ watch(
         </button>
       </template>
 
-      <BottomNav />
     </div>
   </main>
 </template>
@@ -437,7 +435,7 @@ watch(
   width: min(100%, 430px);
   min-height: 100vh;
   margin: auto;
-  padding: 14px 18px 118px;
+  padding: 14px 18px 32px;
   background: linear-gradient(180deg, #f4f7ff 0%, #edf3fc 100%);
 }
 
