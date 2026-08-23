@@ -111,7 +111,10 @@ export const useExchangeStore = defineStore('exchange', () => {
     try {
       const data = await getExchangeAlerts();
       alerts.value = data.map((item) => ({
-        ...item,
+        id: item.id,
+        countryId: item.countryId,
+        currencyCode: item.currencyCode,
+        targetRate: item.targetRate,
       }));
     } catch (e) {
       console.error('Failed to fetch exchange alerts', e);
