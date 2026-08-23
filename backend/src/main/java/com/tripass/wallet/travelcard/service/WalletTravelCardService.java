@@ -1,5 +1,6 @@
 package com.tripass.wallet.travelcard.service;
 
+import com.tripass.dev.util.DevDateUtil;
 import com.tripass.wallet.domain.Wallet;
 import com.tripass.wallet.domain.WalletLedger;
 import com.tripass.wallet.enums.WalletDirection;
@@ -35,7 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -55,6 +58,7 @@ public class WalletTravelCardService {
     private final WalletMapper walletMapper;
     private final WalletTravelCardMapper walletTravelCardMapper;
     private final MockTravelCardClient mockTravelCardClient;
+    private final DevDateUtil devDateUtil;
 
     public WalletTravelCardResponseDto getTravelCard(Long userId) {
         Wallet wallet = getWallet(userId);
@@ -436,6 +440,7 @@ public class WalletTravelCardService {
             Long walletLedgerId,
             Long cardLedgerId
     ) {
+        Wallet wallet = walletMapper.findWalletById(topup.getWalletId());
         WalletExchangeTransaction exchangeTransaction = WalletExchangeTransaction.builder()
                 .walletId(topup.getWalletId())
                 .walletTravelCardId(topup.getWalletTravelCardId())
@@ -448,7 +453,7 @@ public class WalletTravelCardService {
                 .feeRate(ZERO_FEE_RATE)
                 .feeAmount(ZERO_FEE_AMOUNT)
                 .status(ExchangeStatus.COMPLETED.name())
-                .completedAt(LocalDateTime.now())
+                .completedAt(devDateUtil.getEffectiveDateTime(wallet.getUserId()))
                 .walletLedgerId(walletLedgerId)
                 .cardLedgerId(cardLedgerId)
                 .build();

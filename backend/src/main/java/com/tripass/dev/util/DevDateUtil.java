@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Component
 @RequiredArgsConstructor
@@ -18,5 +20,11 @@ public class DevDateUtil {
         }
         LocalDate override = devDateMapper.selectOverrideDate(userId);
         return override != null ? override : LocalDate.now();
+    }
+
+    public LocalDateTime getEffectiveDateTime(Long userId) {
+        LocalDate effectiveDate = today(userId);
+        LocalTime currentTime = LocalTime.now();
+        return LocalDateTime.of(effectiveDate, currentTime);
     }
 }

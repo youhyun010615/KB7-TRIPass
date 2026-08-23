@@ -813,8 +813,8 @@ public class WalletService {
                         .idempotencyKey(request.getIdempotencyKey())
                         .externalTransactionId("LEGACY-" + request.getIdempotencyKey())
                         .retryCount(1)
-                        .lastTriedAt(LocalDateTime.now())
-                        .completedAt(LocalDateTime.now())
+                        .lastTriedAt(devDateUtil.getEffectiveDateTime(userId))
+                        .completedAt(devDateUtil.getEffectiveDateTime(userId))
                         .walletLedgerId(walletLedger.getId())
                         .cardLedgerId(cardLedger.getId())
                         .refunded(false)
@@ -830,7 +830,8 @@ public class WalletService {
                 estimate.getForeignAmount(),
                 estimate,
                 walletLedger.getId(),
-                cardLedger.getId()
+                cardLedger.getId(),
+                userId
         );
 
         return estimate;
@@ -946,7 +947,8 @@ public class WalletService {
                 estimate.getForeignAmount(),
                 estimate,
                 walletLedger.getId(),
-                cardLedger.getId()
+                cardLedger.getId(),
+                userId
         );
 
         return estimate;
@@ -1352,7 +1354,8 @@ public class WalletService {
             BigDecimal foreignAmount,
             WalletExchangeEstimateResponseDto estimate,
             Long walletLedgerId,
-            Long cardLedgerId
+            Long cardLedgerId,
+            Long userId
     ) {
         walletMapper.insertWalletExchangeTransaction(
                 WalletExchangeTransaction.builder()
@@ -1367,7 +1370,7 @@ public class WalletService {
                         .feeRate(estimate.getFeeRate())
                         .feeAmount(estimate.getFeeAmount())
                         .status("COMPLETED")
-                        .completedAt(LocalDateTime.now())
+                        .completedAt(devDateUtil.getEffectiveDateTime(userId))
                         .walletLedgerId(walletLedgerId)
                         .cardLedgerId(cardLedgerId)
                         .build()
