@@ -2978,9 +2978,9 @@ async function switchMode(mode) {
 .overall-fund-stat{width:50%;min-width:0}
 .overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:6px;white-space:nowrap}
 .overall-currency-breakdown.align-right{align-items:flex-end}
-.overall-currency-breakdown em{color:#fff;font-size:14px;font-style:normal;font-weight:900}
-.overall-currency-row{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
-.overall-currency-row.align-right{align-items:flex-end}
+.overall-currency-breakdown em{color:#fff;font-size:12px;font-style:normal;font-weight:900}
+.overall-currency-row{display:flex;align-items:baseline;gap:5px}
+.overall-currency-row.align-right{justify-content:flex-end}
 .overall-currency-row i{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
 .overall-fund-stat>small{margin-top:7px}
 </style>
