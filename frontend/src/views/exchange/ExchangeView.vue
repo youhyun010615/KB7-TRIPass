@@ -117,13 +117,15 @@ watch(
 
     if (!hasAppliedInitialDefault) {
       hasAppliedInitialDefault = true;
+      // 여행 중이면 현재 여행 중인 국가를, 여행 전이면(저축 모드 등) 여행 국가
+      // 순서상 첫 번째 국가를 기본으로 강제 선택한다 — 이전 방문 때 사용자가
+      // 다른 국가를 골라뒀어도 이 탭에 새로 들어올 때마다 이 규칙을 우선한다.
       const travelingName = currentTravelCountryName.value;
       const travelingCountry = travelingName && newList.find((c) => c.countryName === travelingName);
-      if (travelingCountry) {
-        exchange.selectedCode = travelingCountry.code;
-        exchange.selectedCountryId = travelingCountry.countryId ?? null;
-        return;
-      }
+      const defaultCountry = travelingCountry || newList[0];
+      exchange.selectedCode = defaultCountry.code;
+      exchange.selectedCountryId = defaultCountry.countryId ?? null;
+      return;
     }
 
     const isSelectedValid = newList.some((c) =>
