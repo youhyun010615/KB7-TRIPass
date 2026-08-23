@@ -89,10 +89,26 @@ public class MonthlySpendingAnalysisService {
         if (existing != null
                 && existing.getSavingTargetAmount() != null
                 && existing.getActualSavingAmount() == null) {
-            // 실제 저축액을 저장하지 않던 이전 버전에서 생성된 리포트는 최초 조회 시 한 번 재집계한다.
-            return generateMonthlyAnalysis(userId, analysisYearMonth);
+            // 이전 버전 리포트는 저축 결과만 보정한다. 전체 분석을 재생성하면 당시 소비 원본을
+            // 조회할 수 없는 환경에서 기존 소비·절약 포인트가 빈 값으로 덮일 수 있다.
+            BigDecimal actualSavingAmount = mapper.findActualSavingAmount(userId, analysisYearMonth.toString());
+            SavingResultResponseDto savingResult = savingResultCalculator.calculate(
+                    existing.getSavingTargetAmount(), actualSavingAmount);
+            updateSavingResult(userId, existing.getId(), savingResult);
         }
         return buildResponse(userId, analysisYearMonth);
+    }
+
+    private void updateSavingResult(Long userId, Long analysisId, SavingResultResponseDto savingResult) {
+        MonthlySpendingAnalysisDto dto = new MonthlySpendingAnalysisDto();
+        dto.setId(analysisId);
+        dto.setUserId(userId);
+        dto.setActualSavingAmount(roundToWon(savingResult.actualAmount()));
+        dto.setSavingDifferenceAmount(roundToWon(savingResult.differenceAmount()));
+        dto.setSavingResultMessage(savingResult.resultMessage());
+        if (mapper.updateSavingResult(dto) == 0) {
+            throw new CustomException(HttpStatus.NOT_FOUND, "MONTHLY_ANALYSIS_NOT_FOUND", "월간 분석 리포트를 찾을 수 없습니다.");
+        }
     }
 
     @Transactional

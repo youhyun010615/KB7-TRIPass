@@ -112,6 +112,16 @@
         )
     </insert>
 
+    <update id="updateSavingResult">
+        UPDATE monthly_spending_analyses
+        SET actual_saving_amount = #{actualSavingAmount},
+            saving_difference_amount = #{savingDifferenceAmount},
+            saving_result_message = #{savingResultMessage},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND user_id = #{userId}
+    </update>
+
     <!-- 재계산 시 집계값만 갱신하고 report_status/report_viewed_at/report_closed_at은 보존한다. -->
     <update id="updateMonthlyAnalysisPreservingStatus">
         UPDATE monthly_spending_analyses
