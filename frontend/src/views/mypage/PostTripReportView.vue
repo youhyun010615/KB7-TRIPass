@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 import { useTravelReportStore } from '@/stores/travelReport'
 import { exportElementToPdf } from '@/utils/pdf'
 
@@ -12,239 +13,110 @@ const tripId = computed(() => {
   return route.query.tripId && Number.isFinite(parsed) && parsed > 0 ? parsed : null
 })
 const r = computed(() => store.postTripView)
-const spent = computed(() => r.value?.spent ?? 0)
-const remaining = computed(() => r.value?.remaining ?? 0)
-const receipts = computed(() => r.value?.receiptCount ?? 0)
 const downloading = ref(false)
 const reportContent = ref(null)
 
-onMounted(() => {
-  if (tripId.value) store.loadPostTripReport(tripId.value)
-})
-watch(tripId, id => {
-  if (id) store.loadPostTripReport(id)
-})
+function loadReport(id) { if (id) store.loadPostTripReport(id) }
+onMounted(() => loadReport(tripId.value))
+watch(tripId, loadReport)
 
-function money(v) {
-  return Number(v).toLocaleString() + '원'
-}
+function money(value) { return `${Math.round(Number(value || 0)).toLocaleString('ko-KR')}원` }
+function percent(value, total) { return total > 0 ? Math.round((Number(value) / Number(total)) * 1000) / 10 : 0 }
+
+const budgetUsage = computed(() => percent(r.value?.spent, r.value?.targetBudget))
+const topCategory = computed(() => r.value?.categories?.[0] || null)
+const categoryTotal = computed(() => (r.value?.categories || []).reduce((sum, item) => sum + Number(item.amount), 0))
+const categoryRows = computed(() => (r.value?.categories || []).map((item, index) => ({ ...item, rank: index + 1, percent: percent(item.amount, categoryTotal.value) })))
+const daily = computed(() => r.value?.daily || [])
+const dailyMax = computed(() => Math.max(...daily.value.map(item => Number(item.amount)), 1))
+const peak = computed(() => daily.value.reduce((best, item) => !best || item.amount > best.amount ? item : best, null))
+const low = computed(() => daily.value.reduce((best, item) => !best || item.amount < best.amount ? item : best, null))
+const zeroDays = computed(() => daily.value.filter(item => Number(item.amount) === 0).length)
+const chartPoints = computed(() => daily.value.map((item, index) => ({ x: 10 + (index * 280) / Math.max(daily.value.length - 1, 1), y: 86 - (Number(item.amount) / dailyMax.value) * 62, ...item })))
+const linePoints = computed(() => chartPoints.value.map(point => `${point.x},${point.y}`).join(' '))
+const peakPoint = computed(() => chartPoints.value.find(point => point.date === peak.value?.date))
+const lowPoint = computed(() => chartPoints.value.find(point => point.date === low.value?.date))
+const averageY = computed(() => 86 - (Number(r.value?.dailyAverage || 0) / dailyMax.value) * 62)
+const highestCountryUsage = computed(() => (r.value?.countrySpend || []).reduce((best, item) => {
+  const usage = percent(item.amount, item.budget)
+  return !best || usage > best.usage ? { ...item, usage } : best
+}, null))
+
 async function download() {
   if (downloading.value) return
   downloading.value = true
-  try {
-    await exportElementToPdf(reportContent.value, `여행후리포트_${r.value.trip.title}.pdf`)
-  } catch (error) {
-    console.error('PDF 저장 실패:', error)
-  } finally {
-    downloading.value = false
-  }
+  try { await exportElementToPdf(reportContent.value, `여행후리포트_${r.value.trip.title}.pdf`) }
+  catch (error) { console.error('PDF 저장 실패:', error) }
+  finally { downloading.value = false }
 }
-
-// 가공 지표 (화면에 표기하는 라벨은 "지출 분석 요약", 값은 백엔드에서 계산되어 내려온다)
-const dailyAverage = computed(() => r.value?.dailyAverage ?? 0)
-const savingsRate = computed(() => r.value?.savingsRate ?? 0)
-const topCategory = computed(() => r.value?.categories?.[0])
-const bottomCategory = computed(() => { const c = r.value?.categories || []; return c[c.length - 1] })
-const categoryRatio = computed(() => (bottomCategory.value?.amount ? Math.round((topCategory.value.amount / bottomCategory.value.amount) * 10) / 10 : 0))
-const nextTripMonths = computed(() => r.value?.nextTripMonths ?? 6)
-const nextTripMonthly = computed(() => r.value?.nextTripMonthly ?? 0)
-
-const dailyAmounts = computed(() => (r.value?.daily || []).map(d => d.amount))
-const maxDaily = computed(() => Math.max(...dailyAmounts.value, 1))
-const minDaily = computed(() => Math.min(...dailyAmounts.value, maxDaily.value))
-
-function anchorFor(x) {
-  if (x < 40) return 'start'
-  if (x > 260) return 'end'
-  return 'middle'
-}
-
-const chartPoints = computed(() => {
-  const daily = r.value?.daily || []
-  const n = daily.length
-  if (!n) return []
-  return daily.map((d, i) => ({
-    x: 10 + (i * 280) / Math.max(n - 1, 1),
-    y: 88 - (d.amount / maxDaily.value) * 65,
-    amount: d.amount,
-    date: d.date,
-  }))
-})
-const dailyPoints = computed(() => chartPoints.value.map(p => `${p.x},${p.y}`).join(' '))
-const peakDailyIndex = computed(() => dailyAmounts.value.indexOf(maxDaily.value))
-const troughDailyIndex = computed(() => dailyAmounts.value.indexOf(minDaily.value))
-const peakPoint = computed(() => chartPoints.value[peakDailyIndex.value])
-const troughPoint = computed(() =>
-  troughDailyIndex.value !== peakDailyIndex.value ? chartPoints.value[troughDailyIndex.value] : null
-)
-
-// 카테고리별 지출 도넛 세그먼트
-const CIRCUMFERENCE = 251.2
-const totalCategory = computed(() => (r.value?.categories || []).reduce((s, c) => s + c.amount, 0) || 1)
-const categorySegments = computed(() => {
-  let offset = 0
-  return (r.value?.categories || []).map(c => {
-    const len = (c.amount / totalCategory.value) * CIRCUMFERENCE
-    const seg = { color: c.color, len, gap: CIRCUMFERENCE - len, offset: -offset, percent: Math.round((c.amount / totalCategory.value) * 100) }
-    offset += len
-    return seg
-  })
-})
 </script>
 
 <template>
   <main class="page">
-    <header><button type="button" @click="router.back()">‹</button><h1>여행 후 리포트</h1><span /></header>
-
+    <header class="page-header"><button type="button" aria-label="뒤로 가기" @click="router.back()">‹</button><h1>여행 후 리포트</h1><span /></header>
     <p v-if="!tripId" class="loading error">여행 정보를 찾을 수 없어요.</p>
     <p v-else-if="!r && store.errorMessage" class="loading error">{{ store.errorMessage }}</p>
     <p v-else-if="!r" class="loading">불러오는 중...</p>
 
     <template v-else>
-    <div ref="reportContent" class="pdf-content">
-    <section class="summary">
-      <small>TRIP RESULT REPORT</small>
-      <div><h2>{{ r.trip.flags }} {{ r.trip.title }}</h2><em>여행 완료</em></div>
-      <p>{{ r.trip.dateRange }} · {{ r.trip.days }}일</p>
-    </section>
+      <div ref="reportContent" class="pdf-content">
+        <TravelArchiveSummaryCard :trip-id="tripId" />
 
-    <section class="card">
-      <h3>예산 소비 요약</h3>
-      <div class="summary-row">
-        <div><small>여행 목표 예산</small><b>{{ money(r.targetBudget) }}</b></div>
-        <div><small>지출 금액</small><b>{{ money(spent) }}</b></div>
-        <div class="green"><small>남은 잔액</small><b>{{ money(remaining) }}</b></div>
+        <section class="card overview">
+          <h2>이번 여행 한눈에 보기</h2>
+          <div class="overview-head"><div><strong>{{ money(r.spent) }}</strong><span>지출</span></div><em>{{ r.remaining >= 0 ? '예산 안에서 여행을 마쳤어요' : '예산을 초과했어요' }}</em></div>
+          <div class="usage-label"><span>예산 사용률</span><b>{{ budgetUsage }}%</b></div>
+          <div class="bar-track"><span class="bar-fill blue" :style="{ width: `${Math.min(budgetUsage, 100)}%` }" /></div>
+          <div class="metric-grid"><div><small>목표 예산</small><b>{{ money(r.targetBudget) }}</b></div><div><small>남은 예산</small><b class="green">{{ money(r.remaining) }}</b></div><div><small>일 평균</small><b>{{ money(r.dailyAverage) }}</b></div></div>
+        </section>
+
+        <section class="card">
+          <h2>국가별 예산 결과</h2>
+          <div class="country-list">
+            <div v-for="country in r.countrySpend" :key="country.name" class="country-row">
+              <div class="country-head"><b>{{ country.flag }} {{ country.name }}</b><strong :class="{ danger: country.amount > country.budget }">{{ percent(country.amount, country.budget) }}%</strong></div>
+              <div class="bar-track"><span class="bar-fill" :style="{ width: `${Math.min(percent(country.amount, country.budget), 100)}%`, background: country.amount > country.budget ? '#e5484d' : country.color }" /></div>
+              <div class="country-money"><span>{{ money(country.amount) }} / {{ money(country.budget) }}</span><em>잔액 {{ money(country.budget - country.amount) }}</em></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>어디에 많이 썼나요?</h2>
+          <div class="category-list">
+            <div v-for="item in categoryRows" :key="item.name" class="category-row"><i :style="{ background: item.color }">{{ item.rank }}</i><b>{{ item.name }}</b><div class="bar-track"><span class="bar-fill" :style="{ width: `${item.percent}%`, background: item.color }" /></div><strong>{{ money(item.amount) }} · {{ item.percent }}%</strong></div>
+          </div>
+          <p v-if="topCategory" class="insight">{{ topCategory.name }} 지출이 {{ money(topCategory.amount) }}으로 가장 많았어요.</p>
+        </section>
+
+        <section v-if="r.countryTopCategories.length" class="card">
+          <h2>나라별 지출 특징</h2>
+          <div class="feature-grid"><article v-for="item in r.countryTopCategories" :key="item.name"><b>{{ item.flag }} {{ item.name }}</b><small>가장 많이 쓴 항목</small><strong :style="{ color: item.color }">{{ item.category }}</strong><span>{{ item.percent }}% · {{ money(item.amount) }}</span></article></div>
+        </section>
+
+        <section class="card">
+          <h2>일별 지출 추이</h2>
+          <svg v-if="daily.length" viewBox="0 0 300 108" class="line-chart">
+            <line x1="10" :y1="averageY" x2="290" :y2="averageY" class="average-line" /><text x="12" :y="averageY - 4" class="average-label">일 평균 {{ money(r.dailyAverage) }}</text>
+            <polyline :points="linePoints" fill="none" stroke="#2f6fed" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+            <template v-if="peakPoint"><circle :cx="peakPoint.x" :cy="peakPoint.y" r="3.5" fill="#e5484d" stroke="#fff" stroke-width="1.5" /><text :x="peakPoint.x" :y="peakPoint.y - 7" text-anchor="middle" class="peak-label">최고 {{ money(peakPoint.amount) }}</text></template>
+            <template v-if="lowPoint && lowPoint.date !== peakPoint?.date"><circle :cx="lowPoint.x" :cy="lowPoint.y" r="3.5" fill="#18a77d" stroke="#fff" stroke-width="1.5" /></template><line x1="10" y1="88" x2="290" y2="88" stroke="#dfe7f4" />
+          </svg>
+          <div class="daily-labels"><span v-for="item in daily" :key="item.date">{{ item.date }}</span></div>
+          <div class="trend-facts"><span>지출 없는 날 <b>{{ zeroDays }}일</b></span><span>최고 지출일 <b>{{ peak?.date }}</b></span></div>
+        </section>
+
+        <section class="card next-trip">
+          <h2>다음 여행 준비 제안</h2>
+          <p v-if="highestCountryUsage"><i>↗</i><span><b>{{ highestCountryUsage.name }}</b>에서 예산의 {{ highestCountryUsage.usage }}%를 사용했어요. 다음 여행에서는 이 국가의 여유 예산을 더 확보해 보세요.</span></p>
+          <p v-if="topCategory"><i>★</i><span>가장 큰 <b>{{ topCategory.name }}</b> 예산 {{ money(topCategory.amount) }}을 다음 여행 계획에서 먼저 확보해 보세요.</span></p>
+        </section>
       </div>
-    </section>
-
-    <section class="card">
-      <h3>지출 분석 요약</h3>
-      <div class="insight-grid">
-        <div><small>일 평균 지출</small><b>{{ money(dailyAverage) }}</b></div>
-        <div><small>예산 절감률</small><b class="green">{{ savingsRate }}%</b></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h3>일별 지출 추이</h3>
-      <svg viewBox="0 0 300 100" class="line-chart">
-        <polyline :points="dailyPoints" fill="none" stroke="#176be0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-        <line x1="10" y1="90" x2="290" y2="90" stroke="#e2e7ef" />
-        <template v-if="troughPoint">
-          <text :x="troughPoint.x" :y="troughPoint.y - 6" :text-anchor="anchorFor(troughPoint.x)" class="chart-label low">{{ money(troughPoint.amount) }}</text>
-          <circle :cx="troughPoint.x" :cy="troughPoint.y" r="3" fill="#18a77d" stroke="#fff" stroke-width="1" />
-        </template>
-        <template v-if="peakPoint">
-          <text :x="peakPoint.x" :y="peakPoint.y - 6" :text-anchor="anchorFor(peakPoint.x)" class="chart-label high">{{ money(peakPoint.amount) }}</text>
-          <circle :cx="peakPoint.x" :cy="peakPoint.y" r="3" fill="#e5484d" stroke="#fff" stroke-width="1" />
-        </template>
-      </svg>
-      <div class="daily-labels" v-if="r.daily.length">
-        <span v-for="d in r.daily" :key="d.date">{{ d.date }}</span>
-      </div>
-      <p class="chart-note" v-if="r.daily.length">평균 {{ money(dailyAverage) }}</p>
-    </section>
-
-    <section class="card">
-      <h3>카테고리별 지출</h3>
-      <div class="donut-row">
-        <svg viewBox="0 0 100 100" class="donut">
-          <g transform="rotate(-90 50 50)">
-            <circle v-for="(seg, i) in categorySegments" :key="i" cx="50" cy="50" r="40" fill="none" stroke-width="14"
-              :stroke="seg.color" :stroke-dasharray="`${seg.len} ${seg.gap}`" :stroke-dashoffset="seg.offset" />
-          </g>
-        </svg>
-        <ul class="legend">
-          <li v-for="(c, i) in r.categories" :key="c.name">
-            <i :style="{ background: c.color }" />{{ c.name }}
-            <b>{{ categorySegments[i].percent }}%</b>
-          </li>
-        </ul>
-      </div>
-      <p class="chart-note" v-if="topCategory && bottomCategory">가장 많은 지출: {{ topCategory.name }} {{ money(topCategory.amount) }} — {{ bottomCategory.name }}의 {{ categoryRatio }}배예요.</p>
-    </section>
-
-    <section class="card">
-      <h3>국가별 지출 현황</h3>
-      <div class="country-list">
-        <div v-for="c in r.countrySpend" :key="c.name" class="country-row">
-          <span>{{ c.flag }} {{ c.name }}</span>
-          <div class="bar-track"><span class="bar-fill" :style="{ width: `${Math.min((c.amount / c.budget) * 100, 100)}%`, background: c.amount > c.budget ? '#e5484d' : c.color }" /></div>
-          <small>{{ money(c.amount) }} / {{ money(c.budget) }}</small>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <table class="stat-table">
-        <tr><td>등록된 영수증</td><td>{{ receipts }}건</td></tr>
-      </table>
-    </section>
-
-    <section class="card next-trip">
-      <h3>다음 여행 준비 제안</h3>
-      <p>이번 여행 지출({{ money(spent) }}) 기준, 다음 여행은 월 {{ money(nextTripMonthly) }}씩 {{ nextTripMonths }}개월 저축을 추천해요.</p>
-    </section>
-    </div>
-
-    <button class="pdf" type="button" @click="download" :disabled="downloading">{{ downloading ? 'PDF 생성 중...' : '▣ PDF 저장하기' }}</button>
+      <button class="pdf" type="button" :disabled="downloading" @click="download">{{ downloading ? 'PDF 생성 중...' : 'PDF로 저장하기' }}</button>
     </template>
   </main>
 </template>
 
 <style scoped>
-.page { min-height: 100vh; padding: 0 16px 32px; background: #f8f6f1; color: #111a2d; }
-.page > header { display: grid; height: 63px; grid-template-columns: 35px 1fr 35px; align-items: end; padding-bottom: 16px; }
-.page > header button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #fff; color: #193d82; font-size: 24px; font-weight: 700; box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07); }
-.page > header h1 { text-align: center; font-size: 15px; font-weight: 900; }
-.loading { padding: 40px 0; color: #8290a3; font-size: 11px; text-align: center; }
-.loading.error { color: #e5484d; }
-.summary { padding: 17px; border-radius: 14px; background: linear-gradient(135deg, #122f6d, #0d214f); color: #fff; }
-.summary small { color: #a8c1e8; font-size: 8px; font-weight: 800; }
-.summary > div { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-.summary h2 { font-size: 15px; }
-.summary em { padding: 5px 8px; border: 1px solid #ffffff50; border-radius: 10px; font-size: 7px; font-style: normal; }
-.summary p { margin-top: 5px; color: #b9c9e1; font-size: 8px; }
-.card { margin-top: 11px; padding: 15px; border: 1px solid #e2e7ef; border-radius: 15px; background: #fff; }
-.card h3 { font-size: 12px; font-weight: 900; }
-.summary-row { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 6px; margin-top: 12px; padding: 10px; border-radius: 10px; background: #f4f7fb; }
-.summary-row > div { text-align: center; }
-.summary-row small { display: block; color: #8290a3; font-size: 8px; }
-.summary-row b { display: block; margin-top: 4px; font-size: 11px; font-weight: 900; }
-.summary-row .green { border-radius: 8px; background: #e8f8f3; padding: 4px 0; }
-.summary-row .green b { color: #18a77d; }
-.insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-.insight-grid div { padding: 11px; border-radius: 10px; background: #f4f7fb; text-align: center; }
-.insight-grid small { display: block; color: #8290a3; font-size: 8px; }
-.insight-grid b { display: block; margin-top: 6px; font-size: 13px; font-weight: 900; color: #19499a; }
-.insight-grid b.green { color: #18a77d; }
-.line-chart { width: 100%; height: auto; margin-top: 10px; overflow: visible; }
-.chart-label { font-size: 7px; font-weight: 800; }
-.chart-label.high { fill: #e5484d; }
-.chart-label.low { fill: #18a77d; }
-.daily-labels { display: flex; justify-content: space-between; padding: 0 2px; }
-.daily-labels span { flex: 1; overflow: visible; color: #8290a3; font-size: 6px; text-align: center; white-space: nowrap; transform: rotate(-40deg); transform-origin: center; }
-.chart-note { margin-top: 8px; color: #8290a3; font-size: 8px; }
-.chart-note + .chart-note { margin-top: 3px; }
-.donut-row { display: flex; align-items: center; gap: 18px; margin-top: 12px; }
-.donut { width: 90px; height: 90px; flex-shrink: 0; }
-.legend { display: flex; flex-direction: column; gap: 7px; flex: 1; }
-.legend li { display: flex; align-items: center; gap: 6px; font-size: 10px; }
-.legend li i { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
-.legend li b { margin-left: auto; color: #8290a3; font-size: 10px; }
-.country-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.country-row span { font-size: 10px; }
-.bar-track { height: 6px; margin-top: 5px; border-radius: 4px; background: #edf1f6; overflow: hidden; }
-.bar-fill { display: block; height: 100%; border-radius: 4px; }
-.country-row small { display: block; margin-top: 4px; color: #8290a3; font-size: 8px; text-align: right; }
-.stat-table { width: 100%; font-size: 10px; }
-.stat-table td { padding: 2px 0; color: #55708f; }
-.stat-table td:last-child { text-align: right; font-weight: 800; color: #111a2d; }
-.next-trip p { margin-top: 10px; color: #55708f; font-size: 9px; line-height: 1.6; }
-.pdf { width: 100%; margin-top: 12px; padding: 14px; border-radius: 11px; background: #174695; color: #fff; font-size: 11px; font-weight: 900; }
-.pdf:disabled { opacity: 0.6; }
-</style>
-<style scoped>
-.page{background:#f3f6fc}.summary{border-radius:20px;background:linear-gradient(145deg,#2662ea,#173f8d);box-shadow:0 14px 30px rgba(23,63,141,.18)}.card{border-color:#dfe7f4;border-radius:18px;box-shadow:0 7px 20px rgba(23,63,141,.05)}.summary-row,.insight-grid div{background:#f2f6ff}.insight-grid b{color:#2662ea}.pdf{background:#2662ea;box-shadow:0 10px 22px rgba(38,98,234,.2)}
-.summary{padding:15px;border-radius:18px;box-shadow:0 9px 22px rgba(23,63,141,.14)}.summary>div{margin-top:8px}.card{margin-top:9px;padding:13px;border-radius:16px;box-shadow:0 5px 15px rgba(23,63,141,.045)}.summary-row{gap:5px;margin-top:10px;padding:8px}.insight-grid{gap:7px;margin-top:10px}.insight-grid div{padding:9px}.donut-row{gap:14px;margin-top:10px}.donut{width:82px;height:82px}.country-list{gap:8px;margin-top:10px}.pdf{margin-top:10px;padding:12px;border-radius:10px}
+.page{min-height:100vh;padding:0 16px 32px;background:#f3f6fc;color:#111a2d}.page-header{display:grid;height:64px;grid-template-columns:36px 1fr 36px;align-items:end;padding-bottom:14px}.page-header button{display:grid;width:36px;height:36px;place-items:center;border-radius:12px;background:#fff;color:#193d82;font-size:25px;font-weight:800;box-shadow:0 5px 16px rgba(36,72,117,.07)}.page-header h1{text-align:center;font-size:16px;font-weight:900}.loading{padding:40px 0;color:#8290a3;font-size:12px;text-align:center}.loading.error{color:#e5484d}.pdf-content{display:flex;flex-direction:column;gap:10px}.card{padding:15px;border:1px solid #dfe7f4;border-radius:17px;background:#fff;box-shadow:0 6px 18px rgba(23,63,141,.05)}.card h2{font-size:13px;font-weight:950}.overview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}.overview-head strong{color:#2f6fed;font-size:22px;font-weight:950;letter-spacing:-.04em}.overview-head span{margin-left:4px;color:#2f6fed;font-size:12px;font-weight:900}.overview-head em{max-width:120px;padding:8px 10px;border-radius:12px;background:#e8f8f3;color:#087f61;font-size:9px;font-style:normal;font-weight:800;line-height:1.4}.usage-label{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:9px}.usage-label b{font-size:11px}.bar-track{height:7px;border-radius:99px;background:#e9eef6;overflow:hidden}.usage-label+.bar-track{margin-top:6px}.bar-fill{display:block;height:100%;border-radius:99px}.bar-fill.blue{background:#2f6fed}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:13px;padding:11px 4px;border-radius:12px;background:#f5f8fd}.metric-grid>div{text-align:center}.metric-grid>div+div{border-left:1px solid #dfe7f4}.metric-grid small{display:block;color:#8290a3;font-size:8px}.metric-grid b{display:block;margin-top:5px;font-size:10px}.green{color:#18a77d}.country-list{display:flex;flex-direction:column;gap:14px;margin-top:13px}.country-head,.country-money{display:flex;align-items:center;justify-content:space-between}.country-head b{font-size:10px}.country-head strong{color:#2f6fed;font-size:10px}.country-head strong.danger{color:#e5484d}.country-row .bar-track{margin-top:6px}.country-money{margin-top:5px;color:#71819a;font-size:8px}.country-money em{color:#18a77d;font-style:normal;font-weight:800}.category-list{display:flex;flex-direction:column;gap:9px;margin-top:13px}.category-row{display:grid;grid-template-columns:18px 45px minmax(50px,1fr) 105px;align-items:center;gap:7px}.category-row i{display:grid;width:17px;height:17px;place-items:center;border-radius:50%;color:#fff;font-size:8px;font-style:normal;font-weight:900}.category-row b{font-size:9px}.category-row .bar-track{height:6px}.category-row strong{font-size:8px;text-align:right}.insight{margin-top:12px;padding:8px 10px;border-radius:10px;background:#eef5ff;color:#2f6fed;font-size:9px;font-weight:800}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.feature-grid article{display:flex;min-width:0;flex-direction:column;align-items:center;padding:10px 5px;border:1px solid #e4eaf3;border-radius:12px;text-align:center}.feature-grid article b{font-size:9px}.feature-grid article small{margin-top:8px;color:#8290a3;font-size:7px}.feature-grid article strong{margin-top:3px;font-size:12px}.feature-grid article span{margin-top:4px;font-size:7px;font-weight:800}.line-chart{width:100%;margin-top:10px;overflow:visible}.average-line{stroke:#79a6f5;stroke-width:1;stroke-dasharray:3 3}.average-label{fill:#2f6fed;font-size:6px;font-weight:700}.peak-label{fill:#e5484d;font-size:6px;font-weight:800}.daily-labels{display:flex;justify-content:space-between;margin-top:-6px}.daily-labels span{flex:1;color:#8290a3;font-size:5.5px;text-align:center;transform:rotate(-35deg)}.trend-facts{display:grid;grid-template-columns:1fr 1fr;margin-top:12px;padding:10px;border-radius:11px;background:#f5f8fd;color:#71819a;font-size:8px;text-align:center}.trend-facts span+span{border-left:1px solid #dfe7f4}.trend-facts b{margin-left:4px;color:#173f8d;font-size:9px}.next-trip{display:flex;flex-direction:column;gap:8px}.next-trip p{display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid #e4eaf3;border-radius:12px;color:#55708f;font-size:9px;line-height:1.5}.next-trip i{display:grid;flex:0 0 25px;width:25px;height:25px;place-items:center;border-radius:8px;background:#eaf1ff;color:#2f6fed;font-style:normal;font-weight:900}.next-trip b{color:#173f8d}.pdf{width:100%;margin-top:12px;padding:14px;border-radius:12px;background:#2f6fed;color:#fff;font-size:12px;font-weight:900;box-shadow:0 10px 22px rgba(47,111,237,.2)}.pdf:disabled{opacity:.6}
 </style>
