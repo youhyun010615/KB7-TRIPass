@@ -6,6 +6,7 @@ import { daysUntilTrip, tripPhase } from '@/utils/tripLifecycle'
 
 const props = defineProps({
   tripId: { type: [Number, String], required: true },
+  showStatus: { type: Boolean, default: true },
 })
 
 const trip = ref(null)
@@ -71,7 +72,7 @@ watch(() => props.tripId, loadTrip)
       </div>
       <p>{{ dateRange }}<template v-if="totalDays"> · {{ totalDays }}일</template></p>
     </div>
-    <strong :class="{ traveling: statusLabel === '여행 중' }">{{ statusLabel }}</strong>
+    <strong v-if="showStatus" :class="{ traveling: statusLabel === '여행 중' }">{{ statusLabel }}</strong>
   </section>
 </template>
 

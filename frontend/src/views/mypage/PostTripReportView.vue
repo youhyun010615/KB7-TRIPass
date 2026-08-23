@@ -100,7 +100,7 @@ async function download() {
 
     <template v-else>
       <div ref="reportContent" class="pdf-content">
-        <TravelArchiveSummaryCard :trip-id="tripId" />
+        <TravelArchiveSummaryCard :trip-id="tripId" :show-status="false" />
 
         <section class="card overview">
           <h2>여행 지출 한눈에 보기</h2>
