@@ -133,7 +133,7 @@ export const useExchangeStore = defineStore('exchange', () => {
         await updateExchangeAlert(payload.id, updatePayload);
       } else {
         const createPayload = {
-          currencyCode: payload.currencyCode,
+          countryId: payload.countryId,
           targetRate: payload.targetRate,
         };
         await registerExchangeAlert(createPayload);
