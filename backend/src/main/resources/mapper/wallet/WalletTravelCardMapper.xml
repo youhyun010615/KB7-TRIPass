@@ -358,7 +358,8 @@
             target_type,
             target_id,
             idempotency_key,
-            memo
+            memo,
+            created_at
         )
         VALUES (
             #{walletTravelCardId},
@@ -373,7 +374,8 @@
             #{targetType},
             #{targetId},
             #{idempotencyKey},
-            #{memo}
+            #{memo},
+            #{createdAt}
         )
     </insert>
 

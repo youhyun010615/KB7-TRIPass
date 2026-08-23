@@ -262,7 +262,8 @@ public class WalletTravelCardService {
                 WalletTargetType.TRAVEL_CARD,
                 topup.getWalletTravelCardId(),
                 topup.getIdempotencyKey(),
-                "트래블카드 외화 충전"
+                "트래블카드 외화 충전",
+                wallet.getUserId()
         );
 
         TravelCardBalance balance = getOrCreateTravelCardBalance(topup.getWalletTravelCardId(), topup.getCurrencyCode());
@@ -379,7 +380,8 @@ public class WalletTravelCardService {
             WalletTargetType targetType,
             Long targetId,
             String idempotencyKey,
-            String memo
+            String memo,
+            Long userId
     ) {
         WalletLedger ledger = WalletLedger.builder()
                 .walletId(walletId)
@@ -394,6 +396,7 @@ public class WalletTravelCardService {
                 .targetId(targetId)
                 .idempotencyKey(idempotencyKey)
                 .memo(memo)
+                .createdAt(devDateUtil.getEffectiveDateTime(userId))
                 .build();
 
         walletMapper.insertWalletLedger(ledger);
@@ -416,6 +419,23 @@ public class WalletTravelCardService {
             String idempotencyKey,
             String memo
     ) {
+        // Need a way to get the userId without having the walletId easily accessible here.
+        // Actually, the Ledger already has references.
+        // Let's find the travel card first using walletTravelCardId to get the walletId.
+        
+        // Correct approach: Fetch the travel card by ID.
+        // I need a method that only takes walletTravelCardId.
+        // Let's check mapper for something like findWalletTravelCardById
+        
+        // Alternatively, since I have sourceId (often walletId), I might be able to use that.
+        // In the calls, sourceId is often walletId. Let's try that.
+        
+        // Actually, looking at the calls:
+        // insertTravelCardLedger(topup.getWalletTravelCardId(), ...)
+        // sourceId is passed as wallet.getId()
+        
+        Long userId = walletMapper.findWalletById(sourceId).getUserId();
+        
         TravelCardLedger ledger = TravelCardLedger.builder()
                 .walletTravelCardId(walletTravelCardId)
                 .currencyCode(currencyCode)
@@ -430,6 +450,7 @@ public class WalletTravelCardService {
                 .targetId(targetId)
                 .idempotencyKey(idempotencyKey)
                 .memo(memo)
+                .createdAt(devDateUtil.getEffectiveDateTime(userId))
                 .build();
 
         walletTravelCardMapper.insertTravelCardLedger(ledger);
