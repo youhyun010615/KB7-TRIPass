@@ -61,8 +61,8 @@ public interface ExchangeRateMapper {
     // 관심 환율 알림 등록
     void insertAlert(ExchangeRateAlert alert);
 
-    // 사용자별 통화 알림 존재 여부 확인
-    int countAlertByUserAndCurrency(@Param("userId") Long userId, @Param("currencyId") Long currencyId);
+    // 사용자별 국가 알림 존재 여부 확인
+    int countAlertByUserAndCountry(@Param("userId") Long userId, @Param("countryId") Long countryId);
 
     // 특정 통화 히스토리 조회
     List<ExchangeRateHistoryResponseDto.RateInfo> getHistoryRates(@Param("currencyCode") String currencyCode, @Param("days") int days);
@@ -75,6 +75,8 @@ public interface ExchangeRateMapper {
 
     // 관심 환율 알림 조회 (단건)
     ExchangeRateAlertUpdateResponseDto getAlertById(@Param("id") Long id);
+
+    Long getCurrencyIdByCountryId(@Param("countryId") Long countryId);
 
     List<CountryExchangeRateDto> getLatestRatesByCountry();
 }

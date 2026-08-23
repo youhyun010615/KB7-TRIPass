@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
-import { fetchTripGoal } from '@/api/travel'
+import { fetchTripGoal, fetchBudgetCheck } from '@/api/travel'
 import { useTravelStore } from '@/stores/travel'
 
 const COUNTRY_COLORS = ['#1767dc', '#c8173c', '#25ad72', '#7143e8', '#ff922b']
@@ -30,6 +30,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   const tripBasic = ref(null)
   const preTripReport = ref(null)
   const postTripReport = ref(null)
+  const postTripBudgetCheck = ref([])
   const loading = ref(false)
   const errorMessage = ref('')
 
@@ -106,22 +107,34 @@ export const useTravelReportStore = defineStore('travelReport', () => {
       targetBudget: r.targetBudget,
       securedFund: r.securedFund,
       savingsPercent: r.savingsPercent,
-      savingHistory: (r.savingHistory || []).map(h => ({
-        date: formatShortDate(h.date),
-        label: h.label,
-        amount: h.amount,
-      })),
+      emergencyFund: r.emergencyFund || 0,
       countrySpend: (r.countryBudgets || []).map((c, i) => ({
         name: c.countryName,
         flag: travelStore.countryFlagMap[c.countryName]?.emoji || '🌍',
-        budget: c.budget,
+        currencyCode: c.currencyCode,
+        budget: c.budget || 0,
+        foreignAmount: c.foreignAmount ?? null,
         color: COUNTRY_COLORS[i % COUNTRY_COLORS.length],
       })),
-      checklistCompleted: r.checklistCompleted,
-      checklistTotal: r.checklistTotal,
-      schedules: r.scheduleCount,
-      paidSchedules: r.prepaidScheduleCount,
-      pendingSchedules: r.onsiteScheduleCount,
+      savingsTrend: (r.savingsTrend || []).map(m => ({
+        month: m.month,
+        monthLabel: `${Number(m.month?.split('-')[1])}월`,
+        savedAmount: m.savedAmount || 0,
+        cumulativeAmount: m.cumulativeAmount || 0,
+      })),
+      checklistStages: (r.checklistStages || []).map(s => {
+        const total = s.total || 0
+        const completed = s.completed || 0
+        return {
+          stage: s.stage,
+          stageLabel: s.stage === 'D30' ? 'D-30' : s.stage === 'D7' ? 'D-7' : 'D-1',
+          completed,
+          total,
+          percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+          message: s.message,
+        }
+      }),
+      insights: r.insights || [],
     }
   })
 
@@ -130,8 +143,17 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     loading.value = true
     errorMessage.value = ''
     postTripReport.value = null
+    postTripBudgetCheck.value = []
     try {
-      postTripReport.value = await fetchPostTripReport(tripId)
+      const [report, budgetCheck] = await Promise.all([
+        fetchPostTripReport(tripId),
+        fetchBudgetCheck(tripId).catch(error => {
+          console.error('국가별 지출 분석 조회 실패:', error)
+          return []
+        }),
+      ])
+      postTripReport.value = report
+      postTripBudgetCheck.value = budgetCheck || []
     } catch (error) {
       errorMessage.value = '여행 후 리포트를 불러오지 못했습니다.'
       console.error('여행 후 리포트 조회 실패:', error)
@@ -143,6 +165,20 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   const postTripView = computed(() => {
     const r = postTripReport.value
     if (!r) return null
+    const countryTopCategories = (r.countryTopCategories || []).length
+      ? r.countryTopCategories
+      : postTripBudgetCheck.value.map(country => {
+          const topCategory = (country.categoryBreakdown || [])
+            .filter(category => category.categoryName && Number(category.amount) > 0)
+            .sort((a, b) => Number(b.amount) - Number(a.amount))[0]
+          return topCategory ? {
+            countryName: country.countryName,
+            categoryName: topCategory.categoryName,
+            amount: topCategory.amount,
+            countryTotal: country.travelExpenseTotal,
+          } : null
+        }).filter(Boolean)
+
     return {
       trip: {
         title: r.tripName,
@@ -172,7 +208,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
         budget: c.budget,
         color: COUNTRY_COLORS[i % COUNTRY_COLORS.length],
       })),
-      countryTopCategories: (r.countryTopCategories || []).map((c, i) => ({
+      countryTopCategories: countryTopCategories.map((c, i) => ({
         name: c.countryName,
         flag: travelStore.countryFlagMap[c.countryName]?.emoji || '🌍',
         category: c.categoryName,

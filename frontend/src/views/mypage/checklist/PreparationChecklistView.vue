@@ -147,7 +147,8 @@ const store = useChecklistStore();
 
 // 1. Query 파라미터에서 tripId 및 탭(stage) 설정
 const tripId = computed(() => Number(route.query.tripId || 1));
-const stage = ref('d30'); // 'd30', 'd7', 'd1'
+const validStages = ['d30', 'd7', 'd1'];
+const stage = ref(validStages.includes(route.query.stage) ? route.query.stage : 'd30'); // 'd30', 'd7', 'd1'
 const adding = ref(false);
 const newItem = ref('');
 

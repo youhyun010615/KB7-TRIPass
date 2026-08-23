@@ -383,6 +383,10 @@ public class ExchangeRateService {
         return exchangeRateMapper.getCurrencyCodeById(id);
     }
 
+    public Long getCurrencyIdByCountryId(Long countryId) {
+        return exchangeRateMapper.getCurrencyIdByCountryId(countryId);
+    }
+
     public Map<Long, BigDecimal> getLatestRatesMap() {
         LocalDate targetDate = LocalDate.now();
         List<ExchangeRate> rates = exchangeRateMapper.findAllByDate(targetDate);
@@ -408,20 +412,9 @@ public class ExchangeRateService {
             throw new ExchangeException(ExchangeErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // countryId로부터 currencyId 확인 (중복 체크용)
-        // 실제 프로젝트 스키마에 따라 countryId로 currencyId를 조회하는 쿼리가 필요할 수 있음
-        // 여기서는 기존 mapper 메서드들을 조합하여 처리
-        // 우선 countryId가 유효한지 확인하고, 해당 국가의 통화를 가져옴
-        
-        // 스키마상 countryId로 통화코드를 알 수 있다면 사용
-        // 현재 Mapper에 countryId로 currencyId를 직접 가져오는 쿼리가 없으므로,
-        // 필요하다면 Mapper에 추가해야 함. 
-        // 일단 여기서는 validation 로직 내에서 처리 가능하게 수정
-        
-        validateAlertRequest(countryId, request.getTargetRate());
+        validateAlertRequest(null, request.getTargetRate());
 
-        // 국가별 중복 알림 체크
-        int count = exchangeRateMapper.countAlertByUserAndCurrency(userId, getCurrencyIdByCountryId(countryId));
+        int count = exchangeRateMapper.countAlertByUserAndCountry(userId, countryId);
         if (count > 0) {
             throw new ExchangeException(ExchangeErrorCode.DUPLICATE_ALERT);
         }
@@ -438,13 +431,6 @@ public class ExchangeRateService {
         }
 
         return alert.getId();
-    }
-    
-    // 편의 메서드 추가 (Mapper에 추가가 필요할 수 있음)
-    private Long getCurrencyIdByCountryId(Long countryId) {
-        // ExchangeRateMapper에 추가되어야 함, 우선 로직 구현
-        // SQL 쿼리가 필요함: SELECT currency_id FROM countries WHERE id = #{countryId}
-        return exchangeRateMapper.getCurrencyIdByCountryId(countryId);
     }
 
     @Transactional
