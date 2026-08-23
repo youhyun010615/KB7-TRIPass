@@ -1,37 +1,47 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useTravelModeStore } from '@/stores/travelMode';
 import { useTravelFundStore } from '@/stores/travelFund';
-import { useTravelStore } from '@/stores/travel'; // 추가
-import { fetchTripTransactions } from '@/api/travel'; // 추가
+import { useTravelStore } from '@/stores/travel';
+import { fetchTripTransactions } from '@/api/travel';
 
 const route = useRoute();
 const router = useRouter();
-const travelMode = useTravelModeStore();
 const fund = useTravelFundStore();
-const travel = useTravelStore(); // 추가
+const travel = useTravelStore();
 
-const transactions = ref([]); // ref로 변경
+const transactions = ref([]);
+const isLoading = ref(true);
+const errorMessage = ref('');
 
-const category = computed(
-  () => fund.getCategory(route.params.categoryId) ?? fund.categories[0],
+const category = computed(() => {
+  const stored = fund.getCategory(Number(route.params.categoryId));
+  if (stored) return stored;
+  return { name: String(route.query.categoryName || '기타'), icon: '💳', color: '#2f6fed' };
+});
+
+const requestedCategoryName = computed(() =>
+  String(route.query.categoryName || category.value.name).replace('취미·여가', '취미여가'),
+);
+const displayCategoryName = computed(() =>
+  String(route.query.categoryName || category.value.name).replace('취미여가', '취미·여가'),
 );
 
 // 데이터 가져오는 함수
 const loadTransactions = async () => {
-  const tripId = travel.tripId; // 활성 여행 ID 사용
-  if (!tripId || !travel.activeTrip) return; // 활성 여행 정보가 없으면 대기
+  const tripId = travel.tripId;
+  if (!tripId) return;
 
-  // route.query에서 tripCountryId를 직접 가져옴
   const countryId = route.query.tripCountryId || null;
   const categoryNames =
-    category.value.name === '취미·여가'
+    requestedCategoryName.value === '취미여가'
       ? ['취미여가', '관광']
-      : category.value.name === '기타'
+      : requestedCategoryName.value === '기타'
         ? ['기타', '숙박']
-        : [category.value.name];
+        : [requestedCategoryName.value];
 
+  isLoading.value = true;
+  errorMessage.value = '';
   try {
     const responses = await Promise.all(
       categoryNames.map(async (categoryName) => {
@@ -61,48 +71,44 @@ const loadTransactions = async () => {
   } catch (error) {
     console.error('거래 내역 조회 실패:', error);
     transactions.value = [];
+    errorMessage.value = '거래 내역을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// 마운트 시 및 category/destination 변경 시 데이터 다시 불러오기
 onMounted(async () => {
-  if (!travel.tripId) await travel.loadActiveGoal(); // tripId가 없으면 로드 시도
-  loadTransactions();
+  if (!travel.tripId) await travel.loadActiveGoal();
+  await loadTransactions();
 });
-watch([() => travelMode.selectedDestination, category], loadTransactions);
+watch(
+  [() => route.params.categoryId, () => route.query.tripCountryId, requestedCategoryName],
+  loadTransactions,
+);
 
 const total = computed(() =>
-  transactions.value.reduce((sum, item) => sum + item.amount, 0),
+  transactions.value.reduce((sum, item) => sum + Number(item.amount || 0), 0),
 );
-const country = computed(() =>
-  travelMode.selectedDestination === 'all'
-    ? null
-    : fund.getCountry(travelMode.selectedDestination),
-);
-const periods = computed(() =>
-  country.value
-    ? [fund.period(country.value.code)]
-    : fund.countries.map((item) => fund.period(item.code)),
-);
+const countryName = computed(() => String(route.query.countryName || '전체 여행'));
 const dateRange = computed(() => {
-  const starts = periods.value.map((item) => item.startDate).sort();
-  const ends = periods.value.map((item) => item.endDate).sort();
-  return `${starts[0]} ~ ${ends.at(-1)}`;
+  const start = route.query.startDate;
+  const end = route.query.endDate;
+  return start && end ? `${start} ~ ${end}` : '여행 기간 전체';
 });
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`;
 const dateLabel = (value) =>
-  new Intl.DateTimeFormat('ko-KR', {
+  value ? new Intl.DateTimeFormat('ko-KR', {
     month: 'numeric',
     day: 'numeric',
     weekday: 'short',
-  }).format(new Date(`${value}T00:00:00`));
+  }).format(new Date(`${value}T00:00:00`)) : '-';
 </script>
 
 <template>
   <main class="detail-page">
     <header>
       <button type="button" @click="router.back()">‹</button>
-      <h1>{{ category.name }} 상세</h1>
+      <h1>{{ displayCategoryName }} 상세</h1>
       <span aria-hidden="true"></span>
     </header>
     <section class="category-summary" :style="{ '--accent': category.color }">
@@ -110,10 +116,8 @@ const dateLabel = (value) =>
         <span>{{ category.icon }}</span>
         <div>
           <b
-            >{{
-              country ? `${country.flag} ${country.name}` : '🌍 전체 여행'
-            }}
-            · {{ category.name }}</b
+            >{{ countryName === '전체 여행' ? '🌍 전체 여행' : countryName }}
+            · {{ displayCategoryName }}</b
           ><small>{{ dateRange }}</small>
         </div>
       </div>
@@ -127,8 +131,9 @@ const dateLabel = (value) =>
       <b>{{ transactions.length }}건</b>
     </div>
     <section class="transaction-list">
+      <p v-if="isLoading" class="empty">거래 내역을 불러오는 중이에요.</p>
       <button
-        v-for="item in transactions"
+        v-for="item in isLoading ? [] : transactions"
         :key="item.transactionId"
         type="button"
         @click="router.push(`/travel/funds/transactions/${item.transactionId}`)"
@@ -143,7 +148,8 @@ const dateLabel = (value) =>
           ><small>상세보기 ›</small></span
         >
       </button>
-      <p v-if="!transactions.length" class="empty">
+      <p v-if="!isLoading && errorMessage" class="empty error">{{ errorMessage }}</p>
+      <p v-else-if="!isLoading && !transactions.length" class="empty">
         선택한 여행 기간의 거래 내역이 없어요.
       </p>
     </section>

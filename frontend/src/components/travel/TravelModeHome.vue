@@ -370,6 +370,31 @@ const categorySummary = computed(() => {
 
   return [...merged.values()];
 });
+const CATEGORY_IDS = {
+  식비: 1,
+  교통: 2,
+  쇼핑: 4,
+  관광: 5,
+  기타: 6,
+  카페: 7,
+  생활비: 8,
+  '취미·여가': 9,
+};
+
+function openCategoryDetail(category) {
+  const destination = destinations.value.find((item) => item.code === selectedCountryId.value);
+  router.push({
+    name: 'TravelFundCategoryDetail',
+    params: { categoryId: CATEGORY_IDS[category.name] || 6 },
+    query: {
+      categoryName: category.name,
+      ...(destination?.code !== 'all' ? { tripCountryId: destination.code } : {}),
+      countryName: destination?.code === 'all' ? '전체 여행' : destination?.name,
+      startDate: destination?.arrivalDate,
+      endDate: destination?.departureDate,
+    },
+  });
+}
 
 const totalCategorySpending = computed(() =>
   categorySummary.value.reduce(
@@ -379,7 +404,10 @@ const totalCategorySpending = computed(() =>
 );
 
 const categoryList = computed(() => {
-  const byName = new Map(categorySummary.value.map((cat) => [cat.categoryName, cat]));
+  const byName = new Map(categorySummary.value.map((cat) => [
+    cat.categoryName === '취미여가' ? '취미·여가' : cat.categoryName,
+    cat,
+  ]));
 
   return CATEGORY_ORDER.map((name) => {
     const cat = byName.get(name);
@@ -1216,11 +1244,14 @@ async function switchMode(mode) {
       <div class="budget-heading">
         <span>카테고리별 지출</span>
       </div>
-      <div
+      <button
         v-for="(cat, index) in categoryList"
         :key="cat.name"
+        type="button"
         class="budget-row"
         :style="{ '--row-delay': `${index * 48}ms` }"
+        :aria-label="`${cat.name} 지출 상세보기`"
+        @click="openCategoryDetail(cat)"
       >
         <span class="category">
           <i :style="{ background: cat.icon.soft }">
@@ -1255,7 +1286,8 @@ async function switchMode(mode) {
         </div>
         <b class="budget-amount">{{ formatWon(cat.total) }}</b>
         <b class="budget-ratio">{{ cat.ratio }}%</b>
-      </div>
+        <span class="budget-chevron" aria-hidden="true">›</span>
+      </button>
     </article>
     <article
       v-reveal
@@ -2190,10 +2222,25 @@ async function switchMode(mode) {
 }
 .budget-row {
   display: grid;
-  grid-template-columns: 94px minmax(44px, 1fr) auto 30px;
+  grid-template-columns: 94px minmax(44px, 1fr) auto 30px 12px;
   align-items: center;
   gap: 9px;
+  width: 100%;
   min-height: 45px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.budget-row:active {
+  opacity: 0.68;
+}
+.budget-chevron {
+  color: #9aa8bd;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
 }
 .category {
   display: flex;
