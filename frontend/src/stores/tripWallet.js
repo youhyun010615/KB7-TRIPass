@@ -12,6 +12,7 @@ import {
   fetchWalletAutoSavingLogs,
   fetchWalletCurrencies,
   fetchWalletForeignBalances,
+  fetchLinkedTravelCard,
   fetchWalletLedgers,
   fetchWalletMain,
   fetchWalletMonthlySavingDetail,
@@ -567,6 +568,26 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     }
   }
 
+  async function loadLinkedTravelCard() {
+    errorMessage.value = ''
+    try {
+      const data = await fetchLinkedTravelCard()
+      const normalized = normalizeTravelCard(data)
+
+      isTravelCardLinked.value = data?.linked === true || Boolean(normalized?.walletTravelCardId)
+      if (!isTravelCardLinked.value || !normalized) return null
+
+      travelCard.value = {
+        ...normalized,
+        frozenIndex: travelCard.value?.frozenIndex ?? null,
+      }
+      return travelCard.value
+    } catch (error) {
+      errorMessage.value = error.response?.data?.message || '연결된 트래블카드를 확인하지 못했어요.'
+      throw error
+    }
+  }
+
   async function linkTravelCard(card) {
     const data = await linkWalletTravelCard({
       travelCardId: card.travelCardId,
@@ -631,8 +652,19 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
 
   async function exchangeToTravelCard(payload) {
     const value = parseAmount(payload.krwAmount)
-    const walletTravelCardId = payload.walletTravelCardId ?? travelCard.value?.walletTravelCardId
-    if (!walletTravelCardId || value <= 0 || value > balance.value) return null
+    let walletTravelCardId = payload.walletTravelCardId ?? travelCard.value?.walletTravelCardId
+
+    // 새로고침이나 환전 화면 직접 진입 시 /wallet 응답보다 연결 카드 정보가 늦게
+    // 준비될 수 있다. 이 경우 조용히 중단하지 말고 연결 카드 API로 한 번 더 확인한다.
+    if (!walletTravelCardId) {
+      const linkedCard = await loadLinkedTravelCard()
+      walletTravelCardId = linkedCard?.walletTravelCardId
+    }
+    if (!walletTravelCardId) {
+      errorMessage.value = '외화를 충전할 트래블카드를 먼저 연결해 주세요.'
+      return null
+    }
+    if (value <= 0 || value > balance.value) return null
 
     const result = await topupWalletTravelCard({
       walletTravelCardId,
@@ -646,8 +678,16 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
 
   async function sellFromTravelCard(payload) {
     const foreignAmount = Number(String(payload.foreignAmount ?? '').replace(/,/g, '')) || 0
-    const walletTravelCardId = payload.walletTravelCardId ?? travelCard.value?.walletTravelCardId
-    if (!walletTravelCardId || foreignAmount <= 0) return null
+    let walletTravelCardId = payload.walletTravelCardId ?? travelCard.value?.walletTravelCardId
+    if (!walletTravelCardId) {
+      const linkedCard = await loadLinkedTravelCard()
+      walletTravelCardId = linkedCard?.walletTravelCardId
+    }
+    if (!walletTravelCardId) {
+      errorMessage.value = '외화를 옮길 트래블카드를 먼저 연결해 주세요.'
+      return null
+    }
+    if (foreignAmount <= 0) return null
 
     const result = await sellWalletExchange({
       walletTravelCardId,
@@ -729,6 +769,7 @@ export const useTripWalletStore = defineStore('tripWallet', () => {
     deposit,
     withdraw,
     loadTravelCardOptions,
+    loadLinkedTravelCard,
     linkTravelCard,
     unlinkTravelCard,
     loadForeignBalances,

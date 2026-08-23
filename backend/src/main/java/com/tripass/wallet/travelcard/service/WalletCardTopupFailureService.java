@@ -21,7 +21,8 @@ public class WalletCardTopupFailureService {
             Long topupId,
             String failureReason
     ) {
-        int count = walletTravelCardMapper.updateWalletCardTopupFailed(topupId, failureReason);
+        int count = walletTravelCardMapper.updateWalletCardTopupFailed(
+                topupId, failureReason, java.time.LocalDateTime.now());
 
         if (count == 0) {
             throw new WalletException(WALLET_TRAVEL_CARD_NOT_FOUND);

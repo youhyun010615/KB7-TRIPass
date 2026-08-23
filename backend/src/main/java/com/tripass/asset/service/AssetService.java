@@ -890,7 +890,7 @@ public class AssetService {
 
     private void tryAutoGenerateAnalysis(Long userId) {
         try {
-            YearMonth previousMonth = YearMonth.now().minusMonths(1);
+            YearMonth previousMonth = YearMonth.from(devDateUtil.today(userId)).minusMonths(1);
             monthlySpendingAnalysisService.generateMonthlyAnalysis(userId, previousMonth);
             log.info("신규 사용자 자동 분석 리포트 생성 완료 - userId: {}, 분석월: {}", userId, previousMonth);
         } catch (Exception e) {

@@ -97,4 +97,8 @@ public interface DevResetMapper {
     void resetTravelCardBalanceByUser(@Param("userId") Long userId);
 
     void recalcWalletBalanceFromSeedLedger(@Param("userId") Long userId);
+
+    void restoreAccountBalanceFromNonSeedWalletTransactions(@Param("userId") Long userId);
+
+    void deleteNonSeedWalletAccountTransactions(@Param("userId") Long userId);
 }

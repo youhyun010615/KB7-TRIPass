@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ChevronRight } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, PiggyBank } from '@lucide/vue'
 import BottomNav from '@/components/common/BottomNav.vue'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -24,6 +24,35 @@ const travel = useTravelStore()
 const isTravelWallet = computed(() => travelMode.isTravelMode)
 const showMonthlySavings = computed(() =>
   !isTravelWallet.value && Boolean(travel.lifecycle?.savingsTrackingStarted),
+)
+const monthlySavingGoalTarget = computed(() =>
+  Number(travel.homeDashboard?.monthlySavingTarget || 0),
+)
+const monthlySavingGoalSaved = computed(() =>
+  Number(travel.homeDashboard?.currentMonthSaving || 0),
+)
+const monthlySavingGoalRemaining = computed(() =>
+  Number(travel.homeDashboard?.currentMonthRemaining || 0),
+)
+const isDepartureMonth = computed(() => {
+  const startDate = travel.homeDashboard?.startDate
+  if (!startDate) return false
+  return startDate.slice(0, 7) <= todayIso().slice(0, 7)
+})
+const isSavingGoalAchieved = computed(() =>
+  !isDepartureMonth.value
+  && Number(travel.homeDashboard?.totalTargetAmount || 0) > 0
+  && Number(travel.homeDashboard?.remainingTargetAmount || 0) <= 0,
+)
+const monthlySavingGoalPercent = computed(() => {
+  if (isSavingGoalAchieved.value) return 100
+  return Math.min(100, Number(travel.homeDashboard?.currentMonthSavingPercent || 0))
+})
+const savingGoalNote = computed(() =>
+  isDepartureMonth.value ? '여행 출발 달은 별도 저축 목표가 없어요.' : '',
+)
+const showMonthlySavingGoalInSheet = computed(() =>
+  showMonthlySavings.value,
 )
 const walletTripCountries = computed(() => travel.activeTrip?.countries || [])
 const walletTravelStart = computed(() => walletTripCountries.value.map(item => item.arrivalDate || item.startDate).filter(Boolean).sort()[0] || '')
@@ -120,6 +149,7 @@ watch(() => wallet.isLoading, (loading) => {
   }
 }, { immediate: true })
 const showTransfer = ref(false)
+const submitPending = ref(false)
 const showAutoChargeSetting = ref(false)
 const showUnlinkConfirm = ref(false)
 const showAutoChargeRemoveConfirm = ref(false)
@@ -141,9 +171,6 @@ const transferMode = ref('charge')
 const amount = ref('')
 const autoChargeDay = ref(wallet.autoCharge.day)
 const autoChargeAmount = ref(wallet.autoCharge.amount)
-const autoChargeSummary = computed(() => wallet.autoCharge.enabled
-  ? `매월 ${wallet.autoCharge.day}일 ${money(wallet.autoCharge.amount)}`
-  : '설정하기')
 const selectedAccount = ref(null)
 const withdrawMode = ref('registered') // 'registered' | 'recent' | 'manual'
 const selectedRecentRecipientId = ref(null)
@@ -314,7 +341,7 @@ const maxTransferAmount = computed(() => {
   if (transferMode.value === 'withdraw') return wallet.balance
   return accounts.value.find(account => account.accountId === selectedAccount.value)?.withdrawableAmount ?? 0
 })
-const canSubmitTransfer = computed(() => transferAmountNumber.value > 0 && transferAmountNumber.value <= maxTransferAmount.value)
+const canSubmitTransfer = computed(() => !submitPending.value && transferAmountNumber.value > 0 && transferAmountNumber.value <= maxTransferAmount.value)
 
 function applyQuickAmount(value) {
   if (value === 'full') {
@@ -342,6 +369,12 @@ function openAutoChargeSetting() {
   showAutoChargeSetting.value = true
 }
 
+function backToChargeFromAutoModal() {
+  showAutoChargeSetting.value = false
+  transferMode.value = 'charge'
+  showTransfer.value = true
+}
+
 function showNotice(message) {
   notice.value = message
   window.clearTimeout(noticeTimer)
@@ -352,8 +385,8 @@ function showNotice(message) {
 
 function ledgerTitle(item) {
   if (item.memo) return item.memo
-  if (item.transactionType === 'CHARGE') return item.transferMethod === 'AUTO_SAVING' ? '자동 충전' : '트립머니 충전'
-  if (item.transactionType === 'WITHDRAW') return '트립머니 송금'
+  if (item.transactionType === 'CHARGE') return item.transferMethod === 'AUTO_SAVING' ? '자동 충전' : '트립월렛 충전'
+  if (item.transactionType === 'WITHDRAW') return '트립월렛 송금'
   if (item.transactionType === 'CARD_TOPUP') return '트래블카드 충전'
   if (item.transactionType === 'MISSION_REWARD') return '미션 보상'
   if (item.transactionType === 'REFUND') return '환불'
@@ -403,6 +436,8 @@ onMounted(async () => {
           ])
         }
       })())
+    } else {
+      tasks.push(travel.loadHomeDashboard())
     }
     await Promise.all(tasks)
   } catch {
@@ -436,12 +471,14 @@ async function removeAutoChargeSetting() {
 }
 
 async function submitTransfer() {
+  if (submitPending.value) return
   const chargeValue = Number(String(amount.value).replace(/[^0-9]/g, '')) || 0
   if (transferMode.value === 'charge' && chargeValue > maxTransferAmount.value) {
     showNotice('계좌 잔액 안에서 충전할 금액을 입력해 주세요.')
     return
   }
 
+  submitPending.value = true
   try {
     let ok
     if (transferMode.value === 'charge') {
@@ -468,11 +505,17 @@ async function submitTransfer() {
     }
 
     showNotice(transferMode.value === 'charge'
-      ? `${money(amount.value)}을 트립머니에 충전했어요.`
+      ? `${money(amount.value)}을 트립월렛에 충전했어요.`
       : `${money(amount.value)}을 계좌로 송금했어요.`)
     showTransfer.value = false
+
+    if (showMonthlySavings.value) {
+      await travel.loadHomeDashboard({ force: true })
+    }
   } catch {
     showNotice(wallet.errorMessage || '월렛 거래 처리에 실패했어요.')
+  } finally {
+    submitPending.value = false
   }
 }
 
@@ -593,7 +636,7 @@ async function confirmUnlinkTravelCard() {
           <span :class="chartColorClass(item)">{{ item.month }}</span>
         </button>
       </div>
-      <p class="saving-hint">최근 6개월간 월렛 입출금 합계예요.</p>
+      <p class="saving-hint">이번 달부터 6개월간 월렛 입출금 합계예요.</p>
     </section>
 
     <section v-if="!wallet.isTravelCardLinked" class="empty-card">
@@ -682,12 +725,28 @@ async function confirmUnlinkTravelCard() {
             <header class="charge-sheet-head">
               <button type="button" aria-label="충전 화면 닫기" @click="showTransfer = false">×</button>
               <h2>충전</h2>
-              <span aria-hidden="true" />
+              <button
+                type="button"
+                class="auto-charge-chip"
+                :class="{ active: wallet.autoCharge.enabled }"
+                @click="showTransfer = false; openAutoChargeSetting()"
+              >{{ wallet.autoCharge.enabled ? '자동충전 사용중' : '자동충전 설정하기' }}<ChevronRight :size="12" /></button>
             </header>
-            <button type="button" class="auto-charge-row" @click="showTransfer = false; openAutoChargeSetting()">
-              <span>자동충전</span>
-              <span class="auto-charge-row-value">{{ autoChargeSummary }}<ChevronRight :size="14" /></span>
-            </button>
+            <div v-if="showMonthlySavingGoalInSheet" class="charge-goal-card">
+              <span class="charge-goal-title"><PiggyBank :size="13" class="charge-goal-icon" />이번 달 저축</span>
+              <div class="charge-goal-bar-row">
+                <div class="charge-goal-bar"><i :style="{ width: (!isDepartureMonth ? monthlySavingGoalPercent : 0) + '%' }" /></div>
+                <b v-if="!isDepartureMonth">{{ monthlySavingGoalPercent }}%</b>
+              </div>
+              <p class="charge-goal-fraction">
+                <b :class="{ 'charge-goal-achieved': isSavingGoalAchieved }">{{ money(monthlySavingGoalSaved) }}</b>
+                <span>/ {{ !isDepartureMonth ? money(monthlySavingGoalTarget) : '-' }}</span>
+              </p>
+              <p class="charge-goal-note">
+                <template v-if="savingGoalNote">{{ savingGoalNote }}</template>
+                <template v-else>남은 금액 <b class="charge-goal-remaining">{{ money(monthlySavingGoalRemaining) }}</b></template>
+              </p>
+            </div>
             <div class="charge-account-picker">
               <div v-if="accounts.length" class="charge-account-content">
                 <select v-model="selectedAccount" aria-label="충전 계좌 선택">
@@ -702,7 +761,7 @@ async function confirmUnlinkTravelCard() {
                 <template v-if="transferAmountNumber"><strong>{{ formattedTransferAmount }}</strong><span>원</span></template>
                 <span v-else>얼마를 충전할까요?</span>
               </div>
-              <p>트립머니 잔액 {{ money(wallet.balance) }}</p>
+              <p>트립월렛 잔액 {{ money(wallet.balance) }}</p>
             </div>
             <div class="charge-controls">
               <div class="charge-quick-amounts">
@@ -744,7 +803,7 @@ async function confirmUnlinkTravelCard() {
               <button v-for="value in quickAmountValues" :key="value" type="button" @click="applyQuickAmount(value)">+{{ value / 10000 }}만</button>
               <button type="button" @click="applyQuickAmount('full')">전액</button>
             </div>
-            <button class="confirm-transfer" type="button" @click="submitTransfer">송금</button>
+            <button class="confirm-transfer" type="button" :disabled="submitPending" @click="submitTransfer">송금</button>
           </template>
         </section>
       </div>
@@ -755,6 +814,9 @@ async function confirmUnlinkTravelCard() {
       <div v-if="showAutoChargeSetting" class="auto-modal-backdrop" @click.self="showAutoChargeSetting = false">
         <section class="auto-modal">
           <div class="auto-modal-head">
+            <button type="button" class="auto-modal-back" aria-label="충전 화면으로 돌아가기" @click="backToChargeFromAutoModal">
+              <ChevronLeft :size="20" />
+            </button>
             <h2>자동 충전 설정</h2>
             <button type="button" @click="showAutoChargeSetting = false">×</button>
           </div>
@@ -847,7 +909,7 @@ async function confirmUnlinkTravelCard() {
 </template>
 
 <style scoped>
-.wallet-page{max-width:390px;min-height:100vh;margin:0 auto;padding:0 16px 88px;background:#eef2f8;color:#111827}.wallet-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 16px;background:#eef2f8;transform:translateX(-50%)}.wallet-header{display:flex;align-items:flex-start;justify-content:space-between}.wallet-header p{display:flex;align-items:center;gap:4px;font-family:'Space Mono',monospace;color:#0b2a6b;font-size:9.5px;font-weight:800;letter-spacing:.15em;margin-bottom:4px}.wallet-header h1{margin-top:2px;font-size:19px;font-weight:900;color:#10192b;letter-spacing:normal}.header-plane{width:12px;height:12px;animation:header-plane-fly 2.6s ease-in-out infinite}@keyframes header-plane-fly{0%,100%{transform:translateY(0) rotate(0deg);filter:brightness(1) drop-shadow(0 0 0 rgba(47,112,242,0))}25%{transform:translateY(-1.5px) rotate(-8deg)}50%{transform:translateY(0) rotate(0deg);filter:brightness(1.6) drop-shadow(0 0 3px rgba(47,112,242,.55))}75%{transform:translateY(1.5px) rotate(6deg)}}.wallet-card{position:relative;margin-top:20px}.wallet-card-tab{position:absolute;top:-13px;left:42px;width:150px;height:42px;border-radius:18px 18px 0 0;background:#1f5ab9}.wallet-card-inner{position:relative;z-index:1;padding:22px 24px 18px;border-radius:24px;background:#14357f;box-shadow:0 16px 28px rgba(24,51,99,.2);color:#fff}.wallet-card-inner:before{content:"";position:absolute;inset:12px;border:1px solid rgba(124,164,232,.42);border-radius:21px;pointer-events:none}.wallet-card-top,.wallet-balance,.emergency,.goal-row,.goal-bar,.wallet-actions{position:relative;z-index:1}.wallet-card-top{display:flex;align-items:center;justify-content:space-between}.wallet-card-top b{color:#ffd34d;font-size:17px;font-weight:800}.wallet-card-top button{color:#c4d4f5;font-size:12px;font-weight:600}.link-button{display:inline-flex;align-items:center;gap:1px}.wallet-balance{display:flex;align-items:flex-end;gap:10px;margin-top:26px}.wallet-balance strong{font-size:42px;font-weight:800;line-height:.95;letter-spacing:-.05em}.wallet-balance span{font-size:17px;font-weight:700}.emergency{margin-top:11px;color:#ffd34d;font-size:13px;font-weight:700}.goal-row{display:flex;justify-content:space-between;margin-top:18px;font-size:14px;font-weight:600}.goal-row b{color:#ffd34d;font-weight:800}.goal-bar{height:9px;margin-top:12px;overflow:hidden;border-radius:99px;background:rgba(160,183,225,.48)}.goal-bar i{display:block;height:100%;border-radius:inherit;background:#ffd45a}.wallet-actions{display:grid;grid-template-columns:1fr 1fr 58px;gap:10px;margin-top:24px}.wallet-actions button{height:50px;border:1px solid rgba(163,194,248,.55);border-radius:999px;background:#4169af;color:#fff;font-size:17px;font-weight:700}.wallet-actions .history-button{font-size:14px;background:#234d9a}.white-card{margin-top:16px;border-radius:24px;background:#fff;box-shadow:0 10px 24px rgba(18,43,82,.07)}.saving-card{padding:24px 20px}.section-title h2,.linked-title h2{font-size:22px;font-weight:800;letter-spacing:-.04em}.chart-legend{display:flex;align-items:center;gap:10px;margin-top:14px;color:#7c8aa2;font-size:12px;font-weight:600}.chart-legend span{display:flex;align-items:center;gap:6px}.chart-legend i{width:11px;height:11px;border-radius:4px}.chart-legend .target-line:before{content:"";display:inline-block;width:23px;border-top:1.5px dashed #aab8ce}.success{background:#079b84;color:#079b84}.fail{background:#f15b3b;color:#f15b3b}.chart-legend i.success{background:#079b84;color:#079b84}.chart-legend i.fail{background:#f15b3b;color:#f15b3b}.bar-wrap>b.success{color:#079b84}.bar-wrap>b.fail{color:#f15b3b}.chart-item i.success{background:#079b84;color:#079b84}.chart-item i.fail{background:#f15b3b;color:#f15b3b}.saving-chart{display:grid;grid-template-columns:repeat(6,1fr);align-items:end;gap:7px;margin-top:25px}.chart-item{display:flex;min-width:0;align-items:center;flex-direction:column;gap:8px}.bar-wrap{position:relative;display:flex;width:48px;height:124px;align-items:flex-end;justify-content:center}.bar-wrap>b{position:absolute;left:50%;z-index:2;transform:translateX(-50%);font-size:10px;font-weight:600;color:#7d8ba2;background:transparent!important;white-space:nowrap}.bar-wrap>b.current-amount{color:#64748b}.target-marker{position:absolute;left:0;right:0;border-top:1.5px dashed #aab8ce}.chart-item i{display:block;width:34px;border-radius:8px;background:currentColor}.chart-item i.current{width:34px;background:#94a3b8;color:#94a3b8;box-shadow:none;outline:3px solid #eef2f7}.chart-item>span{color:#5f6c82;font-size:13px;font-weight:600}.chart-item>span.current{color:#1d66ed;font-weight:800}.chart-item>em{padding:5px 10px;border-radius:999px;font-size:11px;font-style:normal;font-weight:700;white-space:nowrap}.chart-item>em.success{background:#e4f8f2;color:#079b84}.chart-item>em.fail{background:#fff0e9;color:#ef4f32}.chart-item>em.current-status{background:#eef2f7;color:#64748b}.saving-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.saving-summary span{display:block;padding:13px 8px;border-radius:14px;text-align:center;font-size:13px;font-weight:700}.saving-summary .good{background:#ddf7ee;color:#009a82}.saving-summary .bad{background:#fff0e9;color:#ef4f32}.empty-card{margin-top:16px}.empty-hero{position:relative;display:flex;min-height:186px;align-items:center;overflow:hidden;padding:24px 22px;border-radius:22px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 62%,#2f70d9 100%);text-align:left;box-shadow:0 16px 34px rgba(18,58,133,.28)}.empty-hero-orbit{position:absolute;top:-64px;right:-54px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.09)}.empty-hero-main{position:relative;z-index:1;max-width:78%}.empty-hero-copy h2{color:#fff;font-size:21px;font-weight:800;line-height:1.3;letter-spacing:-.03em;white-space:nowrap}.empty-hero-copy p{margin-top:9px;color:rgba(255,255,255,.72);font-size:12.5px;font-weight:500;line-height:1.55}.empty-hero-card-photo{position:absolute;right:-8px;bottom:-16px;z-index:1;width:120px;transform:rotate(9deg);filter:drop-shadow(0 14px 22px rgba(6,20,52,.5));animation:empty-hero-card-float 3.4s ease-in-out infinite}.empty-hero-actions{display:flex;align-items:center;gap:8px;margin-top:14px;text-align:left}.primary-button,.recommend-link{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:3px;height:32px;padding:0 14px;border-radius:9px;font-size:11.5px;font-weight:800}.primary-button{background:#ffd466;color:#0b2a6b;box-shadow:0 6px 14px rgba(6,20,52,.2);animation:empty-hero-cta-pulse 2.4s ease-out infinite}.recommend-link{background:rgba(255,255,255,.16);color:#fff}@keyframes empty-hero-card-float{0%,100%{transform:rotate(9deg) translateY(0)}50%{transform:rotate(6deg) translateY(-7px)}}@keyframes empty-hero-cta-pulse{0%{box-shadow:0 6px 14px rgba(6,20,52,.2),0 0 0 0 rgba(255,212,102,.5)}70%,100%{box-shadow:0 6px 14px rgba(6,20,52,.2),0 0 0 9px rgba(255,212,102,0)}}@media(prefers-reduced-motion:reduce){.empty-hero-card-photo,.primary-button{animation:none}}.linked-card{padding:23px 22px 22px}.linked-title{display:flex;align-items:center;justify-content:space-between}.linked-title button{color:#94a3b8;font-size:12px;font-weight:600}.travel-card-box{display:grid;grid-template-columns:136px 1fr;gap:16px;align-items:stretch;margin-top:22px}.card-visual{position:relative;width:100%;aspect-ratio:.63;border-radius:18px;overflow:hidden}.card-info h3{font-size:20px;font-weight:800;letter-spacing:-.04em}.card-info p{margin-top:8px;color:#94a3b8;font-size:13px;font-weight:500}.card-info button{width:100%;height:50px;border-radius:15px;background:#2f70e9;color:#fff;font-size:17px;font-weight:800}.card-action-row{display:grid;width:100%;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}.card-action-row .secondary-button{background:#eaf1ff;color:#2f70e9}.linked-card hr{height:1px;margin:23px 0;border:0;background:#dfe6f1}.currency-list{display:grid;gap:12px;margin-top:18px}.currency-row{display:grid;grid-template-columns:42px 1fr auto 10px;align-items:center;gap:12px;padding:16px;border-radius:17px;background:#f6f8fc;text-align:left}.currency-row>span{display:grid;width:38px;height:38px;place-items:center;border-radius:50%;color:#fff;font-size:16px;font-weight:700}.currency-row>b{font-size:18px;font-weight:800}.currency-row>strong{grid-column:3;align-self:end;font-size:19px;font-weight:800}.currency-row>small{grid-column:3;color:#9aa8bd;font-size:12px;font-weight:600}.currency-row>em{grid-column:4;grid-row:1/3;color:#c5cfdd;font-size:20px;font-style:normal}.wallet-sheet-backdrop{position:fixed;z-index:100;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(23,35,60,.4)}.wallet-sheet{width:min(100%,430px);padding:12px 20px 28px;border-radius:24px 24px 0 0;background:#fff}.sheet-handle{display:block;width:36px;height:4px;margin:0 auto 17px;border-radius:9px;background:#d5ddeb}.wallet-sheet h2{font-size:20px;font-weight:800}.wallet-sheet-head{display:flex;align-items:flex-start;justify-content:space-between}.sheet-close{padding:4px 8px;color:#64748b;font-size:22px}.auto-charge-preview{margin-top:18px;padding:18px;border-radius:18px;background:#f7f9fd}.auto-charge-preview.compact{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px 15px;border:1px solid #e0e8f4;background:#f8fbff}.auto-charge-preview h3{font-size:17px;font-weight:800}.auto-charge-preview.compact h3{font-size:14px;font-weight:800}.auto-charge-preview p{margin-top:7px;color:#8b98ad;font-size:12px;font-weight:500;line-height:1.45}.auto-charge-preview.compact p{margin-top:4px;font-size:12px}.auto-charge-preview dl{display:grid;gap:12px;margin-top:17px}.auto-charge-preview dl div{display:flex;align-items:center;justify-content:space-between}.auto-charge-preview dt{color:#8b98ad;font-size:13px;font-weight:600}.auto-charge-preview dd{color:#111827;font-size:16px;font-weight:800}.auto-charge-preview button{width:100%;height:43px;margin-top:16px;border-radius:12px;background:#2f70e9;color:#fff;font-size:14px;font-weight:700}.auto-charge-preview.compact button{width:auto;height:34px;margin-top:0;padding:0 14px;border-radius:999px;background:#eaf3ff;color:#2167e8;font-size:12px;font-weight:800}.wallet-sheet>p{margin-top:7px;color:#8290a6;font-size:12px}.withdraw-mode-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:16px}.withdraw-mode-tabs button{height:38px;border:1px solid #dce4f1;border-radius:11px;background:#fff;color:#63718a;font-size:12px;font-weight:700}.withdraw-mode-tabs button.active{border-color:#193d8c;background:#193d8c;color:#fff}.empty-inline-hint{margin-top:8px;color:#94a3b8;font-size:11px}.wallet-sheet label{display:block;margin-top:18px;color:#63718a;font-size:12px;font-weight:600}.wallet-sheet select,.amount-field{width:100%;height:50px;margin-top:8px;padding:0 14px;border:1px solid #dce4f1;border-radius:13px;background:#fff;color:#182849;font-size:14px;font-weight:600}.amount-field{display:flex;align-items:center}.amount-field input{width:100%;font-size:19px;font-weight:700;outline:0}.amount-field b{color:#7d8ba2}.quick-amounts{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.quick-amounts button{padding:7px 12px;border:1px solid #e2e5ea;border-radius:99px;background:#f4f5f7;color:#111827;font-size:12px;font-weight:700}.confirm-transfer{width:100%;height:52px;margin-top:24px;border-radius:14px;background:#193d8c;color:#fff;font-size:15px;font-weight:800}.auto-modal-backdrop,.confirm-backdrop{position:fixed;z-index:130;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(23,35,60,.42)}.auto-modal,.confirm-modal{width:min(100%,360px);padding:20px;border-radius:22px;background:#fff;box-shadow:0 18px 44px rgba(17,24,39,.22)}.auto-modal-head{display:flex;align-items:center;justify-content:space-between}.auto-modal-head h2{font-size:19px;font-weight:800}.auto-modal-head button{width:30px;height:30px;border-radius:50%;background:#f1f4f9;color:#64748b;font-size:19px}.auto-modal label{display:block;margin-top:18px;color:#63718a;font-size:12px;font-weight:700}.modal-field{display:flex;align-items:center;gap:8px;height:48px;margin-top:8px;padding:0 14px;border:1px solid #dce4f1;border-radius:14px;background:#f9fbff;color:#111827}.modal-field input{min-width:0;flex:1;font-size:17px;font-weight:800;text-align:right;outline:0}.modal-field span,.modal-field b{color:#7d8ba2;font-size:13px;font-weight:700}.auto-modal p{margin-top:14px;color:#8b98ad;font-size:12px;line-height:1.45}.modal-save{width:100%;height:48px;margin-top:18px;border-radius:14px;background:#2f70e9;color:#fff;font-size:15px;font-weight:800}.modal-remove{width:100%;height:40px;margin-top:8px;border-radius:14px;background:transparent;color:#ef4444;font-size:13px;font-weight:700}.confirm-modal{text-align:center}.confirm-icon{display:grid;width:56px;height:56px;margin:0 auto 14px;place-items:center;border-radius:18px;background:#eef4ff;font-size:24px}.confirm-modal h2{font-size:20px;font-weight:800;letter-spacing:-.04em}.confirm-modal p{margin-top:10px;color:#64748b;font-size:13px;font-weight:500;line-height:1.5}.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}.confirm-actions button{height:48px;border-radius:14px;background:#f1f5f9;color:#64748b;font-size:15px;font-weight:800}.confirm-actions .danger{background:#ffe8e8;color:#ef4444}.wallet-toast{position:fixed;bottom:78px;left:50%;z-index:120;width:max-content;max-width:calc(100% - 40px);transform:translateX(-50%);padding:11px 15px;border-radius:99px;background:#172644;color:#fff;font-size:12px;box-shadow:0 5px 18px rgba(17,24,39,.2)}.sheet-enter-active,.sheet-leave-active{transition:opacity .2s}.sheet-enter-active .wallet-sheet,.sheet-leave-active .wallet-sheet{transition:transform .25s}.sheet-enter-from,.sheet-leave-to{opacity:0}.sheet-enter-from .wallet-sheet,.sheet-leave-to .wallet-sheet{transform:translateY(100%)}@media(max-width:380px){.wallet-balance strong{font-size:36px}.travel-card-box{grid-template-columns:112px 1fr}.saving-summary{grid-template-columns:1fr}.chart-item>i{width:28px}.chart-item>b{font-size:9px}}
+.wallet-page{max-width:390px;min-height:100vh;margin:0 auto;padding:0 16px 88px;background:#eef2f8;color:#111827}.wallet-header-fixed{position:fixed;top:0;left:50%;z-index:60;width:100%;max-width:390px;padding:14px 16px;background:#eef2f8;transform:translateX(-50%)}.wallet-header{display:flex;align-items:flex-start;justify-content:space-between}.wallet-header p{display:flex;align-items:center;gap:4px;font-family:'Space Mono',monospace;color:#0b2a6b;font-size:9.5px;font-weight:800;letter-spacing:.15em;margin-bottom:4px}.wallet-header h1{margin-top:2px;font-size:19px;font-weight:900;color:#10192b;letter-spacing:normal}.header-plane{width:12px;height:12px;animation:header-plane-fly 2.6s ease-in-out infinite}@keyframes header-plane-fly{0%,100%{transform:translateY(0) rotate(0deg);filter:brightness(1) drop-shadow(0 0 0 rgba(47,112,242,0))}25%{transform:translateY(-1.5px) rotate(-8deg)}50%{transform:translateY(0) rotate(0deg);filter:brightness(1.6) drop-shadow(0 0 3px rgba(47,112,242,.55))}75%{transform:translateY(1.5px) rotate(6deg)}}.wallet-card{position:relative;margin-top:20px}.wallet-card-tab{position:absolute;top:-13px;left:42px;width:150px;height:42px;border-radius:18px 18px 0 0;background:#1f5ab9}.wallet-card-inner{position:relative;z-index:1;padding:22px 24px 18px;border-radius:24px;background:#14357f;box-shadow:0 16px 28px rgba(24,51,99,.2);color:#fff}.wallet-card-inner:before{content:"";position:absolute;inset:12px;border:1px solid rgba(124,164,232,.42);border-radius:21px;pointer-events:none}.wallet-card-top,.wallet-balance,.emergency,.goal-row,.goal-bar,.wallet-actions{position:relative;z-index:1}.wallet-card-top{display:flex;align-items:center;justify-content:space-between}.wallet-card-top b{color:#ffd34d;font-size:17px;font-weight:800}.wallet-card-top button{color:#c4d4f5;font-size:12px;font-weight:600}.link-button{display:inline-flex;align-items:center;gap:1px}.wallet-balance{display:flex;align-items:flex-end;gap:10px;margin-top:26px}.wallet-balance strong{font-size:42px;font-weight:800;line-height:.95;letter-spacing:-.05em}.wallet-balance span{font-size:17px;font-weight:700}.emergency{margin-top:11px;color:#ffd34d;font-size:13px;font-weight:700}.goal-row{display:flex;justify-content:space-between;margin-top:18px;font-size:14px;font-weight:600}.goal-row b{color:#ffd34d;font-weight:800}.goal-bar{height:9px;margin-top:12px;overflow:hidden;border-radius:99px;background:rgba(160,183,225,.48)}.goal-bar i{display:block;height:100%;border-radius:inherit;background:#ffd45a}.wallet-actions{display:grid;grid-template-columns:1fr 1fr 58px;gap:10px;margin-top:24px}.wallet-actions button{height:50px;border:1px solid rgba(163,194,248,.55);border-radius:999px;background:#4169af;color:#fff;font-size:17px;font-weight:700}.wallet-actions .history-button{font-size:14px;background:#234d9a}.white-card{margin-top:16px;border-radius:24px;background:#fff;box-shadow:0 10px 24px rgba(18,43,82,.07)}.saving-card{padding:24px 20px}.section-title h2,.linked-title h2{font-size:22px;font-weight:800;letter-spacing:-.04em}.chart-legend{display:flex;align-items:center;gap:10px;margin-top:14px;color:#7c8aa2;font-size:12px;font-weight:600}.chart-legend span{display:flex;align-items:center;gap:6px}.chart-legend i{width:11px;height:11px;border-radius:4px}.chart-legend .target-line:before{content:"";display:inline-block;width:23px;border-top:1.5px dashed #aab8ce}.success{background:#079b84;color:#079b84}.fail{background:#f15b3b;color:#f15b3b}.chart-legend i.success{background:#079b84;color:#079b84}.chart-legend i.fail{background:#f15b3b;color:#f15b3b}.bar-wrap>b.success{color:#079b84}.bar-wrap>b.fail{color:#f15b3b}.chart-item i.success{background:#079b84;color:#079b84}.chart-item i.fail{background:#f15b3b;color:#f15b3b}.saving-chart{display:grid;grid-template-columns:repeat(6,1fr);align-items:end;gap:7px;margin-top:25px}.chart-item{display:flex;min-width:0;align-items:center;flex-direction:column;gap:8px}.bar-wrap{position:relative;display:flex;width:48px;height:124px;align-items:flex-end;justify-content:center}.bar-wrap>b{position:absolute;left:50%;z-index:2;transform:translateX(-50%);font-size:10px;font-weight:600;color:#7d8ba2;background:transparent!important;white-space:nowrap}.bar-wrap>b.current-amount{color:#64748b}.target-marker{position:absolute;left:0;right:0;border-top:1.5px dashed #aab8ce}.chart-item i{display:block;width:34px;border-radius:8px;background:currentColor}.chart-item i.current{width:34px;background:#94a3b8;color:#94a3b8;box-shadow:none;outline:3px solid #eef2f7}.chart-item>span{color:#5f6c82;font-size:13px;font-weight:600}.chart-item>span.current{color:#1d66ed;font-weight:800}.chart-item>em{padding:5px 10px;border-radius:999px;font-size:11px;font-style:normal;font-weight:700;white-space:nowrap}.chart-item>em.success{background:#e4f8f2;color:#079b84}.chart-item>em.fail{background:#fff0e9;color:#ef4f32}.chart-item>em.current-status{background:#eef2f7;color:#64748b}.saving-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.saving-summary span{display:block;padding:13px 8px;border-radius:14px;text-align:center;font-size:13px;font-weight:700}.saving-summary .good{background:#ddf7ee;color:#009a82}.saving-summary .bad{background:#fff0e9;color:#ef4f32}.empty-card{margin-top:16px}.empty-hero{position:relative;display:flex;min-height:186px;align-items:center;overflow:hidden;padding:24px 22px;border-radius:22px;background:linear-gradient(145deg,#0c2d72 0%,#174ca7 62%,#2f70d9 100%);text-align:left;box-shadow:0 16px 34px rgba(18,58,133,.28)}.empty-hero-orbit{position:absolute;top:-64px;right:-54px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.09)}.empty-hero-main{position:relative;z-index:1;max-width:78%}.empty-hero-copy h2{color:#fff;font-size:21px;font-weight:800;line-height:1.3;letter-spacing:-.03em;white-space:nowrap}.empty-hero-copy p{margin-top:9px;color:rgba(255,255,255,.72);font-size:12.5px;font-weight:500;line-height:1.55}.empty-hero-card-photo{position:absolute;right:-8px;bottom:-16px;z-index:1;width:120px;transform:rotate(9deg);filter:drop-shadow(0 14px 22px rgba(6,20,52,.5));animation:empty-hero-card-float 3.4s ease-in-out infinite}.empty-hero-actions{display:flex;align-items:center;gap:8px;margin-top:14px;text-align:left}.primary-button,.recommend-link{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:3px;height:32px;padding:0 14px;border-radius:9px;font-size:11.5px;font-weight:800}.primary-button{background:#ffd466;color:#0b2a6b;box-shadow:0 6px 14px rgba(6,20,52,.2);animation:empty-hero-cta-pulse 2.4s ease-out infinite}.recommend-link{background:rgba(255,255,255,.16);color:#fff}@keyframes empty-hero-card-float{0%,100%{transform:rotate(9deg) translateY(0)}50%{transform:rotate(6deg) translateY(-7px)}}@keyframes empty-hero-cta-pulse{0%{box-shadow:0 6px 14px rgba(6,20,52,.2),0 0 0 0 rgba(255,212,102,.5)}70%,100%{box-shadow:0 6px 14px rgba(6,20,52,.2),0 0 0 9px rgba(255,212,102,0)}}@media(prefers-reduced-motion:reduce){.empty-hero-card-photo,.primary-button{animation:none}}.linked-card{padding:23px 22px 22px}.linked-title{display:flex;align-items:center;justify-content:space-between}.linked-title button{color:#94a3b8;font-size:12px;font-weight:600}.travel-card-box{display:grid;grid-template-columns:136px 1fr;gap:16px;align-items:stretch;margin-top:22px}.card-visual{position:relative;width:100%;aspect-ratio:.63;border-radius:18px;overflow:hidden}.card-info h3{font-size:20px;font-weight:800;letter-spacing:-.04em}.card-info p{margin-top:8px;color:#94a3b8;font-size:13px;font-weight:500}.card-info button{width:100%;height:50px;border-radius:15px;background:#2f70e9;color:#fff;font-size:17px;font-weight:800}.card-action-row{display:grid;width:100%;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}.card-action-row .secondary-button{background:#eaf1ff;color:#2f70e9}.linked-card hr{height:1px;margin:23px 0;border:0;background:#dfe6f1}.currency-list{display:grid;gap:12px;margin-top:18px}.currency-row{display:grid;grid-template-columns:42px 1fr auto 10px;align-items:center;gap:12px;padding:16px;border-radius:17px;background:#f6f8fc;text-align:left}.currency-row>span{display:grid;width:38px;height:38px;place-items:center;border-radius:50%;color:#fff;font-size:16px;font-weight:700}.currency-row>b{font-size:18px;font-weight:800}.currency-row>strong{grid-column:3;align-self:end;font-size:19px;font-weight:800}.currency-row>small{grid-column:3;color:#9aa8bd;font-size:12px;font-weight:600}.currency-row>em{grid-column:4;grid-row:1/3;color:#c5cfdd;font-size:20px;font-style:normal}.wallet-sheet-backdrop{position:fixed;z-index:100;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(23,35,60,.4)}.wallet-sheet{width:min(100%,430px);padding:12px 20px 28px;border-radius:24px 24px 0 0;background:#fff}.sheet-handle{display:block;width:36px;height:4px;margin:0 auto 17px;border-radius:9px;background:#d5ddeb}.wallet-sheet h2{font-size:20px;font-weight:800}.wallet-sheet-head{display:flex;align-items:flex-start;justify-content:space-between}.sheet-close{padding:4px 8px;color:#64748b;font-size:22px}.auto-charge-preview{margin-top:18px;padding:18px;border-radius:18px;background:#f7f9fd}.auto-charge-preview.compact{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px 15px;border:1px solid #e0e8f4;background:#f8fbff}.auto-charge-preview h3{font-size:17px;font-weight:800}.auto-charge-preview.compact h3{font-size:14px;font-weight:800}.auto-charge-preview p{margin-top:7px;color:#8b98ad;font-size:12px;font-weight:500;line-height:1.45}.auto-charge-preview.compact p{margin-top:4px;font-size:12px}.auto-charge-preview dl{display:grid;gap:12px;margin-top:17px}.auto-charge-preview dl div{display:flex;align-items:center;justify-content:space-between}.auto-charge-preview dt{color:#8b98ad;font-size:13px;font-weight:600}.auto-charge-preview dd{color:#111827;font-size:16px;font-weight:800}.auto-charge-preview button{width:100%;height:43px;margin-top:16px;border-radius:12px;background:#2f70e9;color:#fff;font-size:14px;font-weight:700}.auto-charge-preview.compact button{width:auto;height:34px;margin-top:0;padding:0 14px;border-radius:999px;background:#eaf3ff;color:#2167e8;font-size:12px;font-weight:800}.wallet-sheet>p{margin-top:7px;color:#8290a6;font-size:12px}.withdraw-mode-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:16px}.withdraw-mode-tabs button{height:38px;border:1px solid #dce4f1;border-radius:11px;background:#fff;color:#63718a;font-size:12px;font-weight:700}.withdraw-mode-tabs button.active{border-color:#193d8c;background:#193d8c;color:#fff}.empty-inline-hint{margin-top:8px;color:#94a3b8;font-size:11px}.wallet-sheet label{display:block;margin-top:18px;color:#63718a;font-size:12px;font-weight:600}.wallet-sheet select,.amount-field{width:100%;height:50px;margin-top:8px;padding:0 14px;border:1px solid #dce4f1;border-radius:13px;background:#fff;color:#182849;font-size:14px;font-weight:600}.amount-field{display:flex;align-items:center}.amount-field input{width:100%;font-size:19px;font-weight:700;outline:0}.amount-field b{color:#7d8ba2}.quick-amounts{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.quick-amounts button{padding:7px 12px;border:1px solid #e2e5ea;border-radius:99px;background:#f4f5f7;color:#111827;font-size:12px;font-weight:700}.confirm-transfer{width:100%;height:52px;margin-top:24px;border-radius:14px;background:#193d8c;color:#fff;font-size:15px;font-weight:800}.auto-modal-backdrop,.confirm-backdrop{position:fixed;z-index:130;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(23,35,60,.42)}.auto-modal,.confirm-modal{width:min(100%,360px);padding:20px;border-radius:22px;background:#fff;box-shadow:0 18px 44px rgba(17,24,39,.22)}.auto-modal-head{display:flex;align-items:center;justify-content:space-between}.auto-modal-head h2{font-size:19px;font-weight:800}.auto-modal-head button{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#f1f4f9;color:#64748b;font-size:19px}.auto-modal label{display:block;margin-top:18px;color:#63718a;font-size:12px;font-weight:700}.modal-field{display:flex;align-items:center;gap:8px;height:48px;margin-top:8px;padding:0 14px;border:1px solid #dce4f1;border-radius:14px;background:#f9fbff;color:#111827}.modal-field input{min-width:0;flex:1;font-size:17px;font-weight:800;text-align:right;outline:0}.modal-field span,.modal-field b{color:#7d8ba2;font-size:13px;font-weight:700}.auto-modal p{margin-top:14px;color:#8b98ad;font-size:12px;line-height:1.45}.modal-save{width:100%;height:48px;margin-top:18px;border-radius:14px;background:#2f70e9;color:#fff;font-size:15px;font-weight:800}.modal-remove{width:100%;height:40px;margin-top:8px;border-radius:14px;background:transparent;color:#ef4444;font-size:13px;font-weight:700}.confirm-modal{text-align:center}.confirm-icon{display:grid;width:56px;height:56px;margin:0 auto 14px;place-items:center;border-radius:18px;background:#eef4ff;font-size:24px}.confirm-modal h2{font-size:20px;font-weight:800;letter-spacing:-.04em}.confirm-modal p{margin-top:10px;color:#64748b;font-size:13px;font-weight:500;line-height:1.5}.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}.confirm-actions button{height:48px;border-radius:14px;background:#f1f5f9;color:#64748b;font-size:15px;font-weight:800}.confirm-actions .danger{background:#ffe8e8;color:#ef4444}.wallet-toast{position:fixed;bottom:78px;left:50%;z-index:120;width:max-content;max-width:calc(100% - 40px);transform:translateX(-50%);padding:11px 15px;border-radius:99px;background:#172644;color:#fff;font-size:12px;box-shadow:0 5px 18px rgba(17,24,39,.2)}.sheet-enter-active,.sheet-leave-active{transition:opacity .2s}.sheet-enter-active .wallet-sheet,.sheet-leave-active .wallet-sheet{transition:transform .25s}.sheet-enter-from,.sheet-leave-to{opacity:0}.sheet-enter-from .wallet-sheet,.sheet-leave-to .wallet-sheet{transform:translateY(100%)}.sheet-enter-active .auto-modal,.sheet-leave-active .auto-modal{transition:transform .25s}.sheet-enter-from .auto-modal,.sheet-leave-to .auto-modal{transform:translateY(100%)}@media(max-width:380px){.wallet-balance strong{font-size:36px}.travel-card-box{grid-template-columns:112px 1fr}.saving-summary{grid-template-columns:1fr}.chart-item>i{width:28px}.chart-item>b{font-size:9px}}
 .saving-chart{margin-top:20px}.bar-wrap>b{font-size:11px;font-weight:700;color:#2563eb}.bar-wrap>b.current{padding:3px 7px;border-radius:999px;background:#eaf2ff!important;color:#1768f2}.bar-wrap>b.negative{color:#ef4444}.bar-wrap>b.zero{color:#4b5563}.bar-wrap .zero-line{position:absolute;left:2px;right:2px;height:1px;background:#e3e9f3}.chart-item i{position:absolute;left:50%;width:34px;border-radius:10px;transform:translateX(-50%);background:linear-gradient(180deg,#2f70e9,#1d54c6)}.chart-item i.current{background:linear-gradient(180deg,#ffcf5a,#ffb020);outline:4px solid #fff6dd}.chart-item i.negative{background:linear-gradient(180deg,#ef4444,#c92e2e)}.chart-item i.zero{background:#4b5563}.chart-item>span.current{color:#111827}.chart-item>span.negative{color:#ef4444}.chart-item>span.zero{color:#111827}.card-info{min-width:0;display:flex;flex-direction:column;align-items:flex-start}.card-info h3{font-size:18px;line-height:1.22;word-break:keep-all}.card-label{display:inline-block;margin-bottom:5px;color:#94a3b8;font-size:11px;font-weight:700}
 .bar-wrap>b.disabled{color:#b6c1d1}.chart-item i.disabled{background:#e4eaf3;outline:none}.chart-item>span.disabled{color:#b6c1d1}.saving-hint{margin-top:16px;padding:11px 13px;border-radius:13px;background:#f5f8fc;color:#8290a6;font-size:12px;font-weight:600;text-align:center}.list-empty{margin-top:18px;padding:20px;border-radius:14px;background:#f7f9fd;color:#9aa8bd;font-size:12px;font-weight:600;text-align:center}
 .currency-head{display:flex;align-items:center;justify-content:space-between}.currency-title{color:#64748b;font-size:17px;font-weight:800;letter-spacing:-.02em}.currency-head button{color:#1768f2;font-size:13px;font-weight:800}.currency-list{gap:8px;margin-top:12px}.currency-row{grid-template-columns:34px minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;gap:3px 10px!important;padding:11px 12px!important;border:1px solid #edf2f8;border-radius:14px!important;background:#f8fbff!important}.currency-row .flag{grid-row:1/3;display:grid!important;width:32px!important;height:32px!important;place-items:center!important;border-radius:50%!important;background:#fff!important;font-size:18px!important;box-shadow:0 0 0 1px #e4ebf5!important}.currency-row>b{grid-column:2!important;display:flex;min-width:0;align-items:baseline;gap:5px;font-size:15px!important;font-weight:800!important}.currency-row>b small{overflow:hidden;color:#8b98ad;font-size:11px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}.currency-row>em{grid-column:2!important;grid-row:2!important;color:#94a3b8!important;font-size:11px!important;font-style:normal!important;font-weight:600!important}.currency-row>strong{grid-column:3!important;grid-row:1!important;align-self:end!important;font-size:16px!important;font-weight:800!important}.currency-row>.krw{grid-column:3!important;grid-row:2!important;color:#9aa8bd!important;font-size:11px!important;font-weight:600!important;text-align:right}
@@ -1054,10 +1116,12 @@ async function confirmUnlinkTravelCard() {
 .wallet-sheet-backdrop:has(.charge-sheet),
 .wallet-sheet-backdrop:has(.withdraw-sheet){align-items:center;padding:24px 0;background:rgba(15,31,61,.46);backdrop-filter:blur(3px)}
 .charge-sheet-head{
-  display:grid;
-  grid-template-columns:34px minmax(0,1fr) 34px;
+  position:relative;
+  display:flex;
   align-items:center;
+  justify-content:space-between;
   min-height:38px;
+  gap:6px;
 }
 .charge-sheet-head button{
   width:34px;
@@ -1069,7 +1133,26 @@ async function confirmUnlinkTravelCard() {
   font-weight:300;
   line-height:1;
 }
+.auto-charge-chip{
+  display:flex!important;
+  align-items:center;
+  gap:2px;
+  width:auto!important;
+  height:auto!important;
+  padding:6px 8px 6px 10px;
+  border-radius:999px!important;
+  background:#eaf1ff!important;
+  color:#2167e8!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  white-space:nowrap;
+}
+.auto-charge-chip.active{background:#e5f7f1!important;color:#0a8f6f!important}
 .charge-sheet-head h2{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
   margin:0;
   color:#101828;
   font-size:18px!important;
@@ -1106,25 +1189,47 @@ async function confirmUnlinkTravelCard() {
   letter-spacing:.02em;
 }
 .charge-account-empty{margin:0;color:#8b98ad;font-size:14px;font-weight:650;text-align:center}
-.auto-charge-row{
+.charge-goal-card{
+  position:relative;
   display:flex;
-  align-items:center;
-  justify-content:space-between;
+  flex-direction:column;
   width:100%;
-  margin-top:12px;
-  padding:12px 14px;
-  border-radius:14px;
-  background:#f7f9fd;
+  margin-top:6px;
+  padding:8px 10px;
+  border-radius:13px;
+  border:1.5px solid transparent;
+  background:linear-gradient(#f7f9fd,#f7f9fd) padding-box,
+    linear-gradient(135deg,#7fb0ff,#2f70e9 55%,#8fd6ff) border-box;
+  box-shadow:0 4px 10px rgba(47,112,233,.08);
+  animation:charge-goal-card-in .35s ease-out;
 }
-.auto-charge-row>span:first-child{color:#2f70e9;font-size:14px;font-weight:700}
-.auto-charge-row-value{
-  display:flex;
-  align-items:center;
-  gap:2px;
-  color:#5f6775;
-  font-size:13px;
-  font-weight:650;
+.charge-goal-title{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:#1c2433}
+.charge-goal-icon{color:#2f70e9;animation:charge-goal-icon-bounce 2.4s ease-in-out infinite}
+.charge-goal-bar-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.charge-goal-bar-row>b{flex:none;color:#2f70e9;font-size:11.5px;font-weight:800}
+.charge-goal-fraction{margin:6px 0 0;display:flex;align-items:baseline;justify-content:center;gap:3px}
+.charge-goal-fraction>b{font-size:16px;font-weight:800;color:#1c2433}
+.charge-goal-fraction>span{color:#8b98ad;font-size:11.5px;font-weight:700}
+.charge-goal-bar{
+  flex:1;
+  height:5px;
+  border-radius:99px;
+  background:#e2e9f6;
+  overflow:hidden;
 }
+.charge-goal-bar>i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:#2f70e9;
+  animation:charge-goal-bar-fill .7s ease-out;
+}
+.charge-goal-achieved{color:#009a82 !important}
+.charge-goal-note{margin:5px 0 0;color:#8b98ad;font-size:10.5px;font-weight:600;line-height:1.3;text-align:center}
+@keyframes charge-goal-card-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes charge-goal-bar-fill{from{width:0}}
+@keyframes charge-goal-icon-bounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-4deg)}}
+@media(prefers-reduced-motion:reduce){.charge-goal-card,.charge-goal-bar>i,.charge-goal-icon{animation:none}}
 .charge-amount-area{margin-top:14px;text-align:center}
 .charge-amount-display{
   min-height:52px;
@@ -1243,5 +1348,17 @@ async function confirmUnlinkTravelCard() {
   .charge-amount-area{margin-top:6px}
   .charge-controls{margin-top:10px}
   .charge-keypad button{height:38px}
+}
+@media (max-height:820px){
+  .charge-goal-card{margin-top:6px;padding:9px 12px}
+  .charge-goal-bar-row{margin-top:5px}
+  .charge-goal-note{margin-top:6px}
+  .charge-account-picker{margin-top:6px}
+  .charge-amount-area{margin-top:6px}
+  .charge-controls{margin-top:10px}
+  .charge-quick-amounts button{height:32px}
+  .charge-keypad{margin-top:4px}
+  .charge-keypad button{height:36px}
+  .charge-submit{height:42px;margin-top:6px}
 }
 </style>
