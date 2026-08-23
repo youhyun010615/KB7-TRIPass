@@ -14,7 +14,7 @@ const notice = ref('')
 const filters = [
   { key: 'ALL', label: '전체' },
   { key: 'PAYMENT', label: '현지 결제' },
-  { key: 'EXCHANGE', label: '충전·환전' },
+  { key: 'EXCHANGE', label: '충전·빼기' },
   { key: 'REFUND', label: '환불' },
 ]
 
