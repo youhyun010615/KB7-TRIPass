@@ -193,9 +193,17 @@ const overallCurrencyBreakdown = computed(() => {
       const code = String(item.currency).toUpperCase();
       const unit = Number(item.unit || 1);
       const rate = Number(item.rate || 0);
-      const current = grouped.get(code) || { code, spent: 0, budget: 0 };
+      const current = grouped.get(code) || {
+        code,
+        spent: 0,
+        budget: 0,
+        spentKrw: 0,
+        budgetKrw: 0,
+      };
       current.spent += (Number(item.spentAmount || 0) / rate) * unit;
       current.budget += (Number(item.targetBudget || 0) / rate) * unit;
+      current.spentKrw += Number(item.spentAmount || 0);
+      current.budgetKrw += Number(item.targetBudget || 0);
       grouped.set(code, current);
     });
 
@@ -1017,19 +1025,27 @@ async function switchMode(mode) {
                 <div class="fund-progress-meta">
                   <div class="overall-fund-stat">
                     <span class="overall-currency-breakdown">
-                      <em
+                      <span
                         v-for="currency in overallCurrencyBreakdown"
                         :key="`spent-${currency.code}`"
-                      >{{ formatForeignBreakdown(currency.code, currency.spent) }}</em>
+                        class="overall-currency-row"
+                      >
+                        <em>{{ formatForeignBreakdown(currency.code, currency.spent) }}</em>
+                        <i>약 {{ formatWon(currency.spentKrw) }}</i>
+                      </span>
                     </span>
                     <small>SPENT</small>
                   </div>
                   <div class="overall-fund-stat align-right">
                     <span class="overall-currency-breakdown align-right">
-                      <em
+                      <span
                         v-for="currency in overallCurrencyBreakdown"
                         :key="`budget-${currency.code}`"
-                      >{{ formatForeignBreakdown(currency.code, currency.budget) }}</em>
+                        class="overall-currency-row align-right"
+                      >
+                        <em>{{ formatForeignBreakdown(currency.code, currency.budget) }}</em>
+                        <i>약 {{ formatWon(currency.budgetKrw) }}</i>
+                      </span>
                     </span>
                     <small>BUDGET</small>
                   </div>
@@ -2960,8 +2976,11 @@ async function switchMode(mode) {
 .fund-amount-line.align-right{align-items:flex-end}
 .fund-amount-line em{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
 .overall-fund-stat{width:50%;min-width:0}
-.overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
+.overall-currency-breakdown{display:flex;flex-direction:column;align-items:flex-start;gap:6px;white-space:nowrap}
 .overall-currency-breakdown.align-right{align-items:flex-end}
 .overall-currency-breakdown em{color:#fff;font-size:14px;font-style:normal;font-weight:900}
+.overall-currency-row{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.overall-currency-row.align-right{align-items:flex-end}
+.overall-currency-row i{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
 .overall-fund-stat>small{margin-top:7px}
 </style>
