@@ -63,6 +63,12 @@ public interface MonthlySpendingAnalysisMapper {
             @Param("analysisYearMonth") String analysisYearMonth
     );
 
+    /** 분석 월 안에 여행 저축 집계가 시작된 이력이 있는지 확인한다. */
+    Boolean hasSavingsTrackingStartedByMonth(
+            @Param("userId") Long userId,
+            @Param("analysisYearMonth") String analysisYearMonth
+    );
+
     // ===== 월간 분석 저장·조회 =====
 
     MonthlySpendingAnalysisDto findMonthlyAnalysis(
