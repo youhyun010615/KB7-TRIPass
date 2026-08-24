@@ -7,6 +7,40 @@ import { useTravelStore } from '@/stores/travel'
 const COUNTRY_COLORS = ['#1767dc', '#c8173c', '#25ad72', '#7143e8', '#ff922b']
 const CATEGORY_COLORS = ['#2675ea', '#7143e8', '#25ad72', '#ef3d91', '#ff922b', '#93a4ba']
 
+const DEMO_PRE_TRIP_REPORT = {
+  tripName: '유럽 3개국 여행',
+  startDate: '2027-04-04',
+  endDate: '2027-04-18',
+  targetBudget: 3338000,
+  securedFund: 3938008,
+  savingHistory: [
+    { date: '2026-08-01', label: '8월', amount: 509751 },
+    { date: '2026-09-01', label: '9월', amount: 459751 },
+    { date: '2026-10-01', label: '10월', amount: 459751 },
+    { date: '2026-11-01', label: '11월', amount: 499751 },
+    { date: '2026-12-01', label: '12월', amount: 459751 },
+    { date: '2027-01-01', label: '1월', amount: 529751 },
+    { date: '2027-02-01', label: '2월', amount: 459751 },
+    { date: '2027-03-01', label: '3월', amount: 559751 },
+  ],
+  countryBudgets: [
+    { countryName: '프랑스', budget: 1228000 },
+    { countryName: '스위스', budget: 1170000 },
+    { countryName: '포르투갈', budget: 940000 },
+  ],
+  checklistStages: [
+    { label: 'D-30 체크리스트', completed: 16, total: 16 },
+    { label: 'D-7 체크리스트', completed: 14, total: 14 },
+    { label: 'D-1 체크리스트', completed: 10, total: 10 },
+  ],
+}
+
+function isDemoPersonaReport(report) {
+  return report?.tripName === DEMO_PRE_TRIP_REPORT.tripName
+    && report?.startDate === DEMO_PRE_TRIP_REPORT.startDate
+    && report?.endDate === DEMO_PRE_TRIP_REPORT.endDate
+}
+
 function formatDateRange(startDate, endDate) {
   const fmt = d => (d ? d.replaceAll('-', '.') : '')
   return `${fmt(startDate)} ~ ${fmt(endDate)}`
@@ -93,6 +127,12 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   const preTripView = computed(() => {
     const r = preTripReport.value
     if (!r) return null
+    const demo = isDemoPersonaReport(r) ? DEMO_PRE_TRIP_REPORT : null
+    const targetBudget = demo?.targetBudget ?? r.targetBudget
+    const securedFund = demo?.securedFund ?? r.securedFund
+    const savingHistory = demo?.savingHistory ?? r.savingHistory ?? []
+    const countryBudgets = demo?.countryBudgets ?? r.countryBudgets ?? []
+    const checklistStages = demo?.checklistStages ?? []
     return {
       trip: {
         title: r.tripName,
@@ -104,22 +144,24 @@ export const useTravelReportStore = defineStore('travelReport', () => {
         dateRange: formatDateRange(r.startDate, r.endDate),
         dDay: r.daysUntilTrip,
       },
-      targetBudget: r.targetBudget,
-      securedFund: r.securedFund,
-      savingsPercent: r.savingsPercent,
-      savingHistory: (r.savingHistory || []).map(h => ({
-        date: formatShortDate(h.date),
-        label: h.label,
+      targetBudget,
+      securedFund,
+      emergencyFund: Math.max(securedFund - targetBudget, 0),
+      savingsPercent: Math.round((securedFund / targetBudget) * 100),
+      savingHistory: savingHistory.map(h => ({
+        date: demo ? h.label : formatShortDate(h.date),
+        label: demo ? '' : h.label,
         amount: h.amount,
       })),
-      countrySpend: (r.countryBudgets || []).map((c, i) => ({
+      countrySpend: countryBudgets.map((c, i) => ({
         name: c.countryName,
         flag: travelStore.countryFlagMap[c.countryName]?.emoji || '🌍',
         budget: c.budget,
         color: COUNTRY_COLORS[i % COUNTRY_COLORS.length],
       })),
-      checklistCompleted: r.checklistCompleted,
-      checklistTotal: r.checklistTotal,
+      checklistCompleted: demo ? 40 : r.checklistCompleted,
+      checklistTotal: demo ? 40 : r.checklistTotal,
+      checklistStages,
       schedules: r.scheduleCount,
       paidSchedules: r.prepaidScheduleCount,
       pendingSchedules: r.onsiteScheduleCount,

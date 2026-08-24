@@ -84,6 +84,10 @@ const budgetSegments = computed(() => {
       <p class="big">{{ money(r.securedFund) }} <small>/ {{ money(r.targetBudget) }}</small></p>
       <div class="bar"><span :style="{ width: `${savingPercent}%` }" /></div>
       <p class="sub">달성률 {{ savingPercent }}%</p>
+      <div class="fund-summary">
+        <span>목표보다 더 모은 비상금</span>
+        <b>+{{ money(r.emergencyFund) }}</b>
+      </div>
     </section>
 
     <section class="card">
@@ -119,6 +123,12 @@ const budgetSegments = computed(() => {
 
     <section class="card">
       <h3>여행 준비 현황</h3>
+      <ul v-if="r.checklistStages?.length" class="checklist-stages">
+        <li v-for="stage in r.checklistStages" :key="stage.label">
+          <span>{{ stage.label }}</span>
+          <b>{{ stage.completed }}/{{ stage.total }} 달성</b>
+        </li>
+      </ul>
       <table class="stat-table">
         <tr><td>체크리스트 완료</td><td>{{ r.checklistCompleted }}/{{ r.checklistTotal }}건</td></tr>
         <tr><td>등록된 여행 일정</td><td>{{ r.schedules }}건</td></tr>
@@ -153,6 +163,8 @@ const budgetSegments = computed(() => {
 .card.highlight .bar { height: 6px; margin-top: 10px; border-radius: 4px; background: #d7e6fb; overflow: hidden; }
 .card.highlight .bar span { display: block; height: 100%; border-radius: 4px; background: #176be0; }
 .card.highlight .sub { margin-top: 7px; color: #3970ad; font-size: 9px; }
+.fund-summary { display: flex; align-items: center; justify-content: space-between; margin-top: 11px; padding: 10px 11px; border-radius: 10px; background: rgba(255,255,255,.72); color: #55708f; font-size: 9px; }
+.fund-summary b { color: #16a47d; font-size: 12px; }
 .saving-chart { display: flex; justify-content: space-around; align-items: end; height: 110px; margin-top: 14px; }
 .saving-bar { display: flex; flex-direction: column; align-items: center; justify-content: end; height: 100%; }
 .saving-bar .value { margin-bottom: 4px; font-size: 8px; font-weight: 800; color: #176be0; }
@@ -168,6 +180,9 @@ const budgetSegments = computed(() => {
 .legend li i { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 .legend li b { margin-left: auto; color: #8290a3; font-size: 10px; }
 .stat-table { width: 100%; margin-top: 12px; font-size: 10px; }
+.checklist-stages { display: grid; gap: 7px; margin-top: 12px; }
+.checklist-stages li { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; border-radius: 9px; background: #f3f7ff; color: #55708f; font-size: 9px; }
+.checklist-stages li b { color: #176be0; font-size: 9px; }
 .stat-table td { padding: 7px 0; border-bottom: 1px solid #edf0f4; color: #55708f; }
 .stat-table td:last-child { text-align: right; font-weight: 800; color: #111a2d; }
 .stat-table tr:last-child td { border: 0; }
