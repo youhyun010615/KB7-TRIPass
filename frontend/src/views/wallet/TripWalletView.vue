@@ -390,6 +390,15 @@ const formattedTransferAmountInput = computed({
     amount.value = String(value ?? '').replace(/[^0-9]/g, '')
   },
 })
+const formattedAutoChargeAmount = computed({
+  get: () => {
+    const value = Number(String(autoChargeAmount.value ?? '').replace(/[^0-9]/g, '')) || 0
+    return value ? value.toLocaleString('ko-KR') : ''
+  },
+  set: value => {
+    autoChargeAmount.value = String(value ?? '').replace(/[^0-9]/g, '')
+  },
+})
 
 const maxTransferAmount = computed(() => {
   if (transferMode.value === 'withdraw') return wallet.balance
@@ -419,7 +428,9 @@ function removeKeypadValue() {
 
 function openAutoChargeSetting() {
   autoChargeDay.value = wallet.autoCharge.enabled ? wallet.autoCharge.day : 1
-  autoChargeAmount.value = wallet.autoCharge.enabled ? wallet.autoCharge.amount : 10000
+  autoChargeAmount.value = wallet.autoCharge.enabled
+    ? wallet.autoCharge.amount
+    : monthlySavingGoalTarget.value
   showAutoChargeSetting.value = true
 }
 
@@ -893,8 +904,11 @@ async function confirmUnlinkTravelCard() {
             <div class="modal-field"><span>매월</span><input v-model="autoChargeDay" inputmode="numeric"><b>일</b></div>
           </label>
           <label>
-            송금 금액
-            <div class="modal-field"><input v-model="autoChargeAmount" inputmode="numeric"><b>원</b></div>
+            <span class="auto-charge-amount-label">
+              <span>송금 금액</span>
+              <small>월 저축 목표 금액 {{ money(monthlySavingGoalTarget) }}</small>
+            </span>
+            <div class="modal-field"><input v-model="formattedAutoChargeAmount" inputmode="numeric"><b>원</b></div>
           </label>
           <p>자동으로 주계좌에서 월렛으로 들어와요.</p>
           <button class="modal-save" type="button" @click="saveAutoChargeSetting">설정 저장</button>
@@ -1409,6 +1423,18 @@ async function confirmUnlinkTravelCard() {
   background:#173f8d;
   font-size:14px;
   font-weight:800;
+}
+.auto-charge-amount-label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.auto-charge-amount-label small{
+  color:#8494ad;
+  font-size:10px;
+  font-weight:700;
+  white-space:nowrap;
 }
 @media (max-height:680px){
   .wallet-sheet.charge-sheet{padding-top:14px;padding-bottom:14px}
