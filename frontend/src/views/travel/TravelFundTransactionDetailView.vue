@@ -40,6 +40,7 @@ const countryMeta = {
   DE: { flag: '🇩🇪', name: '독일', city: '베를린', code: 'DE' },
   JP: { flag: '🇯🇵', name: '일본', city: '도쿄', code: 'JP' },
   HK: { flag: '🇭🇰', name: '홍콩', city: '홍콩', code: 'HK' },
+  PT: { flag: '🇵🇹', name: '포르투갈', city: '리스본', code: 'PT' },
 };
 
 // 트랜잭션에 기록된 countryCode(또는 trip_country_id에 맞춘 기본값) 기준 매핑
@@ -147,9 +148,6 @@ const rows = computed(() =>
           </strong>
           <em>약 {{ money(transaction.amount) }}</em>
         </div>
-        <span :style="{ background: `${category?.color || '#98a7ba'}18` }">
-          {{ transaction.icon || '•••' }}
-        </span>
       </section>
       <section class="info-card">
         <div v-for="row in rows" :key="row.label">
@@ -219,7 +217,7 @@ const rows = computed(() =>
   min-height: 100vh;
   margin: 0 auto;
   padding: 14px 20px 105px;
-  background: #f8f6f1;
+  background: #f3f6fc;
   color: #10192d;
 }
 .detail-page > header {
@@ -246,9 +244,7 @@ const rows = computed(() =>
   font-weight: 900;
 }
 .hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: block;
   padding: 18px;
   border: 1px solid #d8e2f0;
   border-radius: 16px;
@@ -278,14 +274,6 @@ const rows = computed(() =>
   color: #94a3b8;
   font-size: 9px;
   font-style: normal;
-}
-.hero > span {
-  display: grid;
-  width: 50px;
-  height: 50px;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 21px;
 }
 .info-card {
   margin-top: 12px;
