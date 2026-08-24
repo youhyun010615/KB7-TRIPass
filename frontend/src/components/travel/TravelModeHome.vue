@@ -719,6 +719,31 @@ function foreignBudgetText(item, krwAmount) {
   })}`;
 }
 
+function destinationForCountry(countryName) {
+  return destinations.value.find(item => item.name === countryName);
+}
+
+function displayAmount(krwAmount, countryDetails = []) {
+  if (amountDisplayCurrency.value === 'krw') return formatWon(krwAmount);
+  if (selected.value.code !== 'all') return foreignBudgetText(selected.value, krwAmount);
+
+  const grouped = new Map();
+  (countryDetails || []).forEach(detail => {
+    const destination = destinationForCountry(detail.countryName);
+    if (!destination?.currency || !destination.rate) return;
+    const code = destination.currency;
+    const amount = (Number(detail.amount || 0) / destination.rate) * Number(destination.unit || 1);
+    grouped.set(code, (grouped.get(code) || 0) + amount);
+  });
+  if (!grouped.size) return formatWon(krwAmount);
+  return [...grouped].map(([code, amount]) => formatForeignBreakdown(code, amount)).join(' · ');
+}
+
+function displayCountryAmount(countryName, amount) {
+  if (amountDisplayCurrency.value === 'krw') return formatWon(amount);
+  return foreignBudgetText(destinationForCountry(countryName), amount);
+}
+
 const allTravelCardBalances = computed(() => tripWalletStore.foreignBalances.map((balance) => {
   const currencyCode = String(balance.currencyCode || balance.code || '').toUpperCase();
   const amount = Number(balance.balanceAmount ?? balance.amount ?? 0);
@@ -1020,7 +1045,7 @@ async function switchMode(mode) {
                 <p>{{ countryDateRange(item) }}</p>
                 <div>
                   <span>{{ item.name }} 총 지출</span>
-                  <strong>{{ formatWon(item.spentAmount) }}</strong>
+                  <strong>{{ amountDisplayCurrency === 'foreign' ? foreignBudgetText(item, item.spentAmount) : formatWon(item.spentAmount) }}</strong>
                 </div>
               </section>
               <template v-else>
@@ -1030,8 +1055,7 @@ async function switchMode(mode) {
                   <small>트래블카드 잔액</small>
                   <div v-if="item.code === 'all'" class="all-travel-card-balances">
                     <div v-for="balance in allTravelCardBalances" :key="balance.currencyCode" class="travel-card-balance-values">
-                      <strong>{{ balance.foreignText }}</strong>
-                      <em>{{ balance.krwText }}</em>
+                      <strong>{{ amountDisplayCurrency === 'foreign' ? balance.foreignText : balance.krwText.replace('약 ', '') }}</strong>
                     </div>
                     <div v-if="!allTravelCardBalances.length" class="travel-card-balance-values">
                       <strong>0.00</strong>
@@ -1039,8 +1063,7 @@ async function switchMode(mode) {
                     </div>
                   </div>
                   <div v-else class="travel-card-balance-values">
-                    <strong>{{ travelCardBalanceText(item) }}</strong>
-                    <em>{{ travelCardBalanceKrwText(item) }}</em>
+                    <strong>{{ amountDisplayCurrency === 'foreign' ? travelCardBalanceText(item) : travelCardBalanceKrwText(item).replace('약 ', '') }}</strong>
                   </div>
                 </div>
               </div>
@@ -1173,7 +1196,7 @@ async function switchMode(mode) {
       </div>
       <div class="budget-total-block">
         <span>총 지출</span>
-        <strong>{{ formatWon(totalCategorySpending) }}</strong>
+        <strong>{{ displayAmount(totalCategorySpending, categorySummary.flatMap(category => category.countryDetails || [])) }}</strong>
       </div>
       <div class="budget-divider"></div>
       <div class="budget-heading">
@@ -1205,7 +1228,7 @@ async function switchMode(mode) {
               v-for="d in cat.details"
               :key="d.countryName"
               @mouseover="
-                showTooltip($event, `${d.countryName}: ${formatWon(d.amount)}`)
+                showTooltip($event, `${d.countryName}: ${displayCountryAmount(d.countryName, d.amount)}`)
               "
               @mouseleave="hideTooltip"
               :style="{
@@ -1219,7 +1242,7 @@ async function switchMode(mode) {
             />
           </div>
         </div>
-        <b class="budget-amount">{{ formatWon(cat.total) }}</b>
+        <b class="budget-amount">{{ displayAmount(cat.total, cat.details) }}</b>
         <b class="budget-ratio">{{ cat.ratio }}%</b>
         <span class="budget-chevron" aria-hidden="true">›</span>
       </button>

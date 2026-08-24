@@ -26,6 +26,29 @@ const countryData = {
 
 const categoryNames = ['쇼핑', '식비', '카페', '교통', '생활비', '취미여가', '기타']
 const countryIdNames = new Map()
+const transactionCache = new Map()
+const categoryIds = { 식비: 1, 교통: 2, 쇼핑: 4, 관광: 5, 기타: 6, 카페: 7, 생활비: 8, 취미여가: 9 }
+const merchantNames = {
+  스위스: {
+    쇼핑: ['Coop City Zürich', 'Victorinox Flagship Store', 'Läderach Zürich'],
+    식비: ['Zeughauskeller', 'Swiss Chuchi Restaurant', 'Hiltl Zürich'],
+    카페: ['Confiserie Sprüngli', 'Café Schober', 'Bäckerei Jung'],
+    교통: ['SBB Mobile', 'Zürich HB 교통권', 'Jungfraubahn'],
+    생활비: ['Migros Zürich', 'Coop Supermarkt'],
+    취미여가: ['Kunsthaus Zürich', 'Jungfraujoch 전망대', '루체른 호수 크루즈'],
+    기타: ['Zürich HB 보관함', '관광 안내소'],
+  },
+  프랑스: {
+    쇼핑: ['Galeries Lafayette', 'Monoprix Paris'], 식비: ['Bouillon Chartier', 'Le Comptoir'],
+    카페: ['Café de Flore', 'Angelina Paris'], 교통: ['Île-de-France Mobilités', 'SNCF Connect'],
+    생활비: ['Carrefour City'], 취미여가: ['Musée du Louvre', 'Bateaux Mouches'], 기타: ['Paris consigne'],
+  },
+  포르투갈: {
+    쇼핑: ['A Vida Portuguesa', 'El Corte Inglés Lisboa'], 식비: ['Time Out Market', 'Cervejaria Ramiro'],
+    카페: ['Pastéis de Belém', 'Fábrica Coffee Roasters'], 교통: ['Viva Viagem', 'Comboios de Portugal'],
+    생활비: ['Pingo Doce'], 취미여가: ['Palácio da Pena', 'Lisbon Oceanarium'], 기타: ['Lisboa Lockers'],
+  },
+}
 
 const daily = [
   ['2027-04-04', '프랑스', 124_740], ['2027-04-05', '프랑스', 238_140],
@@ -220,14 +243,27 @@ export function demoTransactions(base = [], countryId = null, categoryName = '')
         : Math.round(categoryTotal * total / Math.max(rowTotals[name], 1))
       allocated[name] = (allocated[name] || 0) + categoryAmount
     }
-    return {
-      transactionId: `lay-demo-${name}-${date}-${index}`,
+    const displayCategory = normalizedCategory || '기타'
+    const merchants = merchantNames[name]?.[displayCategory] || [`${name} 현지 결제`]
+    const transaction = {
+      transactionId: `lay-demo-${name}-${displayCategory}-${date}-${index}`,
       countryName: name,
-      categoryName: normalizedCategory || '기타',
-      merchantName: `${name} 여행 결제`, amount: categoryAmount,
-      originalAmount: 0, appliedExchangeRate: name === '스위스' ? 1780 : 1620,
+      countryCode: name === '스위스' ? 'CH' : name === '포르투갈' ? 'PT' : 'FR',
+      categoryId: categoryIds[displayCategory] || 6,
+      categoryName: displayCategory,
+      merchantName: merchants[index % merchants.length], amount: categoryAmount,
+      originalAmount: categoryAmount / (name === '스위스' ? 1780 : 1620),
+      appliedExchangeRate: name === '스위스' ? 1780 : 1620,
       currencySymbol: name === '스위스' ? 'CHF' : 'EUR', transactionDate: date,
-      transactionType: 'WITHDRAWAL',
+      transactionTime: `${String(10 + (index % 9)).padStart(2, '0')}:${index % 2 ? '35' : '10'}:00`,
+      transactionType: 'WITHDRAWAL', paymentMethodName: 'KB 트래블러스 체크카드',
+      memo: `${name} 여행 중 ${displayCategory} 결제`,
     }
+    transactionCache.set(String(transaction.transactionId), transaction)
+    return transaction
   }).filter(item => item.amount > 0)
+}
+
+export function getDemoTransaction(transactionId) {
+  return transactionCache.get(String(transactionId)) || null
 }
