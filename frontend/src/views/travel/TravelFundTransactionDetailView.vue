@@ -3,14 +3,10 @@ import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import api from '@/api';
-import { useTravelFundStore } from '@/stores/travelFund';
-import TransactionEditModal from '@/components/asset/TransactionEditModal.vue';
 import { getDemoTransaction, isLay1217Demo } from '@/mocks/lay1217TravelDemo';
 
 const route = useRoute(),
   router = useRouter(),
-  fund = useTravelFundStore(),
-  editMode = ref(null),
   transaction = ref(null);
 
 // 거래 상세 데이터를 다시 가져오는 함수
@@ -30,9 +26,6 @@ const fetchTransaction = async () => {
 
 onMounted(fetchTransaction);
 
-const category = computed(() =>
-  fund.getCategory(transaction.value?.categoryId),
-);
 // 국가별 기본 메타데이터 맵 (프랑스, 스위스, 독일, 일본, 홍콩)
 const countryMeta = {
   FR: { flag: '🇫🇷', name: '프랑스', city: '파리', code: 'FR' },
@@ -165,49 +158,12 @@ const rows = computed(() =>
           </p>
         </div>
       </section>
-      <div class="section-heading">
-        <h2>메모</h2>
-        <button @click="editMode = 'memo'">수정</button>
-      </div>
-      <section class="memo">
-        {{ transaction.memo || '등록된 메모가 없어요.' }}
-      </section>
       <p class="trip-note">
         이 거래는 등록한 {{ country.name }} 여행 기간에 포함된 내역이에요.
       </p></template
     >
     <p v-else class="empty">거래내역을 찾을 수 없어요.</p>
     <BottomNav></BottomNav>
-    <TransactionEditModal
-      :model-value="Boolean(editMode)"
-      :mode="editMode || 'category'"
-      :categories="fund.categories"
-      :selected-category="transaction?.categoryId"
-      :memo="transaction?.memo"
-      @update:model-value="
-        (value) => {
-          if (!value) editMode = null;
-        }
-      "
-      @save-category="
-        async (value) => {
-          await api.patch(`/transactions/${route.params.transactionId}`, {
-            categoryId: value,
-          });
-          editMode = null;
-          await fetchTransaction();
-        }
-      "
-      @save-memo="
-        async (value) => {
-          await api.patch(`/transactions/${route.params.transactionId}`, {
-            memo: value,
-          });
-          editMode = null;
-          await fetchTransaction();
-        }
-      "
-    />
   </main>
 </template>
 
@@ -306,30 +262,13 @@ const rows = computed(() =>
   font-size: 11px;
   line-height: 1.4;
 }
-.info-card button,
-.section-heading button {
+.info-card button {
   padding: 4px 7px;
   border-radius: 7px;
   background: #edf4ff;
   color: #286dd8;
   font-size: 8px;
   font-weight: 900;
-}
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  margin: 20px 3px 9px;
-}
-.section-heading h2 {
-  font-size: 12px;
-}
-.memo {
-  min-height: 54px;
-  padding: 15px;
-  border: 1px solid #dbe3ef;
-  border-radius: 12px;
-  background: #fff;
-  font-size: 11px;
 }
 .trip-note {
   margin-top: 12px;
