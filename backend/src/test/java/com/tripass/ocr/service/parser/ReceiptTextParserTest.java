@@ -121,6 +121,32 @@ class ReceiptTextParserTest {
     }
 
     @Test
+    void parsesEuropeanDateAndTimeSeparatedBySlash() {
+        String rawText =
+                """
+                Berghotel Grosse Scheidegg
+                3818 Grindelwald
+                30.07.2007/13:29:17
+                Total CHF 54.50
+                """;
+
+        ParsedReceiptData result =
+                parse(rawText, "de");
+
+        assertEquals(
+                LocalDateTime.of(
+                        2007,
+                        7,
+                        30,
+                        13,
+                        29,
+                        17
+                ),
+                result.getPaymentDateTime()
+        );
+    }
+
+    @Test
     void parsesKoreanReceiptMainFields() {
         String rawText =
                 """

@@ -81,13 +81,37 @@ function separatePaymentDateTime(value) {
     }
   }
 
-  const [date = '', time = ''] =
-      String(value).split('T')
+  const matched = String(value).trim().match(
+      /^(\d{4}-\d{1,2}-\d{1,2})[T/\s]+(\d{1,2}:\d{2})/,
+  )
 
   return {
-    date,
-    time: time.substring(0, 5),
+    date: matched?.[1] ?? '',
+    time: matched?.[2] ?? '',
   }
+}
+
+function extractPaymentDateTimeFromRawText(rawText) {
+  if (!rawText) return ''
+
+  const text = String(rawText)
+  const yearFirst = text.match(
+      /(?:^|\D)(\d{4})[./-](\d{1,2})[./-](\d{1,2})[ T/]+(\d{1,2}):(\d{2})(?::(\d{2}))?/,
+  )
+  const yearLast = text.match(
+      /(?:^|\D)(\d{1,2})[./-](\d{1,2})[./-](\d{4})[ T/]+(\d{1,2}):(\d{2})(?::(\d{2}))?/,
+  )
+  const matched = yearFirst ?? yearLast
+
+  if (!matched) return ''
+
+  const [, first, second, third, hour, minute, secondValue = '00'] = matched
+  const [year, month, day] = yearFirst
+      ? [first, second, third]
+      : [third, second, first]
+  const pad = (value) => String(value).padStart(2, '0')
+
+  return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${minute}:${secondValue}`
 }
 
 const initialDateTime =
@@ -395,7 +419,10 @@ function decreaseSplitCount() {
 function applyReceiptData(data) {
   const dateTime =
       separatePaymentDateTime(
-          data.paymentDateTime,
+          data.paymentDateTime ||
+          extractPaymentDateTimeFromRawText(
+              data.ocrRawText,
+          ),
       )
 
   form.countryId =
@@ -1072,7 +1099,10 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- 영수증 인식 결과 -->
-      <section class="receipt-paper tripass-receipt-document">
+      <section
+          class="receipt-paper tripass-receipt-document"
+          :class="{ 'is-editing': editing }"
+      >
         <div class="receipt-paper-heading">
           <span>TRIPASS</span>
           <b>여행 영수증</b>
@@ -2954,3 +2984,58 @@ onBeforeUnmount(() => {
 </style>
 
 <style src="../../assets/receipt-document.css"></style>
+
+<style scoped>
+.result-page .tripass-receipt-document.is-editing .datetime-field {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.result-page .tripass-receipt-document.is-editing .datetime-field .field,
+.result-page .tripass-receipt-document.is-editing .datetime-field input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.result-page .tripass-receipt-document.is-editing .datetime-field input {
+  display: block;
+  padding: 0 10px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.result-page .tripass-receipt-document.is-editing .receipt-item {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.result-page .tripass-receipt-document.is-editing .item-name-area,
+.result-page .tripass-receipt-document.is-editing .item-edit-area,
+.result-page .tripass-receipt-document.is-editing .item-edit-area label {
+  min-width: 0;
+}
+
+.result-page .tripass-receipt-document.is-editing .item-edit-area {
+  width: 100%;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.15fr) auto;
+  gap: 6px;
+}
+
+.result-page .tripass-receipt-document.is-editing .item-name-area input,
+.result-page .tripass-receipt-document.is-editing .item-edit-area input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 360px) {
+  .result-page .tripass-receipt-document.is-editing .receipt-item {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

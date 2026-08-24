@@ -33,7 +33,7 @@ public class ReceiptTextParser {
             Pattern.compile(
                     "(?<!\\d)"
                             + "(\\d{4})[./-](\\d{1,2})[./-](\\d{1,2})"
-                            + "[ T]+"
+                            + "[ T/]+"
                             + "(\\d{1,2}):(\\d{2})(?::(\\d{2}))?"
             );
 
@@ -42,7 +42,7 @@ public class ReceiptTextParser {
             Pattern.compile(
                     "(?<!\\d)"
                             + "(\\d{1,2})[./-](\\d{1,2})[./-](\\d{4})"
-                            + "[ T]+"
+                            + "[ T/]+"
                             + "(\\d{1,2}):(\\d{2})(?::(\\d{2}))?"
             );
 
