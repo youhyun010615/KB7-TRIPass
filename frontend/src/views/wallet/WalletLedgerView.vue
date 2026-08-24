@@ -104,9 +104,15 @@ onMounted(async () => {
 
     <div class="filter-row">
       <div class="date-filter">
-        <input v-model="dateFrom" type="date" :max="dateTo || undefined">
+        <label class="date-input-wrap" :class="{ empty: !dateFrom }">
+          <span v-if="!dateFrom">연도. 월. 일.</span>
+          <input v-model="dateFrom" type="date" :max="dateTo || undefined" aria-label="조회 시작일">
+        </label>
         <span>~</span>
-        <input v-model="dateTo" type="date" :min="dateFrom || undefined">
+        <label class="date-input-wrap" :class="{ empty: !dateTo }">
+          <span v-if="!dateTo">연도. 월. 일.</span>
+          <input v-model="dateTo" type="date" :min="dateFrom || undefined" aria-label="조회 종료일">
+        </label>
       </div>
       <select v-model="sortOption" class="sort-select">
         <option v-for="option in sortOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
@@ -149,4 +155,5 @@ onMounted(async () => {
 .ledger-card{margin-top:9px;padding:0 14px;border-radius:18px}.ledger-line{grid-template-columns:34px 1fr auto;gap:10px;padding:12px 0}
 .ledger-line>span{width:32px;height:32px;border-radius:10px;font-size:18px}.ledger-line b{display:flex;align-items:center;gap:6px;font-size:13px}.ledger-line b span{display:inline;width:auto;height:auto;border-radius:0;font-size:inherit}.ledger-line small{margin-top:4px;font-size:10px}.ledger-line strong{font-size:13px}
 .currency-flow{flex:none;padding:3px 6px;border-radius:999px;background:#eaf2ff;color:#246bf2;font-size:9px;font-style:normal;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.date-input-wrap{position:relative;display:block;min-width:86px;flex:1}.date-input-wrap>span{position:absolute;top:50%;left:9px;z-index:1;color:#374151;font-size:10px;font-weight:600;transform:translateY(-50%);pointer-events:none}.date-input-wrap input{width:100%;min-width:0}.date-input-wrap.empty input{color:transparent}.date-input-wrap.empty input::-webkit-datetime-edit{color:transparent}.date-input-wrap input::-webkit-calendar-picker-indicator{position:relative;z-index:2;opacity:1}
 </style>
