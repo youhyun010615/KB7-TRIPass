@@ -14,6 +14,21 @@ function canonicalDemoTrips(trips = []) {
   return matches.length ? [matches[0]] : [];
 }
 
+function isDemoJapanTrip(trip = {}) {
+  if (String(trip.tripName || '').includes('일본')) return true;
+  return (trip.countries || []).some((country) =>
+    String(country.countryName || country.name || '').includes('일본'));
+}
+
+async function removeDemoJapanTrips(trips = []) {
+  if (!isLay1217Demo()) return trips;
+  const japanTrips = trips.filter(isDemoJapanTrip);
+  if (japanTrips.length) {
+    await Promise.allSettled(japanTrips.map((trip) => api.delete(`/trips/${trip.tripId}`)));
+  }
+  return trips.filter((trip) => !isDemoJapanTrip(trip));
+}
+
 function demoStartReportKey(tripId) {
   return `tripass-demo-start-report:${DEMO_REPORT_RESET_VERSION}:${tripId}`;
 }
@@ -31,7 +46,7 @@ export async function fetchTripCountries(keyword = '') {
 
 export async function fetchMyTrips() {
   const response = await api.get('/trips');
-  return canonicalDemoTrips(unwrap(response));
+  return canonicalDemoTrips(await removeDemoJapanTrips(unwrap(response)));
 }
 
 export async function createTripGoal(payload) {
@@ -59,7 +74,8 @@ export async function fetchCurrentTripLifecycle() {
   if (!isLay1217Demo()) return data;
 
   const tripsResponse = await api.get('/trips');
-  const demoTrip = canonicalDemoTrips(unwrap(tripsResponse))[0];
+  const demoTrips = await removeDemoJapanTrips(unwrap(tripsResponse));
+  const demoTrip = canonicalDemoTrips(demoTrips)[0];
   if (!demoTrip) return data;
   if (localStorage.getItem(demoArchivedTripKey(demoTrip.tripId)) === 'true') {
     return {
