@@ -764,6 +764,19 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
   gap: 7px;
 }
 
+.split > input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.split > input::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
 .money {
   display: grid;
   grid-template-columns: 130px 1fr 40px;
