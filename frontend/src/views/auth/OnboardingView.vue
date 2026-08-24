@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
-import aiIcon from '@/assets/icons/ai.svg'
-import moneyExchangeIcon from '@/assets/icons/money-exchange.svg'
+import onboardingAiIcon from '@/assets/icons/onboarding-ai.svg'
+import onboardingMoneyExchangeIcon from '@/assets/icons/onboarding-money-exchange.svg'
 
 const router = useRouter()
 
@@ -179,9 +179,9 @@ function onTouchEnd() {
                   <div class="journey-feature-strip" aria-label="TRIPASS 주요 기능">
                     <div><span>₩</span><strong>저축 목표</strong></div>
                     <i aria-hidden="true"></i>
-                    <div><span><i class="journey-feature-icon" :style="{ maskImage: `url(${moneyExchangeIcon})`, WebkitMaskImage: `url(${moneyExchangeIcon})` }" aria-hidden="true"></i></span><strong>여행 지출</strong></div>
+                    <div><span><img :src="onboardingMoneyExchangeIcon" alt="" /></span><strong>여행 지출</strong></div>
                     <i aria-hidden="true"></i>
-                    <div class="ai-feature"><span><i class="journey-feature-icon" :style="{ maskImage: `url(${aiIcon})`, WebkitMaskImage: `url(${aiIcon})` }" aria-hidden="true"></i></span><strong>AI 리포트</strong></div>
+                    <div class="ai-feature"><span><img :src="onboardingAiIcon" alt="" /></span><strong>AI 리포트</strong></div>
                   </div>
                 </div>
 
@@ -1510,17 +1510,10 @@ function onTouchEnd() {
   font-weight: 900;
 }
 
-.journey-feature-icon {
-  display: block;
+.journey-feature-strip div span img {
   width: 18px;
   height: 18px;
-  background: var(--yellow);
-  mask-position: center;
-  mask-repeat: no-repeat;
-  mask-size: contain;
-  -webkit-mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
+  object-fit: contain;
 }
 
 .journey-feature-strip div strong {
@@ -1549,7 +1542,7 @@ function onTouchEnd() {
 .slide.is-active .journey-feature-strip > i:nth-of-type(2) { animation-delay: 940ms; }
 .slide.is-active .journey-feature-strip div span { animation: feature-pulse 2.4s ease-in-out 1.3s infinite; }
 .slide.is-active .journey-feature-strip .ai-feature span { animation: ai-feature-orbit 2.8s ease-in-out 1.3s infinite; }
-.slide.is-active .journey-feature-strip .ai-feature .journey-feature-icon { animation: ai-feature-blink 1.8s ease-in-out 1.3s infinite; }
+.slide.is-active .journey-feature-strip .ai-feature span img { animation: ai-feature-blink 1.8s ease-in-out 1.3s infinite; }
 
 .saving-visual {
   gap: 12px;
@@ -2462,7 +2455,7 @@ function onTouchEnd() {
   .slide.is-active .journey-feature-strip > i,
   .slide.is-active .journey-feature-strip div span,
   .slide.is-active .journey-feature-strip .ai-feature span,
-  .slide.is-active .journey-feature-strip .ai-feature .journey-feature-icon,
+  .slide.is-active .journey-feature-strip .ai-feature span img,
   .slide.is-active .brand-logo-halo,
   .slide.is-active .brand-flight-path span,
   .slide.is-active .brand-flight-path b,
