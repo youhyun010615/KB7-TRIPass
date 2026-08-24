@@ -76,19 +76,44 @@
     </select>
 
     <select id="findActualSavingAmount" resultType="java.math.BigDecimal">
-        SELECT COALESCE(SUM(
-            CASE
-                WHEN wl.direction = 'IN' THEN wl.amount
-                WHEN wl.direction = 'OUT' THEN -wl.amount
-                ELSE 0
-            END
-        ), 0)
-        FROM wallet_ledger wl
-                 JOIN wallet w ON w.id = wl.wallet_id
-        WHERE w.user_id = #{userId}
-          AND w.status = 'ACTIVE'
-          AND wl.transaction_type != 'ADJUST'
-          AND DATE_FORMAT(wl.created_at, '%Y-%m') = #{analysisYearMonth}
+        SELECT CASE
+            WHEN EXISTS (
+                SELECT 1
+                FROM trips t
+                WHERE t.user_id = #{userId}
+                  AND t.is_deleted = 0
+                  AND t.savings_tracking_started_at IS NOT NULL
+                  AND t.savings_tracking_started_at <![CDATA[<]]>
+                      DATE_ADD(STR_TO_DATE(CONCAT(#{analysisYearMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
+            ) THEN (
+                SELECT COALESCE(SUM(
+                    CASE
+                        WHEN wl.direction = 'IN' THEN wl.amount
+                        WHEN wl.direction = 'OUT' THEN -wl.amount
+                        ELSE 0
+                    END
+                ), 0)
+                FROM wallet_ledger wl
+                         JOIN wallet w ON w.id = wl.wallet_id
+                WHERE w.user_id = #{userId}
+                  AND w.status = 'ACTIVE'
+                  AND wl.transaction_type != 'ADJUST'
+                  AND DATE_FORMAT(wl.created_at, '%Y-%m') = #{analysisYearMonth}
+            )
+            ELSE NULL
+        END
+    </select>
+
+    <select id="hasSavingsTrackingStartedByMonth" resultType="java.lang.Boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM trips t
+            WHERE t.user_id = #{userId}
+              AND t.is_deleted = 0
+              AND t.savings_tracking_started_at IS NOT NULL
+              AND t.savings_tracking_started_at <![CDATA[<]]>
+                  DATE_ADD(STR_TO_DATE(CONCAT(#{analysisYearMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
+        )
     </select>
 
     <!-- ===== 월간 분석 저장·조회 ===== -->

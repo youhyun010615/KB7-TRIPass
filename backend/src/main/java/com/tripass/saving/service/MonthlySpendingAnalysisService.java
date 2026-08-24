@@ -614,8 +614,14 @@ public class MonthlySpendingAnalysisService {
         List<MonthlyCategoryAnalysisDto> categoryRows = mapper.findCategoryAnalyses(analysis.getId());
         List<MonthlyCategoryAnalysisDto> recommendedRows = mapper.findRecommendedCategoryAnalyses(analysis.getId());
 
+        // 과거 버전에서 집계 시작 전 달을 실제 저축 0원으로 저장했더라도 응답에서는 집계 불가로 보정한다.
+        // Boolean null은 단위 테스트의 기존 mock 및 레거시 mapper 호환을 위해 기존 저장값을 유지한다.
+        Boolean trackingStarted = mapper.hasSavingsTrackingStartedByMonth(userId, analysisYearMonth.toString());
+        BigDecimal responseActualSavingAmount = Boolean.FALSE.equals(trackingStarted)
+                ? null
+                : analysis.getActualSavingAmount();
         SavingResultResponseDto savingResult = savingResultCalculator.calculate(
-                analysis.getSavingTargetAmount(), analysis.getActualSavingAmount());
+                analysis.getSavingTargetAmount(), responseActualSavingAmount);
 
         List<SpendingCategoryResponseDto> spendingCategories = categoryRows.stream()
                 .map(category -> new SpendingCategoryResponseDto(

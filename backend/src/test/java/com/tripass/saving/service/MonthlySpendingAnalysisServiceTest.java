@@ -387,6 +387,31 @@ class MonthlySpendingAnalysisServiceTest {
     }
 
     @Test
+    @DisplayName("여행 저축 집계 시작 전 달은 저장된 0원 대신 집계 불가로 응답한다")
+    void get_monthBeforeSavingsTrackingStarted_returnsUnavailable() {
+        MonthlySpendingAnalysisDto analysis = new MonthlySpendingAnalysisDto();
+        analysis.setId(1L);
+        analysis.setAnalysisYearMonth("2026-07");
+        analysis.setTargetYearMonth("2026-08");
+        analysis.setSavingTargetAmount(new BigDecimal("700000"));
+        analysis.setActualSavingAmount(BigDecimal.ZERO);
+        analysis.setSavingDifferenceAmount(new BigDecimal("-700000"));
+        analysis.setReportStatus("PENDING");
+
+        when(mapper.findMonthlyAnalysis(USER_ID, "2026-07")).thenReturn(analysis);
+        when(mapper.hasSavingsTrackingStartedByMonth(USER_ID, "2026-07")).thenReturn(false);
+        when(mapper.findCategoryAnalyses(1L)).thenReturn(List.of());
+        when(mapper.findRecommendedCategoryAnalyses(1L)).thenReturn(List.of());
+
+        MonthlyAnalysisResponseDto response = service.getMonthlyAnalysis(USER_ID, ANALYSIS_MONTH);
+
+        assertEquals(SavingResultStatus.UNAVAILABLE, response.savingResult().status());
+        assertNull(response.savingResult().actualAmount());
+        assertNull(response.savingResult().differenceAmount());
+        assertEquals("아직 집계할 수 있는 저축 내역이 없어요.", response.savingResult().resultMessage());
+    }
+
+    @Test
     @DisplayName("추천 카테고리 응답에는 근거 문구만 담기고 코칭 문구는 담기지 않는다")
     void get_recommendedCategories_containsOnlyReason() {
         MonthlySpendingAnalysisDto analysis = new MonthlySpendingAnalysisDto();
