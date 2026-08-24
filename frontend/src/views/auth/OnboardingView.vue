@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import tripassTransparentSymbol from '@/assets/brand/tripass-symbol-transparent-v2.png'
 import onboardingAiIcon from '@/assets/icons/onboarding-ai.svg'
@@ -43,6 +43,16 @@ const routeProgress = computed(() => `${(current.value / (slides.length - 1)) * 
 const trackTransform = computed(() => {
   const dragOffset = isDragging.value ? touchDeltaX.value : 0
   return `translateX(calc(-${current.value * 100}% + ${dragOffset}px))`
+})
+
+onMounted(() => {
+  document.documentElement.classList.add('onboarding-active')
+  document.body.classList.add('onboarding-active')
+})
+
+onBeforeUnmount(() => {
+  document.documentElement.classList.remove('onboarding-active')
+  document.body.classList.remove('onboarding-active')
 })
 
 function rememberOnboarding() {
@@ -312,13 +322,33 @@ function onTouchEnd() {
   --yellow: #ffd45e;
   position: relative;
   display: flex;
-  min-height: 100dvh;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
   flex-direction: column;
   overflow: hidden;
   color: white;
   background: radial-gradient(120% 90% at 50% 0%, #2456b8 0%, #173d8f 46%, #0c2564 100%);
   isolation: isolate;
-  touch-action: pan-y;
+  overscroll-behavior: none;
+  touch-action: pan-x;
+}
+
+:global(html.onboarding-active),
+:global(body.onboarding-active) {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #173d8f;
+}
+
+:global(body.onboarding-active #app) {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .onboarding::after {
