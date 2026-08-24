@@ -320,7 +320,8 @@ function onTouchEnd() {
   --navy: #0d2e72;
   --navy-light: #285ec5;
   --yellow: #ffd45e;
-  position: relative;
+  position: fixed;
+  inset: 0;
   display: flex;
   width: 100%;
   height: 100vh;
@@ -342,7 +343,7 @@ function onTouchEnd() {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  background: #173d8f;
+  background: #2456b8;
 }
 
 :global(body.onboarding-active #app) {
