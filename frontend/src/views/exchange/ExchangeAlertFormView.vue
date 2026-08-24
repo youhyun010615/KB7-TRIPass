@@ -51,8 +51,7 @@ const travelCurrencies = computed(() => {
         && String(item.countryId) === String(plan.countryId))
       || (plan.name && item.countryName === plan.name)
     )))
-    .filter(Boolean)
-    .sort((a, b) => (a.countryName || '').localeCompare(b.countryName || '', 'ko-KR'));
+    .filter(Boolean);
 });
 
 const availableCurrencies = computed(() => {
