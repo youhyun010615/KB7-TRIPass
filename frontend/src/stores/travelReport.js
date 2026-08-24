@@ -3,9 +3,11 @@ import { defineStore } from 'pinia'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { fetchTripGoal, fetchBudgetCheck } from '@/api/travel'
 import { useTravelStore } from '@/stores/travel'
+import { useAuthStore } from '@/stores/auth'
 
 const COUNTRY_COLORS = ['#1767dc', '#c8173c', '#25ad72', '#7143e8', '#ff922b']
 const CATEGORY_COLORS = ['#2675ea', '#7143e8', '#25ad72', '#ef3d91', '#ff922b', '#93a4ba']
+const DEMO_REPORT_ACCOUNTS = new Set(['lay1217', 'ahyoung021217@gmail.com'])
 
 const DEMO_PRE_TRIP_REPORT = {
   tripName: '유럽 3개국 여행',
@@ -35,10 +37,11 @@ const DEMO_PRE_TRIP_REPORT = {
   ],
 }
 
-function isDemoPersonaReport(report) {
-  return report?.tripName === DEMO_PRE_TRIP_REPORT.tripName
-    && report?.startDate === DEMO_PRE_TRIP_REPORT.startDate
-    && report?.endDate === DEMO_PRE_TRIP_REPORT.endDate
+function isDemoReportAccount(user) {
+  const identifiers = [user?.loginId, user?.email]
+    .filter(Boolean)
+    .map(value => String(value).trim().toLowerCase())
+  return identifiers.some(identifier => DEMO_REPORT_ACCOUNTS.has(identifier))
 }
 
 function formatDateRange(startDate, endDate) {
@@ -60,6 +63,7 @@ function statusLabel(status) {
 
 export const useTravelReportStore = defineStore('travelReport', () => {
   const travelStore = useTravelStore()
+  const authStore = useAuthStore()
 
   const tripBasic = ref(null)
   const preTripReport = ref(null)
@@ -127,7 +131,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   const preTripView = computed(() => {
     const r = preTripReport.value
     if (!r) return null
-    const demo = isDemoPersonaReport(r) ? DEMO_PRE_TRIP_REPORT : null
+    const demo = isDemoReportAccount(authStore.user) ? DEMO_PRE_TRIP_REPORT : null
     const targetBudget = demo?.targetBudget ?? r.targetBudget
     const securedFund = demo?.securedFund ?? r.securedFund
     const countryBudgets = demo?.countryBudgets ?? r.countryBudgets ?? []
