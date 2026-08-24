@@ -108,13 +108,6 @@ const wonRates = {
 const wonAmount = computed(() =>
     Math.round(Number(form.amount || 0) * (wonRates[form.currency] || 1)),
 );
-const tripDateRange = computed(() => {
-  const plans = availableCountries.value;
-  const starts = plans.map((item) => item.startDate).filter(Boolean).sort();
-  const ends = plans.map((item) => item.endDate).filter(Boolean).sort();
-  return starts.length && ends.length ? `${starts[0].replaceAll('-', '.')} ~ ${ends.at(-1).replaceAll('-', '.')}` : '';
-});
-
 function applyCountry() {
   if (!country.value) return;
   form.currency = country.value.currency;
@@ -278,10 +271,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
       <h1>여행일정 {{ editing ? '수정' : '추가' }}</h1>
       <span/>
     </header>
-    <section v-if="editing" class="trip-summary">
-      <div><b>{{ travel.tripName || '여행 일정' }}</b><small>{{ tripDateRange }}</small></div>
-      <span>여행 중</span>
-    </section>
     <section class="form-card">
       <div class="section-title"><h2>일정 정보</h2>
         <p>여행 중 방문할 일정 정보를 입력해요.</p></div>
@@ -666,50 +655,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
   margin-left: auto;
   flex: none;
   color: #246dd7
-}
-
-.trip-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  padding: 17px 18px;
-  border: 1px solid #d5e1f3;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 8px 20px rgba(23, 63, 141, .07)
-}
-
-.trip-summary div {
-  min-width: 0
-}
-
-.trip-summary b, .trip-summary small {
-  display: block
-}
-
-.trip-summary b {
-  overflow: hidden;
-  font-size: 15px;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap
-}
-
-.trip-summary small {
-  margin-top: 6px;
-  color: #8493a9;
-  font-size: 10px
-}
-
-.trip-summary > span {
-  flex: none;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: #214d97;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 900
 }
 
 .section-title {
