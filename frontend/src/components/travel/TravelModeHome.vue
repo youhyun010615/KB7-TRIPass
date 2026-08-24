@@ -1013,7 +1013,13 @@ async function switchMode(mode) {
               <i v-if="currentTravelCountry" :class="flagIconClass(countryFlagMap[currentTravelCountry.countryName])" />
             </span>
             <span class="ticket-meta-divider" aria-hidden="true" />
-            <span class="ticket-meta-day">DAY {{ currentDay }}</span>
+            <span class="ticket-meta-day-area">
+              <span class="amount-currency-toggle ticket-currency-toggle" aria-label="예산 금액 표시 통화">
+                <button type="button" :class="{ active: amountDisplayCurrency === 'foreign' }" :aria-pressed="amountDisplayCurrency === 'foreign'" @click="setAmountDisplayCurrency('foreign')">외화</button>
+                <button type="button" :class="{ active: amountDisplayCurrency === 'krw' }" :aria-pressed="amountDisplayCurrency === 'krw'" @click="setAmountDisplayCurrency('krw')">원화</button>
+              </span>
+              <span class="ticket-meta-day">DAY {{ currentDay }}</span>
+            </span>
           </div>
           <div class="perforation"><i /><span /><i /></div>
           <div class="ticket-main">
@@ -1077,10 +1083,6 @@ async function switchMode(mode) {
                 <div class="fund-progress-head">
                   <span class="fund-progress-title">
                     전체 예산 사용률
-                    <span class="amount-currency-toggle" aria-label="예산 금액 표시 통화">
-                      <button type="button" :class="{ active: amountDisplayCurrency === 'foreign' }" :aria-pressed="amountDisplayCurrency === 'foreign'" @click="setAmountDisplayCurrency('foreign')">외화</button>
-                      <button type="button" :class="{ active: amountDisplayCurrency === 'krw' }" :aria-pressed="amountDisplayCurrency === 'krw'" @click="setAmountDisplayCurrency('krw')">원화</button>
-                    </span>
                   </span><strong>{{ fundPercent(item) }}%</strong>
                 </div>
                 <div class="fund-progress-track">
@@ -1119,10 +1121,6 @@ async function switchMode(mode) {
                 <div class="fund-progress-head">
                   <span class="fund-progress-title">
                     {{ item.name }} 예산 사용률
-                    <span class="amount-currency-toggle" aria-label="예산 금액 표시 통화">
-                      <button type="button" :class="{ active: amountDisplayCurrency === 'foreign' }" :aria-pressed="amountDisplayCurrency === 'foreign'" @click="setAmountDisplayCurrency('foreign')">외화</button>
-                      <button type="button" :class="{ active: amountDisplayCurrency === 'krw' }" :aria-pressed="amountDisplayCurrency === 'krw'" @click="setAmountDisplayCurrency('krw')">원화</button>
-                    </span>
                   </span><strong>{{ fundPercent(item) }}%</strong>
                 </div>
                 <div class="fund-progress-track">
@@ -3044,6 +3042,7 @@ async function switchMode(mode) {
 .perforation:not(.lower),.perforation.lower{transform:translateY(-11px)}
 .travel-card-balance{display:flex;flex-direction:column;align-items:flex-start;text-align:left}.travel-card-balance small{color:rgba(255,255,255,.72);font-size:8px;font-weight:700}.travel-card-balance strong{margin-top:2px;color:#fff;font-family:inherit;font-size:11px;font-weight:900}
 .fund-progress-title{display:inline-flex;align-items:center;gap:7px}.amount-currency-toggle{display:inline-flex;padding:2px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(4,17,48,.45)}.amount-currency-toggle button{min-width:29px;padding:3px 6px;border:0;border-radius:999px;background:transparent;color:rgba(255,255,255,.66);font-size:7px;font-weight:900;line-height:1}.amount-currency-toggle button.active{background:#fff;color:#17499c;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.ticket-meta-day-area{display:flex;flex:none;align-items:center;flex-direction:column;gap:2px}.ticket-currency-toggle{padding:1px}.ticket-currency-toggle button{min-width:22px;padding:2px 4px;font-size:6px}.ticket-meta-day-area .ticket-meta-day{display:block}
 .ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
 .return-checklist-icon{display:inline-flex;flex:none;align-items:center;flex-direction:column;gap:4px;padding:7px 9px 6px;border:1px solid rgba(255,255,255,.38);border-radius:12px;background:rgba(7,22,55,.76);color:#ffd466;font-family:'Space Mono',ui-monospace,monospace;font-size:7px;font-weight:900;letter-spacing:.04em;box-shadow:0 7px 16px rgba(3,17,45,.24);backdrop-filter:blur(7px);animation:return-checklist-float 2.4s ease-in-out infinite}.return-checklist-icon img{width:27px;height:27px;padding:5px;border-radius:8px;background:#fff;object-fit:contain}.return-checklist-icon:active{transform:scale(.96)}@keyframes return-checklist-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .travel-card-balance-values{display:flex;align-items:baseline;gap:8px}.travel-card-balance-values em{color:#8cebbf;font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}
