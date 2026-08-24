@@ -379,7 +379,7 @@ function onTouchEnd() {
 }
 
 .ambient-top {
-  top: 24px;
+  top: -72px;
   right: -60px;
   width: 230px;
   height: 230px;
