@@ -6,6 +6,12 @@ import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
 import livingIcon from '@/assets/icons/home-dollar.svg';
+import foodIconRaw from '@/assets/icons/food.svg?raw';
+import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
+import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
+import taxiIconRaw from '@/assets/icons/taxi.svg?raw';
+import leisureIconRaw from '@/assets/icons/hobby_drink.svg?raw';
+import livingIconRaw from '@/assets/icons/home-dollar.svg?raw';
 
 const props = defineProps({
   report: { type: Object, required: true },
@@ -21,6 +27,15 @@ const categoryMeta = {
   LEISURE: { icon: '🎮', iconSrc: leisureIcon, color: '#8b5cf6' },
   TRANSPORT: { icon: '🚌', iconSrc: taxiIcon, color: '#0ea5e9' },
   OTHER: { icon: '•••', color: '#64748b' },
+};
+
+const categoryIconRaw = {
+  FOOD: foodIconRaw,
+  CAFE: cafeIconRaw,
+  LIVING: livingIconRaw,
+  SHOPPING: shoppingIconRaw,
+  LEISURE: leisureIconRaw,
+  TRANSPORT: taxiIconRaw,
 };
 
 const analysisMonthLabel = computed(() => {
@@ -50,6 +65,18 @@ function formatCurrency(value) {
 
 function metaOf(categoryCode) {
   return categoryMeta[categoryCode] || categoryMeta.OTHER;
+}
+
+function darken(hex, amount = 0.3) {
+  const value = Number.parseInt(String(hex || '').replace('#', ''), 16);
+  if (Number.isNaN(value)) return hex;
+  const channel = (shift) => Math.max(0, Math.round(((value >> shift) & 255) * (1 - amount)));
+  return `rgb(${channel(16)}, ${channel(8)}, ${channel(0)})`;
+}
+
+function coloredCategoryIcon(categoryCode) {
+  const raw = categoryIconRaw[categoryCode];
+  return raw?.replaceAll('black', darken(metaOf(categoryCode).color)) || '';
 }
 </script>
 
@@ -113,7 +140,11 @@ function metaOf(categoryCode) {
       >
         <b>{{ category.rank }}</b>
         <i :style="{ background: `${metaOf(category.categoryCode).color}18` }">
-          <img v-if="metaOf(category.categoryCode).iconSrc" :src="metaOf(category.categoryCode).iconSrc" alt="" />
+          <span
+            v-if="categoryIconRaw[category.categoryCode]"
+            class="category-icon-glyph"
+            v-html="coloredCategoryIcon(category.categoryCode)"
+          ></span>
           <template v-else>{{ metaOf(category.categoryCode).icon }}</template>
         </i>
         <div>
@@ -318,7 +349,9 @@ function metaOf(categoryCode) {
   font-size: 14px;
   font-style: normal;
 }
-.category-row > i img {
+.category-icon-glyph,
+.category-icon-glyph :deep(svg) {
+  display: block;
   width: 16px;
   height: 16px;
 }
