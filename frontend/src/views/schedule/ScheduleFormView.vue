@@ -762,14 +762,23 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeDropdowns
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 9px;
 }
 
 .split > input {
   display: block;
+  inline-size: 100%;
   width: 100%;
+  min-inline-size: 0;
   min-width: 0;
   max-width: 100%;
+  height: 45px;
   box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .split > input::-webkit-date-and-time-value {
