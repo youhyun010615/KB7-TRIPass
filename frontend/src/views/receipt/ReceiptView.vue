@@ -501,10 +501,22 @@ async function resetDateFilter() {
 
 function openSettlements() {
   activeVaultView.value = 'settlements'
+  if (!isArchiveView.value && route.name !== 'ReceiptSettlements') {
+    router.replace({
+      name: 'ReceiptSettlements',
+      params: { tripId: tripId.value },
+    })
+  }
 }
 
 function openReceipts() {
   activeVaultView.value = 'receipts'
+  if (!isArchiveView.value && route.name !== 'Receipt') {
+    router.replace({
+      name: 'Receipt',
+      params: { tripId: tripId.value },
+    })
+  }
 }
 
 function openReceipt(receiptId) {
