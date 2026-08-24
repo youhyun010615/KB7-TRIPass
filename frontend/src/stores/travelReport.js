@@ -13,6 +13,7 @@ const DEMO_PRE_TRIP_REPORT = {
   tripName: '유럽 3개국 여행',
   startDate: '2027-04-04',
   endDate: '2027-04-18',
+  countryNames: ['프랑스', '스위스', '포르투갈'],
   targetBudget: 3338000,
   securedFund: 3938008,
   countryBudgets: [
@@ -132,6 +133,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     const r = preTripReport.value
     if (!r) return null
     const demo = isDemoReportAccount(authStore.user) ? DEMO_PRE_TRIP_REPORT : null
+    const reportCountryNames = demo?.countryNames ?? r.countryNames ?? []
     const targetBudget = demo?.targetBudget ?? r.targetBudget
     const securedFund = demo?.securedFund ?? r.securedFund
     const countryBudgets = demo?.countryBudgets ?? r.countryBudgets ?? []
@@ -139,13 +141,13 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     const checklistStages = demo?.checklistStages ?? r.checklistStages ?? []
     return {
       trip: {
-        title: r.tripName,
-        flags: flagsFor(r.countryNames),
-        countryCodes: (r.countryNames || [])
+        title: demo?.tripName ?? r.tripName,
+        flags: flagsFor(reportCountryNames),
+        countryCodes: reportCountryNames
           .map(name => travelStore.countryFlagMap[name]?.code)
           .filter(Boolean),
-        countries: (r.countryNames || []).join(' · '),
-        dateRange: formatDateRange(r.startDate, r.endDate),
+        countries: reportCountryNames.join(' · '),
+        dateRange: formatDateRange(demo?.startDate ?? r.startDate, demo?.endDate ?? r.endDate),
         dDay: r.daysUntilTrip,
       },
       targetBudget,
