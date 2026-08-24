@@ -5,6 +5,7 @@ import BottomNav from '@/components/common/BottomNav.vue';
 import api from '@/api';
 import { useTravelFundStore } from '@/stores/travelFund';
 import TransactionEditModal from '@/components/asset/TransactionEditModal.vue';
+import { getDemoTransaction, isLay1217Demo } from '@/mocks/lay1217TravelDemo';
 
 const route = useRoute(),
   router = useRouter(),
@@ -14,6 +15,11 @@ const route = useRoute(),
 
 // 거래 상세 데이터를 다시 가져오는 함수
 const fetchTransaction = async () => {
+  const demoTransaction = isLay1217Demo() ? getDemoTransaction(route.params.transactionId) : null;
+  if (demoTransaction) {
+    transaction.value = demoTransaction;
+    return;
+  }
   try {
     const res = await api.get(`/transactions/${route.params.transactionId}`);
     transaction.value = res.data.data;
@@ -39,7 +45,9 @@ const countryMeta = {
 // 트랜잭션에 기록된 countryCode(또는 trip_country_id에 맞춘 기본값) 기준 매핑
 const country = computed(() => {
   // 실제 데이터의 필드명(예: transaction.value?.countryCode)에 맞춰 fallback 설정
-  const code = transaction.value?.countryCode || 'FR';
+  const code = transaction.value?.countryCode
+    || ({ 프랑스: 'FR', 스위스: 'CH', 포르투갈: 'PT' }[transaction.value?.countryName])
+    || 'FR';
 
   return (
     countryMeta[code] || {
@@ -57,15 +65,18 @@ const currencyMeta = {
   DE: { code: 'EUR', rate: 1486.2 },
   JP: { code: 'JPY', rate: 9.23 },
   HK: { code: 'HKD', rate: 184.2 },
+  PT: { code: 'EUR', rate: 1620 },
 };
 
 const localAmount = computed(() =>
   transaction.value && country.value
-    ? Math.round(
-        (transaction.value.amount /
-          (currencyMeta[country.value.code]?.rate || 1)) *
-          100,
-      ) / 100
+    ? Number(transaction.value.originalAmount ?? (
+        Math.round(
+          (transaction.value.amount /
+            (transaction.value.appliedExchangeRate || currencyMeta[country.value.code]?.rate || 1)) *
+            100,
+        ) / 100
+      ))
     : 0,
 );
 
