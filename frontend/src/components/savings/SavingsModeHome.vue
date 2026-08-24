@@ -818,7 +818,7 @@ function closeTripRequiredModal() {
           </div>
         </div>
         <button class="month-wallet-button" @click="goWallet">
-          <span>트립월렛에 저축하기 <i>＋</i></span>
+          <span>트립월렛에 저축하기</span><b>›</b>
         </button>
       </section>
 
@@ -2731,12 +2731,16 @@ function closeTripRequiredModal() {
   background: #f2994a;
 }
 .month-wallet-button {
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: 12px;
   background: #0b2a6b;
   box-shadow: none;
+}
+.month-wallet-button > span {
+  color: #ffd466;
+  font-size: 13.5px;
 }
 .month-wallet-button > span i {
   width: 20px;
@@ -2745,8 +2749,8 @@ function closeTripRequiredModal() {
 }
 .month-wallet-button > b {
   color: #ffd466;
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .analysis-load-error {
