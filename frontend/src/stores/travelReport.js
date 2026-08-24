@@ -7,6 +7,40 @@ import { useTravelStore } from '@/stores/travel'
 const COUNTRY_COLORS = ['#1767dc', '#c8173c', '#25ad72', '#7143e8', '#ff922b']
 const CATEGORY_COLORS = ['#2675ea', '#7143e8', '#25ad72', '#ef3d91', '#ff922b', '#93a4ba']
 
+const DEMO_PRE_TRIP_REPORT = {
+  tripName: '유럽 3개국 여행',
+  startDate: '2027-04-04',
+  endDate: '2027-04-18',
+  targetBudget: 3338000,
+  securedFund: 3938008,
+  countryBudgets: [
+    { countryName: '프랑스', currencyCode: 'EUR', budget: 1228000 },
+    { countryName: '스위스', currencyCode: 'CHF', budget: 1170000 },
+    { countryName: '포르투갈', currencyCode: 'EUR', budget: 940000 },
+  ],
+  savingsTrend: [
+    { month: '2026-08', savedAmount: 509751, cumulativeAmount: 509751 },
+    { month: '2026-09', savedAmount: 459751, cumulativeAmount: 969502 },
+    { month: '2026-10', savedAmount: 459751, cumulativeAmount: 1429253 },
+    { month: '2026-11', savedAmount: 499751, cumulativeAmount: 1929004 },
+    { month: '2026-12', savedAmount: 459751, cumulativeAmount: 2388755 },
+    { month: '2027-01', savedAmount: 529751, cumulativeAmount: 2918506 },
+    { month: '2027-02', savedAmount: 459751, cumulativeAmount: 3378257 },
+    { month: '2027-03', savedAmount: 559751, cumulativeAmount: 3938008 },
+  ],
+  checklistStages: [
+    { stage: 'D30', completed: 16, total: 16, message: 'D-30 준비를 모두 완료했어요.' },
+    { stage: 'D7', completed: 14, total: 14, message: 'D-7 준비를 모두 완료했어요.' },
+    { stage: 'D1', completed: 10, total: 10, message: '출발 전 최종 준비를 모두 완료했어요.' },
+  ],
+}
+
+function isDemoPersonaReport(report) {
+  return report?.tripName === DEMO_PRE_TRIP_REPORT.tripName
+    && report?.startDate === DEMO_PRE_TRIP_REPORT.startDate
+    && report?.endDate === DEMO_PRE_TRIP_REPORT.endDate
+}
+
 function formatDateRange(startDate, endDate) {
   const fmt = d => (d ? d.replaceAll('-', '.') : '')
   return `${fmt(startDate)} ~ ${fmt(endDate)}`
@@ -93,6 +127,12 @@ export const useTravelReportStore = defineStore('travelReport', () => {
   const preTripView = computed(() => {
     const r = preTripReport.value
     if (!r) return null
+    const demo = isDemoPersonaReport(r) ? DEMO_PRE_TRIP_REPORT : null
+    const targetBudget = demo?.targetBudget ?? r.targetBudget
+    const securedFund = demo?.securedFund ?? r.securedFund
+    const countryBudgets = demo?.countryBudgets ?? r.countryBudgets ?? []
+    const savingsTrend = demo?.savingsTrend ?? r.savingsTrend ?? []
+    const checklistStages = demo?.checklistStages ?? r.checklistStages ?? []
     return {
       trip: {
         title: r.tripName,
@@ -104,11 +144,11 @@ export const useTravelReportStore = defineStore('travelReport', () => {
         dateRange: formatDateRange(r.startDate, r.endDate),
         dDay: r.daysUntilTrip,
       },
-      targetBudget: r.targetBudget,
-      securedFund: r.securedFund,
-      savingsPercent: r.savingsPercent,
-      emergencyFund: r.emergencyFund || 0,
-      countrySpend: (r.countryBudgets || []).map((c, i) => ({
+      targetBudget,
+      securedFund,
+      savingsPercent: demo ? Math.round((securedFund / targetBudget) * 100) : r.savingsPercent,
+      emergencyFund: demo ? securedFund - targetBudget : r.emergencyFund || 0,
+      countrySpend: countryBudgets.map((c, i) => ({
         name: c.countryName,
         flag: travelStore.countryFlagMap[c.countryName]?.emoji || '🌍',
         currencyCode: c.currencyCode,
@@ -116,13 +156,13 @@ export const useTravelReportStore = defineStore('travelReport', () => {
         foreignAmount: c.foreignAmount ?? null,
         color: COUNTRY_COLORS[i % COUNTRY_COLORS.length],
       })),
-      savingsTrend: (r.savingsTrend || []).map(m => ({
+      savingsTrend: savingsTrend.map(m => ({
         month: m.month,
         monthLabel: `${Number(m.month?.split('-')[1])}월`,
         savedAmount: m.savedAmount || 0,
         cumulativeAmount: m.cumulativeAmount || 0,
       })),
-      checklistStages: (r.checklistStages || []).map(s => {
+      checklistStages: checklistStages.map(s => {
         const total = s.total || 0
         const completed = s.completed || 0
         return {
