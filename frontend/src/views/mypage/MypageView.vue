@@ -574,6 +574,7 @@ const myManageItems = computed(() => [
   .trip-circle-item.preparing .trip-circle::before { animation:none; }
 }
 .dev-date-section {
+  margin-top: 12px;
   background: #fff;
   border: 2px dashed #f59e0b;
   border-radius: 16px;
@@ -637,4 +638,5 @@ const myManageItems = computed(() => [
 .dev-date-btn.apply:disabled { background: #94a3b8; }
 .dev-date-btn.clear { background: #fee2e2; color: #dc2626; }
 .dev-date-btn.clear:disabled { background: #f1f5f9; color: #cbd5e1; }
+.dev-date-section + .reset-button { margin-top: -22px; }
 </style>
