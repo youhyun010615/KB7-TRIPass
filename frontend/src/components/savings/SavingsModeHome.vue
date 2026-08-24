@@ -806,7 +806,7 @@ function closeTripRequiredModal() {
           </div>
         </div>
         <button class="month-wallet-button" @click="goWallet">
-          <span><i>＋</i> 여행 월렛에 저축하기</span><b>출발 준비하기 ›</b>
+          <span>트립월렛에 저축하기 <i>＋</i></span>
         </button>
       </section>
 
@@ -2719,6 +2719,7 @@ function closeTripRequiredModal() {
   background: #f2994a;
 }
 .month-wallet-button {
+  justify-content: flex-end;
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: 12px;
