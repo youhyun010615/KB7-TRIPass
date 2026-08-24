@@ -2989,7 +2989,8 @@ onBeforeUnmount(() => {
 .result-page .tripass-receipt-document.is-editing .datetime-field {
   width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
 }
 
 .result-page .tripass-receipt-document.is-editing .datetime-field .field,
@@ -3002,6 +3003,8 @@ onBeforeUnmount(() => {
 
 .result-page .tripass-receipt-document.is-editing .datetime-field input {
   display: block;
+  -webkit-appearance: none;
+  appearance: none;
   padding: 0 10px;
   font-size: 12px;
   text-align: left;
