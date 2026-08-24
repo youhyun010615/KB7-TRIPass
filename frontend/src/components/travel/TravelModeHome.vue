@@ -726,7 +726,7 @@ function destinationForCountry(countryName) {
   return destinations.value.find(item => item.name === countryName);
 }
 
-function displayAmount(krwAmount, countryDetails = []) {
+function displayAmount(krwAmount, countryDetails = [], multiline = false) {
   if (amountDisplayCurrency.value === 'krw') return formatWon(krwAmount);
   if (selected.value.code !== 'all') return foreignBudgetText(selected.value, krwAmount);
 
@@ -739,7 +739,9 @@ function displayAmount(krwAmount, countryDetails = []) {
     grouped.set(code, (grouped.get(code) || 0) + amount);
   });
   if (!grouped.size) return formatWon(krwAmount);
-  return [...grouped].map(([code, amount]) => formatForeignBreakdown(code, amount)).join(' · ');
+  return [...grouped]
+    .map(([code, amount]) => formatForeignBreakdown(code, amount))
+    .join(multiline ? '\n' : ' · ');
 }
 
 function displayCountryAmount(countryName, amount) {
@@ -1247,7 +1249,10 @@ async function switchMode(mode) {
             />
           </div>
         </div>
-        <b class="budget-amount">{{ displayAmount(cat.total, cat.details) }}</b>
+        <b
+          class="budget-amount"
+          :class="{ 'multi-currency': selected.code === 'all' && amountDisplayCurrency === 'foreign' }"
+        >{{ displayAmount(cat.total, cat.details, true) }}</b>
         <b class="budget-ratio">{{ cat.ratio }}%</b>
         <span class="budget-chevron" aria-hidden="true">›</span>
       </button>
@@ -2263,6 +2268,7 @@ async function switchMode(mode) {
   text-align: right;
   white-space: nowrap;
 }
+.budget-amount.multi-currency{line-height:1.55;white-space:pre-line}
 .budget-ratio {
   width: 30px;
   color: #98a2b3;
