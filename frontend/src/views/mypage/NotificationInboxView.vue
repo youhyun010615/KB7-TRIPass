@@ -1,12 +1,20 @@
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import BottomNav from '@/components/common/BottomNav.vue';
 import { useMypageStore } from '@/stores/mypage';
+import { resetAccount as resetAccountApi, setOverrideDate, clearOverrideDate } from '@/api/mypage';
+import { effectiveDate, initDevDate, isOverridden, realDate } from '@/utils/devDate';
 import alertIcon from '@/assets/icons/alert.svg';
 import notificationIcon from '@/assets/icons/mingcute_notification-fill.svg';
+
 const router = useRouter(),
   store = useMypageStore();
+
+const overrideDate = ref('');
+const isSettingDate = ref(false);
+const isResetting = ref(false);
+
 const meta = {
   schedule: ['▣', '#e7f1ff'],
   finance: ['₩', '#e8f8f2'],
@@ -16,13 +24,57 @@ const meta = {
   test: ['🧪', '#f1f5f9'],
   report: ['📊', '#fff0f0'],
 };
-onMounted(() => {
+
+onMounted(async () => {
   store.fetchNotifications();
+  await initDevDate();
+  if (isOverridden.value) overrideDate.value = effectiveDate.value;
 });
+
 function open(item) {
   store.markRead(item.id);
   if (item.url) {
     router.push(item.url);
+  }
+}
+
+async function applyOverrideDate() {
+  if (!overrideDate.value || isSettingDate.value) return;
+  isSettingDate.value = true;
+  try {
+    await setOverrideDate(overrideDate.value);
+    await initDevDate();
+    window.alert(`가상 날짜가 ${overrideDate.value}로 설정되었습니다.`);
+  } catch (e) {
+    window.alert('설정 실패: ' + (e.response?.data?.message || e.message));
+  } finally { isSettingDate.value = false; }
+}
+
+async function removeOverrideDate() {
+  isSettingDate.value = true;
+  try {
+    await clearOverrideDate();
+    overrideDate.value = '';
+    await initDevDate();
+    window.alert('가상 날짜가 해제되었습니다.');
+  } catch (e) {
+    window.alert('해제 실패: ' + (e.response?.data?.message || e.message));
+  } finally { isSettingDate.value = false; }
+}
+
+async function resetAccount() {
+  if (isResetting.value) return;
+  const confirmed = window.confirm('계정의 모든 데이터(여행, 계좌, 카드, 거래내역, 미션 등)가 삭제됩니다.\n\n정말 초기화할까요?');
+  if (!confirmed) return;
+  isResetting.value = true;
+  try {
+    await resetAccountApi();
+    window.alert('계정 데이터가 초기화되었습니다.');
+    window.location.reload();
+  } catch (error) {
+    window.alert('초기화에 실패했습니다: ' + (error.response?.data?.message || error.message));
+  } finally {
+    isResetting.value = false;
   }
 }
 </script>
@@ -78,6 +130,27 @@ function open(item) {
         <p>새로운 소식이 도착하면<br />이곳에서 바로 알려드릴게요.</p>
       </div>
     </section>
+
+    <section class="dev-section">
+      <div class="dev-date-section">
+        <h3>가상 날짜 설정 <span class="dev-badge">DEV</span></h3>
+        <p class="dev-date-desc">비즈니스 로직에만 적용됩니다 (환율·Codef 등 외부 API 무관)</p>
+        <div v-if="isOverridden" class="dev-date-active">
+          현재 적용: <strong>{{ effectiveDate }}</strong>
+          <small>(실제: {{ realDate }})</small>
+        </div>
+        <div class="dev-date-controls">
+          <input type="date" v-model="overrideDate" class="dev-date-input" />
+          <button type="button" class="dev-date-btn apply" :disabled="!overrideDate || isSettingDate" @click="applyOverrideDate">적용</button>
+          <button type="button" class="dev-date-btn clear" :disabled="isSettingDate || !isOverridden" @click="removeOverrideDate">해제</button>
+        </div>
+      </div>
+      <button type="button" class="reset-button" :disabled="isResetting" @click="resetAccount">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14.25-5M20 12a8 8 0 0 1-14.25 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 3v4h-4M4 21v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {{ isResetting ? '초기화 중...' : '계정 데이터 초기화' }}
+      </button>
+    </section>
+
     <BottomNav />
   </main>
 </template>
@@ -298,4 +371,94 @@ function open(item) {
   .icon-bubble,
   .pulse-ring { animation: none; }
 }
+
+/* Dev controls */
+.dev-section {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dev-date-section {
+  background: #fff;
+  border: 2px dashed #f59e0b;
+  border-radius: 16px;
+  padding: 16px;
+}
+.dev-date-section h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dev-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #f59e0b;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.dev-date-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+.dev-date-active {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+}
+.dev-date-active strong { font-weight: 800; }
+.dev-date-active small { display: block; font-size: 11px; color: #b45309; margin-top: 2px; }
+.dev-date-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+.dev-date-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+}
+.dev-date-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+.dev-date-btn.apply { background: #2563eb; color: #fff; }
+.dev-date-btn.apply:disabled { background: #94a3b8; }
+.dev-date-btn.clear { background: #fee2e2; color: #dc2626; }
+.dev-date-btn.clear:disabled { background: #f1f5f9; color: #cbd5e1; }
+.reset-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #dde3ed;
+  border-radius: 16px;
+  background: #fff;
+  color: #6b7a90;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 5px 14px rgba(16,25,43,.04);
+}
+.reset-button:active { background: #f5f7fb; }
+.reset-button:disabled { opacity: .55; }
+.reset-button svg { width: 17px; height: 17px; }
 </style>

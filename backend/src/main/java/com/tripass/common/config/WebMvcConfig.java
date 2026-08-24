@@ -34,7 +34,6 @@ import java.util.List;
 @ComponentScan(basePackages = {
         "com.tripass.auth.controller",
         "com.tripass.mypage.controller",
-        "com.tripass.profile.controller",
         "com.tripass.financial.controller",
         "com.tripass.asset.controller",
         "com.tripass.saving.controller",
@@ -42,9 +41,7 @@ import java.util.List;
         "com.tripass.checklist.controller",
         "com.tripass.exchange.controller",
         "com.tripass.bank.controller",
-        "com.tripass.prepay.controller",
         "com.tripass.schedule.controller",
-        "com.tripass.expense.controller",
         "com.tripass.ocr.controller",
         "com.tripass.report.controller",
         "com.tripass.wallet.controller",
