@@ -93,6 +93,9 @@ const calculatorCountryCode = ref(null);
 const isInitialLoading = ref(true);
 const showStartReportModal = ref(false);
 const amountDisplayCurrency = ref('foreign');
+const exchangeRateCaption = computed(() => exchangeStore.lastUpdateDate
+  ? `${exchangeStore.lastUpdateDate} 환율 기준`
+  : '최신 환율 기준');
 
 function setAmountDisplayCurrency(currency) {
   amountDisplayCurrency.value = currency;
@@ -1055,7 +1058,8 @@ async function switchMode(mode) {
                   <small>트래블카드 잔액</small>
                   <div v-if="item.code === 'all'" class="all-travel-card-balances">
                     <div v-for="balance in allTravelCardBalances" :key="balance.currencyCode" class="travel-card-balance-values">
-                      <strong>{{ amountDisplayCurrency === 'foreign' ? balance.foreignText : balance.krwText.replace('약 ', '') }}</strong>
+                      <strong>{{ balance.foreignText }}</strong>
+                      <em>{{ balance.krwText }}</em>
                     </div>
                     <div v-if="!allTravelCardBalances.length" class="travel-card-balance-values">
                       <strong>0.00</strong>
@@ -1063,8 +1067,10 @@ async function switchMode(mode) {
                     </div>
                   </div>
                   <div v-else class="travel-card-balance-values">
-                    <strong>{{ amountDisplayCurrency === 'foreign' ? travelCardBalanceText(item) : travelCardBalanceKrwText(item).replace('약 ', '') }}</strong>
+                    <strong>{{ travelCardBalanceText(item) }}</strong>
+                    <em>{{ travelCardBalanceKrwText(item) }}</em>
                   </div>
+                  <span class="travel-card-rate-caption">{{ exchangeRateCaption }}</span>
                 </div>
               </div>
               <div v-if="item.code === 'all'" class="fund-progress-box overall-fund-progress-box">
@@ -3041,6 +3047,7 @@ async function switchMode(mode) {
 .ticket:not(.combined) .ticket-main{display:flex;flex-direction:column}.ticket:not(.combined) .ticket-photo-space{min-height:34px;height:auto;flex:1}.ticket:not(.combined) .travel-summary-content{margin-top:auto}.ticket:not(.combined) .summary-title-spacer{display:none}
 .return-checklist-icon{display:inline-flex;flex:none;align-items:center;flex-direction:column;gap:4px;padding:7px 9px 6px;border:1px solid rgba(255,255,255,.38);border-radius:12px;background:rgba(7,22,55,.76);color:#ffd466;font-family:'Space Mono',ui-monospace,monospace;font-size:7px;font-weight:900;letter-spacing:.04em;box-shadow:0 7px 16px rgba(3,17,45,.24);backdrop-filter:blur(7px);animation:return-checklist-float 2.4s ease-in-out infinite}.return-checklist-icon img{width:27px;height:27px;padding:5px;border-radius:8px;background:#fff;object-fit:contain}.return-checklist-icon:active{transform:scale(.96)}@keyframes return-checklist-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .travel-card-balance-values{display:flex;align-items:baseline;gap:8px}.travel-card-balance-values em{color:#8cebbf;font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}
+.travel-card-rate-caption{display:block;margin-top:3px;color:rgba(255,255,255,.68);font-size:8px;font-weight:700;line-height:1.25;white-space:nowrap}
 .all-travel-card-balances{display:flex;flex-wrap:wrap;gap:3px 12px}.all-travel-card-balances .travel-card-balance-values{flex:0 0 auto}
 .combined .ticket-main{display:flex;flex-direction:column;background:linear-gradient(145deg,#0b1635 0%,#152b62 58%,#10224d 100%)}.combined .ticket-photo-space{min-height:24px;height:auto;flex:1}.combined .travel-summary-content{margin-top:auto}.overall-fund-progress-box{margin-top:0;background:rgba(4,14,44,.8);box-shadow:0 12px 28px rgba(0,0,0,.2)}
 .travel-card-balance-row{display:flex;width:fit-content;max-width:100%;align-items:center;gap:13px;margin-bottom:12px;perspective:180px}.travel-card-balance-row .travel-card-icon-image{width:40px;height:56px;flex:none;border:1px solid rgba(255,255,255,.58);border-radius:6px;object-fit:cover;box-shadow:0 6px 14px rgba(3,16,43,.34);transform-origin:center;animation:travel-card-flip 4s ease-in-out infinite}.travel-card-balance-row .travel-card-balance small{color:#ffd466;font-size:15px;font-weight:950;letter-spacing:-.02em}.travel-card-balance-row .travel-card-balance strong{color:#fff;font-size:20px;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.28)}
