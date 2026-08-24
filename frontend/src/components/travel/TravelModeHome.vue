@@ -947,17 +947,19 @@ async function switchMode(mode) {
         </div>
         <NotificationBell />
       </div>
-      <div class="home-brand-row">
-        <h1 class="home-header-title">
-          <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
-        </h1>
-        <span class="amount-currency-toggle header-currency-toggle" aria-label="예산 금액 표시 통화">
-          <button type="button" :class="{ active: amountDisplayCurrency === 'foreign' }" :aria-pressed="amountDisplayCurrency === 'foreign'" @click="setAmountDisplayCurrency('foreign')">외화</button>
-          <button type="button" :class="{ active: amountDisplayCurrency === 'krw' }" :aria-pressed="amountDisplayCurrency === 'krw'" @click="setAmountDisplayCurrency('krw')">원화</button>
-        </span>
-      </div>
+      <h1 class="home-header-title">
+        <img src="@/assets/brand/tripass-text.png" class="home-wordmark" alt="TRIPASS" />
+      </h1>
     </div>
     <div :style="{ height: travelHeaderHeight + 'px' }" aria-hidden="true" />
+
+    <div v-if="tripId && !isInitialLoading" class="currency-toolbar">
+      <span class="currency-toolbar-label">금액 표시</span>
+      <span class="amount-currency-toggle header-currency-toggle" aria-label="예산 금액 표시 통화">
+        <button type="button" :class="{ active: amountDisplayCurrency === 'foreign' }" :aria-pressed="amountDisplayCurrency === 'foreign'" @click="setAmountDisplayCurrency('foreign')">외화</button>
+        <button type="button" :class="{ active: amountDisplayCurrency === 'krw' }" :aria-pressed="amountDisplayCurrency === 'krw'" @click="setAmountDisplayCurrency('krw')">원화</button>
+      </span>
+    </div>
 
     <template v-if="isInitialLoading">
       <div class="ticket-skeleton" aria-hidden="true" />
@@ -1690,7 +1692,7 @@ async function switchMode(mode) {
   gap: 5px;
   margin-top: 10px;
 }
-.home-brand-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.home-brand-row .home-header-title{margin-top:10px}.header-currency-toggle{margin-top:10px;border-color:#cbd7e8;background:#e7edf7}.header-currency-toggle button{min-width:38px;padding:5px 9px;color:#71819a;font-size:9px}.header-currency-toggle button.active{background:#17499c;color:#fff}
+.currency-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:7px 20px 8px}.currency-toolbar-label{color:#536681;font-size:11px;font-weight:850}.header-currency-toggle{padding:3px;border-color:#b9c9e1;background:#fff;box-shadow:0 5px 14px rgba(22,58,114,.12)}.header-currency-toggle button{min-width:48px;padding:7px 12px;color:#536681;font-size:11px}.header-currency-toggle button.active{background:#1767dc;color:#fff}
 .home-wordmark {
   display: block;
   width: 88px;
