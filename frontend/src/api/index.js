@@ -13,7 +13,9 @@ const api = axios.create({
 let refreshPromise = null
 
 api.interceptors.request.use((config) => {
-    config._loadingOverlayKey = beginLoading(Symbol('api-request'))
+    if (!config.skipLoadingOverlay) {
+        config._loadingOverlayKey = beginLoading(Symbol('api-request'))
+    }
     const authStore = useAuthStore()
     if (authStore.accessToken) {
         config.headers.Authorization = `Bearer ${authStore.accessToken}`

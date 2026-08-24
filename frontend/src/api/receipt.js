@@ -21,6 +21,7 @@ export function analyzeReceipt(file) {
     formData,
     {
       timeout: OCR_REQUEST_TIMEOUT,
+      skipLoadingOverlay: true,
     },
   )
 }

@@ -321,8 +321,7 @@ onBeforeUnmount(() => {
         'capture-page',
         {
           camera:
-              step === 'preview' ||
-              step === 'analyzing',
+              step === 'preview',
         },
       ]"
   >
@@ -498,27 +497,16 @@ onBeforeUnmount(() => {
     </template>
 
     <template v-else-if="step === 'analyzing'">
-      <section class="analysis">
-        <div class="analysis-preview">
-          <img
-              v-if="previewUrl"
-              :src="previewUrl"
-              :alt="
-                fileName ||
-                '분석 중인 영수증 이미지'
-              "
-          >
-
-          <span
-              class="scan-line"
-              :style="{
-                top: `${progress}%`,
-              }"
-          />
+      <section class="analysis analysis-card">
+        <div class="receipt-animation analyzing-receipt" aria-hidden="true">
+          <span class="receipt-orbit analyzing-orbit" />
+          <div class="receipt-icon analyzing-icon">
+            <img :src="receiptIcon" alt="">
+          </div>
         </div>
 
         <h2>
-          영수증을 읽고 있어요
+          영수증을 인식하고 있어요
         </h2>
 
         <p>
@@ -526,15 +514,6 @@ onBeforeUnmount(() => {
           인식하고 번역하는 중이에요.
         </p>
 
-        <div class="progress">
-          <i
-              :style="{
-                width: `${progress}%`,
-              }"
-          />
-        </div>
-
-        <b>{{ progress }}%</b>
       </section>
     </template>
   </main>
@@ -844,6 +823,37 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   padding-top: 20px
+}
+
+.analysis-card {
+  min-height: 410px;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 34px 20px;
+  border: 1px solid #cfddf4;
+  border-radius: 24px;
+  background: linear-gradient(150deg, #fff 0%, #f2f7ff 100%);
+  color: #111a2d;
+  box-shadow: 0 16px 36px rgba(29, 67, 132, .09);
+  text-align: center;
+}
+
+.analysis-card h2 { margin-top: 22px; font-size: 16px; }
+.analysis-card p { margin-top: 9px; color: #7d8a9c; font-size: 10px; line-height: 1.55; }
+.analyzing-receipt { width: 128px; height: 128px; }
+.analyzing-orbit {
+  inset: 2px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: #2f72df transparent #ffd25d transparent;
+  animation: receipt-orbit 1.05s linear infinite;
+}
+.analyzing-icon { animation: receipt-pulse 1.35s ease-in-out infinite; }
+.analyzing-icon i { display: none; }
+
+@keyframes receipt-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
 
 .analysis .paper {
