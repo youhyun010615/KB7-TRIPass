@@ -13,14 +13,158 @@ import homeIcon from '@/assets/icons/home-dollar.svg'
 import { useRoute } from 'vue-router'
 import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
 import { today as currentDate } from '@/utils/devDate'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 const tripId = computed(() => Number(route.query.tripId) || null)
 const loading = ref(true)
 const errorMessage = ref('')
 const monthlyRecords = ref([])
 const expandedMonth = ref('')
+const demoAccounts = new Set(['lay1217', 'ahyoung021217@gmail.com'])
+
+const demoMonthlyRecords = [
+  {
+    key: '2026-08', year: 2026, month: 8,
+    weeks: [
+      { weekNumber: 4, periodStartDate: '2026-08-24', periodEndDate: '2026-08-30', missions: [
+        { id: 'demo-aug-4-1', title: '식비 지출 30% 줄이기', categoryCode: 'FOOD', savedAmount: 188823 },
+      ] },
+    ],
+  },
+  {
+    key: '2026-09', year: 2026, month: 9,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2026-09-01', periodEndDate: '2026-09-06', missions: [
+        { id: 'demo-sep-1-1', title: '식비 지출 10% 줄이기', categoryCode: 'FOOD', savedAmount: 62941 },
+        { id: 'demo-sep-1-2', title: '카페 지출 30% 줄이기', categoryCode: 'CAFE', savedAmount: 31500 },
+      ] },
+      { weekNumber: 2, periodStartDate: '2026-09-07', periodEndDate: '2026-09-13', missions: [
+        { id: 'demo-sep-2-1', title: '쇼핑 지출 10% 줄이기', categoryCode: 'SHOPPING', savedAmount: 42000 },
+        { id: 'demo-sep-2-2', title: '교통 지출 10% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 18000 },
+      ] },
+      { weekNumber: 4, periodStartDate: '2026-09-21', periodEndDate: '2026-09-27', missions: [
+        { id: 'demo-sep-4-1', title: '취미여가 지출 30% 줄이기', categoryCode: 'HOBBY', savedAmount: 75000 },
+      ] },
+    ],
+  },
+  {
+    key: '2026-10', year: 2026, month: 10,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2026-10-01', periodEndDate: '2026-10-07', missions: [
+        { id: 'demo-oct-1-1', title: '식비 지출 30% 줄이기', categoryCode: 'FOOD', savedAmount: 188823 },
+        { id: 'demo-oct-1-2', title: '카페 지출 30% 줄이기', categoryCode: 'CAFE', savedAmount: 31500 },
+      ] },
+      { weekNumber: 2, periodStartDate: '2026-10-08', periodEndDate: '2026-10-14', missions: [
+        { id: 'demo-oct-2-1', title: '생활비 지출 10% 줄이기', categoryCode: 'LIVING', savedAmount: 35000 },
+        { id: 'demo-oct-2-2', title: '교통 지출 30% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 54000 },
+      ] },
+      { weekNumber: 4, periodStartDate: '2026-10-22', periodEndDate: '2026-10-28', missions: [
+        { id: 'demo-oct-4-1', title: '쇼핑 지출 10% 줄이기', categoryCode: 'SHOPPING', savedAmount: 42000 },
+        { id: 'demo-oct-4-2', title: '취미여가 지출 10% 줄이기', categoryCode: 'HOBBY', savedAmount: 25000 },
+      ] },
+    ],
+  },
+  {
+    key: '2026-11', year: 2026, month: 11,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2026-11-01', periodEndDate: '2026-11-07', missions: [
+        { id: 'demo-nov-1-1', title: '식비 지출 10% 줄이기', categoryCode: 'FOOD', savedAmount: 62941 },
+        { id: 'demo-nov-1-2', title: '카페 지출 50% 줄이기', categoryCode: 'CAFE', savedAmount: 52500 },
+      ] },
+      { weekNumber: 2, periodStartDate: '2026-11-08', periodEndDate: '2026-11-14', missions: [
+        { id: 'demo-nov-2-1', title: '생활비 지출 30% 줄이기', categoryCode: 'LIVING', savedAmount: 105000 },
+        { id: 'demo-nov-2-2', title: '교통 지출 10% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 18000 },
+      ] },
+      { weekNumber: 3, periodStartDate: '2026-11-15', periodEndDate: '2026-11-21', missions: [
+        { id: 'demo-nov-3-1', title: '쇼핑 지출 30% 줄이기', categoryCode: 'SHOPPING', savedAmount: 126000 },
+        { id: 'demo-nov-3-2', title: '카페 지출 10% 줄이기', categoryCode: 'CAFE', savedAmount: 10500 },
+      ] },
+      { weekNumber: 4, periodStartDate: '2026-11-22', periodEndDate: '2026-11-28', missions: [
+        { id: 'demo-nov-4-1', title: '취미여가 지출 30% 줄이기', categoryCode: 'HOBBY', savedAmount: 75000 },
+      ] },
+    ],
+  },
+  {
+    key: '2026-12', year: 2026, month: 12,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2026-12-01', periodEndDate: '2026-12-07', missions: [
+        { id: 'demo-dec-1-1', title: '식비 지출 30% 줄이기', categoryCode: 'FOOD', savedAmount: 188823 },
+        { id: 'demo-dec-1-2', title: '쇼핑 지출 30% 줄이기', categoryCode: 'SHOPPING', savedAmount: 126000 },
+      ] },
+      { weekNumber: 3, periodStartDate: '2026-12-15', periodEndDate: '2026-12-21', missions: [
+        { id: 'demo-dec-3-1', title: '카페 지출 30% 줄이기', categoryCode: 'CAFE', savedAmount: 31500 },
+        { id: 'demo-dec-3-2', title: '교통 지출 10% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 18000 },
+      ] },
+    ],
+  },
+  {
+    key: '2027-01', year: 2027, month: 1,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2027-01-01', periodEndDate: '2027-01-07', missions: [
+        { id: 'demo-jan-1-1', title: '식비 지출 10% 줄이기', categoryCode: 'FOOD', savedAmount: 62941 },
+        { id: 'demo-jan-1-2', title: '카페 지출 30% 줄이기', categoryCode: 'CAFE', savedAmount: 31500 },
+      ] },
+      { weekNumber: 2, periodStartDate: '2027-01-08', periodEndDate: '2027-01-14', missions: [
+        { id: 'demo-jan-2-1', title: '생활비 지출 30% 줄이기', categoryCode: 'LIVING', savedAmount: 105000 },
+        { id: 'demo-jan-2-2', title: '교통 지출 30% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 54000 },
+      ] },
+      { weekNumber: 4, periodStartDate: '2027-01-22', periodEndDate: '2027-01-28', missions: [
+        { id: 'demo-jan-4-1', title: '쇼핑 지출 10% 줄이기', categoryCode: 'SHOPPING', savedAmount: 42000 },
+        { id: 'demo-jan-4-2', title: '취미여가 지출 10% 줄이기', categoryCode: 'HOBBY', savedAmount: 25000 },
+      ] },
+    ],
+  },
+  {
+    key: '2027-02', year: 2027, month: 2,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2027-02-01', periodEndDate: '2027-02-07', missions: [
+        { id: 'demo-feb-1-1', title: '식비 지출 30% 줄이기', categoryCode: 'FOOD', savedAmount: 188823 },
+        { id: 'demo-feb-1-2', title: '카페 지출 10% 줄이기', categoryCode: 'CAFE', savedAmount: 10500 },
+      ] },
+      { weekNumber: 2, periodStartDate: '2027-02-08', periodEndDate: '2027-02-14', missions: [
+        { id: 'demo-feb-2-1', title: '생활비 지출 10% 줄이기', categoryCode: 'LIVING', savedAmount: 35000 },
+        { id: 'demo-feb-2-2', title: '교통 지출 10% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 18000 },
+      ] },
+      { weekNumber: 4, periodStartDate: '2027-02-22', periodEndDate: '2027-02-28', missions: [
+        { id: 'demo-feb-4-1', title: '취미여가 지출 30% 줄이기', categoryCode: 'HOBBY', savedAmount: 75000 },
+      ] },
+    ],
+  },
+  {
+    key: '2027-03', year: 2027, month: 3,
+    weeks: [
+      { weekNumber: 1, periodStartDate: '2027-03-01', periodEndDate: '2027-03-07', missions: [
+        { id: 'demo-mar-1-1', title: '식비 지출 10% 줄이기', categoryCode: 'FOOD', savedAmount: 62941 },
+        { id: 'demo-mar-1-2', title: '카페 지출 30% 줄이기', categoryCode: 'CAFE', savedAmount: 31500 },
+      ] },
+      { weekNumber: 3, periodStartDate: '2027-03-15', periodEndDate: '2027-03-21', missions: [
+        { id: 'demo-mar-3-1', title: '쇼핑 지출 10% 줄이기', categoryCode: 'SHOPPING', savedAmount: 42000 },
+        { id: 'demo-mar-3-2', title: '교통 지출 30% 줄이기', categoryCode: 'TRANSPORT', savedAmount: 54000 },
+      ] },
+    ],
+  },
+].map((month) => ({
+  ...month,
+  weeks: month.weeks.map((week) => ({
+    ...week,
+    savedAmount: week.missions.reduce((sum, mission) => sum + mission.savedAmount, 0),
+  })),
+  completedCount: month.weeks.reduce((sum, week) => sum + week.missions.length, 0),
+  savedAmount: month.weeks.reduce(
+    (monthSum, week) => monthSum + week.missions.reduce((sum, mission) => sum + mission.savedAmount, 0),
+    0,
+  ),
+}))
+
+function isDemoAccount() {
+  const identifiers = [authStore.user?.loginId, authStore.user?.email]
+    .filter(Boolean)
+    .map(value => String(value).trim().toLowerCase())
+  return identifiers.some(identifier => demoAccounts.has(identifier))
+}
 
 const iconByCategory = {
   FOOD: foodIcon,
@@ -114,6 +258,12 @@ function toggleMonth(key) {
 async function loadHistory() {
   loading.value = true
   errorMessage.value = ''
+  if (isDemoAccount()) {
+    monthlyRecords.value = demoMonthlyRecords
+    expandedMonth.value = demoMonthlyRecords[0].key
+    loading.value = false
+    return
+  }
   const targets = recentYearMonths()
   const results = await Promise.allSettled(targets.map((target) => fetchSavingMissions(target)))
   monthlyRecords.value = results.flatMap((result, index) => {
