@@ -2,10 +2,12 @@
 import { computed, reactive, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useExchangeStore } from '@/stores/exchange';
+import { useTravelStore } from '@/stores/travel';
 
 const route = useRoute();
 const router = useRouter();
 const exchange = useExchangeStore();
+const travel = useTravelStore();
 
 const isModalOpen = ref(false);
 
@@ -38,9 +40,24 @@ const valid = computed(() => form.currencyCode && form.targetRate > 0);
 const format = (v) =>
   Number(v || 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
 
+const travelCurrencies = computed(() => {
+  const hasActiveTravelGoal = Boolean(travel.tripId || travel.activeTrip?.tripId);
+  if (!hasActiveTravelGoal) return exchange.currencies;
+
+  return travel.selectedPlans
+    .map((plan) => exchange.currencies.find((item) => (
+      (plan.countryId != null
+        && item.countryId != null
+        && String(item.countryId) === String(plan.countryId))
+      || (plan.name && item.countryName === plan.name)
+    )))
+    .filter(Boolean)
+    .sort((a, b) => (a.countryName || '').localeCompare(b.countryName || '', 'ko-KR'));
+});
+
 const availableCurrencies = computed(() => {
   const alertCodes = exchange.alerts.map((a) => a.currencyCode);
-  return exchange.currencies.filter((c) => !alertCodes.includes(c.code));
+  return travelCurrencies.value.filter((c) => !alertCodes.includes(c.code));
 });
 
 function save() {
@@ -58,11 +75,13 @@ function selectCurrency(c) {
 }
 
 onMounted(async () => {
-  if (exchange.currencies.length === 0) {
-    await exchange.updateExchangeRates();
-  }
-
-  await exchange.fetchAlerts();
+  await Promise.all([
+    exchange.currencies.length === 0
+      ? exchange.updateExchangeRates()
+      : Promise.resolve(),
+    travel.loadActiveGoal({ force: true }),
+    exchange.fetchAlerts(),
+  ]);
 
   if (isEditMode.value) {
     const existing = exchange.alerts.find(
@@ -74,7 +93,11 @@ onMounted(async () => {
       form.targetRate = existing.targetRate;
       
       // 알림 정보에서 통화 코드로 countryId 찾기
-      const currency = exchange.getCurrency(existing.currencyCode);
+      const currency = travelCurrencies.value.find(
+        (item) => String(item.countryId) === String(existing.countryId),
+      ) || travelCurrencies.value.find(
+        (item) => item.code === existing.currencyCode,
+      );
       if (currency) {
         form.countryId = currency.countryId;
       }
@@ -82,10 +105,13 @@ onMounted(async () => {
   } else {
     // 신규 모드일 경우 이미 알림이 있는 통화는 제외
     if (availableCurrencies.value.length > 0) {
-      if (!form.countryId && !form.currencyCode) {
-        form.countryId = availableCurrencies.value[0].countryId;
-        form.currencyCode = availableCurrencies.value[0].code;
-      }
+      const selected = availableCurrencies.value.find(
+        (item) => form.countryId != null
+          ? String(item.countryId) === String(form.countryId)
+          : item.code === form.currencyCode,
+      ) || availableCurrencies.value[0];
+      form.countryId = selected.countryId;
+      form.currencyCode = selected.code;
     }
     // 신규 모드일 경우 초기 환율 설정
     if (form.targetRate === 0 && currency.value) {
