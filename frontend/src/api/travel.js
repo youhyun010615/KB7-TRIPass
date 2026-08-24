@@ -1,7 +1,22 @@
 import api from '@/api';
 import { demoTransactions, isLay1217Demo, overlayBudgetCheck, overlayTravelStatus } from '@/mocks/lay1217TravelDemo';
+import { todayIso } from '@/utils/devDate';
 
 const unwrap = (response) => response.data.data;
+const DEMO_TRIP_NAME = '유럽 3개국 여행';
+const DEMO_REPORT_RESET_VERSION = 'budget-without-emergency-v1';
+
+function canonicalDemoTrips(trips = []) {
+  if (!isLay1217Demo()) return trips;
+  const matches = trips
+    .filter((trip) => trip.tripName === DEMO_TRIP_NAME)
+    .sort((a, b) => Number(a.tripId) - Number(b.tripId));
+  return matches.length ? [matches[0]] : [];
+}
+
+function demoStartReportKey(tripId) {
+  return `tripass-demo-start-report:${DEMO_REPORT_RESET_VERSION}:${tripId}`;
+}
 
 export async function fetchTripCountries(keyword = '') {
   const response = await api.get('/trips/countries', {
@@ -12,7 +27,7 @@ export async function fetchTripCountries(keyword = '') {
 
 export async function fetchMyTrips() {
   const response = await api.get('/trips');
-  return unwrap(response);
+  return canonicalDemoTrips(unwrap(response));
 }
 
 export async function createTripGoal(payload) {
@@ -36,7 +51,32 @@ export async function fetchActiveTripGoal() {
 
 export async function fetchCurrentTripLifecycle() {
   const response = await api.get('/trips/current-lifecycle');
-  return unwrap(response);
+  const data = unwrap(response);
+  if (!isLay1217Demo()) return data;
+
+  const tripsResponse = await api.get('/trips');
+  const demoTrip = canonicalDemoTrips(unwrap(tripsResponse))[0];
+  if (!demoTrip) return data;
+
+  const today = todayIso();
+  const lifecycle = today < demoTrip.startDate
+    ? 'PREPARING'
+    : today <= demoTrip.endDate ? 'TRAVELING' : 'REVIEW';
+  return {
+    ...data,
+    tripId: demoTrip.tripId,
+    tripName: demoTrip.tripName,
+    status: lifecycle === 'PREPARING' ? 'PLANNING' : lifecycle === 'TRAVELING' ? 'TRAVELING' : 'ENDED',
+    lifecycle,
+    startDate: demoTrip.startDate,
+    endDate: demoTrip.endDate,
+    hasTrip: true,
+    travelModeAvailable: lifecycle === 'TRAVELING',
+    missionAvailable: lifecycle === 'PREPARING',
+    startReportAvailable: lifecycle === 'TRAVELING',
+    startReportAcknowledged: localStorage.getItem(demoStartReportKey(demoTrip.tripId)) === 'true',
+    endingReviewRequired: lifecycle === 'REVIEW',
+  };
 }
 
 export async function acknowledgeTripOnboarding() {
@@ -58,6 +98,7 @@ export async function archiveTrip(tripId) {
 
 export async function acknowledgeTripStartReport(tripId) {
   const response = await api.post(`/trips/${tripId}/start-report/acknowledge`);
+  if (isLay1217Demo()) localStorage.setItem(demoStartReportKey(tripId), 'true');
   return unwrap(response);
 }
 

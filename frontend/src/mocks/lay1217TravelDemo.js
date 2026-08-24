@@ -19,8 +19,8 @@ const countryData = {
   포르투갈: {
     budget: 940_000,
     day9: { total: 0, categories: [0, 0, 0, 0, 0, 0, 0] },
-    day13: { total: 1_232_500, categories: [301_100, 254_500, 47_300, 158_600, 29_700, 405_100, 36_200] },
-    end: { total: 1_342_560, categories: [301_100, 296_500, 58_800, 177_400, 29_700, 430_100, 48_960] },
+    day13: { total: 978_500, categories: [220_000, 150_000, 40_000, 125_000, 25_000, 388_500, 30_000] },
+    end: { total: 1_108_940, categories: [245_000, 180_000, 51_500, 143_800, 29_700, 423_500, 35_440] },
   },
 }
 
@@ -58,8 +58,8 @@ const daily = [
   ['2027-04-11', '스위스', 141_240], ['2027-04-12', '스위스', 192_640],
   ['2027-04-13', '스위스', 228_460], ['2027-04-14', '스위스', 211_560],
   ['2027-04-14', '포르투갈', 238_500], ['2027-04-15', '포르투갈', 331_200],
-  ['2027-04-16', '포르투갈', 662_800], ['2027-04-17', '포르투갈', 68_260],
-  ['2027-04-18', '포르투갈', 41_800],
+  ['2027-04-16', '포르투갈', 408_800], ['2027-04-17', '포르투갈', 78_260],
+  ['2027-04-18', '포르투갈', 52_180],
 ]
 
 const travelCardPaymentDetails = [
@@ -374,8 +374,8 @@ export function overlayBudgetCheck(base = []) {
 const walletSnapshots = {
   dday: { balance: 3_438_008, emergency: 600_008, eur: [308.64, 500_000], chf: [0, 0] },
   day9: { balance: 2_088_008, emergency: 600_008, eur: [33.68, 54_560], chf: [59.78, 106_400] },
-  day13: { balance: 400_008, emergency: 400_008, eur: [67.94, 110_060], chf: [37.29, 66_380] },
-  end: { balance: 400_008, emergency: 400_008, eur: [0, 0], chf: [37.29, 66_380] },
+  day13: { balance: 600_008, emergency: 600_008, eur: [101.27, 164_060], chf: [37.29, 66_380] },
+  end: { balance: 600_008, emergency: 600_008, eur: [20.75, 33_620], chf: [37.29, 66_380] },
 }
 
 export function demoForeignBalances() {
@@ -406,7 +406,6 @@ const fundingLedgers = [
   ['2027-04-09T09:00:00', 750_000, 2_838_008, 2_088_008, 'CHF 트래블카드 충전'],
   ['2027-04-13T09:00:00', 400_000, 2_088_008, 1_688_008, 'CHF 트래블카드 충전'],
   ['2027-04-14T09:00:00', 1_088_000, 1_688_008, 600_008, '남은 여행 목표 자금 EUR 충전'],
-  ['2027-04-16T12:00:00', 200_000, 600_008, 400_008, '비상금 EUR 충전'],
 ]
 
 export function demoWalletLedgers(base = []) {
@@ -475,7 +474,7 @@ export function demoTravelCardTransactions() {
 }
 
 export function demoPostTripReport(tripId) {
-  const categories = [565_560, 957_180, 163_600, 586_780, 110_080, 981_660, 106_760]
+  const categories = [509_460, 840_680, 156_300, 553_180, 110_080, 975_060, 93_240]
   const groupedDaily = new Map()
   daily.forEach(([date, , amount]) => groupedDaily.set(date, (groupedDaily.get(date) || 0) + amount))
   const countrySpending = Object.entries(countryData).map(([countryName, item]) => ({
@@ -485,8 +484,8 @@ export function demoPostTripReport(tripId) {
     tripId,
     tripName: '유럽 3개국 여행', countryNames: Object.keys(countryData),
     startDate: '2027-04-04', endDate: '2027-04-18', days: 15,
-    targetBudget: TARGET, spent: 3_471_620, remaining: -133_620,
-    dailyAverage: Math.round(3_471_620 / 15), savingsRate: -4,
+    targetBudget: TARGET, spent: 3_238_000, remaining: 100_000,
+    dailyAverage: Math.round(3_238_000 / 15), savingsRate: 3,
     dailySpending: [...groupedDaily].map(([date, amount]) => ({ date, amount })),
     categorySpending: categoryNames.map((categoryName, index) => ({ categoryName, amount: categories[index] })),
     countrySpending,

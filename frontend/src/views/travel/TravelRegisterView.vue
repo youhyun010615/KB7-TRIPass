@@ -146,7 +146,7 @@ const activeBudgetPlan = computed(() =>
     ?? null,
 )
 const demoEndedWalletAmount = computed(() =>
-  isLay1217Demo() && demoStage() === 'end' ? 400_008 : null,
+  isLay1217Demo() && demoStage() === 'end' ? 600_008 : null,
 )
 const walletDecisionAmount = computed(() => Number(
   demoEndedWalletAmount.value
