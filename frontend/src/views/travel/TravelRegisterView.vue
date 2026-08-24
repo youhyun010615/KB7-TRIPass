@@ -13,6 +13,7 @@ import preMoneyIcon from '@/assets/icons/pre_money.svg'
 import taxiIcon from '@/assets/icons/taxi.svg'
 import tourIcon from '@/assets/icons/tour.svg'
 import { fetchWalletAccounts } from '@/api/wallet'
+import { demoStage, isLay1217Demo } from '@/mocks/lay1217TravelDemo'
 import { useTravelStore, flagIconClass } from '@/stores/travel'
 
 const router = useRouter()
@@ -144,10 +145,19 @@ const activeBudgetPlan = computed(() =>
     ?? store.selectedPlans[0]
     ?? null,
 )
+const demoEndedWalletAmount = computed(() =>
+  isLay1217Demo() && demoStage() === 'end' ? 400_008 : null,
+)
 const walletDecisionAmount = computed(() => Number(
-  store.lifecycle?.walletReflectAmount ?? store.currentWalletBalance ?? 0,
+  demoEndedWalletAmount.value
+    ?? store.lifecycle?.walletReflectAmount
+    ?? store.currentWalletBalance
+    ?? 0,
 ))
-const walletDecisionRequired = computed(() => Boolean(store.lifecycle?.needsWalletReflectPrompt))
+const walletDecisionRequired = computed(() =>
+  Boolean(store.lifecycle?.needsWalletReflectPrompt)
+  || (demoEndedWalletAmount.value !== null && walletResolution.value === null),
+)
 const walletStatusLabel = computed(() => {
   if (walletDecisionRequired.value) return walletDecisionAmount.value > 0 ? '선택 필요' : '0원 시작'
   if (walletResolution.value === 'included') return '포함 완료'
@@ -303,7 +313,9 @@ async function includeWalletBalance() {
   walletStepError.value = ''
   try {
     if (walletDecisionRequired.value) {
-      await store.resolveWalletBalanceReflect(true)
+      if (demoEndedWalletAmount.value === null) {
+        await store.resolveWalletBalanceReflect(true)
+      }
       walletResolution.value = 'included'
       walletChoice.value = 'include'
     }
@@ -328,10 +340,12 @@ async function withdrawWalletBalance() {
   walletStepLoading.value = true
   walletStepError.value = ''
   try {
-    await store.resolveWalletBalanceReflect(
-      false,
-      selectedWalletAccount.value.accountId ?? selectedWalletAccount.value.id,
-    )
+    if (demoEndedWalletAmount.value === null) {
+      await store.resolveWalletBalanceReflect(
+        false,
+        selectedWalletAccount.value.accountId ?? selectedWalletAccount.value.id,
+      )
+    }
     walletResolution.value = 'withdrawn'
     walletChoice.value = 'transfer'
     showWalletWithdrawSheet.value = false
