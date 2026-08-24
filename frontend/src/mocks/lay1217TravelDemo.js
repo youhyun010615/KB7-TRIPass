@@ -374,7 +374,7 @@ export function overlayWalletMain(base = {}) {
     targetAmount: TARGET,
     emergencyAmount: snap.emergency,
     goalAvailableAmount: Math.min(snap.balance, TARGET),
-    externalChargeAmount: INITIAL_WALLET,
+    externalChargeAmount: 0,
     savingRate: Math.min(100, Math.round((snap.balance / TARGET) * 1000) / 10),
     foreignBalances: demoForeignBalances(),
   }
