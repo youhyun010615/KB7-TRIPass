@@ -179,9 +179,9 @@ function onTouchEnd() {
                   <div class="journey-feature-strip" aria-label="TRIPASS 주요 기능">
                     <div><span>₩</span><strong>저축 목표</strong></div>
                     <i aria-hidden="true"></i>
-                    <div><span><i class="journey-feature-icon" :style="{ '--feature-icon': `url(${moneyExchangeIcon})` }" aria-hidden="true"></i></span><strong>여행 지출</strong></div>
+                    <div><span><i class="journey-feature-icon" :style="{ maskImage: `url(${moneyExchangeIcon})`, WebkitMaskImage: `url(${moneyExchangeIcon})` }" aria-hidden="true"></i></span><strong>여행 지출</strong></div>
                     <i aria-hidden="true"></i>
-                    <div class="ai-feature"><span><i class="journey-feature-icon" :style="{ '--feature-icon': `url(${aiIcon})` }" aria-hidden="true"></i></span><strong>AI 리포트</strong></div>
+                    <div class="ai-feature"><span><i class="journey-feature-icon" :style="{ maskImage: `url(${aiIcon})`, WebkitMaskImage: `url(${aiIcon})` }" aria-hidden="true"></i></span><strong>AI 리포트</strong></div>
                   </div>
                 </div>
 
@@ -1515,8 +1515,12 @@ function onTouchEnd() {
   width: 18px;
   height: 18px;
   background: var(--yellow);
-  mask: var(--feature-icon) center / contain no-repeat;
-  -webkit-mask: var(--feature-icon) center / contain no-repeat;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
 }
 
 .journey-feature-strip div strong {
