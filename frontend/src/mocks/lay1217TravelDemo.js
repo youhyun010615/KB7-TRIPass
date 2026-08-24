@@ -109,6 +109,151 @@ export function demoTravelScheduleDetail(scheduleId) {
   return demoTravelSchedules().find(item => item.id === Number(scheduleId)) || null
 }
 
+const demoReceiptTemplates = [
+  {
+    id: 98_001, countryName: '프랑스', categoryId: 5, categoryName: '취미여가',
+    merchantOriginalName: 'Musée du Louvre', merchantTranslatedName: '루브르 박물관',
+    paymentDateTime: '2027-04-05T10:18:00', currencyCode: 'EUR', currencyName: '유로', currencySymbol: '€', totalAmount: 90,
+    items: [['Billet Musée du Louvre', '루브르 박물관 입장권', 1, 90]], participants: ['유현', '유진'],
+  },
+  {
+    id: 98_002, countryName: '프랑스', categoryId: 1, categoryName: '식비',
+    merchantOriginalName: 'Bouillon Chartier', merchantTranslatedName: '부이옹 샤르티에',
+    paymentDateTime: '2027-04-06T12:35:00', currencyCode: 'EUR', currencyName: '유로', currencySymbol: '€', totalAmount: 32,
+    items: [['Menu du jour', '오늘의 메뉴', 1, 24], ['Café', '커피', 1, 8]], participants: [],
+  },
+  {
+    id: 98_003, countryName: '스위스', categoryId: 9, categoryName: '취미여가',
+    merchantOriginalName: 'Jungfraujoch - Top of Europe', merchantTranslatedName: '융프라우요흐 전망대',
+    paymentDateTime: '2027-04-10T09:12:00', currencyCode: 'CHF', currencyName: '스위스 프랑', currencySymbol: 'CHF', totalAmount: 70,
+    items: [['Jungfraujoch Ticket', '융프라우요흐 입장권', 1, 70]], participants: ['유현', '유진'],
+  },
+  {
+    id: 98_004, countryName: '스위스', categoryId: 1, categoryName: '식비',
+    merchantOriginalName: 'Zeughauskeller', merchantTranslatedName: '추어크하우스켈러',
+    paymentDateTime: '2027-04-12T18:42:00', currencyCode: 'CHF', currencyName: '스위스 프랑', currencySymbol: 'CHF', totalAmount: 28.2,
+    items: [['Zürcher Geschnetzeltes', '취리히식 송아지 요리', 1, 28.2]], participants: [],
+  },
+  {
+    id: 98_005, countryName: '포르투갈', categoryId: 9, categoryName: '취미여가',
+    merchantOriginalName: 'Palácio Nacional da Pena', merchantTranslatedName: '페나 궁전',
+    paymentDateTime: '2027-04-16T10:08:00', currencyCode: 'EUR', currencyName: '유로', currencySymbol: '€', totalAmount: 105,
+    items: [['Palace & Park Ticket', '페나 궁전·공원 패스', 3, 35]], participants: ['유현', '유진'],
+  },
+  {
+    id: 98_006, countryName: '포르투갈', categoryId: 1, categoryName: '식비',
+    merchantOriginalName: 'Time Out Market Lisboa', merchantTranslatedName: '타임아웃 마켓 리스본',
+    paymentDateTime: '2027-04-17T18:25:00', currencyCode: 'EUR', currencyName: '유로', currencySymbol: '€', totalAmount: 24.5,
+    items: [['Bacalhau', '바칼랰 요리', 1, 18], ['Pastel de nata', '에그타르트', 2, 3.25]], participants: [],
+  },
+]
+
+const demoSettlementState = new Map([['유현', false], ['유진', false]])
+
+function receiptWithContext(template, tripId, countryIds = {}) {
+  const splitCount = template.participants.length ? template.participants.length + 1 : 1
+  return {
+    ...template,
+    tripId: Number(tripId),
+    countryId: Number(countryIds[template.countryName]) || null,
+    currencyId: template.currencyCode === 'CHF' ? 2 : 1,
+    splitCount,
+    splitAmount: Number((template.totalAmount / splitCount).toFixed(2)),
+    participantNames: template.participants.join(', '),
+    participants: template.participants.map((participantName, index) => ({
+      id: template.id * 10 + index + 1,
+      participantName,
+      displayOrder: index + 1,
+    })),
+    items: template.items.map(([originalName, translatedName, quantity, amount], index) => ({
+      id: template.id * 10 + index + 1,
+      originalName,
+      translatedName,
+      quantity,
+      amount,
+      displayOrder: index + 1,
+    })),
+    fileName: null,
+    fileUrl: '',
+    fileType: null,
+    memo: '',
+    status: 'COMPLETED',
+    ocrRawText: '',
+    createdAt: template.paymentDateTime,
+    updatedAt: template.paymentDateTime,
+  }
+}
+
+export function demoReceipts(tripId, countryIds = {}, params = {}) {
+  const cutoff = todayIso()
+  return demoReceiptTemplates
+    .filter(item => item.paymentDateTime.slice(0, 10) <= cutoff)
+    .filter(item => !params.startDate || item.paymentDateTime.slice(0, 10) >= params.startDate)
+    .filter(item => !params.endDate || item.paymentDateTime.slice(0, 10) <= params.endDate)
+    .map(item => receiptWithContext(item, tripId, countryIds))
+}
+
+export function demoReceiptDetail(tripId, receiptId, countryIds = {}) {
+  const template = demoReceiptTemplates.find(item => item.id === Number(receiptId))
+  return template ? receiptWithContext(template, tripId, countryIds) : null
+}
+
+export function demoReceiptDates() {
+  const cutoff = todayIso()
+  return [...new Set(demoReceiptTemplates
+    .map(item => item.paymentDateTime.slice(0, 10))
+    .filter(date => date <= cutoff))]
+}
+
+function participantReceipts(tripId, participantName, countryIds = {}) {
+  return demoReceipts(tripId, countryIds).filter(receipt =>
+    receipt.participants.some(participant => participant.participantName === participantName))
+}
+
+function aggregateParticipantAmounts(receipts) {
+  const amounts = new Map()
+  receipts.forEach(receipt => {
+    amounts.set(receipt.currencyCode, {
+      currencyCode: receipt.currencyCode,
+      currencySymbol: receipt.currencySymbol,
+      amount: Number(((amounts.get(receipt.currencyCode)?.amount || 0) + receipt.splitAmount).toFixed(2)),
+    })
+  })
+  return [...amounts.values()]
+}
+
+export function demoReceiptSettlements(tripId, countryIds = {}) {
+  const participants = ['유현', '유진'].map(participantName => {
+    const receipts = participantReceipts(tripId, participantName, countryIds)
+    return {
+      participantName,
+      receiptCount: receipts.length,
+      settled: demoSettlementState.get(participantName) === true,
+      amounts: aggregateParticipantAmounts(receipts),
+    }
+  }).filter(participant => participant.receiptCount > 0)
+  const totalAmounts = new Map()
+  participants.forEach(participant => participant.amounts.forEach(amount => {
+    const current = totalAmounts.get(amount.currencyCode) || { ...amount, amount: 0 }
+    current.amount = Number((current.amount + amount.amount).toFixed(2))
+    totalAmounts.set(amount.currencyCode, current)
+  }))
+  return { totalAmounts: [...totalAmounts.values()], participantCount: participants.length, participants }
+}
+
+export function demoParticipantSettlement(tripId, participantName, countryIds = {}) {
+  const receipts = participantReceipts(tripId, participantName, countryIds)
+  return {
+    participantName,
+    totalOwedAmount: receipts.reduce((sum, receipt) => sum + receipt.splitAmount, 0),
+    receipts,
+  }
+}
+
+export function toggleDemoReceiptSettlement(participantName, settled) {
+  demoSettlementState.set(participantName, Boolean(settled))
+}
+
 export function isLay1217Demo() {
   try {
     const user = JSON.parse(localStorage.getItem('tripass-user') || 'null')
@@ -273,7 +418,7 @@ export function demoPostTripReport(tripId) {
       const index = state.categories.indexOf(max)
       return { countryName: country.countryName, categoryName: categoryNames[index], amount: max, countryTotal: state.total }
     }),
-    receiptCount: daily.length, nextTripMonthlySuggestion: 460_000, nextTripMonths: 8,
+    receiptCount: demoReceiptTemplates.length, nextTripMonthlySuggestion: 460_000, nextTripMonths: 8,
   }
 }
 

@@ -1,4 +1,13 @@
 import api from '@/api'
+import {
+  demoParticipantSettlement,
+  demoReceiptDates,
+  demoReceiptDetail,
+  demoReceipts,
+  demoReceiptSettlements,
+  isLay1217Demo,
+  toggleDemoReceiptSettlement,
+} from '@/mocks/lay1217TravelDemo'
 
 const OCR_REQUEST_TIMEOUT = 60000
 
@@ -42,17 +51,35 @@ export function createReceipt(tripId, data, file = null) {
 }
 
 // 로그인 회원의 특정 여행 영수증 목록을 조회한다.
-export function getReceipts(tripId, params = {}) {
+const demoCountryMapCache = new Map()
+const demoResponse = data => Promise.resolve({ data: { data } })
+
+async function getDemoCountryMap(tripId) {
+  if (demoCountryMapCache.has(Number(tripId))) return demoCountryMapCache.get(Number(tripId))
+  const response = await api.get(`/trips/${tripId}`)
+  const trip = response.data?.data ?? response.data ?? {}
+  const result = Object.fromEntries((trip.countries || []).map(country => [
+    country.countryName,
+    Number(country.countryId ?? country.id) || null,
+  ]))
+  demoCountryMapCache.set(Number(tripId), result)
+  return result
+}
+
+export async function getReceipts(tripId, params = {}) {
+  if (isLay1217Demo()) return demoResponse(demoReceipts(tripId, await getDemoCountryMap(tripId), params))
   return api.get(`/trips/${tripId}/receipts`, { params })
 }
 
 // 여행 영수증의 참여자별 정산 요약을 조회한다.
-export function getReceiptSettlements(tripId) {
+export async function getReceiptSettlements(tripId) {
+  if (isLay1217Demo()) return demoResponse(demoReceiptSettlements(tripId, await getDemoCountryMap(tripId)))
   return api.get(`/trips/${tripId}/receipts/settlements`)
 }
 
 // 특정 공동결제 참여자에게 연결된 영수증과 총 정산 금액을 조회한다.
-export function getParticipantSettlement(tripId, participantName) {
+export async function getParticipantSettlement(tripId, participantName) {
+  if (isLay1217Demo()) return demoResponse(demoParticipantSettlement(tripId, participantName, await getDemoCountryMap(tripId)))
   return api.get(
     `/trips/${tripId}/receipts/settlements/${encodeURIComponent(participantName)}`,
   )
@@ -60,6 +87,10 @@ export function getParticipantSettlement(tripId, participantName) {
 
 // 공동결제 참여자의 정산 완료 상태를 변경한다.
 export function toggleReceiptSettlement(tripId, participantName, settled) {
+  if (isLay1217Demo()) {
+    toggleDemoReceiptSettlement(participantName, settled)
+    return demoResponse({ participantName, settled })
+  }
   return api.put(
     `/trips/${tripId}/receipts/settlements/${encodeURIComponent(participantName)}/toggle`,
     null,
@@ -69,11 +100,13 @@ export function toggleReceiptSettlement(tripId, participantName, settled) {
 
 // 영수증이 실제로 등록된 결제 날짜 목록을 조회한다.
 export function getReceiptDates(tripId) {
+  if (isLay1217Demo()) return demoResponse(demoReceiptDates())
   return api.get(`/trips/${tripId}/receipts/dates`)
 }
 
 // 로그인 회원이 소유한 특정 여행의 영수증 상세 정보를 조회한다.
-export function getReceipt(tripId, receiptId) {
+export async function getReceipt(tripId, receiptId) {
+  if (isLay1217Demo()) return demoResponse(demoReceiptDetail(tripId, receiptId, await getDemoCountryMap(tripId)))
   return api.get(
     `/trips/${tripId}/receipts/${receiptId}`,
   )
