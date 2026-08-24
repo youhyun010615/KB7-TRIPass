@@ -155,6 +155,14 @@ const selectedTravelEnd = computed(() => {
   if (selectedTripPeriods.value.length) return selectedTripPeriods.value.at(-1).endDate;
   return props.listMode ? reportStore.preTripReport?.endDate : store.travelEnd;
 });
+const isTripEnded = computed(() => {
+  const status = String(reportStore.tripBasic?.status || '').toUpperCase();
+  if (status === 'ENDED' || status === 'ARCHIVED') return true;
+  if (!selectedTravelEnd.value) return false;
+  const today = currentDateTime();
+  const end = new Date(`${selectedTravelEnd.value}T23:59:59`);
+  return today.getTime() > end.getTime();
+});
 const periodForDate = (date) => selectedTripPeriods.value.find(
   (period) => date >= period.startDate && date <= period.endDate,
 );
@@ -534,12 +542,13 @@ async function focusTimelineDate(date) {
         <div v-if="!visibleTimelineGroups.length" class="empty-state">
           <span class="empty-calendar-icon" aria-hidden="true"><CalendarDays :size="28" :stroke-width="2.2" /></span>
           <b>{{ listMode ? '선택한 날짜에 등록된 일정이 없어요' : '아직 등록된 일정이 없어요' }}</b>
-          <small>{{ listMode ? '아래 버튼을 눌러 이 날짜에 일정을 추가해 보세요.' : '첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.' }}</small>
+          <small>{{ isTripEnded ? '이 날짜에 등록된 일정이 없습니다.' : listMode ? '아래 버튼을 눌러 이 날짜에 일정을 추가해 보세요.' : '첫 일정을 등록하면 타임라인에 차곡차곡 채워져요.' }}</small>
         </div>
       </div>
     </section>
 
     <button
+      v-if="!isTripEnded"
       class="add-button"
       type="button"
       @click="openScheduleForm"

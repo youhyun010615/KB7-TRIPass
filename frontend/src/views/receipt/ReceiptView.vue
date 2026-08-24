@@ -96,6 +96,12 @@ const tripTitle = computed(() =>
     trip.value?.tripName ||
     '여행 정보 확인 중',
 )
+const isTripEnded = computed(() => {
+  const status = String(trip.value?.status || '').toUpperCase()
+  if (status === 'ENDED' || status === 'ARCHIVED') return true
+  if (!trip.value?.endDate) return false
+  return todayIso() > trip.value.endDate
+})
 
 const countryCodeFallback = {
   프랑스: 'FR', 독일: 'DE', 스위스: 'CH', 일본: 'JP', 홍콩: 'HK',
@@ -861,7 +867,7 @@ onMounted(loadPage)
       <p class="receipt-list-footer"><span>TRIPASS</span> THANK YOU FOR TRAVELING WITH TRIPASS</p>
     </section>
 
-    <div class="receipt-actions">
+    <div v-if="!isTripEnded" class="receipt-actions">
       <button
           type="button"
           class="manual-button"
