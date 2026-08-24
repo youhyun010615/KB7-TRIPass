@@ -29,6 +29,8 @@ public interface TravelMapper {
 
     int archiveTrip(@Param("tripId") Long tripId, @Param("userId") Long userId, @Param("today") LocalDate today);
 
+    int softDeleteTrip(@Param("tripId") Long tripId, @Param("userId") Long userId);
+
     int acknowledgeStartReport(@Param("tripId") Long tripId, @Param("userId") Long userId, @Param("today") LocalDate today);
 
     // 유저의 current_view_mode 상태 변경

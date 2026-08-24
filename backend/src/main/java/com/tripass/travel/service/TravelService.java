@@ -157,6 +157,15 @@ public class TravelService {
     }
 
     @Transactional
+    public void deleteTrip(Long tripId, Long currentUserId) {
+        validateTripOwner(tripId, currentUserId);
+        if (travelMapper.softDeleteTrip(tripId, currentUserId) == 0) {
+            throw new TravelException(TravelErrorCode.TRIP_NOT_FOUND);
+        }
+        travelMapper.updateUserCurrentViewMode(currentUserId, "SAVING");
+    }
+
+    @Transactional
     public void acknowledgeStartReport(Long tripId, Long currentUserId) {
         validateTripOwner(tripId, currentUserId);
         LocalDate today = devDateUtil.today(currentUserId);

@@ -31,9 +31,11 @@ function money(value) { return `${Math.round(Number(value || 0)).toLocaleString(
 function percent(value, total) { return total > 0 ? Math.round((Number(value) / Number(total)) * 1000) / 10 : 0 }
 
 const budgetUsage = computed(() => percent(r.value?.spent, r.value?.targetBudget))
-const topCategory = computed(() => r.value?.categories?.[0] || null)
 const categoryTotal = computed(() => (r.value?.categories || []).reduce((sum, item) => sum + Number(item.amount), 0))
-const categoryRows = computed(() => (r.value?.categories || []).map((item, index) => ({ ...item, rank: index + 1, percent: percent(item.amount, categoryTotal.value) })))
+const categoryRows = computed(() => [...(r.value?.categories || [])]
+  .sort((a, b) => Number(b.amount) - Number(a.amount))
+  .map((item, index) => ({ ...item, rank: index + 1, percent: percent(item.amount, categoryTotal.value) })))
+const topCategory = computed(() => categoryRows.value[0] || null)
 const daily = computed(() => r.value?.daily || [])
 const dailyMax = computed(() => Math.max(...daily.value.map(item => Number(item.amount)), 1))
 const peak = computed(() => daily.value.reduce((best, item) => !best || item.amount > best.amount ? item : best, null))

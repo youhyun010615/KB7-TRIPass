@@ -25,6 +25,10 @@ export async function updateTripGoal(tripId, payload) {
   return unwrap(response);
 }
 
+export async function deleteTrip(tripId) {
+  await api.delete(`/trips/${tripId}`);
+}
+
 export async function fetchActiveTripGoal() {
   const response = await api.get('/trips/active');
   return unwrap(response);

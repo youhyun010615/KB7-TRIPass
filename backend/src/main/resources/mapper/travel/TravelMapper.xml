@@ -141,6 +141,16 @@
           AND is_deleted = 0
     </update>
 
+    <update id="softDeleteTrip">
+        UPDATE trips
+        SET is_deleted = 1,
+            deleted_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{tripId}
+          AND user_id = #{userId}
+          AND is_deleted = 0
+    </update>
+
 
     <!-- 여행 단건 정보 조회 (start_date, end_date, user_id 포함) -->
     <select id="selectTripById" resultType="com.tripass.travel.domain.Trip">

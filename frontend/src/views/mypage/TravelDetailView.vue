@@ -3,19 +3,22 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TravelManagementMenu from '@/components/mypage/TravelManagementMenu.vue'
 import TravelArchiveSummaryCard from '@/components/mypage/TravelArchiveSummaryCard.vue'
-import { fetchMyTrips } from '@/api/travel'
+import { deleteTrip, fetchMyTrips } from '@/api/travel'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { getReceipts } from '@/api/receipt'
-import { countryPresentation, flagIconClass } from '@/stores/travel'
+import { countryPresentation, flagIconClass, useTravelStore } from '@/stores/travel'
 import { daysUntilTrip, tripPhase } from '@/utils/tripLifecycle'
 
 const router = useRouter()
 const route = useRoute()
+const travelStore = useTravelStore()
 
 const loading = ref(true)
 const trip = ref(null)
 const report = ref(null)
 const receipts = ref([])
+const showDeleteConfirm = ref(false)
+const deleting = ref(false)
 
 function splitCountryNames(joined) {
   return (joined || '').split(' · ').map((name) => name.trim()).filter(Boolean)
@@ -92,6 +95,22 @@ function goEdit() {
   router.push({ name: 'TravelRegister', query: { mode: 'edit' } })
 }
 
+async function confirmDeleteTrip() {
+  if (!trip.value?.tripId || deleting.value) return
+  deleting.value = true
+  try {
+    await deleteTrip(trip.value.tripId)
+    travelStore.resetGoal()
+    showDeleteConfirm.value = false
+    await router.replace({ name: 'MypageTravel' })
+  } catch (error) {
+    console.error('여행 삭제 실패:', error)
+    window.alert(error.response?.data?.message || '여행을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.')
+  } finally {
+    deleting.value = false
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -159,7 +178,33 @@ onMounted(async () => {
         <h2 class="text-lg font-black text-gray-900 px-0.5">{{ isEnded ? '여행 기록' : '여행 관리 메뉴' }}</h2>
 
         <TravelManagementMenu :items="menuItems" @select="router.push($event.path)" />
+
+        <button
+          type="button"
+          class="trip-delete-button"
+          @click="showDeleteConfirm = true"
+        >
+          여행 삭제하기
+        </button>
       </div>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="delete-modal-backdrop" @click.self="showDeleteConfirm = false">
+      <section class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-trip-title">
+        <div class="delete-modal-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 id="delete-trip-title">이 여행을 삭제할까요?</h2>
+        <p>삭제한 여행은 목록과 홈에서 더 이상 표시되지 않아요.</p>
+        <div class="delete-modal-actions">
+          <button type="button" :disabled="deleting" @click="showDeleteConfirm = false">취소</button>
+          <button type="button" class="danger" :disabled="deleting" @click="confirmDeleteTrip">
+            {{ deleting ? '삭제 중...' : '삭제하기' }}
+          </button>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -174,6 +219,17 @@ onMounted(async () => {
 .trip-goal-bar{background:rgba(255,255,255,.7)}
 .trip-goal-bar>div{background:#2662ea}
 .trip-goal-amount{color:#5e78a2}
+.trip-delete-button{width:100%;height:52px;border:1px solid #ffd9dc;border-radius:16px;background:#fff;color:#e34d59;font-size:14px;font-weight:800;transition:background .15s ease,transform .15s ease}
+.trip-delete-button:active{background:#fff3f4;transform:scale(.99)}
+.delete-modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,24,48,.48);backdrop-filter:blur(3px)}
+.delete-modal{width:100%;max-width:340px;border-radius:24px;background:#fff;padding:28px 22px 20px;text-align:center;box-shadow:0 24px 64px rgba(12,31,68,.25)}
+.delete-modal-icon{display:flex;width:52px;height:52px;margin:0 auto 16px;align-items:center;justify-content:center;border-radius:17px;background:#fff0f1;color:#e34d59}
+.delete-modal h2{font-size:19px;font-weight:900;color:#101a31}
+.delete-modal p{margin-top:8px;font-size:13px;line-height:1.6;color:#8290a9}
+.delete-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
+.delete-modal-actions button{height:48px;border-radius:14px;background:#f0f3f8;color:#53627b;font-size:14px;font-weight:800}
+.delete-modal-actions button.danger{background:#e84e5a;color:#fff}
+.delete-modal-actions button:disabled{opacity:.55}
 </style>
 
 <style scoped>

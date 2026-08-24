@@ -196,6 +196,16 @@ public class TravelController {
         return ResponseEntity.ok(ApiResponse.success("여행 목표 수정 성공", data));
     }
 
+    /** 로그인 사용자가 소유한 여행을 삭제합니다. 연결 데이터 보존을 위해 소프트 삭제합니다. */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteTrip(
+            @PathVariable("id") Long tripId,
+            Authentication authentication
+    ) {
+        travelService.deleteTrip(tripId, getAuthenticatedUserId(authentication));
+        return ResponseEntity.ok(ApiResponse.success("여행 삭제 성공", null));
+    }
+
     /** 특정 여행 목표를 조회합니다. */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TripGoalResponseDto>> getTripGoal(
