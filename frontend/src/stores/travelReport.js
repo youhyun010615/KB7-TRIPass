@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { fetchPreTripReport, fetchPostTripReport } from '@/api/report'
 import { fetchTripGoal, fetchBudgetCheck } from '@/api/travel'
 import { useTravelStore } from '@/stores/travel'
+import { isLay1217Demo } from '@/mocks/lay1217TravelDemo'
 
 const COUNTRY_COLORS = ['#1767dc', '#c8173c', '#25ad72', '#7143e8', '#ff922b']
 const CATEGORY_COLORS = ['#2675ea', '#7143e8', '#25ad72', '#ef3d91', '#ff922b', '#93a4ba']
@@ -11,6 +12,7 @@ const DEMO_PRE_TRIP_REPORT = {
   tripName: '유럽 3개국 여행',
   startDate: '2027-04-04',
   endDate: '2027-04-18',
+  countryNames: ['프랑스', '스위스', '포르투갈'],
   targetBudget: 3338000,
   securedFund: 3938008,
   savingHistory: [
@@ -36,9 +38,9 @@ const DEMO_PRE_TRIP_REPORT = {
 }
 
 function isDemoPersonaReport(report) {
-  return report?.tripName === DEMO_PRE_TRIP_REPORT.tripName
+  return isLay1217Demo() || (report?.tripName === DEMO_PRE_TRIP_REPORT.tripName
     && report?.startDate === DEMO_PRE_TRIP_REPORT.startDate
-    && report?.endDate === DEMO_PRE_TRIP_REPORT.endDate
+    && report?.endDate === DEMO_PRE_TRIP_REPORT.endDate)
 }
 
 function formatDateRange(startDate, endDate) {
@@ -128,6 +130,7 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     const r = preTripReport.value
     if (!r) return null
     const demo = isDemoPersonaReport(r) ? DEMO_PRE_TRIP_REPORT : null
+    const reportCountryNames = demo?.countryNames ?? r.countryNames ?? []
     const targetBudget = demo?.targetBudget ?? r.targetBudget
     const securedFund = demo?.securedFund ?? r.securedFund
     const savingHistory = demo?.savingHistory ?? r.savingHistory ?? []
@@ -135,13 +138,13 @@ export const useTravelReportStore = defineStore('travelReport', () => {
     const checklistStages = demo?.checklistStages ?? []
     return {
       trip: {
-        title: r.tripName,
-        flags: flagsFor(r.countryNames),
-        countryCodes: (r.countryNames || [])
+        title: demo?.tripName ?? r.tripName,
+        flags: flagsFor(reportCountryNames),
+        countryCodes: reportCountryNames
           .map(name => travelStore.countryFlagMap[name]?.code)
           .filter(Boolean),
-        countries: (r.countryNames || []).join(' · '),
-        dateRange: formatDateRange(r.startDate, r.endDate),
+        countries: reportCountryNames.join(' · '),
+        dateRange: formatDateRange(demo?.startDate ?? r.startDate, demo?.endDate ?? r.endDate),
         dDay: r.daysUntilTrip,
       },
       targetBudget,

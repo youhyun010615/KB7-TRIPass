@@ -257,7 +257,10 @@ export function toggleDemoReceiptSettlement(participantName, settled) {
 export function isLay1217Demo() {
   try {
     const user = JSON.parse(localStorage.getItem('tripass-user') || 'null')
-    return String(user?.loginId || '').trim().toLowerCase() === 'lay1217'
+    const demoAccounts = new Set(['lay1217', 'ahyoung021217@gmail.com'])
+    return [user?.loginId, user?.email, user?.username]
+      .map(value => String(value || '').trim().toLowerCase())
+      .some(identity => demoAccounts.has(identity))
   } catch {
     return false
   }
