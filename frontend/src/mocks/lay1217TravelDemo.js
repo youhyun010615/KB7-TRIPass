@@ -62,6 +62,26 @@ const daily = [
   ['2027-04-18', '포르투갈', 41_800],
 ]
 
+const travelCardPaymentDetails = [
+  ['12:10:00', 'Île-de-France Mobilités', '교통'],
+  ['10:18:00', 'Musée du Louvre', '취미여가'],
+  ['12:35:00', 'Bouillon Chartier', '식비'],
+  ['19:42:00', 'Bateaux Mouches', '취미여가'],
+  ['15:26:00', 'Galeries Lafayette', '쇼핑'],
+  ['09:14:00', 'SNCF Connect', '교통'],
+  ['16:22:00', 'SBB Mobile', '교통'],
+  ['09:12:00', 'Jungfraujoch - Top of Europe', '취미여가'],
+  ['13:08:00', 'Hiltl Zürich', '식비'],
+  ['18:42:00', 'Zeughauskeller', '식비'],
+  ['17:15:00', 'Coop City Zürich', '쇼핑'],
+  ['09:38:00', 'Zürich HB 교통권', '교통'],
+  ['17:34:00', 'Viva Viagem', '교통'],
+  ['10:24:00', 'Mosteiro dos Jerónimos', '취미여가'],
+  ['10:08:00', 'Palácio Nacional da Pena', '취미여가'],
+  ['18:25:00', 'Time Out Market Lisboa', '식비'],
+  ['11:46:00', 'A Vida Portuguesa', '쇼핑'],
+]
+
 const demoSchedules = [
   ['fr-0405', '프랑스', 'FR', '2027-04-05T10:00:00', '루브르 박물관 가이드 투어', '루브르 박물관'],
   ['fr-0406', '프랑스', 'FR', '2027-04-06T09:30:00', '베르사유 궁전 투어', '베르사유 궁전'],
@@ -397,6 +417,61 @@ export function demoWalletLedgers(base = []) {
     balanceBefore: item[2], balanceAfter: item[3], memo: item[4], createdAt: item[0],
   }))
   return [...rows, ...(base || []).filter(item => String(item.createdAt || '').slice(0, 10) < '2027-04-04')]
+}
+
+export function demoTravelCardTransactions() {
+  const cutoff = todayIso()
+  const payments = demoStage() === 'dday' ? [] : daily
+    .map(([date, countryName, krwAmount], index) => {
+      const currencyCode = countryName === '스위스' ? 'CHF' : 'EUR'
+      const appliedExchangeRate = currencyCode === 'CHF' ? 1780 : 1620
+      const [time, merchantName, categoryName] = travelCardPaymentDetails[index]
+      return {
+        transactionId: `PAYMENT-LAY-DEMO-${index + 1}`,
+        sourceType: 'CARD_PAYMENT',
+        transactionType: 'PAYMENT',
+        direction: 'OUT',
+        currencyCode,
+        foreignAmount: Number((krwAmount / appliedExchangeRate).toFixed(2)),
+        krwAmount,
+        balanceBefore: null,
+        balanceAfter: null,
+        appliedExchangeRate,
+        merchantName,
+        categoryName,
+        countryName,
+        memo: '',
+        occurredAt: `${date}T${time}`,
+      }
+    })
+    .filter(item => item.occurredAt.slice(0, 10) <= cutoff)
+
+  const exchanges = fundingLedgers
+    .filter(item => item[0].slice(0, 10) <= cutoff)
+    .map((item, index) => {
+      const currencyCode = item[4].includes('CHF') ? 'CHF' : 'EUR'
+      const appliedExchangeRate = currencyCode === 'CHF' ? 1780 : 1620
+      return {
+        transactionId: `LEDGER-LAY-DEMO-${index + 1}`,
+        sourceType: 'CARD_LEDGER',
+        transactionType: 'TOPUP',
+        direction: 'IN',
+        currencyCode,
+        foreignAmount: Number((item[1] / appliedExchangeRate).toFixed(2)),
+        krwAmount: item[1],
+        balanceBefore: null,
+        balanceAfter: null,
+        appliedExchangeRate,
+        merchantName: null,
+        categoryName: null,
+        countryName: null,
+        memo: item[4],
+        occurredAt: item[0],
+      }
+    })
+
+  return [...payments, ...exchanges]
+    .sort((first, second) => String(second.occurredAt).localeCompare(String(first.occurredAt)))
 }
 
 export function demoPostTripReport(tripId) {

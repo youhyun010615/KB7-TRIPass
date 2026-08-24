@@ -1,5 +1,5 @@
 import api from '@/api'
-import { demoForeignBalances, demoWalletLedgers, isLay1217Demo, overlayWalletMain } from '@/mocks/lay1217TravelDemo'
+import { demoForeignBalances, demoTravelCardTransactions, demoWalletLedgers, isLay1217Demo, overlayWalletMain } from '@/mocks/lay1217TravelDemo'
 
 const dataOf = response => response.data?.data
 
@@ -112,5 +112,6 @@ export async function fetchWalletTravelCardLedgers() {
 }
 
 export async function fetchWalletTravelCardTransactions() {
+  if (isLay1217Demo()) return demoTravelCardTransactions()
   return dataOf(await api.get('/wallet/travel-card/transactions'))
 }
