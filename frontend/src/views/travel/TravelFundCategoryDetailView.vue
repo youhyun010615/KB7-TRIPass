@@ -59,11 +59,16 @@ const loadTransactions = async () => {
   isLoading.value = true;
   errorMessage.value = '';
   try {
-    transactions.value = await fetchTripTransactions(
+    const result = await fetchTripTransactions(
       tripId,
       countryId,
       categoryName,
     );
+    transactions.value = (Array.isArray(result) ? result : []).sort((a, b) => {
+      const dateCompare = String(b.transactionDate || '').localeCompare(String(a.transactionDate || ''));
+      if (dateCompare !== 0) return dateCompare;
+      return String(b.transactionTime || '').localeCompare(String(a.transactionTime || ''));
+    });
   } catch (error) {
     console.error('거래 내역 조회 실패:', error);
     transactions.value = [];
@@ -85,6 +90,19 @@ watch(
 const total = computed(() =>
   transactions.value.reduce((sum, item) => sum + Number(item.amount || 0), 0),
 );
+const foreignTotalText = computed(() => {
+  const totals = new Map();
+  transactions.value.forEach(item => {
+    const code = item.currencySymbol || 'EUR';
+    const amount = Number(item.originalAmount ?? (
+      Number(item.amount || 0) / Number(item.appliedExchangeRate || 1)
+    ));
+    totals.set(code, (totals.get(code) || 0) + amount);
+  });
+  return [...totals]
+    .map(([code, amount]) => `${code} ${amount.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+    .join(' · ');
+});
 const countryName = computed(() => String(route.query.countryName || '전체 여행'));
 const dateRange = computed(() => {
   const start = route.query.startDate;
@@ -92,6 +110,13 @@ const dateRange = computed(() => {
   return start && end ? `${start} ~ ${end}` : '여행 기간 전체';
 });
 const money = (value) => `${Number(value || 0).toLocaleString('ko-KR')}원`;
+const foreignMoney = (item) => {
+  const code = item.currencySymbol || 'EUR';
+  const amount = Number(item.originalAmount ?? (
+    Number(item.amount || 0) / Number(item.appliedExchangeRate || 1)
+  ));
+  return `${code} ${amount.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 const dateLabel = (value) =>
   value ? new Intl.DateTimeFormat('ko-KR', {
     month: 'numeric',
@@ -104,7 +129,7 @@ const dateLabel = (value) =>
   <main class="detail-page">
     <header>
       <button type="button" @click="router.back()">‹</button>
-      <h1>{{ displayCategoryName }} 상세</h1>
+      <h1>{{ displayCategoryName }} 상세 거래내역</h1>
       <span aria-hidden="true"></span>
     </header>
     <section
@@ -127,7 +152,7 @@ const dateLabel = (value) =>
         </div>
       </div>
       <div class="total">
-        <span>여행 기간 사용 금액</span><strong>{{ money(total) }}</strong>
+        <span>여행 기간 사용 합산 금액</span><strong>{{ foreignTotalText }}</strong>
       </div>
       <p>등록한 여행 기간에 발생한 거래만 반영했어요.</p>
     </section>
@@ -152,7 +177,7 @@ const dateLabel = (value) =>
           ><b>{{ item.merchantName }}</b></span
         >
         <span class="amount"
-          ><b>-{{ money(item.amount) }}</b
+          ><b>-{{ foreignMoney(item) }}</b
           ><small>상세보기 ›</small></span
         >
       </button>
@@ -189,6 +214,7 @@ header button {
   box-shadow: 0 5px 16px rgba(36, 72, 117, 0.07);
 }
 h1 {
+  text-align: center;
   font-size: 19px;
   font-weight: 900;
 }
@@ -256,7 +282,7 @@ h1 {
 }
 .total strong {
   color: var(--accent);
-  font-size: 23px;
+  font-size: 20px;
 }
 .category-summary p {
   margin-top: 9px;
