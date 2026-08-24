@@ -8,6 +8,7 @@ import shoppingIcon from '@/assets/icons/shopping-cart.svg';
 import taxiIcon from '@/assets/icons/taxi.svg';
 import leisureIcon from '@/assets/icons/hobby_drink.svg';
 import livingIcon from '@/assets/icons/home-dollar.svg';
+import graphIcon from '@/assets/icons/graph-bar.svg';
 import foodIconRaw from '@/assets/icons/food.svg?raw';
 import cafeIconRaw from '@/assets/icons/cafe.svg?raw';
 import shoppingIconRaw from '@/assets/icons/shopping-cart.svg?raw';
@@ -202,7 +203,7 @@ function goCategoryDetail(categoryCode) {
           </div>
         </div>
         <div v-else class="saving-empty">
-          <span aria-hidden="true">📊</span>
+          <span aria-hidden="true"><img :src="graphIcon" alt="" /></span>
           <b>{{ savingResult?.resultMessage || '이번 달 저축 목표가 설정되지 않아 결과를 계산할 수 없어요.' }}</b>
         </div>
 
@@ -510,8 +511,16 @@ function goCategoryDetail(categoryCode) {
   text-align: center;
 }
 .saving-empty span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
   font-size: 20px;
-  opacity: 0.7;
+}
+.saving-empty span img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 .saving-empty b {
   color: #7186aa;
