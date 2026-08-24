@@ -20,6 +20,7 @@ const CARD_COMPANY_IMAGES = [
 // 카드사 공식 홈페이지에서 뒷면 이미지를 구할 수 있었던 카드만 등록한다.
 // (체크카드 뒷면은 대부분 마그네틱선·서명란뿐이라 공식 뒷면 이미지를 제공하지 않는 카드사가 많다.)
 const CARD_COMPANY_BACK_IMAGES = [
+    { match: 'KB', image: kbTravelersImage },
     { match: '신한', image: shinhanSolTravelBackImage },
 ]
 

@@ -18,12 +18,24 @@ const hasActiveFilters = computed(() => Boolean(
 
 const PAGE_SIZE = 6
 const currentPage = ref(1)
+const orderedCards = computed(() => {
+  const priority = (card) => {
+    if (card.cardCompany?.includes('KB') && card.cardName?.includes('트래블러스')) return 0
+    if (card.cardCompany?.includes('신한') && card.cardName?.includes('SOL트래블')) return 1
+    return 2
+  }
+
+  return travelCardsStore.cards
+      .map((card, index) => ({ card, index }))
+      .sort((left, right) => priority(left.card) - priority(right.card) || left.index - right.index)
+      .map(({ card }) => card)
+})
 const totalPages = computed(() =>
     Math.max(1, Math.ceil(travelCardsStore.cards.length / PAGE_SIZE)),
 )
 const pagedCards = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
-  return travelCardsStore.cards.slice(start, start + PAGE_SIZE)
+  return orderedCards.value.slice(start, start + PAGE_SIZE)
 })
 
 function goToPage(page) {
