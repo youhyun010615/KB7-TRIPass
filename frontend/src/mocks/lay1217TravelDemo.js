@@ -81,6 +81,34 @@ const demoSchedules = [
   ['pt-0418', '포르투갈', 'PT', '2027-04-18T11:00:00', '타임아웃 마켓·마지막 산책', '타임아웃 마켓'],
 ]
 
+function demoScheduleRow(item, index) {
+  const [, countryName, countryCode, scheduledAt, scheduleName, placeName] = item
+  return {
+    id: 97_001 + index,
+    tripCountryId: null,
+    countryName,
+    countryCode,
+    timeZone: countryCode === 'PT' ? 'Europe/Lisbon' : countryCode === 'CH' ? 'Europe/Zurich' : 'Europe/Paris',
+    scheduleName,
+    scheduledAt,
+    currencyCode: countryCode === 'CH' ? 'CHF' : 'EUR',
+    amount: 0,
+    paymentStatus: 'UNDECIDED',
+    scheduleStatus: 'UPCOMING',
+    placeName,
+    placeAddress: '',
+    memo: '',
+  }
+}
+
+export function demoTravelSchedules() {
+  return demoSchedules.map(demoScheduleRow)
+}
+
+export function demoTravelScheduleDetail(scheduleId) {
+  return demoTravelSchedules().find(item => item.id === Number(scheduleId)) || null
+}
+
 export function isLay1217Demo() {
   try {
     const user = JSON.parse(localStorage.getItem('tripass-user') || 'null')

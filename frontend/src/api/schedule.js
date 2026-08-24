@@ -1,12 +1,15 @@
 import api from '@/api'
+import { demoTravelScheduleDetail, demoTravelSchedules, isLay1217Demo } from '@/mocks/lay1217TravelDemo'
 
 const dataOf = response => response.data?.data
 
 export async function fetchSchedules(tripId) {
+  if (isLay1217Demo()) return demoTravelSchedules()
   return dataOf(await api.get(`/trips/${tripId}/schedules`))
 }
 
 export async function fetchScheduleDetail(tripId, scheduleId) {
+  if (isLay1217Demo()) return demoTravelScheduleDetail(scheduleId)
   return dataOf(await api.get(`/trips/${tripId}/schedules/${scheduleId}`))
 }
 
