@@ -1056,7 +1056,11 @@ async function switchMode(mode) {
                 <p>{{ countryDateRange(item) }}</p>
                 <div>
                   <span>{{ item.name }} 총 지출</span>
-                  <strong>{{ amountDisplayCurrency === 'foreign' ? foreignBudgetText(item, item.spentAmount) : formatWon(item.spentAmount) }}</strong>
+                  <span class="completed-spend-values">
+                    <strong>{{ foreignBudgetText(item, item.spentAmount) }}</strong>
+                    <em>약 {{ formatWon(item.spentAmount) }}</em>
+                    <small>{{ exchangeRateCaption }}</small>
+                  </span>
                 </div>
               </section>
               <template v-else>
@@ -3066,7 +3070,7 @@ async function switchMode(mode) {
 .completed-country-panel>p{margin-top:9px;color:#9dc8f4;font-family:'Space Mono',ui-monospace,monospace;font-size:10px;font-weight:800}
 .completed-country-panel>div{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.48);text-align:left}
 .completed-country-panel span{font-size:12px;font-weight:850}
-.completed-country-panel strong{font-size:22px;font-weight:950}
+.completed-country-panel .completed-spend-values{display:flex;align-items:flex-end;flex-direction:column;gap:2px}.completed-country-panel .completed-spend-values strong{font-family:inherit;font-size:16px;font-weight:900;letter-spacing:-.02em;white-space:nowrap}.completed-country-panel .completed-spend-values em{color:#8cebbf;font-size:11px;font-style:normal;font-weight:800}.completed-country-panel .completed-spend-values small{color:rgba(255,255,255,.65);font-size:7px;font-weight:700;white-space:nowrap}
 .fund-amount-line{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
 .fund-amount-line.align-right{justify-content:flex-end}
 .fund-amount-line em{color:#8cebbf;font-size:8px;font-style:normal;font-weight:850}
