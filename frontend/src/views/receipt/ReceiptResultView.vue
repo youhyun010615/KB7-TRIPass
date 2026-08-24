@@ -2987,10 +2987,12 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .result-page .tripass-receipt-document.is-editing .datetime-field {
-  width: 100%;
+  width: calc(100% - 20px);
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  margin-right: 10px;
+  margin-left: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .result-page .tripass-receipt-document.is-editing .datetime-field .field,

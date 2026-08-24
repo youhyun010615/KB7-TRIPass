@@ -1495,3 +1495,31 @@ form {
 </style>
 
 <style src="../../assets/receipt-document.css"></style>
+
+<style scoped>
+.manual-page .tripass-receipt-document .datetime-field {
+  width: calc(100% - 20px);
+  min-width: 0;
+  margin-right: 10px;
+  margin-left: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manual-page .tripass-receipt-document .datetime-field .field,
+.manual-page .tripass-receipt-document .datetime-field input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.manual-page .tripass-receipt-document .datetime-field input {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0 10px;
+  font-size: 12px;
+  text-align: left;
+}
+</style>
