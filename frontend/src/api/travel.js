@@ -18,6 +18,10 @@ function demoStartReportKey(tripId) {
   return `tripass-demo-start-report:${DEMO_REPORT_RESET_VERSION}:${tripId}`;
 }
 
+function demoArchivedTripKey(tripId) {
+  return `tripass-demo-archived:${DEMO_REPORT_RESET_VERSION}:${tripId}`;
+}
+
 export async function fetchTripCountries(keyword = '') {
   const response = await api.get('/trips/countries', {
     params: keyword ? { keyword } : undefined,
@@ -57,6 +61,19 @@ export async function fetchCurrentTripLifecycle() {
   const tripsResponse = await api.get('/trips');
   const demoTrip = canonicalDemoTrips(unwrap(tripsResponse))[0];
   if (!demoTrip) return data;
+  if (localStorage.getItem(demoArchivedTripKey(demoTrip.tripId)) === 'true') {
+    return {
+      ...data,
+      tripId: null,
+      lifecycle: 'ARCHIVED',
+      status: 'ARCHIVED',
+      hasTrip: false,
+      travelModeAvailable: false,
+      missionAvailable: false,
+      startReportAvailable: false,
+      endingReviewRequired: false,
+    };
+  }
 
   const today = todayIso();
   const lifecycle = today < demoTrip.startDate
@@ -93,6 +110,7 @@ export async function resolveWalletReflect(tripId, reflect, targetAccountId = nu
 
 export async function archiveTrip(tripId) {
   const response = await api.post(`/trips/${tripId}/archive`);
+  if (isLay1217Demo()) localStorage.setItem(demoArchivedTripKey(tripId), 'true');
   return unwrap(response);
 }
 
