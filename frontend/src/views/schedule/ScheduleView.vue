@@ -339,12 +339,17 @@ function updateListMaxHeight() {
   const list = timelineList.value;
   if (!list) return;
   const top = list.getBoundingClientRect().top;
-  const available = window.innerHeight - top - LIST_BOTTOM_CLEARANCE;
+  const available = window.innerHeight - top - (isTripEnded.value ? 32 : LIST_BOTTOM_CLEARANCE);
   list.style.maxHeight = `${Math.max(available, 200)}px`;
 }
 
 async function positionTimelineAtNext() {
   const list = timelineList.value;
+  if (isTripEnded.value) {
+    selectedCalendarDate.value = '';
+    if (list) list.scrollTop = 0;
+    return;
+  }
   const todayExists = travelDates.value.some((date) => date.date === store.today);
   selectedCalendarDate.value = todayExists
     ? store.today
@@ -497,7 +502,7 @@ async function focusTimelineDate(date) {
     <section class="upcoming-card" :class="{ 'is-empty': !visibleTimelineGroups.length }">
       <div class="section-title">
         <div>
-          <h2>{{ listMode ? '여행 일정' : '전체 일정' }}</h2>
+          <h2>{{ listMode && !isTripEnded ? '여행 일정' : '전체 일정' }}</h2>
         </div>
         <span>총 {{ listMode ? visibleScheduleCount : store.sortedSchedules.length }}건</span>
       </div>
