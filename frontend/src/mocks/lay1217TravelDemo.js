@@ -6,21 +6,21 @@ const INITIAL_WALLET = 3_938_008
 const countryData = {
   프랑스: {
     budget: 1_228_000,
-    day9: { total: 1_045_440, categories: [174_960, 276_480, 58_320, 126_360, 34_020, 348_300, 27_000] },
-    day13: { total: 1_045_440, categories: [174_960, 276_480, 58_320, 126_360, 34_020, 348_300, 27_000] },
-    end: { total: 1_045_440, categories: [174_960, 276_480, 58_320, 126_360, 34_020, 348_300, 27_000] },
+    day9: { total: 1_045_440, categories: [154_960, 336_480, 58_320, 126_360, 34_020, 308_300, 27_000] },
+    day13: { total: 1_045_440, categories: [154_960, 336_480, 58_320, 126_360, 34_020, 308_300, 27_000] },
+    end: { total: 1_045_440, categories: [154_960, 336_480, 58_320, 126_360, 34_020, 308_300, 27_000] },
   },
   스위스: {
     budget: 1_170_000,
-    day9: { total: 643_600, categories: [44_500, 168_200, 28_480, 171_020, 21_360, 192_240, 17_800] },
-    day13: { total: 1_083_620, categories: [129_500, 264_200, 46_480, 283_020, 46_360, 283_260, 30_800] },
-    end: { total: 1_083_620, categories: [129_500, 264_200, 46_480, 283_020, 46_360, 283_260, 30_800] },
+    day9: { total: 643_600, categories: [29_500, 208_200, 28_480, 171_020, 21_360, 167_240, 17_800] },
+    day13: { total: 1_083_620, categories: [109_500, 324_200, 46_480, 283_020, 46_360, 243_260, 30_800] },
+    end: { total: 1_083_620, categories: [109_500, 324_200, 46_480, 283_020, 46_360, 243_260, 30_800] },
   },
   포르투갈: {
     budget: 940_000,
     day9: { total: 0, categories: [0, 0, 0, 0, 0, 0, 0] },
-    day13: { total: 1_012_500, categories: [251_100, 214_500, 42_300, 138_600, 29_700, 305_100, 31_200] },
-    end: { total: 1_117_800, categories: [251_100, 256_500, 53_800, 157_400, 29_700, 330_100, 39_200] },
+    day13: { total: 1_232_500, categories: [301_100, 254_500, 47_300, 158_600, 29_700, 405_100, 36_200] },
+    end: { total: 1_342_560, categories: [301_100, 296_500, 58_800, 177_400, 29_700, 430_100, 48_960] },
   },
 }
 
@@ -58,8 +58,27 @@ const daily = [
   ['2027-04-11', '스위스', 141_240], ['2027-04-12', '스위스', 192_640],
   ['2027-04-13', '스위스', 228_460], ['2027-04-14', '스위스', 211_560],
   ['2027-04-14', '포르투갈', 238_500], ['2027-04-15', '포르투갈', 331_200],
-  ['2027-04-16', '포르투갈', 442_800], ['2027-04-17', '포르투갈', 63_500],
+  ['2027-04-16', '포르투갈', 662_800], ['2027-04-17', '포르투갈', 68_260],
   ['2027-04-18', '포르투갈', 41_800],
+]
+
+const demoSchedules = [
+  ['fr-0405', '프랑스', 'FR', '2027-04-05T10:00:00', '루브르 박물관 가이드 투어', '루브르 박물관'],
+  ['fr-0406', '프랑스', 'FR', '2027-04-06T09:30:00', '베르사유 궁전 투어', '베르사유 궁전'],
+  ['fr-0407', '프랑스', 'FR', '2027-04-07T19:30:00', '센강 선셋 크루즈', '센강'],
+  ['fr-0408', '프랑스', 'FR', '2027-04-08T14:00:00', '몽마르트·사크레쾌르 산책', '몽마르트'],
+  ['fr-0409', '프랑스', 'FR', '2027-04-09T09:00:00', '리옹역 출발·스위스 이동', '파리 리옹역'],
+  ['ch-0409', '스위스', 'CH', '2027-04-09T16:00:00', '루체른 도착·호텔 체크인', '루체른'],
+  ['ch-0410', '스위스', 'CH', '2027-04-10T09:00:00', '융프라우요흐 투어', '융프라우요흐'],
+  ['ch-0411', '스위스', 'CH', '2027-04-11T10:00:00', '그린델발트 퍼스트', '그린델발트'],
+  ['ch-0412', '스위스', 'CH', '2027-04-12T10:00:00', '루체른 구시가지·카펠교', '루체른 카펠교'],
+  ['ch-0413', '스위스', 'CH', '2027-04-13T13:30:00', '인터라켄·브리엔츠 호수', '브리엔츠 호수'],
+  ['ch-0414', '스위스', 'CH', '2027-04-14T09:30:00', '취리히 공항·리스본 이동', '취리히 공항'],
+  ['pt-0414', '포르투갈', 'PT', '2027-04-14T17:00:00', '리스본 호텔·코메르시우 광장', '코메르시우 광장'],
+  ['pt-0415', '포르투갈', 'PT', '2027-04-15T10:00:00', '벨렙·제로니무스 수도원', '제로니무스 수도원'],
+  ['pt-0416', '포르투갈', 'PT', '2027-04-16T09:30:00', '신트라 페나성', '페나 궁전'],
+  ['pt-0417', '포르투갈', 'PT', '2027-04-17T16:00:00', '알파마·28번 트램', '알파마'],
+  ['pt-0418', '포르투갈', 'PT', '2027-04-18T11:00:00', '타임아웃 마켓·마지막 산책', '타임아웃 마켓'],
 ]
 
 export function isLay1217Demo() {
@@ -111,11 +130,27 @@ export function overlayTravelStatus(base = {}, requestedCountryId = null) {
       countryDetails,
     }
   })
+  const requestedCountry = requestedCountryId
+    ? countries.find(country => Number(country.tripCountryId) === Number(requestedCountryId))
+    : null
+  const countryIds = new Map(countries.map(country => [country.countryName, country.tripCountryId]))
+  const upcomingSchedules = demoSchedules
+    .filter(([, countryName]) => !requestedCountry || countryName === requestedCountry.countryName)
+    .map(([scheduleId, countryName, countryCode, dateTime, title, location]) => ({
+      scheduleId: `lay-demo-${scheduleId}`,
+      tripCountryId: countryIds.get(countryName),
+      countryName,
+      countryCode,
+      title,
+      dateTime,
+      location,
+    }))
   return {
     ...base,
     totalRemainingFund: TARGET - countries.reduce((sum, item) => sum + Number(item.spentAmount || 0), 0),
     countries,
     categorySummary,
+    upcomingSchedules,
   }
 }
 
@@ -143,8 +178,8 @@ export function overlayBudgetCheck(base = []) {
 const walletSnapshots = {
   dday: { balance: 3_438_008, emergency: 600_008, eur: [308.64, 500_000], chf: [0, 0] },
   day9: { balance: 2_088_008, emergency: 600_008, eur: [33.68, 54_560], chf: [59.78, 106_400] },
-  day13: { balance: 548_008, emergency: 400_008, eur: [112.38, 182_060], chf: [37.29, 66_380] },
-  end: { balance: 548_008, emergency: 400_008, eur: [47.38, 76_760], chf: [37.29, 66_380] },
+  day13: { balance: 400_008, emergency: 400_008, eur: [67.94, 110_060], chf: [37.29, 66_380] },
+  end: { balance: 400_008, emergency: 400_008, eur: [0, 0], chf: [37.29, 66_380] },
 }
 
 export function demoForeignBalances() {
@@ -174,8 +209,8 @@ const fundingLedgers = [
   ['2027-04-06T09:00:00', 600_000, 3_438_008, 2_838_008, 'EUR 트래블카드 충전'],
   ['2027-04-09T09:00:00', 750_000, 2_838_008, 2_088_008, 'CHF 트래블카드 충전'],
   ['2027-04-13T09:00:00', 400_000, 2_088_008, 1_688_008, 'CHF 트래블카드 충전'],
-  ['2027-04-14T09:00:00', 940_000, 1_688_008, 748_008, 'EUR 트래블카드 충전'],
-  ['2027-04-16T12:00:00', 200_000, 748_008, 548_008, '비상금 EUR 충전'],
+  ['2027-04-14T09:00:00', 1_088_000, 1_688_008, 600_008, '남은 여행 목표 자금 EUR 충전'],
+  ['2027-04-16T12:00:00', 200_000, 600_008, 400_008, '비상금 EUR 충전'],
 ]
 
 export function demoWalletLedgers(base = []) {
@@ -189,7 +224,7 @@ export function demoWalletLedgers(base = []) {
 }
 
 export function demoPostTripReport(tripId) {
-  const categories = [555_560, 797_180, 158_600, 566_780, 110_080, 961_660, 97_000]
+  const categories = [565_560, 957_180, 163_600, 586_780, 110_080, 981_660, 106_760]
   const groupedDaily = new Map()
   daily.forEach(([date, , amount]) => groupedDaily.set(date, (groupedDaily.get(date) || 0) + amount))
   const countrySpending = Object.entries(countryData).map(([countryName, item]) => ({
@@ -199,8 +234,8 @@ export function demoPostTripReport(tripId) {
     tripId,
     tripName: '유럽 3개국 여행', countryNames: Object.keys(countryData),
     startDate: '2027-04-04', endDate: '2027-04-18', days: 15,
-    targetBudget: TARGET, spent: 3_246_860, remaining: 91_140,
-    dailyAverage: Math.round(3_246_860 / 15), savingsRate: 2.7,
+    targetBudget: TARGET, spent: 3_471_620, remaining: -133_620,
+    dailyAverage: Math.round(3_471_620 / 15), savingsRate: -4,
     dailySpending: [...groupedDaily].map(([date, amount]) => ({ date, amount })),
     categorySpending: categoryNames.map((categoryName, index) => ({ categoryName, amount: categories[index] })),
     countrySpending,
