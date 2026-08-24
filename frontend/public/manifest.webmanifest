@@ -8,7 +8,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f4f7ff",
-  "theme_color": "#173f8d",
+  "theme_color": "#2456b8",
   "categories": ["finance", "travel", "productivity"],
   "icons": [
     {
