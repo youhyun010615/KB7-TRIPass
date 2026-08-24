@@ -331,7 +331,13 @@ function onTouchEnd() {
   flex-direction: column;
   overflow: hidden;
   color: white;
-  background: radial-gradient(120% 90% at 50% 0%, #2456b8 0%, #173d8f 46%, #0c2564 100%);
+  background: linear-gradient(
+    180deg,
+    #2456b8 0,
+    #2456b8 150px,
+    #173d8f 46%,
+    #0c2564 100%
+  );
   isolation: isolate;
   overscroll-behavior: none;
   touch-action: pan-x;
