@@ -1,13 +1,16 @@
 import api from '@/api'
+import { demoForeignBalances, demoWalletLedgers, isLay1217Demo, overlayWalletMain } from '@/mocks/lay1217TravelDemo'
 
 const dataOf = response => response.data?.data
 
 export async function fetchWalletMain() {
-  return dataOf(await api.get('/wallet'))
+  const data = dataOf(await api.get('/wallet'))
+  return isLay1217Demo() ? overlayWalletMain(data) : data
 }
 
 export async function fetchWalletLedgers() {
-  return dataOf(await api.get('/wallet/ledgers'))
+  const data = dataOf(await api.get('/wallet/ledgers'))
+  return isLay1217Demo() ? demoWalletLedgers(data) : data
 }
 
 export async function fetchWalletMonthlySavingDetail(month) {
@@ -15,6 +18,7 @@ export async function fetchWalletMonthlySavingDetail(month) {
 }
 
 export async function fetchWalletForeignBalances() {
+  if (isLay1217Demo()) return demoForeignBalances()
   return dataOf(await api.get('/wallet/foreign-balances'))
 }
 
@@ -99,6 +103,7 @@ export async function topupWalletTravelCard(payload) {
 }
 
 export async function fetchWalletTravelCardBalances() {
+  if (isLay1217Demo()) return demoForeignBalances()
   return dataOf(await api.get('/wallet/travel-card/balances'))
 }
 

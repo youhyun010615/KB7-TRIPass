@@ -1,0 +1,233 @@
+import { todayIso } from '@/utils/devDate'
+
+const TARGET = 3_338_000
+const INITIAL_WALLET = 3_938_008
+
+const countryData = {
+  프랑스: {
+    budget: 1_228_000,
+    day9: { total: 1_045_440, categories: [174_960, 276_480, 58_320, 126_360, 34_020, 348_300, 27_000] },
+    day13: { total: 1_045_440, categories: [174_960, 276_480, 58_320, 126_360, 34_020, 348_300, 27_000] },
+    end: { total: 1_045_440, categories: [174_960, 276_480, 58_320, 126_360, 34_020, 348_300, 27_000] },
+  },
+  스위스: {
+    budget: 1_170_000,
+    day9: { total: 643_600, categories: [44_500, 168_200, 28_480, 171_020, 21_360, 192_240, 17_800] },
+    day13: { total: 1_083_620, categories: [129_500, 264_200, 46_480, 283_020, 46_360, 283_260, 30_800] },
+    end: { total: 1_083_620, categories: [129_500, 264_200, 46_480, 283_020, 46_360, 283_260, 30_800] },
+  },
+  포르투갈: {
+    budget: 940_000,
+    day9: { total: 0, categories: [0, 0, 0, 0, 0, 0, 0] },
+    day13: { total: 1_012_500, categories: [251_100, 214_500, 42_300, 138_600, 29_700, 305_100, 31_200] },
+    end: { total: 1_117_800, categories: [251_100, 256_500, 53_800, 157_400, 29_700, 330_100, 39_200] },
+  },
+}
+
+const categoryNames = ['쇼핑', '식비', '카페', '교통', '생활비', '취미여가', '기타']
+const countryIdNames = new Map()
+
+const daily = [
+  ['2027-04-04', '프랑스', 124_740], ['2027-04-05', '프랑스', 238_140],
+  ['2027-04-06', '프랑스', 146_880], ['2027-04-07', '프랑스', 193_860],
+  ['2027-04-08', '프랑스', 187_920], ['2027-04-09', '프랑스', 153_900],
+  ['2027-04-09', '스위스', 122_820], ['2027-04-10', '스위스', 186_900],
+  ['2027-04-11', '스위스', 141_240], ['2027-04-12', '스위스', 192_640],
+  ['2027-04-13', '스위스', 228_460], ['2027-04-14', '스위스', 211_560],
+  ['2027-04-14', '포르투갈', 238_500], ['2027-04-15', '포르투갈', 331_200],
+  ['2027-04-16', '포르투갈', 442_800], ['2027-04-17', '포르투갈', 63_500],
+  ['2027-04-18', '포르투갈', 41_800],
+]
+
+export function isLay1217Demo() {
+  try {
+    const user = JSON.parse(localStorage.getItem('tripass-user') || 'null')
+    return String(user?.loginId || '').trim().toLowerCase() === 'lay1217'
+  } catch {
+    return false
+  }
+}
+
+export function demoStage() {
+  const date = todayIso()
+  if (date <= '2027-04-04') return 'dday'
+  if (date <= '2027-04-12') return 'day9'
+  if (date <= '2027-04-18') return 'day13'
+  return 'end'
+}
+
+function stageData(name, stage = demoStage()) {
+  if (stage === 'dday') return { total: 0, categories: Array(7).fill(0) }
+  return countryData[name]?.[stage] || { total: 0, categories: Array(7).fill(0) }
+}
+
+function normalizeName(value) {
+  return value === '취미·여가' ? '취미여가' : value
+}
+
+export function overlayTravelStatus(base = {}, requestedCountryId = null) {
+  const stage = demoStage()
+  const countries = (base.countries || []).map(country => {
+    if (country.tripCountryId != null) countryIdNames.set(String(country.tripCountryId), country.countryName)
+    const mock = countryData[country.countryName]
+    const state = stageData(country.countryName, stage)
+    return mock ? { ...country, targetBudget: mock.budget, spentAmount: state.total } : country
+  })
+  const selected = requestedCountryId
+    ? countries.find(country => Number(country.tripCountryId) === Number(requestedCountryId))
+    : null
+  const names = selected ? [selected.countryName] : Object.keys(countryData)
+  const categorySummary = categoryNames.map((categoryName, index) => {
+    const countryDetails = names.map(name => ({
+      countryName: name,
+      amount: stageData(name, stage).categories[index],
+    }))
+    return {
+      categoryName,
+      totalAmount: countryDetails.reduce((sum, item) => sum + item.amount, 0),
+      countryDetails,
+    }
+  })
+  return {
+    ...base,
+    totalRemainingFund: TARGET - countries.reduce((sum, item) => sum + Number(item.spentAmount || 0), 0),
+    countries,
+    categorySummary,
+  }
+}
+
+export function overlayBudgetCheck(base = []) {
+  const stage = demoStage()
+  return (base || []).map(item => {
+    if (item.tripCountryId != null) countryIdNames.set(String(item.tripCountryId), item.countryName)
+    const mock = countryData[item.countryName]
+    if (!mock) return item
+    const state = stageData(item.countryName, stage)
+    return {
+      ...item,
+      targetBudget: mock.budget,
+      preExpenseTotal: 0,
+      travelExpenseTotal: state.total,
+      remainingFund: mock.budget - state.total,
+      categoryBreakdown: categoryNames.map((categoryName, index) => ({
+        categoryName,
+        amount: state.categories[index],
+      })),
+    }
+  })
+}
+
+const walletSnapshots = {
+  dday: { balance: 3_438_008, emergency: 600_008, eur: [308.64, 500_000], chf: [0, 0] },
+  day9: { balance: 2_088_008, emergency: 600_008, eur: [33.68, 54_560], chf: [59.78, 106_400] },
+  day13: { balance: 548_008, emergency: 400_008, eur: [112.38, 182_060], chf: [37.29, 66_380] },
+  end: { balance: 548_008, emergency: 400_008, eur: [47.38, 76_760], chf: [37.29, 66_380] },
+}
+
+export function demoForeignBalances() {
+  const snap = walletSnapshots[demoStage()]
+  return [
+    { currencyCode: 'EUR', currencyName: '유로', symbol: 'EUR', flag: '🇪🇺', balanceAmount: snap.eur[0], krwEstimatedAmount: snap.eur[1], rate: 1620 },
+    { currencyCode: 'CHF', currencyName: '스위스 프랑', symbol: 'CHF', flag: '🇨🇭', balanceAmount: snap.chf[0], krwEstimatedAmount: snap.chf[1], rate: 1780 },
+  ]
+}
+
+export function overlayWalletMain(base = {}) {
+  const snap = walletSnapshots[demoStage()]
+  return {
+    ...base,
+    balanceAmount: snap.balance,
+    targetAmount: TARGET,
+    emergencyAmount: snap.emergency,
+    goalAvailableAmount: Math.min(snap.balance, TARGET),
+    externalChargeAmount: INITIAL_WALLET,
+    savingRate: Math.min(100, Math.round((snap.balance / TARGET) * 1000) / 10),
+    foreignBalances: demoForeignBalances(),
+  }
+}
+
+const fundingLedgers = [
+  ['2027-04-04T09:00:00', 500_000, INITIAL_WALLET, 3_438_008, 'EUR 트래블카드 충전'],
+  ['2027-04-06T09:00:00', 600_000, 3_438_008, 2_838_008, 'EUR 트래블카드 충전'],
+  ['2027-04-09T09:00:00', 750_000, 2_838_008, 2_088_008, 'CHF 트래블카드 충전'],
+  ['2027-04-13T09:00:00', 400_000, 2_088_008, 1_688_008, 'CHF 트래블카드 충전'],
+  ['2027-04-14T09:00:00', 940_000, 1_688_008, 748_008, 'EUR 트래블카드 충전'],
+  ['2027-04-16T12:00:00', 200_000, 748_008, 548_008, '비상금 EUR 충전'],
+]
+
+export function demoWalletLedgers(base = []) {
+  const cutoff = todayIso()
+  const rows = fundingLedgers.filter(item => item[0].slice(0, 10) <= cutoff).map((item, index) => ({
+    ledgerId: `lay-demo-${index + 1}`,
+    direction: 'OUT', transactionType: 'TRAVEL_CARD_TOPUP', amount: item[1],
+    balanceBefore: item[2], balanceAfter: item[3], memo: item[4], createdAt: item[0],
+  }))
+  return [...rows, ...(base || []).filter(item => String(item.createdAt || '').slice(0, 10) < '2027-04-04')]
+}
+
+export function demoPostTripReport(tripId) {
+  const categories = [555_560, 797_180, 158_600, 566_780, 110_080, 961_660, 97_000]
+  const groupedDaily = new Map()
+  daily.forEach(([date, , amount]) => groupedDaily.set(date, (groupedDaily.get(date) || 0) + amount))
+  const countrySpending = Object.entries(countryData).map(([countryName, item]) => ({
+    countryName, amount: item.end.total, budget: item.budget,
+  }))
+  return {
+    tripId,
+    tripName: '유럽 3개국 여행', countryNames: Object.keys(countryData),
+    startDate: '2027-04-04', endDate: '2027-04-18', days: 15,
+    targetBudget: TARGET, spent: 3_246_860, remaining: 91_140,
+    dailyAverage: Math.round(3_246_860 / 15), savingsRate: 2.7,
+    dailySpending: [...groupedDaily].map(([date, amount]) => ({ date, amount })),
+    categorySpending: categoryNames.map((categoryName, index) => ({ categoryName, amount: categories[index] })),
+    countrySpending,
+    countryTopCategories: countrySpending.map(country => {
+      const state = countryData[country.countryName].end
+      const max = Math.max(...state.categories)
+      const index = state.categories.indexOf(max)
+      return { countryName: country.countryName, categoryName: categoryNames[index], amount: max, countryTotal: state.total }
+    }),
+    receiptCount: daily.length, nextTripMonthlySuggestion: 460_000, nextTripMonths: 8,
+  }
+}
+
+export function demoTransactions(base = [], countryId = null, categoryName = '') {
+  const normalizedCategory = normalizeName(categoryName)
+  const baseCountry = (base || [])[0]?.countryName
+  const countryName = baseCountry || (countryId ? countryIdNames.get(String(countryId)) : '')
+  const cutoff = todayIso()
+  const rows = daily.filter(([date, name]) => date <= cutoff && (!countryName || name === countryName))
+  const rowTotals = rows.reduce((result, [, name, amount]) => {
+    result[name] = (result[name] || 0) + amount
+    return result
+  }, {})
+  const rowCounts = rows.reduce((result, [, name]) => {
+    result[name] = (result[name] || 0) + 1
+    return result
+  }, {})
+  const allocated = {}
+  const visited = {}
+  return rows.map(([date, name, total], index) => {
+    const state = countryData[name]?.[demoStage()]
+    const categoryIndex = normalizedCategory ? categoryNames.indexOf(normalizedCategory) : -1
+    const categoryTotal = Number(state?.categories?.[categoryIndex] || 0)
+    visited[name] = (visited[name] || 0) + 1
+    let categoryAmount = total
+    if (categoryIndex >= 0) {
+      const isLast = visited[name] === rowCounts[name]
+      categoryAmount = isLast
+        ? categoryTotal - (allocated[name] || 0)
+        : Math.round(categoryTotal * total / Math.max(rowTotals[name], 1))
+      allocated[name] = (allocated[name] || 0) + categoryAmount
+    }
+    return {
+      transactionId: `lay-demo-${name}-${date}-${index}`,
+      countryName: name,
+      categoryName: normalizedCategory || '기타',
+      merchantName: `${name} 여행 결제`, amount: categoryAmount,
+      originalAmount: 0, appliedExchangeRate: name === '스위스' ? 1780 : 1620,
+      currencySymbol: name === '스위스' ? 'CHF' : 'EUR', transactionDate: date,
+      transactionType: 'WITHDRAWAL',
+    }
+  }).filter(item => item.amount > 0)
+}

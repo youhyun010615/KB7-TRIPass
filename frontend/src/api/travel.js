@@ -1,4 +1,5 @@
 import api from '@/api';
+import { demoTransactions, isLay1217Demo, overlayBudgetCheck, overlayTravelStatus } from '@/mocks/lay1217TravelDemo';
 
 const unwrap = (response) => response.data.data;
 
@@ -95,7 +96,8 @@ export async function fetchTripStatus(tripId, countryId) {
   const response = await api.get(`/trips/${tripId}/travel-status`, {
     params: countryId ? { countryId } : undefined,
   });
-  return unwrap(response);
+  const data = unwrap(response);
+  return isLay1217Demo() ? overlayTravelStatus(data, countryId) : data;
 }
 
 export async function fetchTripTransactions(tripId, countryId, categoryName) {
@@ -105,10 +107,12 @@ export async function fetchTripTransactions(tripId, countryId, categoryName) {
       categoryName: categoryName || undefined,
     },
   });
-  return unwrap(response);
+  const data = unwrap(response);
+  return isLay1217Demo() ? demoTransactions(data, countryId, categoryName) : data;
 }
 
 export async function fetchBudgetCheck(tripId) {
   const response = await api.get(`/trips/${tripId}/budget-check`);
-  return unwrap(response);
+  const data = unwrap(response);
+  return isLay1217Demo() ? overlayBudgetCheck(data) : data;
 }
