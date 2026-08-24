@@ -4,7 +4,7 @@ import { todayIso } from '@/utils/devDate';
 
 const unwrap = (response) => response.data.data;
 const DEMO_TRIP_NAME = '유럽 3개국 여행';
-const DEMO_REPORT_RESET_VERSION = 'budget-without-emergency-v2';
+const DEMO_REPORT_RESET_VERSION = 'budget-without-emergency-v3';
 
 function canonicalDemoTrips(trips = []) {
   if (!isLay1217Demo()) return trips;
