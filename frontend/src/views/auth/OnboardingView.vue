@@ -325,7 +325,7 @@ function onTouchEnd() {
   bottom: 0;
   left: max(0px, calc((100vw - 390px) / 2));
   display: flex;
-  +width: min(100vw, 390px);
+  width: min(100vw, 390px);
   height: 100vh;
   height: 100dvh;
   min-height: 0;
