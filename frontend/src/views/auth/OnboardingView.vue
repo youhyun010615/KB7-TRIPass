@@ -321,11 +321,9 @@ function onTouchEnd() {
   --navy-light: #285ec5;
   --yellow: #ffd45e;
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: max(0px, calc((100vw - 390px) / 2));
+  inset: 0;
   display: flex;
-  width: min(100vw, 390px);
+  width: 100%;
   height: 100vh;
   height: 100dvh;
   min-height: 0;
@@ -343,6 +341,13 @@ function onTouchEnd() {
   isolation: isolate;
   overscroll-behavior: none;
   touch-action: pan-x;
+}
+@media (hover: hover) and (pointer: fine) {
+  .onboarding {
+    right: auto;
+    left: calc((100vw - 390px) / 2);
+    width: 390px;
+  }
 }
 
 :global(html.onboarding-active),
