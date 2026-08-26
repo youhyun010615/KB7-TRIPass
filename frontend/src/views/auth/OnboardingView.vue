@@ -321,9 +321,11 @@ function onTouchEnd() {
   --navy-light: #285ec5;
   --yellow: #ffd45e;
   position: fixed;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: max(0px, calc((100vw - 390px) / 2));
   display: flex;
-  width: 100%;
+  +width: min(100vw, 390px);
   height: 100vh;
   height: 100dvh;
   min-height: 0;
